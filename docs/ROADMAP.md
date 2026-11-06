@@ -1,18 +1,20 @@
-# Feuille de route par itérations
+# Feuille de route par versions
 
-Chaque itération produit quelque chose qu'on peut **ouvrir et tester en local**. On ne passe
-à la suivante qu'une fois la précédente validée.
+Chaque version produit quelque chose qu'on peut **ouvrir et tester en local** et devient un
+milestone GitHub. On ne passe à la suivante qu'une fois la précédente validée à la main.
+Source de référence des critères : [architecture.md](architecture.md), section « Versions ».
 
-| # | Itération | On obtient | Critère de réussite |
-|---|---|---|---|
-| 0 | **Socle** | Dépôt GitHub, app Next.js, Supabase local, types générés, thème (couleurs, polices, mode sombre) | `npm run dev` affiche une page d'accueil aux couleurs du projet, connectée à la base |
-| 1 | **Lecture seule** | Liste des épreuves, fiche d'épreuve avec liste de départ, podium officiel (données de test) | On navigue dans l'Ultimate Championship 2026 sur mobile |
-| 2 | **Comptes** | Connexion par lien magique, profil (pseudo + avatar emoji) | Je crée un compte et je vois mon pseudo |
-| 3 | **Pronostiquer** | PodiumPicker, joker, compte à rebours, verrouillage | Je fais un prono en moins de 20 s ; impossible après verrouillage |
-| 4 | **Ligues** | Création, code d'invitation, classement de ligue et général | Deux comptes de test se retrouvent dans la même ligue |
-| 5 | **Résultats et points** | Back-office de saisie, calcul des points (domaine TypeScript) et enregistrement, écran « mes points » | Je saisis un podium, les points s'affichent et sont corrects |
-| 6 | **Couche fun** | Confettis, série en feu, coup de flair, badges, réactions, cartes à partager | Une session de test fait sourire |
-| 7 | **Mise en ligne** | Vercel + Supabase cloud, domaine, premiers testeurs | Un ami s'inscrit depuis son téléphone |
+| Version | Contenu | Critère de réussite (« It works when… ») |
+|---|---|---|
+| v0.1 Socle et lecture | Dépôt, app Next.js, Supabase local, thème, liste des épreuves, fiche d'épreuve avec podium officiel | On ouvre sur téléphone la liste des 28 épreuves et la fiche d'une épreuve avec son podium, lus dans la base locale |
+| v0.2 Comptes | Connexion par lien magique, profil (pseudo, 15 ans ou plus) | Un nouvel utilisateur reçoit un lien magique, choisit son pseudo et retrouve son profil après déconnexion |
+| v0.3 Pronostiquer | PodiumPicker, joker, compte à rebours, verrouillage | Un podium se compose en moins de 20 s ; la base refuse toute modification après `lock_at` |
+| v0.4 Back-office et points | Saisie des résultats, calcul des points, écran « mes points » | Les points de joueurs de test correspondent aux cas chiffrés (podium parfait = 12, avec joker = 24) |
+| v0.5 Ligues et classements | Création, code d'invitation, classement de ligue et général | Deux comptes dans la même ligue voient le même classement |
+| v0.6 Suspense | Coup de flair, révélation des pronos après verrouillage, réactions emoji | Avant verrouillage les pronos des autres sont illisibles (test) |
+| v0.7 Mise en ligne | Vercel + Supabase cloud, domaine, premiers testeurs | Un ami s'inscrit depuis son téléphone, fait un prono et peut supprimer son compte |
+
+Plus tard : séries et badges, cartes à partager, questions bonus (voir « Idées pour plus tard »).
 
 ## Rejouer l'Ultimate Championship pour tester
 
@@ -25,7 +27,7 @@ le calcul épreuve par épreuve pour vérifier le barème et le classement.
 - Barème : tests Vitest sur des cas chiffrés (podium parfait, joker, coup de flair, ex æquo).
 - Sécurité : vérifier qu'un joueur ne peut ni pronostiquer après verrouillage ni lire les
   pronos des autres avant.
-- Interface : parcours principal en test de bout en bout (Playwright) à partir de l'itération 3.
+- Interface : parcours principal en test de bout en bout (Playwright) à partir de la v0.3.
 
 ## Idées pour plus tard
 

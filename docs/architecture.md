@@ -1,7 +1,9 @@
 # French Track Prono — Architecture
 
-Statut : phases 1 à 4 validées (définition, stack, couches, harnais de tests). Le calcul des
-points a été déplacé dans le domaine TypeScript (décision B, 6 nov. 2026). Phase 5 à venir.
+Statut : phases 1 à 5 faites (définition, stack, couches, harnais de tests, planification de la
+v0.1). La v0.1 est construite ; reste la vérification à la main du critère « It works when… ».
+Le calcul des points est dans le domaine TypeScript (décision B, 6 nov. 2026). Les phases 6 à 8
+(agents sur GitHub, garde-fous) sont reportées après la v0.1.
 
 Langue : docs du dépôt en français ; code, noms et commentaires de code en anglais.
 
@@ -185,7 +187,7 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 
 Listes de cas chiffrés, référence des tests. Barème : 3 par athlète bien placé, 1 par athlète sur
 le podium mal placé, +3 podium parfait, +2 coup de flair, joker x2 (appliqué en dernier).
-Attention : le schéma SQL n'a pas encore été exécuté ; S1 à S11 sont des tests Vitest purs, S12 et S13 se testent au niveau du cas d'usage.
+Le schéma et le seed ont été exécutés sur Supabase local et sont couverts par des tests pgTAP. S1 à S11 sont des tests Vitest purs, S12 et S13 se testent au niveau du cas d'usage.
 
 **Calcul des points (`src/domain/scoring.ts`, tests Vitest)**
 

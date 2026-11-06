@@ -72,20 +72,19 @@ git config --global user.email "ton-email-github"
 
 ### Méthode de travail Git (simple)
 - `main` : toujours propre, ce qui marche.
-- Une branche par itération : `iteration-0-socle`, `iteration-1-lecture`...
-- Messages de commit courts : `feat:`, `fix:`, `docs:`, `chore:`.
-- Fin d'itération : pull request sur GitHub, puis fusion dans `main`.
+- Une branche par issue : `feat/<n>-nom-court`, `fix/<n>-…`, `chore/<n>-…`, `docs/<n>-…`.
+- Messages de commit courts, en anglais : `feat:`, `fix:`, `docs:`, `chore:`.
+- Jamais de push sur `main` : une pull request par issue, fusionnée par toi (règles complètes dans `AGENTS.md`).
 
 ## 3. Lancer la base de données en local
 
 ```bash
 cd french-track-prono
-supabase init          # une seule fois (crée supabase/config.toml)
 supabase start         # démarre la base (premier lancement : plusieurs minutes)
 supabase db reset      # applique migrations + seed.sql
 ```
 
-`supabase init` peut demander de ne pas écraser des fichiers : garde `migrations/` et `seed.sql`.
+La configuration (`supabase/config.toml`) est déjà dans le dépôt : pas de `supabase init`.
 
 Une fois démarré, `supabase start` affiche les adresses utiles :
 
@@ -95,17 +94,29 @@ Une fois démarré, `supabase start` affiche les adresses utiles :
 | API | http://127.0.0.1:54321 |
 | Mailbox de test (liens magiques) | http://localhost:54324 |
 
-Les clés `anon` et `service_role` s'affichent aussi : elles vont dans `.env.local` (voir `.env.example`).
+La clé « Publishable » (ancienne clé `anon`) s'affiche aussi : elle va dans `.env.local`, jamais dans `.env.example`.
 
 Contrôle rapide dans Studio : la table `events` doit contenir 28 lignes, `results` 91.
 
-## 4. Lancer l'application (à partir de l'itération 0)
+## 4. Lancer l'application
 
 ```bash
 npm install
-cp .env.example .env.local     # puis coller les clés Supabase
-npm run dev                    # http://localhost:3000
+cp .env.example .env.local     # puis remplir les deux variables ci-dessous
+npm run dev                    # http://localhost:3000 ; la liste des épreuves est sur /epreuves
 ```
+
+Dans `.env.local` :
+
+```
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321      # en http, pas https
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<la clé « Publishable » affichée par supabase start>
+```
+
+Après toute modification de `.env.local`, redémarre `npm run dev`.
+
+Pour les composants : `npm run storybook` (http://localhost:6006). Pour leurs tests, installe une
+fois le navigateur : `npx playwright install chromium`, puis `npm run test:storybook`.
 
 ## 5. Sécurité : à ne jamais committer
 
