@@ -9,6 +9,7 @@ import { verifyEmailCode } from "@/application/verify-email-code";
 import { safeRedirectPath } from "@/domain/redirect";
 import { createSupabaseAuthService, createSupabaseProfileRepository } from "@/infra";
 
+import { formText } from "../form-data";
 import { getSessionClient } from "../session";
 
 export type SignInState = {
@@ -16,11 +17,6 @@ export type SignInState = {
   email: string;
   error?: ErrorCode;
   resent?: boolean;
-};
-
-const text = (data: FormData, name: string) => {
-  const value = data.get(name);
-  return typeof value === "string" ? value : "";
 };
 
 async function codeOf<T>(work: () => Promise<T>): Promise<{ value: T } | { error: ErrorCode }> {
@@ -35,8 +31,8 @@ async function codeOf<T>(work: () => Promise<T>): Promise<{ value: T } | { error
 
 /** One action for the whole form; the button pressed says what to do (`intent`). */
 export async function signInAction(_: SignInState, data: FormData): Promise<SignInState> {
-  const email = text(data, "email");
-  const intent = text(data, "intent");
+  const email = formText(data, "email");
+  const intent = formText(data, "intent");
   const client = await getSessionClient();
 
   if (intent === "change") return { step: "email", email };
@@ -50,11 +46,11 @@ export async function signInAction(_: SignInState, data: FormData): Promise<Sign
     return { step: "code", email: email.trim().toLowerCase(), resent: resend || undefined };
   }
 
-  const next = safeRedirectPath(text(data, "next"));
+  const next = safeRedirectPath(formText(data, "next"));
   const result = await codeOf(async () => {
     const session = await verifyEmailCode({ auth: createSupabaseAuthService(client) }).execute({
       email,
-      code: text(data, "code"),
+      code: formText(data, "code"),
     });
     return getProfile({ profiles: createSupabaseProfileRepository(client) }).execute({
       userId: session.userId,

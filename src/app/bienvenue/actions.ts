@@ -7,6 +7,7 @@ import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { safeRedirectPath } from "@/domain/redirect";
 import { createSupabaseProfileRepository } from "@/infra";
 
+import { formText } from "../form-data";
 import { getCurrentUser, getSessionClient } from "../session";
 
 export type WelcomeState = {
@@ -17,13 +18,9 @@ export type WelcomeState = {
 };
 
 export async function createProfileAction(_: WelcomeState, data: FormData): Promise<WelcomeState> {
-  const text = (name: string) => {
-    const value = data.get(name);
-    return typeof value === "string" ? value : "";
-  };
   const state: WelcomeState = {
-    pseudo: text("pseudo"),
-    avatar: text("avatar"),
+    pseudo: formText(data, "pseudo"),
+    avatar: formText(data, "avatar"),
     ageConfirmed: data.get("age") === "on",
   };
 
@@ -41,5 +38,5 @@ export async function createProfileAction(_: WelcomeState, data: FormData): Prom
       if (error.code !== "PROFILE_EXISTS") return { ...state, error: error.code };
     } else throw error;
   }
-  redirect(safeRedirectPath(text("next")));
+  redirect(safeRedirectPath(formText(data, "next")));
 }
