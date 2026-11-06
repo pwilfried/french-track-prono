@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { createSessionClient, readCurrentUser } from "@/infra";
+import { UseCaseError } from "@/application/errors";
+import { getProfile } from "@/application/get-profile";
+import { requiresProfile } from "@/domain/profile-gate";
+import { createSessionClient, createSupabaseProfileRepository, readCurrentUser } from "@/infra";
 
 /** Refreshes the session cookie on every page request, so the visitor stays signed in. */
 export async function proxy(request: NextRequest) {
@@ -13,7 +16,26 @@ export async function proxy(request: NextRequest) {
       for (const { name, value, options } of cookies) response.cookies.set(name, value, options);
     },
   });
-  await readCurrentUser(client);
+  const user = await readCurrentUser(client);
+
+  // A signed-in player without profile must create one before using the app.
+  const { pathname, search } = request.nextUrl;
+  if (user && requiresProfile(pathname)) {
+    const profile = await getProfile({ profiles: createSupabaseProfileRepository(client) })
+      .execute({ userId: user.userId })
+      // If the profile cannot be read, let the page load rather than block everyone.
+      .catch((error: unknown) =>
+        error instanceof UseCaseError ? "unknown" : Promise.reject(error),
+      );
+    if (profile === null) {
+      const target = new URL("/bienvenue", request.url);
+      target.searchParams.set("next", pathname + search);
+      const redirect = NextResponse.redirect(target);
+      // Keep the refreshed session cookies on the redirect.
+      for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
+      return redirect;
+    }
+  }
   return response;
 }
 
