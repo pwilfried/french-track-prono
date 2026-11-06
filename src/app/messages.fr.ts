@@ -58,6 +58,18 @@ export const messages = {
     codeNote: "Le code expire au bout d'une heure. Pense à regarder tes spams.",
     linkInvalid: "Ce lien ne fonctionne plus. Demande un nouveau code.",
   },
+  account: {
+    signIn: "Se connecter",
+    myProfile: (pseudo: string) => `Mon profil : ${pseudo}`,
+  },
+  profile: {
+    title: "Mon profil",
+    since: (date: string) => `Joueur depuis le ${date}`,
+    emailPrivate: "Ton e-mail reste privé : il n'apparaît jamais dans l'application.",
+    signOut: "Se déconnecter",
+    signingOut: "Déconnexion…",
+    back: "Voir les épreuves",
+  },
   welcome: {
     title: "Bienvenue !",
     subtitle: "Dernière étape : ton profil de joueur.",
