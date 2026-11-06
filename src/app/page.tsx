@@ -15,10 +15,10 @@ export default function Home() {
     <main className="hero flex flex-1 flex-col px-4 pb-10 pt-14">
       <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6 text-center">
         <h1 className="font-display text-5xl font-extrabold uppercase leading-none tracking-tight">
-          French Track
+          {messages.app.nameLine1}
           <span className="mt-3 block">
             <span className="inline-block -rotate-2 rounded-xl bg-primary px-4 py-1 text-primary-foreground">
-              Prono
+              {messages.app.nameLine2}
             </span>
           </span>
         </h1>

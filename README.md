@@ -8,44 +8,70 @@ Projet lié au podcast **FrenchTrack**.
 
 | | |
 |---|---|
-| Phase | Conception terminée, **aucun code applicatif encore** |
+| Version en cours | **v0.1 Foundation and read-only** : on ouvre sur un téléphone la liste des 28 épreuves de l'Ultimate Championship 2026 et la page d'une épreuve avec son podium officiel |
 | Compétition de test | World Athletics Ultimate Championship, Budapest, 11-13 sept. 2026 |
-| Mode de travail | Itérations courtes, test en local d'abord |
-| Base de données | Schéma + données de test prêts (`supabase/`) |
+| Mode de travail | Une issue = une branche = une pull request, tests d'abord, test en local avant de fusionner (règles dans [AGENTS.md](AGENTS.md)) |
+| Prochaines versions | v0.2 comptes, v0.3 pronostics, v0.4 back-office et points, v0.5 ligues et classements, v0.6 suspense, v0.7 mise en ligne (voir [docs/ROADMAP.md](docs/ROADMAP.md)) |
 
 ## Stack
 
-- **Front + API** : Next.js (App Router) + TypeScript
-- **UI** : Tailwind CSS + shadcn/ui, animations Framer Motion, glisser-déposer dnd-kit, confettis
+- **Front + serveur** : Next.js (App Router) + TypeScript, Node 24
+- **UI** : Tailwind CSS v4 + composants façon shadcn/ui, mode sombre, Storybook pour podium, classement et compte à rebours
 - **Base de données + comptes** : Supabase (PostgreSQL, Auth, Row Level Security), en local via Docker
+- **Tests** : Vitest (domaine, cas d'usage, adaptateurs), pgTAP (base), Storybook + Vitest (composants)
+- **CI** : GitHub Actions sur chaque pull request
 - **Hébergement (plus tard)** : Vercel + Supabase cloud
 
 ## Documents
 
 | Fichier | Contenu |
 |---|---|
-| [docs/CONCEPTION.md](docs/CONCEPTION.md) | Vision, règles du jeu, barème, architecture, modèle de données |
-| [docs/DESIGN.md](docs/DESIGN.md) | Identité visuelle, écrans, composants, ton « fun » |
-| [docs/SETUP.md](docs/SETUP.md) | Outils à installer, connexion GitHub, lancement en local |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Itérations, avec critères de réussite |
+| [AGENTS.md](AGENTS.md) | Règles du projet (Git, TDD, couches, interface) |
+| [docs/architecture.md](docs/architecture.md) | Vision, stack, couches, versions, cas de test |
+| [docs/CONCEPTION.md](docs/CONCEPTION.md) | Règles du jeu, barème, modèle de données |
+| [docs/DESIGN.md](docs/DESIGN.md) | Identité visuelle, palette, composants |
+| [docs/SETUP.md](docs/SETUP.md) | Outils à installer, connexion GitHub |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Versions, avec critères de réussite |
 
-## Démarrage rapide (une fois les outils installés, voir SETUP)
+## Démarrage rapide
+
+Prérequis : Node 24 (`.nvmrc`), Docker (qui doit tourner), la CLI Supabase. Détails dans [docs/SETUP.md](docs/SETUP.md).
 
 ```bash
-supabase start        # base locale (Docker doit tourner)
-supabase db reset     # applique le schéma + les données de test
-# puis, dès l'itération 0 : npm run dev  ->  http://localhost:3000
+npm install
+supabase start        # base locale ; affiche l'adresse de l'API et la clé « Publishable »
+supabase db reset     # applique le schéma et les données de test
+cp .env.example .env.local
 ```
 
-## Structure prévue
+Dans `.env.local`, renseigne `NEXT_PUBLIC_SUPABASE_URL` (en local : `http://127.0.0.1:54321`, en `http`)
+et `NEXT_PUBLIC_SUPABASE_ANON_KEY` (la clé « Publishable » de `supabase status`). Ne mets aucune clé
+dans `.env.example`.
+
+```bash
+npm run dev           # http://localhost:3000, la liste des épreuves est sur /epreuves
+```
+
+Autres commandes : `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`,
+`npm run storybook` (http://localhost:6006), `npm run test:storybook` (première fois :
+`npx playwright install chromium`), `supabase test db`.
+
+## Structure
 
 ```
 french-track-prono/
-├─ docs/                  documents de conception
+├─ docs/                  conception, architecture, design
 ├─ supabase/
 │  ├─ migrations/         schéma SQL versionné
-│  └─ seed.sql            données de test (Ultimate Championship 2026)
-├─ src/                   application Next.js (à partir de l'itération 0)
-├─ .env.example           variables d'environnement (à copier en .env.local)
-└─ README.md
+│  ├─ seed.sql            données de test (Ultimate Championship 2026)
+│  └─ tests/              tests pgTAP
+├─ src/
+│  ├─ domain/             règles pures
+│  ├─ application/        cas d'usage et ports
+│  ├─ infra/              Supabase (réel) et versions en mémoire pour les tests
+│  ├─ app/                pages Next.js et textes (messages.fr.ts)
+│  └─ components/         composants d'interface
+├─ .storybook/            configuration Storybook
+├─ .env.example           modèle des variables d'environnement
+└─ AGENTS.md              règles pour tous les agents
 ```

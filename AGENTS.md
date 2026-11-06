@@ -122,8 +122,7 @@ Disponibles : `npm run dev`, `npm run build`, `npm run start`, `npm run lint`,
 `npm run test:watch`, `npm run format` (écrit), `npm run format:check` (vérifie),
 `npm run storybook` (composants), `npm run test:storybook` (play functions, navigateur Chromium),
 `npm run build-storybook`,
-`supabase start`, `supabase db reset`.
-À venir : `supabase test db` (issue « pgTAP health test »).
+`supabase start`, `supabase db reset`, `supabase test db` (pgTAP).
 
 Prérequis : Node 24 (`.nvmrc`), Docker pour Supabase local. Variables : copier `.env.example`
 en `.env.local`.

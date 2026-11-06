@@ -56,7 +56,7 @@ export default async function EventsPage({
             className="inline-flex min-h-11 items-center gap-3 text-sm font-bold uppercase"
           >
             <span className="-rotate-3 rounded-lg bg-primary px-2.5 py-1 text-primary-foreground">
-              FTP
+              {messages.app.short}
             </span>
             {messages.app.name}
           </Link>
