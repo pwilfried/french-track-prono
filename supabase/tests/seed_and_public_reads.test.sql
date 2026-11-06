@@ -34,7 +34,7 @@ select is(
 set local role anon;
 select is((select count(*) from events), 28::bigint, 'an anonymous visitor can read events');
 select is((select count(*) from results), 91::bigint, 'an anonymous visitor can read results');
-select is((select count(*) from entries), (select count(*) from entries), 'an anonymous visitor can read entries');
+select is((select count(*) from entries), 91::bigint, 'an anonymous visitor can read entries');
 select cmp_ok((select count(*) from athletes), '>', 0::bigint, 'an anonymous visitor can read athletes');
 select cmp_ok((select count(*) from competitions), '>', 0::bigint, 'an anonymous visitor can read competitions');
 
