@@ -38,6 +38,7 @@
     "@vitest/browser-playwright": "^5.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
+    "fast-check": "^4.10.2",
     "playwright": "^1.65.0",
     "prettier": "^3.9.10",
     "storybook": "^10.6.6",
