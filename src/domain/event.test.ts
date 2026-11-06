@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { compareEvents, type EventSummary } from "./event";
+import { compareEvents, compareResults, type EventSummary, type ResultLine } from "./event";
 
 const event = (slug: string, startsAt: string): EventSummary => ({
   id: slug,
@@ -27,5 +27,27 @@ describe("compareEvents", () => {
     ];
 
     expect(events.sort(compareEvents).map((e) => e.slug)).toEqual(["f-100m", "m-100m"]);
+  });
+});
+
+const line = (name: string, rank: number): ResultLine => ({
+  athleteId: name,
+  name,
+  countryCode: "FRA",
+  rank,
+  mark: null,
+});
+
+describe("compareResults", () => {
+  it("orders result lines by rank", () => {
+    const lines = [line("c", 3), line("a", 1), line("b", 2)];
+
+    expect(lines.sort(compareResults).map((l) => l.rank)).toEqual([1, 2, 3]);
+  });
+
+  it("orders tied athletes by name so the order is stable", () => {
+    const lines = [line("zed", 3), line("amy", 3)];
+
+    expect(lines.sort(compareResults).map((l) => l.name)).toEqual(["amy", "zed"]);
   });
 });

@@ -17,6 +17,7 @@ const event = (slug: string, startsAt: string, isFeatured = false): EventSummary
 
 const readerWith = (bySlug: Record<string, EventSummary[]>): EventReader => ({
   listByCompetition: async (slug) => bySlug[slug] ?? [],
+  findBySlug: async () => null,
 });
 
 describe("listEvents", () => {

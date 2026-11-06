@@ -20,3 +20,19 @@ export function compareEvents(a: EventSummary, b: EventSummary): number {
   if (byStart !== 0) return byStart;
   return a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0;
 }
+
+export type AthleteRef = { athleteId: string; name: string; countryCode: string };
+
+/** An athlete on the start list of an event. */
+export type Entry = AthleteRef & { seasonBest: string | null };
+
+/** One line of the official result. Tied athletes share the same rank. */
+export type ResultLine = AthleteRef & { rank: number; mark: string | null };
+
+export type EventDetail = EventSummary & { entries: Entry[]; results: ResultLine[] };
+
+/** Orders result lines by rank, then by name so the order of tied athletes is stable. */
+export function compareResults(a: ResultLine, b: ResultLine): number {
+  if (a.rank !== b.rank) return a.rank - b.rank;
+  return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+}

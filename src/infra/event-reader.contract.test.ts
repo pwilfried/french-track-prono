@@ -1,14 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 
-import type { EventSummary } from "@/domain/event";
+import type { EventDetail } from "@/domain/event";
 
 import { eventReaderContract } from "./contract/event-reader.contract";
 import { createInMemoryEventReader, createSupabaseEventReader } from "./index";
 
 const COMPETITION = "ultimate-championship-2026";
 
-const fixture: EventSummary[] = [
+const fixture: EventDetail[] = [
   {
     id: "e1",
     slug: "m-100m",
@@ -18,6 +18,8 @@ const fixture: EventSummary[] = [
     lockAt: "2026-09-12T16:55:00.000Z",
     isFeatured: true,
     status: "finished",
+    entries: [{ athleteId: "a1", name: "A", countryCode: "FRA", seasonBest: null }],
+    results: [{ athleteId: "a1", name: "A", countryCode: "FRA", rank: 1, mark: "9.80" }],
   },
   {
     id: "e2",
@@ -28,6 +30,8 @@ const fixture: EventSummary[] = [
     lockAt: "2026-09-11T16:55:00.000Z",
     isFeatured: false,
     status: "finished",
+    entries: [{ athleteId: "a1", name: "A", countryCode: "FRA", seasonBest: null }],
+    results: [{ athleteId: "a1", name: "A", countryCode: "FRA", rank: 1, mark: "9.80" }],
   },
 ];
 
@@ -47,6 +51,13 @@ if (url && key) {
   eventReaderContract("Supabase (local)", supabaseReader, COMPETITION);
 
   describe("Supabase event reader on the seed", () => {
+    it("returns the official podium of the men's 100 m in rank order", async () => {
+      const event = await supabaseReader().findBySlug(COMPETITION, "m-100m");
+
+      expect(event?.entries.length).toBeGreaterThanOrEqual(3);
+      expect(event?.results.map((r) => r.rank).slice(0, 3)).toEqual([1, 2, 3]);
+    });
+
     it("returns the 28 events of the Ultimate Championship 2026", async () => {
       const events = await supabaseReader().listByCompetition(COMPETITION);
 
