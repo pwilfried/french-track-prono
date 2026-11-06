@@ -23,6 +23,16 @@ export const messages = {
     empty: "Aucune épreuve pour ce filtre.",
     loading: "Chargement des épreuves…",
   },
+  event: {
+    back: "Épreuves",
+    startList: "Liste de départ",
+    startListEmpty: "La liste de départ n'est pas encore connue.",
+    podium: "Podium officiel",
+    podiumEmpty: "Le résultat n'est pas encore connu.",
+    podiumStep: (rank: number) => `Place ${rank}`,
+    seedNote:
+      "Seuls les podiums sont chargés dans le jeu de test. Les listes de départ complètes viendront plus tard.",
+  },
   errors: {
     EVENTS_UNAVAILABLE: "Impossible de charger les épreuves pour le moment.",
     EVENT_NOT_FOUND: "Cette épreuve n'existe pas.",

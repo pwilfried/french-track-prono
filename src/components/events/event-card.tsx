@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import type { EventSummary } from "@/domain/event";
 import { cn } from "@/lib/utils";
 import { messages } from "@/app/messages.fr";
@@ -16,34 +18,39 @@ export function EventCard({ event, timeZone }: { event: EventSummary; timeZone: 
   }).format(new Date(event.startsAt));
 
   return (
-    <li className="flex min-h-11 items-center gap-3 rounded-card border border-border bg-card p-3 text-card-foreground">
-      <span
-        aria-hidden="true"
-        className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-extrabold"
+    <li>
+      <Link
+        href={`/epreuves/${event.slug}`}
+        className="flex min-h-11 items-center gap-3 rounded-card border border-border bg-card p-3 text-card-foreground"
       >
-        {messages.events.genderInitial[event.gender]}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="font-display text-lg font-bold leading-tight">{event.discipline}</p>
-        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-          <span>
-            {messages.events.gender[event.gender]} · {time}
-          </span>
-          {event.isFeatured && (
-            <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">
-              ★ {messages.events.featured}
+        <span
+          aria-hidden="true"
+          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-extrabold"
+        >
+          {messages.events.genderInitial[event.gender]}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-lg font-bold leading-tight">{event.discipline}</p>
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+            <span>
+              {messages.events.gender[event.gender]} · {time}
             </span>
+            {event.isFeatured && (
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">
+                ★ {messages.events.featured}
+              </span>
+            )}
+          </p>
+        </div>
+        <span
+          className={cn(
+            "shrink-0 rounded-full px-3 py-1 text-xs font-bold",
+            statusStyle[event.status],
           )}
-        </p>
-      </div>
-      <span
-        className={cn(
-          "shrink-0 rounded-full px-3 py-1 text-xs font-bold",
-          statusStyle[event.status],
-        )}
-      >
-        {messages.events.status[event.status]}
-      </span>
+        >
+          {messages.events.status[event.status]}
+        </span>
+      </Link>
     </li>
   );
 }
