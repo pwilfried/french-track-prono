@@ -10,22 +10,29 @@
 5. **Récompenser l'audace**, pas seulement les favoris.
 6. **Jamais de page vide.** Chaque état vide a un message amusant et une action claire.
 
-## Identité visuelle (proposition à valider)
+## Identité visuelle
 
-L'univers de la piste : tartan, couloirs, chronos.
+Charte tirée du logo FrenchTrack : un bleu profond en dégradé, un rouge vif, du blanc.
 
 | Rôle | Couleur | Usage |
 |---|---|---|
-| Tartan | `#E4572E` | Actions principales |
-| Nuit | `#0B1B3A` | Fonds sombres, textes |
-| Or | `#FFC857` | Victoires, joker, 1re place |
-| Vert vainqueur | `#2BB673` | Points gagnés, bons pronos |
-| Craie | `#F7F5F0` | Fond clair |
+| Bleu FrenchTrack | `#084595` | Fond des écrans d'accueil, liens et éléments de marque en mode clair |
+| Nuit | `#052B5C` | Départ du dégradé, texte en mode clair, fond du mode sombre |
+| Rouge | `#E03020` | Actions principales (texte blanc dessus, contraste 4,55:1) |
+| Blanc | `#F8F8F8` | Fond clair, texte sur bleu |
+| Or (accent fonctionnel) | `#FFC857` | Victoires, joker, 1re place |
+| Vert (accent fonctionnel) | `#2BB673` | Points gagnés, bons pronos |
 
-- **Mode sombre** dès le départ (les soirs de meeting).
-- **Typo** : un titre sportif et énergique (Bricolage Grotesque ou Space Grotesk) +
+Règles de contraste (AA) : le rouge `#E03020` n'atteint que 4,3:1 en texte sur blanc. En texte
+on utilise `#C42818` (5,4:1) en mode clair et `#FF6B5B` (5:1) en mode sombre. Pas de texte rouge
+sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
+
+- **Mode sombre** dès le départ (les soirs de meeting) : fond nuit `#052B5C`.
+- **Typo** : titre sportif en capitales, Bricolage Grotesque (variable, hébergée dans le projet),
   Inter pour le texte. Chiffres tabulaires pour les chronos et classements.
-- **Formes** : coins très arrondis, ombres douces, motif de couloirs de piste en fond d'en-tête.
+- **Formes** : coins très arrondis, ombres douces, motif de couloirs de piste sur le dégradé bleu.
+- **Titre** : « FRENCH TRACK » en blanc, « PRONO » dans une étiquette rouge légèrement inclinée,
+  en écho au logo.
 - **Mascotte** (idée) : un petit sprinter-emoji qui réagit (🏃 😎 🤯 🔥).
 
 ## Écrans de la V1

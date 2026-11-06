@@ -1,45 +1,45 @@
 @import "tailwindcss";
 
 /*
- * Design tokens (docs/DESIGN.md).
- * Brand colors: tartan #E4572E, nuit #0B1B3A, or #FFC857, vert #2BB673, craie #F7F5F0.
- * Contrast (WCAG AA): tartan as text on craie is only 3.4:1, so text/link uses a darker
- * tartan in light mode; the original tartan stays for button backgrounds (nuit text, 4.6:1).
+ * Design tokens (docs/DESIGN.md), taken from the FrenchTrack logo:
+ * bleu #084595 (gradient to nuit #052B5C), rouge #E03020, blanc #F8F8F8.
+ * Functional accents: or #FFC857 (winner, joker) and vert #2BB673 (points won).
+ * Contrast (WCAG AA): white on rouge is 4.55:1; rouge as text on white is only 4.3:1, so text
+ * uses a darker rouge (#C42818, 5.4:1) in light mode and a lighter one (#FF6B5B) in dark mode.
  */
 :root {
-  --background: #f7f5f0;
-  --foreground: #0b1b3a;
+  --background: #f8f8f8;
+  --foreground: #052b5c;
   --card: #ffffff;
-  --card-foreground: #0b1b3a;
-  --primary: #e4572e;
-  --primary-foreground: #0b1b3a;
+  --card-foreground: #052b5c;
+  --primary: #e03020;
+  --primary-foreground: #ffffff;
+  --brand: #084595;
+  --brand-foreground: #f8f8f8;
+  --nuit: #052b5c;
   --secondary: #ffc857;
-  --secondary-foreground: #0b1b3a;
-  --muted: #ebe7dd;
-  --muted-foreground: #5b6578;
-  --accent-text: #b8401d;
+  --secondary-foreground: #052b5c;
+  --muted: #e9eef6;
+  --muted-foreground: #4a5a78;
+  --accent-text: #c42818;
   --success: #2bb673;
   --success-text: #15804f;
-  --border: #d9d4c7;
-  --ring: #0b1b3a;
+  --border: #d3dcea;
+  --ring: #084595;
   --radius: 1.25rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b1b3a;
-    --foreground: #f7f5f0;
-    --card: #12274f;
-    --card-foreground: #f7f5f0;
-    --primary: #e4572e;
-    --primary-foreground: #0b1b3a;
-    --secondary: #ffc857;
-    --secondary-foreground: #0b1b3a;
-    --muted: #17305f;
-    --muted-foreground: #a9b3c7;
-    --accent-text: #ff8a63;
+    --background: #052b5c;
+    --foreground: #f8f8f8;
+    --card: #0a3a7a;
+    --card-foreground: #f8f8f8;
+    --muted: #0b3a78;
+    --muted-foreground: #a9bbd8;
+    --accent-text: #ff6b5b;
     --success-text: #2bb673;
-    --border: #25407a;
+    --border: #1b4c94;
     --ring: #ffc857;
   }
 }
@@ -53,6 +53,9 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-nuit: var(--nuit);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent-text: var(--accent-text);
@@ -72,13 +75,17 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Track lanes motif for headers */
-.lanes {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0 18px,
-    color-mix(in srgb, var(--foreground) 10%, transparent) 18px 20px
-  );
+/* Hero: logo blue gradient with track lanes */
+.hero {
+  background-color: var(--nuit);
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 18px,
+      rgb(255 255 255 / 0.08) 18px 20px
+    ),
+    linear-gradient(135deg, #052b5c 0%, #084595 100%);
+  color: #f8f8f8;
 }
 
 @media (prefers-reduced-motion: reduce) {
