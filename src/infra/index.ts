@@ -4,3 +4,5 @@ export { createSupabaseEventReader } from "./supabase/event-reader";
 export { createPublicSupabaseClient } from "./supabase/client";
 export { createInMemoryAuthService } from "./in-memory/auth-service";
 export { createSupabaseAuthService } from "./supabase/auth-service";
+export { createInMemoryProfileRepository } from "./in-memory/profile-repository";
+export { createSupabaseProfileRepository } from "./supabase/profile-repository";
