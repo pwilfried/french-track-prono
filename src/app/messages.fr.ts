@@ -58,6 +58,18 @@ export const messages = {
     codeNote: "Le code expire au bout d'une heure. Pense à regarder tes spams.",
     linkInvalid: "Ce lien ne fonctionne plus. Demande un nouveau code.",
   },
+  welcome: {
+    title: "Bienvenue !",
+    subtitle: "Dernière étape : ton profil de joueur.",
+    pseudoLabel: "Ton pseudo",
+    pseudoHint:
+      "2 à 24 caractères : lettres, chiffres, espace, _ - . Visible par les autres joueurs.",
+    avatarLabel: "Ton avatar",
+    ageLabel: "J'ai 15 ans ou plus",
+    ageHint: "Obligatoire pour jouer.",
+    submit: "Créer mon profil",
+    submitting: "Création…",
+  },
   errors: {
     EVENTS_UNAVAILABLE: "Impossible de charger les épreuves pour le moment.",
     EVENT_NOT_FOUND: "Cette épreuve n'existe pas.",
