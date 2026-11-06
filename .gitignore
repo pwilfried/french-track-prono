@@ -24,3 +24,7 @@ Thumbs.db
 # logs
 npm-debug.log*
 *.log
+
+# Next.js generated
+next-env.d.ts
+*.tsbuildinfo

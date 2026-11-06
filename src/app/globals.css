@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens (docs/DESIGN.md).
+ * Brand colors: tartan #E4572E, nuit #0B1B3A, or #FFC857, vert #2BB673, craie #F7F5F0.
+ * Contrast (WCAG AA): tartan as text on craie is only 3.4:1, so text/link uses a darker
+ * tartan in light mode; the original tartan stays for button backgrounds (nuit text, 4.6:1).
+ */
+:root {
+  --background: #f7f5f0;
+  --foreground: #0b1b3a;
+  --card: #ffffff;
+  --card-foreground: #0b1b3a;
+  --primary: #e4572e;
+  --primary-foreground: #0b1b3a;
+  --secondary: #ffc857;
+  --secondary-foreground: #0b1b3a;
+  --muted: #ebe7dd;
+  --muted-foreground: #5b6578;
+  --accent-text: #b8401d;
+  --success: #2bb673;
+  --success-text: #15804f;
+  --border: #d9d4c7;
+  --ring: #0b1b3a;
+  --radius: 1.25rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0b1b3a;
+    --foreground: #f7f5f0;
+    --card: #12274f;
+    --card-foreground: #f7f5f0;
+    --primary: #e4572e;
+    --primary-foreground: #0b1b3a;
+    --secondary: #ffc857;
+    --secondary-foreground: #0b1b3a;
+    --muted: #17305f;
+    --muted-foreground: #a9b3c7;
+    --accent-text: #ff8a63;
+    --success-text: #2bb673;
+    --border: #25407a;
+    --ring: #ffc857;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent-text: var(--accent-text);
+  --color-success: var(--success);
+  --color-success-text: var(--success-text);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --radius-card: var(--radius);
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-bricolage), system-ui, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Track lanes motif for headers */
+.lanes {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 18px,
+    color-mix(in srgb, var(--foreground) 10%, transparent) 18px 20px
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

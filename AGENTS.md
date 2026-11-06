@@ -117,9 +117,13 @@ le propriétaire avant que des issues passent en `agent:ready`.
 
 ## Commands
 
-Renseignées à la création du projet Next.js (v0.1). Valeurs prévues :
-`npm run dev`, `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`,
-`supabase start`, `supabase db reset`, `supabase test db`.
+Disponibles : `npm run dev`, `npm run build`, `npm run start`, `npm run lint`,
+`npm run typecheck`, `supabase start`, `supabase db reset`.
+À venir avec l'outillage (issue « Set up tooling ») : `npm test`, `npm run format`,
+`supabase test db`.
+
+Prérequis : Node 24 (`.nvmrc`), Docker pour Supabase local. Variables : copier `.env.example`
+en `.env.local`.
 
 ## Before saying it is done
 
