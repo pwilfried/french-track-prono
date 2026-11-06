@@ -2,17 +2,15 @@ import Link from "next/link";
 
 import { listEvents } from "@/application/list-events";
 import { UseCaseError } from "@/application/errors";
+import { ErrorNotice } from "@/components/error-notice";
 import { EventCard } from "@/components/events/event-card";
 import { GenderFilter } from "@/components/events/gender-filter";
-import { buttonVariants } from "@/components/ui/button";
 import type { EventGender, EventSummary } from "@/domain/event";
 import { filterByGender, groupEventsByDay } from "@/domain/event-list";
 import { createPublicSupabaseClient, createSupabaseEventReader } from "@/infra";
 
+import { COMPETITION_SLUG, COMPETITION_TIME_ZONE } from "../competition";
 import { messages } from "../messages.fr";
-
-const COMPETITION_SLUG = "ultimate-championship-2026";
-const COMPETITION_TIME_ZONE = "Europe/Budapest";
 
 const genders: EventGender[] = ["F", "M", "X"];
 
@@ -73,12 +71,7 @@ export default async function EventsPage({
         <GenderFilter selected={gender} />
 
         {loaded === "error" ? (
-          <div role="alert" className="flex flex-col items-start gap-3 rounded-card bg-muted p-4">
-            <p>{messages.errors.EVENTS_UNAVAILABLE}</p>
-            <Link href="/epreuves" className={buttonVariants({ variant: "outline" })}>
-              {messages.errors.retry}
-            </Link>
-          </div>
+          <ErrorNotice retryHref="/epreuves" />
         ) : days.length === 0 ? (
           <p className="rounded-card bg-muted p-4">{messages.events.empty}</p>
         ) : (

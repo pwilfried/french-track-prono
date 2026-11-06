@@ -3,16 +3,14 @@ import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
 import { getEvent } from "@/application/get-event";
-import { buttonVariants } from "@/components/ui/button";
+import { ErrorNotice } from "@/components/error-notice";
 import { PodiumDisplay } from "@/components/podium/podium-display";
 import type { EventDetail } from "@/domain/event";
 import { initialsOf } from "@/domain/podium";
 import { createPublicSupabaseClient, createSupabaseEventReader } from "@/infra";
 
+import { COMPETITION_SLUG, COMPETITION_TIME_ZONE } from "../../competition";
 import { messages } from "../../messages.fr";
-
-const COMPETITION_SLUG = "ultimate-championship-2026";
-const COMPETITION_TIME_ZONE = "Europe/Budapest";
 
 async function loadEvent(slug: string): Promise<EventDetail | "error"> {
   try {
@@ -31,17 +29,13 @@ async function loadEvent(slug: string): Promise<EventDetail | "error"> {
 }
 
 export default async function EventPage({ params }: { params: Promise<{ slug: string }> }) {
-  const loaded = await loadEvent((await params).slug);
+  const { slug } = await params;
+  const loaded = await loadEvent(slug);
 
   if (loaded === "error") {
     return (
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-8">
-        <div role="alert" className="flex flex-col items-start gap-3 rounded-card bg-muted p-4">
-          <p>{messages.errors.EVENTS_UNAVAILABLE}</p>
-          <Link href="/epreuves" className={buttonVariants({ variant: "outline" })}>
-            {messages.errors.retry}
-          </Link>
-        </div>
+        <ErrorNotice retryHref={`/epreuves/${slug}`} />
       </main>
     );
   }
