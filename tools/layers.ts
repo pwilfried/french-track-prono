@@ -32,7 +32,7 @@ const IMPORT_PATTERNS = [
   /\bimport\(\s*["']([^"']+)["']\s*\)/g, // import("y")
 ];
 
-export function importsOf(content: string): string[] {
+function importsOf(content: string): string[] {
   const found: string[] = [];
   for (const pattern of IMPORT_PATTERNS) {
     for (const match of content.matchAll(pattern)) found.push(match[1]);
