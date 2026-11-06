@@ -1,0 +1,26 @@
+# dépendances et build
+node_modules/
+.next/
+out/
+dist/
+coverage/
+
+# secrets
+.env
+.env.local
+.env.*.local
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# système et éditeurs
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# logs
+npm-debug.log*
+*.log

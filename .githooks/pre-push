@@ -1,0 +1,10 @@
+#!/bin/sh
+# Refuses any push to main: everything goes through a branch and a pull request.
+# Enable with: git config core.hooksPath .githooks
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    echo "Push to main is forbidden. Push a branch and open a pull request." >&2
+    exit 1
+  fi
+done
+exit 0
