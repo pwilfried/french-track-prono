@@ -16,7 +16,8 @@ const mailbox = process.env.SUPABASE_MAILBOX_URL ?? "http://127.0.0.1:54324";
 
 /** Reads the 6-digit code of the latest message sent to an address in the local test mailbox. */
 async function latestCodeFromMailbox(email: string): Promise<string> {
-  for (let attempt = 0; attempt < 25; attempt += 1) {
+  let seen = "no message";
+  for (let attempt = 0; attempt < 40; attempt += 1) {
     const search = await fetch(
       `${mailbox}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`,
     );
@@ -25,13 +26,18 @@ async function latestCodeFromMailbox(email: string): Promise<string> {
     if (id) {
       const message = (await (await fetch(`${mailbox}/api/v1/message/${id}`)).json()) as {
         Text?: string;
+        HTML?: string;
+        Subject?: string;
       };
-      const match = /Code de connexion\s*:\s*(\d{6})/.exec(message.Text ?? "");
+      // The template is HTML: read the text part when there is one, else the HTML without tags.
+      const body = message.Text || (message.HTML ?? "").replace(/<[^>]+>/g, " ");
+      const match = /Code de connexion\s*:\s*(\d{6})/.exec(body);
       if (match?.[1]) return match[1];
+      seen = `message "${message.Subject}" without the code, start of body: ${body.slice(0, 200)}`;
     }
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 250));
   }
-  throw new Error(`no sign-in message found for ${email} in ${mailbox}`);
+  throw new Error(`no sign-in code found for ${email} in ${mailbox} (${seen})`);
 }
 
 if (url && key) {
