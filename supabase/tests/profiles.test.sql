@@ -54,12 +54,11 @@ select lives_ok(
     values ('aaaaaaaa-0000-0000-0000-000000000002', 'Bob', now())$$,
   'a free pseudo is accepted');
 
+-- Bob tries to rename Anna's profile: row-level security hides it, so nothing changes.
+update profiles set pseudo = 'Hacked' where id = 'aaaaaaaa-0000-0000-0000-000000000001';
 select is(
-  (with changed as (
-     update profiles set pseudo = 'Hacked'
-     where id = 'aaaaaaaa-0000-0000-0000-000000000001' returning 1)
-   select count(*) from changed),
-  0::bigint,
+  (select pseudo from profiles where id = 'aaaaaaaa-0000-0000-0000-000000000001'),
+  'Anna',
   'a user cannot change another profile');
 
 select is((select count(*) from profiles), 2::bigint, 'signed-in players can see the profiles');
