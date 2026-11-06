@@ -1,4 +1,6 @@
 import Link from "next/link";
+
+import { AccountMenu } from "@/components/account/account-menu";
 import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
@@ -55,12 +57,15 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
     <main className="flex flex-1 flex-col">
       <header className="hero px-4 pt-6">
         <div className="mx-auto max-w-md">
-          <Link
-            href="/epreuves"
-            className="inline-flex min-h-11 items-center text-base font-semibold"
-          >
-            ‹ {messages.event.back}
-          </Link>
+          <div className="flex items-center justify-between gap-3">
+            <Link
+              href="/epreuves"
+              className="inline-flex min-h-11 items-center text-base font-semibold"
+            >
+              ‹ {messages.event.back}
+            </Link>
+            <AccountMenu returnTo={`/epreuves/${slug}`} />
+          </div>
           <h1 className="mt-1 flex flex-wrap items-center gap-2 font-display text-3xl font-extrabold uppercase leading-none">
             {event.discipline}
             <span className="rounded-full bg-primary px-3 py-1 font-sans text-sm font-extrabold text-primary-foreground">
