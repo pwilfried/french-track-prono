@@ -71,9 +71,10 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      # Starts the database and the REST API only (migrations + seed.sql are applied by the start).
+      # Starts the database, the REST API, the auth service and the test mailbox (migrations + seed.sql
+      # are applied by the start). The other services are not needed.
       - name: Start local Supabase
-        run: supabase start -x gotrue,realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+        run: supabase start -x realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
 
       - name: pgTAP tests
         run: supabase test db

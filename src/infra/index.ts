@@ -2,3 +2,5 @@
 export { createInMemoryEventReader } from "./in-memory/event-reader";
 export { createSupabaseEventReader } from "./supabase/event-reader";
 export { createPublicSupabaseClient } from "./supabase/client";
+export { createInMemoryAuthService } from "./in-memory/auth-service";
+export { createSupabaseAuthService } from "./supabase/auth-service";

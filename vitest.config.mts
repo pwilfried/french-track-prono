@@ -8,6 +8,8 @@ export default defineConfig(({ mode }) => ({
   },
   test: {
     environment: "node",
+    // Adapter tests talk to a local Supabase and its mailbox: give them more than the default 5 s.
+    testTimeout: 20000,
     include: ["src/**/*.test.ts", "tools/**/*.test.ts"],
     // .env.local gives the local Supabase address and key to the adapter tests.
     env: loadEnv(mode, process.cwd(), ""),
