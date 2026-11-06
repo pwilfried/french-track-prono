@@ -1,6 +1,6 @@
 <h2>Connexion à French Track Prono</h2>
 <p>Touche le bouton pour te connecter :</p>
-<p><a href="{{ .ConfirmationURL }}">Me connecter</a></p>
+<p><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email">Me connecter</a></p>
 <p>Le lien ne s'ouvre pas bien sur ton téléphone ? Saisis ce code sur la page de connexion :</p>
 <p>Code de connexion : <strong>{{ .Token }}</strong></p>
 <p>Le lien et le code sont valables 1 heure. Si tu n'as rien demandé, ignore ce message.</p>
