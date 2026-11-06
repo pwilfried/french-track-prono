@@ -79,11 +79,7 @@ body {
 .hero {
   background-color: var(--nuit);
   background-image:
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0 18px,
-      rgb(255 255 255 / 0.08) 18px 20px
-    ),
+    repeating-linear-gradient(to bottom, transparent 0 18px, rgb(255 255 255 / 0.08) 18px 20px),
     linear-gradient(135deg, #052b5c 0%, #084595 100%);
   color: #f8f8f8;
 }
