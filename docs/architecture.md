@@ -163,7 +163,7 @@ par joueur et par épreuve, seuls les athlètes engagés sont pronostiquables.
 
 Ajouts nécessaires au schéma (à faire dans la version indiquée) :
 
-- `profiles.age_confirmed_at` : case « 15 ans ou plus » (v0.2).
+- `profiles.age_confirmed_at` : case « 15 ans ou plus » (v0.2, fait : obligatoire en base). Le pseudo est unique sans tenir compte de la casse.
 - `profiles.is_admin` : accès au back-office, réservé à toi (v0.4).
 - Suppression de compte et export des données : fonctions SQL (v0.7).
 - Les tables de questions bonus et de badges ne sont pas utilisées avant leurs versions.
