@@ -15,7 +15,7 @@ export function SubmitButton({
   children: React.ReactNode;
   pendingLabel: string;
   intent?: string;
-  variant?: "default" | "secondary";
+  variant?: "default" | "muted";
   noValidate?: boolean;
 }) {
   const { pending, data } = useFormStatus();

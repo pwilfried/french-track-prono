@@ -74,7 +74,7 @@ export function SignInForm({ next, linkError }: { next: string; linkError: boole
       <div className="grid grid-cols-2 gap-3">
         <SubmitButton
           intent="resend"
-          variant="secondary"
+          variant="muted"
           pendingLabel={messages.signIn.sending}
           noValidate
         >
@@ -82,7 +82,7 @@ export function SignInForm({ next, linkError }: { next: string; linkError: boole
         </SubmitButton>
         <SubmitButton
           intent="change"
-          variant="secondary"
+          variant="muted"
           pendingLabel={messages.signIn.changeEmail}
           noValidate
         >
