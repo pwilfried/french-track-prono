@@ -127,6 +127,19 @@ Règles :
   `LEAGUE_CODE_UNKNOWN`), jamais des phrases. Les textes français vivent dans le fichier
   de messages de l'interface.
 
+**Comptes et session (v0.2).**
+
+- Connexion sans mot de passe : le même e-mail contient un code à 6 chiffres et un lien. Le code
+  marche dans n'importe quel navigateur (utile sur téléphone) ; le lien passe par `/auth/callback`.
+- La session vit dans des cookies (`@supabase/ssr`). `src/proxy.ts` la rafraîchit à chaque page et
+  envoie un joueur connecté sans profil vers `/bienvenue` (règle pure : `src/domain/profile-gate.ts`).
+- Les paramètres de redirection n'acceptent que des chemins de l'application
+  (`src/domain/redirect.ts`).
+- L'adresse e-mail n'est jamais affichée ni copiée dans `profiles`. Pseudo : 2 à 24 caractères,
+  unique sans tenir compte de la casse ; avatar : un des 12 de la liste fixe.
+- Pages : `/connexion`, `/bienvenue`, `/profil` ; l'en-tête affiche « Se connecter » ou l'avatar et
+  le pseudo.
+
 **Décision B : le calcul des points vit dans le domaine TypeScript** (`src/domain/scoring.ts`,
 fonction pure, testée avec Vitest et fast-check).
 Raisons : le projet est piloté par des agents, et un cœur pur est plus simple à lire, à
@@ -175,7 +188,7 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 | Version | Contenu | It works when… |
 |---|---|---|
 | v0.1 Socle et lecture | Dépôt, app Next.js, Supabase local, thème, **F2** | …on ouvre sur téléphone la liste des 28 épreuves de l'Ultimate Championship 2026 et la fiche d'une épreuve avec son podium officiel, lus dans la base locale |
-| v0.2 Comptes | **F1** | …un nouvel utilisateur reçoit un lien magique (boîte de test locale), coche « 15 ans ou plus », choisit son pseudo et retrouve son profil après déconnexion |
+| v0.2 Comptes | **F1** | …un nouvel utilisateur reçoit un code et un lien de connexion (boîte de test locale), coche « 15 ans ou plus », choisit son pseudo et retrouve son profil après déconnexion |
 | v0.3 Pronostiquer | **F3**, **F8** (joker) | …un joueur compose un podium en moins de 20 secondes avec compte à rebours, et la base refuse toute modification après `lock_at` (vérifié par test) |
 | v0.4 Back-office et points | **F6**, **F7** | …l'admin saisit un podium, lance le calcul, et les points de joueurs de test correspondent aux cas chiffrés (podium parfait = 12, avec joker = 24) |
 | v0.5 Ligues et classements | **F4**, **F5** | …deux comptes dans la même ligue voient le même classement, départagé par podiums parfaits puis vainqueurs trouvés |

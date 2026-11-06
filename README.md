@@ -8,10 +8,10 @@ Projet lié au podcast **FrenchTrack**.
 
 | | |
 |---|---|
-| Version en cours | **v0.1 Foundation and read-only** : on ouvre sur un téléphone la liste des 28 épreuves de l'Ultimate Championship 2026 et la page d'une épreuve avec son podium officiel |
+| Version en cours | **v0.2 Comptes** : connexion par code ou lien reçu par e-mail, profil (pseudo, avatar, 15 ans ou plus). Terminé : v0.1 (liste des 28 épreuves de l'Ultimate Championship 2026 et podium officiel) |
 | Compétition de test | World Athletics Ultimate Championship, Budapest, 11-13 sept. 2026 |
 | Mode de travail | Une issue = une branche = une pull request, tests d'abord, test en local avant de fusionner (règles dans [AGENTS.md](AGENTS.md)) |
-| Prochaines versions | v0.2 comptes, v0.3 pronostics, v0.4 back-office et points, v0.5 ligues et classements, v0.6 suspense, v0.7 mise en ligne (voir [docs/ROADMAP.md](docs/ROADMAP.md)) |
+| Prochaines versions | v0.3 pronostics, v0.4 back-office et points, v0.5 ligues et classements, v0.6 suspense, v0.7 mise en ligne (voir [docs/ROADMAP.md](docs/ROADMAP.md)) |
 
 ## Stack
 
