@@ -31,9 +31,10 @@ async function latestCodeFromMailbox(email: string): Promise<string> {
       };
       // The template is HTML: read the text part when there is one, else the HTML without tags.
       const body = message.Text || (message.HTML ?? "").replace(/<[^>]+>/g, " ");
-      const match = /Code de connexion\s*:\s*(\d{6})/.exec(body);
+      // Mailpit may render the bold code with markers around it: allow a few non-digits before it.
+      const match = /Code de connexion\D{0,20}(\d{6})/.exec(body);
       if (match?.[1]) return match[1];
-      seen = `message "${message.Subject}" without the code, start of body: ${body.slice(0, 200)}`;
+      seen = `message "${message.Subject}" without the code, start of body: ${body.replace(/\s+/g, " ").slice(0, 600)}`;
     }
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
