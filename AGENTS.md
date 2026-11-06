@@ -118,9 +118,10 @@ le propriétaire avant que des issues passent en `agent:ready`.
 ## Commands
 
 Disponibles : `npm run dev`, `npm run build`, `npm run start`, `npm run lint`,
-`npm run typecheck`, `supabase start`, `supabase db reset`.
-À venir avec l'outillage (issue « Set up tooling ») : `npm test`, `npm run format`,
-`supabase test db`.
+`npm run typecheck`, `npm test` (Vitest, dont la règle d'import des couches),
+`npm run test:watch`, `npm run format` (écrit), `npm run format:check` (vérifie),
+`supabase start`, `supabase db reset`.
+À venir : `supabase test db` (issue « pgTAP health test »).
 
 Prérequis : Node 24 (`.nvmrc`), Docker pour Supabase local. Variables : copier `.env.example`
 en `.env.local`.
