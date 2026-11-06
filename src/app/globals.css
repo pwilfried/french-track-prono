@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens (docs/DESIGN.md), taken from the FrenchTrack logo:
+ * bleu #084595 (gradient to nuit #052B5C), rouge #E03020, blanc #F8F8F8.
+ * Functional accents: or #FFC857 (winner, joker) and vert #2BB673 (points won).
+ * Contrast (WCAG AA): white on rouge is 4.55:1; rouge as text on white is only 4.3:1, so text
+ * uses a darker rouge (#C42818, 5.4:1) in light mode and a lighter one (#FF6B5B) in dark mode.
+ */
+:root {
+  --background: #f8f8f8;
+  --foreground: #052b5c;
+  --card: #ffffff;
+  --card-foreground: #052b5c;
+  --primary: #e03020;
+  --primary-foreground: #ffffff;
+  --brand: #084595;
+  --brand-foreground: #f8f8f8;
+  --nuit: #052b5c;
+  --secondary: #ffc857;
+  --secondary-foreground: #052b5c;
+  --muted: #e9eef6;
+  --muted-foreground: #4a5a78;
+  --accent-text: #c42818;
+  --success: #2bb673;
+  --success-text: #15804f;
+  --border: #d3dcea;
+  --ring: #084595;
+  --radius: 1.25rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #052b5c;
+    --foreground: #f8f8f8;
+    --card: #0a3a7a;
+    --card-foreground: #f8f8f8;
+    --muted: #0b3a78;
+    --muted-foreground: #a9bbd8;
+    --accent-text: #ff6b5b;
+    --success-text: #2bb673;
+    --border: #1b4c94;
+    --ring: #ffc857;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-nuit: var(--nuit);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent-text: var(--accent-text);
+  --color-success: var(--success);
+  --color-success-text: var(--success-text);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --radius-card: var(--radius);
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-bricolage), system-ui, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hero: logo blue gradient with track lanes */
+.hero {
+  background-color: var(--nuit);
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 18px,
+      rgb(255 255 255 / 0.08) 18px 20px
+    ),
+    linear-gradient(135deg, #052b5c 0%, #084595 100%);
+  color: #f8f8f8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
