@@ -98,9 +98,10 @@ Français seul en v1. Tous les textes visibles sont dans un seul fichier de mess
 ## CI
 
 Sur chaque PR (runners GitHub, pas de machine dédiée) : formatage, lint, types, règle d'import
-des couches, tests Vitest, tests pgTAP (Supabase local), build. Storybook (build + play functions) tourne
-depuis la PR du podium ; les tests Playwright de bout en bout viennent avec le parcours complet. Un test instable est corrigé ou supprimé
-dans la semaine, jamais relancé automatiquement.
+des couches, tests Vitest, tests pgTAP (Supabase local), build, puis Storybook (tests des
+play functions dans Chromium et build). Les tests Playwright de bout en bout viennent avec le
+parcours complet. Un test instable est corrigé ou supprimé dans la semaine, jamais relancé
+automatiquement.
 
 ## Agents on GitHub
 
