@@ -28,3 +28,6 @@ npm-debug.log*
 # Next.js generated
 next-env.d.ts
 *.tsbuildinfo
+
+# Storybook build output
+storybook-static/

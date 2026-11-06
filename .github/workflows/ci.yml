@@ -45,6 +45,16 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Play functions of the stories run in a real browser (Chromium).
+      - name: Install browser for Storybook tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Storybook tests
+        run: npm run test:storybook
+
+      - name: Storybook build
+        run: npm run build-storybook
+
   database:
     name: Database (Supabase local, pgTAP, adapters)
     runs-on: ubuntu-latest

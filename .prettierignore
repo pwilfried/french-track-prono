@@ -6,3 +6,4 @@ public/
 supabase/
 docs/
 *.md
+storybook-static
