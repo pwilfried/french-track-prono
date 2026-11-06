@@ -7,7 +7,7 @@ Source de référence des critères : [architecture.md](architecture.md), sectio
 | Version | Contenu | Critère de réussite (« It works when… ») |
 |---|---|---|
 | v0.1 Socle et lecture | Dépôt, app Next.js, Supabase local, thème, liste des épreuves, fiche d'épreuve avec podium officiel | On ouvre sur téléphone la liste des 28 épreuves et la fiche d'une épreuve avec son podium, lus dans la base locale |
-| v0.2 Comptes | Connexion par lien magique, profil (pseudo, 15 ans ou plus) | Un nouvel utilisateur reçoit un lien magique, choisit son pseudo et retrouve son profil après déconnexion |
+| v0.2 Comptes | Connexion par code à 6 chiffres ou lien magique, profil (pseudo, avatar, 15 ans ou plus), en-tête | Un nouvel utilisateur reçoit un code et un lien, choisit son pseudo et retrouve son profil après déconnexion |
 | v0.3 Pronostiquer | PodiumPicker, joker, compte à rebours, verrouillage | Un podium se compose en moins de 20 s ; la base refuse toute modification après `lock_at` |
 | v0.4 Back-office et points | Saisie des résultats, calcul des points, écran « mes points » | Les points de joueurs de test correspondent aux cas chiffrés (podium parfait = 12, avec joker = 24) |
 | v0.5 Ligues et classements | Création, code d'invitation, classement de ligue et général | Deux comptes dans la même ligue voient le même classement |
