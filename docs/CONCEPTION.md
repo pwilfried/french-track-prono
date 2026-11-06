@@ -75,7 +75,7 @@ Principes :
 
 À savoir sur les données de test (`supabase/seed.sql`) :
 - 28 épreuves, podiums seulement (rang 1 à 3) + finalistes français. Source : NBC Sports.
-- **Horaires = placeholders** (19 h, heure de Budapest) : à remplacer par les vrais horaires.
+- **Jours et ordre de passage** tirés du communiqué de World Athletics (sous réserve de modifications) : vendredi 19 h-22 h, samedi et dimanche 18 h-21 h, heure de Budapest. Les **heures exactes sont des estimations** (réparties dans la plage selon l'ordre de passage) : à remplacer par le programme officiel.
 - **Saut en longueur dames** : la source donne un ordre incohérent avec les marques, à vérifier.
 - Pour tester le jeu, il faudra des listes de départ plus complètes que les podiums.
 

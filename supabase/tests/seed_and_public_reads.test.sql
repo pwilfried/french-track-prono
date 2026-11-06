@@ -1,6 +1,6 @@
 -- pgTAP: seed health and public reads. Run with `supabase test db`.
 begin;
-select plan(13);
+select plan(14);
 
 -- Seed health ---------------------------------------------------------------
 select is((select count(*) from events), 28::bigint, 'the seed has 28 events');
@@ -29,6 +29,13 @@ select is(
   (select count(*) from events where lock_at <> starts_at - interval '5 minutes'),
   0::bigint,
   'every event locks 5 minutes before its start');
+
+select is(
+  (select array_agg(n order by d) from (
+     select (starts_at at time zone 'Europe/Budapest')::date as d, count(*) as n
+     from events group by 1) days),
+  array[8, 9, 11]::bigint[],
+  'the events are spread over 11, 12 and 13 September as 8, 9 and 11 finals');
 
 -- Public reads: no account needed in v0.1 -----------------------------------
 set local role anon;

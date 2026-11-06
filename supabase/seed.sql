@@ -6,9 +6,11 @@
 -- Source des résultats : NBC Sports (finales). A recouper avec World Athletics.
 --  * Seuls les podiums (rang 1 à 3) + les finalistes français sont chargés.
 --    Les listes de départ complètes seront à importer pour le vrai jeu.
---  * Les horaires sont des PLACEHOLDERS (19:00 heure de Budapest, le jour
---    de l'épreuve quand il est connu). Jours à confirmer : javelot F/H,
---    longueur F/H, triple saut F, marteau H, hauteur H.
+--  * Jours et ordre de passage : communiqué de World Athletics (programme des
+--    sessions, « sous réserve de modifications »). Ven. 11 sept. 19h-22h,
+--    sam. 12 et dim. 13 sept. 18h-21h, heure de Budapest. Les HEURES sont des
+--    ESTIMATIONS : les épreuves de chaque soirée (demi-finales comprises) sont
+--    réparties à intervalles réguliers dans la plage, arrondies à 5 minutes.
 --  * ⚠ Saut en longueur F : la source donne un ordre incohérent avec les
 --    marques (2e = 6.59 m, 3e = 6.77 m). A vérifier avant de s'en servir.
 --  * Hauteur F : égalité à la 3e place (Patterson / Topic, 1.91 m).
@@ -25,34 +27,34 @@ on conflict (slug) do nothing;
 insert into events (competition_id, slug, discipline, gender, starts_at, lock_at, is_featured, status)
 select c.id, v.slug, v.discipline, v.gender, v.starts_at, v.starts_at - interval '5 minutes', v.is_featured, 'finished'
 from competitions c, (values
-  ('f-100m', '100 m', 'F', (timestamp '2026-09-12 19:00') at time zone 'Europe/Budapest', true),
-  ('f-100m-hurdles', '100 m haies', 'F', (timestamp '2026-09-11 19:00') at time zone 'Europe/Budapest', false),
-  ('f-200m', '200 m', 'F', (timestamp '2026-09-13 19:00') at time zone 'Europe/Budapest', false),
-  ('f-400m', '400 m', 'F', (timestamp '2026-09-12 19:00') at time zone 'Europe/Budapest', false),
-  ('f-400m-hurdles', '400 m haies', 'F', (timestamp '2026-09-13 19:00') at time zone 'Europe/Budapest', false),
-  ('f-800m', '800 m', 'F', (timestamp '2026-09-12 19:00') at time zone 'Europe/Budapest', false),
-  ('f-1500m', '1500 m', 'F', (timestamp '2026-09-12 19:00') at time zone 'Europe/Budapest', false),
-  ('f-5000m', '5000 m', 'F', (timestamp '2026-09-13 19:00') at time zone 'Europe/Budapest', false),
-  ('f-high-jump', 'Saut en hauteur', 'F', (timestamp '2026-09-11 19:00') at time zone 'Europe/Budapest', false),
-  ('f-javelin', 'Javelot', 'F', (timestamp '2026-09-12 19:00') at time zone 'Europe/Budapest', false),
-  ('f-long-jump', 'Saut en longueur', 'F', (timestamp '2026-09-12 19:00') at time zone 'Europe/Budapest', false),
-  ('f-pole-vault', 'Saut à la perche', 'F', (timestamp '2026-09-12 19:00') at time zone 'Europe/Budapest', false),
-  ('f-triple-jump', 'Triple saut', 'F', (timestamp '2026-09-12 19:00') at time zone 'Europe/Budapest', false),
-  ('m-100m', '100 m', 'M', (timestamp '2026-09-12 19:00') at time zone 'Europe/Budapest', true),
-  ('m-110m-hurdles', '110 m haies', 'M', (timestamp '2026-09-11 19:00') at time zone 'Europe/Budapest', false),
-  ('m-200m', '200 m', 'M', (timestamp '2026-09-13 19:00') at time zone 'Europe/Budapest', false),
-  ('m-400m', '400 m', 'M', (timestamp '2026-09-12 19:00') at time zone 'Europe/Budapest', false),
-  ('m-400m-hurdles', '400 m haies', 'M', (timestamp '2026-09-13 19:00') at time zone 'Europe/Budapest', true),
-  ('m-800m', '800 m', 'M', (timestamp '2026-09-13 19:00') at time zone 'Europe/Budapest', false),
-  ('m-1500m', '1500 m', 'M', (timestamp '2026-09-13 19:00') at time zone 'Europe/Budapest', false),
-  ('m-5000m', '5000 m', 'M', (timestamp '2026-09-11 19:00') at time zone 'Europe/Budapest', true),
-  ('m-hammer', 'Lancer du marteau', 'M', (timestamp '2026-09-12 19:00') at time zone 'Europe/Budapest', false),
-  ('m-high-jump', 'Saut en hauteur', 'M', (timestamp '2026-09-12 19:00') at time zone 'Europe/Budapest', false),
-  ('m-javelin', 'Javelot', 'M', (timestamp '2026-09-12 19:00') at time zone 'Europe/Budapest', false),
-  ('m-long-jump', 'Saut en longueur', 'M', (timestamp '2026-09-12 19:00') at time zone 'Europe/Budapest', false),
-  ('m-pole-vault', 'Saut à la perche', 'M', (timestamp '2026-09-11 19:00') at time zone 'Europe/Budapest', true),
+  ('f-100m', '100 m', 'F', (timestamp '2026-09-12 20:35') at time zone 'Europe/Budapest', true),
+  ('f-100m-hurdles', '100 m haies', 'F', (timestamp '2026-09-11 21:30') at time zone 'Europe/Budapest', false),
+  ('f-200m', '200 m', 'F', (timestamp '2026-09-13 20:45') at time zone 'Europe/Budapest', false),
+  ('f-400m', '400 m', 'F', (timestamp '2026-09-12 18:00') at time zone 'Europe/Budapest', false),
+  ('f-400m-hurdles', '400 m haies', 'F', (timestamp '2026-09-13 18:00') at time zone 'Europe/Budapest', false),
+  ('f-800m', '800 m', 'F', (timestamp '2026-09-12 20:20') at time zone 'Europe/Budapest', false),
+  ('f-1500m', '1500 m', 'F', (timestamp '2026-09-12 19:45') at time zone 'Europe/Budapest', false),
+  ('f-5000m', '5000 m', 'F', (timestamp '2026-09-13 19:25') at time zone 'Europe/Budapest', false),
+  ('f-high-jump', 'Saut en hauteur', 'F', (timestamp '2026-09-11 19:15') at time zone 'Europe/Budapest', false),
+  ('f-javelin', 'Javelot', 'F', (timestamp '2026-09-12 18:15') at time zone 'Europe/Budapest', false),
+  ('f-long-jump', 'Saut en longueur', 'F', (timestamp '2026-09-11 21:05') at time zone 'Europe/Budapest', false),
+  ('f-pole-vault', 'Saut à la perche', 'F', (timestamp '2026-09-12 18:50') at time zone 'Europe/Budapest', false),
+  ('f-triple-jump', 'Triple saut', 'F', (timestamp '2026-09-13 19:35') at time zone 'Europe/Budapest', false),
+  ('m-100m', '100 m', 'M', (timestamp '2026-09-12 20:45') at time zone 'Europe/Budapest', true),
+  ('m-110m-hurdles', '110 m haies', 'M', (timestamp '2026-09-11 21:45') at time zone 'Europe/Budapest', false),
+  ('m-200m', '200 m', 'M', (timestamp '2026-09-13 20:30') at time zone 'Europe/Budapest', false),
+  ('m-400m', '400 m', 'M', (timestamp '2026-09-12 18:25') at time zone 'Europe/Budapest', false),
+  ('m-400m-hurdles', '400 m haies', 'M', (timestamp '2026-09-13 18:40') at time zone 'Europe/Budapest', true),
+  ('m-800m', '800 m', 'M', (timestamp '2026-09-13 19:50') at time zone 'Europe/Budapest', false),
+  ('m-1500m', '1500 m', 'M', (timestamp '2026-09-13 20:20') at time zone 'Europe/Budapest', false),
+  ('m-5000m', '5000 m', 'M', (timestamp '2026-09-11 20:50') at time zone 'Europe/Budapest', true),
+  ('m-hammer', 'Lancer du marteau', 'M', (timestamp '2026-09-11 19:40') at time zone 'Europe/Budapest', false),
+  ('m-high-jump', 'Saut en hauteur', 'M', (timestamp '2026-09-13 19:10') at time zone 'Europe/Budapest', false),
+  ('m-javelin', 'Javelot', 'M', (timestamp '2026-09-13 18:15') at time zone 'Europe/Budapest', false),
+  ('m-long-jump', 'Saut en longueur', 'M', (timestamp '2026-09-12 19:55') at time zone 'Europe/Budapest', false),
+  ('m-pole-vault', 'Saut à la perche', 'M', (timestamp '2026-09-11 20:25') at time zone 'Europe/Budapest', true),
   ('x-4x100m', 'Relais mixte 4x100 m', 'X', (timestamp '2026-09-11 19:00') at time zone 'Europe/Budapest', false),
-  ('x-4x400m', 'Relais mixte 4x400 m', 'X', (timestamp '2026-09-13 19:00') at time zone 'Europe/Budapest', false)
+  ('x-4x400m', 'Relais mixte 4x400 m', 'X', (timestamp '2026-09-13 20:05') at time zone 'Europe/Budapest', false)
 ) as v(slug, discipline, gender, starts_at, is_featured)
 where c.slug = 'ultimate-championship-2026'
 on conflict (competition_id, slug) do nothing;
