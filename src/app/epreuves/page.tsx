@@ -1,0 +1,108 @@
+import Link from "next/link";
+
+import { listEvents } from "@/application/list-events";
+import { UseCaseError } from "@/application/errors";
+import { EventCard } from "@/components/events/event-card";
+import { GenderFilter } from "@/components/events/gender-filter";
+import { buttonVariants } from "@/components/ui/button";
+import type { EventGender, EventSummary } from "@/domain/event";
+import { filterByGender, groupEventsByDay } from "@/domain/event-list";
+import { createPublicSupabaseClient, createSupabaseEventReader } from "@/infra";
+
+import { messages } from "../messages.fr";
+
+const COMPETITION_SLUG = "ultimate-championship-2026";
+const COMPETITION_TIME_ZONE = "Europe/Budapest";
+
+const genders: EventGender[] = ["F", "M", "X"];
+
+function parseGender(value: string | string[] | undefined): EventGender | null {
+  return genders.find((gender) => gender === value) ?? null;
+}
+
+async function loadEvents(): Promise<EventSummary[] | "error"> {
+  try {
+    const events = createSupabaseEventReader(createPublicSupabaseClient());
+    return await listEvents({ events }).execute({ competitionSlug: COMPETITION_SLUG });
+  } catch (error) {
+    // Only known error codes are expected here; anything else is a bug and stays visible.
+    if (error instanceof UseCaseError) return "error";
+    throw error;
+  }
+}
+
+export default async function EventsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ genre?: string | string[] }>;
+}) {
+  const gender = parseGender((await searchParams).genre);
+  const loaded = await loadEvents();
+  const events = loaded === "error" ? [] : loaded;
+  const days = groupEventsByDay(filterByGender(events, gender), COMPETITION_TIME_ZONE);
+  const dayLabel = new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: COMPETITION_TIME_ZONE,
+  });
+
+  return (
+    <main className="flex flex-1 flex-col">
+      <header className="hero px-4 pb-6 pt-8">
+        <div className="mx-auto max-w-md">
+          <Link
+            href="/"
+            className="inline-flex min-h-11 items-center gap-3 text-sm font-bold uppercase"
+          >
+            <span className="-rotate-3 rounded-lg bg-primary px-2.5 py-1 text-primary-foreground">
+              FTP
+            </span>
+            {messages.app.name}
+          </Link>
+          <h1 className="mt-2 font-display text-3xl font-extrabold uppercase leading-none">
+            {messages.events.title}
+          </h1>
+          <p className="mt-2 text-[#dce6f5]">
+            {loaded === "error" ? messages.events.place : messages.events.subtitle(events.length)}
+          </p>
+        </div>
+      </header>
+
+      <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-5">
+        <GenderFilter selected={gender} />
+
+        {loaded === "error" ? (
+          <div role="alert" className="flex flex-col items-start gap-3 rounded-card bg-muted p-4">
+            <p>{messages.errors.EVENTS_UNAVAILABLE}</p>
+            <Link href="/epreuves" className={buttonVariants({ variant: "outline" })}>
+              {messages.errors.retry}
+            </Link>
+          </div>
+        ) : days.length === 0 ? (
+          <p className="rounded-card bg-muted p-4">{messages.events.empty}</p>
+        ) : (
+          days.map(({ day, events: dayEvents }) => (
+            <section key={day} aria-labelledby={`day-${day}`} className="flex flex-col gap-2">
+              <h2
+                id={`day-${day}`}
+                className="text-sm font-bold uppercase tracking-wide text-muted-foreground"
+              >
+                {dayLabel.format(new Date(`${day}T12:00:00Z`))}
+              </h2>
+              <ul className="flex flex-col gap-2">
+                {dayEvents.map((event) => (
+                  <EventCard key={event.id} event={event} timeZone={COMPETITION_TIME_ZONE} />
+                ))}
+              </ul>
+            </section>
+          ))
+        )}
+
+        <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
+          {messages.events.provisionalTimes}
+        </p>
+      </div>
+    </main>
+  );
+}
