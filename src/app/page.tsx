@@ -1,4 +1,6 @@
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+
+import { buttonVariants } from "@/components/ui/button";
 
 import { messages } from "./messages.fr";
 
@@ -37,10 +39,9 @@ export default function Home() {
           ))}
         </div>
 
-        <Button size="lg" disabled>
+        <Link href="/epreuves" className={buttonVariants({ size: "lg" })}>
           {messages.home.cta}
-        </Button>
-        <p className="text-sm text-[#dce6f5]">{messages.home.soon}</p>
+        </Link>
       </div>
     </main>
   );
