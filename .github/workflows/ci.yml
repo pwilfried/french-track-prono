@@ -76,6 +76,7 @@ jobs:
       - name: Adapter tests against local Supabase
         run: |
           supabase status -o json > "$RUNNER_TEMP/supabase.json"
-          echo "NEXT_PUBLIC_SUPABASE_URL=$(jq -r .API_URL "$RUNNER_TEMP/supabase.json")" >> "$GITHUB_ENV"
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(jq -r '.PUBLISHABLE_KEY // .ANON_KEY' "$RUNNER_TEMP/supabase.json")" >> "$GITHUB_ENV"
+          jq 'keys' "$RUNNER_TEMP/supabase.json"
+          export NEXT_PUBLIC_SUPABASE_URL="$(jq -r .API_URL "$RUNNER_TEMP/supabase.json")"
+          export NEXT_PUBLIC_SUPABASE_ANON_KEY="$(jq -r '.PUBLISHABLE_KEY // .ANON_KEY' "$RUNNER_TEMP/supabase.json")"
           REQUIRE_SUPABASE_TESTS=1 npm test
