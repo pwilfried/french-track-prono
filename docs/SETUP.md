@@ -118,6 +118,22 @@ Après toute modification de `.env.local`, redémarre `npm run dev`.
 Pour les composants : `npm run storybook` (http://localhost:6006). Pour leurs tests, installe une
 fois le navigateur : `npx playwright install chromium`, puis `npm run test:storybook`.
 
+## 4 bis. Connexion : lien du message et téléphone
+
+Le message de connexion contient un code à 6 chiffres et un lien. Le lien pointe vers
+`site_url` (`supabase/config.toml`, `http://127.0.0.1:3000` par défaut) puis `/auth/callback`.
+Il fonctionne dans n'importe quel navigateur (pas de cookie préalable nécessaire).
+Redirections acceptées : `http://127.0.0.1:3000` et `http://localhost:3000`.
+
+Pour tester le lien depuis un téléphone sur le même réseau :
+
+1. Dans `supabase/config.toml`, mets l'adresse locale de ton Mac dans `site_url`
+   (exemple : `http://192.168.1.20:3000`) et ajoute la même adresse à `additional_redirect_urls`.
+2. `supabase stop` puis `supabase start` pour recharger la configuration.
+3. Ne committe pas cette adresse : remets `127.0.0.1` avant de créer ta PR.
+
+Le code à 6 chiffres marche toujours, sans rien changer.
+
 ## 5. Sécurité : à ne jamais committer
 
 - `.env.local` et tout fichier contenant des clés (déjà dans `.gitignore`)
