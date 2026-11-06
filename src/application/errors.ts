@@ -1,5 +1,5 @@
 /** Error codes of the use cases. The UI maps them to French messages (src/app/messages.fr.ts). */
-export type ErrorCode = "EVENTS_UNAVAILABLE";
+export type ErrorCode = "EVENTS_UNAVAILABLE" | "EVENT_NOT_FOUND";
 
 export class UseCaseError extends Error {
   constructor(readonly code: ErrorCode) {

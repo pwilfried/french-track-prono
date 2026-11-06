@@ -45,5 +45,30 @@ export function eventReaderContract(
 
       expect(new Set(events.map((e) => e.id)).size).toBe(events.length);
     });
+
+    it("finds nothing for an unknown event", async () => {
+      expect(await create().findBySlug(knownCompetition, "no-such-event")).toBeNull();
+    });
+
+    it("finds nothing for an unknown competition", async () => {
+      const reader = create();
+      const [known] = await reader.listByCompetition(knownCompetition);
+
+      expect(await reader.findBySlug("no-such-competition", known!.slug)).toBeNull();
+    });
+
+    it("finds a known event with its start list and results", async () => {
+      const reader = create();
+      const [known] = await reader.listByCompetition(knownCompetition);
+
+      const event = await reader.findBySlug(knownCompetition, known!.slug);
+
+      expect(event?.id).toBe(known!.id);
+      expect(event?.entries.length).toBeGreaterThan(0);
+      for (const result of event?.results ?? []) {
+        expect(result.rank).toBeGreaterThanOrEqual(1);
+        expect(event?.entries.map((e) => e.athleteId)).toContain(result.athleteId);
+      }
+    });
   });
 }
