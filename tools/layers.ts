@@ -40,6 +40,10 @@ export function importsOf(content: string): string[] {
   return found;
 }
 
+function isTestFile(file: string): boolean {
+  return /\.test\.tsx?$/.test(file);
+}
+
 function layerOfFile(file: string): Layer | null {
   const match = /^src\/([^/]+)\//.exec(file);
   return match && (LAYERS as readonly string[]).includes(match[1]) ? (match[1] as Layer) : null;
@@ -69,7 +73,8 @@ export function checkLayers(files: SourceFile[]): Violation[] {
       const target = resolve(file, specifier);
 
       if (target.kind === "external") {
-        if (!EXTERNAL_ALLOWED[layer])
+        // Test files may import test tooling (vitest...); their other imports still follow the rule.
+        if (!EXTERNAL_ALLOWED[layer] && !isTestFile(file))
           fail(`${layer} must not import "${specifier}" (npm package or builtin)`);
         continue;
       }
