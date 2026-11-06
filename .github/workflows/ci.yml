@@ -46,7 +46,7 @@ jobs:
         run: npm run build
 
   database:
-    name: Database (Supabase local, pgTAP)
+    name: Database (Supabase local, pgTAP, adapters)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -56,9 +56,38 @@ jobs:
         with:
           version: latest
 
-      # Starts only the database (migrations + seed.sql are applied by the start).
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # Starts the database and the REST API only (migrations + seed.sql are applied by the start).
       - name: Start local Supabase
-        run: supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+        run: supabase start -x gotrue,realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
 
       - name: pgTAP tests
         run: supabase test db
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The adapter tests read the local address and key from the environment.
+      # With some services excluded, `supabase status` prints no API key, so the key is built from
+      # the documented default JWT secret of the local stack (local use only, never a real secret).
+      # REQUIRE_SUPABASE_TESTS makes the run fail instead of silently skipping the tests.
+      - name: Adapter tests against local Supabase
+        run: |
+          supabase status -o json > "$RUNNER_TEMP/supabase.json"
+          export NEXT_PUBLIC_SUPABASE_URL="$(jq -r .API_URL "$RUNNER_TEMP/supabase.json")"
+          KEY="$(jq -r '.PUBLISHABLE_KEY // .ANON_KEY // empty' "$RUNNER_TEMP/supabase.json")"
+          if [ -z "$KEY" ]; then
+            KEY="$(node -e '
+              const crypto = require("node:crypto");
+              const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
+              const body = b64({ alg: "HS256", typ: "JWT" }) + "." + b64({ iss: "supabase-demo", role: "anon", exp: 1983812996 });
+              const sig = crypto.createHmac("sha256", "super-secret-jwt-token-with-at-least-32-characters-long").update(body).digest("base64url");
+              console.log(body + "." + sig);
+            ')"
+          fi
+          export NEXT_PUBLIC_SUPABASE_ANON_KEY="$KEY"
+          REQUIRE_SUPABASE_TESTS=1 npm test

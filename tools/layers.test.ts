@@ -98,6 +98,16 @@ describe("checkLayers", () => {
     expect(violations).toHaveLength(3);
   });
 
+  it("lets test files import test tooling but still applies the layer rule to them", () => {
+    const violations = checkLayers([
+      file("src/domain/scoring.test.ts", "vitest", "./scoring"),
+      file("src/application/list-events.test.ts", "vitest", "@/infra/in-memory/event-reader"),
+    ]);
+
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toMatchObject({ file: "src/application/list-events.test.ts" });
+  });
+
   it("ignores files outside the four layers and test-only files in tools", () => {
     const violations = checkLayers([
       file("src/lib/utils.ts", "clsx"),
