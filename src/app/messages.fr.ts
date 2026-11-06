@@ -2,6 +2,9 @@
 export const messages = {
   app: {
     name: "French Track Prono",
+    nameLine1: "French Track",
+    nameLine2: "Prono",
+    short: "FTP",
     tagline: "Pronostique les podiums d'athlétisme, chambre tes amis, grimpe au classement.",
     description: "Le jeu de pronostics d'athlétisme de la communauté FrenchTrack.",
   },
