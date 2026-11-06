@@ -1,11 +1,9 @@
 import Link from "next/link";
 
-import { getProfile } from "@/application/get-profile";
-import { UseCaseError } from "@/application/errors";
 import { messages } from "@/app/messages.fr";
+import { lookUpProfile } from "@/app/profile-lookup";
 import { getCurrentUser, getSessionClient } from "@/app/session";
 import { buttonVariants } from "@/components/ui/button";
-import { createSupabaseProfileRepository } from "@/infra";
 
 /** Top-right corner of the pages: sign-in link for a visitor, avatar and pseudo for a player. */
 export async function AccountMenu({ returnTo }: { returnTo: string }) {
@@ -21,12 +19,8 @@ export async function AccountMenu({ returnTo }: { returnTo: string }) {
     );
   }
 
-  const profile = await getProfile({
-    profiles: createSupabaseProfileRepository(await getSessionClient()),
-  })
-    .execute({ userId: user.userId })
-    .catch((error: unknown) => (error instanceof UseCaseError ? null : Promise.reject(error)));
-  if (!profile) return null;
+  const profile = await lookUpProfile(await getSessionClient(), user.userId);
+  if (profile === null || profile === "unavailable") return null;
 
   return (
     <Link
