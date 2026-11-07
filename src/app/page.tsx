@@ -13,7 +13,7 @@ const steps = [
 
 export default function Home() {
   return (
-    <main className="hero flex flex-1 flex-col px-4 pb-10 pt-6">
+    <main id="main" className="hero flex flex-1 flex-col px-4 pb-10 pt-6">
       <div className="mx-auto mb-8 flex w-full max-w-md justify-end">
         <AccountMenu returnTo="/" />
       </div>

@@ -43,7 +43,7 @@ export default async function MyPointsPage() {
   const loaded = await load(user.userId);
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <AccountHero title={messages.points.title} subtitle={messages.events.title} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-3 px-4 py-6">
         {loaded === "error" ? (

@@ -26,7 +26,7 @@ export default async function ProfilePage() {
   }).format(profile.ageConfirmedAt);
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <AccountHero title={messages.profile.title} subtitle={messages.profile.since(since)} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-6">
         <div className="flex flex-col items-center gap-3 text-center">

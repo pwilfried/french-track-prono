@@ -17,9 +17,29 @@ const inter = localFont({
   weight: "100 900",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: messages.app.name,
   description: messages.app.description,
+  alternates: { canonical: "/" },
+  robots: { index: true, follow: true },
+  icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
+  openGraph: {
+    title: messages.app.name,
+    description: messages.app.description,
+    locale: "fr_FR",
+    type: "website",
+    siteName: messages.app.name,
+    images: [{ url: "/icons/icon-512.png", width: 512, height: 512 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: messages.app.name,
+    description: messages.app.description,
+    images: ["/icons/icon-512.png"],
+  },
 };
 
 export const viewport: Viewport = {
@@ -34,7 +54,15 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={`${display.variable} ${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-[#084595]"
+        >
+          {messages.app.skipToContent}
+        </a>
+        {children}
+      </body>
     </html>
   );
 }
