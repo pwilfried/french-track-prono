@@ -1,0 +1,76 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Board v0.6 · Révélation</title>
+<style>
+:root{--bg:#f8f8f8;--fg:#052b5c;--card:#fff;--muted:#e9eef6;--mfg:#4a5a78;--brand:#084595;--primary:#e03020;--gold:#ffc857;--succ:#15804f;--border:#d3dcea;--accent:#c42818;--mine:#fff6dc}
+@media (prefers-color-scheme:dark){:root{--bg:#052b5c;--fg:#f8f8f8;--card:#0a3a7a;--muted:#0b3a78;--mfg:#a9bbd8;--brand:#ffc857;--succ:#2bb673;--border:#1b4c94;--accent:#ff6b5b;--mine:#123f7e}}
+*{box-sizing:border-box}body{margin:0;background:#8899aa33;font:15px/1.4 Inter,system-ui,sans-serif;color:var(--fg);display:flex;gap:24px;padding:24px;align-items:flex-start}
+.phone{width:390px;min-height:844px;background:var(--bg);border-radius:28px;overflow:hidden;box-shadow:0 8px 30px #0003;flex:none}
+.cap{font:600 12px Inter;color:#556;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px 4px}
+header{padding:20px 16px 12px}h1{font:800 26px/1.1 "Bricolage Grotesque",system-ui;text-transform:uppercase;margin:4px 0}
+.back{color:var(--brand);font-weight:600;font-size:14px}.sub{color:var(--mfg);font-size:14px}
+.badge{display:inline-block;background:#4a5a78;color:#fff;border-radius:999px;padding:4px 10px;font-size:13px;font-weight:600;margin-top:6px}
+.tabs{display:flex;gap:8px;padding:0 16px 12px;overflow-x:auto}.tab{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--fg);font:600 14px Inter;display:flex;align-items:center;white-space:nowrap}
+.tab.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+section{margin:0 16px 12px;background:var(--card);border-radius:20px;padding:14px 16px;border:1px solid var(--border)}
+h2{font:700 14px Inter;margin:0 0 10px;text-transform:uppercase;letter-spacing:.04em;color:var(--mfg)}
+.bar{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:14px}.bar .n{flex:0 0 130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .t{flex:1;height:10px;border-radius:5px;background:var(--muted);overflow:hidden}.bar .t i{display:block;height:100%;background:var(--brand)}
+.bar .p{flex:0 0 38px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.pred{margin:0 16px 10px;background:var(--card);border-radius:20px;padding:12px 14px;border:1px solid var(--border)}
+.pred.mine{background:var(--mine);border-color:var(--gold)}
+.who{display:flex;align-items:center;gap:10px;font-weight:700;min-width:0}.who>span:not(.av){min-width:0}.av{font-size:24px}.who small{font-weight:500;color:var(--mfg)}
+.tags{margin-left:auto;display:flex;gap:6px}.tag{white-space:nowrap;font-size:12px;font-weight:700;border-radius:999px;padding:3px 8px;background:var(--gold);color:#052b5c}.tag.flair{background:#2bb673;color:#052b5c}
+ol{margin:8px 0 6px;padding:0;list-style:none;display:grid;gap:3px}ol li{display:flex;gap:8px;font-size:14px}ol li b{width:22px;text-align:center}
+.reac{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:6px}.r{min-width:44px;min-height:44px;border-radius:14px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-size:18px;display:flex;align-items:center;justify-content:center;gap:4px;padding:0 2px}
+.r small{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}.r.on{border:2px solid var(--brand);background:var(--muted)}
+.counts{color:var(--mfg);font-size:13px;margin-top:6px}
+.empty{text-align:center;padding:40px 24px}.empty .big{font-size:44px}.empty p{color:var(--mfg)}
+.btn{display:inline-flex;min-height:44px;align-items:center;padding:0 20px;border-radius:999px;background:#e03020;color:#fff;font-weight:700;border:0;font-size:15px}
+.err{margin:0 16px;border-radius:16px;padding:14px;border:1px solid var(--accent);color:var(--accent);font-weight:600}
+.lockbox{margin:0 16px 12px;border:2px dashed var(--border);border-radius:20px;padding:20px;text-align:center;color:var(--mfg)}
+</style></head><body>
+
+<div><p class="cap">1 · Révélation, tous les joueurs</p><div class="phone">
+<header><span class="back">← Épreuves</span><h1>100 m hommes</h1><div class="sub">Finale · lun. 23 nov. 21:35</div><span class="badge">🔒 Verrouillé · 128 pronos</span></header>
+<div class="tabs"><span class="tab on">Tous</span><span class="tab">Les Pointes du 93</span><span class="tab">Bureau Lyon Part-Dieu</span></div>
+<section><h2>Qui ont-ils vu gagner ?</h2>
+<div class="bar"><span class="n">Zharnel Hughes</span><span class="t"><i style="width:46%"></i></span><span class="p">46 %</span></div>
+<div class="bar"><span class="n">Jeremiah Azu</span><span class="t"><i style="width:31%"></i></span><span class="p">31 %</span></div>
+<div class="bar"><span class="n">Henrik Larsson</span><span class="t"><i style="width:9%"></i></span><span class="p">9 %</span></div>
+<div class="bar"><span class="n">Autres</span><span class="t"><i style="width:14%"></i></span><span class="p">14 %</span></div></section>
+<div class="pred mine"><div class="who"><span class="av">🦅</span>Toi<div class="tags"><span class="tag">🃏 Joker</span></div></div>
+<ol><li><b>🥇</b>Jeremiah Azu</li><li><b>🥈</b>Zharnel Hughes</li><li><b>🥉</b>Henrik Larsson</li></ol>
+<div class="counts">🔥 4 · 😂 1 · 🎯 2</div></div>
+<div class="pred"><div class="who"><span class="av">🐆</span>Gazelle_du_9.3</div>
+<ol><li><b>🥇</b>Zharnel Hughes</li><li><b>🥈</b>Jeremiah Azu</li><li><b>🥉</b>Jeff Erius</li></ol>
+<div class="reac"><span class="r on">🔥<small>3</small></span><span class="r">😂</span><span class="r">😮<small>1</small></span><span class="r">👏</span><span class="r">🤡<small>2</small></span><span class="r">🎯</span></div></div>
+<div class="pred"><div class="who"><span class="av">🚀</span>Pistard<div class="tags"><span class="tag">🃏 Joker</span></div></div>
+<ol><li><b>🥇</b>Henrik Larsson</li><li><b>🥈</b>Zharnel Hughes</li><li><b>🥉</b>Jeremiah Azu</li></ol>
+<div class="reac"><span class="r">🔥</span><span class="r">😂<small>5</small></span><span class="r">😮<small>2</small></span><span class="r">👏</span><span class="r">🤡</span><span class="r">🎯</span></div></div>
+</div></div>
+
+<div><p class="cap">2 · Après le résultat, filtre « ma ligue », coup de flair</p><div class="phone">
+<header><span class="back">← Épreuves</span><h1>100 m hommes</h1><div class="sub">Finale · résultat saisi</div><span class="badge">🔒 Verrouillé · 6 pronos dans ta ligue</span></header>
+<div class="tabs"><span class="tab">Tous</span><span class="tab on">Les Pointes du 93</span><span class="tab">Bureau Lyon Part-Dieu</span></div>
+<section><h2>Qui ont-ils vu gagner ?</h2>
+<div class="bar"><span class="n">Zharnel Hughes</span><span class="t"><i style="width:50%"></i></span><span class="p">50 %</span></div>
+<div class="bar"><span class="n">Jeremiah Azu</span><span class="t"><i style="width:33%"></i></span><span class="p">33 %</span></div>
+<div class="bar"><span class="n">Henrik Larsson ✓</span><span class="t"><i style="width:17%"></i></span><span class="p">17 %</span></div></section>
+<div class="pred"><div class="who"><span class="av">🚀</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">Pistard_avec_un_pseudo_très_long</span><div class="tags"><span class="tag flair">🎯 Coup de flair</span></div></div>
+<ol><li><b>🥇</b>Henrik Larsson</li><li><b>🥈</b>Zharnel Hughes</li><li><b>🥉</b>Jeremiah Azu</li></ol>
+<div class="sub">Tu l'avais vu venir quand personne ne regardait.</div>
+<div class="reac"><span class="r">🔥<small>2</small></span><span class="r">😂</span><span class="r">😮<small>4</small></span><span class="r on">👏<small>3</small></span><span class="r">🤡</span><span class="r">🎯<small>1</small></span></div></div>
+<div class="pred mine"><div class="who"><span class="av">🦅</span>Toi<div class="tags"><span class="tag">🃏 Joker</span></div></div>
+<ol><li><b>🥇</b>Jeremiah Azu</li><li><b>🥈</b>Zharnel Hughes</li><li><b>🥉</b>Henrik Larsson</li></ol>
+<div class="counts">🤡 3 · 😂 2</div></div>
+</div></div>
+
+<div><p class="cap">3 · Avant le verrouillage / vide / erreur</p><div class="phone">
+<header><span class="back">← Épreuves</span><h1>Saut à la perche femmes</h1><div class="sub">Finale · jeu. 26 nov. 19:10</div><span class="badge" style="background:#ffe3b0;color:#6b3d00">Verrouillage dans 42 min</span></header>
+<div class="lockbox">🙈<br><b>Les pronos des autres se dévoilent au verrouillage.</b><br>D'ici là, chacun garde son podium pour soi.</div>
+<p class="cap" style="margin:18px 16px 6px">Vide (verrouillé, personne n'a pronostiqué)</p>
+<div class="empty" style="padding:16px 24px"><div class="big">🦗</div><b>Personne dans ta ligue n'a pronostiqué.</b><p>Même Duplantis commence à 5 m. Relance tes potes pour la prochaine.</p><span class="btn">Partager l'épreuve</span></div>
+<p class="cap" style="margin:8px 16px 6px">Erreur</p>
+<div class="err">Les pronos des autres ne sont pas disponibles pour le moment. Réessaie dans un instant.<br><span class="btn" style="margin-top:10px">Réessayer</span></div>
+</div></div>
+</body></html>
