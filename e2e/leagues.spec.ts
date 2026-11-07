@@ -18,7 +18,10 @@ test("two friends in the same league see the same ranking", async ({ browser }) 
   await annaPage.getByRole("button", { name: "Créer la ligue" }).click();
   await expect(annaPage.getByText("Ta ligue est prête")).toBeVisible();
   const leagueUrl = annaPage.url().split("?")[0]!;
-  const code = (await annaPage.locator(".font-mono").innerText()).replace(/\s/g, "");
+  const code = (await annaPage.getByText(/^[A-Z0-9]{3} ?[A-Z0-9]{3}$/).innerText()).replace(
+    /\s/g,
+    "",
+  );
   expect(code).toMatch(/^[A-Z0-9]{6}$/);
 
   // Bob joins with the code, typed in lower case.
