@@ -1,5 +1,5 @@
 import type { Podium } from "@/domain/podium-draft";
-import type { Reaction } from "@/domain/reveal";
+import { pickDistribution, type PickShare, type Reaction } from "@/domain/reveal";
 
 import { UseCaseError } from "./errors";
 import type { LeagueRepository } from "./leagues";
@@ -13,7 +13,12 @@ export type RevealedPrediction = {
   podium: Podium;
   useJoker: boolean;
   reactions: { userId: string; reaction: Reaction }[];
+  /** True when the computed points of this prediction include the "coup de flair". */
+  flair: boolean;
 };
+
+/** The revealed podiums shown, and who the whole field picked as winner (never filtered). */
+export type EventReveal = { predictions: RevealedPrediction[]; winnerPicks: PickShare[] };
 
 /** Port: the predictions of an event as the signed-in player may see them. */
 export interface RevealRepository {
@@ -30,7 +35,7 @@ export function listEventPredictions(ports: {
   leagues: LeagueRepository;
 }) {
   return {
-    async execute(input: { eventId: string; leagueId?: string }): Promise<RevealedPrediction[]> {
+    async execute(input: { eventId: string; leagueId?: string }): Promise<EventReveal> {
       const { locked, predictions } = await ports.reveal.listForEvent(input.eventId);
       if (!locked) throw new UseCaseError("EVENT_NOT_LOCKED");
       let shown = predictions;
@@ -40,9 +45,12 @@ export function listEventPredictions(ports: {
         const ids = new Set(members.map((m) => m.userId));
         shown = predictions.filter((p) => ids.has(p.userId));
       }
-      return [...shown].sort((a, b) =>
-        a.pseudo.localeCompare(b.pseudo, "fr", { sensitivity: "base" }),
-      );
+      return {
+        predictions: [...shown].sort((a, b) =>
+          a.pseudo.localeCompare(b.pseudo, "fr", { sensitivity: "base" }),
+        ),
+        winnerPicks: pickDistribution(predictions.map((p) => p.podium)),
+      };
     },
   };
 }

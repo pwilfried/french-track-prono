@@ -2,10 +2,11 @@ import Link from "next/link";
 
 import { UseCaseError } from "@/application/errors";
 import { listMyLeagues, type League } from "@/application/leagues";
-import { listEventPredictions, type RevealedPrediction } from "@/application/reveal";
+import { listEventPredictions, type EventReveal } from "@/application/reveal";
 import { buttonVariants } from "@/components/ui/button";
 import { ErrorNotice } from "@/components/error-notice";
 import { ReactionBar, ReactionSummary } from "@/components/reveal/reaction-bar";
+import { PickDistribution } from "@/components/reveal/pick-distribution";
 import { RevealedPredictionCard } from "@/components/reveal/revealed-prediction-card";
 import type { EventDetail } from "@/domain/event";
 import { reactionCounts, type Reaction } from "@/domain/reveal";
@@ -21,18 +22,18 @@ import { getSessionClient } from "../../session";
 async function load(
   eventId: string,
   leagueId: string | undefined,
-): Promise<{ predictions: RevealedPrediction[]; leagues: League[] } | "error"> {
+): Promise<(EventReveal & { leagues: League[] }) | "error"> {
   try {
     const client = await getSessionClient();
     const leagueRepository = createSupabaseLeagueRepository(client);
-    const [predictions, leagues] = await Promise.all([
+    const [reveal, leagues] = await Promise.all([
       listEventPredictions({
         reveal: createSupabaseRevealRepository(client),
         leagues: leagueRepository,
       }).execute({ eventId, leagueId }),
       listMyLeagues({ leagues: leagueRepository }).execute(),
     ]);
-    return { predictions, leagues };
+    return { ...reveal, leagues };
   } catch (error) {
     if (error instanceof UseCaseError) return "error";
     throw error;
@@ -64,7 +65,8 @@ export async function RevealSection({
     );
   }
 
-  const { predictions, leagues } = loaded;
+  const { predictions, winnerPicks, leagues } = loaded;
+  const winners = new Set(event.results.filter((r) => r.rank === 1).map((r) => r.athleteId));
   const names = new Map(event.entries.map((entry) => [entry.athleteId, entry.name]));
   const nameOf = (athleteId: string) => names.get(athleteId) ?? "?";
   const tabs = [
@@ -108,6 +110,9 @@ export async function RevealSection({
           </ul>
         </nav>
       )}
+      {winnerPicks.length > 0 && (
+        <PickDistribution picks={winnerPicks} nameOf={nameOf} winners={winners} />
+      )}
       {predictions.length === 0 ? (
         <div className="mx-4 flex flex-col items-center gap-2 rounded-card bg-muted p-6 text-center">
           <span aria-hidden="true" className="text-4xl">
@@ -136,6 +141,7 @@ export async function RevealSection({
                 podium={prediction.podium}
                 useJoker={prediction.useJoker}
                 mine={mine}
+                flair={prediction.flair}
                 nameOf={nameOf}
               >
                 {mine ? (
