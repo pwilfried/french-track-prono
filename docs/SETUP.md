@@ -86,6 +86,21 @@ supabase db reset      # applique migrations + seed.sql
 
 La configuration (`supabase/config.toml`) est déjà dans le dépôt : pas de `supabase init`.
 
+### Rouvrir des épreuves pour tester les pronostics
+
+Le tournoi de test est terminé : après un `supabase db reset`, toutes les épreuves sont
+verrouillées. Pour pouvoir pronostiquer en local :
+
+```bash
+npm run db:open-events
+```
+
+Le script (`supabase/dev/open_events.sql`) décale tout le programme à partir de maintenant, dans le
+même ordre : la première épreuve est déjà verrouillée, les 27 autres sont ouvertes sur trois
+jours, et les résultats officiels sont retirés. Relance-le pour repartir de « maintenant ».
+`supabase db reset` remet le vrai programme. Ce script ne sert qu'en local : il n'est ni dans les
+migrations ni dans `seed.sql`.
+
 Une fois démarré, `supabase start` affiche les adresses utiles :
 
 | Service | Adresse habituelle |
