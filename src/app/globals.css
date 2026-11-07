@@ -27,6 +27,25 @@
   --border: #d3dcea;
   --ring: #084595;
   --radius: 1.25rem;
+  /* Soft surfaces for chips (chip-bg + chip-text), contrasts audited ≥ AA. */
+  --brand-soft: #d9e4f5;
+  --brand-ink: #082e66;
+  --primary-soft: #fbe3e1;
+  --primary-ink: #7a1a10;
+  --success-soft: #d7eedf;
+  --success-ink: #0f4d29;
+  --gold-soft: #fbeec6;
+  --gold-ink: #6e4a08;
+  /* Medal gradients for PodiumMedals (used via arbitrary values in classes). */
+  --medal-gold-from: #f7d672;
+  --medal-gold-to: #d99a22;
+  --medal-gold-ink: #3a2a05;
+  --medal-silver-from: #e6e8eb;
+  --medal-silver-to: #a9aeb5;
+  --medal-silver-ink: #1b1f26;
+  --medal-bronze-from: #d99464;
+  --medal-bronze-to: #8b4513;
+  --medal-bronze-ink: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -41,6 +60,14 @@
     --success-text: #2bb673;
     --border: #1b4c94;
     --ring: #ffc857;
+    --brand-soft: #16305e;
+    --brand-ink: #bfd4f3;
+    --primary-soft: #3d1210;
+    --primary-ink: #ffb4a9;
+    --success-soft: #0e2e1b;
+    --success-ink: #8ce4ac;
+    --gold-soft: #3a2a0b;
+    --gold-ink: #f7d37b;
   }
 }
 
@@ -63,6 +90,14 @@
   --color-success-text: var(--success-text);
   --color-border: var(--border);
   --color-ring: var(--ring);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-ink: var(--brand-ink);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-ink: var(--primary-ink);
+  --color-success-soft: var(--success-soft);
+  --color-success-ink: var(--success-ink);
+  --color-gold-soft: var(--gold-soft);
+  --color-gold-ink: var(--gold-ink);
   --radius-card: var(--radius);
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-bricolage), system-ui, sans-serif;
