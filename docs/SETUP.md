@@ -128,6 +128,16 @@ donne les points attendus si l'admin saisit le résultat a, b, c (l'ordre de la 
 un podium parfait avec joker et coup de flair (28 points), un podium parfait simple (12), un joker
 sur 5 points (10), etc. `supabase db reset` efface ces joueurs.
 
+Pour vérifier les points en une seule commande (après `npm run db:open-events`) :
+
+```
+npm run db:test-points
+```
+
+Elle crée les joueurs de démo, affiche les athlètes des deux épreuves sous les lettres a, b, c,
+puis verrouille ces deux épreuves. Il ne reste qu'à te mettre admin (« Devenir admin en local »),
+à saisir a 1er, b 2e, c 3e dans `/admin` et à calculer les points.
+
 ## 4. Lancer l'application
 
 ```bash
