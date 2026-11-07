@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { latestCodeFromMailbox } from "../src/infra/contract/mailbox";
 import { sql } from "./database";
 
-test("a new player predicts a podium, then cannot change it once the event is locked", async ({
+test("a new player predicts a perfect podium, the admin enters the result and the player gets 12 points", async ({
   page,
 }) => {
   // An event still open (run `npm run db:open-events` first).
@@ -43,4 +43,21 @@ test("a new player predicts a podium, then cannot change it once the event is lo
   sql(`update events set lock_at = now() - interval '1 second' where slug = '${slug}'`);
   await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
   await expect(page.locator("main").getByRole("alert")).toContainText("Trop tard");
+
+  // The player is made admin (from SQL, as documented) and enters the same podium.
+  sql(
+    `update profiles set is_admin = true where id = (select id from auth.users where email = '${email}')`,
+  );
+  await page.goto(`/admin/${slug}`);
+  const official = page.locator("li > button[aria-pressed]");
+  for (const index of [0, 1, 2]) await official.nth(index).click();
+  await page.getByRole("button", { name: "Enregistrer le résultat" }).click();
+  await expect(page.getByRole("status")).toContainText("Résultat enregistré");
+
+  // Computing the points, then the player sees them.
+  await page.getByRole("button", { name: "Calculer les points" }).click();
+  await expect(page.getByRole("status")).toContainText("Points calculés");
+  await page.goto("/mes-points");
+  await expect(page.locator("main")).toContainText("+12 pts");
+  await expect(page.locator("main")).toContainText("Podium parfait");
 });
