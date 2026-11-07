@@ -47,23 +47,25 @@ export const BronzeTied: Story = {
   args: { rank: 3, athleteId: "a-marie", mark: "10.91", tie: true },
 };
 
+function InteractiveResultInput(args: React.ComponentProps<typeof ResultInput>) {
+  const [athleteId, setAthleteId] = useState<string | undefined>();
+  const [mark, setMark] = useState<string>("");
+  const [tie, setTie] = useState(false);
+  return (
+    <ResultInput
+      {...args}
+      athleteId={athleteId}
+      mark={mark}
+      tie={tie}
+      onAthleteChange={setAthleteId}
+      onMarkChange={setMark}
+      onTieChange={setTie}
+    />
+  );
+}
+
 /** Full flow: edit athlete, mark, toggle tie — the parent owns the state. */
 export const Interactive: Story = {
   args: { rank: 1 },
-  render: (args) => {
-    const [athleteId, setAthleteId] = useState<string | undefined>();
-    const [mark, setMark] = useState<string>("");
-    const [tie, setTie] = useState(false);
-    return (
-      <ResultInput
-        {...args}
-        athleteId={athleteId}
-        mark={mark}
-        tie={tie}
-        onAthleteChange={setAthleteId}
-        onMarkChange={setMark}
-        onTieChange={setTie}
-      />
-    );
-  },
+  render: InteractiveResultInput,
 };

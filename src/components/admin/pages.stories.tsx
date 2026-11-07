@@ -234,161 +234,165 @@ const podiumAthletes: ResultAthleteOption[] = [
 
 type SlotState = { athleteId?: string; mark: string; tie: boolean };
 
-export const PodiumSaisie: Story = {
-  render: () => {
-    const [slots, setSlots] = useState<[SlotState, SlotState, SlotState]>([
-      { athleteId: "a-shacarri", mark: "10.78", tie: false },
-      { athleteId: "a-julien", mark: "10.85", tie: false },
-      { athleteId: undefined, mark: "", tie: true },
-    ]);
-    const update = (i: 0 | 1 | 2, patch: Partial<SlotState>) =>
-      setSlots((s) => {
-        const next = [...s] as typeof s;
-        next[i] = { ...next[i], ...patch };
-        return next;
-      });
+function PodiumSaisieView() {
+  const [slots, setSlots] = useState<[SlotState, SlotState, SlotState]>([
+    { athleteId: "a-shacarri", mark: "10.78", tie: false },
+    { athleteId: "a-julien", mark: "10.85", tie: false },
+    { athleteId: undefined, mark: "", tie: true },
+  ]);
+  const update = (i: 0 | 1 | 2, patch: Partial<SlotState>) =>
+    setSlots((s) => {
+      const next = [...s] as typeof s;
+      next[i] = { ...next[i], ...patch };
+      return next;
+    });
 
-    return (
-      <AdminShell title="" view="saisie résultat" back="← Épreuves">
-        <div className="px-4 pt-1">
-          <h1 className="font-display text-[22px] font-extrabold leading-tight tracking-tight text-foreground">
-            100 m F — Podium officiel
-          </h1>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Déclenche le calcul des points pour 142 joueurs
-          </p>
-        </div>
+  return (
+    <AdminShell title="" view="saisie résultat" back="← Épreuves">
+      <div className="px-4 pt-1">
+        <h1 className="font-display text-[22px] font-extrabold leading-tight tracking-tight text-foreground">
+          100 m F — Podium officiel
+        </h1>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Déclenche le calcul des points pour 142 joueurs
+        </p>
+      </div>
 
-        <h2 className="mt-4 px-4 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-          3 marches
-        </h2>
-        <div className="flex flex-col gap-2 px-4">
-          {([1, 2, 3] as const).map((rank, i) => (
-            <ResultInput
-              key={rank}
-              rank={rank}
-              athletes={podiumAthletes}
-              athleteId={slots[i].athleteId}
-              mark={slots[i].mark}
-              tie={slots[i].tie}
-              onAthleteChange={(athleteId) => update(i as 0 | 1 | 2, { athleteId })}
-              onMarkChange={(mark) => update(i as 0 | 1 | 2, { mark })}
-              onTieChange={(tie) => update(i as 0 | 1 | 2, { tie })}
-            />
-          ))}
-        </div>
+      <h2 className="mt-4 px-4 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+        3 marches
+      </h2>
+      <div className="flex flex-col gap-2 px-4">
+        {([1, 2, 3] as const).map((rank, i) => (
+          <ResultInput
+            key={rank}
+            rank={rank}
+            athletes={podiumAthletes}
+            athleteId={slots[i].athleteId}
+            mark={slots[i].mark}
+            tie={slots[i].tie}
+            onAthleteChange={(athleteId) => update(i as 0 | 1 | 2, { athleteId })}
+            onMarkChange={(mark) => update(i as 0 | 1 | 2, { mark })}
+            onTieChange={(tie) => update(i as 0 | 1 | 2, { tie })}
+          />
+        ))}
+      </div>
 
-        {slots.some((s) => s.tie) && (
-          <aside className="mx-4 mt-2.5 flex items-start gap-2.5 rounded-xl bg-secondary/40 p-3 text-xs text-foreground">
-            <span aria-hidden="true" className="text-base leading-none">
-              ⚠️
+      {slots.some((s) => s.tie) && (
+        <aside className="mx-4 mt-2.5 flex items-start gap-2.5 rounded-xl bg-secondary/40 p-3 text-xs text-foreground">
+          <span aria-hidden="true" className="text-base leading-none">
+            ⚠️
+          </span>
+          <div>
+            <strong className="block text-[13px] font-extrabold">Ex æquo détecté</strong>
+            <span>
+              Au clic suivant, tu pourras saisir deux athlètes avec le même chrono sur ce rang.
             </span>
-            <div>
-              <strong className="block text-[13px] font-extrabold">Ex æquo détecté</strong>
-              <span>
-                Au clic suivant, tu pourras saisir deux athlètes avec le même chrono sur ce rang.
-              </span>
-            </div>
-          </aside>
-        )}
+          </div>
+        </aside>
+      )}
 
-        <div className="mt-4 flex gap-2 px-4 pb-4">
-          <button className="flex-1 min-h-12 rounded-xl border-[1.5px] border-brand text-sm font-bold text-brand">
-            Brouillon
-          </button>
-          <button className="flex-[1.4] min-h-12 rounded-xl bg-primary text-sm font-bold text-primary-foreground">
-            Valider le podium
-          </button>
-        </div>
-      </AdminShell>
-    );
-  },
+      <div className="mt-4 flex gap-2 px-4 pb-4">
+        <button className="flex-1 min-h-12 rounded-xl border-[1.5px] border-brand text-sm font-bold text-brand">
+          Brouillon
+        </button>
+        <button className="flex-[1.4] min-h-12 rounded-xl bg-primary text-sm font-bold text-primary-foreground">
+          Valider le podium
+        </button>
+      </div>
+    </AdminShell>
+  );
+}
+
+export const PodiumSaisie: Story = {
+  render: () => <PodiumSaisieView />,
 };
 
 /* ---------------------------------------------------------------
    A6 — Lancement du calcul (dry-run / write)
 --------------------------------------------------------------- */
-export const ScoringRun: Story = {
-  render: () => {
-    const [mode, setMode] = useState<"dry" | "write">("dry");
-    return (
-      <AdminShell title="" view="scoring run" back="← Dashboard">
-        <div className="px-4 pt-1">
-          <h1 className="font-display text-[22px] font-extrabold leading-tight tracking-tight text-foreground">
-            Calcul des points
-          </h1>
-          <p className="mt-1 text-xs text-muted-foreground">Ultimate Championship 2026</p>
-        </div>
+function ScoringRunView() {
+  const [mode, setMode] = useState<"dry" | "write">("dry");
+  return (
+    <AdminShell title="" view="scoring run" back="← Dashboard">
+      <div className="px-4 pt-1">
+        <h1 className="font-display text-[22px] font-extrabold leading-tight tracking-tight text-foreground">
+          Calcul des points
+        </h1>
+        <p className="mt-1 text-xs text-muted-foreground">Ultimate Championship 2026</p>
+      </div>
 
-        <section className="mx-4 mt-3 flex flex-col gap-2 rounded-xl bg-muted p-3.5">
-          {[
-            ["Épreuves à calculer", "10"],
-            ["Déjà calculées (skip)", "8"],
-            ["Joueurs concernés", "142"],
-            ["Pronos en entrée", "1 384"],
-            ["Lignes score_events estimées", "~ 1 800"],
-          ].map(([l, v]) => (
-            <div key={l} className="flex items-center justify-between text-[13px]">
-              <span className="font-medium text-foreground/85">{l}</span>
-              <span className="font-mono font-bold tabular-nums text-foreground">{v}</span>
-            </div>
-          ))}
-          <div className="flex items-center justify-between border-t-2 border-foreground pt-2.5 text-[14.5px]">
-            <span className="font-display font-extrabold text-foreground">Durée estimée</span>
-            <span className="font-mono font-bold text-success-text">≈ 3 s</span>
+      <section className="mx-4 mt-3 flex flex-col gap-2 rounded-xl bg-muted p-3.5">
+        {[
+          ["Épreuves à calculer", "10"],
+          ["Déjà calculées (skip)", "8"],
+          ["Joueurs concernés", "142"],
+          ["Pronos en entrée", "1 384"],
+          ["Lignes score_events estimées", "~ 1 800"],
+        ].map(([l, v]) => (
+          <div key={l} className="flex items-center justify-between text-[13px]">
+            <span className="font-medium text-foreground/85">{l}</span>
+            <span className="font-mono font-bold tabular-nums text-foreground">{v}</span>
           </div>
-        </section>
+        ))}
+        <div className="flex items-center justify-between border-t-2 border-foreground pt-2.5 text-[14.5px]">
+          <span className="font-display font-extrabold text-foreground">Durée estimée</span>
+          <span className="font-mono font-bold text-success-text">≈ 3 s</span>
+        </div>
+      </section>
 
-        <aside className="mx-4 mt-2.5 flex items-start gap-2.5 rounded-xl bg-secondary/40 p-3 text-xs text-foreground">
-          <span aria-hidden="true" className="text-base leading-none">
-            💡
+      <aside className="mx-4 mt-2.5 flex items-start gap-2.5 rounded-xl bg-secondary/40 p-3 text-xs text-foreground">
+        <span aria-hidden="true" className="text-base leading-none">
+          💡
+        </span>
+        <div>
+          <strong className="block text-[13px] font-extrabold">Idempotent</strong>
+          <span>
+            Relancer n&apos;écrit pas deux fois : le même prono garde la même ligne (contrainte{" "}
+            <code className="font-mono text-[11px]">one_score_per_prediction</code>).
           </span>
-          <div>
-            <strong className="block text-[13px] font-extrabold">Idempotent</strong>
-            <span>
-              Relancer n'écrit pas deux fois : le même prono garde la même ligne (contrainte{" "}
-              <code className="font-mono text-[11px]">one_score_per_prediction</code>).
-            </span>
-          </div>
-        </aside>
-
-        <h2 className="mt-4 px-4 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-          Mode
-        </h2>
-        <fieldset className="flex flex-col gap-2 px-4">
-          <legend className="sr-only">Mode de calcul</legend>
-          {(
-            [
-              ["dry", "Dry-run (simulation)", "N'écrit rien, affiche le résumé"],
-              ["write", "Écrire en base", "Insère dans score_events (service_role)"],
-            ] as const
-          ).map(([value, label, help]) => (
-            <label
-              key={value}
-              className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl bg-muted p-3"
-            >
-              <input
-                type="radio"
-                name="scoring-mode"
-                value={value}
-                checked={mode === value}
-                onChange={() => setMode(value)}
-                className="size-4 shrink-0 accent-primary"
-              />
-              <span className="flex-1">
-                <span className="block text-[13px] font-bold text-foreground">{label}</span>
-                <span className="block text-[11px] text-muted-foreground">{help}</span>
-              </span>
-            </label>
-          ))}
-        </fieldset>
-
-        <div className="mt-4 px-4 pb-4">
-          <button className="min-h-12 w-full rounded-xl bg-primary text-sm font-bold text-primary-foreground">
-            ⚡ Lancer le calcul ({mode === "dry" ? "simulation" : "en base"})
-          </button>
         </div>
-      </AdminShell>
-    );
-  },
+      </aside>
+
+      <h2 className="mt-4 px-4 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+        Mode
+      </h2>
+      <fieldset className="flex flex-col gap-2 px-4">
+        <legend className="sr-only">Mode de calcul</legend>
+        {(
+          [
+            ["dry", "Dry-run (simulation)", "N'écrit rien, affiche le résumé"],
+            ["write", "Écrire en base", "Insère dans score_events (service_role)"],
+          ] as const
+        ).map(([value, label, help]) => (
+          <label
+            key={value}
+            className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl bg-muted p-3"
+          >
+            <input
+              type="radio"
+              name="scoring-mode"
+              value={value}
+              checked={mode === value}
+              onChange={() => setMode(value)}
+              className="size-4 shrink-0 accent-primary"
+            />
+            <span className="flex-1">
+              <span className="block text-[13px] font-bold text-foreground">{label}</span>
+              <span className="block text-[11px] text-muted-foreground">{help}</span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+
+      <div className="mt-4 px-4 pb-4">
+        <button className="min-h-12 w-full rounded-xl bg-primary text-sm font-bold text-primary-foreground">
+          ⚡ Lancer le calcul ({mode === "dry" ? "simulation" : "en base"})
+        </button>
+      </div>
+    </AdminShell>
+  );
+}
+
+export const ScoringRun: Story = {
+  render: () => <ScoringRunView />,
 };
