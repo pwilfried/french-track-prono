@@ -34,7 +34,7 @@ export default async function LeaguesPage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <LeagueHero title={messages.leagues.title} subtitle={COMPETITION_TEXT.name} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-3 px-4 py-6">
         {rows === "error" ? (

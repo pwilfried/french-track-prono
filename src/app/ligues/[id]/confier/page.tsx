@@ -24,7 +24,7 @@ export default async function HandOverPage({ params }: { params: Promise<{ id: s
   const others = found.members.filter((m) => m.userId !== ports.userId);
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <LeagueHero
         title={messages.leagues.handOverTitle}
         subtitle={messages.leagues.handOverSubtitle}

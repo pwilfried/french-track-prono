@@ -24,7 +24,7 @@ export default async function WelcomePage({
   if (profile) redirect(next);
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <AccountHero title={messages.welcome.title} subtitle={messages.welcome.subtitle} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
         <WelcomeForm next={next} />

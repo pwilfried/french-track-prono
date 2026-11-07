@@ -18,6 +18,7 @@ export const messages = {
     short: "FTP",
     home: "French Track Prono, accueil",
     logoAlt: "French Track",
+    skipToContent: "Aller au contenu",
     tagline: "Pronostique les podiums d'athlétisme, chambre tes amis, grimpe au classement.",
     description: "Le jeu de pronostics d'athlétisme de la communauté FrenchTrack.",
   },

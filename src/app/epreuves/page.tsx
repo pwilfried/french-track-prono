@@ -75,7 +75,7 @@ export default async function EventsPage({
   });
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <header className="hero px-4 pb-6 pt-8">
         <div className="mx-auto max-w-md">
           <div className="flex items-center justify-between gap-3">

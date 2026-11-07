@@ -7,7 +7,7 @@ import { leaguePorts } from "../data";
 export default async function JoinLeaguePage() {
   await leaguePorts("/ligues/rejoindre");
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <LeagueHero
         title={messages.leagues.joinTitle}
         subtitle={messages.leagues.joinSubtitle}

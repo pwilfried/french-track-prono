@@ -69,7 +69,7 @@ export default async function AdminPage({
   });
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <header className="hero px-4 pb-6 pt-8">
         <div className="mx-auto max-w-md">
           <h1 className="flex items-center gap-3 font-display text-3xl font-extrabold uppercase leading-none">

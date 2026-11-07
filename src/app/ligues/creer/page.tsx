@@ -8,7 +8,7 @@ import { leaguePorts } from "../data";
 export default async function CreateLeaguePage() {
   await leaguePorts("/ligues/creer");
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <LeagueHero
         title={messages.leagues.createTitle}
         subtitle={messages.leagues.createSubtitle(COMPETITION_TEXT.name)}
