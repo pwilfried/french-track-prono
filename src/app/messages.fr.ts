@@ -219,6 +219,19 @@ export const messages = {
     signOut: "Se déconnecter",
     signingOut: "Déconnexion…",
     back: "Voir les épreuves",
+    deleteLink: "Supprimer mon compte",
+  },
+  deleteAccount: {
+    title: "Supprimer mon compte",
+    subtitle: "C'est définitif.",
+    whatGoes:
+      "Ton profil, tes pronos, tes points, tes réactions et tes ligues disparaissent. Une ligue que tu as créée passe au membre le plus ancien, ou disparaît si tu y es seul.",
+    confirmLabel: "Je comprends que c'est définitif",
+    submit: "Supprimer définitivement",
+    submitting: "Suppression…",
+    cancel: "Garder mon compte",
+    done: "Ton compte est supprimé. Merci d'avoir joué !",
+    home: "Retour à l'accueil",
   },
   welcome: {
     title: "Bienvenue !",
@@ -318,6 +331,7 @@ export const messages = {
     JOKER_ALREADY_USED: "Tu as déjà utilisé ton joker dans cette compétition.",
     PREDICTION_UNAVAILABLE:
       "Ton prono n'est pas disponible pour le moment. Réessaie dans un instant.",
+    DELETION_NOT_CONFIRMED: "Coche la case pour confirmer la suppression.",
     retry: "Réessayer",
   },
 } as const;
