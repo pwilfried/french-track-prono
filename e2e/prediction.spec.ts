@@ -18,7 +18,7 @@ test("a new player predicts a perfect podium, the admin enters the result and th
 
   // Visitor on the event: the sign-in prompt comes back to it.
   await page.goto(`/epreuves/${slug}`);
-  await page.getByRole("link", { name: "Se connecter", exact: true }).last().click();
+  await page.locator("main").getByRole("link", { name: "Se connecter", exact: true }).click();
   await signUp(page, player);
   await page.waitForURL(new RegExp(`/epreuves/${slug}$`));
 
