@@ -1,12 +1,11 @@
-import { createClient } from "@supabase/supabase-js";
 import { describe, it } from "vitest";
 
-import { latestCodeFromMailbox } from "./contract/mailbox";
 import {
   predictionRepositoryContract,
   type EventFixture,
   type PredictionWorld,
 } from "./contract/prediction-repository.contract";
+import { signedInPlayer } from "./contract/test-player";
 import {
   createInMemoryPredictionRepository,
   createPublicSupabaseClient,
@@ -72,24 +71,11 @@ if (url && key) {
     const [a, b, c] = all.map(fixture) as [EventFixture, EventFixture, EventFixture];
 
     const newPlayer = async () => {
-      const client = createClient(url, key, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
-      const email = `player-${crypto.randomUUID()}@example.test`;
-      await client.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
-      const token = await latestCodeFromMailbox(email);
-      const { data, error } = await client.auth.verifyOtp({ email, token, type: "email" });
-      if (error || !data.user)
-        throw new Error(`could not sign the test player in: ${error?.message}`);
-      // A prediction needs a profile (foreign key).
-      const profile = await client.from("profiles").insert({
-        id: data.user.id,
-        pseudo: `Joueur ${crypto.randomUUID().slice(0, 8)}`,
-        age_confirmed_at: new Date().toISOString(),
-      });
-      if (profile.error)
-        throw new Error(`could not create the test profile: ${profile.error.message}`);
-      return { userId: data.user.id, predictions: createSupabasePredictionRepository(client) };
+      const player = await signedInPlayer(url, key);
+      return {
+        userId: player.userId,
+        predictions: createSupabasePredictionRepository(player.client),
+      };
     };
     return { competitionSlug: COMPETITION, newPlayer, openEvents: [a, b], lockedEvent: c };
   };

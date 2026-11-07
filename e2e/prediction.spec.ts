@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { sql } from "./database";
+import { sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
 
 test("a new player predicts a perfect podium, the admin enters the result and the player gets 12 points", async ({
