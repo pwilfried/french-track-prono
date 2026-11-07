@@ -301,6 +301,8 @@ export const messages = {
     EVENT_NOT_LOCKED: "Les pronos de cette épreuve ne sont pas encore fermés.",
     POINTS_UNAVAILABLE:
       "Les points ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+    REVEAL_UNAVAILABLE:
+      "Les pronos des autres ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     retry: "Réessayer",
   },
 } as const;
