@@ -25,6 +25,7 @@ import { COMPETITION_SLUG, COMPETITION_TIME_ZONE } from "../../competition";
 import { messages } from "../../messages.fr";
 import { getCurrentUser, getSessionClient } from "../../session";
 import { PredictionForm } from "./prediction-form";
+import { ResultSection } from "./result-section";
 import { RevealHidden, RevealSection } from "./reveal-section";
 
 async function loadEvent(slug: string): Promise<EventDetail | "error"> {
@@ -153,6 +154,7 @@ export default async function EventPage({
     minute: "2-digit",
     timeZone: COMPETITION_TIME_ZONE,
   }).format(new Date(event.startsAt));
+  const winner = event.results.find((result) => result.rank === 1);
   const markOf = new Map(event.results.map((result) => [result.athleteId, result.mark]));
 
   return (
@@ -166,8 +168,15 @@ export default async function EventPage({
             ‹ {messages.event.back}
           </Link>
           <div>
+            {winner && (
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                {messages.result.eyebrow(event.discipline, messages.events.gender[event.gender])}
+              </p>
+            )}
             <h1 className="font-display text-3xl font-extrabold leading-tight">
-              {messages.event.title(event.discipline)}
+              {winner
+                ? messages.result.winner(winner.name)
+                : messages.event.title(event.discipline)}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {messages.events.gender[event.gender]} ·{" "}
@@ -190,7 +199,11 @@ export default async function EventPage({
       </header>
 
       <section className="mx-auto w-full max-w-md pt-6" aria-label={messages.picker.podium}>
-        <PredictionSection event={event} slug={slug} user={user} open={open} />
+        {user && winner ? (
+          <ResultSection event={event} slug={slug} user={user} />
+        ) : (
+          <PredictionSection event={event} slug={slug} user={user} open={open} />
+        )}
       </section>
 
       {user && (

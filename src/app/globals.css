@@ -35,6 +35,9 @@
   --countdown-very-soon-foreground: #ffffff;
   --countdown-locked: #4a5a78;
   --countdown-locked-foreground: #ffffff;
+  /* Points won (result card): white on green, AA in both themes. */
+  --win: #15804f;
+  --win-foreground: #ffffff;
   /* Soft surfaces for status chips (chip-bg + chip-text), all pairs audited ≥ AA. */
   --brand-soft: #d9e4f5;
   --brand-ink: #082e66;
@@ -72,6 +75,8 @@
     --countdown-soon-foreground: #ffe3b0;
     --countdown-locked: #a9bbd8;
     --countdown-locked-foreground: #052b5c;
+    --win: #0f5c36;
+    --win-foreground: #ffffff;
     --brand-soft: #16305e;
     --brand-ink: #bfd4f3;
     --primary-soft: #3d1210;
@@ -108,6 +113,8 @@
   --color-countdown-locked: var(--countdown-locked);
   --color-countdown-locked-foreground: var(--countdown-locked-foreground);
   --color-ring: var(--ring);
+  --color-win: var(--win);
+  --color-win-foreground: var(--win-foreground);
   --color-brand-soft: var(--brand-soft);
   --color-brand-ink: var(--brand-ink);
   --color-primary-soft: var(--primary-soft);

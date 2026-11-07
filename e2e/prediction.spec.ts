@@ -53,4 +53,10 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   await page.goto("/mes-points");
   await expect(page.locator("main")).toContainText("+12 pts");
   await expect(page.locator("main")).toContainText("Podium parfait");
+
+  // The event page now shows the result and my podium against the official one.
+  await page.goto(`/epreuves/${slug}`);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("s'impose");
+  await expect(page.locator("main")).toContainText("+12 pts");
+  await expect(page.getByRole("heading", { name: "Ton prono vs officiel" })).toBeVisible();
 });

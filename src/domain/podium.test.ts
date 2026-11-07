@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ResultLine } from "./event";
-import { podiumSteps } from "./podium";
+import { podiumSteps, predictionVsOfficial } from "./podium";
 
 const line = (name: string, rank: number): ResultLine => ({
   athleteId: name,
@@ -42,5 +42,26 @@ describe("podiumSteps", () => {
 
   it("returns three empty steps when there is no result", () => {
     expect(podiumSteps([]).map((s) => s.athletes.length)).toEqual([0, 0, 0]);
+  });
+});
+
+describe("predictionVsOfficial", () => {
+  const results = [
+    { athleteId: "a", rank: 1 },
+    { athleteId: "b", rank: 2 },
+    { athleteId: "c", rank: 3 },
+    { athleteId: "d", rank: 3 },
+  ];
+
+  it("says exact, on the podium or off for each slot", () => {
+    expect(
+      predictionVsOfficial({ first: "a", second: "c", third: "z" }, results).map((r) => r.outcome),
+    ).toEqual(["exact", "on_podium", "off"]);
+  });
+
+  it("counts a tied athlete as exact on the shared place", () => {
+    expect(predictionVsOfficial({ first: "b", second: "a", third: "d" }, results)[2]!.outcome).toBe(
+      "exact",
+    );
   });
 });
