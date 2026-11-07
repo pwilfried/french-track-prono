@@ -42,6 +42,12 @@ export default async function ProfilePage() {
         <Link href="/mes-points" className={`${buttonVariants({ variant: "muted" })} w-full`}>
           {messages.points.profileLink} ›
         </Link>
+        <Link href="/ligues" className={`${buttonVariants({ variant: "muted" })} w-full`}>
+          {messages.points.leaguesLink} ›
+        </Link>
+        <Link href="/classement" className={`${buttonVariants({ variant: "muted" })} w-full`}>
+          {messages.points.rankingLink} ›
+        </Link>
         <Link href="/epreuves" className={`${buttonVariants()} w-full`}>
           {messages.profile.back}
         </Link>

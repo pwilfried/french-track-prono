@@ -28,14 +28,13 @@ export function sql(statement: string): string {
 }
 
 /**
- * An event of its own in a competition of its own, so that no other test (nor the seed counts)
- * sees it: four athletes on the start list and a fifth one who is not. Its predictions lock in an
- * hour.
+ * A competition of its own, so that no other test (nor the seed counts) sees it: `open` events
+ * whose predictions lock in an hour, then `locked` events already locked. Each has the same four
+ * athletes on its start list; a fifth athlete is on none.
  */
-export function createTestEvent(): {
+export function createTestCompetition(counts: { open: number; locked?: number }): {
   competitionSlug: string;
-  eventId: string;
-  athleteIds: string[];
+  events: { eventId: string; athleteIds: string[]; locked: boolean }[];
   outsiderId: string;
 } {
   const tag = crypto.randomUUID().slice(0, 8);
@@ -44,19 +43,42 @@ export function createTestEvent(): {
     "select string_agg(id::text, ',' order by id) from (select id from athletes order by id limit 5) a",
   ).split(",");
   const athleteIds = ids.slice(0, 4);
-  const eventId = sql(`
-    with c as (
-      insert into competitions (slug, name, starts_on, ends_on)
-      values ('${competitionSlug}', 'Test ${tag}', current_date, current_date + 1) returning id
-    ), e as (
-      insert into events (competition_id, slug, discipline, gender, starts_at, lock_at)
-      select c.id, 'test-event-${tag}', '100 m', 'F', now() + interval '1 day', now() + interval '1 hour'
-      from c returning id
-    ), s as (
-      insert into entries (event_id, athlete_id)
-      select e.id, a.id::uuid from e, unnest(array['${athleteIds.join("','")}']) as a(id)
-      returning event_id
-    )
-    select id from e`);
-  return { competitionSlug, eventId, athleteIds, outsiderId: ids[4]! };
+  const competitionId = sql(`insert into competitions (slug, name, starts_on, ends_on)
+    values ('${competitionSlug}', 'Test ${tag}', current_date, current_date + 1) returning id`);
+  const plan = [
+    ...Array.from({ length: counts.open }, () => false),
+    ...Array.from({ length: counts.locked ?? 0 }, () => true),
+  ];
+  const events = plan.map((locked, index) => {
+    const lock = locked ? "now() - interval '1 hour'" : "now() + interval '1 hour'";
+    const eventId = sql(`
+      with e as (
+        insert into events (competition_id, slug, discipline, gender, starts_at, lock_at)
+        values ('${competitionId}', 'test-event-${tag}-${index}', '100 m', 'F', now() + interval '1 day', ${lock})
+        returning id
+      ), s as (
+        insert into entries (event_id, athlete_id)
+        select e.id, a.id::uuid from e, unnest(array['${athleteIds.join("','")}']) as a(id)
+        returning event_id
+      )
+      select id from e`);
+    return { eventId, athleteIds, locked };
+  });
+  return { competitionSlug, events, outsiderId: ids[4]! };
+}
+
+/** One open event in a competition of its own (see createTestCompetition). */
+export function createTestEvent(): {
+  competitionSlug: string;
+  eventId: string;
+  athleteIds: string[];
+  outsiderId: string;
+} {
+  const { competitionSlug, events, outsiderId } = createTestCompetition({ open: 1 });
+  return {
+    competitionSlug,
+    eventId: events[0]!.eventId,
+    athleteIds: events[0]!.athleteIds,
+    outsiderId,
+  };
 }

@@ -99,9 +99,10 @@ Français seul en v1. Tous les textes visibles sont dans un seul fichier de mess
 
 Sur chaque PR (runners GitHub, pas de machine dédiée) : formatage, lint, types, règle d'import
 des couches, tests Vitest, tests pgTAP (Supabase local), build, puis Storybook (tests des
-play functions dans Chromium et build). Le job base de données lance aussi le test Playwright de
-bout en bout sur le build, contre Supabase local (sans relance automatique). Un test instable est corrigé ou supprimé dans la semaine, jamais relancé
-automatiquement.
+play functions dans Chromium et build). Le job base de données lance aussi les tests Playwright
+de bout en bout (`e2e/`) sur le build, contre Supabase local, sans relance automatique. Une PR
+n'est mergeable que si tout est vert, tests de bout en bout compris. Un test instable est corrigé
+ou supprimé dans la semaine, jamais relancé automatiquement.
 
 ## Agents on GitHub
 
@@ -123,7 +124,8 @@ Disponibles : `npm run dev`, `npm run build`, `npm run start`, `npm run lint`,
 `npm run test:watch`, `npm run format` (écrit), `npm run format:check` (vérifie),
 `npm run storybook` (composants), `npm run test:storybook` (play functions, navigateur Chromium),
 `npm run build-storybook`, `npm run test:e2e` (Playwright, Supabase local + `npm run build`),
-`supabase start`, `supabase db reset`, `supabase test db` (pgTAP).
+`supabase start`, `supabase db reset`, `supabase test db` (pgTAP),
+`npm run db:open-events` et `npm run db:demo-players` (données de test locales, voir `docs/SETUP.md`).
 
 Prérequis : Node 24 (`.nvmrc`), Docker pour Supabase local. Variables : copier `.env.example`
 en `.env.local`.
@@ -137,6 +139,8 @@ en `.env.local`.
 4. Docs mises à jour si une règle ou une décision a changé.
 5. Aucun secret, aucune donnée réelle, aucun fichier inutile dans le diff.
 6. Capture jointe si l'interface a changé.
+7. Si la PR change un parcours (page, formulaire, redirection), le test de bout en bout (`e2e/`)
+   est complété ou mis à jour dans la même PR, et la CI est verte, bout en bout compris.
 
 ## TDD
 
@@ -153,7 +157,7 @@ Les agents suivent ce tableau sans qu'on le leur demande.
 | Bug | Un test qui le reproduit **au plus bas niveau possible**, écrit avant le correctif | selon la couche |
 | Invariants | Property tests : un score est toujours entre 0 et 28 ; l'ordre d'arrivée des pronos ne change pas le classement ; relancer le calcul ne change rien | Vitest + fast-check |
 | Sorties texte | Snapshots, seulement pour des textes générés qui doivent rester stables | Vitest |
-| Parcours principal | Un test de bout en bout : inscription → prono → résultat saisi → points → classement (dès la v0.3, complété ensuite) | Playwright |
+| Parcours principal | Tests de bout en bout dans `e2e/` : inscription → prono → résultat saisi → points, et deux amis dans une ligue → même classement. Lancés sur chaque PR ; toute PR qui change un parcours les complète | Playwright |
 
 Règles complémentaires :
 
