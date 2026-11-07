@@ -1,11 +1,17 @@
 import type { Profile, ProfileRepository } from "@/application/create-profile";
 
 /** Test double of the ProfileRepository port. Same rules as the database. */
-export function createInMemoryProfileRepository(): ProfileRepository {
+export function createInMemoryProfileRepository(
+  options: { admins?: string[] } = {},
+): ProfileRepository {
   const byUser = new Map<string, Profile>();
+  const admins = new Set(options.admins ?? []);
   return {
     async find(userId) {
       return byUser.get(userId) ?? null;
+    },
+    async isAdmin(userId) {
+      return byUser.has(userId) && admins.has(userId);
     },
     async create(profile) {
       if (byUser.has(profile.userId)) return "profile_exists";
