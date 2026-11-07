@@ -14,7 +14,11 @@ export type ErrorCode =
   | "NOT_ADMIN"
   | "ATHLETE_NOT_IN_EVENT"
   | "RESULT_INVALID"
-  | "RESULTS_UNAVAILABLE";
+  | "RESULTS_UNAVAILABLE"
+  | "PODIUM_INVALID"
+  | "PREDICTION_LOCKED"
+  | "JOKER_ALREADY_USED"
+  | "PREDICTION_UNAVAILABLE";
 
 export class UseCaseError extends Error {
   constructor(readonly code: ErrorCode) {

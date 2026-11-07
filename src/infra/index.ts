@@ -17,3 +17,8 @@ export {
 } from "./supabase/session";
 export { createInMemoryResultStore, type ResultEventFixture } from "./in-memory/result-repository";
 export { createSupabaseResultRepository } from "./supabase/result-repository";
+export {
+  createInMemoryPredictionRepository,
+  type PredictionEventFixture,
+} from "./in-memory/prediction-repository";
+export { createSupabasePredictionRepository } from "./supabase/prediction-repository";

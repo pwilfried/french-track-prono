@@ -26,6 +26,11 @@ export const messages = {
     empty: "Aucune épreuve pour ce filtre.",
     loading: "Chargement des épreuves…",
   },
+  myPredictions: {
+    predicted: "✓ Pronostiqué",
+    toPredict: "À pronostiquer",
+    joker: "🃏 Joker",
+  },
   event: {
     back: "Épreuves",
     startList: "Liste de départ",
@@ -82,6 +87,45 @@ export const messages = {
     submit: "Créer mon profil",
     submitting: "Création…",
   },
+  countdown: {
+    locksIn: (duration: string) => `Verrouillage dans ${duration}`,
+    locked: "Verrouillé",
+    /** "2 j 4 h", "3 h 5 min", "42 min", "4 min 12 s", "38 s". */
+    duration: (parts: { days: number; hours: number; minutes: number; seconds: number }) => {
+      const { days, hours, minutes, seconds } = parts;
+      if (days > 0) return hours > 0 ? `${days} j ${hours} h` : `${days} j`;
+      if (hours > 0) return minutes > 0 ? `${hours} h ${minutes} min` : `${hours} h`;
+      if (minutes >= 10) return `${minutes} min`;
+      if (minutes > 0) return seconds > 0 ? `${minutes} min ${seconds} s` : `${minutes} min`;
+      return `${seconds} s`;
+    },
+  },
+  picker: {
+    podium: "Ton podium",
+    athletes: "Athlètes engagés",
+    emptyStep: "Touche un athlète",
+    step: (rank: 1 | 2 | 3) => ["1er", "2e", "3e"][rank - 1]!,
+    stepLabel: (rank: 1 | 2 | 3, name: string | null) =>
+      `${["1re", "2e", "3e"][rank - 1]} place : ${name ?? "vide"}`,
+    athleteLabel: (name: string, rank: 1 | 2 | 3 | null) =>
+      rank ? `${name}, placé ${["1er", "2e", "3e"][rank - 1]}. Toucher pour le retirer` : name,
+    hint: "Touche les athlètes dans l'ordre : 1er, 2e, 3e.",
+    hintComplete: "Touche un athlète déjà placé pour le retirer, ou une marche pour la changer.",
+  },
+  prediction: {
+    joker: "🃏 Joker : points × 2",
+    jokerHint: "Un seul par compétition.",
+    save: "Enregistrer mon podium",
+    saving: "Enregistrement…",
+    saved: "✓ Podium enregistré. Tu peux le modifier jusqu'au verrouillage.",
+    lockedTitle: "Ton podium (verrouillé)",
+    jokerUsedHere: "🃏 Joker utilisé sur cette épreuve",
+    none: "Tu n'avais pas pronostiqué cette épreuve : 0 point.",
+    othersSoon: "Les pronos des autres joueurs apparaîtront bientôt ici.",
+    visitorTitle: "Connecte-toi pour pronostiquer",
+    visitorText: "Il faut un compte pour enregistrer ton podium.",
+    signIn: "Se connecter",
+  },
   errors: {
     EVENTS_UNAVAILABLE: "Impossible de charger les épreuves pour le moment.",
     EVENT_NOT_FOUND: "Cette épreuve n'existe pas.",
@@ -101,6 +145,12 @@ export const messages = {
       "Résultat incomplet : au moins trois athlètes différents, rangs 1 à 3 (les ex æquo partagent un rang).",
     RESULTS_UNAVAILABLE:
       "Les résultats ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+    PODIUM_INVALID: "Choisis trois athlètes différents pour ton podium.",
+    PREDICTION_LOCKED:
+      "Trop tard : cette épreuve vient d'être verrouillée. Ton podium n'a pas été enregistré.",
+    JOKER_ALREADY_USED: "Tu as déjà utilisé ton joker dans cette compétition.",
+    PREDICTION_UNAVAILABLE:
+      "Ton prono n'est pas disponible pour le moment. Réessaie dans un instant.",
     retry: "Réessayer",
   },
 } as const;
