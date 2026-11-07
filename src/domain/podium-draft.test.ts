@@ -5,6 +5,7 @@ import {
   emptyDraft,
   isComplete,
   nextEmptyStep,
+  isValidPodium,
   placeAthlete,
   removeStep,
   stepOf,
@@ -129,5 +130,16 @@ describe("stepOf", () => {
 
   it("is null for an athlete not on the podium", () => {
     expect(stepOf(draft("a", null, null), "z")).toBeNull();
+  });
+});
+
+describe("isValidPodium", () => {
+  it("accepts three different athletes", () => {
+    expect(isValidPodium({ first: "a", second: "b", third: "c" })).toBe(true);
+  });
+
+  it("refuses a duplicate or an empty step", () => {
+    expect(isValidPodium({ first: "a", second: "a", third: "c" })).toBe(false);
+    expect(isValidPodium({ first: "a", second: "b", third: "" })).toBe(false);
   });
 });

@@ -66,3 +66,9 @@ export function stepOf(draft: PodiumDraft, athleteId: string): Step | null {
   if (draft.third === athleteId) return 3;
   return null;
 }
+
+/** A podium can be saved when its three athletes are given and all different. */
+export function isValidPodium(podium: Podium): boolean {
+  const ids = [podium.first, podium.second, podium.third];
+  return ids.every((id) => id.length > 0) && new Set(ids).size === 3;
+}
