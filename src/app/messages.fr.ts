@@ -16,6 +16,8 @@ export const messages = {
     nameLine1: "French Track",
     nameLine2: "Prono",
     short: "FTP",
+    home: "French Track Prono, accueil",
+    logoAlt: "French Track",
     tagline: "Pronostique les podiums d'athlétisme, chambre tes amis, grimpe au classement.",
     description: "Le jeu de pronostics d'athlétisme de la communauté FrenchTrack.",
   },
@@ -31,6 +33,9 @@ export const messages = {
     genderInitial: { F: "F", M: "H", X: "X" },
     status: { upcoming: "À venir", live: "En cours", finished: "Terminé" },
     featured: "Phare",
+    final: "Finale",
+    cardLabel: (discipline: string, gender: string, hour: string) =>
+      `${discipline}, ${gender}, ${hour}`,
     provisionalTimes: "Les horaires affichés sont provisoires (jeu de test).",
     empty: "Aucune épreuve pour ce filtre.",
     loading: "Chargement des épreuves…",

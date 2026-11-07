@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { CountdownBadge } from "@/components/countdown/countdown-badge";
+import { eventPhase } from "@/domain/countdown";
 import type { EventSummary } from "@/domain/event";
 import { messages } from "@/app/messages.fr";
 
@@ -11,12 +12,20 @@ export type MyEventState = { predicted: boolean; joker: boolean };
 
 type StatusVisual = { tone: ChipTone; label: string };
 
-/** Right-hand chip; mirrors the Officiel direction. Reads `messages.events.status` for finished/live. */
-function statusOf(status: EventSummary["status"], mine?: MyEventState): StatusVisual {
+/**
+ * Right-hand chip of the Officiel direction. A visitor only sees the countdown of an upcoming
+ * event; "À pronostiquer" is for a signed-in player, and only while predictions are open.
+ */
+function statusOf(
+  status: EventSummary["status"],
+  open: boolean,
+  mine?: MyEventState,
+): StatusVisual | null {
   if (mine?.predicted) return { tone: "ok", label: messages.myPredictions.predicted };
   if (status === "finished") return { tone: "neutral", label: messages.events.status.finished };
   if (status === "live") return { tone: "hot", label: messages.events.status.live };
-  return { tone: "brand", label: messages.myPredictions.toPredict };
+  if (mine && open) return { tone: "brand", label: messages.myPredictions.toPredict };
+  return null;
 }
 
 /**
@@ -39,19 +48,24 @@ export function EventCard({
     minute: "2-digit",
     timeZone,
   }).format(new Date(event.startsAt));
-  const status = statusOf(event.status, mine);
+  const open = eventPhase(now, event.lockAt) === "open";
+  const status = statusOf(event.status, open, mine);
 
   return (
     <li>
       <Link
         href={`/epreuves/${event.slug}`}
         className="grid min-h-16 grid-cols-[56px_1fr_auto] items-center gap-3 rounded-card border border-border bg-card p-3 text-card-foreground outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring"
-        aria-label={`${event.discipline} ${messages.events.gender[event.gender]} à ${hour}`}
+        aria-label={messages.events.cardLabel(
+          event.discipline,
+          messages.events.gender[event.gender],
+          hour,
+        )}
       >
         <div className="flex flex-col items-center gap-0.5">
           <span className="font-sans text-base font-bold leading-none tabular-nums">{hour}</span>
           <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Finale
+            {messages.events.final}
           </span>
         </div>
         <div className="min-w-0">
@@ -79,7 +93,7 @@ export function EventCard({
           {event.status === "upcoming" && !mine?.predicted && (
             <CountdownBadge lockAt={event.lockAt} now={now} compact />
           )}
-          <ChipStatus tone={status.tone}>{status.label}</ChipStatus>
+          {status && <ChipStatus tone={status.tone}>{status.label}</ChipStatus>}
         </div>
       </Link>
     </li>

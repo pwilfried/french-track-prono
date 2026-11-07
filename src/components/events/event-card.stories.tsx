@@ -35,9 +35,17 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default upcoming event, the player hasn't predicted yet. */
-export const Upcoming: Story = {
+/** Visitor: only the countdown, no "À pronostiquer". */
+export const Visitor: Story = {
   args: { event: baseEvent },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).queryByText(/À pronostiquer/)).toBeNull();
+  },
+};
+
+/** Signed-in player who hasn't predicted yet. */
+export const Upcoming: Story = {
+  args: { event: baseEvent, mine: { predicted: false, joker: false } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("100 m")).toBeInTheDocument();

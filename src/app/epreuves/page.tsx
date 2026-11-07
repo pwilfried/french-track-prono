@@ -1,10 +1,9 @@
-import Link from "next/link";
-
 import { listEvents } from "@/application/list-events";
 import { listMyPredictions } from "@/application/list-my-predictions";
 import { UseCaseError } from "@/application/errors";
 import { AccountMenu } from "@/components/account/account-menu";
 import { ErrorNotice } from "@/components/error-notice";
+import { BrandLink } from "@/components/brand/brand-link";
 import { EventCard, type MyEventState } from "@/components/events/event-card";
 import { GenderFilter } from "@/components/events/gender-filter";
 import type { EventGender, EventSummary } from "@/domain/event";
@@ -80,15 +79,7 @@ export default async function EventsPage({
       <header className="hero px-4 pb-6 pt-8">
         <div className="mx-auto max-w-md">
           <div className="flex items-center justify-between gap-3">
-            <Link
-              href="/"
-              className="inline-flex min-h-11 shrink-0 items-center gap-3 whitespace-nowrap text-sm font-bold uppercase"
-            >
-              <span className="-rotate-3 rounded-lg bg-primary px-2.5 py-1 text-primary-foreground">
-                {messages.app.short}
-              </span>
-              {messages.app.name}
-            </Link>
+            <BrandLink />
             <AccountMenu returnTo="/epreuves" />
           </div>
           <h1 className="mt-2 font-display text-3xl font-extrabold uppercase leading-none">

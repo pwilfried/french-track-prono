@@ -21,21 +21,21 @@ type StepStyle = {
 const stepStyle: Record<1 | 2 | 3, StepStyle> = {
   1: {
     height: "h-28 sm:h-32",
-    gradientFrom: "from-[#f7d672]",
-    gradientTo: "to-[#d99a22]",
-    text: "text-[#3a2a05]",
+    gradientFrom: "from-(--medal-gold-from)",
+    gradientTo: "to-(--medal-gold-to)",
+    text: "text-(--medal-gold-ink)",
   },
   2: {
     height: "h-20 sm:h-24",
-    gradientFrom: "from-[#e6e8eb]",
-    gradientTo: "to-[#a9aeb5]",
-    text: "text-[#1b1f26]",
+    gradientFrom: "from-(--medal-silver-from)",
+    gradientTo: "to-(--medal-silver-to)",
+    text: "text-(--medal-silver-ink)",
   },
   3: {
     height: "h-16 sm:h-20",
-    gradientFrom: "from-[#d99464]",
-    gradientTo: "to-[#8b4513]",
-    text: "text-white",
+    gradientFrom: "from-(--medal-bronze-from)",
+    gradientTo: "to-(--medal-bronze-to)",
+    text: "text-(--medal-bronze-ink)",
   },
 };
 
