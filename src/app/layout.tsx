@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 
+import { BottomNav } from "@/components/shell/bottom-nav";
+import { SiteHeader } from "@/components/shell/site-header";
+
 import { messages } from "./messages.fr";
 import "./globals.css";
 
@@ -15,6 +18,12 @@ const inter = localFont({
   src: "../../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2",
   variable: "--font-inter",
   weight: "100 900",
+});
+
+const mono = localFont({
+  src: "../../node_modules/@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2",
+  variable: "--font-jetbrains",
+  weight: "100 800",
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -45,22 +54,27 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#084595" },
+    { media: "(prefers-color-scheme: light)", color: "#fdfbf5" },
     { media: "(prefers-color-scheme: dark)", color: "#052b5c" },
   ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`${display.variable} ${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+    <html
+      lang="fr"
+      className={`${display.variable} ${inter.variable} ${mono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col pb-16 md:pb-0">
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-card focus:px-3 focus:py-2 focus:font-semibold focus:text-card-foreground focus:ring-2 focus:ring-ring"
         >
           {messages.app.skipToContent}
         </a>
+        <SiteHeader />
         {children}
+        <BottomNav />
       </body>
     </html>
   );

@@ -2,8 +2,6 @@ import Link from "next/link";
 
 import { notFound } from "next/navigation";
 
-import { AccountMenu } from "@/components/account/account-menu";
-
 import { UseCaseError } from "@/application/errors";
 import { getEvent } from "@/application/get-event";
 import { getMyPrediction, type Prediction } from "@/application/save-prediction";
@@ -168,7 +166,6 @@ export default async function EventPage({
             >
               ‹ {messages.event.back}
             </Link>
-            <AccountMenu returnTo={`/epreuves/${slug}`} />
           </div>
           <h1 className="mt-1 flex flex-wrap items-center gap-2 font-display text-3xl font-extrabold uppercase leading-none">
             {event.discipline}

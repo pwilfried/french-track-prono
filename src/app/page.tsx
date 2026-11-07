@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { AccountMenu } from "@/components/account/account-menu";
 import { buttonVariants } from "@/components/ui/button";
 
 import { messages } from "./messages.fr";
@@ -15,13 +14,10 @@ const steps = [
 export default function Home() {
   return (
     <main id="main" className="hero flex flex-1 flex-col px-4 pb-10 pt-6">
-      <div className="mx-auto mb-8 flex w-full max-w-md justify-end">
-        <AccountMenu returnTo="/" />
-      </div>
       <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6 text-center">
         <h1 className="flex flex-col items-center font-display text-5xl font-extrabold uppercase leading-none tracking-tight">
           <Image
-            src="/brand/frenchtrack.png"
+            src="/brand/frenchtrack-dark.png"
             width={274}
             height={318}
             alt={messages.app.logoAlt}

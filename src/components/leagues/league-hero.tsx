@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-/** Blue header of the league pages: back link, title, subtitle. */
+/** Header of the league pages, on the cream page: back link, title, subtitle. */
 export function LeagueHero({
   title,
   subtitle,
@@ -11,17 +11,20 @@ export function LeagueHero({
   back?: { href: string; label: string };
 }) {
   return (
-    <header className="hero px-4 pb-6 pt-6">
+    <header className="px-4 pb-2 pt-4">
       <div className="mx-auto max-w-md">
         {back && (
-          <Link href={back.href} className="inline-flex min-h-11 items-center font-semibold">
+          <Link
+            href={back.href}
+            className="inline-flex min-h-11 items-center font-semibold text-brand dark:text-secondary"
+          >
             ‹ {back.label}
           </Link>
         )}
-        <h1 className="mt-1 break-words font-display text-3xl font-extrabold uppercase leading-none">
+        <h1 className="mt-1 break-words font-display text-3xl font-extrabold leading-none">
           {title}
         </h1>
-        <p className="mt-2 text-[#dce6f5]">{subtitle}</p>
+        <p className="mt-2 text-muted-foreground">{subtitle}</p>
       </div>
     </header>
   );

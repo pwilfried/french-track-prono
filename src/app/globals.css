@@ -8,9 +8,10 @@
  * uses a darker rouge (#C42818, 5.4:1) in light mode and a lighter one (#FF6B5B) in dark mode.
  */
 :root {
-  --background: #f8f8f8;
+  /* Officiel direction (boards V1, 7 Nov 2026): cream page, beige cards, navy text. */
+  --background: #fdfbf5;
   --foreground: #052b5c;
-  --card: #ffffff;
+  --card: #f1ede1;
   --card-foreground: #052b5c;
   --primary: #e03020;
   --primary-foreground: #ffffff;
@@ -19,12 +20,12 @@
   --nuit: #052b5c;
   --secondary: #ffc857;
   --secondary-foreground: #052b5c;
-  --muted: #e9eef6;
+  --muted: #e7e1d1;
   --muted-foreground: #4a5a78;
   --accent-text: #c42818;
   --success: #2bb673;
-  --success-text: #15804f;
-  --border: #d3dcea;
+  --success-text: #0f6e42;
+  --border: #e0d9c6;
   --ring: #084595;
   --radius: 1.25rem;
   /* Countdown badge: orange from 1 h, red from 10 min before the lock (all pairs AA). */
@@ -118,6 +119,7 @@
   --radius-card: var(--radius);
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-bricolage), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 }
 
 body {
