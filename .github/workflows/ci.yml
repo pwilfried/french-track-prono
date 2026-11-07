@@ -115,7 +115,8 @@ jobs:
         run: |
           DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
           for i in 1 2; do psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/open_events.sql; done
-          RESULT="$(psql "$DB" -tA -c "select count(*) filter (where lock_at > now()) > 0 and count(*) filter (where lock_at <= now()) > 0 and (select count(*) from results) = 0 from events")"
+          # Only the Ultimate Championship is reopened: other tests create events in competitions of their own.
+          RESULT="$(psql "$DB" -tA -c "select count(*) filter (where e.lock_at > now()) > 0 and count(*) filter (where e.lock_at <= now()) > 0 and count(r.event_id) = 0 from events e join competitions c on c.id = e.competition_id left join results r on r.event_id = e.id where c.slug = 'ultimate-championship-2026'")"
           test "$RESULT" = "t"
 
       # End-to-end journey (Playwright) on the production build. The events are open after the
