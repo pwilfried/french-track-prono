@@ -8,7 +8,9 @@ test("a new player predicts a perfect podium, the admin enters the result and th
 }) => {
   // An event still open (run `npm run db:open-events` first).
   const slug = sql(
-    "select slug from events where lock_at > now() + interval '5 minutes' order by starts_at limit 1",
+    `select e.slug from events e join competitions c on c.id = e.competition_id
+     where c.slug = 'ultimate-championship-2026' and e.lock_at > now() + interval '5 minutes'
+     order by e.starts_at limit 1`,
   );
   expect(slug, "no open event: run npm run db:open-events").not.toBe("");
   const player = newPlayer("prono");

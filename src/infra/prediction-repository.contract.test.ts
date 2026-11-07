@@ -5,15 +5,9 @@ import {
   type EventFixture,
   type PredictionWorld,
 } from "./contract/prediction-repository.contract";
+import { createTestCompetition } from "./contract/database";
 import { signedInPlayer } from "./contract/test-player";
-import {
-  createInMemoryPredictionRepository,
-  createPublicSupabaseClient,
-  createSupabaseEventReader,
-  createSupabasePredictionRepository,
-} from "./index";
-
-const COMPETITION = "ultimate-championship-2026";
+import { createInMemoryPredictionRepository, createSupabasePredictionRepository } from "./index";
 
 function fakeWorld(): PredictionWorld {
   const athletes = ["a1", "a2", "a3", "a4"];
@@ -45,30 +39,14 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (url && key) {
-  /** Events of the local database, as the contract needs them: two open, one locked. */
+  /** A competition of its own: two open events and one locked event. */
   const realWorld = async (): Promise<PredictionWorld> => {
-    const reader = createSupabaseEventReader(createPublicSupabaseClient());
-    const summaries = await reader.listByCompetition(COMPETITION);
-    const now = Date.now();
-    const open = summaries.filter((e) => Date.parse(e.lockAt) > now);
-    const locked = summaries.find((e) => Date.parse(e.lockAt) <= now);
-    if (open.length < 2 || !locked) {
-      throw new Error(
-        "Needs two open events and one locked event: run `npm run db:open-events` first.",
-      );
-    }
-    const details = await Promise.all(
-      [open[0]!, open[1]!, locked].map((e) => reader.findBySlug(COMPETITION, e.slug)),
-    );
-    const all = details.map((d) => d!);
-    const fixture = (d: (typeof all)[number]): EventFixture => {
-      const ids = d.entries.map((e) => e.athleteId);
-      const outsider = all.flatMap((o) => o.entries).find((e) => !ids.includes(e.athleteId));
-      if (ids.length < 3 || !outsider)
-        throw new Error(`Event ${d.slug} cannot be used by the contract`);
-      return { eventId: d.id, athleteIds: ids, outsiderId: outsider.athleteId };
-    };
-    const [a, b, c] = all.map(fixture) as [EventFixture, EventFixture, EventFixture];
+    const { competitionSlug, events, outsiderId } = createTestCompetition({ open: 2, locked: 1 });
+    const [a, b, c] = events.map((e) => ({
+      eventId: e.eventId,
+      athleteIds: e.athleteIds,
+      outsiderId,
+    })) as [EventFixture, EventFixture, EventFixture];
 
     const newPlayer = async () => {
       const player = await signedInPlayer(url, key);
@@ -77,7 +55,7 @@ if (url && key) {
         predictions: createSupabasePredictionRepository(player.client),
       };
     };
-    return { competitionSlug: COMPETITION, newPlayer, openEvents: [a, b], lockedEvent: c };
+    return { competitionSlug, newPlayer, openEvents: [a, b], lockedEvent: c };
   };
   predictionRepositoryContract("Supabase (local)", realWorld);
 } else {
