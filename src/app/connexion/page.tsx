@@ -17,7 +17,7 @@ export default async function SignInPage({
   if (await getCurrentUser()) redirect(next);
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <AccountHero title={messages.signIn.title} subtitle={messages.signIn.subtitle} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
         <SignInForm next={next} linkError={erreur === "lien"} />

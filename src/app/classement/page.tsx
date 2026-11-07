@@ -30,7 +30,7 @@ export default async function GeneralRankingPage() {
   const me = ranking === "error" ? undefined : ranking.find((p) => p.userId === user.userId);
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <LeagueHero
         title={messages.ranking.title}
         subtitle={messages.ranking.subtitle(COMPETITION_TEXT.name)}

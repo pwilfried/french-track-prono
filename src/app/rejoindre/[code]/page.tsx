@@ -20,7 +20,7 @@ export default async function InviteLinkPage({ params }: { params: Promise<{ cod
   if (!user) redirect(`/connexion?next=${encodeURIComponent(`/rejoindre/${raw}`)}`);
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <LeagueHero title={messages.leagues.inviteTitle} subtitle={messages.leagues.inviteSubtitle} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-6">
         {code ? (

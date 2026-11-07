@@ -57,7 +57,7 @@ export default async function LeaguePage({
 
   if (loaded === "error") {
     return (
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-8">
+      <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-8">
         <ErrorNotice retryHref={`/ligues/${id}`} message={messages.errors.LEAGUES_UNAVAILABLE} />
       </main>
     );
@@ -73,7 +73,7 @@ export default async function LeaguePage({
     .join(" · ");
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <LeagueHero
         title={league.name}
         subtitle={subtitle}

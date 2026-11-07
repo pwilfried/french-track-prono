@@ -136,7 +136,7 @@ export default async function EventPage({
 
   if (loaded === "error") {
     return (
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-8">
+      <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-8">
         <ErrorNotice retryHref={`/epreuves/${slug}`} />
       </main>
     );
@@ -158,7 +158,7 @@ export default async function EventPage({
   const markOf = new Map(event.results.map((result) => [result.athleteId, result.mark]));
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <header className="hero px-4 pt-6">
         <div className="mx-auto max-w-md">
           <div className="flex items-center justify-between gap-3">

@@ -11,7 +11,7 @@ export default async function DeleteAccountPage() {
   if (!user) redirect(`/connexion?next=${encodeURIComponent("/profil/supprimer")}`);
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <AccountHero
         title={messages.deleteAccount.title}
         subtitle={messages.deleteAccount.subtitle}

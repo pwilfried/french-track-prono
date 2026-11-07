@@ -16,6 +16,7 @@ export const messages = {
     nameLine1: "French Track",
     nameLine2: "Prono",
     short: "FTP",
+    skipToContent: "Aller au contenu",
     tagline: "Pronostique les podiums d'athlétisme, chambre tes amis, grimpe au classement.",
     description: "Le jeu de pronostics d'athlétisme de la communauté FrenchTrack.",
   },
