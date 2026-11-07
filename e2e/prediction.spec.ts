@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-import { latestCodeFromMailbox } from "../src/infra/contract/mailbox";
 import { sql } from "./database";
+import { newPlayer, signUp } from "./players";
 
 test("a new player predicts a perfect podium, the admin enters the result and the player gets 12 points", async ({
   page,
@@ -11,22 +11,13 @@ test("a new player predicts a perfect podium, the admin enters the result and th
     "select slug from events where lock_at > now() + interval '5 minutes' order by starts_at limit 1",
   );
   expect(slug, "no open event: run npm run db:open-events").not.toBe("");
-  const email = `e2e-${Date.now()}@example.test`;
+  const player = newPlayer("prono");
+  const email = player.email;
 
   // Visitor on the event: the sign-in prompt comes back to it.
   await page.goto(`/epreuves/${slug}`);
   await page.getByRole("link", { name: "Se connecter", exact: true }).last().click();
-  await page.getByLabel("Ton e-mail").fill(email);
-  await page.getByRole("button", { name: "Recevoir mon code" }).click();
-  await page.getByLabel(/code/i).fill(await latestCodeFromMailbox(email));
-  await page.getByRole("button", { name: "Me connecter" }).click();
-
-  // First visit: profile.
-  await page.waitForURL(/\/bienvenue/);
-  await page.getByLabel("Ton pseudo").fill(`E2E ${Date.now() % 100000}`);
-  await page.locator("label", { hasText: "🦅" }).click();
-  await page.getByRole("checkbox", { name: /15 ans/ }).check();
-  await page.getByRole("button", { name: "Créer mon profil" }).click();
+  await signUp(page, player);
   await page.waitForURL(new RegExp(`/epreuves/${slug}$`));
 
   // Compose the podium with the first three athletes, then save.
