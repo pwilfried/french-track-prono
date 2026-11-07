@@ -10,7 +10,12 @@ export type ErrorCode =
   | "PSEUDO_TAKEN"
   | "AVATAR_INVALID"
   | "PROFILE_EXISTS"
-  | "PROFILE_UNAVAILABLE";
+  | "PROFILE_UNAVAILABLE"
+  | "PODIUM_INVALID"
+  | "PREDICTION_LOCKED"
+  | "ATHLETE_NOT_IN_EVENT"
+  | "JOKER_ALREADY_USED"
+  | "PREDICTION_UNAVAILABLE";
 
 export class UseCaseError extends Error {
   constructor(readonly code: ErrorCode) {

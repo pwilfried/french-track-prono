@@ -82,6 +82,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The prediction contract test needs events that are still open.
+      - name: Reopen events for the adapter tests
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/dev/open_events.sql
+
       # The adapter tests read the local address and key from the environment.
       # With some services excluded, `supabase status` prints no API key, so the key is built from
       # the documented default JWT secret of the local stack (local use only, never a real secret).

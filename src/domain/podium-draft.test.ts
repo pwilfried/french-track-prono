@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   emptyDraft,
   isComplete,
+  isValidPodium,
   placeAthlete,
   removeStep,
   swapSteps,
@@ -103,5 +104,16 @@ describe("any sequence of actions", () => {
         if (podium) expect(new Set([podium.first, podium.second, podium.third]).size).toBe(3);
       }),
     );
+  });
+});
+
+describe("isValidPodium", () => {
+  it("accepts three different athletes", () => {
+    expect(isValidPodium({ first: "a", second: "b", third: "c" })).toBe(true);
+  });
+
+  it("refuses a duplicate or an empty step", () => {
+    expect(isValidPodium({ first: "a", second: "a", third: "c" })).toBe(false);
+    expect(isValidPodium({ first: "a", second: "b", third: "" })).toBe(false);
   });
 });
