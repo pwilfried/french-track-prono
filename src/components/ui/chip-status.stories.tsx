@@ -42,6 +42,7 @@ export const Ghost: Story = {
 };
 
 export const AllTones: Story = {
+  args: { children: "" },
   render: () => (
     <>
       <ChipStatus tone="brand">+ Prono</ChipStatus>
