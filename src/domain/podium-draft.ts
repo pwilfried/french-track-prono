@@ -50,3 +50,9 @@ export function toPodium(draft: PodiumDraft): Podium | null {
   if (first === null || second === null || third === null) return null;
   return { first, second, third };
 }
+
+/** A podium can be saved when its three athletes are given and all different. */
+export function isValidPodium(podium: Podium): boolean {
+  const ids = [podium.first, podium.second, podium.third];
+  return ids.every((id) => id.length > 0) && new Set(ids).size === 3;
+}

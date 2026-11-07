@@ -101,7 +101,11 @@ jobs:
             ')"
           fi
           export NEXT_PUBLIC_SUPABASE_ANON_KEY="$KEY"
-          REQUIRE_SUPABASE_TESTS=1 npm test
+          # The prediction contract needs open events, and reopening removes the results the event
+          # reader test relies on: run it last, after reopening.
+          REQUIRE_SUPABASE_TESTS=1 npm test -- --exclude src/infra/prediction-repository.contract.test.ts
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/dev/open_events.sql
+          REQUIRE_SUPABASE_TESTS=1 npm test -- src/infra/prediction-repository.contract.test.ts
 
       # The reopen script is local test tooling; this keeps it working (twice in a row) after schema changes.
       - name: Local reopen script
