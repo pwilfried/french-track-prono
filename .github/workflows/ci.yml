@@ -123,6 +123,22 @@ jobs:
           RESULT="$(psql "$DB" -tA -c "select count(*) filter (where e.lock_at > now()) > 0 and count(*) filter (where e.lock_at <= now()) > 0 and count(r.event_id) = 0 from events e join competitions c on c.id = e.competition_id left join results r on r.event_id = e.id where c.slug = 'ultimate-championship-2026'")"
           test "$RESULT" = "t"
 
+      # Demo players (local test tooling): twelve players, 24 predictions, idempotent.
+      - name: Local demo players script
+        run: |
+          DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          for i in 1 2; do psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/demo_players.sql; done
+          RESULT="$(psql "$DB" -tA -c "select count(*) from predictions p join auth.users u on u.id = p.user_id where u.email like 'demo-%@example.test'")"
+          test "$RESULT" = "24"
+
+      # One-command points check (local test tooling): demo players, then the two events locked.
+      - name: Local points check script
+        run: |
+          DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/open_events.sql
+          psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/demo_players.sql
+          psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/lock_demo_events.sql
+
       # End-to-end journey (Playwright) on the production build. The events are open after the
       # reopen script above. No retry: see playwright.config.ts.
       - name: Install Chromium for Playwright
@@ -143,19 +159,3 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
-
-      # Demo players (local test tooling): twelve players, 24 predictions, idempotent.
-      - name: Local demo players script
-        run: |
-          DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-          for i in 1 2; do psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/demo_players.sql; done
-          RESULT="$(psql "$DB" -tA -c "select count(*) from predictions p join auth.users u on u.id = p.user_id where u.email like 'demo-%@example.test'")"
-          test "$RESULT" = "24"
-
-      # One-command points check (local test tooling): demo players, then the two events locked.
-      - name: Local points check script
-        run: |
-          DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-          psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/open_events.sql
-          psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/demo_players.sql
-          psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/lock_demo_events.sql
