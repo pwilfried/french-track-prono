@@ -256,6 +256,8 @@ Le schéma de production suit le dépôt, jamais de modification à la main
 
 - **Tag `vX.Y.Z` poussé** : les migrations de `supabase/migrations` sont appliquées au projet
   Supabase de production (`supabase db push`), dans l'environnement GitHub `production`.
+- **À la main** (onglet Actions > « Database migrations » > **Run workflow**) : applique les
+  migrations de `main` sans nouveau tag, par exemple après avoir corrigé un secret.
 - **PR qui touche `supabase/migrations`** : un essai à blanc (`--dry-run`) liste ce qui serait
   appliqué, sans rien changer.
 - **Secrets** (GitHub > Settings > Secrets and variables > Actions) : `SUPABASE_ACCESS_TOKEN`,

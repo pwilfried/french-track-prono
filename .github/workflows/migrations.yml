@@ -10,6 +10,8 @@ name: Database migrations
 on:
   push:
     tags: ["v*.*.*"]
+  # Run by hand from the Actions tab (or the API) to apply main's migrations without a new tag.
+  workflow_dispatch:
   pull_request:
     paths: ["supabase/migrations/**"]
 
@@ -51,7 +53,7 @@ jobs:
 
       - name: Link the production project
         if: steps.secrets.outputs.ready == 'true'
-        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
       - name: Show the migrations that would be applied
         if: steps.secrets.outputs.ready == 'true'
@@ -59,7 +61,7 @@ jobs:
 
   apply:
     name: Apply migrations to production
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: production
@@ -88,7 +90,7 @@ jobs:
 
       - name: Link the production project
         if: steps.secrets.outputs.ready == 'true'
-        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
       - name: Apply the migrations
         if: steps.secrets.outputs.ready == 'true'
