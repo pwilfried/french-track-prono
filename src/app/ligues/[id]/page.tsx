@@ -65,7 +65,6 @@ export default async function LeaguePage({
 
   const { league, members, ranking } = loaded;
   const isOwner = league.ownerId === ports.userId;
-  const avatarOf = new Map(members.map((m) => [m.userId, m.avatar]));
   const subtitle = [
     messages.leagues.members(league.memberCount),
     isOwner ? messages.leagues.createdByMe : null,
@@ -99,11 +98,7 @@ export default async function LeaguePage({
 
         {tab === "classement" && (
           <>
-            <Leaderboard
-              rows={ranking.map((p) => ({ ...p, avatar: avatarOf.get(p.userId) }))}
-              meId={ports.userId}
-              retryHref={`/ligues/${id}`}
-            />
+            <Leaderboard rows={ranking} meId={ports.userId} retryHref={`/ligues/${id}`} />
             <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
               {messages.leagues.tieRule}
             </p>

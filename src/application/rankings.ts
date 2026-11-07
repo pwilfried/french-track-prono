@@ -7,6 +7,7 @@ import type { LeagueRepository } from "./leagues";
 export type RankingLine = {
   userId: string;
   pseudo: string;
+  avatar: string;
   points: number;
   reasons: ScoreReason[];
 };
@@ -17,15 +18,21 @@ export interface RankingRepository {
   competitionLines(competitionSlug: string): Promise<RankingLine[]>;
 }
 
-const rank = (lines: RankingLine[]) => {
-  const pseudos = new Map(lines.map((l) => [l.userId, l.pseudo]));
-  return rankPlayers(totalsOf(lines, (id) => pseudos.get(id) ?? ""));
+/** A ranked player with the avatar shown next to the pseudo. */
+export type RankingRow = RankedPlayer & { avatar: string };
+
+const rank = (lines: RankingLine[]): RankingRow[] => {
+  const byUser = new Map(lines.map((l) => [l.userId, l]));
+  return rankPlayers(totalsOf(lines, (id) => byUser.get(id)?.pseudo ?? "")).map((player) => ({
+    ...player,
+    avatar: byUser.get(player.userId)?.avatar ?? "",
+  }));
 };
 
 /** All the players who scored in a competition. */
 export function getGeneralRanking(ports: { ranking: RankingRepository }) {
   return {
-    async execute(input: { competitionSlug: string }): Promise<RankedPlayer[]> {
+    async execute(input: { competitionSlug: string }): Promise<RankingRow[]> {
       return rank(await ports.ranking.competitionLines(input.competitionSlug));
     },
   };
@@ -37,7 +44,7 @@ export function getGeneralRanking(ports: { ranking: RankingRepository }) {
  */
 export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: LeagueRepository }) {
   return {
-    async execute(input: { leagueId: string; competitionSlug: string }): Promise<RankedPlayer[]> {
+    async execute(input: { leagueId: string; competitionSlug: string }): Promise<RankingRow[]> {
       const members = await ports.leagues.members(input.leagueId);
       if (!members) throw new UseCaseError("LEAGUE_NOT_FOUND");
       const ids = new Set(members.map((m) => m.userId));
@@ -48,6 +55,7 @@ export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: L
       const zero = members.map((m) => ({
         userId: m.userId,
         pseudo: m.pseudo,
+        avatar: m.avatar,
         points: 0,
         reasons: [],
       }));

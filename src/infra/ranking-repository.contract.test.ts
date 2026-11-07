@@ -11,10 +11,17 @@ const lines = (ana: string, bob: string, anaPseudo: string, bobPseudo: string): 
   {
     userId: ana,
     pseudo: anaPseudo,
+    avatar: "🏃",
     points: 24,
     reasons: [{ kind: "perfect_podium" }, { kind: "joker" }],
   },
-  { userId: bob, pseudo: bobPseudo, points: 3, reasons: [{ kind: "exact", slot: 1 }] },
+  {
+    userId: bob,
+    pseudo: bobPseudo,
+    avatar: "🏃",
+    points: 3,
+    reasons: [{ kind: "exact", slot: 1 }],
+  },
 ];
 
 rankingRepositoryContract("in-memory fake", async () => {

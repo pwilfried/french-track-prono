@@ -12,6 +12,7 @@ import {
 const line = (userId: string, points: number, perfect = false): RankingLine => ({
   userId,
   pseudo: userId.toUpperCase(),
+  avatar: "🦅",
   points,
   reasons: perfect ? [{ kind: "perfect_podium" }] : [],
 });
