@@ -1,56 +1,159 @@
-import Image from "next/image";
 import Link from "next/link";
 
+import { UseCaseError } from "@/application/errors";
+import { listEvents } from "@/application/list-events";
+import { listMyPredictions } from "@/application/list-my-predictions";
+import { getGeneralRanking } from "@/application/rankings";
+import { EventCard, type MyEventState } from "@/components/events/event-card";
+import { LockCountdown } from "@/components/home/lock-countdown";
 import { buttonVariants } from "@/components/ui/button";
+import type { EventSummary } from "@/domain/event";
+import { openEvents } from "@/domain/event-list";
+import {
+  createPublicSupabaseClient,
+  createSupabaseEventReader,
+  createSupabasePredictionRepository,
+  createSupabaseRankingRepository,
+} from "@/infra";
 
+import { COMPETITION_SLUG, COMPETITION_TEXT, COMPETITION_TIME_ZONE } from "./competition";
 import { messages } from "./messages.fr";
+import { getCurrentUser, getSessionClient } from "./session";
 
-const steps = [
-  { rank: 2, height: "h-16", style: "bg-[#c9ced8] text-nuit" },
-  { rank: 1, height: "h-24", style: "bg-secondary text-secondary-foreground" },
-  { rank: 3, height: "h-12", style: "bg-primary text-primary-foreground" },
-] as const;
+async function loadEvents(): Promise<EventSummary[]> {
+  try {
+    const events = createSupabaseEventReader(createPublicSupabaseClient());
+    return await listEvents({ events }).execute({ competitionSlug: COMPETITION_SLUG });
+  } catch (error) {
+    if (error instanceof UseCaseError) return [];
+    throw error;
+  }
+}
 
-export default function Home() {
+/** The player's rank and predictions; null for a visitor or when they cannot be read. */
+async function loadPlayer(userId: string) {
+  try {
+    const client = await getSessionClient();
+    const [ranking, mine] = await Promise.all([
+      getGeneralRanking({ ranking: createSupabaseRankingRepository(client) }).execute({
+        competitionSlug: COMPETITION_SLUG,
+      }),
+      listMyPredictions({ predictions: createSupabasePredictionRepository(client) }).execute({
+        userId,
+        competitionSlug: COMPETITION_SLUG,
+      }),
+    ]);
+    const me = ranking.find((p) => p.userId === userId);
+    return {
+      rank: me?.rank ?? null,
+      players: ranking.length,
+      mine: new Map<string, MyEventState>(
+        mine.map((p) => [p.eventId, { predicted: true, joker: p.useJoker }]),
+      ),
+    };
+  } catch (error) {
+    if (error instanceof UseCaseError) return null;
+    throw error;
+  }
+}
+
+/** Home (Officiel board 01): the competition, the next lock, my rank, the next events. */
+export default async function Home() {
+  const now = new Date();
+  const [events, user] = await Promise.all([loadEvents(), getCurrentUser()]);
+  const player = user ? await loadPlayer(user.userId) : null;
+  const next = openEvents(events, now, 3);
+  const started = events.some((e) => Date.parse(e.startsAt) <= now.getTime());
+
   return (
-    <main id="main" className="hero flex flex-1 flex-col px-4 pb-10 pt-6">
-      <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6 text-center">
-        <h1 className="flex flex-col items-center font-display text-5xl font-extrabold uppercase leading-none tracking-tight">
-          <Image
-            src="/brand/frenchtrack-dark.png"
-            width={274}
-            height={318}
-            alt={messages.app.logoAlt}
-            priority
-            className="h-40 w-auto"
-          />
-          <span className="mt-3 block">
-            <span className="inline-block -rotate-2 rounded-xl bg-primary px-4 py-1 text-primary-foreground">
-              {messages.app.nameLine2}
-            </span>
-          </span>
-        </h1>
-        <p className="text-lg text-[#dce6f5]">{messages.app.tagline}</p>
-
-        <div
-          role="img"
-          aria-label={messages.home.podiumLabel}
-          className="flex items-end justify-center gap-2"
-        >
-          {steps.map((step) => (
-            <div
-              key={step.rank}
-              className={`flex w-20 items-start justify-center rounded-t-2xl pt-2 text-2xl font-extrabold ${step.height} ${step.style}`}
+    <main id="main" className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-5 md:max-w-5xl">
+      <div className="flex flex-col gap-4 md:grid md:grid-cols-[1fr_300px]">
+        <section className="hero flex flex-col gap-4 rounded-card p-5 md:p-8">
+          <p className="text-xs font-bold uppercase tracking-wide text-[#dce6f5]">
+            {started ? messages.home.current : messages.home.upcoming}
+          </p>
+          <div>
+            <h1 className="font-display text-3xl font-extrabold leading-tight md:text-5xl">
+              {COMPETITION_TEXT.name}
+            </h1>
+            <p className="mt-1 text-[#dce6f5]">{COMPETITION_TEXT.place}</p>
+          </div>
+          {next[0] && <LockCountdown lockAt={next[0].lockAt} />}
+          <div className="flex flex-wrap gap-2">
+            {next[0] && (
+              <Link href={`/epreuves/${next[0].slug}`} className={buttonVariants()}>
+                {messages.home.compose}
+              </Link>
+            )}
+            <Link
+              href="/epreuves"
+              className={`${buttonVariants({ variant: "outline" })} border-white text-white`}
             >
-              {step.rank}
-            </div>
-          ))}
-        </div>
+              {messages.home.seeAll(events.length)}
+            </Link>
+          </div>
+        </section>
 
-        <Link href="/epreuves" className={buttonVariants({ size: "lg" })}>
-          {messages.home.cta}
-        </Link>
+        <aside className="flex flex-col gap-3">
+          {player ? (
+            <Link
+              href="/classement"
+              className="flex min-h-16 items-center gap-4 rounded-card border border-border bg-card p-4"
+            >
+              <span className="font-mono text-3xl font-bold text-brand dark:text-secondary">
+                {player.rank === null ? "–" : `#${player.rank}`}
+              </span>
+              <span>
+                <span className="block font-bold">{messages.home.myRank}</span>
+                <span className="block text-sm text-muted-foreground">
+                  {player.rank === null
+                    ? messages.home.notRanked
+                    : messages.home.players(player.players)}
+                </span>
+              </span>
+            </Link>
+          ) : (
+            <div className="flex flex-col gap-3 rounded-card border border-border bg-card p-4">
+              <p className="text-sm">{messages.app.tagline}</p>
+              {!user && (
+                <Link href="/connexion?next=/epreuves" className={`${buttonVariants()} w-full`}>
+                  {messages.account.signIn}
+                </Link>
+              )}
+            </div>
+          )}
+        </aside>
       </div>
+
+      <section className="flex flex-col gap-2" aria-labelledby="next-events">
+        <h2
+          id="next-events"
+          className="border-b border-border pb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground"
+        >
+          {messages.home.nextEvents}
+        </h2>
+        {next.length === 0 ? (
+          <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
+            {messages.home.noneOpen}
+          </p>
+        ) : (
+          <ul className="grid gap-2 md:grid-cols-3">
+            {next.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                timeZone={COMPETITION_TIME_ZONE}
+                now={now}
+                mine={
+                  player
+                    ? (player.mine.get(event.id) ?? { predicted: false, joker: false })
+                    : undefined
+                }
+              />
+            ))}
+          </ul>
+        )}
+      </section>
     </main>
   );
 }
