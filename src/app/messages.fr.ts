@@ -1,5 +1,16 @@
 // Every visible UI string lives here (French only in v1, no i18n library).
 export const messages = {
+  /** Name and place of each competition the app can show (see src/app/competition.ts). */
+  competitions: {
+    "ultimate-championship-2026": {
+      name: "Ultimate Championship",
+      place: "Budapest · 11 au 13 septembre 2026",
+    },
+    "european-championships-2026": {
+      name: "Championnats d'Europe",
+      place: "Birmingham · 23 au 29 novembre 2026",
+    },
+  },
   app: {
     name: "French Track Prono",
     nameLine1: "French Track",
@@ -13,9 +24,7 @@ export const messages = {
     cta: "Voir les épreuves",
   },
   events: {
-    title: "Ultimate Championship",
-    place: "Budapest · 11 au 13 septembre 2026",
-    subtitle: (count: number) => `Budapest · 11 au 13 septembre 2026 · ${count} épreuves`,
+    subtitle: (place: string, count: number) => `${place} · ${count} épreuves`,
     filtersLabel: "Filtrer les épreuves",
     filters: { all: "Toutes", F: "Femmes", M: "Hommes", X: "Mixte" },
     gender: { F: "Femmes", M: "Hommes", X: "Mixte" },
@@ -68,7 +77,6 @@ export const messages = {
   leagues: {
     title: "Mes ligues",
     back: "Mes ligues",
-    subtitle: "Ultimate Championship",
     members: (n: number) => `${n} ${n <= 1 ? "membre" : "membres"}`,
     createdByMe: "créée par toi",
     rankOf: (rank: number, of: number) => `${rank === 1 ? "1er" : `${rank}e`} sur ${of}`,
@@ -77,7 +85,7 @@ export const messages = {
     create: "Créer une ligue",
     join: "Rejoindre avec un code",
     createTitle: "Créer une ligue",
-    createSubtitle: "Elle comptera l'Ultimate Championship",
+    createSubtitle: (competition: string) => `Elle comptera : ${competition}`,
     nameLabel: "Nom de la ligue",
     nameHint: "2 à 40 caractères. Emoji bienvenus.",
     createSubmit: "Créer la ligue",
@@ -119,7 +127,7 @@ export const messages = {
   },
   ranking: {
     title: "Classement",
-    subtitle: "Tous les joueurs · Ultimate Championship",
+    subtitle: (competition: string) => `Tous les joueurs · ${competition}`,
     mine: (rank: number, of: number, points: number) =>
       `Ta place : ${rank === 1 ? "1er" : `${rank}e`} sur ${of} · ${points} ${points <= 1 ? "pt" : "pts"}`,
     notRanked: "Tu n'as pas encore de points : fais tes pronos pour entrer au classement.",
@@ -128,8 +136,8 @@ export const messages = {
   admin: {
     title: "Résultats",
     badge: "Admin",
-    subtitle: (count: number) =>
-      `${messages.events.title} · ${count} ${count <= 1 ? "épreuve verrouillée" : "épreuves verrouillées"}`,
+    subtitle: (competition: string, count: number) =>
+      `${competition} · ${count} ${count <= 1 ? "épreuve verrouillée" : "épreuves verrouillées"}`,
     back: "Résultats",
     filters: "Filtrer par état",
     filter: {
@@ -211,6 +219,19 @@ export const messages = {
     signOut: "Se déconnecter",
     signingOut: "Déconnexion…",
     back: "Voir les épreuves",
+    deleteLink: "Supprimer mon compte",
+  },
+  deleteAccount: {
+    title: "Supprimer mon compte",
+    subtitle: "C'est définitif.",
+    whatGoes:
+      "Ton profil, tes pronos, tes points, tes réactions et tes ligues disparaissent. Une ligue que tu as créée passe au membre le plus ancien, ou disparaît si tu y es seul.",
+    confirmLabel: "Je comprends que c'est définitif",
+    submit: "Supprimer définitivement",
+    submitting: "Suppression…",
+    cancel: "Garder mon compte",
+    done: "Ton compte est supprimé. Merci d'avoir joué !",
+    home: "Retour à l'accueil",
   },
   welcome: {
     title: "Bienvenue !",
@@ -314,16 +335,17 @@ export const messages = {
     EVENT_NOT_LOCKED: "Les pronos de cette épreuve ne sont pas encore fermés.",
     POINTS_UNAVAILABLE:
       "Les points ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+    INVALID_REACTION: "Cette réaction n’existe pas.",
+    REACTION_NOT_ALLOWED: "Tu peux réagir aux pronos des autres une fois l’épreuve verrouillée.",
+    REVEAL_UNAVAILABLE:
+      "Les pronos des autres ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     PODIUM_INVALID: "Choisis trois athlètes différents pour ton podium.",
     PREDICTION_LOCKED:
       "Trop tard : cette épreuve vient d'être verrouillée. Ton podium n'a pas été enregistré.",
     JOKER_ALREADY_USED: "Tu as déjà utilisé ton joker dans cette compétition.",
     PREDICTION_UNAVAILABLE:
       "Ton prono n'est pas disponible pour le moment. Réessaie dans un instant.",
-    REVEAL_UNAVAILABLE:
-      "Les pronos des autres ne sont pas disponibles pour le moment. Réessaie dans un instant.",
-    INVALID_REACTION: "Cette réaction n’existe pas.",
-    REACTION_NOT_ALLOWED: "Tu peux réagir aux pronos des autres une fois l’épreuve verrouillée.",
+    DELETION_NOT_CONFIRMED: "Coche la case pour confirmer la suppression.",
     retry: "Réessayer",
   },
 } as const;

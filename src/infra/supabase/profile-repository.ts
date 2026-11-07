@@ -50,5 +50,11 @@ export function createSupabaseProfileRepository(client: SupabaseClient): Profile
       }
       throw new UseCaseError("PROFILE_UNAVAILABLE");
     },
+
+    // The database function deletes the caller (auth.uid()), whatever id is given.
+    async deleteMine() {
+      const { error } = await client.rpc("delete_my_account");
+      if (error) throw new UseCaseError("PROFILE_UNAVAILABLE");
+    },
   };
 }
