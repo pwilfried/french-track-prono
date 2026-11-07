@@ -15,12 +15,12 @@ export {
   type CookieToSet,
   type CurrentUser,
 } from "./supabase/session";
+export { createInMemoryResultStore, type ResultEventFixture } from "./in-memory/result-repository";
+export { createSupabaseResultRepository } from "./supabase/result-repository";
+export { createInMemoryPointsStore } from "./in-memory/points-repository";
+export { createSupabasePointsRepository } from "./supabase/points-repository";
 export {
   createInMemoryPredictionRepository,
   type PredictionEventFixture,
 } from "./in-memory/prediction-repository";
 export { createSupabasePredictionRepository } from "./supabase/prediction-repository";
-export { createInMemoryResultStore, type ResultEventFixture } from "./in-memory/result-repository";
-export { createSupabaseResultRepository } from "./supabase/result-repository";
-export { createInMemoryPointsStore } from "./in-memory/points-repository";
-export { createSupabasePointsRepository } from "./supabase/points-repository";

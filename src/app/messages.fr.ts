@@ -26,11 +26,6 @@ export const messages = {
     empty: "Aucune épreuve pour ce filtre.",
     loading: "Chargement des épreuves…",
   },
-  myPredictions: {
-    predicted: "✓ Pronostiqué",
-    toPredict: "À pronostiquer",
-    joker: "🃏 Joker",
-  },
   points: {
     title: "Mes points",
     total: (points: number, events: number) =>
@@ -92,6 +87,11 @@ export const messages = {
     kpi: { predictions: "pronos", average: "moyenne", best: "meilleur" },
     detail: "Détail",
     noPrediction: "Personne n'a pronostiqué cette épreuve.",
+  },
+  myPredictions: {
+    predicted: "✓ Pronostiqué",
+    toPredict: "À pronostiquer",
+    joker: "🃏 Joker",
   },
   event: {
     back: "Épreuves",
@@ -201,14 +201,8 @@ export const messages = {
     AVATAR_INVALID: "Choisis un avatar dans la liste.",
     PROFILE_EXISTS: "Tu as déjà un profil.",
     PROFILE_UNAVAILABLE: "Le profil n'est pas disponible pour le moment. Réessaie dans un instant.",
-    PODIUM_INVALID: "Choisis trois athlètes différents pour ton podium.",
-    PREDICTION_LOCKED:
-      "Trop tard : cette épreuve vient d'être verrouillée. Ton podium n'a pas été enregistré.",
-    ATHLETE_NOT_IN_EVENT: "Cet athlète ne participe pas à cette épreuve.",
-    JOKER_ALREADY_USED: "Tu as déjà utilisé ton joker dans cette compétition.",
-    PREDICTION_UNAVAILABLE:
-      "Ton prono n'est pas disponible pour le moment. Réessaie dans un instant.",
     NOT_ADMIN: "Seul un administrateur peut faire ça.",
+    ATHLETE_NOT_IN_EVENT: "Cet athlète ne participe pas à cette épreuve.",
     RESULT_INVALID:
       "Résultat incomplet : au moins trois athlètes différents, rangs 1 à 3 (les ex æquo partagent un rang).",
     RESULTS_UNAVAILABLE:
@@ -217,6 +211,12 @@ export const messages = {
     EVENT_NOT_LOCKED: "Les pronos de cette épreuve ne sont pas encore fermés.",
     POINTS_UNAVAILABLE:
       "Les points ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+    PODIUM_INVALID: "Choisis trois athlètes différents pour ton podium.",
+    PREDICTION_LOCKED:
+      "Trop tard : cette épreuve vient d'être verrouillée. Ton podium n'a pas été enregistré.",
+    JOKER_ALREADY_USED: "Tu as déjà utilisé ton joker dans cette compétition.",
+    PREDICTION_UNAVAILABLE:
+      "Ton prono n'est pas disponible pour le moment. Réessaie dans un instant.",
     retry: "Réessayer",
   },
 } as const;

@@ -113,6 +113,21 @@ La clé « Publishable » (ancienne clé `anon`) s'affiche aussi : elle va dans 
 
 Contrôle rapide dans Studio : la table `events` doit contenir 28 lignes, `results` 91.
 
+### Joueurs de démo pour vérifier les points
+
+Après `npm run db:open-events`, la commande suivante crée douze joueurs inventés
+(`demo-1@example.test` à `demo-12@example.test`, pseudos « Démo … ») avec des pronos sur les deux
+premières épreuves ouvertes :
+
+```
+npm run db:demo-players
+```
+
+Elle peut être relancée : elle repart de zéro. Le haut du fichier `supabase/dev/demo_players.sql`
+donne les points attendus si l'admin saisit le résultat a, b, c (l'ordre de la liste de départ) :
+un podium parfait avec joker et coup de flair (28 points), un podium parfait simple (12), un joker
+sur 5 points (10), etc. `supabase db reset` efface ces joueurs.
+
 ## 4. Lancer l'application
 
 ```bash
