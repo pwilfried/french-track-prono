@@ -9,6 +9,8 @@ export type LeaderboardRow = RankedPlayer & {
   avatar?: string;
   /** Places won (+) or lost (−) since the last computed event; null or absent: not shown. */
   change?: number | null;
+  /** Events in a row with points; shown from 2. */
+  streak?: number;
 };
 
 function Change({ change }: { change: number }) {
@@ -121,6 +123,12 @@ export function Leaderboard({
             </span>
             <span className="min-w-0 flex-1 font-bold [overflow-wrap:anywhere]">
               {row.pseudo}
+              {row.streak !== undefined && row.streak >= 2 && (
+                <span className="ml-1.5 whitespace-nowrap text-sm text-accent-text">
+                  <span aria-hidden>🔥{row.streak}</span>
+                  <span className="sr-only">{messages.leaderboard.streak(row.streak)}</span>
+                </span>
+              )}
               {detail && (
                 <span
                   className={cn(

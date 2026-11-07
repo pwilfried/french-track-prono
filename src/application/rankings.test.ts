@@ -51,9 +51,9 @@ describe("getGeneralRanking", () => {
       ]),
     }).execute({ competitionSlug: "c" });
 
-    expect(result.map((r) => [r.userId, r.change])).toEqual([
-      ["bob", 1],
-      ["ana", -1],
+    expect(result.map((r) => [r.userId, r.change, r.streak])).toEqual([
+      ["bob", 1, 2],
+      ["ana", -1, 0],
     ]);
   });
 
