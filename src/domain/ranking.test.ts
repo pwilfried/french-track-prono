@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { rankPlayers, totalsOf, type PlayerTotals } from "./ranking";
+import { rankChanges, rankPlayers, totalsOf, type PlayerTotals } from "./ranking";
 
 const player = (
   pseudo: string,
@@ -110,5 +110,51 @@ describe("totalsOf", () => {
       { userId: "a", pseudo: "A", points: 27, perfectPodiums: 1, winnersFound: 2 },
       { userId: "b", pseudo: "B", points: 1, perfectPodiums: 0, winnersFound: 0 },
     ]);
+  });
+});
+
+describe("rankChanges", () => {
+  const line = (userId: string, eventId: string, startsAt: string, points: number) => ({
+    userId,
+    eventId,
+    eventStartsAt: startsAt,
+    points,
+    reasons: [],
+  });
+  const day1 = "2026-11-23T19:00:00Z";
+  const day2 = "2026-11-24T19:00:00Z";
+
+  it("compares each player's place with the ranking before the last computed event", () => {
+    const lines = [
+      line("ana", "e1", day1, 10),
+      line("bob", "e1", day1, 5),
+      line("cid", "e1", day1, 3),
+      line("bob", "e2", day2, 12),
+      line("cid", "e2", day2, 1),
+    ];
+
+    const changes = rankChanges(lines, (id) => id);
+
+    expect(changes.get("bob")).toBe(1); // 2nd → 1st
+    expect(changes.get("ana")).toBe(-1); // 1st → 2nd
+    expect(changes.get("cid")).toBe(0);
+  });
+
+  it("gives null to a player who only scored in the last event, and to everyone after one event", () => {
+    expect(rankChanges([line("ana", "e1", day1, 3)], (id) => id).get("ana")).toBeNull();
+    const changes = rankChanges(
+      [line("ana", "e1", day1, 3), line("dan", "e2", day2, 9)],
+      (id) => id,
+    );
+    expect(changes.get("dan")).toBeNull();
+    expect(changes.get("ana")).toBe(-1);
+  });
+
+  it("does not depend on the order of the lines", () => {
+    const lines = [line("a", "e1", day1, 2), line("b", "e2", day2, 5), line("b", "e1", day1, 1)];
+    const sorted = (m: Map<string, number | null>) => [...m].sort(([x], [y]) => x.localeCompare(y));
+    expect(sorted(rankChanges([...lines].reverse(), (id) => id))).toEqual(
+      sorted(rankChanges(lines, (id) => id)),
+    );
   });
 });

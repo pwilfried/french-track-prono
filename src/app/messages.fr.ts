@@ -66,6 +66,12 @@ export const messages = {
     loading: "Chargement des épreuves…",
   },
   leaderboard: {
+    change: (n: number) =>
+      n > 0
+        ? `${n} ${n === 1 ? "place gagnée" : "places gagnées"} depuis la dernière épreuve`
+        : n < 0
+          ? `${-n} ${n === -1 ? "place perdue" : "places perdues"} depuis la dernière épreuve`
+          : "même place qu'avant la dernière épreuve",
     label: "Classement",
     me: "Toi",
     tie: "ex æquo",
