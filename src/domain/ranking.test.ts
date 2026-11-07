@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { rankChanges, rankPlayers, totalsOf, type PlayerTotals } from "./ranking";
+import { rankChanges, rankPlayers, streaks, totalsOf, type PlayerTotals } from "./ranking";
 
 const player = (
   pseudo: string,
@@ -156,5 +156,39 @@ describe("rankChanges", () => {
     expect(sorted(rankChanges([...lines].reverse(), (id) => id))).toEqual(
       sorted(rankChanges(lines, (id) => id)),
     );
+  });
+});
+
+describe("streaks", () => {
+  const line = (userId: string, eventId: string, day: number, points: number) => ({
+    userId,
+    eventId,
+    eventStartsAt: `2026-11-2${day}T19:00:00Z`,
+    points,
+    reasons: [],
+  });
+
+  it("counts the last computed events in a row where the player scored at least 1 point", () => {
+    const lines = [
+      line("ana", "e1", 3, 4),
+      line("ana", "e2", 4, 1),
+      line("ana", "e3", 5, 3),
+      line("bob", "e1", 3, 5),
+      line("bob", "e2", 4, 0),
+      line("bob", "e3", 5, 2),
+      line("cid", "e1", 3, 6),
+      line("cid", "e2", 4, 6),
+    ];
+
+    const result = streaks(lines);
+
+    expect(result.get("ana")).toBe(3);
+    expect(result.get("bob")).toBe(1); // 0 on e2 broke it
+    expect(result.get("cid")).toBe(0); // no prediction on the last event
+  });
+
+  it("does not depend on the order of the lines", () => {
+    const lines = [line("a", "e1", 3, 1), line("a", "e2", 4, 2), line("b", "e2", 4, 1)];
+    expect(streaks([...lines].reverse()).get("a")).toBe(streaks(lines).get("a"));
   });
 });

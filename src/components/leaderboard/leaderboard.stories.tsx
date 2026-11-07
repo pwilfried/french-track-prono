@@ -54,7 +54,11 @@ export const Default: Story = {
 /** Places won and lost since the last computed event (▲ green, ▼ red, — same place). */
 export const WithChanges: Story = {
   args: {
-    rows: rows.map((r, i) => ({ ...r, change: [2, -1, 0, 1, null, -3][i] ?? null })),
+    rows: rows.map((r, i) => ({
+      ...r,
+      change: [2, -1, 0, 1, null, -3][i] ?? null,
+      streak: [3, 2, 1, 0, 0, 0][i] ?? 0,
+    })),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -63,6 +67,8 @@ export const WithChanges: Story = {
     ).toBeInTheDocument();
     await expect(canvas.getByText("1 place perdue depuis la dernière épreuve")).toBeInTheDocument();
     await expect(canvas.getAllByRole("listitem")[4]).not.toHaveTextContent("▲");
+    await expect(canvas.getAllByRole("listitem")[0]).toHaveTextContent("🔥3");
+    await expect(canvas.getAllByRole("listitem")[2]).not.toHaveTextContent("🔥");
   },
 };
 

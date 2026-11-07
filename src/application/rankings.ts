@@ -1,4 +1,4 @@
-import { rankChanges, rankPlayers, totalsOf, type RankedPlayer } from "@/domain/ranking";
+import { rankChanges, rankPlayers, streaks, totalsOf, type RankedPlayer } from "@/domain/ranking";
 import type { ScoreReason } from "@/domain/scoring";
 
 import { UseCaseError } from "./errors";
@@ -22,20 +22,20 @@ export interface RankingRepository {
 }
 
 /** A ranked player with the avatar shown next to the pseudo and the places won since the last event. */
-export type RankingRow = RankedPlayer & { avatar: string; change: number | null };
+export type RankingRow = RankedPlayer & { avatar: string; change: number | null; streak: number };
 
 const rank = (lines: RankingLine[]): RankingRow[] => {
   const byUser = new Map(lines.map((l) => [l.userId, l]));
   const pseudoOf = (id: string) => byUser.get(id)?.pseudo ?? "";
   // League members without points have no event: they never move.
-  const changes = rankChanges(
-    lines.filter((l) => l.eventId !== ""),
-    pseudoOf,
-  );
+  const dated = lines.filter((l) => l.eventId !== "");
+  const changes = rankChanges(dated, pseudoOf);
+  const streakOf = streaks(dated);
   return rankPlayers(totalsOf(lines, pseudoOf)).map((player) => ({
     ...player,
     avatar: byUser.get(player.userId)?.avatar ?? "",
     change: changes.get(player.userId) ?? null,
+    streak: streakOf.get(player.userId) ?? 0,
   }));
 };
 

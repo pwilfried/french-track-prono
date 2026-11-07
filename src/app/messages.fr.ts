@@ -66,6 +66,7 @@ export const messages = {
     loading: "Chargement des épreuves…",
   },
   leaderboard: {
+    streak: (n: number) => `, série de ${n} épreuves avec des points`,
     change: (n: number) =>
       n > 0
         ? `${n} ${n === 1 ? "place gagnée" : "places gagnées"} depuis la dernière épreuve`

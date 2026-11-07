@@ -91,3 +91,23 @@ export function rankChanges(
   }
   return changes;
 }
+
+/**
+ * Current streak of each player (owner's decision, v0.8): the last computed events in a row,
+ * newest first, where the player scored at least 1 point. No prediction or 0 point breaks it.
+ */
+export function streaks(lines: DatedLine[]): Map<string, number> {
+  const events = new Map<string, number>();
+  for (const l of lines) events.set(l.eventId, Date.parse(l.eventStartsAt));
+  const order = [...events]
+    .sort(([a, ta], [b, tb]) => tb - ta || (a < b ? 1 : a > b ? -1 : 0))
+    .map(([id]) => id);
+  const scored = new Set(lines.filter((l) => l.points > 0).map((l) => `${l.userId}|${l.eventId}`));
+  const result = new Map<string, number>();
+  for (const userId of new Set(lines.map((l) => l.userId))) {
+    let n = 0;
+    while (n < order.length && scored.has(`${userId}|${order[n]}`)) n += 1;
+    result.set(userId, n);
+  }
+  return result;
+}
