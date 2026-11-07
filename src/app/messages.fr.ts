@@ -207,6 +207,19 @@ export const messages = {
     emailPrivate: "Ton e-mail reste privé : il n'apparaît jamais dans l'application.",
     signOut: "Se déconnecter",
     back: "Voir les épreuves",
+    deleteLink: "Supprimer mon compte",
+  },
+  deleteAccount: {
+    title: "Supprimer mon compte",
+    subtitle: "C'est définitif.",
+    whatGoes:
+      "Ton profil, tes pronos, tes points, tes réactions et tes ligues disparaissent. Une ligue que tu as créée passe au membre le plus ancien, ou disparaît si tu y es seul.",
+    confirmLabel: "Je comprends que c'est définitif",
+    submit: "Supprimer définitivement",
+    submitting: "Suppression…",
+    cancel: "Garder mon compte",
+    done: "Ton compte est supprimé. Merci d'avoir joué !",
+    home: "Retour à l'accueil",
   },
   welcome: {
     title: "Bienvenue !",
@@ -301,6 +314,7 @@ export const messages = {
     EVENT_NOT_LOCKED: "Les pronos de cette épreuve ne sont pas encore fermés.",
     POINTS_UNAVAILABLE:
       "Les points ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+    DELETION_NOT_CONFIRMED: "Coche la case pour confirmer la suppression.",
     retry: "Réessayer",
   },
 } as const;

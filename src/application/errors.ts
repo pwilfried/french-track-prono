@@ -31,7 +31,8 @@ export type ErrorCode =
   | "RANKING_UNAVAILABLE"
   | "RESULT_MISSING"
   | "EVENT_NOT_LOCKED"
-  | "POINTS_UNAVAILABLE";
+  | "POINTS_UNAVAILABLE"
+  | "DELETION_NOT_CONFIRMED";
 
 export class UseCaseError extends Error {
   constructor(readonly code: ErrorCode) {
