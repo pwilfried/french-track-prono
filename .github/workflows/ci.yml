@@ -79,6 +79,10 @@ jobs:
       - name: pgTAP tests
         run: supabase test db
 
+      # Static checks of the SQL functions (plpgsql_check): fails on errors, not on warnings.
+      - name: Database lint
+        run: supabase db lint --level error --fail-on error
+
       - name: Install dependencies
         run: npm ci
 

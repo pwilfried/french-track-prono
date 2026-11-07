@@ -15,8 +15,19 @@ const devOrigins = [
     .filter(Boolean) ?? []),
 ];
 
+/** Basic security headers on every response; a Content-Security-Policy comes with the production origins. */
+const securityHeaders = [
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "X-Frame-Options", value: "DENY" },
+];
+
 const nextConfig: NextConfig = {
   allowedDevOrigins: devOrigins,
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
   turbopack: {
     rules: {
       "*.css": {
