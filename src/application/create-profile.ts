@@ -8,6 +8,8 @@ export type Profile = { userId: string; pseudo: string; avatar: Avatar; ageConfi
 /** Port: where profiles are stored. Real adapter = Supabase, fake = in memory. */
 export interface ProfileRepository {
   find(userId: string): Promise<Profile | null>;
+  /** True for an admin (designated from SQL only); false for a player or an unknown user. */
+  isAdmin(userId: string): Promise<boolean>;
   /** Saves a new profile. Returns why it could not, instead of throwing, for the two expected cases. */
   create(profile: Profile): Promise<"created" | "pseudo_taken" | "profile_exists">;
 }

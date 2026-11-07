@@ -19,6 +19,13 @@ export function profileRepositoryContract(name: string, newPlayer: () => Promise
   });
 
   describe(`ProfileRepository contract: ${name}`, () => {
+    it("does not take a new player for an admin", async () => {
+      const player = await newPlayer();
+      await player.profiles.create(profileOf(player));
+
+      expect(await player.profiles.isAdmin(player.userId)).toBe(false);
+    });
+
     it("finds nothing for a player without profile", async () => {
       const player = await newPlayer();
 
