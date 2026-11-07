@@ -12,6 +12,8 @@ export interface ProfileRepository {
   isAdmin(userId: string): Promise<boolean>;
   /** Saves a new profile. Returns why it could not, instead of throwing, for the two expected cases. */
   create(profile: Profile): Promise<"created" | "pseudo_taken" | "profile_exists">;
+  /** Deletes the signed-in player's account and everything attached to it (F13). */
+  deleteMine(userId: string): Promise<void>;
 }
 
 export type CreateProfileInput = {

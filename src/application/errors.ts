@@ -34,7 +34,8 @@ export type ErrorCode =
   | "PODIUM_INVALID"
   | "PREDICTION_LOCKED"
   | "JOKER_ALREADY_USED"
-  | "PREDICTION_UNAVAILABLE";
+  | "PREDICTION_UNAVAILABLE"
+  | "DELETION_NOT_CONFIRMED";
 
 export class UseCaseError extends Error {
   constructor(readonly code: ErrorCode) {

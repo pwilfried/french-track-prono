@@ -173,6 +173,29 @@ docker exec -i supabase_db_french-track-prono psql -U postgres -c "update profil
 
 3. Recharge la page. `supabase db reset` efface ce droit : refais l'étape 2 après un reset.
 
+### Compétition de lancement : Championnats d'Europe (Birmingham)
+
+Les Championnats d'Europe de Birmingham (10-16 août 2026) sont rejoués comme s'ils avaient lieu
+du lundi 23 au dimanche 29 novembre 2026 (mêmes jours de la semaine, mêmes heures locales) :
+46 finales, les finalistes comme liste de départ (les trois médaillés pour les concours et les
+épreuves combinées), sans résultat.
+
+```
+npm run db:load-euro
+```
+
+Puis `COMPETITION_SLUG=european-championships-2026` dans `.env.local` et relance `npm run dev`.
+Pour simuler la fin des épreuves, `npm run db:euro-results` charge les résultats officiels (ou
+saisis-les dans `/admin`). Les sources sont citées en tête des fichiers `supabase/data/`.
+En production, le même fichier se charge une fois dans l'éditeur SQL de Supabase.
+
+### Choisir la compétition affichée
+
+L'application affiche une seule compétition, choisie par la variable `COMPETITION_SLUG` dans
+`.env.local` (côté serveur). Sans valeur, c'est l'Ultimate Championship du jeu de test. Les
+compétitions connues, leur fuseau horaire et leur nom en français sont dans
+`src/app/competition.ts` et `src/app/messages.fr.ts`. Relance `npm run dev` après un changement.
+
 ## 4 bis. Connexion : lien du message et téléphone
 
 Le message de connexion contient un code à 6 chiffres et un lien. Le lien pointe vers
@@ -225,6 +248,25 @@ npm run test:e2e
   `playwright-report`.
 - Le test crée un joueur `e2e-…@example.test` à chaque passage ; `supabase db reset` remet tout à
   zéro.
+
+## 4 quater. Migrations de la base en production
+
+Le schéma de production suit le dépôt, jamais de modification à la main
+(`.github/workflows/migrations.yml`) :
+
+- **Tag `vX.Y.Z` poussé** : les migrations de `supabase/migrations` sont appliquées au projet
+  Supabase de production (`supabase db push`), dans l'environnement GitHub `production`.
+- **PR qui touche `supabase/migrations`** : un essai à blanc (`--dry-run`) liste ce qui serait
+  appliqué, sans rien changer.
+- **Secrets** (GitHub > Settings > Secrets and variables > Actions) : `SUPABASE_ACCESS_TOKEN`,
+  `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`. Sans eux, le workflow le signale et s'arrête
+  sans échouer (cas d'aujourd'hui, tant que le projet de production n'existe pas).
+
+**Retour arrière.** Une migration appliquée n'est jamais modifiée ni supprimée : on écrit une
+nouvelle migration qui défait la précédente, on la fait passer par une PR, puis on pose un tag de
+correctif (`vX.Y.Z+1`). En cas de casse grave, la restauration se fait depuis la sauvegarde
+quotidienne du projet Supabase (tableau de bord > Database > Backups), puis on réapplique les
+migrations voulues avec un tag.
 
 ## Dépendances : les « overrides » de package.json
 

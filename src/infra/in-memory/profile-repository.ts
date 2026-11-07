@@ -22,5 +22,8 @@ export function createInMemoryProfileRepository(
       byUser.set(profile.userId, profile);
       return "created";
     },
+    async deleteMine(userId) {
+      byUser.delete(userId);
+    },
   };
 }

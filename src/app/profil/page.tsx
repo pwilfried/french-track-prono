@@ -59,6 +59,12 @@ export default async function ProfilePage() {
         <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
           {messages.profile.emailPrivate}
         </p>
+        <Link
+          href="/profil/supprimer"
+          className="flex min-h-11 items-center justify-center text-sm font-semibold text-accent-text underline underline-offset-4"
+        >
+          {messages.profile.deleteLink}
+        </Link>
       </div>
     </main>
   );

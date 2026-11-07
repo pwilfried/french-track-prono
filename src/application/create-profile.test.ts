@@ -23,6 +23,9 @@ function fakeProfiles(): ProfileRepository {
       all.set(profile.userId, profile);
       return "created";
     },
+    async deleteMine(userId) {
+      all.delete(userId);
+    },
   };
 }
 
