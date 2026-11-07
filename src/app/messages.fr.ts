@@ -264,6 +264,21 @@ export const messages = {
     seeEvents: "Voir les autres épreuves",
     places: { first: "1er", second: "2e", third: "3e" },
   },
+  reactions: {
+    group: "Réagir à ce prono",
+    names: {
+      "🔥": "feu",
+      "😂": "mort de rire",
+      "😮": "surpris",
+      "👏": "bravo",
+      "🤡": "clown",
+      "🎯": "dans le mille",
+    },
+    label: (name: string, count: number) =>
+      count === 0
+        ? `Réagir : ${name}`
+        : `Réagir : ${name}, ${count} ${count === 1 ? "réaction" : "réactions"}`,
+  },
   prediction: {
     joker: "🃏 Joker : points × 2",
     jokerHint: "Un seul par compétition.",

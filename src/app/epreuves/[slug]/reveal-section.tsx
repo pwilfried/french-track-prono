@@ -5,8 +5,10 @@ import { listMyLeagues, type League } from "@/application/leagues";
 import { listEventPredictions, type RevealedPrediction } from "@/application/reveal";
 import { buttonVariants } from "@/components/ui/button";
 import { ErrorNotice } from "@/components/error-notice";
+import { ReactionBar, ReactionSummary } from "@/components/reveal/reaction-bar";
 import { RevealedPredictionCard } from "@/components/reveal/revealed-prediction-card";
 import type { EventDetail } from "@/domain/event";
+import { reactionCounts, type Reaction } from "@/domain/reveal";
 import {
   createSupabaseLeagueRepository,
   createSupabaseRevealRepository,
@@ -121,17 +123,34 @@ export async function RevealSection({
         </div>
       ) : (
         <ul className="mx-4 flex flex-col gap-2.5">
-          {predictions.map((prediction) => (
-            <RevealedPredictionCard
-              key={prediction.predictionId}
-              pseudo={prediction.pseudo}
-              avatar={prediction.avatar}
-              podium={prediction.podium}
-              useJoker={prediction.useJoker}
-              mine={prediction.userId === user.userId}
-              nameOf={nameOf}
-            />
-          ))}
+          {predictions.map((prediction) => {
+            const mine = prediction.userId === user.userId;
+            const counts = reactionCounts(prediction.reactions.map((r) => r.reaction));
+            const myReaction: Reaction | null =
+              prediction.reactions.find((r) => r.userId === user.userId)?.reaction ?? null;
+            return (
+              <RevealedPredictionCard
+                key={prediction.predictionId}
+                pseudo={prediction.pseudo}
+                avatar={prediction.avatar}
+                podium={prediction.podium}
+                useJoker={prediction.useJoker}
+                mine={mine}
+                nameOf={nameOf}
+              >
+                {mine ? (
+                  <ReactionSummary counts={counts} />
+                ) : (
+                  <ReactionBar
+                    slug={slug}
+                    predictionId={prediction.predictionId}
+                    counts={Object.fromEntries(counts.map((c) => [c.reaction, c.count]))}
+                    mine={myReaction}
+                  />
+                )}
+              </RevealedPredictionCard>
+            );
+          })}
         </ul>
       )}
     </div>
