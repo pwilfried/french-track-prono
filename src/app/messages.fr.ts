@@ -22,6 +22,14 @@ export const messages = {
     tagline: "Pronostique les podiums d'athlétisme, chambre tes amis, grimpe au classement.",
     description: "Le jeu de pronostics d'athlétisme de la communauté FrenchTrack.",
   },
+  nav: {
+    label: "Navigation principale",
+    home: "Accueil",
+    events: "Épreuves",
+    ranking: "Classement",
+    league: "Ma ligue",
+    profile: "Profil",
+  },
   home: {
     podiumLabel: "Podium",
     cta: "Voir les épreuves",

@@ -1,9 +1,7 @@
 import { listEvents } from "@/application/list-events";
 import { listMyPredictions } from "@/application/list-my-predictions";
 import { UseCaseError } from "@/application/errors";
-import { AccountMenu } from "@/components/account/account-menu";
 import { ErrorNotice } from "@/components/error-notice";
-import { BrandLink } from "@/components/brand/brand-link";
 import { EventCard, type MyEventState } from "@/components/events/event-card";
 import { GenderFilter } from "@/components/events/gender-filter";
 import type { EventGender, EventSummary } from "@/domain/event";
@@ -76,16 +74,13 @@ export default async function EventsPage({
 
   return (
     <main id="main" className="flex flex-1 flex-col">
-      <header className="hero px-4 pb-6 pt-8">
+      <header className="px-4 pb-1 pt-6">
         <div className="mx-auto max-w-md">
-          <div className="flex items-center justify-between gap-3">
-            <BrandLink />
-            <AccountMenu returnTo="/epreuves" />
-          </div>
-          <h1 className="mt-2 font-display text-3xl font-extrabold uppercase leading-none">
-            {COMPETITION_TEXT.name}
+          <h1 className="font-display text-3xl font-extrabold leading-none">
+            {messages.nav.events}
           </h1>
-          <p className="mt-2 text-[#dce6f5]">
+          <p className="mt-2 text-sm text-muted-foreground">
+            {COMPETITION_TEXT.name} ·{" "}
             {loaded === "error"
               ? COMPETITION_TEXT.place
               : messages.events.subtitle(COMPETITION_TEXT.place, events.length)}
