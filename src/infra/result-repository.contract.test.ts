@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 
-import { sql } from "./contract/database";
+import { createTestEvent, sql } from "./contract/database";
 import { resultRepositoryContract } from "./contract/result-repository.contract";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryResultStore, createSupabaseResultRepository } from "./index";
@@ -26,24 +26,7 @@ if (url && key) {
   resultRepositoryContract("Supabase (local)", async () => {
     const [admin, player] = await Promise.all([signedInPlayer(url, key), signedInPlayer(url, key)]);
     sql(`update profiles set is_admin = true where id = '${admin.userId}'`);
-    // An event of its own with four athletes, and a fifth one not on its start list.
-    const slug = `test-results-${crypto.randomUUID().slice(0, 8)}`;
-    const ids = sql(
-      "select string_agg(id::text, ',' order by id) from (select id from athletes order by id limit 5) a",
-    ).split(",");
-    const athleteIds = ids.slice(0, 4);
-    const outsiderId = ids[4]!;
-    const eventId = sql(`
-      with e as (
-        insert into events (competition_id, slug, discipline, gender, starts_at, lock_at)
-        select competition_id, '${slug}', discipline, gender, starts_at, lock_at
-        from events where slug = 'f-100m' returning id
-      ), s as (
-        insert into entries (event_id, athlete_id)
-        select e.id, a.id::uuid from e, unnest(array['${athleteIds.join("','")}']) as a(id)
-        returning event_id
-      )
-      select id from e`);
+    const { eventId, athleteIds, outsiderId } = createTestEvent();
     return {
       eventId,
       athleteIds,

@@ -2,7 +2,7 @@ import { describe, it } from "vitest";
 
 import { DEFAULT_RULES } from "@/domain/scoring";
 
-import { sql } from "./contract/database";
+import { createTestEvent, sql } from "./contract/database";
 import { pointsRepositoryContract } from "./contract/points-repository.contract";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryPointsStore, createSupabasePointsRepository } from "./index";
@@ -41,22 +41,8 @@ if (url && key) {
     const [admin, player] = await Promise.all([signedInPlayer(url, key), signedInPlayer(url, key)]);
     sql(`update profiles set is_admin = true where id = '${admin.userId}'`);
     // An event of its own: open while the predictions are written, then locked, then its result.
-    const ids = sql(
-      "select string_agg(id::text, ',' order by id) from (select id from athletes order by id limit 4) a",
-    ).split(",");
+    const { eventId, athleteIds: ids } = createTestEvent();
     const [a1, a2, a3, a4] = ids as [string, string, string, string];
-    const slug = `test-points-${crypto.randomUUID().slice(0, 8)}`;
-    const eventId = sql(`
-      with e as (
-        insert into events (competition_id, slug, discipline, gender, starts_at, lock_at)
-        select competition_id, '${slug}', discipline, gender, now() + interval '1 day', now() + interval '1 hour'
-        from events where slug = 'f-100m' returning id
-      ), s as (
-        insert into entries (event_id, athlete_id)
-        select e.id, a.id::uuid from e, unnest(array['${ids.join("','")}']) as a(id)
-        returning event_id
-      )
-      select id from e`);
     sql(`insert into predictions (user_id, event_id, p1, p2, p3, use_joker) values
       ('${admin.userId}', '${eventId}', '${a1}', '${a2}', '${a3}', true),
       ('${player.userId}', '${eventId}', '${a1}', '${a4}', '${a2}', false)`);
