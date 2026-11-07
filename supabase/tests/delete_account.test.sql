@@ -11,7 +11,7 @@ insert into profiles (id, pseudo, age_confirmed_at) values
   ('dddd0000-0000-0000-0000-000000000002', 'Premier', now()),
   ('dddd0000-0000-0000-0000-000000000003', 'Second', now());
 
-create temp table ctx (shared uuid, alone uuid);
+create temp table ctx (shared uuid, alone uuid, code text);
 grant all on ctx to authenticated;
 
 create function act_as(p_user text) returns void language sql as $$
@@ -22,12 +22,12 @@ set local role authenticated;
 
 -- The leaving player owns two leagues: one shared with two friends, one alone.
 select act_as('dddd0000-0000-0000-0000-000000000001');
-insert into ctx (shared) select league_id from create_league('Partagée', 'ultimate-championship-2026');
+insert into ctx (shared, code) select league_id, invite_code from create_league('Partagée', 'ultimate-championship-2026');
 update ctx set alone = (select league_id from create_league('Solo', 'ultimate-championship-2026'));
 select act_as('dddd0000-0000-0000-0000-000000000002');
-select join_league((select invite_code from leagues where id = (select shared from ctx)));
+select join_league((select code from ctx));
 select act_as('dddd0000-0000-0000-0000-000000000003');
-select join_league((select invite_code from leagues where id = (select shared from ctx)));
+select join_league((select code from ctx));
 -- The second friend joined later.
 reset role;
 update league_members set joined_at = now() + interval '1 minute'
