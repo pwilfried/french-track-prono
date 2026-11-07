@@ -25,7 +25,7 @@ export function createSupabaseRevealRepository(client: SupabaseClient): RevealRe
 
       const { data, error } = await client
         .from("predictions")
-        .select("id, user_id, p1, p2, p3, use_joker, profiles!inner(pseudo, avatar_emoji), reactions(user_id, emoji)")
+        .select("id, user_id, p1, p2, p3, use_joker, profiles!predictions_user_id_fkey!inner(pseudo, avatar_emoji), reactions(user_id, emoji)")
         .eq("event_id", eventId)
         .returns<Row[]>();
       if (error) throw new UseCaseError("REVEAL_UNAVAILABLE");
