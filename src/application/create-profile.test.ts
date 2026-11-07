@@ -11,6 +11,9 @@ function fakeProfiles(): ProfileRepository {
     async find(userId) {
       return all.get(userId) ?? null;
     },
+    async isAdmin() {
+      return false;
+    },
     async create(profile) {
       if (all.has(profile.userId)) return "profile_exists";
       const taken = [...all.values()].some(
