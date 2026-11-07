@@ -133,6 +133,21 @@ Après toute modification de `.env.local`, redémarre `npm run dev`.
 Pour les composants : `npm run storybook` (http://localhost:6006). Pour leurs tests, installe une
 fois le navigateur : `npx playwright install chromium`, puis `npm run test:storybook`.
 
+## Devenir admin en local
+
+L'admin saisit les résultats et lance le calcul des points avec sa propre session : pas de clé
+secrète dans l'application. On devient admin uniquement en SQL (un joueur ne peut pas se donner
+ce droit depuis l'application).
+
+1. Connecte-toi une fois sur `http://localhost:3000` et crée ton profil.
+2. Dans le terminal (remplace le pseudo par le tien) :
+
+```
+docker exec -i supabase_db_french-track-prono psql -U postgres -c "update profiles set is_admin = true where lower(pseudo) = lower('MonPseudo')"
+```
+
+3. Recharge la page. `supabase db reset` efface ce droit : refais l'étape 2 après un reset.
+
 ## 4 bis. Connexion : lien du message et téléphone
 
 Le message de connexion contient un code à 6 chiffres et un lien. Le lien pointe vers
