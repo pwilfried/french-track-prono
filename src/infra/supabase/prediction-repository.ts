@@ -5,6 +5,15 @@ import type { Prediction, PredictionRepository } from "@/application/save-predic
 
 type Row = { user_id: string; event_id: string; p1: string; p2: string; p3: string; use_joker: boolean };
 
+function toPrediction(row: Row): Prediction {
+  return {
+    userId: row.user_id,
+    eventId: row.event_id,
+    podium: { first: row.p1, second: row.p2, third: row.p3 },
+    useJoker: row.use_joker,
+  };
+}
+
 /** The client must carry the player's session: row level security decides who can write what. */
 export function createSupabasePredictionRepository(client: SupabaseClient): PredictionRepository {
   return {
@@ -16,13 +25,18 @@ export function createSupabasePredictionRepository(client: SupabaseClient): Pred
         .eq("event_id", eventId)
         .maybeSingle<Row>();
       if (error) throw new UseCaseError("PREDICTION_UNAVAILABLE");
-      if (!data) return null;
-      return {
-        userId: data.user_id,
-        eventId: data.event_id,
-        podium: { first: data.p1, second: data.p2, third: data.p3 },
-        useJoker: data.use_joker,
-      } satisfies Prediction;
+      return data ? toPrediction(data) : null;
+    },
+
+    async listForCompetition(userId, competitionSlug) {
+      const { data, error } = await client
+        .from("predictions")
+        .select("user_id, event_id, p1, p2, p3, use_joker, events!inner(competitions!inner(slug))")
+        .eq("user_id", userId)
+        .eq("events.competitions.slug", competitionSlug)
+        .returns<Row[]>();
+      if (error) throw new UseCaseError("PREDICTION_UNAVAILABLE");
+      return data.map(toPrediction);
     },
 
     async save(prediction) {

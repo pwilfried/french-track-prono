@@ -15,6 +15,9 @@ function repository(outcome: SaveOutcome = "saved") {
     async find(userId, eventId) {
       return saved.find((p) => p.userId === userId && p.eventId === eventId) ?? null;
     },
+    async listForCompetition(userId) {
+      return saved.filter((p) => p.userId === userId);
+    },
     async save(prediction) {
       if (outcome === "saved") saved.push(prediction);
       return outcome;

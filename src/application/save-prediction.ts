@@ -10,6 +10,8 @@ export type SaveOutcome = "saved" | "locked" | "athlete_not_in_event" | "joker_a
 /** Port: where predictions are stored. Real adapter = Supabase, fake = in memory. */
 export interface PredictionRepository {
   find(userId: string, eventId: string): Promise<Prediction | null>;
+  /** The player's own predictions for the events of one competition. */
+  listForCompetition(userId: string, competitionSlug: string): Promise<Prediction[]>;
   /** Creates the prediction or replaces the player's previous one for this event. */
   save(prediction: Prediction): Promise<SaveOutcome>;
 }

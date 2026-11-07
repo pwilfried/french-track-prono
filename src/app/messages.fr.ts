@@ -94,6 +94,19 @@ export const messages = {
     hint: "Touche les athlètes dans l'ordre : 1er, 2e, 3e.",
     hintComplete: "Touche un athlète déjà placé pour le retirer, ou une marche pour la changer.",
   },
+  countdown: {
+    locksIn: (duration: string) => `Verrouillage dans ${duration}`,
+    locked: "Verrouillé",
+    /** "2 j 4 h", "3 h 5 min", "42 min", "4 min 12 s", "38 s". */
+    duration: (parts: { days: number; hours: number; minutes: number; seconds: number }) => {
+      const { days, hours, minutes, seconds } = parts;
+      if (days > 0) return hours > 0 ? `${days} j ${hours} h` : `${days} j`;
+      if (hours > 0) return minutes > 0 ? `${hours} h ${minutes} min` : `${hours} h`;
+      if (minutes >= 10) return `${minutes} min`;
+      if (minutes > 0) return seconds > 0 ? `${minutes} min ${seconds} s` : `${minutes} min`;
+      return `${seconds} s`;
+    },
+  },
   errors: {
     EVENTS_UNAVAILABLE: "Impossible de charger les épreuves pour le moment.",
     EVENT_NOT_FOUND: "Cette épreuve n'existe pas.",

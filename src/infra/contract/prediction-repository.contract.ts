@@ -8,6 +8,7 @@ export type Player = { userId: string; predictions: PredictionRepository };
 export type EventFixture = { eventId: string; athleteIds: string[]; outsiderId: string };
 
 export type PredictionWorld = {
+  competitionSlug: string;
   newPlayer(): Promise<Player>;
   /** At least two events still open, in the same competition. */
   openEvents: EventFixture[];
@@ -66,6 +67,24 @@ export function predictionRepositoryContract(name: string, world: () => Promise<
       expect(await player.predictions.save(changed)).toBe("saved");
 
       expect(await player.predictions.find(player.userId, event.eventId)).toEqual(changed);
+    });
+
+    it("lists only the player's own predictions of the competition, with the joker flag", async () => {
+      const w = await world();
+      const player = await w.newPlayer();
+      const other = await w.newPlayer();
+      await player.predictions.save(prediction(player, w.openEvents[0]!, true));
+      await player.predictions.save(prediction(player, w.openEvents[1]!));
+      await other.predictions.save(prediction(other, w.openEvents[0]!));
+
+      const mine = await player.predictions.listForCompetition(player.userId, w.competitionSlug);
+
+      expect(mine.map((p) => [p.eventId, p.useJoker]).sort()).toEqual(
+        [
+          [w.openEvents[0]!.eventId, true],
+          [w.openEvents[1]!.eventId, false],
+        ].sort(),
+      );
     });
 
     it("refuses a prediction on a locked event", async () => {

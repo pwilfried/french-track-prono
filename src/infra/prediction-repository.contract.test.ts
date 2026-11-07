@@ -21,9 +21,9 @@ function fakeWorld(): PredictionWorld {
   const future = new Date(Date.now() + 3600_000).toISOString();
   const past = new Date(Date.now() - 3600_000).toISOString();
   const fixtures = [
-    { id: "open-1", lockAt: future, athleteIds: athletes },
-    { id: "open-2", lockAt: future, athleteIds: athletes },
-    { id: "locked", lockAt: past, athleteIds: athletes },
+    { id: "open-1", competitionSlug: "c", lockAt: future, athleteIds: athletes },
+    { id: "open-2", competitionSlug: "c", lockAt: future, athleteIds: athletes },
+    { id: "locked", competitionSlug: "c", lockAt: past, athleteIds: athletes },
   ];
   const shared = createInMemoryPredictionRepository({ events: fixtures });
   const event = (id: string): EventFixture => ({
@@ -32,6 +32,7 @@ function fakeWorld(): PredictionWorld {
     outsiderId: "stranger",
   });
   return {
+    competitionSlug: "c",
     newPlayer: async () => ({ userId: crypto.randomUUID(), predictions: shared }),
     openEvents: [event("open-1"), event("open-2")],
     lockedEvent: event("locked"),
@@ -90,7 +91,7 @@ if (url && key) {
         throw new Error(`could not create the test profile: ${profile.error.message}`);
       return { userId: data.user.id, predictions: createSupabasePredictionRepository(client) };
     };
-    return { newPlayer, openEvents: [a, b], lockedEvent: c };
+    return { competitionSlug: COMPETITION, newPlayer, openEvents: [a, b], lockedEvent: c };
   };
   predictionRepositoryContract("Supabase (local)", realWorld);
 } else {
