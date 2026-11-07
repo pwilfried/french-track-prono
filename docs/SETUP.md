@@ -226,6 +226,14 @@ npm run test:e2e
 - Le test crée un joueur `e2e-…@example.test` à chaque passage ; `supabase db reset` remet tout à
   zéro.
 
+## Dépendances : les « overrides » de package.json
+
+`package.json` force deux versions de dépendances indirectes : `minimatch` sous
+`@typescript-eslint/typescript-estree` et `glob` sous
+`@joshwooding/vite-plugin-react-docgen-typescript`. Elles corrigent des failles signalées par
+`npm audit` dans des versions anciennes de ces paquets. On peut les retirer quand `npm audit` ne
+signale plus rien sans elles (test : les supprimer, `npm install`, `npm audit`).
+
 ## 5. Sécurité : à ne jamais committer
 
 - `.env.local` et tout fichier contenant des clés (déjà dans `.gitignore`)
