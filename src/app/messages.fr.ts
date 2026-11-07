@@ -112,6 +112,10 @@ export const messages = {
     leaving: "Départ…",
     actions: "Gérer la ligue",
     general: "Classement général",
+    inviteTitle: "Rejoindre une ligue",
+    inviteSubtitle: "Lien d'invitation",
+    invited: (code: string) => `Tu as été invité dans une ligue avec le code ${code}.`,
+    inviteNote: "Tu rejoins la ligue en un appui ; tu pourras la quitter quand tu veux.",
   },
   ranking: {
     title: "Classement",
