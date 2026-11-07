@@ -26,6 +26,30 @@ export const messages = {
     empty: "Aucune épreuve pour ce filtre.",
     loading: "Chargement des épreuves…",
   },
+  points: {
+    title: "Mes points",
+    total: (points: number, events: number) =>
+      events === 0
+        ? "point"
+        : `${points <= 1 ? "point" : "points"} · ${events} ${events === 1 ? "épreuve" : "épreuves"}`,
+    line: (points: number) => (points > 0 ? `+${points} pts` : `${points} pt`),
+    emptyTitle: "Pas encore de points",
+    emptyText: "Fais tes pronos : tes points apparaîtront ici dès que les résultats seront saisis.",
+    seeEvents: "Voir les épreuves",
+    note: "Les points arrivent quand l'admin a saisi le résultat.",
+    profileLink: "Mes points",
+    reasons: {
+      winner: "Vainqueur trouvé",
+      second: "2e trouvé",
+      third: "3e trouvé",
+      misplaced: (count: number) =>
+        count === 1 ? "1 athlète mal placé" : `${count} athlètes mal placés`,
+      perfect: "Podium parfait",
+      flair: "Coup de flair",
+      joker: "Joker ×2",
+      none: "Aucun athlète sur le podium",
+    },
+  },
   event: {
     back: "Épreuves",
     startList: "Liste de départ",
