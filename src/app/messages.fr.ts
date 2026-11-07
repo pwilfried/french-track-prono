@@ -219,6 +219,8 @@ export const messages = {
     LEAGUE_MEMBER_UNKNOWN: "Ce joueur ne fait pas partie de la ligue.",
     LEAGUES_UNAVAILABLE:
       "Les ligues ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+    RANKING_UNAVAILABLE:
+      "Le classement n'est pas disponible pour le moment. Réessaie dans un instant.",
     RESULT_MISSING: "Saisis d'abord le résultat officiel de cette épreuve.",
     EVENT_NOT_LOCKED: "Les pronos de cette épreuve ne sont pas encore fermés.",
     POINTS_UNAVAILABLE:
