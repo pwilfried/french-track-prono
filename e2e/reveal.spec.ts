@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
 
-test("a player cannot see a friend's podium before the lock and sees it after", async ({
+test("a player cannot see a friend's podium before the lock, sees it after and reacts to it", async ({
   browser,
 }) => {
   // An open event of its own (the prediction journey uses the first one).
@@ -41,4 +41,16 @@ test("a player cannot see a friend's podium before the lock and sees it after", 
   await bobPage.reload();
   await expect(bobPage.getByRole("heading", { name: "Les pronos" })).toBeVisible();
   await expect(bobPage.getByText(anna.pseudo)).toBeVisible();
+
+  // Bob reacts with a fire; Anna sees it on her own podium.
+  const fire = bobPage.getByRole("button", { name: /^Réagir : feu/ });
+  await fire.click();
+  await expect(fire).toHaveAttribute("aria-pressed", "true");
+  await expect(fire).toHaveAccessibleName("Réagir : feu, 1 réaction");
+  await annaPage.reload();
+  await expect(annaPage.getByText("🔥 1")).toBeVisible();
+
+  // Tapping it again removes it.
+  await fire.click();
+  await expect(fire).toHaveAttribute("aria-pressed", "false");
 });
