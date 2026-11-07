@@ -99,8 +99,8 @@ Français seul en v1. Tous les textes visibles sont dans un seul fichier de mess
 
 Sur chaque PR (runners GitHub, pas de machine dédiée) : formatage, lint, types, règle d'import
 des couches, tests Vitest, tests pgTAP (Supabase local), build, puis Storybook (tests des
-play functions dans Chromium et build). Les tests Playwright de bout en bout viennent avec le
-parcours complet. Un test instable est corrigé ou supprimé dans la semaine, jamais relancé
+play functions dans Chromium et build). Le job base de données lance aussi le test Playwright de
+bout en bout sur le build, contre Supabase local (sans relance automatique). Un test instable est corrigé ou supprimé dans la semaine, jamais relancé
 automatiquement.
 
 ## Agents on GitHub
@@ -122,7 +122,7 @@ Disponibles : `npm run dev`, `npm run build`, `npm run start`, `npm run lint`,
 `npm run typecheck`, `npm test` (Vitest, dont la règle d'import des couches),
 `npm run test:watch`, `npm run format` (écrit), `npm run format:check` (vérifie),
 `npm run storybook` (composants), `npm run test:storybook` (play functions, navigateur Chromium),
-`npm run build-storybook`,
+`npm run build-storybook`, `npm run test:e2e` (Playwright, Supabase local + `npm run build`),
 `supabase start`, `supabase db reset`, `supabase test db` (pgTAP).
 
 Prérequis : Node 24 (`.nvmrc`), Docker pour Supabase local. Variables : copier `.env.example`

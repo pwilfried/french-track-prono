@@ -23,7 +23,14 @@ export type ErrorCode =
   | "LEAGUE_OWNER_MUST_HAND_OVER"
   | "NOT_LEAGUE_OWNER"
   | "LEAGUE_MEMBER_UNKNOWN"
-  | "LEAGUES_UNAVAILABLE";
+  | "LEAGUES_UNAVAILABLE"
+  | "RESULT_MISSING"
+  | "EVENT_NOT_LOCKED"
+  | "POINTS_UNAVAILABLE"
+  | "PODIUM_INVALID"
+  | "PREDICTION_LOCKED"
+  | "JOKER_ALREADY_USED"
+  | "PREDICTION_UNAVAILABLE";
 
 export class UseCaseError extends Error {
   constructor(readonly code: ErrorCode) {
