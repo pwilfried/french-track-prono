@@ -250,6 +250,14 @@ export const messages = {
     signIn: "Se connecter",
     myProfile: (pseudo: string) => `Mon profil : ${pseudo}`,
   },
+  badges: {
+    nostradamus: { emoji: "🔮", name: "Nostradamus", rule: "Un podium parfait" },
+    chasseur: { emoji: "🎯", name: "Chasseur", rule: "3 vainqueurs trouvés" },
+    flair: { emoji: "🦊", name: "Flair", rule: "Un coup de flair" },
+    serie: { emoji: "🔥", name: "Série", rule: "5 épreuves de suite avec des points" },
+    bleus: { emoji: "🇫🇷", name: "Bleus", rule: "Un vainqueur français trouvé" },
+    fidele: { emoji: "📅", name: "Fidèle", rule: "Un prono sur chaque épreuve d'une journée" },
+  },
   profile: {
     title: "Mon profil",
     since: (date: string) => `Joueur depuis le ${date}`,
@@ -261,6 +269,9 @@ export const messages = {
     pseudo: "Pseudo",
     email: "E-mail",
     private: "Privé",
+    badges: "Badges",
+    noBadge:
+      "Pas encore de badge : un podium parfait, un coup de flair ou une série de 5 en débloquent.",
     emailPrivate: "Ton e-mail reste privé : il n'apparaît jamais dans l'application.",
     signOut: "Se déconnecter",
     signingOut: "Déconnexion…",
