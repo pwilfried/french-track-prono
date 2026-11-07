@@ -31,8 +31,21 @@ export const messages = {
     profile: "Profil",
   },
   home: {
-    podiumLabel: "Podium",
-    cta: "Voir les épreuves",
+    current: "Compétition en cours",
+    upcoming: "Prochaine compétition",
+    in: "Dans",
+    days: "j",
+    hours: "h",
+    minutes: "min",
+    countdownLabel: (days: number, hours: number, minutes: number) =>
+      `Prochain verrouillage dans ${days} jours, ${hours} heures et ${minutes} minutes`,
+    compose: "Composer mon podium",
+    seeAll: (count: number) => `Voir les ${count} épreuves`,
+    myRank: "Ton rang général",
+    players: (count: number) => (count <= 1 ? `sur ${count} joueur` : `sur ${count} joueurs`),
+    notRanked: "Pas encore classé : fais ton premier prono.",
+    nextEvents: "Prochaines épreuves",
+    noneOpen: "Plus aucune épreuve ouverte aux pronos.",
   },
   events: {
     subtitle: (place: string, count: number) => `${place} · ${count} épreuves`,
