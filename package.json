@@ -16,7 +16,8 @@
     "build-storybook": "storybook build",
     "db:open-events": "docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/dev/open_events.sql",
     "test:storybook": "vitest run --config vitest.storybook.config.mts",
-    "db:demo-players": "docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/dev/demo_players.sql"
+    "db:demo-players": "docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/dev/demo_players.sql",
+    "db:test-points": "npm run db:demo-players && docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/dev/lock_demo_events.sql"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
