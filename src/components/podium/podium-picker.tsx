@@ -32,12 +32,15 @@ export function PodiumPicker({
   error,
   disabled = false,
   onChange,
+  title = messages.picker.podium,
 }: {
   athletes: Entry[];
   initialDraft?: PodiumDraft;
   error?: string;
   disabled?: boolean;
   onChange?: (draft: PodiumDraft) => void;
+  /** Heading above the steps ("Ton podium" by default). */
+  title?: string;
 }) {
   const [draft, setDraft] = useState(initialDraft);
   const [selected, setSelected] = useState<Step | null>(null);
@@ -62,7 +65,7 @@ export function PodiumPicker({
   return (
     <div className="flex flex-col gap-3">
       <h2 className="px-4 text-xs font-bold tracking-wider text-muted-foreground uppercase">
-        {messages.picker.podium}
+        {title}
       </h2>
       <div className="grid grid-cols-3 items-end gap-2.5 px-4">
         {DISPLAY.map((step) => {

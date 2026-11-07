@@ -79,6 +79,25 @@ export function createSupabasePointsRepository(client: SupabaseClient): PointsRe
       );
     },
 
+    async progress(competitionSlug) {
+      const [results, scores] = await Promise.all([
+        client
+          .from("results")
+          .select("event_id, events!inner(competitions!inner(slug))")
+          .eq("events.competitions.slug", competitionSlug)
+          .returns<{ event_id: string }[]>(),
+        client
+          .from("score_events")
+          .select("event_id, events!inner(competitions!inner(slug))")
+          .eq("source", "prediction")
+          .eq("events.competitions.slug", competitionSlug)
+          .returns<{ event_id: string }[]>(),
+      ]);
+      if (results.error || scores.error) fail();
+      const unique = (rows: { event_id: string }[]) => [...new Set(rows.map((r) => r.event_id))];
+      return { withResult: unique(results.data!), scored: unique(scores.data!) };
+    },
+
     async listMine(userId, competitionSlug) {
       const { data, error } = await client
         .from("score_events")

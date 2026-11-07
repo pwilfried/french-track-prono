@@ -25,6 +25,7 @@ function repository(event: EventToScore | null, outcome: "saved" | "not_admin" =
   const stored = new Map<string, ScoreLine[]>();
   const points: PointsRepository = {
     loadEvent: async () => event,
+    progress: async () => ({ withResult: [], scored: [] }),
     findEventScores: async (eventId) => stored.get(eventId) ?? [],
     listMine: async () => [],
     replaceEventScores: async (eventId, lines) => {
