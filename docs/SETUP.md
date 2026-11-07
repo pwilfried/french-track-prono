@@ -86,6 +86,21 @@ supabase db reset      # applique migrations + seed.sql
 
 La configuration (`supabase/config.toml`) est déjà dans le dépôt : pas de `supabase init`.
 
+### Rouvrir des épreuves pour tester les pronostics
+
+Le tournoi de test est terminé : après un `supabase db reset`, toutes les épreuves sont
+verrouillées. Pour pouvoir pronostiquer en local :
+
+```bash
+npm run db:open-events
+```
+
+Le script (`supabase/dev/open_events.sql`) décale tout le programme à partir de maintenant, dans le
+même ordre : la première épreuve est déjà verrouillée, les 27 autres sont ouvertes sur trois
+jours, et les résultats officiels sont retirés. Relance-le pour repartir de « maintenant ».
+`supabase db reset` remet le vrai programme. Ce script ne sert qu'en local : il n'est ni dans les
+migrations ni dans `seed.sql`.
+
 Une fois démarré, `supabase start` affiche les adresses utiles :
 
 | Service | Adresse habituelle |
@@ -97,6 +112,31 @@ Une fois démarré, `supabase start` affiche les adresses utiles :
 La clé « Publishable » (ancienne clé `anon`) s'affiche aussi : elle va dans `.env.local`, jamais dans `.env.example`.
 
 Contrôle rapide dans Studio : la table `events` doit contenir 28 lignes, `results` 91.
+
+### Joueurs de démo pour vérifier les points
+
+Après `npm run db:open-events`, la commande suivante crée douze joueurs inventés
+(`demo-1@example.test` à `demo-12@example.test`, pseudos « Démo … ») avec des pronos sur les deux
+premières épreuves ouvertes :
+
+```
+npm run db:demo-players
+```
+
+Elle peut être relancée : elle repart de zéro. Le haut du fichier `supabase/dev/demo_players.sql`
+donne les points attendus si l'admin saisit le résultat a, b, c (l'ordre de la liste de départ) :
+un podium parfait avec joker et coup de flair (28 points), un podium parfait simple (12), un joker
+sur 5 points (10), etc. `supabase db reset` efface ces joueurs.
+
+Pour vérifier les points en une seule commande (après `npm run db:open-events`) :
+
+```
+npm run db:test-points
+```
+
+Elle crée les joueurs de démo, affiche les athlètes des deux épreuves sous les lettres a, b, c,
+puis verrouille ces deux épreuves. Il ne reste qu'à te mettre admin (« Devenir admin en local »),
+à saisir a 1er, b 2e, c 3e dans `/admin` et à calculer les points.
 
 ## 4. Lancer l'application
 
@@ -118,6 +158,21 @@ Après toute modification de `.env.local`, redémarre `npm run dev`.
 Pour les composants : `npm run storybook` (http://localhost:6006). Pour leurs tests, installe une
 fois le navigateur : `npx playwright install chromium`, puis `npm run test:storybook`.
 
+## Devenir admin en local
+
+L'admin saisit les résultats et lance le calcul des points avec sa propre session : pas de clé
+secrète dans l'application. On devient admin uniquement en SQL (un joueur ne peut pas se donner
+ce droit depuis l'application).
+
+1. Connecte-toi une fois sur `http://localhost:3000` et crée ton profil.
+2. Dans le terminal (remplace le pseudo par le tien) :
+
+```
+docker exec -i supabase_db_french-track-prono psql -U postgres -c "update profiles set is_admin = true where lower(pseudo) = lower('MonPseudo')"
+```
+
+3. Recharge la page. `supabase db reset` efface ce droit : refais l'étape 2 après un reset.
+
 ## 4 bis. Connexion : lien du message et téléphone
 
 Le message de connexion contient un code à 6 chiffres et un lien. Le lien pointe vers
@@ -135,6 +190,28 @@ Pour tester le lien depuis un téléphone sur le même réseau :
 3. Ne committe pas cette adresse : remets `http://localhost:3000` avant de créer ta PR.
 
 Le code à 6 chiffres marche toujours, sans rien changer.
+
+## 4 ter. Test de bout en bout (Playwright)
+
+Le parcours « connexion → profil → prono → épreuve verrouillée » est testé avec Playwright, sur
+le build de production, contre Supabase local. Il lit le code de connexion dans la boîte de test
+(Mailpit) et verrouille l'épreuve avec `psql`.
+
+```
+supabase start
+npm run db:open-events
+npx playwright install chromium
+npm run build
+npm run test:e2e
+```
+
+- Durée : moins d'une minute pour le test lui-même ; en CI, l'installation de Chromium et le
+  build ajoutent environ 3 minutes au job « Database ».
+- Pas de relance automatique : un test qui échoue est corrigé ou supprimé.
+- En cas d'échec en CI, le rapport (traces, captures) est joint au run sous le nom
+  `playwright-report`.
+- Le test crée un joueur `e2e-…@example.test` à chaque passage ; `supabase db reset` remet tout à
+  zéro.
 
 ## 5. Sécurité : à ne jamais committer
 

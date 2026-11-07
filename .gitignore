@@ -31,3 +31,7 @@ next-env.d.ts
 
 # Storybook build output
 storybook-static/
+
+# Playwright
+/playwright-report/
+/test-results/
