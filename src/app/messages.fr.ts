@@ -208,6 +208,8 @@ export const messages = {
   },
   event: {
     back: "Épreuves",
+    final: "Finale",
+    title: (discipline: string) => `${discipline} — Finale`,
     startList: "Liste de départ",
     startListEmpty: "La liste de départ n'est pas encore connue.",
     podium: "Podium officiel",
@@ -278,6 +280,8 @@ export const messages = {
   countdown: {
     locksIn: (duration: string) => `Verrouillage dans ${duration}`,
     locked: "Verrouillé",
+    locksInLabel: "Verrouillage dans",
+    day: "j",
     /** "2 j 4 h", "3 h 5 min", "42 min", "4 min 12 s", "38 s". */
     duration: (parts: { days: number; hours: number; minutes: number; seconds: number }) => {
       const { days, hours, minutes, seconds } = parts;
@@ -289,9 +293,11 @@ export const messages = {
     },
   },
   picker: {
-    podium: "Ton podium",
-    athletes: "Athlètes engagés",
+    podium: "Mon podium",
+    athletes: "Liste de départ",
     emptyStep: "Touche un athlète",
+    choose: "Choisir",
+    seasonBest: (mark: string) => `RS ${mark}`,
     step: (rank: 1 | 2 | 3) => ["1er", "2e", "3e"][rank - 1]!,
     stepLabel: (rank: 1 | 2 | 3, name: string | null) =>
       `${["1re", "2e", "3e"][rank - 1]} place : ${name ?? "vide"}`,

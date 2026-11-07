@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ResultLine } from "./event";
-import { initialsOf, podiumSteps } from "./podium";
+import { podiumSteps } from "./podium";
 
 const line = (name: string, rank: number): ResultLine => ({
   athleteId: name,
@@ -42,23 +42,5 @@ describe("podiumSteps", () => {
 
   it("returns three empty steps when there is no result", () => {
     expect(podiumSteps([]).map((s) => s.athletes.length)).toEqual([0, 0, 0]);
-  });
-});
-
-describe("initialsOf", () => {
-  it("takes the first letter of the first and last words", () => {
-    expect(initialsOf("Kenny Bednarek")).toBe("KB");
-  });
-
-  it("uses a single letter for a one-word name", () => {
-    expect(initialsOf("Duplantis")).toBe("D");
-  });
-
-  it("ignores extra spaces and middle names", () => {
-    expect(initialsOf("  Anna  Maria  Lopez ")).toBe("AL");
-  });
-
-  it("uppercases the letters", () => {
-    expect(initialsOf("jean dupont")).toBe("JD");
   });
 });

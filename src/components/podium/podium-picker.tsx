@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { messages } from "@/app/messages.fr";
 import type { Entry } from "@/domain/event";
+import { flagOf } from "@/domain/flag";
 import {
   emptyDraft,
   nextEmptyStep,
@@ -15,11 +16,15 @@ import {
 } from "@/domain/podium-draft";
 import { cn } from "@/lib/utils";
 
-const MEDAL = { 1: "🥇", 2: "🥈", 3: "🥉" } as const;
+const MEDAL_STYLE = {
+  1: "bg-gradient-to-b from-(--medal-gold-from) to-(--medal-gold-to) text-(--medal-gold-ink) border-transparent",
+  2: "bg-gradient-to-b from-(--medal-silver-from) to-(--medal-silver-to) text-(--medal-silver-ink) border-transparent",
+  3: "bg-gradient-to-b from-(--medal-bronze-from) to-(--medal-bronze-to) text-(--medal-bronze-ink) border-transparent",
+} as const;
 const KEY = { 1: "first", 2: "second", 3: "third" } as const;
 // Display order: second on the left, winner in the middle, third on the right.
 const DISPLAY: Step[] = [2, 1, 3];
-const STEP_HEIGHT = { 1: "min-h-29", 2: "min-h-24", 3: "min-h-21" } as const;
+const STEP_HEIGHT = { 1: "min-h-32", 2: "min-h-28", 3: "min-h-24" } as const;
 
 /**
  * Compose a podium by tapping: athletes go on the selected step (by default the first empty one),
@@ -79,26 +84,26 @@ export function PodiumPicker({
               aria-label={messages.picker.stepLabel(step, athlete?.name ?? null)}
               onClick={() => setSelected(selected === step ? null : step)}
               className={cn(
-                "flex min-w-0 flex-col items-center justify-center gap-1 rounded-[18px] border-2 bg-card px-1 py-2 text-center text-[13px] font-bold transition-shadow motion-reduce:transition-none",
+                "flex min-w-0 flex-col items-center justify-start gap-1 rounded-t-2xl rounded-b-lg border-2 px-1 py-2 text-center text-[13px] font-bold transition-shadow motion-reduce:transition-none",
                 STEP_HEIGHT[step],
-                athlete ? "border-solid border-primary bg-muted" : "border-dashed border-border",
-                active === step && !disabled && "border-primary ring-3 ring-primary/25",
+                athlete
+                  ? MEDAL_STYLE[step]
+                  : "border-dashed border-border bg-card text-muted-foreground",
+                active === step && !disabled && "ring-3 ring-primary/40",
               )}
             >
-              <span aria-hidden className="text-[22px]">
-                {MEDAL[step]}
+              <span aria-hidden className="font-display text-2xl font-extrabold">
+                {step}
               </span>
               {athlete ? (
                 <>
-                  <span className="line-clamp-2 break-words hyphens-auto">{athlete.name}</span>
-                  <span className="text-[11px] font-semibold text-muted-foreground">
-                    {athlete.countryCode}
+                  <span aria-hidden className="text-lg leading-none">
+                    {flagOf(athlete.countryCode) ?? athlete.countryCode}
                   </span>
+                  <span className="line-clamp-2 break-words hyphens-auto">{athlete.name}</span>
                 </>
               ) : (
-                <span className="text-xs font-semibold text-muted-foreground">
-                  {messages.picker.emptyStep}
-                </span>
+                <span className="text-xs font-semibold">{messages.picker.emptyStep}</span>
               )}
             </button>
           );
@@ -126,24 +131,39 @@ export function PodiumPicker({
                 aria-pressed={rank !== null}
                 onClick={() => tapAthlete(athlete.athleteId)}
                 className={cn(
-                  "flex min-h-14 w-full items-center gap-3 rounded-2xl border-2 bg-card px-3.5 py-1.5 text-left",
-                  rank !== null ? "border-primary bg-muted" : "border-border",
+                  "flex min-h-14 w-full items-center gap-3 rounded-2xl border bg-card px-3.5 py-2 text-left",
+                  rank !== null ? "border-primary" : "border-border",
                 )}
               >
+                <span aria-hidden className="w-7 shrink-0 text-center text-xl leading-none">
+                  {flagOf(athlete.countryCode) ?? (
+                    <span className="text-xs font-bold">{athlete.countryCode}</span>
+                  )}
+                </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-bold break-words">{athlete.name}</span>
-                  <span className="block text-[13px] text-muted-foreground">
-                    {athlete.countryCode}
-                    {athlete.seasonBest ? ` · ${athlete.seasonBest}` : ""}
-                  </span>
+                  {athlete.seasonBest && (
+                    <span className="block font-mono text-xs text-muted-foreground">
+                      {messages.picker.seasonBest(athlete.seasonBest)}
+                    </span>
+                  )}
                 </span>
-                {rank !== null && (
+                {rank !== null ? (
                   <span
                     aria-hidden
-                    className="grid size-8 shrink-0 place-items-center rounded-full bg-primary font-extrabold text-primary-foreground"
+                    className="grid size-9 shrink-0 place-items-center rounded-full bg-primary font-extrabold text-primary-foreground"
                   >
                     {rank}
                   </span>
+                ) : (
+                  !disabled && (
+                    <span
+                      aria-hidden
+                      className="shrink-0 rounded-full bg-brand-soft px-3 py-1.5 text-xs font-bold text-brand-ink"
+                    >
+                      {messages.picker.choose}
+                    </span>
+                  )
                 )}
               </button>
             </li>

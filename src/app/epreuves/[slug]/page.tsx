@@ -6,13 +6,13 @@ import { UseCaseError } from "@/application/errors";
 import { getEvent } from "@/application/get-event";
 import { getMyPrediction, type Prediction } from "@/application/save-prediction";
 import { buttonVariants } from "@/components/ui/button";
-import { CountdownBadge } from "@/components/countdown/countdown-badge";
+import { LockBanner } from "@/components/countdown/lock-banner";
 import { ErrorNotice } from "@/components/error-notice";
-import { PodiumDisplay } from "@/components/podium/podium-display";
+import { PodiumMedals } from "@/components/podium/podium-medals";
 import { PodiumPicker } from "@/components/podium/podium-picker";
 import { eventPhase } from "@/domain/countdown";
 import type { EventDetail } from "@/domain/event";
-import { initialsOf } from "@/domain/podium";
+import { flagOf } from "@/domain/flag";
 import { draftFromPodium, emptyDraft } from "@/domain/podium-draft";
 import {
   createPublicSupabaseClient,
@@ -157,34 +157,35 @@ export default async function EventPage({
 
   return (
     <main id="main" className="flex flex-1 flex-col">
-      <header className="hero px-4 pt-6">
-        <div className="mx-auto max-w-md">
-          <div className="flex items-center justify-between gap-3">
-            <Link
-              href="/epreuves"
-              className="inline-flex min-h-11 items-center text-base font-semibold"
-            >
-              ‹ {messages.event.back}
-            </Link>
+      <header className="px-4 pt-4">
+        <div className="mx-auto flex max-w-md flex-col gap-3">
+          <Link
+            href="/epreuves"
+            className="inline-flex min-h-11 items-center self-start font-semibold text-brand dark:text-secondary"
+          >
+            ‹ {messages.event.back}
+          </Link>
+          <div>
+            <h1 className="font-display text-3xl font-extrabold leading-tight">
+              {messages.event.title(event.discipline)}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {messages.events.gender[event.gender]} ·{" "}
+              <span className="first-letter:uppercase">{when.replace(" à ", " · ")}</span>
+            </p>
           </div>
-          <h1 className="mt-1 flex flex-wrap items-center gap-2 font-display text-3xl font-extrabold uppercase leading-none">
-            {event.discipline}
-            <span className="rounded-full bg-primary px-3 py-1 font-sans text-sm font-extrabold text-primary-foreground">
-              {messages.events.gender[event.gender]}
-            </span>
-          </h1>
-          <p className="mt-2 flex flex-wrap items-center gap-2 text-[#dce6f5]">
-            <span className="first-letter:uppercase">{when.replace(" à ", " · ")}</span>
-            <span className="rounded-full bg-success-text px-3 py-0.5 text-xs font-bold text-white">
+          {event.status === "upcoming" ? (
+            <LockBanner lockAt={event.lockAt} />
+          ) : (
+            <span className="self-start rounded-full bg-muted px-3 py-1 text-xs font-bold">
               {messages.events.status[event.status]}
             </span>
-          </p>
-          <div className="mt-4">
-            <CountdownBadge lockAt={event.lockAt} />
-          </div>
-          <div className="mt-6">
-            <PodiumDisplay results={event.results} />
-          </div>
+          )}
+          {event.results.length > 0 && (
+            <div className="rounded-card border border-border bg-card p-4">
+              <PodiumMedals results={event.results} />
+            </div>
+          )}
         </div>
       </header>
 
@@ -204,31 +205,28 @@ export default async function EventPage({
 
       {showStartList && (
         <div className="mx-auto flex w-full max-w-md flex-col gap-3 px-4 py-6">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
             {messages.event.startList}
           </h2>
           {event.entries.length === 0 ? (
             <p className="rounded-card bg-muted p-4">{messages.event.startListEmpty}</p>
           ) : (
-            <ul className="flex flex-col">
+            <ul className="flex flex-col gap-2">
               {event.entries.map((entry) => (
                 <li
                   key={entry.athleteId}
-                  className="flex min-h-14 items-center gap-3 border-b border-border py-2"
+                  className="flex min-h-14 items-center gap-3 rounded-2xl border border-border bg-card px-3.5 py-2"
                 >
                   <span
                     aria-hidden="true"
-                    className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-extrabold text-brand-foreground"
+                    className="w-7 shrink-0 text-center text-xl leading-none"
                   >
-                    {initialsOf(entry.name)}
+                    {flagOf(entry.countryCode) ?? (
+                      <span className="text-xs font-bold">{entry.countryCode}</span>
+                    )}
                   </span>
-                  <span className="min-w-0 flex-1 break-words font-display text-lg font-bold">
-                    {entry.name}
-                  </span>
-                  <span className="rounded-md bg-muted px-2 py-0.5 text-sm font-bold">
-                    {entry.countryCode}
-                  </span>
-                  <span className="w-14 text-right text-lg font-bold">
+                  <span className="min-w-0 flex-1 break-words font-bold">{entry.name}</span>
+                  <span className="font-mono text-sm font-semibold tabular-nums">
                     {markOf.get(entry.athleteId) ?? entry.seasonBest ?? ""}
                   </span>
                 </li>
