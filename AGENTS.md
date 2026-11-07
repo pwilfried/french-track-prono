@@ -85,8 +85,9 @@ supabase/          migrations, seed, tests pgTAP (verrouillage, sécurité)
 - Mobile d'abord (390 px), puis adaptation desktop. Cibles tactiles ≥ 44 px, contrastes AA.
 - Palette et typographie : `docs/DESIGN.md`. Mode sombre obligatoire.
 - Animations courtes, `prefers-reduced-motion` respecté.
-- Composants Storybook : podium, classement, compte à rebours seulement. Chaque état : vide,
-  chargement, erreur, texte long.
+- Composants Storybook : ceux du design system « Officiel » (podium, classement, compte à rebours,
+  étiquettes de statut, carte d'épreuve, marque) ; pas les pages. Chaque état : vide, chargement,
+  erreur, texte long.
 - Les maquettes (« boards ») vivent sur la branche orpheline `boards`, jamais sur `main` ;
   une PR d'interface les référence par lien. Une issue `after-ui` attend la maquette validée.
 
@@ -162,8 +163,8 @@ Les agents suivent ce tableau sans qu'on le leur demande.
 Règles complémentaires :
 
 - Les noms de tests sont des phrases en anglais : `rejects a prediction after the lock time`.
-- Composants Storybook : uniquement podium, classement et compte à rebours (cf. « Stack »).
-  Les autres écrans sont couverts par le test de bout en bout.
+- Composants Storybook : ceux du design system (voir « UI rules »). Les écrans complets sont
+  couverts par les tests de bout en bout.
 - Un test instable est corrigé ou supprimé dans la semaine, **jamais relancé automatiquement**.
 - Chaque PR se termine par son étape de refactor : doublons fusionnés, code mort retiré,
   comportement inchangé (et tests toujours verts).

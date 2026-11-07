@@ -14,6 +14,14 @@
 
 Charte tirée du logo FrenchTrack : un bleu profond en dégradé, un rouge vif, du blanc.
 
+**Direction « Officiel »** (adoptée par le propriétaire le 7 nov. 2026, proposée dans #185) :
+le logo FrenchTrack (`public/brand/frenchtrack.png`, version contour pour les en-têtes bleus)
+suivi de l'étiquette rouge « Prono » ; des étiquettes de statut (`ChipStatus`, six tons :
+neutre, marque, or, ok, chaud, discret) sur des fonds doux (`--*-soft` / `--*-ink`, contrastes
+AA dans les deux thèmes) ; une carte d'épreuve en grille « heure | discipline | statut » ; un
+podium officiel en dégradés or, argent, bronze (`--medal-*`). Un visiteur ne voit pas
+« À pronostiquer » : seulement le compte à rebours.
+
 | Rôle | Couleur | Usage |
 |---|---|---|
 | Bleu FrenchTrack | `#084595` | Fond des écrans d'accueil, liens et éléments de marque en mode clair |

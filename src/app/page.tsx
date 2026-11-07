@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { AccountMenu } from "@/components/account/account-menu";
@@ -18,8 +19,15 @@ export default function Home() {
         <AccountMenu returnTo="/" />
       </div>
       <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6 text-center">
-        <h1 className="font-display text-5xl font-extrabold uppercase leading-none tracking-tight">
-          {messages.app.nameLine1}
+        <h1 className="flex flex-col items-center font-display text-5xl font-extrabold uppercase leading-none tracking-tight">
+          <Image
+            src="/brand/frenchtrack.png"
+            width={274}
+            height={318}
+            alt={messages.app.logoAlt}
+            priority
+            className="h-40 w-auto"
+          />
           <span className="mt-3 block">
             <span className="inline-block -rotate-2 rounded-xl bg-primary px-4 py-1 text-primary-foreground">
               {messages.app.nameLine2}
