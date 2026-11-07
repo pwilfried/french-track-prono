@@ -35,11 +35,6 @@ export const messages = {
     empty: "Aucune épreuve pour ce filtre.",
     loading: "Chargement des épreuves…",
   },
-  myPredictions: {
-    predicted: "✓ Pronostiqué",
-    toPredict: "À pronostiquer",
-    joker: "🃏 Joker",
-  },
   leaderboard: {
     label: "Classement",
     me: "Toi",
@@ -78,43 +73,6 @@ export const messages = {
       joker: "Joker ×2",
       none: "Aucun athlète sur le podium",
     },
-  },
-  admin: {
-    title: "Résultats",
-    badge: "Admin",
-    subtitle: (competition: string, count: number) =>
-      `${competition} · ${count} ${count <= 1 ? "épreuve verrouillée" : "épreuves verrouillées"}`,
-    back: "Résultats",
-    filters: "Filtrer par état",
-    filter: {
-      todo: (n: number) => `À saisir (${n})`,
-      entered: (n: number) => `Saisis (${n})`,
-      scored: (n: number) => `Calculés (${n})`,
-    },
-    state: { todo: "Sans résultat", entered: "Résultat saisi", scored: "Points calculés" },
-    empty: "Aucune épreuve dans cet état.",
-    lockedOnly: "Seules les épreuves verrouillées peuvent recevoir un résultat.",
-    officialPodium: "Podium officiel",
-    addTie: "Ajouter un ex æquo",
-    tieRank: "Place",
-    tieAthlete: "Athlète",
-    tieAdd: "Ajouter",
-    tieLabel: (rank: number) => `ex æquo ${rank === 1 ? "1re" : `${rank}e`} place`,
-    removeTie: (name: string) => `Retirer ${name}`,
-    marks: "Marques (facultatif)",
-    saveResult: "Enregistrer le résultat",
-    savingResult: "Enregistrement…",
-    resultSaved: "✓ Résultat enregistré. Les points ne sont pas encore calculés.",
-    compute: "Calculer les points",
-    recompute: "Recalculer",
-    computing: "Calcul…",
-    correct: "Corriger le résultat",
-    computeNote:
-      "Calculer peut être relancé après une correction : les points sont remplacés, jamais ajoutés deux fois.",
-    computed: (players: number) =>
-      `✓ Points calculés pour ${players} ${players <= 1 ? "joueur" : "joueurs"}.`,
-    kpi: { predictions: "pronos", average: "moyenne", best: "meilleur" },
-    detail: "Détail",
   },
   leagues: {
     title: "Mes ligues",
@@ -175,6 +133,49 @@ export const messages = {
     notRanked: "Tu n'as pas encore de points : fais tes pronos pour entrer au classement.",
     predict: "Faire mes pronos",
   },
+  admin: {
+    title: "Résultats",
+    badge: "Admin",
+    subtitle: (competition: string, count: number) =>
+      `${competition} · ${count} ${count <= 1 ? "épreuve verrouillée" : "épreuves verrouillées"}`,
+    back: "Résultats",
+    filters: "Filtrer par état",
+    filter: {
+      todo: (n: number) => `À saisir (${n})`,
+      entered: (n: number) => `Saisis (${n})`,
+      scored: (n: number) => `Calculés (${n})`,
+    },
+    state: { todo: "Sans résultat", entered: "Résultat saisi", scored: "Points calculés" },
+    empty: "Aucune épreuve dans cet état.",
+    lockedOnly: "Seules les épreuves verrouillées peuvent recevoir un résultat.",
+    officialPodium: "Podium officiel",
+    addTie: "Ajouter un ex æquo",
+    tieRank: "Place",
+    tieAthlete: "Athlète",
+    tieAdd: "Ajouter",
+    tieLabel: (rank: number) => `ex æquo ${rank === 1 ? "1re" : `${rank}e`} place`,
+    removeTie: (name: string) => `Retirer ${name}`,
+    marks: "Marques (facultatif)",
+    saveResult: "Enregistrer le résultat",
+    savingResult: "Enregistrement…",
+    resultSaved: "✓ Résultat enregistré. Les points ne sont pas encore calculés.",
+    compute: "Calculer les points",
+    recompute: "Recalculer",
+    computing: "Calcul…",
+    correct: "Corriger le résultat",
+    computeNote:
+      "Calculer peut être relancé après une correction : les points sont remplacés, jamais ajoutés deux fois.",
+    computed: (players: number) =>
+      `✓ Points calculés pour ${players} ${players <= 1 ? "joueur" : "joueurs"}.`,
+    kpi: { predictions: "pronos", average: "moyenne", best: "meilleur" },
+    detail: "Détail",
+    noPrediction: "Personne n'a pronostiqué cette épreuve.",
+  },
+  myPredictions: {
+    predicted: "✓ Pronostiqué",
+    toPredict: "À pronostiquer",
+    joker: "🃏 Joker",
+  },
   event: {
     back: "Épreuves",
     startList: "Liste de départ",
@@ -193,6 +194,8 @@ export const messages = {
     send: "Recevoir mon code",
     sending: "Envoi…",
     firstTime: "Pas de compte à créer : si c'est ta première fois, il se crée tout seul.",
+    checkTitle: "Vérifie ta boîte mail",
+    sentTo: (email: string) => `Code envoyé à ${email}`,
     waysTitle: "Deux façons de te connecter",
     waysBody:
       "Tape le code à 6 chiffres ci-dessous, ou ouvre le lien du message (sur ce téléphone).",
@@ -214,6 +217,7 @@ export const messages = {
     since: (date: string) => `Joueur depuis le ${date}`,
     emailPrivate: "Ton e-mail reste privé : il n'apparaît jamais dans l'application.",
     signOut: "Se déconnecter",
+    signingOut: "Déconnexion…",
     back: "Voir les épreuves",
   },
   welcome: {
@@ -245,6 +249,7 @@ export const messages = {
     podium: "Ton podium",
     athletes: "Athlètes engagés",
     emptyStep: "Touche un athlète",
+    step: (rank: 1 | 2 | 3) => ["1er", "2e", "3e"][rank - 1]!,
     stepLabel: (rank: 1 | 2 | 3, name: string | null) =>
       `${["1re", "2e", "3e"][rank - 1]} place : ${name ?? "vide"}`,
     athleteLabel: (name: string, rank: 1 | 2 | 3 | null) =>
@@ -279,14 +284,8 @@ export const messages = {
     AVATAR_INVALID: "Choisis un avatar dans la liste.",
     PROFILE_EXISTS: "Tu as déjà un profil.",
     PROFILE_UNAVAILABLE: "Le profil n'est pas disponible pour le moment. Réessaie dans un instant.",
-    PODIUM_INVALID: "Choisis trois athlètes différents pour ton podium.",
-    PREDICTION_LOCKED:
-      "Trop tard : cette épreuve vient d'être verrouillée. Ton podium n'a pas été enregistré.",
-    ATHLETE_NOT_IN_EVENT: "Cet athlète ne participe pas à cette épreuve.",
-    JOKER_ALREADY_USED: "Tu as déjà utilisé ton joker dans cette compétition.",
-    PREDICTION_UNAVAILABLE:
-      "Ton prono n'est pas disponible pour le moment. Réessaie dans un instant.",
     NOT_ADMIN: "Seul un administrateur peut faire ça.",
+    ATHLETE_NOT_IN_EVENT: "Cet athlète ne participe pas à cette épreuve.",
     RESULT_INVALID:
       "Résultat incomplet : au moins trois athlètes différents, rangs 1 à 3 (les ex æquo partagent un rang).",
     RESULTS_UNAVAILABLE:
@@ -309,6 +308,12 @@ export const messages = {
     EVENT_NOT_LOCKED: "Les pronos de cette épreuve ne sont pas encore fermés.",
     POINTS_UNAVAILABLE:
       "Les points ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+    PODIUM_INVALID: "Choisis trois athlètes différents pour ton podium.",
+    PREDICTION_LOCKED:
+      "Trop tard : cette épreuve vient d'être verrouillée. Ton podium n'a pas été enregistré.",
+    JOKER_ALREADY_USED: "Tu as déjà utilisé ton joker dans cette compétition.",
+    PREDICTION_UNAVAILABLE:
+      "Ton prono n'est pas disponible pour le moment. Réessaie dans un instant.",
     retry: "Réessayer",
   },
 } as const;
