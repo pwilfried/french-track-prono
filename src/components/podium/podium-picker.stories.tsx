@@ -1,0 +1,132 @@
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { expect, userEvent, within } from "storybook/test";
+
+import type { Entry } from "@/domain/event";
+
+import { PodiumPicker } from "./podium-picker";
+
+const entry = (athleteId: string, name: string, countryCode: string): Entry => ({
+  athleteId,
+  name,
+  countryCode,
+  seasonBest: null,
+});
+
+// Invented athletes.
+const athletes = [
+  entry("lena", "Lena Okoro", "NGR"),
+  entry("mateo", "Mateo Ruiz", "ESP"),
+  entry("ines", "Ines Barbier", "FRA"),
+  entry("kofi", "Kofi Mensah", "GHA"),
+  entry("aiko", "Aiko Tanabe", "JPN"),
+];
+
+const meta = {
+  title: "Podium/PodiumPicker",
+  component: PodiumPicker,
+  args: { athletes },
+  decorators: [
+    (Story) => (
+      <div className="max-w-[390px] bg-background py-4">
+        <Story />
+      </div>
+    ),
+  ],
+} satisfies Meta<typeof PodiumPicker>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+const athlete = (canvasElement: HTMLElement, name: string) =>
+  within(canvasElement).getByRole("button", { name: new RegExp(`^${name}`) });
+const step = (canvasElement: HTMLElement, place: string) =>
+  within(canvasElement).getByRole("button", { name: new RegExp(`^${place} place`) });
+
+/** Nothing placed: the winner's step is selected. */
+export const Empty: Story = {
+  play: async ({ canvasElement }) => {
+    await expect(step(canvasElement, "1re")).toHaveAttribute("aria-pressed", "true");
+    await expect(within(canvasElement).getAllByText("Touche un athlète")).toHaveLength(3);
+  },
+};
+
+/** Tapping athletes fills the steps in order: 1st, 2nd, 3rd. */
+export const PlacingInOrder: Story = {
+  play: async ({ canvasElement }) => {
+    await userEvent.click(athlete(canvasElement, "Lena Okoro"));
+    await userEvent.click(athlete(canvasElement, "Ines Barbier"));
+    await userEvent.click(athlete(canvasElement, "Mateo Ruiz"));
+    await expect(step(canvasElement, "1re")).toHaveAccessibleName("1re place : Lena Okoro");
+    await expect(step(canvasElement, "2e")).toHaveAccessibleName("2e place : Ines Barbier");
+    await expect(step(canvasElement, "3e")).toHaveAccessibleName("3e place : Mateo Ruiz");
+  },
+};
+
+/** Two placed, the third step is the next one. */
+export const Partial: Story = {
+  args: { initialDraft: { first: "lena", second: "ines", third: null } },
+  play: async ({ canvasElement }) => {
+    await expect(step(canvasElement, "3e")).toHaveAttribute("aria-pressed", "true");
+  },
+};
+
+/** Complete podium: tapping a placed athlete removes him, the empty step is filled next. */
+export const Complete: Story = {
+  args: { initialDraft: { first: "lena", second: "ines", third: "mateo" } },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(athlete(canvasElement, "Ines Barbier"));
+    await expect(step(canvasElement, "2e")).toHaveAccessibleName("2e place : vide");
+    await userEvent.click(athlete(canvasElement, "Kofi Mensah"));
+    await expect(step(canvasElement, "2e")).toHaveAccessibleName("2e place : Kofi Mensah");
+  },
+};
+
+/** Selecting a step then a placed athlete moves him there: an athlete is never on two steps. */
+export const MovingNoDuplicate: Story = {
+  args: { initialDraft: { first: "lena", second: "ines", third: "mateo" } },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(step(canvasElement, "1re"));
+    await userEvent.click(athlete(canvasElement, "Mateo Ruiz"));
+    await expect(step(canvasElement, "1re")).toHaveAccessibleName("1re place : Mateo Ruiz");
+    await expect(step(canvasElement, "3e")).toHaveAccessibleName("3e place : Lena Okoro");
+    await expect(within(canvasElement).getAllByText("Mateo Ruiz")).toHaveLength(2);
+  },
+};
+
+/** Very long names wrap inside the steps and the list. */
+export const LongNames: Story = {
+  args: {
+    athletes: [
+      entry("a", "Maximilienne-Augustine Vandenberghe-Lefèvre", "BEL"),
+      entry("b", "Oluwaseun Adebayo-Okonkwo", "NGR"),
+      entry("c", "Kristóf Szentgyörgyi-Bartholomeusz", "HUN"),
+      entry("d", "Ana", "POR"),
+    ],
+    initialDraft: { first: "a", second: "b", third: "c" },
+  },
+  play: async ({ canvasElement }) => {
+    const buttons = within(canvasElement).getAllByRole("button");
+    for (const button of buttons) {
+      await expect(button.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+    }
+  },
+};
+
+/** An error from the server is shown under the podium. */
+export const WithError: Story = {
+  args: {
+    initialDraft: { first: "lena", second: "ines", third: "mateo" },
+    error: "Tu as déjà utilisé ton joker dans cette compétition.",
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole("alert")).toHaveTextContent("joker");
+  },
+};
+
+/** Locked: read only. */
+export const Disabled: Story = {
+  args: { initialDraft: { first: "lena", second: "ines", third: "mateo" }, disabled: true },
+  play: async ({ canvasElement }) => {
+    await expect(athlete(canvasElement, "Kofi Mensah")).toBeDisabled();
+  },
+};
