@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { EventGender, EventSummary } from "./event";
-import { filterByGender, groupEventsByDay } from "./event-list";
+import { filterByGender, groupEventsByDay, openEvents } from "./event-list";
 
 const event = (slug: string, startsAt: string, gender: EventGender = "M"): EventSummary => ({
   id: slug,
@@ -60,5 +60,25 @@ describe("filterByGender", () => {
 
   it("keeps every event when no gender is chosen", () => {
     expect(filterByGender(events, null)).toHaveLength(3);
+  });
+});
+
+describe("openEvents", () => {
+  const now = new Date("2026-11-23T18:00:00Z");
+  const at = (iso: string, slug: string): EventSummary => ({ ...event(slug, iso), lockAt: iso });
+
+  it("lists the events still open to predictions, soonest lock first, at most the given count", () => {
+    const events = [
+      at("2026-11-24T19:00:00Z", "later"),
+      at("2026-11-23T17:00:00Z", "locked"),
+      at("2026-11-23T19:00:00Z", "next"),
+      at("2026-11-25T19:00:00Z", "last"),
+    ];
+
+    expect(openEvents(events, now, 2).map((e) => e.slug)).toEqual(["next", "later"]);
+  });
+
+  it("is empty once every event is locked", () => {
+    expect(openEvents([at("2026-11-23T17:00:00Z", "locked")], now, 3)).toEqual([]);
   });
 });

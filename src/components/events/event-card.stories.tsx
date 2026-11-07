@@ -22,7 +22,7 @@ const baseEvent: EventSummary = {
 const meta = {
   title: "Events/EventCard",
   component: EventCard,
-  args: { timeZone: "Europe/Budapest", now },
+  args: { timeZone: "Europe/Budapest", now, tick: false },
   decorators: [
     (Story) => (
       <ul className="max-w-sm bg-background p-6">
@@ -39,7 +39,7 @@ type Story = StoryObj<typeof meta>;
 export const Visitor: Story = {
   args: { event: baseEvent },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).queryByText(/À pronostiquer/)).toBeNull();
+    await expect(within(canvasElement).queryByText(/\+ Prono/)).toBeNull();
   },
 };
 
@@ -49,7 +49,7 @@ export const Upcoming: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("100 m")).toBeInTheDocument();
-    await expect(canvas.getByText(/À pronostiquer/)).toBeInTheDocument();
+    await expect(canvas.getByText(/\+ Prono/)).toBeInTheDocument();
   },
 };
 
@@ -64,7 +64,7 @@ export const LockImminent: Story = {
 export const AlreadyPredicted: Story = {
   args: { event: baseEvent, mine: { predicted: true, joker: false } },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText(/Pronostiqué/)).toBeInTheDocument();
+    await expect(within(canvasElement).getByText(/Posé/)).toBeInTheDocument();
   },
 };
 

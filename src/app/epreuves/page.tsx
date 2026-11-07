@@ -64,6 +64,12 @@ export default async function EventsPage({
   const gender = parseGender((await searchParams).genre);
   const [loaded, mine] = await Promise.all([loadEvents(), loadMine()]);
   const events = loaded === "error" ? [] : loaded;
+  const counts = {
+    all: events.length,
+    F: filterByGender(events, "F").length,
+    M: filterByGender(events, "M").length,
+    X: filterByGender(events, "X").length,
+  };
   const days = groupEventsByDay(filterByGender(events, gender), COMPETITION_TIME_ZONE);
   const dayLabel = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
@@ -75,7 +81,7 @@ export default async function EventsPage({
   return (
     <main id="main" className="flex flex-1 flex-col">
       <header className="px-4 pb-1 pt-6">
-        <div className="mx-auto max-w-md">
+        <div className="mx-auto max-w-md md:max-w-5xl">
           <h1 className="font-display text-3xl font-extrabold leading-none">
             {messages.nav.events}
           </h1>
@@ -88,41 +94,46 @@ export default async function EventsPage({
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-5">
-        <GenderFilter selected={gender} />
+      <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-5 md:grid md:max-w-5xl md:grid-cols-[200px_1fr] md:items-start md:gap-8">
+        <div className="md:sticky md:top-20">
+          <GenderFilter selected={gender} counts={counts} />
+        </div>
+        <div className="flex flex-col gap-5">
+          {loaded === "error" ? (
+            <ErrorNotice retryHref="/epreuves" />
+          ) : days.length === 0 ? (
+            <p className="rounded-card bg-muted p-4">{messages.events.empty}</p>
+          ) : (
+            days.map(({ day, events: dayEvents }) => (
+              <section key={day} aria-labelledby={`day-${day}`} className="flex flex-col gap-2">
+                <h2
+                  id={`day-${day}`}
+                  className="border-b border-border pb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground"
+                >
+                  {dayLabel.format(new Date(`${day}T12:00:00Z`))}
+                </h2>
+                <ul className="grid gap-2 md:grid-cols-2">
+                  {dayEvents.map((event) => (
+                    <EventCard
+                      key={event.id}
+                      event={event}
+                      timeZone={COMPETITION_TIME_ZONE}
+                      mine={
+                        mine
+                          ? (mine.get(event.id) ?? { predicted: false, joker: false })
+                          : undefined
+                      }
+                    />
+                  ))}
+                </ul>
+              </section>
+            ))
+          )}
 
-        {loaded === "error" ? (
-          <ErrorNotice retryHref="/epreuves" />
-        ) : days.length === 0 ? (
-          <p className="rounded-card bg-muted p-4">{messages.events.empty}</p>
-        ) : (
-          days.map(({ day, events: dayEvents }) => (
-            <section key={day} aria-labelledby={`day-${day}`} className="flex flex-col gap-2">
-              <h2
-                id={`day-${day}`}
-                className="text-sm font-bold uppercase tracking-wide text-muted-foreground"
-              >
-                {dayLabel.format(new Date(`${day}T12:00:00Z`))}
-              </h2>
-              <ul className="flex flex-col gap-2">
-                {dayEvents.map((event) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    timeZone={COMPETITION_TIME_ZONE}
-                    mine={
-                      mine ? (mine.get(event.id) ?? { predicted: false, joker: false }) : undefined
-                    }
-                  />
-                ))}
-              </ul>
-            </section>
-          ))
-        )}
-
-        <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
-          {messages.events.provisionalTimes}
-        </p>
+          <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
+            {messages.events.provisionalTimes}
+          </p>
+        </div>
       </div>
     </main>
   );
