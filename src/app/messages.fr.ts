@@ -95,6 +95,18 @@ export const messages = {
       return `${seconds} s`;
     },
   },
+  picker: {
+    podium: "Ton podium",
+    athletes: "Athlètes engagés",
+    emptyStep: "Touche un athlète",
+    step: (rank: 1 | 2 | 3) => ["1er", "2e", "3e"][rank - 1]!,
+    stepLabel: (rank: 1 | 2 | 3, name: string | null) =>
+      `${["1re", "2e", "3e"][rank - 1]} place : ${name ?? "vide"}`,
+    athleteLabel: (name: string, rank: 1 | 2 | 3 | null) =>
+      rank ? `${name}, placé ${["1er", "2e", "3e"][rank - 1]}. Toucher pour le retirer` : name,
+    hint: "Touche les athlètes dans l'ordre : 1er, 2e, 3e.",
+    hintComplete: "Touche un athlète déjà placé pour le retirer, ou une marche pour la changer.",
+  },
   errors: {
     EVENTS_UNAVAILABLE: "Impossible de charger les épreuves pour le moment.",
     EVENT_NOT_FOUND: "Cette épreuve n'existe pas.",

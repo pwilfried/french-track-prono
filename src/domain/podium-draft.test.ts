@@ -5,8 +5,10 @@ import {
   emptyDraft,
   isComplete,
   isValidPodium,
+  nextEmptyStep,
   placeAthlete,
   removeStep,
+  stepOf,
   swapSteps,
   toPodium,
   type PodiumDraft,
@@ -115,5 +117,29 @@ describe("isValidPodium", () => {
   it("refuses a duplicate or an empty step", () => {
     expect(isValidPodium({ first: "a", second: "a", third: "c" })).toBe(false);
     expect(isValidPodium({ first: "a", second: "b", third: "" })).toBe(false);
+  });
+});
+
+describe("nextEmptyStep", () => {
+  it("starts with the winner", () => {
+    expect(nextEmptyStep(emptyDraft())).toBe(1);
+  });
+
+  it("fills a step left empty above before the next ones", () => {
+    expect(nextEmptyStep(draft("a", null, "c"))).toBe(2);
+  });
+
+  it("is null when the podium is complete", () => {
+    expect(nextEmptyStep(draft("a", "b", "c"))).toBeNull();
+  });
+});
+
+describe("stepOf", () => {
+  it("finds the step of a placed athlete", () => {
+    expect(stepOf(draft("a", "b", "c"), "c")).toBe(3);
+  });
+
+  it("is null for an athlete not on the podium", () => {
+    expect(stepOf(draft("a", null, null), "z")).toBeNull();
   });
 });

@@ -56,3 +56,19 @@ export function isValidPodium(podium: Podium): boolean {
   const ids = [podium.first, podium.second, podium.third];
   return ids.every((id) => id.length > 0) && new Set(ids).size === 3;
 }
+
+/** The first empty step, where the next tapped athlete goes; null when the podium is complete. */
+export function nextEmptyStep(draft: PodiumDraft): Step | null {
+  if (draft.first === null) return 1;
+  if (draft.second === null) return 2;
+  if (draft.third === null) return 3;
+  return null;
+}
+
+/** The step an athlete is on, or null. */
+export function stepOf(draft: PodiumDraft, athleteId: string): Step | null {
+  if (draft.first === athleteId) return 1;
+  if (draft.second === athleteId) return 2;
+  if (draft.third === athleteId) return 3;
+  return null;
+}
