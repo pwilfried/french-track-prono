@@ -127,6 +127,17 @@ Redirections acceptées : `http://localhost:3000` et `http://127.0.0.1:3000`.
 Ouvre toujours l'application sur `localhost` : les cookies de connexion sont propres à chaque
 adresse, et un lien qui s'ouvre sur `127.0.0.1` te connecterait là, pas dans ton onglet `localhost`.
 
+Pour tester l'application sur un téléphone (même Wi-Fi que le Mac) :
+
+1. Trouve l'adresse locale du Mac : `ipconfig getifaddr en0` (exemple : `192.168.1.20`).
+2. Lance `npm run dev -- -H 0.0.0.0` et ouvre `http://192.168.1.20:3000` sur le téléphone.
+3. Connecte-toi avec le code à 6 chiffres (lu dans la boîte de test sur le Mac).
+
+`next.config.ts` autorise les adresses du réseau local (192.168.x.x, 10.x.x.x, 172.x.x.x,
+*.local) en développement : sans cela, Next.js bloque ses scripts pour toute autre adresse que
+`localhost`, la page s'affiche mais rien ne réagit au toucher. Pour une autre adresse (tunnel,
+nom de machine), ajoute-la dans `DEV_ALLOWED_ORIGINS` (séparées par des virgules) dans `.env.local`.
+
 Pour tester le lien depuis un téléphone sur le même réseau :
 
 1. Dans `supabase/config.toml`, mets l'adresse locale de ton Mac dans `site_url`
