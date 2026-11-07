@@ -91,7 +91,6 @@ export const messages = {
     note: "Les points arrivent quand l'admin a saisi le résultat.",
     profileLink: "Mes points",
     leaguesLink: "Mes ligues",
-    rankingLink: "Classement général",
     reasons: {
       winner: "Vainqueur trouvé",
       second: "2e trouvé",
@@ -247,10 +246,17 @@ export const messages = {
   profile: {
     title: "Mon profil",
     since: (date: string) => `Joueur depuis le ${date}`,
+    season: "Saison",
+    rank: "Rang",
+    points: "Points",
+    predictions: "Pronos",
+    account: "Compte",
+    pseudo: "Pseudo",
+    email: "E-mail",
+    private: "Privé",
     emailPrivate: "Ton e-mail reste privé : il n'apparaît jamais dans l'application.",
     signOut: "Se déconnecter",
     signingOut: "Déconnexion…",
-    back: "Voir les épreuves",
     deleteLink: "Supprimer mon compte",
   },
   deleteAccount: {
