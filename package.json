@@ -32,6 +32,7 @@
     "@storybook/addon-vitest": "^10.6.6",
     "@storybook/nextjs-vite": "^10.6.6",
     "@tailwindcss/turbopack": "^4",
+    "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^24.19.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
