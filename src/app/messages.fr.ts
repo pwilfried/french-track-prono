@@ -37,12 +37,15 @@ export const messages = {
   events: {
     subtitle: (place: string, count: number) => `${place} · ${count} épreuves`,
     filtersLabel: "Filtrer les épreuves",
+    category: "Catégorie",
     filters: { all: "Toutes", F: "Femmes", M: "Hommes", X: "Mixte" },
     gender: { F: "Femmes", M: "Hommes", X: "Mixte" },
     genderInitial: { F: "F", M: "H", X: "X" },
     status: { upcoming: "À venir", live: "En cours", finished: "Terminé" },
     featured: "Phare",
     final: "Finale",
+    posed: "✓ Posé",
+    addPrediction: "+ Prono",
     cardLabel: (discipline: string, gender: string, hour: string) =>
       `${discipline}, ${gender}, ${hour}`,
     provisionalTimes: "Les horaires affichés sont provisoires (jeu de test).",
