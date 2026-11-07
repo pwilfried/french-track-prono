@@ -5,7 +5,30 @@ import { buttonVariants } from "@/components/ui/button";
 import type { RankedPlayer } from "@/domain/ranking";
 import { cn } from "@/lib/utils";
 
-export type LeaderboardRow = RankedPlayer & { avatar?: string };
+export type LeaderboardRow = RankedPlayer & {
+  avatar?: string;
+  /** Places won (+) or lost (−) since the last computed event; null or absent: not shown. */
+  change?: number | null;
+};
+
+function Change({ change }: { change: number }) {
+  const text = messages.leaderboard;
+  const [symbol, style] =
+    change > 0
+      ? ["▲", "text-success-text"]
+      : change < 0
+        ? ["▼", "text-accent-text"]
+        : ["—", "text-muted-foreground"];
+  return (
+    <span className={`block text-right font-mono text-xs font-bold ${style}`}>
+      <span aria-hidden>
+        {symbol}
+        {change === 0 ? "" : Math.abs(change)}
+      </span>
+      <span className="sr-only">{text.change(change)}</span>
+    </span>
+  );
+}
 
 /** What decided a player's place, shown under the pseudo. */
 function detailOf(row: LeaderboardRow, me: boolean): string {
@@ -112,6 +135,7 @@ export function Leaderboard({
             <span className="shrink-0 font-mono text-lg font-bold tabular-nums">
               <span aria-hidden>{row.points}</span>
               <span className="sr-only">{messages.leaderboard.points(row.points)}</span>
+              {row.change !== undefined && row.change !== null && <Change change={row.change} />}
             </span>
           </li>
         );

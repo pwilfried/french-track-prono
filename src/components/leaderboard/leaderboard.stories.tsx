@@ -51,6 +51,21 @@ export const Default: Story = {
   },
 };
 
+/** Places won and lost since the last computed event (▲ green, ▼ red, — same place). */
+export const WithChanges: Story = {
+  args: {
+    rows: rows.map((r, i) => ({ ...r, change: [2, -1, 0, 1, null, -3][i] ?? null })),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByText("2 places gagnées depuis la dernière épreuve"),
+    ).toBeInTheDocument();
+    await expect(canvas.getByText("1 place perdue depuis la dernière épreuve")).toBeInTheDocument();
+    await expect(canvas.getAllByRole("listitem")[4]).not.toHaveTextContent("▲");
+  },
+};
+
 /** Equal players share the place and the next place is skipped. */
 export const Ties: Story = {
   args: {

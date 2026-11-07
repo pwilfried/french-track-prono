@@ -1,4 +1,4 @@
-import { rankPlayers, totalsOf, type RankedPlayer } from "@/domain/ranking";
+import { rankChanges, rankPlayers, totalsOf, type RankedPlayer } from "@/domain/ranking";
 import type { ScoreReason } from "@/domain/scoring";
 
 import { UseCaseError } from "./errors";
@@ -10,6 +10,9 @@ export type RankingLine = {
   avatar: string;
   points: number;
   reasons: ScoreReason[];
+  eventId: string;
+  /** Start of the event, ISO 8601: orders the events to find the last computed one. */
+  eventStartsAt: string;
 };
 
 /** Port: the score lines a ranking is made of. Real adapter = Supabase, fake = in memory. */
@@ -18,14 +21,21 @@ export interface RankingRepository {
   competitionLines(competitionSlug: string): Promise<RankingLine[]>;
 }
 
-/** A ranked player with the avatar shown next to the pseudo. */
-export type RankingRow = RankedPlayer & { avatar: string };
+/** A ranked player with the avatar shown next to the pseudo and the places won since the last event. */
+export type RankingRow = RankedPlayer & { avatar: string; change: number | null };
 
 const rank = (lines: RankingLine[]): RankingRow[] => {
   const byUser = new Map(lines.map((l) => [l.userId, l]));
-  return rankPlayers(totalsOf(lines, (id) => byUser.get(id)?.pseudo ?? "")).map((player) => ({
+  const pseudoOf = (id: string) => byUser.get(id)?.pseudo ?? "";
+  // League members without points have no event: they never move.
+  const changes = rankChanges(
+    lines.filter((l) => l.eventId !== ""),
+    pseudoOf,
+  );
+  return rankPlayers(totalsOf(lines, pseudoOf)).map((player) => ({
     ...player,
     avatar: byUser.get(player.userId)?.avatar ?? "",
+    change: changes.get(player.userId) ?? null,
   }));
 };
 
@@ -58,6 +68,8 @@ export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: L
         avatar: m.avatar,
         points: 0,
         reasons: [],
+        eventId: "",
+        eventStartsAt: "",
       }));
       return rank([...zero, ...lines]);
     },

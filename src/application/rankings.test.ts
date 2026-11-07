@@ -9,12 +9,20 @@ import {
   type RankingRepository,
 } from "./rankings";
 
-const line = (userId: string, points: number, perfect = false): RankingLine => ({
+const line = (
+  userId: string,
+  points: number,
+  perfect = false,
+  eventId = "e1",
+  eventStartsAt = "2026-11-23T19:00:00.000Z",
+): RankingLine => ({
   userId,
   pseudo: userId.toUpperCase(),
   avatar: "🦅",
   points,
   reasons: perfect ? [{ kind: "perfect_podium" }] : [],
+  eventId,
+  eventStartsAt,
 });
 const ranking = (lines: RankingLine[]): RankingRepository => ({
   competitionLines: async () => lines,
@@ -34,6 +42,21 @@ const member = (userId: string): LeagueMember => ({
 });
 
 describe("getGeneralRanking", () => {
+  it("tells how many places each player won or lost with the last computed event", async () => {
+    const result = await getGeneralRanking({
+      ranking: ranking([
+        line("ana", 10),
+        line("bob", 5),
+        line("bob", 9, false, "e2", "2026-11-24T19:00:00.000Z"),
+      ]),
+    }).execute({ competitionSlug: "c" });
+
+    expect(result.map((r) => [r.userId, r.change])).toEqual([
+      ["bob", 1],
+      ["ana", -1],
+    ]);
+  });
+
   it("ranks all the players of the competition on their total", async () => {
     const result = await getGeneralRanking({
       ranking: ranking([line("ana", 12, true), line("bob", 20), line("ana", 10)]),

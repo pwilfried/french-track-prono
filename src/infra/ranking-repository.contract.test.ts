@@ -7,13 +7,22 @@ import { rankingRepositoryContract } from "./contract/ranking-repository.contrac
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryRankingRepository, createSupabaseRankingRepository } from "./index";
 
-const lines = (ana: string, bob: string, anaPseudo: string, bobPseudo: string): RankingLine[] => [
+const lines = (
+  ana: string,
+  bob: string,
+  anaPseudo: string,
+  bobPseudo: string,
+  eventId: string,
+  eventStartsAt: string,
+): RankingLine[] => [
   {
     userId: ana,
     pseudo: anaPseudo,
     avatar: "🏃",
     points: 24,
     reasons: [{ kind: "perfect_podium" }, { kind: "joker" }],
+    eventId,
+    eventStartsAt,
   },
   {
     userId: bob,
@@ -21,11 +30,13 @@ const lines = (ana: string, bob: string, anaPseudo: string, bobPseudo: string): 
     avatar: "🏃",
     points: 3,
     reasons: [{ kind: "exact", slot: 1 }],
+    eventId,
+    eventStartsAt,
   },
 ];
 
 rankingRepositoryContract("in-memory fake", async () => {
-  const expected = lines("ana", "bob", "Ana", "Bob");
+  const expected = lines("ana", "bob", "Ana", "Bob", "e1", "2026-11-23T19:00:00.000Z");
   return {
     competitionSlug: "c",
     expected,
@@ -41,8 +52,20 @@ if (url && key) {
   rankingRepositoryContract("Supabase (local)", async () => {
     const [ana, bob] = await Promise.all([signedInPlayer(url, key), signedInPlayer(url, key)]);
     const pseudoOf = (id: string) => sql(`select pseudo from profiles where id = '${id}'`);
-    const expected = lines(ana.userId, bob.userId, pseudoOf(ana.userId), pseudoOf(bob.userId));
     const { competitionSlug, eventId } = createTestEvent();
+    const startsAt = new Date(
+      sql(
+        `select to_char(starts_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') from events where id = '${eventId}'`,
+      ),
+    ).toISOString();
+    const expected = lines(
+      ana.userId,
+      bob.userId,
+      pseudoOf(ana.userId),
+      pseudoOf(bob.userId),
+      eventId,
+      startsAt,
+    );
     for (const l of expected) {
       sql(`insert into score_events (user_id, competition_id, event_id, source, points, reason, detail)
         select '${l.userId}', competition_id, id, 'prediction', ${l.points}, 'prediction',
