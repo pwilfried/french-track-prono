@@ -5,7 +5,7 @@ import type { RevealRepository } from "@/application/reveal";
 /**
  * Two events of their own: `openEventId` still open and `lockedEventId` locked, each predicted by
  * Anna (a b c, joker) and Bob (b a c). `bob` reads as Bob; on the locked event, Bob reacted 🔥 to
- * Anna's prediction.
+ * Anna's prediction, and Anna's computed points include the "coup de flair".
  */
 export type RevealWorld = {
   annaId: string;
@@ -40,9 +40,11 @@ export function revealRepositoryContract(name: string, world: () => Promise<Reve
       expect(anna.useJoker).toBe(true);
       expect(anna.pseudo).not.toBe("");
       expect(anna.reactions).toEqual([{ userId: w.bobId, reaction: "🔥" }]);
+      expect(anna.flair).toBe(true);
       const bob = locked.predictions.find((p) => p.userId === w.bobId)!;
       expect(bob.podium).toEqual({ first: b, second: a, third: c });
       expect(bob.reactions).toEqual([]);
+      expect(bob.flair).toBe(false);
     });
   });
 }

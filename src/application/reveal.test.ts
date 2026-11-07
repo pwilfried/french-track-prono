@@ -12,6 +12,7 @@ const prediction = (userId: string, pseudo: string): RevealedPrediction => ({
   podium: { first: "a", second: "b", third: "c" },
   useJoker: false,
   reactions: [],
+  flair: false,
 });
 const reveal = (locked: boolean, predictions: RevealedPrediction[]): RevealRepository => ({
   listForEvent: async () => ({ locked, predictions }),
@@ -35,7 +36,7 @@ describe("listEventPredictions", () => {
       eventId: "e1",
     });
 
-    expect(result.map((p) => p.pseudo)).toEqual(["ana", "Bob", "Zoé"]);
+    expect(result.predictions.map((p) => p.pseudo)).toEqual(["ana", "Bob", "Zoé"]);
   });
 
   it("refuses before the lock with EVENT_NOT_LOCKED", async () => {
@@ -55,7 +56,9 @@ describe("listEventPredictions", () => {
       ]),
     }).execute({ eventId: "e1", leagueId: "l1" });
 
-    expect(result.map((p) => p.userId)).toEqual(["b", "z"]);
+    expect(result.predictions.map((p) => p.userId)).toEqual(["b", "z"]);
+    // Who the field picked stays computed on everyone, not only the league.
+    expect(result.winnerPicks).toEqual([{ athleteId: "a", count: 3, percent: 100 }]);
   });
 
   it("refuses a league I am not in with LEAGUE_NOT_FOUND", async () => {

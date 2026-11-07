@@ -29,6 +29,19 @@ export function createSupabaseRevealRepository(client: SupabaseClient): RevealRe
         .eq("event_id", eventId)
         .returns<Row[]>();
       if (error) throw new UseCaseError("REVEAL_UNAVAILABLE");
+      // The computed points say who earned the "coup de flair" (the rules live in the database).
+      const scores = await client
+        .from("score_events")
+        .select("user_id, detail")
+        .eq("event_id", eventId)
+        .eq("source", "prediction")
+        .returns<{ user_id: string; detail: { reasons?: { kind: string }[] } }[]>();
+      if (scores.error) throw new UseCaseError("REVEAL_UNAVAILABLE");
+      const flair = new Set(
+        scores.data
+          .filter((s) => (s.detail.reasons ?? []).some((r) => r.kind === "flair"))
+          .map((s) => s.user_id),
+      );
       return {
         locked: true,
         predictions: data.map(
@@ -39,6 +52,7 @@ export function createSupabaseRevealRepository(client: SupabaseClient): RevealRe
             avatar: row.profiles.avatar_emoji,
             podium: { first: row.p1, second: row.p2, third: row.p3 },
             useJoker: row.use_joker,
+            flair: flair.has(row.user_id),
             reactions: row.reactions.flatMap((r) =>
               isReaction(r.emoji) ? [{ userId: r.user_id, reaction: r.emoji }] : [],
             ),

@@ -41,6 +41,8 @@ test("a player cannot see a friend's podium before the lock, sees it after and r
   await bobPage.reload();
   await expect(bobPage.getByRole("heading", { name: "Les pronos" })).toBeVisible();
   await expect(bobPage.getByText(anna.pseudo)).toBeVisible();
+  await expect(bobPage.getByRole("heading", { name: "Qui ont-ils vu gagner ?" })).toBeVisible();
+  await expect(bobPage.getByText(": 100 %")).toBeAttached();
 
   // Bob reacts with a fire; Anna sees it on her own podium.
   const fire = bobPage.getByRole("button", { name: /^Réagir : feu/ });

@@ -14,6 +14,7 @@ export function RevealedPredictionCard({
   podium,
   useJoker,
   mine,
+  flair = false,
   nameOf,
   children,
 }: {
@@ -22,6 +23,7 @@ export function RevealedPredictionCard({
   podium: Podium;
   useJoker: boolean;
   mine: boolean;
+  flair?: boolean;
   nameOf: (athleteId: string) => string;
   children?: React.ReactNode;
 }) {
@@ -36,6 +38,11 @@ export function RevealedPredictionCard({
           {avatar}
         </span>
         <span className="min-w-0 flex-1 truncate">{mine ? messages.reveal.me : pseudo}</span>
+        {flair && (
+          <span className="shrink-0 rounded-full bg-success px-2 py-0.5 text-xs font-extrabold text-nuit">
+            {messages.reveal.flair}
+          </span>
+        )}
         {useJoker && (
           <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs font-extrabold text-secondary-foreground">
             {messages.reveal.joker}
@@ -53,6 +60,7 @@ export function RevealedPredictionCard({
           </li>
         ))}
       </ol>
+      {flair && <p className="text-sm text-muted-foreground">{messages.reveal.flairLine}</p>}
       {children}
     </li>
   );

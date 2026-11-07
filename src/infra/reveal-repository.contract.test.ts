@@ -22,10 +22,12 @@ revealRepositoryContract("in-memory fake", async () => {
     podium: { first, second, third: "c" },
     useJoker: joker,
     reactions: [],
+    flair: false,
   });
   const anna = {
     ...of("anna", "a", "b", true),
     reactions: [{ userId: "bob", reaction: "🔥" as const }],
+    flair: true,
   };
   return {
     annaId: "anna",
@@ -64,6 +66,11 @@ if (url && key) {
     sql(`update events set lock_at = now() - interval '1 minute' where id = '${locked.eventId}'`);
     sql(`insert into reactions (prediction_id, user_id, emoji)
       select id, '${bob.userId}', '🔥' from predictions where event_id = '${locked.eventId}' and user_id = '${anna.userId}'`);
+    // Anna's computed points, with the flair (as the admin's computation would write them).
+    sql(`insert into score_events (user_id, competition_id, event_id, source, points, reason, detail)
+      select '${anna.userId}', e.competition_id, e.id, 'prediction', 7, 'prediction',
+             '{"reasons":[{"kind":"exact","slot":1},{"kind":"flair"}]}'::jsonb
+      from events e where e.id = '${locked.eventId}'`);
     return {
       annaId: anna.userId,
       bobId: bob.userId,
