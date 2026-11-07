@@ -113,6 +113,8 @@ export const messages = {
     LEAGUE_MEMBER_UNKNOWN: "Ce joueur ne fait pas partie de la ligue.",
     LEAGUES_UNAVAILABLE:
       "Les ligues ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+    RANKING_UNAVAILABLE:
+      "Le classement n'est pas disponible pour le moment. Réessaie dans un instant.",
     retry: "Réessayer",
   },
 } as const;

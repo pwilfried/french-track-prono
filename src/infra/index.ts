@@ -19,3 +19,5 @@ export { createInMemoryResultStore, type ResultEventFixture } from "./in-memory/
 export { createSupabaseResultRepository } from "./supabase/result-repository";
 export { createInMemoryLeagueStore } from "./in-memory/league-repository";
 export { createSupabaseLeagueRepository } from "./supabase/league-repository";
+export { createInMemoryRankingRepository } from "./in-memory/ranking-repository";
+export { createSupabaseRankingRepository } from "./supabase/ranking-repository";
