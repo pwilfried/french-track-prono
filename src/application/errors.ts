@@ -24,7 +24,10 @@ export type ErrorCode =
   | "NOT_LEAGUE_OWNER"
   | "LEAGUE_MEMBER_UNKNOWN"
   | "LEAGUES_UNAVAILABLE"
-  | "RANKING_UNAVAILABLE";
+  | "RANKING_UNAVAILABLE"
+  | "RESULT_MISSING"
+  | "EVENT_NOT_LOCKED"
+  | "POINTS_UNAVAILABLE";
 
 export class UseCaseError extends Error {
   constructor(readonly code: ErrorCode) {
