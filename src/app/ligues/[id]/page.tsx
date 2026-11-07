@@ -67,6 +67,7 @@ export default async function LeaguePage({
   const isOwner = league.ownerId === ports.userId;
   const subtitle = [
     messages.leagues.members(league.memberCount),
+    messages.leagues.codeShort(league.inviteCode),
     isOwner ? messages.leagues.createdByMe : null,
   ]
     .filter(Boolean)
@@ -78,6 +79,7 @@ export default async function LeaguePage({
         title={league.name}
         subtitle={subtitle}
         back={{ href: "/ligues", label: messages.leagues.back }}
+        icon="🏆"
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
         <nav className="-mx-4 flex gap-2 overflow-x-auto px-4" aria-label={league.name}>
@@ -88,7 +90,9 @@ export default async function LeaguePage({
               aria-current={t === tab ? "page" : undefined}
               className={cn(
                 "inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-4 font-semibold",
-                t === tab ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
+                t === tab
+                  ? "bg-brand text-brand-foreground dark:bg-secondary dark:text-secondary-foreground"
+                  : "border border-border bg-background text-foreground",
               )}
             >
               {t === "membres" ? `${TAB_LABEL[t]} (${league.memberCount})` : TAB_LABEL[t]}

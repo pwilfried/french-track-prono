@@ -107,6 +107,7 @@ export const messages = {
     title: "Mes ligues",
     back: "Mes ligues",
     members: (n: number) => `${n} ${n <= 1 ? "membre" : "membres"}`,
+    codeShort: (code: string) => `code ${code}`,
     createdByMe: "créée par toi",
     rankOf: (rank: number, of: number) => `${rank === 1 ? "1er" : `${rank}e`} sur ${of}`,
     emptyTitle: "Joue entre amis",

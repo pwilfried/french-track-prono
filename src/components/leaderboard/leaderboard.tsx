@@ -65,7 +65,10 @@ export function Leaderboard({
     rows[index - 1]?.rank === rows[index]!.rank || rows[index + 1]?.rank === rows[index]!.rank;
 
   return (
-    <ol aria-label={messages.leaderboard.label} className="flex flex-col">
+    <ol
+      aria-label={messages.leaderboard.label}
+      className="flex flex-col gap-0.5 rounded-card border border-border bg-card p-2"
+    >
       {rows.map((row, index) => {
         const me = row.userId === meId;
         const detail = detailOf(row, me);
@@ -74,11 +77,11 @@ export function Leaderboard({
             key={row.userId}
             aria-current={me ? "true" : undefined}
             className={cn(
-              "flex min-h-14 items-center gap-2.5 border-b border-border px-1 py-1.5",
-              me && "rounded-2xl border-transparent bg-secondary/30",
+              "flex min-h-14 items-center gap-2.5 rounded-xl px-2 py-1.5",
+              me && "bg-brand-soft text-brand-ink",
             )}
           >
-            <span className="w-9 shrink-0 text-center text-lg font-extrabold">
+            <span className="w-8 shrink-0 text-center font-mono text-lg font-bold">
               <span className="sr-only">{messages.leaderboard.position(row.rank)}</span>
               <span aria-hidden>{row.rank}</span>
               {tied(index) && (
@@ -89,17 +92,24 @@ export function Leaderboard({
             </span>
             <span
               aria-hidden
-              className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-lg"
+              className="grid size-9 shrink-0 place-items-center rounded-full bg-background text-lg"
             >
               {row.avatar ?? "🏃"}
             </span>
             <span className="min-w-0 flex-1 font-bold [overflow-wrap:anywhere]">
               {row.pseudo}
               {detail && (
-                <span className="block text-xs font-semibold text-muted-foreground">{detail}</span>
+                <span
+                  className={cn(
+                    "block text-xs font-semibold",
+                    me ? "text-brand-ink/80" : "text-muted-foreground",
+                  )}
+                >
+                  {detail}
+                </span>
               )}
             </span>
-            <span className="shrink-0 text-lg font-extrabold">
+            <span className="shrink-0 font-mono text-lg font-bold tabular-nums">
               <span aria-hidden>{row.points}</span>
               <span className="sr-only">{messages.leaderboard.points(row.points)}</span>
             </span>

@@ -43,7 +43,7 @@ export default async function GeneralRankingPage() {
             <Leaderboard rows={ranking} meId={user.userId} retryHref="/classement" />
             {ranking.length > 0 &&
               (me ? (
-                <p className="sticky bottom-3 rounded-2xl bg-foreground px-3.5 py-3 font-extrabold text-background shadow-lg">
+                <p className="sticky bottom-20 rounded-2xl bg-foreground md:bottom-3 px-3.5 py-3 font-extrabold text-background shadow-lg">
                   {messages.ranking.mine(me.rank, ranking.length, me.points)}
                 </p>
               ) : (
