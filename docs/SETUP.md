@@ -168,9 +168,11 @@ Le code à 6 chiffres marche toujours, sans rien changer.
 
 ## 4 ter. Test de bout en bout (Playwright)
 
-Le parcours « connexion → profil → prono → épreuve verrouillée » est testé avec Playwright, sur
-le build de production, contre Supabase local. Il lit le code de connexion dans la boîte de test
-(Mailpit) et verrouille l'épreuve avec `psql`.
+Deux parcours sont testés avec Playwright : « connexion → profil → prono → épreuve verrouillée →
+résultat saisi par l'admin → points », et « deux amis dans la même ligue voient le même classement ».
+Ils tournent sur le build de production, contre Supabase local. Ils lisent le code de connexion
+dans la boîte de test (Mailpit) et préparent la base avec `psql` (verrouillage, droit admin,
+points).
 
 ```
 supabase start
