@@ -16,7 +16,7 @@ test("two friends in the same league see the same ranking", async ({ browser }) 
   await annaPage.getByRole("link", { name: "Créer une ligue" }).click();
   await annaPage.getByLabel("Nom de la ligue").fill("Les Foulées E2E");
   await annaPage.getByRole("button", { name: "Créer la ligue" }).click();
-  await expect(annaPage.getByRole("status")).toContainText("Ta ligue est prête");
+  await expect(annaPage.getByText("Ta ligue est prête")).toBeVisible();
   const leagueUrl = annaPage.url().split("?")[0]!;
   const code = (await annaPage.locator(".font-mono").innerText()).replace(/\s/g, "");
   expect(code).toMatch(/^[A-Z0-9]{6}$/);
