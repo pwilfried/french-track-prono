@@ -249,6 +249,25 @@ npm run test:e2e
 - Le test crée un joueur `e2e-…@example.test` à chaque passage ; `supabase db reset` remet tout à
   zéro.
 
+## 4 quater. Migrations de la base en production
+
+Le schéma de production suit le dépôt, jamais de modification à la main
+(`.github/workflows/migrations.yml`) :
+
+- **Tag `vX.Y.Z` poussé** : les migrations de `supabase/migrations` sont appliquées au projet
+  Supabase de production (`supabase db push`), dans l'environnement GitHub `production`.
+- **PR qui touche `supabase/migrations`** : un essai à blanc (`--dry-run`) liste ce qui serait
+  appliqué, sans rien changer.
+- **Secrets** (GitHub > Settings > Secrets and variables > Actions) : `SUPABASE_ACCESS_TOKEN`,
+  `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`. Sans eux, le workflow le signale et s'arrête
+  sans échouer (cas d'aujourd'hui, tant que le projet de production n'existe pas).
+
+**Retour arrière.** Une migration appliquée n'est jamais modifiée ni supprimée : on écrit une
+nouvelle migration qui défait la précédente, on la fait passer par une PR, puis on pose un tag de
+correctif (`vX.Y.Z+1`). En cas de casse grave, la restauration se fait depuis la sauvegarde
+quotidienne du projet Supabase (tableau de bord > Database > Backups), puis on réapplique les
+migrations voulues avec un tag.
+
 ## Dépendances : les « overrides » de package.json
 
 `package.json` force deux versions de dépendances indirectes : `minimatch` sous
