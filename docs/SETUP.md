@@ -121,16 +121,18 @@ fois le navigateur : `npx playwright install chromium`, puis `npm run test:story
 ## 4 bis. Connexion : lien du message et téléphone
 
 Le message de connexion contient un code à 6 chiffres et un lien. Le lien pointe vers
-`site_url` (`supabase/config.toml`, `http://127.0.0.1:3000` par défaut) puis `/auth/callback`.
+`site_url` (`supabase/config.toml`, `http://localhost:3000`, la même adresse que `npm run dev`) puis `/auth/callback`.
 Il fonctionne dans n'importe quel navigateur (pas de cookie préalable nécessaire).
-Redirections acceptées : `http://127.0.0.1:3000` et `http://localhost:3000`.
+Redirections acceptées : `http://localhost:3000` et `http://127.0.0.1:3000`.
+Ouvre toujours l'application sur `localhost` : les cookies de connexion sont propres à chaque
+adresse, et un lien qui s'ouvre sur `127.0.0.1` te connecterait là, pas dans ton onglet `localhost`.
 
 Pour tester le lien depuis un téléphone sur le même réseau :
 
 1. Dans `supabase/config.toml`, mets l'adresse locale de ton Mac dans `site_url`
    (exemple : `http://192.168.1.20:3000`) et ajoute la même adresse à `additional_redirect_urls`.
-2. `supabase stop` puis `supabase start` pour recharger la configuration.
-3. Ne committe pas cette adresse : remets `127.0.0.1` avant de créer ta PR.
+2. `supabase stop` puis `supabase start` pour recharger la configuration (un `supabase db reset` ne la recharge pas).
+3. Ne committe pas cette adresse : remets `http://localhost:3000` avant de créer ta PR.
 
 Le code à 6 chiffres marche toujours, sans rien changer.
 
