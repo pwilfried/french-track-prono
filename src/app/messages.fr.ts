@@ -107,6 +107,20 @@ export const messages = {
     hint: "Touche les athlètes dans l'ordre : 1er, 2e, 3e.",
     hintComplete: "Touche un athlète déjà placé pour le retirer, ou une marche pour la changer.",
   },
+  prediction: {
+    joker: "🃏 Joker : points × 2",
+    jokerHint: "Un seul par compétition.",
+    save: "Enregistrer mon podium",
+    saving: "Enregistrement…",
+    saved: "✓ Podium enregistré. Tu peux le modifier jusqu'au verrouillage.",
+    lockedTitle: "Ton podium (verrouillé)",
+    jokerUsedHere: "🃏 Joker utilisé sur cette épreuve",
+    none: "Tu n'avais pas pronostiqué cette épreuve : 0 point.",
+    othersSoon: "Les pronos des autres joueurs apparaîtront bientôt ici.",
+    visitorTitle: "Connecte-toi pour pronostiquer",
+    visitorText: "Il faut un compte pour enregistrer ton podium.",
+    signIn: "Se connecter",
+  },
   errors: {
     EVENTS_UNAVAILABLE: "Impossible de charger les épreuves pour le moment.",
     EVENT_NOT_FOUND: "Cette épreuve n'existe pas.",
@@ -121,7 +135,8 @@ export const messages = {
     PROFILE_EXISTS: "Tu as déjà un profil.",
     PROFILE_UNAVAILABLE: "Le profil n'est pas disponible pour le moment. Réessaie dans un instant.",
     PODIUM_INVALID: "Choisis trois athlètes différents pour ton podium.",
-    PREDICTION_LOCKED: "Les pronos sont fermés pour cette épreuve.",
+    PREDICTION_LOCKED:
+      "Trop tard : cette épreuve vient d'être verrouillée. Ton podium n'a pas été enregistré.",
     ATHLETE_NOT_IN_EVENT: "Cet athlète ne participe pas à cette épreuve.",
     JOKER_ALREADY_USED: "Tu as déjà utilisé ton joker dans cette compétition.",
     PREDICTION_UNAVAILABLE:
