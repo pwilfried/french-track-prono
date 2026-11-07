@@ -1,17 +1,23 @@
 import Link from "next/link";
 
 import { listEvents } from "@/application/list-events";
+import { listMyPredictions } from "@/application/list-my-predictions";
 import { UseCaseError } from "@/application/errors";
 import { AccountMenu } from "@/components/account/account-menu";
 import { ErrorNotice } from "@/components/error-notice";
-import { EventCard } from "@/components/events/event-card";
+import { EventCard, type MyEventState } from "@/components/events/event-card";
 import { GenderFilter } from "@/components/events/gender-filter";
 import type { EventGender, EventSummary } from "@/domain/event";
 import { filterByGender, groupEventsByDay } from "@/domain/event-list";
-import { createPublicSupabaseClient, createSupabaseEventReader } from "@/infra";
+import {
+  createPublicSupabaseClient,
+  createSupabaseEventReader,
+  createSupabasePredictionRepository,
+} from "@/infra";
 
 import { COMPETITION_SLUG, COMPETITION_TIME_ZONE } from "../competition";
 import { messages } from "../messages.fr";
+import { getCurrentUser, getSessionClient } from "../session";
 
 const genders: EventGender[] = ["F", "M", "X"];
 
@@ -30,13 +36,36 @@ async function loadEvents(): Promise<EventSummary[] | "error"> {
   }
 }
 
+/**
+ * The signed-in player's predictions by event id; null for a visitor, or when they cannot be read
+ * (the list still shows, without the marks).
+ */
+async function loadMine(): Promise<Map<string, MyEventState> | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  try {
+    const predictions = createSupabasePredictionRepository(await getSessionClient());
+    const mine = await listMyPredictions({ predictions }).execute({
+      userId: user.userId,
+      competitionSlug: COMPETITION_SLUG,
+    });
+    const byEvent = new Map<string, MyEventState>(
+      mine.map((p) => [p.eventId, { predicted: true, joker: p.useJoker }]),
+    );
+    return byEvent;
+  } catch (error) {
+    if (error instanceof UseCaseError) return null;
+    throw error;
+  }
+}
+
 export default async function EventsPage({
   searchParams,
 }: {
   searchParams: Promise<{ genre?: string | string[] }>;
 }) {
   const gender = parseGender((await searchParams).genre);
-  const loaded = await loadEvents();
+  const [loaded, mine] = await Promise.all([loadEvents(), loadMine()]);
   const events = loaded === "error" ? [] : loaded;
   const days = groupEventsByDay(filterByGender(events, gender), COMPETITION_TIME_ZONE);
   const dayLabel = new Intl.DateTimeFormat("fr-FR", {
@@ -89,7 +118,14 @@ export default async function EventsPage({
               </h2>
               <ul className="flex flex-col gap-2">
                 {dayEvents.map((event) => (
-                  <EventCard key={event.id} event={event} timeZone={COMPETITION_TIME_ZONE} />
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    timeZone={COMPETITION_TIME_ZONE}
+                    mine={
+                      mine ? (mine.get(event.id) ?? { predicted: false, joker: false }) : undefined
+                    }
+                  />
                 ))}
               </ul>
             </section>

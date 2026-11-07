@@ -86,6 +86,21 @@ supabase db reset      # applique migrations + seed.sql
 
 La configuration (`supabase/config.toml`) est déjà dans le dépôt : pas de `supabase init`.
 
+### Rouvrir des épreuves pour tester les pronostics
+
+Le tournoi de test est terminé : après un `supabase db reset`, toutes les épreuves sont
+verrouillées. Pour pouvoir pronostiquer en local :
+
+```bash
+npm run db:open-events
+```
+
+Le script (`supabase/dev/open_events.sql`) décale tout le programme à partir de maintenant, dans le
+même ordre : la première épreuve est déjà verrouillée, les 27 autres sont ouvertes sur trois
+jours, et les résultats officiels sont retirés. Relance-le pour repartir de « maintenant ».
+`supabase db reset` remet le vrai programme. Ce script ne sert qu'en local : il n'est ni dans les
+migrations ni dans `seed.sql`.
+
 Une fois démarré, `supabase start` affiche les adresses utiles :
 
 | Service | Adresse habituelle |
@@ -150,6 +165,28 @@ Pour tester le lien depuis un téléphone sur le même réseau :
 3. Ne committe pas cette adresse : remets `http://localhost:3000` avant de créer ta PR.
 
 Le code à 6 chiffres marche toujours, sans rien changer.
+
+## 4 ter. Test de bout en bout (Playwright)
+
+Le parcours « connexion → profil → prono → épreuve verrouillée » est testé avec Playwright, sur
+le build de production, contre Supabase local. Il lit le code de connexion dans la boîte de test
+(Mailpit) et verrouille l'épreuve avec `psql`.
+
+```
+supabase start
+npm run db:open-events
+npx playwright install chromium
+npm run build
+npm run test:e2e
+```
+
+- Durée : moins d'une minute pour le test lui-même ; en CI, l'installation de Chromium et le
+  build ajoutent environ 3 minutes au job « Database ».
+- Pas de relance automatique : un test qui échoue est corrigé ou supprimé.
+- En cas d'échec en CI, le rapport (traces, captures) est joint au run sous le nom
+  `playwright-report`.
+- Le test crée un joueur `e2e-…@example.test` à chaque passage ; `supabase db reset` remet tout à
+  zéro.
 
 ## 5. Sécurité : à ne jamais committer
 
