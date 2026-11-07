@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import {
   emptyDraft,
   isComplete,
-  isValidPodium,
   nextEmptyStep,
+  isValidPodium,
   placeAthlete,
   removeStep,
   stepOf,
@@ -109,17 +109,6 @@ describe("any sequence of actions", () => {
   });
 });
 
-describe("isValidPodium", () => {
-  it("accepts three different athletes", () => {
-    expect(isValidPodium({ first: "a", second: "b", third: "c" })).toBe(true);
-  });
-
-  it("refuses a duplicate or an empty step", () => {
-    expect(isValidPodium({ first: "a", second: "a", third: "c" })).toBe(false);
-    expect(isValidPodium({ first: "a", second: "b", third: "" })).toBe(false);
-  });
-});
-
 describe("nextEmptyStep", () => {
   it("starts with the winner", () => {
     expect(nextEmptyStep(emptyDraft())).toBe(1);
@@ -141,5 +130,16 @@ describe("stepOf", () => {
 
   it("is null for an athlete not on the podium", () => {
     expect(stepOf(draft("a", null, null), "z")).toBeNull();
+  });
+});
+
+describe("isValidPodium", () => {
+  it("accepts three different athletes", () => {
+    expect(isValidPodium({ first: "a", second: "b", third: "c" })).toBe(true);
+  });
+
+  it("refuses a duplicate or an empty step", () => {
+    expect(isValidPodium({ first: "a", second: "a", third: "c" })).toBe(false);
+    expect(isValidPodium({ first: "a", second: "b", third: "" })).toBe(false);
   });
 });
