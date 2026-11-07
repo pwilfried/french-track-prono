@@ -306,6 +306,16 @@ export const messages = {
     hint: "Touche les athlètes dans l'ordre : 1er, 2e, 3e.",
     hintComplete: "Touche un athlète déjà placé pour le retirer, ou une marche pour la changer.",
   },
+  result: {
+    eyebrow: (discipline: string, gender: string) => `Résultat · ${discipline} ${gender}`,
+    winner: (name: string) => `${name} s'impose`,
+    points: (points: number) => (points > 0 ? `+${points} pts` : `${points} pt`),
+    notComputed: "Les points de cette épreuve ne sont pas encore calculés.",
+    vsTitle: "Ton prono vs officiel",
+    outcome: { exact: "exact", on_podium: "podium", off: "hors podium" },
+    total: "Total",
+    totalPoints: (points: number) => `${points} pts`,
+  },
   reveal: {
     title: "Les pronos",
     filtersLabel: "Voir les pronos de",
