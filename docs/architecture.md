@@ -174,6 +174,16 @@ classement (`src/domain/ranking.ts`, R9) départage aux points, puis aux podiums
 aux vainqueurs trouvés ; des joueurs toujours égaux partagent la place. Pages : `/ligues`,
 `/ligues/[id]`, `/rejoindre/[code]` (lien d'invitation), `/classement`.
 
+**Suspense (v0.6).** Après le verrouillage, la page d'une épreuve montre le podium de tous les
+joueurs, avec un filtre par ligue (onglets « Tous » puis une ligue par onglet) ; avant, une case
+rappelle que les pronos se dévoilent au verrouillage, et la base ne laisse lire que son propre
+prono. Sous le podium d'un autre joueur : six réactions fixes (🔥 😂 😮 👏 🤡 🎯, pas de texte
+libre), une par joueur et par prono, qu'on retire en la touchant à nouveau ; pas de réaction sur
+son propre prono (décisions du propriétaire, issue #16). La répartition « Qui ont-ils vu
+gagner ? » est calculée sur tous les pronos de l'épreuve, jamais sur la seule ligue
+(`pickDistribution`, `src/domain/reveal.ts`). Le badge « Coup de flair » est lu dans les points
+calculés (`score_events`, raison `flair`) : il suit toujours le barème de la base.
+
 Les décisions du propriétaire prises pendant ces versions sont tracées dans l'issue #112.
 
 ## Modèle de données
@@ -184,8 +194,8 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 |---|---|
 | Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions` |
 | Référentiel | `competitions`, `events`, `athletes`, `entries` (liste de départ), `results` |
-| Jeu | `predictions`, `score_events`, `scoring_rules` |
-| Fonctions | `create_league()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger) |
+| Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions` |
+| Fonctions | `create_league()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()` |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers`, `badges`, `user_badges` (F11 et plus tard) |
 
 Garanties portées par la base : pronostic impossible après `lock_at`, pronos des autres

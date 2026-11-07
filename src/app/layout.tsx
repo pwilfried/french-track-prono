@@ -23,7 +23,6 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: messages.app.name,
   description: messages.app.description,
-  alternates: { canonical: "/" },
   robots: { index: true, follow: true },
   icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
   openGraph: {
@@ -35,7 +34,7 @@ export const metadata: Metadata = {
     images: [{ url: "/icons/icon-512.png", width: 512, height: 512 }],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: messages.app.name,
     description: messages.app.description,
     images: ["/icons/icon-512.png"],
@@ -57,7 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col">
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-[#084595]"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-card focus:px-3 focus:py-2 focus:font-semibold focus:text-card-foreground focus:ring-2 focus:ring-ring"
         >
           {messages.app.skipToContent}
         </a>

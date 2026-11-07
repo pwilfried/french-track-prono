@@ -66,7 +66,7 @@ export default async function AdminEventPage({
 
   if (loaded === "error") {
     return (
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-8">
+      <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-8">
         <ErrorNotice retryHref={`/admin/${slug}`} message={messages.errors.RESULTS_UNAVAILABLE} />
       </main>
     );
@@ -95,7 +95,7 @@ export default async function AdminEventPage({
   const average = scored ? scores.reduce((sum, s) => sum + s.points, 0) / scores.length : 0;
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <header className="hero px-4 pb-6 pt-6">
         <div className="mx-auto max-w-md">
           <Link href="/admin" className="inline-flex min-h-11 items-center font-semibold">

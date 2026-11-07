@@ -27,6 +27,7 @@ import { COMPETITION_SLUG, COMPETITION_TIME_ZONE } from "../../competition";
 import { messages } from "../../messages.fr";
 import { getCurrentUser, getSessionClient } from "../../session";
 import { PredictionForm } from "./prediction-form";
+import { RevealHidden, RevealSection } from "./reveal-section";
 
 async function loadEvent(slug: string): Promise<EventDetail | "error"> {
   try {
@@ -117,15 +118,20 @@ async function PredictionSection({
           {messages.prediction.jokerUsedHere}
         </p>
       )}
-      <p className="mx-4 rounded-2xl bg-muted px-3.5 py-3 text-sm text-muted-foreground">
-        {messages.prediction.othersSoon}
-      </p>
     </div>
   );
 }
 
-export default async function EventPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function EventPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ ligue?: string | string[] }>;
+}) {
   const { slug } = await params;
+  const { ligue } = await searchParams;
+  const leagueId = typeof ligue === "string" && ligue !== "" ? ligue : undefined;
   const loaded = await loadEvent(slug);
 
   if (loaded === "error") {
@@ -188,6 +194,16 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
       <section className="mx-auto w-full max-w-md pt-6" aria-label={messages.picker.podium}>
         <PredictionSection event={event} slug={slug} user={user} open={open} />
       </section>
+
+      {user && (
+        <section className="mx-auto w-full max-w-md pt-6">
+          {open ? (
+            <RevealHidden />
+          ) : (
+            <RevealSection event={event} slug={slug} user={user} leagueId={leagueId} />
+          )}
+        </section>
+      )}
 
       {showStartList && (
         <div className="mx-auto flex w-full max-w-md flex-col gap-3 px-4 py-6">

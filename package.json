@@ -18,7 +18,9 @@
     "test:storybook": "vitest run --config vitest.storybook.config.mts",
     "test:e2e": "playwright test",
     "db:demo-players": "docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/dev/demo_players.sql",
-    "db:test-points": "npm run db:demo-players && docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/dev/lock_demo_events.sql"
+    "db:test-points": "npm run db:demo-players && docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/dev/lock_demo_events.sql",
+    "db:load-euro": "docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/data/european-championships-2026.sql",
+    "db:euro-results": "docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/data/european-championships-2026-results.sql"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
@@ -55,7 +57,7 @@
     "vitest": "^5.1.0"
   },
   "engines": {
-    "node": ">=22"
+    "node": "24.x"
   },
   "overrides": {
     "@typescript-eslint/typescript-estree": {

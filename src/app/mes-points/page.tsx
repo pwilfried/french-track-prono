@@ -14,7 +14,7 @@ import {
   createSupabasePointsRepository,
 } from "@/infra";
 
-import { COMPETITION_SLUG } from "../competition";
+import { COMPETITION_SLUG, COMPETITION_TEXT } from "../competition";
 import { messages } from "../messages.fr";
 import { pointsReasonLabels } from "../points-labels";
 import { getCurrentUser, getSessionClient } from "../session";
@@ -44,7 +44,7 @@ export default async function MyPointsPage() {
 
   return (
     <main id="main" className="flex flex-1 flex-col">
-      <AccountHero title={messages.points.title} subtitle={messages.events.title} />
+      <AccountHero title={messages.points.title} subtitle={COMPETITION_TEXT.name} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-3 px-4 py-6">
         {loaded === "error" ? (
           <ErrorNotice retryHref="/mes-points" message={messages.errors.POINTS_UNAVAILABLE} />

@@ -6,7 +6,15 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/auth/", "/profil", "/bienvenue", "/mes-points"],
+      disallow: [
+        "/auth/",
+        "/admin",
+        "/profil",
+        "/bienvenue",
+        "/mes-points",
+        "/ligues",
+        "/au-revoir",
+      ],
     },
     sitemap: `${base}/sitemap.xml`,
   };

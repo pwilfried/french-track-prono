@@ -15,7 +15,7 @@ import {
   createSupabasePredictionRepository,
 } from "@/infra";
 
-import { COMPETITION_SLUG, COMPETITION_TIME_ZONE } from "../competition";
+import { COMPETITION_SLUG, COMPETITION_TEXT, COMPETITION_TIME_ZONE } from "../competition";
 import { messages } from "../messages.fr";
 import { getCurrentUser, getSessionClient } from "../session";
 
@@ -92,10 +92,12 @@ export default async function EventsPage({
             <AccountMenu returnTo="/epreuves" />
           </div>
           <h1 className="mt-2 font-display text-3xl font-extrabold uppercase leading-none">
-            {messages.events.title}
+            {COMPETITION_TEXT.name}
           </h1>
           <p className="mt-2 text-[#dce6f5]">
-            {loaded === "error" ? messages.events.place : messages.events.subtitle(events.length)}
+            {loaded === "error"
+              ? COMPETITION_TEXT.place
+              : messages.events.subtitle(COMPETITION_TEXT.place, events.length)}
           </p>
         </div>
       </header>

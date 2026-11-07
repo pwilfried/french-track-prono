@@ -59,5 +59,17 @@ export function profileRepositoryContract(name: string, newPlayer: () => Promise
 
       expect(await player.profiles.create(profileOf(player))).toBe("profile_exists");
     });
+
+    it("deletes my account: my profile is gone and my pseudo is free again", async () => {
+      const player = await newPlayer();
+      const other = await newPlayer();
+      const mine = pseudo();
+      await player.profiles.create(profileOf(player, mine));
+
+      await player.profiles.deleteMine(player.userId);
+
+      expect(await other.profiles.find(player.userId)).toBeNull();
+      expect(await other.profiles.create(profileOf(other, mine))).toBe("created");
+    });
   });
 }
