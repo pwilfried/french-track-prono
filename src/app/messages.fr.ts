@@ -26,6 +26,11 @@ export const messages = {
     empty: "Aucune épreuve pour ce filtre.",
     loading: "Chargement des épreuves…",
   },
+  myPredictions: {
+    predicted: "✓ Pronostiqué",
+    toPredict: "À pronostiquer",
+    joker: "🃏 Joker",
+  },
   event: {
     back: "Épreuves",
     startList: "Liste de départ",
