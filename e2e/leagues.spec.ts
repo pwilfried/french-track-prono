@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { sql } from "./database";
+import { sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
 
 test("two friends in the same league see the same ranking", async ({ browser }) => {

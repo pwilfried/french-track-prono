@@ -106,7 +106,6 @@ export const messages = {
       `✓ Points calculés pour ${players} ${players <= 1 ? "joueur" : "joueurs"}.`,
     kpi: { predictions: "pronos", average: "moyenne", best: "meilleur" },
     detail: "Détail",
-    noPrediction: "Personne n'a pronostiqué cette épreuve.",
   },
   leagues: {
     title: "Mes ligues",
@@ -186,8 +185,6 @@ export const messages = {
     send: "Recevoir mon code",
     sending: "Envoi…",
     firstTime: "Pas de compte à créer : si c'est ta première fois, il se crée tout seul.",
-    checkTitle: "Vérifie ta boîte mail",
-    sentTo: (email: string) => `Code envoyé à ${email}`,
     waysTitle: "Deux façons de te connecter",
     waysBody:
       "Tape le code à 6 chiffres ci-dessous, ou ouvre le lien du message (sur ce téléphone).",
@@ -209,7 +206,6 @@ export const messages = {
     since: (date: string) => `Joueur depuis le ${date}`,
     emailPrivate: "Ton e-mail reste privé : il n'apparaît jamais dans l'application.",
     signOut: "Se déconnecter",
-    signingOut: "Déconnexion…",
     back: "Voir les épreuves",
   },
   welcome: {
@@ -241,7 +237,6 @@ export const messages = {
     podium: "Ton podium",
     athletes: "Athlètes engagés",
     emptyStep: "Touche un athlète",
-    step: (rank: 1 | 2 | 3) => ["1er", "2e", "3e"][rank - 1]!,
     stepLabel: (rank: 1 | 2 | 3, name: string | null) =>
       `${["1re", "2e", "3e"][rank - 1]} place : ${name ?? "vide"}`,
     athleteLabel: (name: string, rank: 1 | 2 | 3 | null) =>
