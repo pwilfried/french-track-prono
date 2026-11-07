@@ -145,6 +145,10 @@ export const messages = {
       "Résultat incomplet : au moins trois athlètes différents, rangs 1 à 3 (les ex æquo partagent un rang).",
     RESULTS_UNAVAILABLE:
       "Les résultats ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+    RESULT_MISSING: "Saisis d'abord le résultat officiel de cette épreuve.",
+    EVENT_NOT_LOCKED: "Les pronos de cette épreuve ne sont pas encore fermés.",
+    POINTS_UNAVAILABLE:
+      "Les points ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     PODIUM_INVALID: "Choisis trois athlètes différents pour ton podium.",
     PREDICTION_LOCKED:
       "Trop tard : cette épreuve vient d'être verrouillée. Ton podium n'a pas été enregistré.",
