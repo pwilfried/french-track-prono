@@ -301,6 +301,8 @@ export const messages = {
     EVENT_NOT_LOCKED: "Les pronos de cette épreuve ne sont pas encore fermés.",
     POINTS_UNAVAILABLE:
       "Les points ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+    INVALID_REACTION: "Cette réaction n’existe pas.",
+    REACTION_NOT_ALLOWED: "Tu peux réagir aux pronos des autres une fois l’épreuve verrouillée.",
     REVEAL_UNAVAILABLE:
       "Les pronos des autres ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     retry: "Réessayer",
