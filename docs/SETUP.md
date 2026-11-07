@@ -173,6 +173,22 @@ docker exec -i supabase_db_french-track-prono psql -U postgres -c "update profil
 
 3. Recharge la page. `supabase db reset` efface ce droit : refais l'étape 2 après un reset.
 
+### Compétition de lancement : Championnats d'Europe (Birmingham)
+
+Les Championnats d'Europe de Birmingham (10-16 août 2026) sont rejoués comme s'ils avaient lieu
+du lundi 23 au dimanche 29 novembre 2026 (mêmes jours de la semaine, mêmes heures locales) :
+46 finales, les finalistes comme liste de départ (les trois médaillés pour les concours et les
+épreuves combinées), sans résultat.
+
+```
+npm run db:load-euro
+```
+
+Puis `COMPETITION_SLUG=european-championships-2026` dans `.env.local` et relance `npm run dev`.
+Pour simuler la fin des épreuves, `npm run db:euro-results` charge les résultats officiels (ou
+saisis-les dans `/admin`). Les sources sont citées en tête des fichiers `supabase/data/`.
+En production, le même fichier se charge une fois dans l'éditeur SQL de Supabase.
+
 ### Choisir la compétition affichée
 
 L'application affiche une seule compétition, choisie par la variable `COMPETITION_SLUG` dans
