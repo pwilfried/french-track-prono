@@ -10,7 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import type { RankedPlayer } from "@/domain/ranking";
 import { createSupabaseRankingRepository } from "@/infra";
 
-import { COMPETITION_SLUG } from "../competition";
+import { COMPETITION_SLUG, COMPETITION_TEXT } from "../competition";
 import { messages } from "../messages.fr";
 import { getCurrentUser, getSessionClient } from "../session";
 
@@ -31,7 +31,10 @@ export default async function GeneralRankingPage() {
 
   return (
     <main className="flex flex-1 flex-col">
-      <LeagueHero title={messages.ranking.title} subtitle={messages.ranking.subtitle} />
+      <LeagueHero
+        title={messages.ranking.title}
+        subtitle={messages.ranking.subtitle(COMPETITION_TEXT.name)}
+      />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
         {ranking === "error" ? (
           <ErrorNotice retryHref="/classement" message={messages.errors.RANKING_UNAVAILABLE} />

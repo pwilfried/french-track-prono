@@ -173,6 +173,13 @@ docker exec -i supabase_db_french-track-prono psql -U postgres -c "update profil
 
 3. Recharge la page. `supabase db reset` efface ce droit : refais l'étape 2 après un reset.
 
+### Choisir la compétition affichée
+
+L'application affiche une seule compétition, choisie par la variable `COMPETITION_SLUG` dans
+`.env.local` (côté serveur). Sans valeur, c'est l'Ultimate Championship du jeu de test. Les
+compétitions connues, leur fuseau horaire et leur nom en français sont dans
+`src/app/competition.ts` et `src/app/messages.fr.ts`. Relance `npm run dev` après un changement.
+
 ## 4 bis. Connexion : lien du message et téléphone
 
 Le message de connexion contient un code à 6 chiffres et un lien. Le lien pointe vers

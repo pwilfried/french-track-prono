@@ -12,7 +12,7 @@ import {
   createSupabasePointsRepository,
 } from "@/infra";
 
-import { COMPETITION_SLUG, COMPETITION_TIME_ZONE } from "../competition";
+import { COMPETITION_SLUG, COMPETITION_TEXT, COMPETITION_TIME_ZONE } from "../competition";
 import { messages } from "../messages.fr";
 import { adminOnly } from "./guard";
 
@@ -78,7 +78,9 @@ export default async function AdminPage({
               {messages.admin.badge}
             </span>
           </h1>
-          <p className="mt-2 text-[#dce6f5]">{messages.admin.subtitle(locked.length)}</p>
+          <p className="mt-2 text-[#dce6f5]">
+            {messages.admin.subtitle(COMPETITION_TEXT.name, locked.length)}
+          </p>
         </div>
       </header>
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
