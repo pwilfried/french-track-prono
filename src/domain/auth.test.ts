@@ -41,7 +41,12 @@ describe("validateCode", () => {
     expect(validateCode("123-456")).toEqual({ ok: true, code: "123456" });
   });
 
-  it.each(["", "12345", "1234567", "12345a", "abcdef"])("rejects %j", (input) => {
+  it("accepts the longer codes a Supabase project can be set to (up to 10 digits)", () => {
+    expect(validateCode("12345678")).toEqual({ ok: true, code: "12345678" });
+    expect(validateCode("1234 5678 90")).toEqual({ ok: true, code: "1234567890" });
+  });
+
+  it.each(["", "12345", "12345678901", "12345a", "abcdef"])("rejects %j", (input) => {
     expect(validateCode(input)).toEqual({ ok: false, code: "CODE_INVALID" });
   });
 });
