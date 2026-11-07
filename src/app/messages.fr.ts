@@ -139,10 +139,15 @@ export const messages = {
     AVATAR_INVALID: "Choisis un avatar dans la liste.",
     PROFILE_EXISTS: "Tu as déjà un profil.",
     PROFILE_UNAVAILABLE: "Le profil n'est pas disponible pour le moment. Réessaie dans un instant.",
+    NOT_ADMIN: "Seul un administrateur peut faire ça.",
+    ATHLETE_NOT_IN_EVENT: "Cet athlète ne participe pas à cette épreuve.",
+    RESULT_INVALID:
+      "Résultat incomplet : au moins trois athlètes différents, rangs 1 à 3 (les ex æquo partagent un rang).",
+    RESULTS_UNAVAILABLE:
+      "Les résultats ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     PODIUM_INVALID: "Choisis trois athlètes différents pour ton podium.",
     PREDICTION_LOCKED:
       "Trop tard : cette épreuve vient d'être verrouillée. Ton podium n'a pas été enregistré.",
-    ATHLETE_NOT_IN_EVENT: "Cet athlète ne participe pas à cette épreuve.",
     JOKER_ALREADY_USED: "Tu as déjà utilisé ton joker dans cette compétition.",
     PREDICTION_UNAVAILABLE:
       "Ton prono n'est pas disponible pour le moment. Réessaie dans un instant.",
