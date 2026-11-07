@@ -151,6 +151,28 @@ Pour tester le lien depuis un téléphone sur le même réseau :
 
 Le code à 6 chiffres marche toujours, sans rien changer.
 
+## 4 ter. Test de bout en bout (Playwright)
+
+Le parcours « connexion → profil → prono → épreuve verrouillée » est testé avec Playwright, sur
+le build de production, contre Supabase local. Il lit le code de connexion dans la boîte de test
+(Mailpit) et verrouille l'épreuve avec `psql`.
+
+```
+supabase start
+npm run db:open-events
+npx playwright install chromium
+npm run build
+npm run test:e2e
+```
+
+- Durée : moins d'une minute pour le test lui-même ; en CI, l'installation de Chromium et le
+  build ajoutent environ 3 minutes au job « Database ».
+- Pas de relance automatique : un test qui échoue est corrigé ou supprimé.
+- En cas d'échec en CI, le rapport (traces, captures) est joint au run sous le nom
+  `playwright-report`.
+- Le test crée un joueur `e2e-…@example.test` à chaque passage ; `supabase db reset` remet tout à
+  zéro.
+
 ## 5. Sécurité : à ne jamais committer
 
 - `.env.local` et tout fichier contenant des clés (déjà dans `.gitignore`)
