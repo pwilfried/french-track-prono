@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
+import { getMyBadges } from "@/application/get-my-badges";
 import { getProfile } from "@/application/get-profile";
 import { listEvents } from "@/application/list-events";
 import { listMyPredictions } from "@/application/list-my-predictions";
@@ -15,7 +16,7 @@ import {
   createSupabaseRankingRepository,
 } from "@/infra";
 
-import { COMPETITION_SLUG } from "../competition";
+import { COMPETITION_SLUG, COMPETITION_TIME_ZONE } from "../competition";
 import { messages } from "../messages.fr";
 import { getCurrentUser, getSessionClient } from "../session";
 
@@ -35,12 +36,18 @@ async function loadSeason(userId: string) {
         competitionSlug: COMPETITION_SLUG,
       }),
     ]);
+    const badges = await getMyBadges({
+      ranking: createSupabaseRankingRepository(client),
+      predictions: createSupabasePredictionRepository(client),
+      events: createSupabaseEventReader(createPublicSupabaseClient()),
+    }).execute({ userId, competitionSlug: COMPETITION_SLUG, timeZone: COMPETITION_TIME_ZONE });
     const me = ranking.find((p) => p.userId === userId);
     return {
       rank: me?.rank ?? null,
       points: me?.points ?? 0,
       predicted: mine.length,
       events: events.length,
+      badges,
     };
   } catch (error) {
     if (error instanceof UseCaseError) return null;
@@ -122,6 +129,35 @@ export default async function ProfilePage() {
           {messages.points.leaguesLink}
           <span aria-hidden="true">›</span>
         </Link>
+      </section>
+
+      <section aria-labelledby="badges" className="flex flex-col gap-2">
+        <h2
+          id="badges"
+          className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+        >
+          {text.badges}
+        </h2>
+        {season && season.badges.length > 0 ? (
+          <ul className="flex flex-wrap gap-2">
+            {season.badges.map((badge) => {
+              const b = messages.badges[badge];
+              return (
+                <li
+                  key={badge}
+                  title={b.rule}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-gold-soft px-3 text-sm font-bold text-gold-ink"
+                >
+                  <span aria-hidden="true">{b.emoji}</span>
+                  {b.name}
+                  <span className="sr-only">: {b.rule}</span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">{text.noBadge}</p>
+        )}
       </section>
 
       <section aria-labelledby="account" className="flex flex-col gap-2">

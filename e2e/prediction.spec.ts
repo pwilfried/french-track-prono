@@ -59,4 +59,8 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   await expect(page.getByRole("heading", { level: 1 })).toContainText("s'impose");
   await expect(page.locator("main")).toContainText("+12 pts");
   await expect(page.getByRole("heading", { name: "Ton prono vs officiel" })).toBeVisible();
+
+  // The perfect podium earns the Nostradamus badge on the profile.
+  await page.goto("/profil");
+  await expect(page.getByRole("listitem").filter({ hasText: "Nostradamus" })).toBeVisible();
 });
