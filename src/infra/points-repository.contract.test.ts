@@ -22,6 +22,7 @@ pointsRepositoryContract("in-memory fake", async () => {
     },
   });
   return {
+    competitionSlug: "ultimate-championship-2026",
     eventId,
     athleteIds,
     adminId,
@@ -65,6 +66,7 @@ if (url && key) {
     sql(`insert into results (event_id, athlete_id, rank) values
       ('${eventId}', '${a1}', 1), ('${eventId}', '${a2}', 2), ('${eventId}', '${a3}', 3)`);
     return {
+      competitionSlug: "ultimate-championship-2026",
       eventId,
       athleteIds: ids,
       adminId: admin.userId,

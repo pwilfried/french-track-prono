@@ -8,6 +8,7 @@ import { DEFAULT_RULES } from "@/domain/scoring";
  * predictions: the admin's (perfect podium, joker) and the player's (winner only, no joker).
  */
 export type PointsWorld = {
+  competitionSlug: string;
   eventId: string;
   athleteIds: string[];
   adminId: string;
@@ -59,6 +60,26 @@ export function pointsRepositoryContract(name: string, world: () => Promise<Poin
       expect(await w.admin.replaceEventScores(w.eventId, lines)).toBe("saved");
 
       expect(byUser(await w.player.findEventScores(w.eventId))).toEqual(byUser(lines));
+    });
+
+    it("lists only the player's own lines of the competition", async () => {
+      const w = await world();
+      await w.admin.replaceEventScores(w.eventId, [
+        { userId: w.adminId, points: 24, reasons: [{ kind: "joker" }] },
+        { userId: w.playerId, points: 3, reasons: [{ kind: "exact", slot: 1 }] },
+      ]);
+
+      const mine = await w.player.listMine(w.playerId, w.competitionSlug);
+
+      expect(mine.filter((l) => l.eventId === w.eventId)).toEqual([
+        {
+          userId: w.playerId,
+          eventId: w.eventId,
+          points: 3,
+          reasons: [{ kind: "exact", slot: 1 }],
+        },
+      ]);
+      expect(await w.player.listMine(w.playerId, "another-competition")).toEqual([]);
     });
 
     it("refuses a player who is not admin and keeps the points", async () => {
