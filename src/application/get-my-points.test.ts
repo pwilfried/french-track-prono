@@ -6,6 +6,7 @@ import { getMyPoints } from "./get-my-points";
 function repository(lines: (ScoreLine & { eventId: string })[]): PointsRepository {
   return {
     loadEvent: async () => null,
+    progress: async () => ({ withResult: [], scored: [] }),
     findEventScores: async () => [],
     replaceEventScores: async () => "saved",
     listMine: async (userId) => lines.filter((l) => l.userId === userId),

@@ -14,7 +14,11 @@
     "format:check": "prettier --check .",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "test:storybook": "vitest run --config vitest.storybook.config.mts"
+    "db:open-events": "docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/dev/open_events.sql",
+    "test:storybook": "vitest run --config vitest.storybook.config.mts",
+    "db:demo-players": "docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/dev/demo_players.sql",
+    "db:test-points": "npm run db:demo-players && docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/dev/lock_demo_events.sql",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
@@ -29,6 +33,7 @@
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@storybook/addon-vitest": "^10.6.6",
     "@storybook/nextjs-vite": "^10.6.6",
     "@tailwindcss/turbopack": "^4",

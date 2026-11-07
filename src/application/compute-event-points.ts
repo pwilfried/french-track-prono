@@ -28,6 +28,8 @@ export interface PointsRepository {
   loadEvent(eventId: string): Promise<EventToScore | null>;
   /** The score lines of an event, in any order. */
   findEventScores(eventId: string): Promise<ScoreLine[]>;
+  /** Where the back-office stands in a competition: events with a result, events with points. */
+  progress(competitionSlug: string): Promise<{ withResult: string[]; scored: string[] }>;
   /** The player's own score lines for the events of a competition. */
   listMine(userId: string, competitionSlug: string): Promise<(ScoreLine & { eventId: string })[]>;
   /** Replaces all the score lines of an event, in one go. */

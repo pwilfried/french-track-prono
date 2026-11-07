@@ -19,6 +19,13 @@ export function createInMemoryPointsStore(
         async findEventScores(eventId) {
           return scores.get(eventId) ?? [];
         },
+        async progress(slug) {
+          if (slug !== competitionSlug) return { withResult: [], scored: [] };
+          return {
+            withResult: Object.keys(events).filter((id) => events[id]!.results.length > 0),
+            scored: [...scores.keys()],
+          };
+        },
         async listMine(userId, slug) {
           if (slug !== competitionSlug) return [];
           return [...scores.entries()].flatMap(([eventId, lines]) =>

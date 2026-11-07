@@ -82,6 +82,21 @@ export function pointsRepositoryContract(name: string, world: () => Promise<Poin
       expect(await w.player.listMine(w.playerId, "another-competition")).toEqual([]);
     });
 
+    it("tells which events have a result and which have points", async () => {
+      const w = await world();
+      expect(await w.admin.progress(w.competitionSlug)).toEqual({
+        withResult: [w.eventId],
+        scored: [],
+      });
+
+      await w.admin.replaceEventScores(w.eventId, [{ userId: w.playerId, points: 3, reasons: [] }]);
+
+      expect(await w.admin.progress(w.competitionSlug)).toEqual({
+        withResult: [w.eventId],
+        scored: [w.eventId],
+      });
+    });
+
     it("refuses a player who is not admin and keeps the points", async () => {
       const w = await world();
       const lines: ScoreLine[] = [{ userId: w.playerId, points: 3, reasons: [] }];
