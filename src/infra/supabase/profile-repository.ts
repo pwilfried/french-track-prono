@@ -25,6 +25,16 @@ export function createSupabaseProfileRepository(client: SupabaseClient): Profile
       } satisfies Profile;
     },
 
+    async isAdmin(userId) {
+      const { data, error } = await client
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", userId)
+        .maybeSingle<{ is_admin: boolean }>();
+      if (error) throw new UseCaseError("PROFILE_UNAVAILABLE");
+      return data?.is_admin ?? false;
+    },
+
     async create(profile) {
       const { error } = await client.from("profiles").insert({
         id: profile.userId,
@@ -39,6 +49,12 @@ export function createSupabaseProfileRepository(client: SupabaseClient): Profile
         if (where.includes("profiles_pkey")) return "profile_exists";
       }
       throw new UseCaseError("PROFILE_UNAVAILABLE");
+    },
+
+    // The database function deletes the caller (auth.uid()), whatever id is given.
+    async deleteMine() {
+      const { error } = await client.rpc("delete_my_account");
+      if (error) throw new UseCaseError("PROFILE_UNAVAILABLE");
     },
   };
 }

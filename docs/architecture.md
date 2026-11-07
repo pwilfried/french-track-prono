@@ -147,15 +147,44 @@ tester et à faire évoluer ; une seule implémentation de la règle, donc pas d
 synchroniser avec l'aperçu affiché dans l'interface.
 Conséquences :
 
-- Un cas d'usage `ScoreEvent` (`src/application`) lit résultats, pronos et barème
-  (`scoring_rules`), appelle le domaine, puis enregistre les lignes de `score_events` et
-  `predictions.points_awarded`.
-- L'enregistrement est idempotent (upsert sur `(user_id, event_id)`) et fait en une seule
-  transaction ; il est réservé au serveur (clé `service_role`, admin uniquement). Le détail
-  (fonction SQL d'écriture `record_scores` ou transaction côté serveur) sera tranché en v0.4.
-- Les joueurs ne peuvent pas écrire dans `score_events` (aucune policy d'écriture).
+- Le cas d'usage `computeEventPoints` (`src/application/compute-event-points.ts`) lit le résultat,
+  tous les pronos de l'épreuve et le barème (`scoring_rules`), appelle le domaine, puis remplace
+  les lignes de `score_events` de l'épreuve. Les raisons sont stockées en codes dans
+  `score_events.detail` (`{"reasons": [...]}`), jamais en phrases.
+- L'écriture passe par la fonction SQL `set_event_scores` (une transaction : suppression puis
+  insertion), donc relancer le calcul ne crée aucun doublon (S12). Elle est appelée avec la
+  session de l'admin (`profiles.is_admin`, posé en SQL seulement) : pas de clé `service_role` dans
+  l'application.
+- Les joueurs ne peuvent pas écrire dans `score_events` (policy `admin_write` réservée à l'admin).
 - Alternative écartée : calcul en SQL (`score_event()`), plus atomique mais plus dur à tester
   et à lire pour des agents.
+
+**Pronostics (v0.3).** On compose son podium en touchant les athlètes dans l'ordre (pas de
+glisser-déposer) ; le compte à rebours passe à l'orange à 1 h et au rouge à 10 min du
+verrouillage. La base refuse un prono après `lock_at`, un athlète hors liste de départ, un
+deuxième joker dans la compétition, et la suppression d'un prono après le verrouillage.
+
+**Résultats et points (v0.4).** L'admin saisit le podium officiel dans `/admin` (ex æquo : les
+athlètes partagent la place, décision du propriétaire), puis clique sur « Calculer les points » ;
+le coup de flair est calculé sur tous les pronos de l'épreuve. Le joueur voit le détail dans
+`/mes-points`.
+
+**Ligues et classements (v0.5).** Voir « Modèle de données » pour les règles des ligues. Le
+classement (`src/domain/ranking.ts`, R9) départage aux points, puis aux podiums parfaits, puis
+aux vainqueurs trouvés ; des joueurs toujours égaux partagent la place. Pages : `/ligues`,
+`/ligues/[id]`, `/rejoindre/[code]` (lien d'invitation), `/classement`.
+
+**Suspense (v0.6).** Après le verrouillage, la page d'une épreuve montre le podium de tous les
+joueurs, avec un filtre par ligue (onglets « Tous » puis une ligue par onglet) ; avant, une case
+rappelle que les pronos se dévoilent au verrouillage, et la base ne laisse lire que son propre
+prono. Sous le podium d'un autre joueur : six réactions fixes (🔥 😂 😮 👏 🤡 🎯, pas de texte
+libre), une par joueur et par prono, qu'on retire en la touchant à nouveau ; pas de réaction sur
+son propre prono (décisions du propriétaire, issue #16). La répartition « Qui ont-ils vu
+gagner ? » est calculée sur tous les pronos de l'épreuve, jamais sur la seule ligue
+(`pickDistribution`, `src/domain/reveal.ts`). Le badge « Coup de flair » est lu dans les points
+calculés (`score_events`, raison `flair`) : il suit toujours le barème de la base.
+
+Les décisions du propriétaire prises pendant ces versions sont tracées dans l'issue #112.
 
 ## Modèle de données
 
@@ -165,14 +194,19 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 |---|---|
 | Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions` |
 | Référentiel | `competitions`, `events`, `athletes`, `entries` (liste de départ), `results` |
-| Jeu | `predictions`, `score_events`, `scoring_rules` |
-| Vues | `leaderboard_competition`, `leaderboard_league` |
-| Fonctions | `join_league()`, `enforce_prediction_lock()` (trigger) |
+| Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions` |
+| Fonctions | `create_league()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()` |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers`, `badges`, `user_badges` (F11 et plus tard) |
 
 Garanties portées par la base : pronostic impossible après `lock_at`, pronos des autres
 illisibles avant verrouillage, un seul joker par joueur et par compétition, un pronostic
 par joueur et par épreuve, seuls les athlètes engagés sont pronostiquables.
+
+Ligues (v0.5, décisions du propriétaire dans l'issue #112) : code d'invitation de 6 caractères sans
+caractères ambigus (ni 0/O, ni 1/I/L), 50 membres au plus, le créateur passe la main à un membre
+avant de partir (seul, partir supprime la ligue), une ligue compte la compétition en cours à sa
+création. Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
+calculé en TypeScript à partir des lignes de points (pas de vue SQL).
 
 Ajouts nécessaires au schéma (à faire dans la version indiquée) :
 
