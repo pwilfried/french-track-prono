@@ -26,6 +26,7 @@ function repository(event: EventToScore | null, outcome: "saved" | "not_admin" =
   const points: PointsRepository = {
     loadEvent: async () => event,
     findEventScores: async (eventId) => stored.get(eventId) ?? [],
+    listMine: async () => [],
     replaceEventScores: async (eventId, lines) => {
       if (outcome === "saved") stored.set(eventId, lines);
       return outcome;

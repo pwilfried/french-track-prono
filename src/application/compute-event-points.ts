@@ -28,6 +28,8 @@ export interface PointsRepository {
   loadEvent(eventId: string): Promise<EventToScore | null>;
   /** The score lines of an event, in any order. */
   findEventScores(eventId: string): Promise<ScoreLine[]>;
+  /** The player's own score lines for the events of a competition. */
+  listMine(userId: string, competitionSlug: string): Promise<(ScoreLine & { eventId: string })[]>;
   /** Replaces all the score lines of an event, in one go. */
   replaceEventScores(eventId: string, lines: ScoreLine[]): Promise<"saved" | "not_admin">;
 }

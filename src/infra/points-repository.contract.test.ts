@@ -22,6 +22,7 @@ pointsRepositoryContract("in-memory fake", async () => {
     },
   });
   return {
+    competitionSlug: "ultimate-championship-2026",
     eventId,
     athleteIds,
     adminId,
@@ -40,7 +41,7 @@ if (url && key) {
     const [admin, player] = await Promise.all([signedInPlayer(url, key), signedInPlayer(url, key)]);
     sql(`update profiles set is_admin = true where id = '${admin.userId}'`);
     // An event of its own: open while the predictions are written, then locked, then its result.
-    const { eventId, athleteIds: ids } = createTestEvent();
+    const { competitionSlug, eventId, athleteIds: ids } = createTestEvent();
     const [a1, a2, a3, a4] = ids as [string, string, string, string];
     sql(`insert into predictions (user_id, event_id, p1, p2, p3, use_joker) values
       ('${admin.userId}', '${eventId}', '${a1}', '${a2}', '${a3}', true),
@@ -51,6 +52,7 @@ if (url && key) {
     sql(`insert into results (event_id, athlete_id, rank) values
       ('${eventId}', '${a1}', 1), ('${eventId}', '${a2}', 2), ('${eventId}', '${a3}', 3)`);
     return {
+      competitionSlug,
       eventId,
       athleteIds: ids,
       adminId: admin.userId,

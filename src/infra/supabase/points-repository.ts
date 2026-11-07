@@ -5,7 +5,12 @@ import { UseCaseError } from "@/application/errors";
 import type { ScoreReason, ScoringRules } from "@/domain/scoring";
 
 type PredictionRow = { user_id: string; p1: string; p2: string; p3: string; use_joker: boolean };
-type ScoreRow = { user_id: string; points: number; detail: { reasons?: ScoreReason[] } };
+type ScoreRow = {
+  user_id: string;
+  event_id: string;
+  points: number;
+  detail: { reasons?: ScoreReason[] };
+};
 
 const RULE_KEYS: Record<string, keyof ScoringRules> = {
   exact_slot: "exactSlot",
@@ -72,6 +77,23 @@ export function createSupabasePointsRepository(client: SupabaseClient): PointsRe
       return data!.map(
         (row): ScoreLine => ({ userId: row.user_id, points: row.points, reasons: row.detail.reasons ?? [] }),
       );
+    },
+
+    async listMine(userId, competitionSlug) {
+      const { data, error } = await client
+        .from("score_events")
+        .select("user_id, event_id, points, detail, events!inner(competitions!inner(slug))")
+        .eq("user_id", userId)
+        .eq("source", "prediction")
+        .eq("events.competitions.slug", competitionSlug)
+        .returns<ScoreRow[]>();
+      if (error) fail();
+      return data!.map((row) => ({
+        userId: row.user_id,
+        eventId: row.event_id,
+        points: row.points,
+        reasons: row.detail.reasons ?? [],
+      }));
     },
 
     async replaceEventScores(eventId, lines) {
