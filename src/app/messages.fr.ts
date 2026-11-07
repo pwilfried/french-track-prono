@@ -181,4 +181,91 @@ export const messages = {
       "Ton prono n'est pas disponible pour le moment. Réessaie dans un instant.",
     retry: "Réessayer",
   },
+  legal: {
+    footer: { notice: "Mentions légales", privacy: "Confidentialité", contact: "Contact" },
+    /** Draft written by the agent: the owner validates the final text (issue #172). */
+    notice: {
+      title: "Mentions légales",
+      subtitle: "Qui édite French Track Prono et qui l'héberge.",
+      sections: [
+        {
+          heading: "Éditeur",
+          body: [
+            "French Track Prono est un jeu gratuit de pronostics d'athlétisme proposé par FrenchTrack, podcast d'athlétisme.",
+            "Directeur de la publication : [nom à compléter].",
+          ],
+        },
+        {
+          heading: "Hébergement",
+          body: [
+            "Application : Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis.",
+            "Base de données et connexion : Supabase Inc., 970 Toa Payoh North #07-04, Singapour 318992 (données stockées dans l'Union européenne).",
+            "Envoi des e-mails de connexion : Resend (Plus Five Five Inc.), 2261 Market Street #5039, San Francisco, CA 94114, États-Unis.",
+          ],
+        },
+        {
+          heading: "Jeu gratuit",
+          body: [
+            "Aucun argent n'est engagé ni gagné : ce n'est pas un jeu d'argent. Les classements n'ont qu'une valeur amicale.",
+            "Les noms des athlètes et les résultats sont des informations publiques. Aucune photo d'athlète n'est utilisée.",
+          ],
+        },
+        {
+          id: "contact",
+          heading: "Contact",
+          body: [
+            "Une question, un bug, une demande sur tes données : [adresse e-mail à compléter].",
+          ],
+        },
+      ],
+    },
+    privacy: {
+      title: "Confidentialité",
+      subtitle: "Ce qu'on garde sur toi, et comment tout effacer.",
+      sections: [
+        {
+          heading: "Ce qu'on garde",
+          body: [
+            "Ton adresse e-mail, uniquement pour t'envoyer ton code de connexion. Elle n'est jamais affichée aux autres joueurs.",
+            "Ton pseudo et ton avatar emoji, visibles des autres joueurs.",
+            "Tes pronos, tes points, tes ligues et tes réactions. Tes pronos sont visibles des autres une fois l'épreuve verrouillée.",
+            "La date à laquelle tu as confirmé avoir 15 ans ou plus.",
+          ],
+        },
+        {
+          heading: "Pourquoi",
+          body: [
+            "Pour faire tourner le jeu : te connecter, calculer tes points, afficher les classements. Base légale : l'exécution du service que tu demandes en t'inscrivant.",
+            "Pas de publicité, pas de revente, pas de pistage : aucun cookie autre que celui qui garde ta session ouverte.",
+          ],
+        },
+        {
+          heading: "15 ans ou plus",
+          body: [
+            "Le jeu est réservé aux personnes de 15 ans ou plus, l'âge à partir duquel on peut consentir seul en France au traitement de ses données.",
+          ],
+        },
+        {
+          heading: "Combien de temps",
+          body: [
+            "Tant que ton compte existe. Tu peux le supprimer à tout moment depuis ton profil : tout disparaît aussitôt (profil, pronos, points, réactions, ligues).",
+            "Un compte sans connexion pendant [durée à compléter] est supprimé.",
+          ],
+        },
+        {
+          heading: "Tes droits",
+          body: [
+            "Tu peux consulter, corriger ou effacer tes données, et t'opposer à leur traitement, en écrivant à l'adresse indiquée dans les mentions légales.",
+            "Tu peux aussi saisir la CNIL (cnil.fr) si tu estimes que tes droits ne sont pas respectés.",
+          ],
+        },
+        {
+          heading: "Sous-traitants",
+          body: [
+            "Vercel (hébergement de l'application), Supabase (base de données et connexion, Union européenne) et Resend (envoi des e-mails de connexion). Les transferts hors de l'Union européenne sont encadrés par les clauses contractuelles types de la Commission européenne.",
+          ],
+        },
+      ],
+    },
+  },
 } as const;
