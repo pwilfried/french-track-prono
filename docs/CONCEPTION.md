@@ -71,7 +71,6 @@ Principes :
 | Référentiel | `competitions`, `events`, `athletes`, `entries` (liste de départ) |
 | Jeu | `predictions`, `results`, `score_events`, `bonus_questions`, `bonus_answers` |
 | Progression | `badges`, `user_badges`, `scoring_rules` |
-| Vues | `leaderboard_competition`, `leaderboard_league` |
 
 À savoir sur les données de test (`supabase/seed.sql`) :
 - 28 épreuves, podiums seulement (rang 1 à 3) + finalistes français. Source : NBC Sports.

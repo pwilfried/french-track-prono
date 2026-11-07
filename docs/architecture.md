@@ -166,13 +166,18 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 | Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions` |
 | Référentiel | `competitions`, `events`, `athletes`, `entries` (liste de départ), `results` |
 | Jeu | `predictions`, `score_events`, `scoring_rules` |
-| Vues | `leaderboard_competition`, `leaderboard_league` |
-| Fonctions | `join_league()`, `enforce_prediction_lock()` (trigger) |
+| Fonctions | `create_league()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger) |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers`, `badges`, `user_badges` (F11 et plus tard) |
 
 Garanties portées par la base : pronostic impossible après `lock_at`, pronos des autres
 illisibles avant verrouillage, un seul joker par joueur et par compétition, un pronostic
 par joueur et par épreuve, seuls les athlètes engagés sont pronostiquables.
+
+Ligues (v0.5, décisions du propriétaire dans l'issue #112) : code d'invitation de 6 caractères sans
+caractères ambigus (ni 0/O, ni 1/I/L), 50 membres au plus, le créateur passe la main à un membre
+avant de partir (seul, partir supprime la ligue), une ligue compte la compétition en cours à sa
+création. Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
+calculé en TypeScript à partir des lignes de points (pas de vue SQL).
 
 Ajouts nécessaires au schéma (à faire dans la version indiquée) :
 
