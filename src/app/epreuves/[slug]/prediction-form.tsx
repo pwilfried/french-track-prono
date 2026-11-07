@@ -50,7 +50,7 @@ export function PredictionForm({
       />
       {!locked && (
         <>
-          <label className="mx-4 flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border-2 border-border bg-card px-3.5 py-2 has-checked:border-secondary has-checked:bg-secondary/20">
+          <label className="mx-4 flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border-2 border-transparent bg-gold-soft px-3.5 py-2 text-gold-ink has-checked:border-secondary">
             <span className="min-w-0 flex-1">
               <span className="block font-extrabold">{messages.prediction.joker}</span>
               <span className="block text-sm text-muted-foreground">
