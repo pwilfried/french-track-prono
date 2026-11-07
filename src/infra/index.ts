@@ -15,11 +15,6 @@ export {
   type CookieToSet,
   type CurrentUser,
 } from "./supabase/session";
-export {
-  createInMemoryPredictionRepository,
-  type PredictionEventFixture,
-} from "./in-memory/prediction-repository";
-export { createSupabasePredictionRepository } from "./supabase/prediction-repository";
 export { createInMemoryResultStore, type ResultEventFixture } from "./in-memory/result-repository";
 export { createSupabaseResultRepository } from "./supabase/result-repository";
 export { createInMemoryLeagueStore } from "./in-memory/league-repository";
@@ -30,3 +25,8 @@ export { createInMemoryPointsStore } from "./in-memory/points-repository";
 export { createSupabasePointsRepository } from "./supabase/points-repository";
 export { createInMemoryRevealRepository } from "./in-memory/reveal-repository";
 export { createSupabaseRevealRepository } from "./supabase/reveal-repository";
+export {
+  createInMemoryPredictionRepository,
+  type PredictionEventFixture,
+} from "./in-memory/prediction-repository";
+export { createSupabasePredictionRepository } from "./supabase/prediction-repository";
