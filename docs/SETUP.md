@@ -148,6 +148,21 @@ Après toute modification de `.env.local`, redémarre `npm run dev`.
 Pour les composants : `npm run storybook` (http://localhost:6006). Pour leurs tests, installe une
 fois le navigateur : `npx playwright install chromium`, puis `npm run test:storybook`.
 
+## Devenir admin en local
+
+L'admin saisit les résultats et lance le calcul des points avec sa propre session : pas de clé
+secrète dans l'application. On devient admin uniquement en SQL (un joueur ne peut pas se donner
+ce droit depuis l'application).
+
+1. Connecte-toi une fois sur `http://localhost:3000` et crée ton profil.
+2. Dans le terminal (remplace le pseudo par le tien) :
+
+```
+docker exec -i supabase_db_french-track-prono psql -U postgres -c "update profiles set is_admin = true where lower(pseudo) = lower('MonPseudo')"
+```
+
+3. Recharge la page. `supabase db reset` efface ce droit : refais l'étape 2 après un reset.
+
 ## 4 bis. Connexion : lien du message et téléphone
 
 Le message de connexion contient un code à 6 chiffres et un lien. Le lien pointe vers
@@ -165,6 +180,28 @@ Pour tester le lien depuis un téléphone sur le même réseau :
 3. Ne committe pas cette adresse : remets `http://localhost:3000` avant de créer ta PR.
 
 Le code à 6 chiffres marche toujours, sans rien changer.
+
+## 4 ter. Test de bout en bout (Playwright)
+
+Le parcours « connexion → profil → prono → épreuve verrouillée » est testé avec Playwright, sur
+le build de production, contre Supabase local. Il lit le code de connexion dans la boîte de test
+(Mailpit) et verrouille l'épreuve avec `psql`.
+
+```
+supabase start
+npm run db:open-events
+npx playwright install chromium
+npm run build
+npm run test:e2e
+```
+
+- Durée : moins d'une minute pour le test lui-même ; en CI, l'installation de Chromium et le
+  build ajoutent environ 3 minutes au job « Database ».
+- Pas de relance automatique : un test qui échoue est corrigé ou supprimé.
+- En cas d'échec en CI, le rapport (traces, captures) est joint au run sous le nom
+  `playwright-report`.
+- Le test crée un joueur `e2e-…@example.test` à chaque passage ; `supabase db reset` remet tout à
+  zéro.
 
 ## 5. Sécurité : à ne jamais committer
 

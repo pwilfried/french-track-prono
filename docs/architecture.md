@@ -216,7 +216,7 @@ Le schéma et le seed ont été exécutés sur Supabase local et sont couverts p
 | S8 | Même cas que S7 avec seulement 9 pronos sur l'épreuve | 3 (pas de flair sous 10 pronos) |
 | S9 | Vainqueur choisi par exactement 15 % des joueurs | pas de flair (seuil strict) |
 | S10 | Podium parfait + flair + joker | 28 (maximum possible) |
-| S11 | Ex æquo à la 3e place : le prono place l'un ou l'autre des deux en 3e | 3 points de place pour les deux cas (à confirmer comme règle) |
+| S11 | Ex æquo à la 3e place : le prono place l'un ou l'autre des deux en 3e | 3 points de place pour les deux cas : les ex æquo partagent la place (décision du 07/11/2026, #112) |
 | S12 | Enregistrer deux fois le même calcul | mêmes points, aucune ligne en double |
 | S13 | Calculer une épreuve sans résultat saisi | erreur explicite |
 
