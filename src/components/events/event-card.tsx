@@ -1,34 +1,37 @@
 import Link from "next/link";
 
+import { CountdownBadge } from "@/components/countdown/countdown-badge";
 import type { EventSummary } from "@/domain/event";
 import { messages } from "@/app/messages.fr";
 
 import { ChipStatus, type ChipTone } from "../ui/chip-status";
-import { CountdownBadge } from "./countdown-badge";
+
+/** What the signed-in player did on this event; absent for a visitor. */
+export type MyEventState = { predicted: boolean; joker: boolean };
 
 type StatusVisual = { tone: ChipTone; label: string };
 
-/** Right-hand chip for the event card. Mirrors the french-track-planches v1 direction. */
-function statusOf(status: EventSummary["status"], hasMyPrediction: boolean): StatusVisual {
-  if (hasMyPrediction) return { tone: "ok", label: "✓ Posé" };
-  if (status === "upcoming") return { tone: "brand", label: "+ Prono" };
-  if (status === "live") return { tone: "hot", label: "⏱ En cours" };
-  return { tone: "neutral", label: "Terminé" };
+/** Right-hand chip; mirrors the Officiel direction. Reads `messages.events.status` for finished/live. */
+function statusOf(status: EventSummary["status"], mine?: MyEventState): StatusVisual {
+  if (mine?.predicted) return { tone: "ok", label: messages.myPredictions.predicted };
+  if (status === "finished") return { tone: "neutral", label: messages.events.status.finished };
+  if (status === "live") return { tone: "hot", label: messages.events.status.live };
+  return { tone: "brand", label: messages.myPredictions.toPredict };
 }
 
 /**
- * One event in a list. Grid: [time] [discipline + meta] [status chip].
- * `now` is passed in to keep the first server render stable and feed the live countdown.
+ * One event in a list. Grid: [time] [discipline + meta + joker badge] [status chip + countdown].
+ * `now` stabilises the first server render; the CountdownBadge then ticks on the client.
  */
 export function EventCard({
   event,
   timeZone,
-  hasMyPrediction = false,
+  mine,
   now = new Date(),
 }: {
   event: EventSummary;
   timeZone: string;
-  hasMyPrediction?: boolean;
+  mine?: MyEventState;
   now?: Date;
 }) {
   const hour = new Intl.DateTimeFormat("fr-FR", {
@@ -36,7 +39,7 @@ export function EventCard({
     minute: "2-digit",
     timeZone,
   }).format(new Date(event.startsAt));
-  const status = statusOf(event.status, hasMyPrediction);
+  const status = statusOf(event.status, mine);
 
   return (
     <li>
@@ -53,7 +56,7 @@ export function EventCard({
         </div>
         <div className="min-w-0">
           <p className="font-display text-base font-bold leading-tight">{event.discipline}</p>
-          <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
             <span className="font-bold text-foreground/80">
               {messages.events.genderInitial[event.gender]}
             </span>
@@ -65,11 +68,16 @@ export function EventCard({
                 <span className="font-bold text-accent-text">★ {messages.events.featured}</span>
               </>
             )}
+            {mine?.joker && (
+              <span className="rounded-full bg-secondary/40 px-2 py-0.5 text-[10px] font-extrabold text-foreground">
+                {messages.myPredictions.joker}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
-          {event.status === "upcoming" && !hasMyPrediction && (
-            <CountdownBadge lockAt={event.lockAt} now={now} />
+          {event.status === "upcoming" && !mine?.predicted && (
+            <CountdownBadge lockAt={event.lockAt} now={now} compact />
           )}
           <ChipStatus tone={status.tone}>{status.label}</ChipStatus>
         </div>

@@ -39,6 +39,9 @@ export default async function ProfilePage() {
           <p className="break-words text-2xl font-extrabold">{profile.pseudo}</p>
         </div>
 
+        <Link href="/mes-points" className={`${buttonVariants({ variant: "muted" })} w-full`}>
+          {messages.points.profileLink} ›
+        </Link>
         <Link href="/epreuves" className={`${buttonVariants()} w-full`}>
           {messages.profile.back}
         </Link>

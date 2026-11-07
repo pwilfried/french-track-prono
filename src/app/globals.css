@@ -27,7 +27,14 @@
   --border: #d3dcea;
   --ring: #084595;
   --radius: 1.25rem;
-  /* Soft surfaces for chips (chip-bg + chip-text), contrasts audited ≥ AA. */
+  /* Countdown badge: orange from 1 h, red from 10 min before the lock (all pairs AA). */
+  --countdown-soon: #ffe3b0;
+  --countdown-soon-foreground: #6b3d00;
+  --countdown-very-soon: #c42818;
+  --countdown-very-soon-foreground: #ffffff;
+  --countdown-locked: #4a5a78;
+  --countdown-locked-foreground: #ffffff;
+  /* Soft surfaces for status chips (chip-bg + chip-text), all pairs audited ≥ AA. */
   --brand-soft: #d9e4f5;
   --brand-ink: #082e66;
   --primary-soft: #fbe3e1;
@@ -36,7 +43,7 @@
   --success-ink: #0f4d29;
   --gold-soft: #fbeec6;
   --gold-ink: #6e4a08;
-  /* Medal gradients for PodiumMedals (used via arbitrary values in classes). */
+  /* Medal gradients for PodiumMedals. */
   --medal-gold-from: #f7d672;
   --medal-gold-to: #d99a22;
   --medal-gold-ink: #3a2a05;
@@ -60,6 +67,10 @@
     --success-text: #2bb673;
     --border: #1b4c94;
     --ring: #ffc857;
+    --countdown-soon: #7a4a00;
+    --countdown-soon-foreground: #ffe3b0;
+    --countdown-locked: #a9bbd8;
+    --countdown-locked-foreground: #052b5c;
     --brand-soft: #16305e;
     --brand-ink: #bfd4f3;
     --primary-soft: #3d1210;
@@ -89,6 +100,12 @@
   --color-success: var(--success);
   --color-success-text: var(--success-text);
   --color-border: var(--border);
+  --color-countdown-soon: var(--countdown-soon);
+  --color-countdown-soon-foreground: var(--countdown-soon-foreground);
+  --color-countdown-very-soon: var(--countdown-very-soon);
+  --color-countdown-very-soon-foreground: var(--countdown-very-soon-foreground);
+  --color-countdown-locked: var(--countdown-locked);
+  --color-countdown-locked-foreground: var(--countdown-locked-foreground);
   --color-ring: var(--ring);
   --color-brand-soft: var(--brand-soft);
   --color-brand-ink: var(--brand-ink);

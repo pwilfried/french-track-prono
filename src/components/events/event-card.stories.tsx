@@ -41,28 +41,31 @@ export const Upcoming: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("100 m")).toBeInTheDocument();
-    await expect(canvas.getByText(/\+ Prono/)).toBeInTheDocument();
+    await expect(canvas.getByText(/À pronostiquer/)).toBeInTheDocument();
   },
 };
 
-/** Lock imminent: countdown chip switches to the hot tone. */
+/** Lock imminent: CountdownBadge switches to the very-soon tone. */
 export const LockImminent: Story = {
   args: {
     event: { ...baseEvent, lockAt: inSeconds(5 * 60), startsAt: inSeconds(10 * 60) },
   },
 };
 
-/** The player has already submitted a prediction. */
+/** The player has already submitted a prediction — no countdown shown, chip reads "Pronostiqué". */
 export const AlreadyPredicted: Story = {
-  args: { event: baseEvent, hasMyPrediction: true },
+  args: { event: baseEvent, mine: { predicted: true, joker: false } },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText(/Posé/)).toBeInTheDocument();
+    await expect(within(canvasElement).getByText(/Pronostiqué/)).toBeInTheDocument();
   },
 };
 
-/** Featured event: ★ marker on the meta line. */
-export const Featured: Story = {
-  args: { event: { ...baseEvent, discipline: "Perche", gender: "F", isFeatured: true } },
+/** Prediction + joker spent on this event. */
+export const PredictedWithJoker: Story = {
+  args: { event: baseEvent, mine: { predicted: true, joker: true } },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText(/Joker/)).toBeInTheDocument();
+  },
 };
 
 /** Not featured, so no star. */
