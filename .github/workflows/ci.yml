@@ -110,3 +110,11 @@ jobs:
           for i in 1 2; do psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/open_events.sql; done
           RESULT="$(psql "$DB" -tA -c "select count(*) filter (where lock_at > now()) > 0 and count(*) filter (where lock_at <= now()) > 0 and (select count(*) from results) = 0 from events")"
           test "$RESULT" = "t"
+
+      # Demo players (local test tooling): twelve players, 24 predictions, idempotent.
+      - name: Local demo players script
+        run: |
+          DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          for i in 1 2; do psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/demo_players.sql; done
+          RESULT="$(psql "$DB" -tA -c "select count(*) from predictions p join auth.users u on u.id = p.user_id where u.email like 'demo-%@example.test'")"
+          test "$RESULT" = "24"
