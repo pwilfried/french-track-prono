@@ -70,6 +70,27 @@ export function JoinLeagueForm({
   );
 }
 
+/** One button to join from an invite link; a wrong code shows its message. */
+export function JoinByLinkForm({ code }: { code: string }) {
+  const [state, action] = useActionState<LeagueFormState, FormData>(joinLeagueAction, {
+    value: code,
+  });
+  return (
+    <form action={action} className="flex flex-col gap-3">
+      <input type="hidden" name="code" value={code} />
+      <input type="hidden" name="back" value={`/rejoindre/${code}`} />
+      {state.error && (
+        <p role="alert" className="text-sm font-semibold text-accent-text">
+          {messages.errors[state.error]}
+        </p>
+      )}
+      <SubmitButton pendingLabel={messages.leagues.joining}>
+        {messages.leagues.joinSubmit}
+      </SubmitButton>
+    </form>
+  );
+}
+
 export function LeaveLeagueForm({ leagueId }: { leagueId: string }) {
   const [state, action] = useActionState<LeagueFormState, FormData>(leaveLeagueAction, {
     value: leagueId,
