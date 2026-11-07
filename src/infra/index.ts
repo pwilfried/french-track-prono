@@ -15,3 +15,8 @@ export {
   type CookieToSet,
   type CurrentUser,
 } from "./supabase/session";
+export {
+  createInMemoryPredictionRepository,
+  type PredictionEventFixture,
+} from "./in-memory/prediction-repository";
+export { createSupabasePredictionRepository } from "./supabase/prediction-repository";
