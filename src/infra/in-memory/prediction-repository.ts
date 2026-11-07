@@ -2,7 +2,12 @@ import { eventPhase } from "@/domain/countdown";
 import type { Prediction, PredictionRepository } from "@/application/save-prediction";
 
 /** What the fake needs to know about an event to apply the same rules as the database. */
-export type PredictionEventFixture = { id: string; lockAt: string; athleteIds: string[] };
+export type PredictionEventFixture = {
+  id: string;
+  competitionSlug: string;
+  lockAt: string;
+  athleteIds: string[];
+};
 
 /**
  * Test double of the PredictionRepository port, with the rules of the database: locked after
@@ -20,6 +25,12 @@ export function createInMemoryPredictionRepository(options: {
   return {
     async find(userId, eventId) {
       return stored.get(key(userId, eventId)) ?? null;
+    },
+    async listForCompetition(userId, competitionSlug) {
+      const ids = new Set(
+        options.events.filter((e) => e.competitionSlug === competitionSlug).map((e) => e.id),
+      );
+      return [...stored.values()].filter((p) => p.userId === userId && ids.has(p.eventId));
     },
     async save(prediction) {
       const event = options.events.find((e) => e.id === prediction.eventId);
