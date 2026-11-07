@@ -229,9 +229,8 @@ export const messages = {
     checkTitle: "Vérifie ta boîte mail",
     sentTo: (email: string) => `Code envoyé à ${email}`,
     waysTitle: "Deux façons de te connecter",
-    waysBody:
-      "Tape le code à 6 chiffres ci-dessous, ou ouvre le lien du message (sur ce téléphone).",
-    codeLabel: "Code à 6 chiffres",
+    waysBody: "Tape le code reçu ci-dessous, ou ouvre le lien du message (sur ce téléphone).",
+    codeLabel: "Code reçu par e-mail",
     verify: "Me connecter",
     verifying: "Vérification…",
     resend: "Renvoyer",
