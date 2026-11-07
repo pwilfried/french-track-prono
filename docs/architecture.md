@@ -147,15 +147,34 @@ tester et à faire évoluer ; une seule implémentation de la règle, donc pas d
 synchroniser avec l'aperçu affiché dans l'interface.
 Conséquences :
 
-- Un cas d'usage `ScoreEvent` (`src/application`) lit résultats, pronos et barème
-  (`scoring_rules`), appelle le domaine, puis enregistre les lignes de `score_events` et
-  `predictions.points_awarded`.
-- L'enregistrement est idempotent (upsert sur `(user_id, event_id)`) et fait en une seule
-  transaction ; il est réservé au serveur (clé `service_role`, admin uniquement). Le détail
-  (fonction SQL d'écriture `record_scores` ou transaction côté serveur) sera tranché en v0.4.
-- Les joueurs ne peuvent pas écrire dans `score_events` (aucune policy d'écriture).
+- Le cas d'usage `computeEventPoints` (`src/application/compute-event-points.ts`) lit le résultat,
+  tous les pronos de l'épreuve et le barème (`scoring_rules`), appelle le domaine, puis remplace
+  les lignes de `score_events` de l'épreuve. Les raisons sont stockées en codes dans
+  `score_events.detail` (`{"reasons": [...]}`), jamais en phrases.
+- L'écriture passe par la fonction SQL `set_event_scores` (une transaction : suppression puis
+  insertion), donc relancer le calcul ne crée aucun doublon (S12). Elle est appelée avec la
+  session de l'admin (`profiles.is_admin`, posé en SQL seulement) : pas de clé `service_role` dans
+  l'application.
+- Les joueurs ne peuvent pas écrire dans `score_events` (policy `admin_write` réservée à l'admin).
 - Alternative écartée : calcul en SQL (`score_event()`), plus atomique mais plus dur à tester
   et à lire pour des agents.
+
+**Pronostics (v0.3).** On compose son podium en touchant les athlètes dans l'ordre (pas de
+glisser-déposer) ; le compte à rebours passe à l'orange à 1 h et au rouge à 10 min du
+verrouillage. La base refuse un prono après `lock_at`, un athlète hors liste de départ, un
+deuxième joker dans la compétition, et la suppression d'un prono après le verrouillage.
+
+**Résultats et points (v0.4).** L'admin saisit le podium officiel dans `/admin` (ex æquo : les
+athlètes partagent la place, décision du propriétaire), puis clique sur « Calculer les points » ;
+le coup de flair est calculé sur tous les pronos de l'épreuve. Le joueur voit le détail dans
+`/mes-points`.
+
+**Ligues et classements (v0.5).** Voir « Modèle de données » pour les règles des ligues. Le
+classement (`src/domain/ranking.ts`, R9) départage aux points, puis aux podiums parfaits, puis
+aux vainqueurs trouvés ; des joueurs toujours égaux partagent la place. Pages : `/ligues`,
+`/ligues/[id]`, `/rejoindre/[code]` (lien d'invitation), `/classement`.
+
+Les décisions du propriétaire prises pendant ces versions sont tracées dans l'issue #112.
 
 ## Modèle de données
 
