@@ -101,6 +101,18 @@ export const messages = {
       "Résultat incomplet : au moins trois athlètes différents, rangs 1 à 3 (les ex æquo partagent un rang).",
     RESULTS_UNAVAILABLE:
       "Les résultats ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+    LEAGUE_NAME_INVALID:
+      "Ce nom n'est pas valable : 2 à 40 caractères (lettres, chiffres, emoji, ponctuation simple).",
+    LEAGUE_CODE_UNKNOWN: "Ce code ne correspond à aucune ligue. Vérifie-le auprès de ton ami.",
+    ALREADY_MEMBER: "Tu fais déjà partie de cette ligue.",
+    LEAGUE_FULL: "Cette ligue est complète (50 membres au maximum).",
+    LEAGUE_NOT_FOUND: "Cette ligue n'existe pas ou tu n'en fais pas partie.",
+    LEAGUE_OWNER_MUST_HAND_OVER:
+      "Tu as créé cette ligue : confie-la d'abord à un autre membre avant de la quitter.",
+    NOT_LEAGUE_OWNER: "Seul le créateur de la ligue peut faire ça.",
+    LEAGUE_MEMBER_UNKNOWN: "Ce joueur ne fait pas partie de la ligue.",
+    LEAGUES_UNAVAILABLE:
+      "Les ligues ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     retry: "Réessayer",
   },
 } as const;
