@@ -4,6 +4,8 @@ import { UseCaseError } from "./errors";
 import {
   addLeagueCompetition,
   createLeague,
+  joinPublicLeague,
+  listPublicLeagues,
   getLeague,
   handOverLeague,
   joinLeague,
@@ -20,19 +22,23 @@ const league = (id: string, name: string): League => ({
   ownerId: "me",
   memberCount: 1,
   competitionSlugs: ["c"],
+  isPublic: false,
 });
 
 function repository(
   overrides: Partial<LeagueRepository> = {},
-): LeagueRepository & { created: string[]; competitions: string[][] } {
+): LeagueRepository & { created: string[]; competitions: string[][]; publics: boolean[] } {
   const created: string[] = [];
   const competitions: string[][] = [];
+  const publics: boolean[] = [];
   return {
     created,
     competitions,
-    create: async (name, slugs) => {
+    publics,
+    create: async (name, slugs, isPublic) => {
       created.push(name);
       competitions.push(slugs);
+      publics.push(isPublic);
       return league("new", name);
     },
     join: async () => ({ outcome: "joined", leagueId: "l1" }),
@@ -41,6 +47,8 @@ function repository(
     leave: async () => "left",
     handOver: async () => "done",
     addCompetition: async () => "added",
+    listPublic: async () => [],
+    joinPublic: async (id) => ({ outcome: "joined", leagueId: id }),
     ...overrides,
   };
 }
@@ -217,5 +225,66 @@ describe("addLeagueCompetition", () => {
         addLeagueCompetition({ leagues }).execute({ leagueId: "l1", competitionSlug: "x" }),
       ),
     ).toBe(code);
+  });
+});
+
+describe("public leagues", () => {
+  it("creates a public league, joined without a code", async () => {
+    const leagues = repository();
+
+    await createLeague({ leagues }).execute({
+      name: "Les Gazelles",
+      competitionSlugs: ["c"],
+      isPublic: true,
+    });
+
+    expect(leagues.publics).toEqual([true]);
+  });
+
+  it("refuses a banned name for a public league with LEAGUE_NAME_BANNED", async () => {
+    const leagues = repository();
+
+    expect(
+      await codeOf(
+        createLeague({ leagues }).execute({
+          name: "Ligue officielle",
+          competitionSlugs: [],
+          isPublic: true,
+        }),
+      ),
+    ).toBe("LEAGUE_NAME_BANNED");
+    expect(leagues.created).toEqual([]);
+  });
+
+  it("lists the public leagues the player is not in yet, the biggest first", async () => {
+    const leagues = repository({
+      listMine: async () => [league("mine", "Mienne")],
+      listPublic: async () => [
+        { id: "small", name: "Petite", memberCount: 2, competitionSlugs: [] },
+        { id: "mine", name: "Mienne", memberCount: 9, competitionSlugs: [] },
+        { id: "big", name: "Grande", memberCount: 40, competitionSlugs: ["c"] },
+      ],
+    });
+
+    const listed = await listPublicLeagues({ leagues }).execute();
+
+    expect(listed.map((l) => l.id)).toEqual(["big", "small"]);
+  });
+
+  it.each([
+    ["full", "LEAGUE_FULL"],
+    ["unknown_code", "LEAGUE_NOT_FOUND"],
+  ] as const)("turns %s into %s when joining a public league", async (outcome, code) => {
+    const leagues = repository({ joinPublic: async () => ({ outcome }) });
+
+    expect(await codeOf(joinPublicLeague({ leagues }).execute({ leagueId: "x" }))).toBe(code);
+  });
+
+  it("takes a player already in the public league to it", async () => {
+    const leagues = repository({
+      joinPublic: async (id) => ({ outcome: "already_member", leagueId: id }),
+    });
+
+    expect(await joinPublicLeague({ leagues }).execute({ leagueId: "x" })).toBe("x");
   });
 });

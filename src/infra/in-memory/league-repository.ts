@@ -1,5 +1,11 @@
 import type { League, LeagueMember, LeagueRepository } from "@/application/leagues";
-import { INVITE_ALPHABET, INVITE_LENGTH, LEAGUE_MAX_MEMBERS } from "@/domain/league";
+import {
+  INVITE_ALPHABET,
+  INVITE_LENGTH,
+  isBannedLeagueName,
+  leagueCapacity,
+} from "@/domain/league";
+import { UseCaseError } from "@/application/errors";
 
 type Stored = {
   id: string;
@@ -8,6 +14,7 @@ type Stored = {
   ownerId: string;
   members: string[];
   competitionSlugs: string[];
+  isPublic: boolean;
 };
 
 /**
@@ -32,6 +39,7 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
     ownerId: l.ownerId,
     memberCount: l.members.length,
     competitionSlugs: [...l.competitionSlugs],
+    isPublic: l.isPublic,
   });
 
   return {
@@ -39,8 +47,10 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
       profiles.set(player.userId, player);
       const me = player.userId;
       return {
-        async create(name, competitionSlugs) {
+        async create(name, competitionSlugs, isPublic) {
+          if (isPublic && isBannedLeagueName(name)) throw new UseCaseError("LEAGUE_NAME_BANNED");
           const league: Stored = {
+            isPublic,
             competitionSlugs: [...new Set(competitionSlugs)].sort(),
             id: crypto.randomUUID(),
             name,
@@ -56,7 +66,7 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
           if (!league) return { outcome: "unknown_code" };
           if (league.members.includes(me))
             return { outcome: "already_member", leagueId: league.id };
-          if (league.members.length >= LEAGUE_MAX_MEMBERS) return { outcome: "full" };
+          if (league.members.length >= leagueCapacity(league.isPublic)) return { outcome: "full" };
           league.members.push(me);
           return { outcome: "joined", leagueId: league.id };
         },
@@ -96,6 +106,24 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
             league.competitionSlugs = [...league.competitionSlugs, competitionSlug].sort();
           }
           return "added";
+        },
+        async listPublic() {
+          return [...leagues.values()]
+            .filter((l) => l.isPublic)
+            .map((l) => ({
+              id: l.id,
+              name: l.name,
+              memberCount: l.members.length,
+              competitionSlugs: [...l.competitionSlugs],
+            }));
+        },
+        async joinPublic(leagueId) {
+          const league = leagues.get(leagueId);
+          if (!league?.isPublic) return { outcome: "unknown_code" };
+          if (league.members.includes(me)) return { outcome: "already_member", leagueId };
+          if (league.members.length >= leagueCapacity(true)) return { outcome: "full" };
+          league.members.push(me);
+          return { outcome: "joined", leagueId };
         },
       };
     },

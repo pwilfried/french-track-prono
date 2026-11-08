@@ -165,6 +165,16 @@ export const messages = {
     adding: "Ajout…",
     added: "✓ Compétition ajoutée au classement de la ligue.",
     nothingToAdd: "Toutes les compétitions à venir sont déjà dans la ligue.",
+    publicLabel: "Ligue publique",
+    publicHint:
+      "Tout le monde peut la trouver et la rejoindre sans code, jusqu'à 200 joueurs. Son nom doit rester correct.",
+    publicBadge: "Publique",
+    publicTitle: "Ligues publiques",
+    publicEmpty: "Pas encore de ligue publique à rejoindre. Crée la première !",
+    publicJoin: "Rejoindre",
+    publicJoinLabel: (name: string) => `Rejoindre la ligue publique ${name}`,
+    publicJoining: "…",
+    publicPlaces: (n: number, max: number) => `${n} / ${max} joueurs`,
     chosen: "Compétitions de la ligue",
     remove: (name: string) => `Retirer ${name}`,
     addCompetition: "+ Ajouter une compétition",
@@ -846,6 +856,8 @@ export const messages = {
       "Les résultats ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     LEAGUE_NAME_INVALID:
       "Ce nom n'est pas valable : 2 à 40 caractères (lettres, chiffres, emoji, ponctuation simple).",
+    LEAGUE_NAME_BANNED:
+      "Ce nom n'est pas possible pour une ligue publique (insulte, nom officiel ou lien). Choisis-en un autre.",
     LEAGUE_CODE_UNKNOWN: "Ce code ne correspond à aucune ligue. Vérifie-le auprès de ton ami.",
     ALREADY_MEMBER: "Tu fais déjà partie de cette ligue.",
     LEAGUE_FULL: "Cette ligue est complète (50 membres au maximum).",
