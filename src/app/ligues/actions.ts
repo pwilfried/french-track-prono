@@ -8,6 +8,7 @@ import {
   addLeagueCompetition,
   createLeague,
   joinPublicLeague,
+  reportLeague,
   handOverLeague,
   joinLeague,
   leaveLeague,
@@ -20,7 +21,12 @@ import { createSupabaseLeagueRepository } from "@/infra";
 import { formText } from "../form-data";
 import { getCurrentUser, getSessionClient } from "../session";
 
-export type LeagueFormState = { value: string; error?: ErrorCode; isPublic?: boolean };
+export type LeagueFormState = {
+  value: string;
+  error?: ErrorCode;
+  isPublic?: boolean;
+  reported?: boolean;
+};
 
 async function leagues(back: string) {
   const user = await getCurrentUser();
@@ -144,4 +150,20 @@ export async function joinPublicLeagueAction(
     throw error;
   }
   redirect(`/ligues/${leagueId}`);
+}
+
+/** Reports a public league to the admin (#321). */
+export async function reportLeagueAction(
+  _: LeagueFormState,
+  data: FormData,
+): Promise<LeagueFormState> {
+  const leagueId = formText(data, "leagueId");
+  const repository = await leagues("/ligues");
+  try {
+    await reportLeague({ leagues: repository }).execute({ leagueId });
+  } catch (error) {
+    if (error instanceof UseCaseError) return { value: leagueId, error: error.code };
+    throw error;
+  }
+  return { value: leagueId, reported: true };
 }

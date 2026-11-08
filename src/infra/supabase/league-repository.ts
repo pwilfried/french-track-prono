@@ -140,5 +140,12 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       }
       return { outcome: before.has(leagueId) ? "already_member" : "joined", leagueId };
     },
+
+    async report(leagueId) {
+      const { error } = await client.rpc("report_league", { p_league: leagueId });
+      if (!error) return "reported";
+      if (error.code === "P0002" || error.code === "22P02") return "unknown";
+      return fail();
+    },
   };
 }

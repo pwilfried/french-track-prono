@@ -6,6 +6,7 @@ import {
   createLeague,
   joinPublicLeague,
   listPublicLeagues,
+  reportLeague,
   getLeague,
   handOverLeague,
   joinLeague,
@@ -49,6 +50,7 @@ function repository(
     addCompetition: async () => "added",
     listPublic: async () => [],
     joinPublic: async (id) => ({ outcome: "joined", leagueId: id }),
+    report: async () => "reported",
     ...overrides,
   };
 }
@@ -286,5 +288,25 @@ describe("public leagues", () => {
     });
 
     expect(await joinPublicLeague({ leagues }).execute({ leagueId: "x" })).toBe("x");
+  });
+});
+
+describe("reportLeague", () => {
+  it("reports a public league, and refuses an unknown one with LEAGUE_NOT_FOUND", async () => {
+    const reported: string[] = [];
+    const leagues = repository({
+      report: async (id) => {
+        if (id === "nope") return "unknown";
+        reported.push(id);
+        return "reported";
+      },
+    });
+
+    await reportLeague({ leagues }).execute({ leagueId: "pub" });
+
+    expect(reported).toEqual(["pub"]);
+    expect(await codeOf(reportLeague({ leagues }).execute({ leagueId: "nope" }))).toBe(
+      "LEAGUE_NOT_FOUND",
+    );
   });
 });

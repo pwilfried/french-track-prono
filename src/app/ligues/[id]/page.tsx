@@ -6,7 +6,11 @@ import { getLeague } from "@/application/leagues";
 import { getLeagueRanking } from "@/application/rankings";
 import { ErrorNotice } from "@/components/error-notice";
 import { Leaderboard } from "@/components/leaderboard/leaderboard";
-import { AddLeagueCompetitionForm, LeaveLeagueForm } from "@/components/leagues/league-forms";
+import {
+  AddLeagueCompetitionForm,
+  LeaveLeagueForm,
+  ReportLeagueForm,
+} from "@/components/leagues/league-forms";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { ShareInvite } from "@/components/leagues/share-invite";
 import { buttonVariants } from "@/components/ui/button";
@@ -186,6 +190,7 @@ export default async function LeaguePage({
               </Link>
             )}
             <LeaveLeagueForm leagueId={id} />
+            {league.isPublic && !isOwner && <ReportLeagueForm leagueId={id} name={league.name} />}
           </>
         )}
 

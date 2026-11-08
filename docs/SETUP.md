@@ -175,7 +175,7 @@ docker exec -i supabase_db_french-track-prono psql -U postgres -c "update profil
 
 Le back-office (`/admin/competitions`) regroupe : Compétitions (créer une compétition, ses épreuves
 et ses engagés, puis les cotes de chaque épreuve), Athlètes, Disciplines (tolérances), Barème
-(points du jeu, cotes et perfs compris) et Historique. À la connexion, un admin arrive sur le
+(points du jeu, cotes et perfs compris), Ligues (ligues publiques signalées) et Historique. À la connexion, un admin arrive sur le
 back-office ; « Voir le site » (bandeau rouge) ouvre le côté joueur, et « Back-office » (en-tête)
 y ramène.
 

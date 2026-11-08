@@ -10,6 +10,7 @@ import {
   addLeagueCompetitionAction,
   createLeagueAction,
   joinPublicLeagueAction,
+  reportLeagueAction,
   handOverLeagueAction,
   joinLeagueAction,
   leaveLeagueAction,
@@ -275,6 +276,38 @@ export function JoinPublicLeagueForm({ leagueId, name }: { leagueId: string; nam
         className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60"
       >
         {pending ? messages.leagues.publicJoining : messages.leagues.publicJoin}
+      </button>
+      {state.error && (
+        <p role="alert" className="text-xs font-semibold text-accent-text">
+          {messages.errors[state.error]}
+        </p>
+      )}
+    </form>
+  );
+}
+
+/** Reports a public league to the admin (#321): once done, says thanks. */
+export function ReportLeagueForm({ leagueId, name }: { leagueId: string; name: string }) {
+  const [state, action, pending] = useActionState<LeagueFormState, FormData>(reportLeagueAction, {
+    value: leagueId,
+  });
+  if (state.reported) {
+    return (
+      <p role="status" className="text-xs font-semibold text-success-text">
+        {messages.leagues.reported}
+      </p>
+    );
+  }
+  return (
+    <form action={action} className="flex flex-col items-end">
+      <input type="hidden" name="leagueId" value={leagueId} />
+      <button
+        type="submit"
+        disabled={pending}
+        aria-label={messages.leagues.reportLabel(name)}
+        className="inline-flex min-h-11 items-center text-xs font-semibold text-muted-foreground underline underline-offset-4 disabled:opacity-60"
+      >
+        {pending ? messages.leagues.reporting : messages.leagues.report}
       </button>
       {state.error && (
         <p role="alert" className="text-xs font-semibold text-accent-text">
