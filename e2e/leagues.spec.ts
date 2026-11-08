@@ -13,7 +13,8 @@ test("two friends in the same league see the same ranking", async ({ browser }) 
   await annaPage.goto("/ligues");
   await signUp(annaPage, anna);
   await annaPage.waitForURL(/\/ligues$/);
-  await annaPage.getByRole("link", { name: "Créer une ligue" }).click();
+  // A league made from a competition counts it from the start.
+  await annaPage.goto("/ligues/creer?competition=ultimate-championship-2026");
   await annaPage.getByLabel("Nom de la ligue").fill("Les Foulées E2E");
   await annaPage.getByRole("button", { name: "Créer la ligue" }).click();
   await expect(annaPage.getByText("Ta ligue est prête")).toBeVisible();

@@ -12,9 +12,10 @@ type Stored = {
 
 /**
  * Test double of the LeagueRepository port, with the rules of the database. One store shared by
- * every player; `session(player)` acts as that player.
+ * every player; `session(player)` acts as that player. `competitions` tells which competitions
+ * exist and whether they have started (every competition is coming when it is not given).
  */
-export function createInMemoryLeagueStore() {
+export function createInMemoryLeagueStore(competitions?: Record<string, "coming" | "started">) {
   const leagues = new Map<string, Stored>();
   const profiles = new Map<string, LeagueMember>();
   const newCode = () => {
@@ -84,6 +85,17 @@ export function createInMemoryLeagueStore() {
           if (newOwnerId === me || !league.members.includes(newOwnerId)) return "unknown_member";
           league.ownerId = newOwnerId;
           return "done";
+        },
+        async addCompetition(leagueId, competitionSlug) {
+          const league = leagues.get(leagueId);
+          if (!league || league.ownerId !== me) return "not_owner";
+          const state = competitions ? competitions[competitionSlug] : "coming";
+          if (!state) return "unknown";
+          if (state === "started") return "started";
+          if (!league.competitionSlugs.includes(competitionSlug)) {
+            league.competitionSlugs = [...league.competitionSlugs, competitionSlug].sort();
+          }
+          return "added";
         },
       };
     },

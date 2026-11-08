@@ -154,7 +154,17 @@ export const messages = {
     join: "Rejoindre avec un code",
     createTitle: "Créer une ligue",
     listSubtitle: "Une ligue compte une ou plusieurs compétitions.",
-    createSubtitle: "Une ou plusieurs compétitions, leurs points s'additionnent.",
+    createSubtitle: "Ses compétitions maintenant ou plus tard, leurs points s'additionnent.",
+    noCompetitionYet:
+      "Aucune compétition pour l'instant : tu pourras en ajouter depuis la ligue, quand tu veux.",
+    competitionsTitle: "Compétitions de la ligue",
+    noCompetition: "Pas encore de compétition : le classement démarre dès que tu en ajoutes une.",
+    noCompetitionMember: "Pas encore de compétition : le créateur de la ligue en ajoutera.",
+    addLabel: "Ajouter une compétition à venir",
+    addSubmit: "Ajouter",
+    adding: "Ajout…",
+    added: "✓ Compétition ajoutée au classement de la ligue.",
+    nothingToAdd: "Toutes les compétitions à venir sont déjà dans la ligue.",
     chosen: "Compétitions de la ligue",
     remove: (name: string) => `Retirer ${name}`,
     addCompetition: "+ Ajouter une compétition",
@@ -834,7 +844,6 @@ export const messages = {
       "Les résultats ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     LEAGUE_NAME_INVALID:
       "Ce nom n'est pas valable : 2 à 40 caractères (lettres, chiffres, emoji, ponctuation simple).",
-    LEAGUE_NO_COMPETITION: "Choisis au moins une compétition pour ta ligue.",
     LEAGUE_CODE_UNKNOWN: "Ce code ne correspond à aucune ligue. Vérifie-le auprès de ton ami.",
     ALREADY_MEMBER: "Tu fais déjà partie de cette ligue.",
     LEAGUE_FULL: "Cette ligue est complète (50 membres au maximum).",
@@ -888,6 +897,7 @@ export const messages = {
     COMPETITION_INVALID:
       "Il faut un nom, un type, des dates dans l'ordre, un fuseau horaire valide et un code pays à trois lettres (facultatif).",
     COMPETITION_NOT_FOUND: "Cette compétition n'existe pas.",
+    COMPETITION_STARTED: "Cette compétition a déjà commencé : choisis-en une à venir.",
     COMPETITIONS_UNAVAILABLE: "Les compétitions n'ont pas pu être chargées. Réessaie.",
     HAS_PREDICTIONS:
       "Des joueurs ont déjà pronostiqué : on ne peut plus supprimer, ni changer le tour d'une épreuve.",

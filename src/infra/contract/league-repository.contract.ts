@@ -10,8 +10,10 @@ export function leagueRepositoryContract(
   setup: () => Promise<{
     newPlayer: () => Promise<LeaguePlayer>;
     competitionSlug: string;
-    /** A second competition, for a league on several. */
+    /** A second competition, for a league on several; it has already started. */
     otherCompetitionSlug: string;
+    /** A competition still to come, that a league can add later. */
+    comingCompetitionSlug: string;
   }>,
 ) {
   describe(`LeagueRepository contract: ${name}`, () => {
@@ -43,6 +45,34 @@ export function leagueRepositoryContract(
       const expected = [competitionSlug, otherCompetitionSlug].sort();
       expect(league.competitionSlugs).toEqual(expected);
       expect((await owner.leagues.listMine())[0]?.competitionSlugs).toEqual(expected);
+    });
+
+    it("creates a league without competition, then its creator adds a coming one", async () => {
+      const { newPlayer, comingCompetitionSlug } = await setup();
+      const owner = await newPlayer();
+      const league = await owner.leagues.create("Plus tard", []);
+      expect(league.competitionSlugs).toEqual([]);
+
+      expect(await owner.leagues.addCompetition(league.id, comingCompetitionSlug)).toBe("added");
+      expect(await owner.leagues.addCompetition(league.id, comingCompetitionSlug)).toBe("added");
+
+      expect((await owner.leagues.listMine())[0]?.competitionSlugs).toEqual([
+        comingCompetitionSlug,
+      ]);
+    });
+
+    it("refuses a started or unknown competition, and a player who is not the creator", async () => {
+      const { newPlayer, otherCompetitionSlug, comingCompetitionSlug } = await setup();
+      const [owner, friend] = [await newPlayer(), await newPlayer()];
+      const league = await owner.leagues.create("Club", []);
+      await friend.leagues.join(league.inviteCode);
+
+      expect(await owner.leagues.addCompetition(league.id, otherCompetitionSlug)).toBe("started");
+      expect(await owner.leagues.addCompetition(league.id, "no-such-competition")).toBe("unknown");
+      expect(await friend.leagues.addCompetition(league.id, comingCompetitionSlug)).toBe(
+        "not_owner",
+      );
+      expect((await owner.leagues.listMine())[0]?.competitionSlugs).toEqual([]);
     });
 
     it("lets a friend join with the code, once", async () => {

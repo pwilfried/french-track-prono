@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CreateLeagueForm } from "@/components/leagues/league-forms";
 import { LeagueHero } from "@/components/leagues/league-hero";
 
-import { currentCompetition, loadCompetitions } from "../../competition";
+import { loadCompetitions } from "../../competition";
 import { paramList } from "../../search-params";
 import { messages } from "../../messages.fr";
 import { leaguePorts } from "../data";
@@ -14,7 +14,7 @@ const withCompetitions = (slugs: string[]) =>
 
 /**
  * League creation (board v0.9 « Créer la ligue »): its name and its competitions, the ones ticked
- * on the choice page (the next competition when none is given).
+ * on the choice page. None is fine: the creator adds them from the league afterwards (#312).
  */
 export default async function CreateLeaguePage({
   searchParams,
@@ -25,9 +25,7 @@ export default async function CreateLeaguePage({
   await leaguePorts(asked.length ? `/ligues/creer?${withCompetitions(asked)}` : "/ligues/creer");
   const { coming, past } = await loadCompetitions();
   const known = [...coming, ...past];
-  const chosen = asked.length
-    ? known.filter((c) => asked.includes(c.slug))
-    : [await currentCompetition()];
+  const chosen = known.filter((c) => asked.includes(c.slug));
   const slugs = chosen.map((c) => c.slug);
   const scope = chosen[0]?.scope ?? "international";
 
@@ -46,6 +44,11 @@ export default async function CreateLeaguePage({
           >
             {messages.leagues.chosen}
           </h2>
+          {chosen.length === 0 && (
+            <p className="rounded-2xl bg-muted px-3.5 py-3 text-sm text-muted-foreground">
+              {messages.leagues.noCompetitionYet}
+            </p>
+          )}
           <ul aria-labelledby="chosen" className="flex flex-col gap-2">
             {chosen.map((c) => (
               <li
@@ -56,15 +59,13 @@ export default async function CreateLeaguePage({
                   {c.scope === "france" ? "FR" : "INT"}
                 </span>
                 <span className="min-w-0 flex-1 font-semibold">{c.name}</span>
-                {chosen.length > 1 && (
-                  <Link
-                    href={`/ligues/creer?${withCompetitions(slugs.filter((s) => s !== c.slug))}`}
-                    aria-label={messages.leagues.remove(c.name)}
-                    className="inline-flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
-                  >
-                    ✕
-                  </Link>
-                )}
+                <Link
+                  href={`/ligues/creer?${withCompetitions(slugs.filter((s) => s !== c.slug))}`}
+                  aria-label={messages.leagues.remove(c.name)}
+                  className="inline-flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+                >
+                  ✕
+                </Link>
               </li>
             ))}
           </ul>
