@@ -287,10 +287,8 @@ export const messages = {
     ofDiscipline: (discipline: string, n: number) =>
       `${n <= 1 ? "Athlète" : "Athlètes"} du ${discipline} (${n})`,
     noneOfDiscipline: (discipline: string) =>
-      `Aucun athlète n'a encore le ${discipline} dans ses disciplines : voici toute la catégorie.`,
-    everyone: (n: number) => `Toute la catégorie (${n})`,
-    showEveryone: "Voir tous",
-    showDiscipline: "Seulement la discipline",
+      `Aucun athlète de cette catégorie n'a le ${discipline} dans ses disciplines : ajoute-la dans sa fiche athlète.`,
+    toAthletes: "Ouvrir les athlètes",
     addOne: "Ajouter",
     alreadyIn: "✓ Au départ",
     duplicate: (name: string) => `${name} est déjà au départ.`,

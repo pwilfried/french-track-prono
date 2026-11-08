@@ -45,17 +45,21 @@ test("an admin builds the start list of a final of eight athletes in less than a
   await matches.first().click();
   await expect(page.locator("main").getByRole("alert")).toContainText("déjà au départ");
 
-  // Seven more athletes: without a search only the 100 m runners show, so search everybody.
-  await search.fill("a");
-  const chosen = page.getByRole("region", { name: /Au départ/ }).getByRole("listitem");
-  for (let index = 0; (await chosen.count()) < 8; index++) {
+  // Every other 100 m runner, from the list offered without a search (#307: only them).
+  await search.fill("");
+  const offered = await matches.count();
+  for (let index = 0; index < offered; index++) {
     const match = matches.nth(index);
     if (!(await match.textContent())?.includes("Au départ")) await match.click();
   }
-  await expect(chosen).toHaveCount(8);
+  const chosen = page.getByRole("region", { name: /Au départ/ }).getByRole("listitem");
+  await expect(chosen).toHaveCount(offered);
+  // A man is never offered on a women's event, even when searched for.
+  await search.fill("Bednarek");
+  await expect(page.getByText("Aucun athlète ne correspond.")).toBeVisible();
 
   await page.getByRole("button", { name: "Enregistrer la liste de départ" }).click();
-  await expect(page.getByRole("status")).toContainText("8 athlètes");
+  await expect(page.getByRole("status")).toContainText(`${offered} athlète`);
   expect(Date.now() - started).toBeLessThan(60_000);
 
   // An admin only sees the back-office: back to a player to look at the public pages.
