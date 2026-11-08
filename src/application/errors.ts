@@ -45,6 +45,9 @@ export type ErrorCode =
   | "IMPORT_COUNTRY_MISSING"
   | "ADMIN_LOG_UNAVAILABLE"
   | "ATHLETE_NOT_FOUND"
+  | "TOLERANCE_INVALID"
+  | "DISCIPLINE_NOT_FOUND"
+  | "DISCIPLINES_UNAVAILABLE"
   | "ATHLETES_UNAVAILABLE";
 
 export class UseCaseError extends Error {

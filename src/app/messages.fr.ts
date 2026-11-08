@@ -281,14 +281,17 @@ export const messages = {
       set_start_list: "Liste de départ",
       set_results: "Résultat saisi",
       run_scoring: "Points calculés",
+      set_tolerance: "Tolérance modifiée",
     },
     noEvent: "Épreuve supprimée",
-    size: (kind: "set_start_list" | "set_results" | "run_scoring", n: number) =>
-      kind === "run_scoring"
-        ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
-        : kind === "set_results"
-          ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
-          : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
+    size: (kind: "set_start_list" | "set_results" | "run_scoring" | "set_tolerance", n: number) =>
+      kind === "set_tolerance"
+        ? "barème"
+        : kind === "run_scoring"
+          ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
+          : kind === "set_results"
+            ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
+            : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
     by: (pseudo: string | null) => (pseudo ? `par ${pseudo}` : "par un compte supprimé"),
   },
   import: {
@@ -343,6 +346,29 @@ export const messages = {
     promoteTop: "Nombre de qualifiés",
     promoted: "✓ Qualifiés ajoutés à la liste de départ du tour suivant.",
     previousLinks: "Tours précédents",
+  },
+  disciplines: {
+    link: "Disciplines",
+    title: "Disciplines",
+    subtitle:
+      "Tolérance du prono de performance : l'écart maximal pour qu'une marque pronostiquée soit juste.",
+    family: {
+      sprint: "Sprint",
+      hurdles: "Haies",
+      middle: "Demi-fond",
+      long: "Fond",
+      relay: "Relais",
+      horizontal_jumps: "Sauts horizontaux",
+      vertical_jumps: "Sauts verticaux",
+      throws: "Lancers",
+      combined: "Épreuves combinées",
+    },
+    unit: { time: "s", distance: "m", points: "pts" },
+    direction: { lower: "temps le plus bas", higher: "valeur la plus haute" },
+    tolerance: (name: string) => `Tolérance du ${name}`,
+    save: "Enregistrer",
+    saving: "…",
+    saved: "✓ Enregistré",
   },
   myPredictions: {
     predicted: "✓ Pronostiqué",
@@ -586,6 +612,9 @@ export const messages = {
       "Chaque nouvel athlète a besoin d'un nom et d'un code pays à trois lettres (FRA, USA…).",
     ADMIN_LOG_UNAVAILABLE: "L'historique n'a pas pu être chargé. Réessaie.",
     ATHLETE_NOT_FOUND: "Cet athlète n'existe pas.",
+    TOLERANCE_INVALID: "La tolérance doit être un nombre supérieur à 0.",
+    DISCIPLINE_NOT_FOUND: "Cette discipline n'existe pas.",
+    DISCIPLINES_UNAVAILABLE: "Les disciplines n'ont pas pu être chargées. Réessaie.",
     ATHLETES_UNAVAILABLE: "La fiche athlète n'a pas pu être chargée. Réessaie.",
     retry: "Réessayer",
   },

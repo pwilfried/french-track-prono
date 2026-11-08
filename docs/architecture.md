@@ -227,6 +227,13 @@ distance en mètres, haies, steeple, marche, relais), valeur plus haute sinon. L
 avec la première course d'une nouvelle année civile. Un résultat corrigé à la baisse ne fait pas
 reculer un record déjà établi. WR et WB se saisissent à la main.
 
+Disciplines (v0.9, issue #257) : la table `disciplines` porte, pour chaque discipline, sa famille,
+son unité (`time`, `distance`, `points`), le sens du classement et la tolérance du prono de
+performance, ajustable par l'admin (`/admin/disciplines`, fonction `set_discipline_tolerance()`).
+`events`, `athlete_disciplines` et `athlete_records` y renvoient par le nom. `lower_is_better()` lit
+la table. Le domaine lit et écrit les marques (`parseMark`, `formatMark` dans
+`src/domain/discipline.ts`).
+
 Tours (v0.8, issue #198) : une série, un quart ou une demi-finale pointe vers le tour qu'il
 alimente (`events.parent_id`). On ne pronostique que les finales, et une finale seulement quand
 tous ses tours précédents sont terminés (`is_predictable()`, vérifié par le trigger de
