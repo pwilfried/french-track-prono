@@ -40,6 +40,17 @@ export function createInMemoryStartListStore(athletes: StartListAthleteFixture[]
         async find(eventId) {
           return (stored.get(eventId) ?? []).map((e) => ({ ...e }));
         },
+        async createAthlete(athlete) {
+          if (!options.isAdmin) return "not_admin";
+          const athleteId = `new-${athletes.length + 1}`;
+          athletes.push({
+            athleteId,
+            name: athlete.name,
+            countryCode: athlete.countryCode,
+            gender: athlete.gender,
+          });
+          return { athleteId };
+        },
         async replace(eventId, entries) {
           if (!options.isAdmin) return "not_admin";
           const kept = entries.map((e) => e.athleteId);

@@ -291,6 +291,28 @@ export const messages = {
           : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
     by: (pseudo: string | null) => (pseudo ? `par ${pseudo}` : "par un compte supprimé"),
   },
+  import: {
+    title: "Importer une liste",
+    link: "Importer une liste (CSV)",
+    paste: "Colle la liste de départ",
+    placeholder: "Nom;Pays;SB\nRICHARDSON Sha'Carri;USA;10.71",
+    hint: "Une ligne par athlète. Virgules, points-virgules ou tabulations ; colonnes nom, pays et SB dans n'importe quel ordre (SB facultatif).",
+    analyse: "Analyser",
+    errors: {
+      CSV_EMPTY: "Rien à importer : colle au moins une ligne.",
+      CSV_NO_NAME: "Aucune colonne de noms trouvée. Ajoute une ligne d'en-tête « Nom ».",
+    },
+    summary: (matched: number, ambiguous: number, created: number) =>
+      `${matched} ${matched <= 1 ? "reconnu" : "reconnus"} · ${ambiguous} à confirmer · ${created} ${created <= 1 ? "nouveau" : "nouveaux"}`,
+    report: "Rapport d'import",
+    status: { matched: "Reconnu", ambiguous: "À confirmer", new: "Nouveau" },
+    choose: "Quel athlète ?",
+    skip: "Ne pas importer",
+    create: "Créer cet athlète",
+    country: "Pays",
+    apply: (n: number) => `Appliquer (${n} ${n <= 1 ? "athlète" : "athlètes"})`,
+    applying: "Import…",
+  },
   offline: {
     title: "Pas de réseau",
     body: "Cette page n'est pas disponible hors ligne. Reviens quand le réseau revient.",
@@ -545,6 +567,8 @@ export const messages = {
     START_LIST_IN_USE:
       "Un athlète déjà pronostiqué ou classé ne peut pas être retiré de la liste de départ.",
     START_LIST_UNAVAILABLE: "La liste de départ n'a pas pu être enregistrée. Réessaie.",
+    IMPORT_COUNTRY_MISSING:
+      "Chaque nouvel athlète a besoin d'un nom et d'un code pays à trois lettres (FRA, USA…).",
     ADMIN_LOG_UNAVAILABLE: "L'historique n'a pas pu être chargé. Réessaie.",
     ATHLETE_NOT_FOUND: "Cet athlète n'existe pas.",
     ATHLETES_UNAVAILABLE: "La fiche athlète n'a pas pu être chargée. Réessaie.",

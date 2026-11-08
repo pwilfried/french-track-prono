@@ -17,6 +17,7 @@ function repository(outcome: StartListOutcome = "saved") {
       if (outcome === "saved") stored.set(eventId, entries);
       return outcome;
     },
+    createAthlete: async () => "not_admin",
   };
   return { startLists, stored };
 }

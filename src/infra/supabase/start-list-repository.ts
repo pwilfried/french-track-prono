@@ -47,6 +47,18 @@ export function createSupabaseStartListRepository(client: SupabaseClient): Start
       );
     },
 
+    async createAthlete(athlete) {
+      const { data, error } = await client.rpc("create_athlete", {
+        p_name: athlete.name,
+        p_country: athlete.countryCode,
+        p_gender: athlete.gender,
+        p_slug: athlete.slug,
+      });
+      if (!error) return { athleteId: data as string };
+      if (error.code === "42501") return "not_admin";
+      throw new UseCaseError("START_LIST_UNAVAILABLE");
+    },
+
     async replace(eventId, entries) {
       const { error } = await client.rpc("set_start_list", {
         p_event: eventId,

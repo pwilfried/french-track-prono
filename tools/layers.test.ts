@@ -14,6 +14,14 @@ describe("checkLayers", () => {
     expect(violations).toEqual([]);
   });
 
+  it("does not mistake a module whose name ends with import for an import", () => {
+    const violations = checkLayers([
+      file("src/application/apply.ts", "@/domain/start-list-import", "./errors"),
+    ]);
+
+    expect(violations).toEqual([]);
+  });
+
   it("rejects a domain file that imports the application layer", () => {
     const violations = checkLayers([file("src/domain/scoring.ts", "@/application/score-event")]);
 

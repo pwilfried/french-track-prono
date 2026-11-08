@@ -65,6 +65,12 @@ export default async function StartListPage({
           <h1 className="mt-1 font-display text-3xl font-extrabold leading-none">
             {messages.startList.title}
           </h1>
+          <Link
+            href={`/admin/${slug}/import`}
+            className="mt-2 inline-flex min-h-11 items-center rounded-full bg-brand-soft px-4 text-sm font-bold text-brand-ink"
+          >
+            {messages.import.link}
+          </Link>
           {loaded !== "error" && (
             <p className="mt-2 text-sm text-muted-foreground">
               {loaded.event.discipline} {messages.events.gender[loaded.event.gender].toLowerCase()}

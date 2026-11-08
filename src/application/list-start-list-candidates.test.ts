@@ -18,6 +18,7 @@ describe("listStartListCandidates", () => {
       },
       find: async () => [],
       replace: async () => "saved",
+      createAthlete: async () => "not_admin",
     };
 
     const candidates = await listStartListCandidates({ startLists }).execute({
