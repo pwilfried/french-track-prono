@@ -39,11 +39,17 @@ const rank = (lines: RankingLine[]): RankingRow[] => {
   }));
 };
 
-/** All the players who scored in a competition. */
+/**
+ * All the players who scored in the competitions given, their points added up: every competition
+ * for the general ranking (decision of 8 Nov 2026), one for the page of a competition.
+ */
 export function getGeneralRanking(ports: { ranking: RankingRepository }) {
   return {
-    async execute(input: { competitionSlug: string }): Promise<RankingRow[]> {
-      return rank(await ports.ranking.competitionLines(input.competitionSlug));
+    async execute(input: { competitionSlugs: string[] }): Promise<RankingRow[]> {
+      const perCompetition = await Promise.all(
+        input.competitionSlugs.map((slug) => ports.ranking.competitionLines(slug)),
+      );
+      return rank(perCompetition.flat());
     },
   };
 }

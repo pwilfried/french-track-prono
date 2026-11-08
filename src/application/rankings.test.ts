@@ -52,7 +52,7 @@ describe("getGeneralRanking", () => {
         line("bob", 5),
         line("bob", 9, false, "e2", "2026-11-24T19:00:00.000Z"),
       ]),
-    }).execute({ competitionSlug: "c" });
+    }).execute({ competitionSlugs: ["c"] });
 
     expect(result.map((r) => [r.userId, r.change, r.streak])).toEqual([
       ["bob", 1, 2],
@@ -63,11 +63,24 @@ describe("getGeneralRanking", () => {
   it("ranks all the players of the competition on their total", async () => {
     const result = await getGeneralRanking({
       ranking: ranking([line("ana", 12, true), line("bob", 20), line("ana", 10)]),
-    }).execute({ competitionSlug: "c" });
+    }).execute({ competitionSlugs: ["c"] });
 
     expect(result.map((p) => [p.rank, p.pseudo, p.points])).toEqual([
       [1, "ANA", 22],
       [2, "BOB", 20],
+    ]);
+  });
+});
+
+describe("getGeneralRanking over several competitions", () => {
+  it("adds up the points of every competition given", async () => {
+    const result = await getGeneralRanking({
+      ranking: ranking([], { a: [line("ana", 12), line("bob", 5)], b: [line("bob", 9)] }),
+    }).execute({ competitionSlugs: ["a", "b"] });
+
+    expect(result.map((p) => [p.rank, p.pseudo, p.points])).toEqual([
+      [1, "BOB", 14],
+      [2, "ANA", 12],
     ]);
   });
 });
