@@ -4,12 +4,14 @@ import type { EventReader } from "@/application/list-events";
 
 /**
  * Contract of the EventReader port, run against the in-memory fake AND the real Supabase adapter.
- * `knownCompetition` is a competition slug that has at least one event in the given reader.
+ * `knownCompetition` is a competition slug that has at least one event in the given reader;
+ * `combined` gives a combined event (decathlon...) known to the reader, with its disciplines.
  */
 export function eventReaderContract(
   name: string,
   create: () => EventReader,
   knownCompetition: string,
+  combined: () => { competitionSlug: string; eventSlug: string; subDisciplines: string[] },
 ) {
   describe(`EventReader contract: ${name}`, () => {
     it("returns an empty list for an unknown competition", async () => {
@@ -69,6 +71,17 @@ export function eventReaderContract(
         expect(result.rank).toBeGreaterThanOrEqual(1);
         expect(event?.entries.map((e) => e.athleteId)).toContain(result.athleteId);
       }
+    });
+
+    it("finds the disciplines of a combined event, in order, and none for a single event", async () => {
+      const reader = create();
+      const event = combined();
+      const [single] = await reader.listByCompetition(knownCompetition);
+
+      expect(
+        (await reader.findBySlug(event.competitionSlug, event.eventSlug))?.subDisciplines,
+      ).toEqual(event.subDisciplines);
+      expect((await reader.findBySlug(knownCompetition, single!.slug))?.subDisciplines).toEqual([]);
     });
   });
 }

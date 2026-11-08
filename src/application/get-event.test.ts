@@ -23,6 +23,7 @@ const detail = (overrides: Partial<EventDetail> = {}): EventDetail => ({
   status: "finished",
   entries: [],
   results: [],
+  subDisciplines: [],
   ...overrides,
 });
 

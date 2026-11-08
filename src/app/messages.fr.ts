@@ -263,6 +263,34 @@ export const messages = {
     install: "Installer",
     dismiss: "Fermer, ne plus proposer",
   },
+  adminLog: {
+    link: "Historique",
+    title: "Historique",
+    subtitle: "Les 50 dernières actions du back-office.",
+    filters: "Filtrer l'historique",
+    admin: "Admin",
+    event: "Épreuve",
+    since: "Depuis le",
+    allAdmins: "Tous",
+    allEvents: "Toutes",
+    apply: "Filtrer",
+    clear: "Effacer",
+    empty: "Aucune action pour ces filtres.",
+    lines: "Actions",
+    kind: {
+      set_start_list: "Liste de départ",
+      set_results: "Résultat saisi",
+      run_scoring: "Points calculés",
+    },
+    noEvent: "Épreuve supprimée",
+    size: (kind: "set_start_list" | "set_results" | "run_scoring", n: number) =>
+      kind === "run_scoring"
+        ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
+        : kind === "set_results"
+          ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
+          : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
+    by: (pseudo: string | null) => (pseudo ? `par ${pseudo}` : "par un compte supprimé"),
+  },
   myPredictions: {
     predicted: "✓ Pronostiqué",
     toPredict: "À pronostiquer",
@@ -272,6 +300,8 @@ export const messages = {
     back: "Épreuves",
     final: "Finale",
     title: (discipline: string) => `${discipline} — Finale`,
+    combined: (n: number) => `Épreuve combinée · ${n} disciplines`,
+    combinedNote: "Tu pronostiques le podium final, au total des points.",
     startList: "Liste de départ",
     startListEmpty: "La liste de départ n'est pas encore connue.",
     podium: "Podium officiel",
@@ -497,6 +527,7 @@ export const messages = {
     START_LIST_IN_USE:
       "Un athlète déjà pronostiqué ou classé ne peut pas être retiré de la liste de départ.",
     START_LIST_UNAVAILABLE: "La liste de départ n'a pas pu être enregistrée. Réessaie.",
+    ADMIN_LOG_UNAVAILABLE: "L'historique n'a pas pu être chargé. Réessaie.",
     retry: "Réessayer",
   },
 } as const;
