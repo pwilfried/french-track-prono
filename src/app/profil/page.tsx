@@ -61,10 +61,11 @@ export default async function ProfilePage() {
   const user = await getCurrentUser();
   if (!user) redirect(`/connexion?next=${encodeURIComponent("/profil")}`);
 
-  const profile = await getProfile({
-    profiles: createSupabaseProfileRepository(await getSessionClient()),
-  }).execute({ userId: user.userId });
+  const profiles = createSupabaseProfileRepository(await getSessionClient());
+  const profile = await getProfile({ profiles }).execute({ userId: user.userId });
   if (!profile) redirect(`/bienvenue?next=${encodeURIComponent("/profil")}`);
+  // Only an admin sees the way to the back-office (the back-office checks it again).
+  const isAdmin = await profiles.isAdmin(user.userId).catch(() => false);
   const season = await loadSeason(user.userId);
 
   const since = new Intl.DateTimeFormat("fr-FR", {
@@ -137,6 +138,15 @@ export default async function ProfilePage() {
           {messages.rules.link}
           <span aria-hidden="true">›</span>
         </Link>
+        {isAdmin && (
+          <Link
+            href="/admin/competitions"
+            className="flex min-h-11 items-center justify-between rounded-card border-2 border-primary bg-card px-4 font-bold"
+          >
+            {messages.profile.backOffice}
+            <span aria-hidden="true">›</span>
+          </Link>
+        )}
       </section>
 
       <section aria-labelledby="badges" className="flex flex-col gap-2">

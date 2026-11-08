@@ -647,6 +647,7 @@ export const messages = {
     fidele: { emoji: "📅", name: "Fidèle", rule: "Un prono sur chaque épreuve d'une journée" },
   },
   profile: {
+    backOffice: "Back-office",
     title: "Mon profil",
     since: (date: string) => `Joueur depuis le ${date}`,
     season: "Saison",
