@@ -900,6 +900,8 @@ export const messages = {
     LEAGUE_CODE_UNKNOWN: "Ce code ne correspond à aucune ligue. Vérifie-le auprès de ton ami.",
     ALREADY_MEMBER: "Tu fais déjà partie de cette ligue.",
     LEAGUE_FULL: "Cette ligue est complète (50 membres au maximum).",
+    LEAGUE_TOO_MANY_ATTEMPTS:
+      "Trop de codes erronés : réessaie dans une heure, ou demande le lien d'invitation à ton ami.",
     LEAGUE_NOT_FOUND: "Cette ligue n'existe pas ou tu n'en fais pas partie.",
     LEAGUE_OWNER_MUST_HAND_OVER:
       "Tu as créé cette ligue : confie-la d'abord à un autre membre avant de la quitter.",

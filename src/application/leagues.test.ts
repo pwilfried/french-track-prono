@@ -310,3 +310,13 @@ describe("reportLeague", () => {
     );
   });
 });
+
+describe("joining with a code, too many wrong codes", () => {
+  it("refuses with LEAGUE_TOO_MANY_ATTEMPTS", async () => {
+    const leagues = repository({ join: async () => ({ outcome: "too_many" }) });
+
+    expect(await codeOf(joinLeague({ leagues }).execute({ code: "K7M2QX" }))).toBe(
+      "LEAGUE_TOO_MANY_ATTEMPTS",
+    );
+  });
+});

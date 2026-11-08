@@ -68,10 +68,12 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       const before = new Set((await listMine()).map((l) => l.id));
       const { data, error } = await client.rpc("join_league", { p_code: code });
       if (error) {
-        if (error.code === "P0002") return { outcome: "unknown_code" };
         if (error.code === "54000") return { outcome: "full" };
+        if (error.code === "FT012") return { outcome: "too_many" };
         return fail();
       }
+      // An unknown code answers nothing (the database remembers the failed attempt).
+      if (!data) return { outcome: "unknown_code" };
       const leagueId = data as string;
       return { outcome: before.has(leagueId) ? "already_member" : "joined", leagueId };
     },

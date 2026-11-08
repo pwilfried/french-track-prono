@@ -38,7 +38,7 @@ select throws_ok($$insert into leagues (name, owner_id) values ('Direct', 'aaaa0
 
 -- R8: joining with a code -----------------------------------------------------------------------
 select act_as('aaaa0000-0000-0000-0000-000000000002');
-select throws_ok($$select join_league('ZZZZZZ')$$, 'P0002', null, 'R8: an unknown code is refused');
+select is(join_league('ZZZZZZ'), null, 'R8: an unknown code joins nothing');
 select is(join_league(lower(' ' || (select code from ctx) || ' ')), (select league from ctx),
   'R8: a valid code joins, whatever the case and spaces');
 select lives_ok($$select join_league((select code from ctx))$$, 'joining twice is accepted');
