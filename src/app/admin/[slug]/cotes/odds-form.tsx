@@ -98,8 +98,8 @@ export function OddsForm({
           className="grid grid-cols-[minmax(0,1fr)_3.25rem_3.25rem_4.75rem_2.75rem] gap-1.5 px-2.5 text-[11px] font-bold uppercase text-muted-foreground"
         >
           <span>{messages.odds.athlete}</span>
-          <span className="text-right">PR</span>
-          <span className="text-right">SB</span>
+          <span className="text-right">{messages.athlete.pr}</span>
+          <span className="text-right">{messages.athlete.sb}</span>
           <span className="text-right">{messages.odds.odds}</span>
           <span />
         </div>
@@ -177,7 +177,12 @@ export function OddsForm({
                 <span className="min-w-0 flex-1 break-words text-sm font-semibold">
                   {a.name}{" "}
                   <span className="font-medium text-muted-foreground">
-                    {[a.pr && `PR ${a.pr}`, a.sb && `SB ${a.sb}`].filter(Boolean).join(" · ")}
+                    {[
+                      a.pr && messages.picker.personalBest(a.pr),
+                      a.sb && messages.picker.seasonBest(a.sb),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </span>
                 </span>
                 <button
