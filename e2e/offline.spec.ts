@@ -16,7 +16,9 @@ test("offline, a visitor reopens a page already seen and gets the offline page e
   await context.setOffline(true);
   await page.goto("/epreuves/f-100m");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  await expect(page.locator("main")).toContainText("Melissa Jefferson-Wooden");
+  await expect(page.locator('main:not([aria-busy="true"])')).toContainText(
+    "Melissa Jefferson-Wooden",
+  );
 
   await page.goto("/epreuves/m-400m");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pas de réseau");

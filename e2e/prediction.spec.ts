@@ -61,13 +61,13 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   await expect(log.nth(1)).toContainText("Résultat saisi");
   await expect(log.nth(0)).toContainText(`par ${player.pseudo}`);
   await page.goto("/mes-points");
-  await expect(page.locator("main")).toContainText("+12 pts");
-  await expect(page.locator("main")).toContainText("Podium parfait");
+  await expect(page.locator('main:not([aria-busy="true"])')).toContainText("+12 pts");
+  await expect(page.locator('main:not([aria-busy="true"])')).toContainText("Podium parfait");
 
   // The event page now shows the result and my podium against the official one.
   await page.goto(`/epreuves/${slug}`);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("s'impose");
-  await expect(page.locator("main")).toContainText("+12 pts");
+  await expect(page.locator('main:not([aria-busy="true"])')).toContainText("+12 pts");
   await expect(page.getByRole("heading", { name: "Ton prono vs officiel" })).toBeVisible();
 
   // The perfect podium earns the Nostradamus badge on the profile.
