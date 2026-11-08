@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 
 import { messages } from "@/app/messages.fr";
@@ -39,16 +40,10 @@ export function StartListForm({
   const [chosen, setChosen] = useState<Chosen[]>(initial);
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
-  const [everyone, setEveryone] = useState(false);
-  // Without a search, every athlete of the discipline (#301); a search looks through everybody.
+  // Only the athletes of the event's sex who have its discipline can join it (#307).
   const runners = candidates.filter((c) => c.fit !== "other");
   const searching = query.trim() !== "";
-  const byDiscipline = !searching && !everyone && runners.length > 0;
-  const matches = searching
-    ? searchAthletes(candidates, query).slice(0, SHOWN)
-    : byDiscipline
-      ? runners
-      : candidates;
+  const matches = searching ? searchAthletes(runners, query).slice(0, SHOWN) : runners;
   const full = chosen.length >= MAX_START_LIST;
 
   const add = (athlete: Athlete) => {
@@ -158,26 +153,21 @@ export function StartListForm({
           </p>
         )}
         {!searching && (
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-semibold">
-              {byDiscipline
-                ? messages.startList.ofDiscipline(discipline, runners.length)
-                : runners.length === 0
-                  ? messages.startList.noneOfDiscipline(discipline)
-                  : messages.startList.everyone(candidates.length)}
-            </p>
-            {runners.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setEveryone(!everyone)}
-                className="min-h-11 shrink-0 text-sm font-bold underline"
-              >
-                {everyone ? messages.startList.showDiscipline : messages.startList.showEveryone}
-              </button>
-            )}
-          </div>
+          <p className="text-sm font-semibold">
+            {runners.length > 0
+              ? messages.startList.ofDiscipline(discipline, runners.length)
+              : messages.startList.noneOfDiscipline(discipline)}
+          </p>
         )}
-        {matches.length === 0 ? (
+        {runners.length === 0 && (
+          <Link
+            href="/admin/athletes"
+            className="inline-flex min-h-11 items-center font-bold underline"
+          >
+            {messages.startList.toAthletes}
+          </Link>
+        )}
+        {runners.length === 0 ? null : matches.length === 0 ? (
           <p className="text-sm text-muted-foreground">{messages.startList.noMatch}</p>
         ) : (
           <ul aria-label={messages.startList.matches} className="flex flex-col">
