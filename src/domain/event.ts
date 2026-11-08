@@ -43,6 +43,8 @@ export type EventDetail = EventSummary & {
   previousRounds: PreviousRound[];
   /** Its competition plays with odds: predictions open once the admin has set them. */
   oddsRequired?: boolean;
+  /** The competition it belongs to (event slugs are unique across competitions). */
+  competitionSlug?: string;
   /** How its discipline measures a mark, and the tolerance of a predicted mark. */
   markUnit?: MarkUnit;
   tolerance?: number;

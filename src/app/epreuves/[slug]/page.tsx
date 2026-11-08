@@ -183,7 +183,6 @@ export default async function EventPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ ligue?: string | string[] }>;
 }) {
-  const competition = await currentCompetition();
   const { slug } = await params;
   const { ligue } = await searchParams;
   const leagueId = typeof ligue === "string" && ligue !== "" ? ligue : undefined;
@@ -198,6 +197,8 @@ export default async function EventPage({
   }
 
   const event = loaded;
+  // Times and points follow the event's own competition.
+  const competition = await currentCompetition(event.competitionSlug);
   const [user, choices] = await Promise.all([getCurrentUser(), loadChoices(event)]);
   const open = eventPhase(new Date(), event.lockAt) === "open";
   // The picker already lists the athletes of an open event for a signed-in player.
@@ -218,7 +219,7 @@ export default async function EventPage({
       <header className="px-4 pt-4">
         <div className="mx-auto flex max-w-md flex-col gap-3">
           <Link
-            href="/epreuves"
+            href={`/epreuves?competition=${competition.slug}`}
             className="inline-flex min-h-11 items-center self-start font-semibold text-brand dark:text-secondary"
           >
             ‹ {messages.event.back}
