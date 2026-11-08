@@ -16,6 +16,10 @@ export type StartListWorld = {
   discipline: string;
   /** An athlete of the gender who runs the discipline. */
   candidateId: string;
+  /** An athlete of the gender who does not run the discipline. */
+  nonRunnerId: string;
+  /** Enters these athletes in the competition of the event (its « engagés »). */
+  enter: (athleteIds: string[]) => void;
   markInUse: (athleteId: string) => void;
   /** Makes the event a round leading to a new event, ranks its first three athletes 1 to 3. */
   makeRound: () => Promise<string>;
@@ -42,6 +46,28 @@ export function startListRepositoryContract(name: string, world: () => Promise<S
           (c) => c.fit === "other",
         ),
       ).toBe(true);
+    });
+
+    it("keeps the candidates to the entered athletes when one of them runs the discipline", async () => {
+      const w = await world();
+      w.enter([w.nonRunnerId, w.candidateId]);
+
+      const ids = (await w.admin.candidates(w.gender, w.discipline, w.eventId)).map(
+        (c) => c.athleteId,
+      );
+
+      expect(ids.sort()).toEqual([w.candidateId, w.nonRunnerId].sort());
+    });
+
+    it("offers every runner of the discipline when no entered athlete runs it", async () => {
+      const w = await world();
+      w.enter([w.nonRunnerId]);
+
+      const candidates = await w.admin.candidates(w.gender, w.discipline, w.eventId);
+
+      const runner = candidates.find((c) => c.athleteId === w.candidateId);
+      expect(runner).toBeDefined();
+      expect(runner?.fit).not.toBe("other");
     });
 
     it("lets an admin replace a start list, removing, adding and updating season bests", async () => {

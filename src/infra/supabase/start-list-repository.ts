@@ -11,7 +11,6 @@ import type {
 export function createSupabaseStartListRepository(client: SupabaseClient): StartListRepository {
   return {
     async candidates(gender, discipline, eventId) {
-      // The athletes entered in the event's competition; nobody entered yet means everybody.
       const event = await client
         .from("events")
         .select("competition_id")
@@ -24,12 +23,12 @@ export function createSupabaseStartListRepository(client: SupabaseClient): Start
         .eq("competition_id", event.data?.competition_id ?? "00000000-0000-0000-0000-000000000000")
         .returns<{ athlete_id: string }[]>();
       if (entered.error) throw new UseCaseError("START_LIST_UNAVAILABLE");
-      const ids = entered.data.map((row) => row.athlete_id);
-      const query = client
+      const ids = new Set(entered.data.map((row) => row.athlete_id));
+      const { data, error } = await client
         .from("athletes")
         .select("id, name, country_code, athlete_disciplines(discipline, is_primary)")
-        .eq("gender", gender);
-      const { data, error } = await (ids.length > 0 ? query.in("id", ids) : query).returns<
+        .eq("gender", gender)
+        .returns<
           {
             id: string;
             name: string;
@@ -38,7 +37,7 @@ export function createSupabaseStartListRepository(client: SupabaseClient): Start
           }[]
         >();
       if (error) throw new UseCaseError("START_LIST_UNAVAILABLE");
-      return data.map((row): Candidate => {
+      const all = data.map((row): Candidate => {
         const runs = row.athlete_disciplines.find((d) => d.discipline === discipline);
         return {
           athleteId: row.id,
@@ -47,6 +46,10 @@ export function createSupabaseStartListRepository(client: SupabaseClient): Start
           fit: !runs ? "other" : runs.is_primary ? "primary" : "discipline",
         };
       });
+      // The athletes entered in the competition, unless none of them runs the discipline (#326):
+      // then every athlete of the sex who runs it.
+      const enteredOnes = all.filter((c) => ids.has(c.athleteId));
+      return enteredOnes.some((c) => c.fit !== "other") ? enteredOnes : all;
     },
 
     async find(eventId) {

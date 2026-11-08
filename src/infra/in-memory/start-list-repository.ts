@@ -22,7 +22,7 @@ export function createInMemoryStartListStore(athletes: StartListAthleteFixture[]
     setRound(eventId: string, next: string, ranked: { athleteId: string; rank: number }[]) {
       rounds.set(eventId, { next, ranked });
     },
-    /** Enters athletes in the competition of an event: candidates are then only those. */
+    /** Enters athletes in the competition of an event: candidates are then only those, if one runs it. */
     enter(eventId: string, athleteIds: string[]) {
       entered.set(eventId, athleteIds);
     },
@@ -33,9 +33,8 @@ export function createInMemoryStartListStore(athletes: StartListAthleteFixture[]
     session(options: { isAdmin: boolean }): StartListRepository {
       return {
         async candidates(gender, discipline, eventId) {
-          const only = entered.get(eventId);
-          return athletes
-            .filter((a) => a.gender === gender && (!only || only.includes(a.athleteId)))
+          const all = athletes
+            .filter((a) => a.gender === gender)
             .map(({ athleteId, name, countryCode, disciplines = [] }) => ({
               athleteId,
               name,
@@ -47,6 +46,10 @@ export function createInMemoryStartListStore(athletes: StartListAthleteFixture[]
                     ? ("discipline" as const)
                     : ("other" as const),
             }));
+          // Only the entered athletes, unless none of them runs the discipline (#326).
+          const only = entered.get(eventId);
+          const enteredOnes = only ? all.filter((c) => only.includes(c.athleteId)) : [];
+          return enteredOnes.some((c) => c.fit !== "other") ? enteredOnes : all;
         },
         async find(eventId) {
           return (stored.get(eventId) ?? []).map((e) => ({ ...e }));

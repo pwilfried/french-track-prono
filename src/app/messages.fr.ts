@@ -602,7 +602,8 @@ export const messages = {
     lockBefore: (m: number) => (m === 0 ? "Au départ" : `${m} min avant`),
     addEventSubmit: "Ajouter l'épreuve",
     enter: "Engager",
-    enterHint: "Les listes de départ se choisissent parmi les engagés. Un athlète absent ?",
+    enterHint:
+      "Les listes de départ se choisissent parmi les engagés (tous les athlètes de la discipline si aucun engagé ne la court). Un athlète absent ?",
     noAthlete: "Personne n'est engagé : cherche un athlète ci-dessus.",
     athletesList: "Athlètes engagés",
     withdraw: (name: string) => `Retirer ${name} de la compétition`,
