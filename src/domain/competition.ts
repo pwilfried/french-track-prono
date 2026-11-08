@@ -90,6 +90,14 @@ export function zonedToUtc(local: string, timeZone: string): string {
   return new Date(guess.getTime() - offsetMinutes(first, timeZone) * 60000).toISOString();
 }
 
+/** The local time ("YYYY-MM-DDTHH:mm") of an instant in a time zone: the inverse of zonedToUtc. */
+export function utcToZoned(iso: string, timeZone: string): string {
+  const instant = new Date(iso);
+  return new Date(instant.getTime() + offsetMinutes(instant, timeZone) * 60000)
+    .toISOString()
+    .slice(0, 16);
+}
+
 /**
  * The competition the app puts first: the one under way or the next to start; when all are over,
  * the latest one.

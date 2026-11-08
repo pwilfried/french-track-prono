@@ -8,8 +8,17 @@ import {
   createCompetition,
   setCompetitionAthlete,
 } from "@/application/create-competition";
+import {
+  deleteCompetition,
+  deleteCompetitionEvent,
+  editCompetition,
+  editCompetitionEvent,
+} from "@/application/edit-competition";
 import { UseCaseError } from "@/application/errors";
-import { createSupabaseCompetitionAdminRepository } from "@/infra";
+import {
+  createSupabaseCompetitionAdminRepository,
+  createSupabaseCompetitionEditRepository,
+} from "@/infra";
 
 import { formText } from "../../form-data";
 import { adminOnly } from "../guard";
@@ -77,5 +86,62 @@ export async function setAthleteAction(data: FormData) {
       entered: formText(data, "entered") === "1",
     });
     return `${back}&enregistre=1`;
+  });
+}
+
+export async function editCompetitionAction(data: FormData) {
+  const slug = formText(data, "slug");
+  await change(`/admin/competitions/${slug}/modifier`, async (client) => {
+    await editCompetition({
+      competitions: createSupabaseCompetitionEditRepository(client),
+    }).execute({
+      slug,
+      name: formText(data, "name"),
+      scope: formText(data, "scope"),
+      city: formText(data, "city"),
+      countryCode: formText(data, "countryCode"),
+      startsOn: formText(data, "startsOn"),
+      endsOn: formText(data, "endsOn"),
+      timeZone: formText(data, "timeZone"),
+    });
+    return `/admin/competitions/${slug}?enregistre=1`;
+  });
+}
+
+export async function deleteCompetitionAction(data: FormData) {
+  const slug = formText(data, "slug");
+  await change(`/admin/competitions/${slug}/modifier`, async (client) => {
+    await deleteCompetition({
+      competitions: createSupabaseCompetitionEditRepository(client),
+    }).execute({ slug });
+    return "/admin/competitions?enregistre=1";
+  });
+}
+
+export async function editEventAction(data: FormData) {
+  const eventSlug = formText(data, "eventSlug");
+  await change(`/admin/${eventSlug}`, async (client) => {
+    await editCompetitionEvent({
+      competitions: createSupabaseCompetitionEditRepository(client),
+    }).execute({
+      eventSlug,
+      timeZone: formText(data, "timeZone"),
+      round: formText(data, "round"),
+      localStart: formText(data, "localStart"),
+      lockMinutes: Number(formText(data, "lockMinutes")),
+    });
+    revalidatePath(`/admin/${eventSlug}`);
+    return `/admin/${eventSlug}?enregistre=1`;
+  });
+}
+
+export async function deleteEventAction(data: FormData) {
+  const eventSlug = formText(data, "eventSlug");
+  const competition = formText(data, "competition");
+  await change(`/admin/${eventSlug}`, async (client) => {
+    await deleteCompetitionEvent({
+      competitions: createSupabaseCompetitionEditRepository(client),
+    }).execute({ eventSlug });
+    return `/admin/competitions/${competition}?enregistre=1`;
   });
 }

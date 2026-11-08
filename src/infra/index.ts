@@ -51,3 +51,4 @@ export { createInMemoryOddsStore, type OddsEventFixture } from "./in-memory/odds
 export { createSupabaseOddsRepository } from "./supabase/odds-repository";
 export { createInMemoryScoringRuleStore } from "./in-memory/scoring-rule-repository";
 export { createSupabaseScoringRuleRepository } from "./supabase/scoring-rule-repository";
+export { createSupabaseCompetitionEditRepository } from "./supabase/competition-edit-repository";

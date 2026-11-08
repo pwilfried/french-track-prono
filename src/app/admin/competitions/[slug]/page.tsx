@@ -103,7 +103,11 @@ export default async function AdminCompetitionPage({
         {messages.adminCompetitions.scope[file.scope]} ·{" "}
         {[file.city, messages.competition.dates(file.startsOn, file.endsOn), file.timeZone]
           .filter(Boolean)
-          .join(" · ")}
+          .join(" · ")}{" "}
+        ·{" "}
+        <Link href={`/admin/competitions/${slug}/modifier`} className="font-semibold underline">
+          {messages.adminCompetitions.edit}
+        </Link>
       </p>
       <ActionNotice saved={!!search.enregistre} error={error} />
       <nav

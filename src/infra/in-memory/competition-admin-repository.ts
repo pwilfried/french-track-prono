@@ -3,11 +3,13 @@ import type {
   CompetitionFile,
   EnteredAthlete,
 } from "@/application/create-competition";
+import type { CompetitionEditRepository } from "@/application/edit-competition";
 
 /** Test double of the CompetitionAdminRepository port: one store, a session per player. */
 export function createInMemoryCompetitionAdminStore(athletes: EnteredAthlete[]) {
   const stored: CompetitionFile[] = [];
   const onStartList = new Set<string>();
+  const predicted = new Set<string>();
   const free = (slug: string, taken: (s: string) => boolean) => {
     let candidate = slug;
     for (let n = 2; taken(candidate); n++) candidate = `${slug}-${n}`;
@@ -18,7 +20,11 @@ export function createInMemoryCompetitionAdminStore(athletes: EnteredAthlete[]) 
     putOnStartList(competition: string, athleteId: string) {
       onStartList.add(`${competition}/${athleteId}`);
     },
-    session(options: { isAdmin: boolean }): CompetitionAdminRepository {
+    /** Someone predicted this event: it cannot be deleted nor change its round. */
+    predict(eventSlug: string) {
+      predicted.add(eventSlug);
+    },
+    session(options: { isAdmin: boolean }): CompetitionAdminRepository & CompetitionEditRepository {
       const find = (slug: string) => stored.find((c) => c.slug === slug);
       return {
         async list() {
@@ -69,6 +75,38 @@ export function createInMemoryCompetitionAdminStore(athletes: EnteredAthlete[]) 
           found.athletes = found.athletes.filter((a) => a.athleteId !== athleteId);
           const athlete = athletes.find((a) => a.athleteId === athleteId);
           if (entered && athlete) found.athletes.push({ ...athlete });
+          return "saved";
+        },
+        async update(slug, fields) {
+          if (!options.isAdmin) return "not_admin";
+          const found = find(slug);
+          if (!found) return "unknown";
+          Object.assign(found, fields);
+          return "saved";
+        },
+        async remove(slug) {
+          if (!options.isAdmin) return "not_admin";
+          const found = find(slug);
+          if (!found) return "unknown";
+          if (found.eventList.some((e) => predicted.has(e.slug))) return "has_predictions";
+          stored.splice(stored.indexOf(found), 1);
+          return "saved";
+        },
+        async updateEvent(eventSlug, change) {
+          if (!options.isAdmin) return "not_admin";
+          const event = stored.flatMap((c) => c.eventList).find((e) => e.slug === eventSlug);
+          if (!event) return "unknown";
+          if (change.round !== event.round && predicted.has(eventSlug)) return "has_predictions";
+          event.round = change.round;
+          event.startsAt = change.startsAt;
+          return "saved";
+        },
+        async removeEvent(eventSlug) {
+          if (!options.isAdmin) return "not_admin";
+          const owner = stored.find((c) => c.eventList.some((e) => e.slug === eventSlug));
+          if (!owner) return "unknown";
+          if (predicted.has(eventSlug)) return "has_predictions";
+          owner.eventList = owner.eventList.filter((e) => e.slug !== eventSlug);
           return "saved";
         },
       };
