@@ -4,6 +4,7 @@ import { UseCaseError } from "@/application/errors";
 import { ErrorNotice } from "@/components/error-notice";
 import { EventCard, type MyEventState } from "@/components/events/event-card";
 import { GenderFilter } from "@/components/events/gender-filter";
+import { InstallPrompt } from "@/components/shell/install-prompt";
 import type { EventGender, EventSummary } from "@/domain/event";
 import { filterByGender, groupEventsByDay } from "@/domain/event-list";
 import {
@@ -135,6 +136,7 @@ export default async function EventsPage({
           </p>
         </div>
       </div>
+      <InstallPrompt signedIn={mine !== null} hasPredicted={(mine?.size ?? 0) > 0} />
     </main>
   );
 }

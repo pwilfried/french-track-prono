@@ -33,7 +33,8 @@ export const metadata: Metadata = {
   title: messages.app.name,
   description: messages.app.description,
   robots: { index: true, follow: true },
-  icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
+  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
+  appleWebApp: { capable: true, title: messages.app.short, statusBarStyle: "default" },
   openGraph: {
     title: messages.app.name,
     description: messages.app.description,
