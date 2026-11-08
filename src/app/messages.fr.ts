@@ -904,7 +904,19 @@ export const messages = {
     retry: "Réessayer",
   },
   legal: {
-    footer: { notice: "Mentions légales", privacy: "Confidentialité", contact: "Contact" },
+    footer: {
+      notice: "Mentions légales",
+      privacy: "Confidentialité",
+      contact: "Contact",
+      socialLabel: "FrenchTrack sur les réseaux",
+      social: {
+        instagram: "Instagram",
+        youtube: "YouTube",
+        tiktok: "TikTok",
+        podcast: "Le podcast",
+      },
+      opensNewTab: (name: string) => `${name} (nouvel onglet)`,
+    },
     /** Draft written by the agent: the owner validates the final text (issue #172). */
     notice: {
       title: "Mentions légales",
