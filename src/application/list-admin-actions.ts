@@ -6,7 +6,8 @@ export type AdminActionKind =
   | "run_scoring"
   | "set_tolerance"
   | "edit_athlete"
-  | "edit_competition";
+  | "edit_competition"
+  | "set_odds";
 
 /** One line of the admin log. */
 export type AdminAction = {

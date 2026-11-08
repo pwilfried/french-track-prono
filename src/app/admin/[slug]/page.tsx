@@ -148,6 +148,12 @@ export default async function AdminEventPage({
           >
             {messages.startList.link(event.entries.length)}
           </Link>
+          <Link
+            href={`/admin/${slug}/cotes`}
+            className="ml-2 mt-2 inline-flex min-h-11 items-center rounded-full bg-gold-soft px-4 text-sm font-bold text-gold-ink"
+          >
+            {messages.odds.link}
+          </Link>
           {event.previousRounds.length > 0 && (
             <nav aria-label={messages.rounds.previousLinks} className="mt-2 flex flex-wrap gap-2">
               {event.previousRounds.map((round, index) => (
