@@ -6,6 +6,7 @@ import {
   eventSlug,
   isValidCompetition,
   nextCompetition,
+  utcToZoned,
   zonedToUtc,
 } from "./competition";
 
@@ -80,5 +81,15 @@ describe("daysUntil", () => {
 
   it("is not fooled by a change of daylight saving time", () => {
     expect(daysUntil("2026-03-30", "2026-03-28")).toBe(2);
+  });
+});
+
+describe("utcToZoned", () => {
+  it("gives back the local time typed for an event, in its competition's time zone", () => {
+    expect(utcToZoned("2027-06-25T18:35:00.000Z", "Europe/Paris")).toBe("2027-06-25T20:35");
+    expect(utcToZoned("2027-01-10T23:30:00.000Z", "Europe/Paris")).toBe("2027-01-11T00:30");
+    expect(utcToZoned(zonedToUtc("2027-03-28T03:15", "Europe/Paris"), "Europe/Paris")).toBe(
+      "2027-03-28T03:15",
+    );
   });
 });

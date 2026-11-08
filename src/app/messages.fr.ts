@@ -219,7 +219,6 @@ export const messages = {
     title: "Résultats",
     subtitle: (competition: string, count: number) =>
       `${competition} · ${count} ${count <= 1 ? "épreuve verrouillée" : "épreuves verrouillées"}`,
-    back: "Résultats",
     filters: "Filtrer par état",
     filter: {
       open: (n: number) => `Ouvertes (${n})`,
@@ -529,6 +528,19 @@ export const messages = {
     mainDiscipline: "Discipline principale",
   },
   adminCompetitions: {
+    edit: "Modifier",
+    editTitle: "Modifier la compétition",
+    editSubmit: "Enregistrer les modifications",
+    deleteTitle: "Supprimer la compétition",
+    deleteHint:
+      "Possible tant que personne n'a pronostiqué : ses épreuves, engagés et cotes partent avec elle.",
+    deleteSubmit: (name: string) => `Supprimer « ${name} »`,
+    editEvent: "Modifier l'épreuve",
+    editEventSubmit: "Enregistrer l'épreuve",
+    editEventHint:
+      "L'horaire et le verrouillage se changent à tout moment ; le tour, seulement tant que personne n'a pronostiqué.",
+    deleteEvent: "Supprimer l'épreuve",
+    deleteEventHint: "Possible tant que personne n'a pronostiqué cette épreuve.",
     needsFinal: "Pas de prono : ajoute la finale",
     title: "Compétitions",
     subtitle: "La prochaine par date est mise en avant sur l'accueil.",
@@ -868,6 +880,8 @@ export const messages = {
       "Il faut un nom, un type, des dates dans l'ordre, un fuseau horaire valide et un code pays à trois lettres (facultatif).",
     COMPETITION_NOT_FOUND: "Cette compétition n'existe pas.",
     COMPETITIONS_UNAVAILABLE: "Les compétitions n'ont pas pu être chargées. Réessaie.",
+    HAS_PREDICTIONS:
+      "Des joueurs ont déjà pronostiqué : on ne peut plus supprimer, ni changer le tour d'une épreuve.",
     EVENT_INVALID: "Il faut une discipline, une catégorie, un tour, un horaire et un verrouillage.",
     ATHLETE_ON_START_LIST:
       "Cet athlète est sur une liste de départ de la compétition : retire-le d'abord.",
