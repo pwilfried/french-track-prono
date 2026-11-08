@@ -51,6 +51,7 @@ const FALLBACK: ShownCompetition = {
   endsOn: "2026-09-13",
   timeZone: "Europe/Paris",
   events: 0,
+  finals: 0,
   entered: 0,
   place: "",
 };

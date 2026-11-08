@@ -93,7 +93,7 @@ export default async function CompetitionsPage({
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="font-bold">{c.name}</span>
                 <span className="text-sm text-muted-foreground">
-                  {[c.place, messages.start.events(c.events)].filter(Boolean).join(" · ")}
+                  {[c.place, messages.start.events(c.finals)].filter(Boolean).join(" · ")}
                 </span>
               </span>
               <span className="font-mono text-xs font-bold text-muted-foreground">

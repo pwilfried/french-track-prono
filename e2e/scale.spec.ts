@@ -25,6 +25,8 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   await expect(
     page.getByRole("navigation", { name: "Sections du back-office" }).getByRole("link"),
   ).toHaveCount(6);
+  // Only the admin interface: no player navigation, and a way out (#295).
+  await expect(page.getByRole("navigation", { name: "Navigation principale" })).toHaveCount(0);
   await page.getByRole("link", { name: "Barème" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Barème");
   const field = page.getByLabel("Perf dans la tolérance", { exact: true });
@@ -37,6 +39,9 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   await field.fill("0");
   await field.locator("xpath=ancestor::form").getByRole("button", { name: "Enregistrer" }).click();
   await expect(page.locator("main").getByRole("alert")).toContainText("nombre positif");
+
+  await page.getByRole("link", { name: "Quitter le back-office" }).click();
+  await expect(page).toHaveURL(/\/profil$/);
 
   sql(`update scoring_rules set value = ${before} where key = 'mark_exact'`);
 });

@@ -18,12 +18,12 @@ type CompetitionRow = {
   starts_on: string;
   ends_on: string;
   time_zone: string;
-  events: { count: number }[];
+  events: { round: string }[];
   competition_athletes: { count: number }[];
 };
 
 const COLUMNS =
-  "slug, name, scope, city, country_code, starts_on, ends_on, time_zone, events(count), competition_athletes(count)";
+  "slug, name, scope, city, country_code, starts_on, ends_on, time_zone, events(round), competition_athletes(count)";
 
 const summary = (row: CompetitionRow): CompetitionSummary => ({
   slug: row.slug,
@@ -34,7 +34,8 @@ const summary = (row: CompetitionRow): CompetitionSummary => ({
   startsOn: row.starts_on,
   endsOn: row.ends_on,
   timeZone: row.time_zone,
-  events: row.events[0]?.count ?? 0,
+  events: row.events.length,
+  finals: row.events.filter((e) => e.round === "final").length,
   entered: row.competition_athletes[0]?.count ?? 0,
 });
 

@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 
 import { BottomNav } from "@/components/shell/bottom-nav";
 import { ServiceWorker } from "@/components/shell/service-worker";
+import { PlayerOnly } from "@/components/shell/player-only";
 import { SiteHeader } from "@/components/shell/site-header";
 
 import { messages } from "./messages.fr";
@@ -74,9 +75,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           {messages.app.skipToContent}
         </a>
-        <SiteHeader />
+        <PlayerOnly>
+          <SiteHeader />
+        </PlayerOnly>
         {children}
-        <BottomNav />
+        <PlayerOnly>
+          <BottomNav />
+        </PlayerOnly>
         <ServiceWorker />
       </body>
     </html>

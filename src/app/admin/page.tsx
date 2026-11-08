@@ -48,8 +48,8 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{ etat?: string }>;
 }) {
-  const competition = await currentCompetition();
   const { client } = await adminOnly();
+  const competition = await currentCompetition();
   const loaded = await load(client);
   const { etat } = await searchParams;
   const wanted = STATES.find((s) => s === etat) ?? "todo";

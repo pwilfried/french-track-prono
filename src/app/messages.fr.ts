@@ -208,6 +208,7 @@ export const messages = {
   },
   admin: {
     band: "Back-office",
+    leave: "Quitter le back-office",
     statsLabel: "État de la compétition",
     stats: {
       open: "Ouvertes aux pronos",
@@ -541,6 +542,7 @@ export const messages = {
       "L'horaire et le verrouillage se changent à tout moment ; le tour, seulement tant que personne n'a pronostiqué.",
     deleteEvent: "Supprimer l'épreuve",
     deleteEventHint: "Possible tant que personne n'a pronostiqué cette épreuve.",
+    needsFinal: "Pas de prono : ajoute la finale",
     title: "Compétitions",
     subtitle: "La prochaine par date est mise en avant sur l'accueil.",
     sections: "Sections du back-office",

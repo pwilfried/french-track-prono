@@ -50,7 +50,7 @@ function NextCompetition({ c, today }: { c: ShownCompetition; today: string }) {
       <div className="flex flex-col gap-1">
         <h3 className="font-display text-[22px] font-extrabold leading-tight">{c.name}</h3>
         <p className="text-sm text-muted-foreground">
-          {[c.place, messages.start.events(c.events)].filter(Boolean).join(" · ")}
+          {[c.place, messages.start.events(c.finals)].filter(Boolean).join(" · ")}
         </p>
       </div>
       <div className="flex gap-2">
