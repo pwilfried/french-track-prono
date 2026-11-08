@@ -36,9 +36,9 @@ insert into league_members (league_id, user_id, role) values
   ('dddddddd-0000-0000-0000-0000000000a1', 'dddd0000-0000-0000-0000-000000000002', 'owner'),
   ('dddddddd-0000-0000-0000-0000000000a2', 'dddd0000-0000-0000-0000-000000000001', 'owner');
 insert into league_competitions (league_id, competition_id)
-select 'dddddddd-0000-0000-0000-0000000000a1', id from competitions where slug = 'test-league-to-predict'
+select 'dddddddd-0000-0000-0000-0000000000a1'::uuid, id from competitions where slug = 'test-league-to-predict'
 union all
-select 'dddddddd-0000-0000-0000-0000000000a2', id from competitions where slug = 'test-league-other';
+select 'dddddddd-0000-0000-0000-0000000000a2'::uuid, id from competitions where slug = 'test-league-other';
 
 create function test_pick(p_n int) returns uuid language sql stable as $$
   select athlete_id from entries where event_id = 'dddddddd-0000-0000-0000-00000000000e'
@@ -65,7 +65,7 @@ select lives_ok(
 -- Once his league counts the competition too, the loner may predict.
 reset role;
 insert into league_competitions (league_id, competition_id)
-select 'dddddddd-0000-0000-0000-0000000000a2', id from competitions where slug = 'test-league-to-predict';
+select 'dddddddd-0000-0000-0000-0000000000a2'::uuid, id from competitions where slug = 'test-league-to-predict';
 set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub":"dddd0000-0000-0000-0000-000000000001","role":"authenticated"}', true);
