@@ -1,3 +1,4 @@
+import type { LeagueModerationRepository } from "@/application/league-moderation";
 import type { League, LeagueMember, LeagueRepository } from "@/application/leagues";
 import {
   INVITE_ALPHABET,
@@ -24,6 +25,7 @@ type Stored = {
  */
 export function createInMemoryLeagueStore(competitions?: Record<string, "coming" | "started">) {
   const leagues = new Map<string, Stored>();
+  const reports = new Map<string, Set<string>>();
   const profiles = new Map<string, LeagueMember>();
   const newCode = () => {
     let code = "";
@@ -43,6 +45,37 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
   });
 
   return {
+    /** The admin's moderation of the same leagues (#321). */
+    moderation(options: { isAdmin: boolean }): LeagueModerationRepository {
+      return {
+        async listReported() {
+          if (!options.isAdmin) return "not_admin";
+          return [...reports.entries()]
+            .filter(([id, by]) => leagues.has(id) && by.size > 0)
+            .map(([id, by]) => ({
+              id,
+              name: leagues.get(id)!.name,
+              reportCount: by.size,
+              memberCount: leagues.get(id)!.members.length,
+            }))
+            .sort((a, b) => b.reportCount - a.reportCount || a.name.localeCompare(b.name));
+        },
+        async rename(leagueId, name) {
+          if (!options.isAdmin) return "not_admin";
+          const league = leagues.get(leagueId);
+          if (!league) return "unknown";
+          league.name = name;
+          reports.delete(leagueId);
+          return "done";
+        },
+        async remove(leagueId) {
+          if (!options.isAdmin) return "not_admin";
+          if (!leagues.delete(leagueId)) return "unknown";
+          reports.delete(leagueId);
+          return "done";
+        },
+      };
+    },
     session(player: LeagueMember): LeagueRepository {
       profiles.set(player.userId, player);
       const me = player.userId;
@@ -124,6 +157,11 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
           if (league.members.length >= leagueCapacity(true)) return { outcome: "full" };
           league.members.push(me);
           return { outcome: "joined", leagueId };
+        },
+        async report(leagueId) {
+          if (!leagues.get(leagueId)?.isPublic) return "unknown";
+          reports.set(leagueId, (reports.get(leagueId) ?? new Set()).add(me));
+          return "reported";
         },
       };
     },

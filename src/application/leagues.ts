@@ -52,6 +52,8 @@ export interface LeagueRepository {
   listPublic(): Promise<PublicLeague[]>;
   /** Joins a public league without its code; "unknown_code" when it is not a public league. */
   joinPublic(leagueId: string): Promise<JoinOutcome>;
+  /** Reports a public league to the admin (once per player). */
+  report(leagueId: string): Promise<"reported" | "unknown">;
 }
 
 type Ports = { leagues: LeagueRepository };
@@ -170,6 +172,16 @@ export function joinPublicLeague(ports: Ports) {
       if (joined.outcome === "unknown_code") throw new UseCaseError("LEAGUE_NOT_FOUND");
       if (joined.outcome === "full") throw new UseCaseError("LEAGUE_FULL");
       return joined.leagueId;
+    },
+  };
+}
+
+/** Reports a public league to the admin (#321); reporting twice changes nothing. */
+export function reportLeague(ports: Ports) {
+  return {
+    async execute(input: { leagueId: string }): Promise<void> {
+      const outcome = await ports.leagues.report(input.leagueId);
+      if (outcome === "unknown") throw new UseCaseError("LEAGUE_NOT_FOUND");
     },
   };
 }

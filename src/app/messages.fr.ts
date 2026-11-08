@@ -175,6 +175,10 @@ export const messages = {
     publicJoinLabel: (name: string) => `Rejoindre la ligue publique ${name}`,
     publicJoining: "…",
     publicPlaces: (n: number, max: number) => `${n} / ${max} joueurs`,
+    report: "Signaler",
+    reportLabel: (name: string) => `Signaler la ligue ${name} à l'admin`,
+    reporting: "…",
+    reported: "✓ Signalée à l'admin. Merci !",
     chosen: "Compétitions de la ligue",
     remove: (name: string) => `Retirer ${name}`,
     addCompetition: "+ Ajouter une compétition",
@@ -346,6 +350,8 @@ export const messages = {
       edit_athlete: "Athlète modifié",
       edit_competition: "Compétition modifiée",
       set_odds: "Cotes enregistrées",
+      set_rule: "Barème modifié",
+      moderate_league: "Ligue modérée",
     },
     noEvent: "Épreuve supprimée",
     size: (
@@ -356,22 +362,28 @@ export const messages = {
         | "set_tolerance"
         | "edit_athlete"
         | "edit_competition"
-        | "set_odds",
+        | "set_odds"
+        | "set_rule"
+        | "moderate_league",
       n: number,
     ) =>
-      kind === "set_tolerance"
+      kind === "set_rule"
         ? "barème"
-        : kind === "edit_athlete"
-          ? "fiche athlète"
-          : kind === "edit_competition"
-            ? "compétition"
-            : kind === "set_odds"
-              ? `${n} cotes`
-              : kind === "run_scoring"
-                ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
-                : kind === "set_results"
-                  ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
-                  : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
+        : kind === "moderate_league"
+          ? "ligue publique"
+          : kind === "set_tolerance"
+            ? "barème"
+            : kind === "edit_athlete"
+              ? "fiche athlète"
+              : kind === "edit_competition"
+                ? "compétition"
+                : kind === "set_odds"
+                  ? `${n} cotes`
+                  : kind === "run_scoring"
+                    ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
+                    : kind === "set_results"
+                      ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
+                      : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
     by: (pseudo: string | null) => (pseudo ? `par ${pseudo}` : "par un compte supprimé"),
   },
   import: {
@@ -586,6 +598,7 @@ export const messages = {
       results: "Résultats",
       disciplines: "Disciplines",
       scale: "Barème",
+      leagues: "Ligues",
       history: "Historique",
     },
     create: "+ Nouvelle compétition",
@@ -844,6 +857,21 @@ export const messages = {
     leagueCreate: "Créer une ligue avec cette compétition",
     leagueJoin: "Rejoindre une ligue",
     leagueAdd: (name: string) => `Ajouter à ma ligue « ${name} »`,
+  },
+  moderation: {
+    title: "Ligues signalées",
+    subtitle:
+      "Les ligues publiques signalées par les joueurs. Renomme ou supprime ; chaque action est notée dans l'historique.",
+    empty: "Aucune ligue signalée pour le moment.",
+    reports: (n: number) => `${n} ${n <= 1 ? "signalement" : "signalements"}`,
+    members: (n: number) => `${n} ${n <= 1 ? "membre" : "membres"}`,
+    renameLabel: (name: string) => `Nouveau nom pour ${name}`,
+    rename: "Renommer",
+    renaming: "…",
+    remove: "Supprimer la ligue",
+    removing: "Suppression…",
+    removeConfirm: "Je confirme la suppression de cette ligue et de ses membres",
+    done: "✓ C'est fait.",
   },
   errors: {
     EVENTS_UNAVAILABLE: "Impossible de charger les épreuves pour le moment.",

@@ -9,7 +9,7 @@ import {
 } from "@/application/leagues";
 import { getLeagueRanking } from "@/application/rankings";
 import { ErrorNotice } from "@/components/error-notice";
-import { JoinPublicLeagueForm } from "@/components/leagues/league-forms";
+import { JoinPublicLeagueForm, ReportLeagueForm } from "@/components/leagues/league-forms";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { buttonVariants } from "@/components/ui/button";
 import { PUBLIC_LEAGUE_MAX_MEMBERS } from "@/domain/league";
@@ -135,7 +135,10 @@ export default async function LeaguesPage() {
                         ].join(" · ")}
                       </span>
                     </span>
-                    <JoinPublicLeagueForm leagueId={league.id} name={league.name} />
+                    <span className="flex shrink-0 flex-col items-end">
+                      <JoinPublicLeagueForm leagueId={league.id} name={league.name} />
+                      <ReportLeagueForm leagueId={league.id} name={league.name} />
+                    </span>
                   </li>
                 ))}
               </ul>
