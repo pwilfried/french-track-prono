@@ -39,8 +39,8 @@ test("an admin builds the start list of a final of eight athletes in less than a
   await matches.first().click();
   await expect(page.locator("main").getByRole("alert")).toContainText("déjà au départ");
 
-  // Seven more athletes from the whole list.
-  await search.fill("");
+  // Seven more athletes: without a search only the 100 m runners show, so search everybody.
+  await search.fill("a");
   const chosen = page.getByRole("region", { name: /Au départ/ }).getByRole("listitem");
   for (let index = 0; (await chosen.count()) < 8; index++) {
     const match = matches.nth(index);
