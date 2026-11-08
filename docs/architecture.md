@@ -74,7 +74,7 @@ Numérotées pour la planification. F11 et F12 sont volontairement repoussées.
 | F15 | Cotes fixées par l'admin, « Autre athlète », perf pronostiquée par athlète, barème ajustable (v0.9) | Des choix plus fins, plus de suspense |
 | F16 | Page « Comment jouer » et premier prono guidé (v0.9) | Comprendre des règles plus riches |
 | F17 | Ligues publiques jusqu'à 200 joueurs, sans code, noms modérés, signalement (v0.7) | Jouer avec la communauté FrenchTrack |
-| F18 | Gestion des profils : pseudo, avatar, e-mail, club ; fiche minimale ; admin chercher, bloquer, supprimer (v0.10) | Un compte que le joueur maîtrise |
+| F18 | Gestion des profils : pseudo, avatar, e-mail, club, disciplines ; fiche minimale ; admin chercher, bloquer, supprimer (v0.10, `docs/decisions/profils.md`) | Un compte que le joueur maîtrise |
 
 Barème (modifiable en base) : 3 points par athlète à la bonne place, 1 point pour un athlète sur
 le podium mais à la mauvaise place, +3 pour un podium parfait, +2 de bonus coup de flair
