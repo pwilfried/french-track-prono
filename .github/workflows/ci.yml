@@ -147,7 +147,11 @@ jobs:
       - name: Build the app
         run: npm run build
 
+      # The pages follow the next competition by date; the tests create competitions of their own,
+      # so the journeys are pinned on the seeded Ultimate Championship.
       - name: End-to-end test
+        env:
+          COMPETITION_SLUG: ultimate-championship-2026
         run: npm run test:e2e
 
       - name: Keep the Playwright report on failure

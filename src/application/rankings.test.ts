@@ -24,8 +24,11 @@ const line = (
   eventId,
   eventStartsAt,
 });
-const ranking = (lines: RankingLine[]): RankingRepository => ({
-  competitionLines: async () => lines,
+const ranking = (
+  lines: RankingLine[],
+  byCompetition?: Record<string, RankingLine[]>,
+): RankingRepository => ({
+  competitionLines: async (slug) => byCompetition?.[slug] ?? lines,
 });
 const leagues = (members: LeagueMember[] | null): LeagueRepository => ({
   create: async () => Promise.reject(new Error("unused")),
@@ -74,11 +77,26 @@ describe("getLeagueRanking", () => {
     const result = await getLeagueRanking({
       ranking: ranking([line("ana", 12), line("stranger", 50)]),
       leagues: leagues([member("ana"), member("bob")]),
-    }).execute({ leagueId: "l1", competitionSlug: "c" });
+    }).execute({ leagueId: "l1", competitionSlugs: ["c"] });
 
     expect(result.map((p) => [p.rank, p.pseudo, p.points])).toEqual([
       [1, "ANA", 12],
       [2, "BOB", 0],
+    ]);
+  });
+
+  it("adds up the points of all the league's competitions", async () => {
+    const result = await getLeagueRanking({
+      ranking: ranking([], {
+        a: [line("ana", 12, false, "a1"), line("bob", 5, false, "a1")],
+        b: [line("bob", 10, false, "b1", "2026-12-01T19:00:00.000Z")],
+      }),
+      leagues: leagues([member("ana"), member("bob")]),
+    }).execute({ leagueId: "l1", competitionSlugs: ["a", "b"] });
+
+    expect(result.map((p) => [p.rank, p.pseudo, p.points])).toEqual([
+      [1, "BOB", 15],
+      [2, "ANA", 12],
     ]);
   });
 
@@ -90,12 +108,12 @@ describe("getLeagueRanking", () => {
       leagues: leagues(members),
     }).execute({
       leagueId: "l1",
-      competitionSlug: "c",
+      competitionSlugs: ["c"],
     });
     const seenByBob = await getLeagueRanking({
       ranking: ranking([...lines].reverse()),
       leagues: leagues([...members].reverse()),
-    }).execute({ leagueId: "l1", competitionSlug: "c" });
+    }).execute({ leagueId: "l1", competitionSlugs: ["c"] });
 
     expect(seenByBob).toEqual(seenByAna);
   });
@@ -104,7 +122,7 @@ describe("getLeagueRanking", () => {
     await expect(
       getLeagueRanking({ ranking: ranking([]), leagues: leagues(null) }).execute({
         leagueId: "l1",
-        competitionSlug: "c",
+        competitionSlugs: ["c"],
       }),
     ).rejects.toEqual(new UseCaseError("LEAGUE_NOT_FOUND"));
   });

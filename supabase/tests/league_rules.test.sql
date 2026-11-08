@@ -23,7 +23,7 @@ set local role authenticated;
 
 -- The owner creates a league ------------------------------------------------------------------
 select act_as('aaaa0000-0000-0000-0000-000000000001');
-insert into ctx select * from create_league('  Les Foulées  ', 'ultimate-championship-2026');
+insert into ctx select * from create_league('  Les Foulées  ', array['ultimate-championship-2026']);
 
 select matches((select code from ctx), '^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$',
   'the invite code has 6 easy-to-read characters');

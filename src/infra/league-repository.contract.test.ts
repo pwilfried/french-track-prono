@@ -1,5 +1,6 @@
 import { describe, it } from "vitest";
 
+import { sql } from "./contract/database";
 import { leagueRepositoryContract } from "./contract/league-repository.contract";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryLeagueStore, createSupabaseLeagueRepository } from "./index";
@@ -8,6 +9,7 @@ leagueRepositoryContract("in-memory fake", async () => {
   const store = createInMemoryLeagueStore();
   return {
     competitionSlug: "ultimate-championship-2026",
+    otherCompetitionSlug: "contract-league-other",
     newPlayer: async () => {
       const userId = crypto.randomUUID();
       return {
@@ -23,13 +25,19 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (url && key) {
-  leagueRepositoryContract("Supabase (local)", async () => ({
-    competitionSlug: "ultimate-championship-2026",
-    newPlayer: async () => {
-      const player = await signedInPlayer(url, key);
-      return { userId: player.userId, leagues: createSupabaseLeagueRepository(player.client) };
-    },
-  }));
+  leagueRepositoryContract("Supabase (local)", async () => {
+    sql(`insert into competitions (slug, name, starts_on, ends_on)
+      values ('contract-league-other', 'Test league other', current_date - 400, current_date - 400)
+      on conflict (slug) do nothing`);
+    return {
+      competitionSlug: "ultimate-championship-2026",
+      otherCompetitionSlug: "contract-league-other",
+      newPlayer: async () => {
+        const player = await signedInPlayer(url, key);
+        return { userId: player.userId, leagues: createSupabaseLeagueRepository(player.client) };
+      },
+    };
+  });
 } else {
   describe("Supabase league repository", () => {
     const message = "NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are not set";

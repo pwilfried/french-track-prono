@@ -7,14 +7,19 @@ export type LeaguePlayer = { userId: string; leagues: LeagueRepository };
 /** Contract of the LeagueRepository port, run against the in-memory fake AND Supabase. */
 export function leagueRepositoryContract(
   name: string,
-  setup: () => Promise<{ newPlayer: () => Promise<LeaguePlayer>; competitionSlug: string }>,
+  setup: () => Promise<{
+    newPlayer: () => Promise<LeaguePlayer>;
+    competitionSlug: string;
+    /** A second competition, for a league on several. */
+    otherCompetitionSlug: string;
+  }>,
 ) {
   describe(`LeagueRepository contract: ${name}`, () => {
     it("creates a league whose owner is the first member, with an easy invite code", async () => {
       const { newPlayer, competitionSlug } = await setup();
       const owner = await newPlayer();
 
-      const league = await owner.leagues.create("Les Foulées", competitionSlug);
+      const league = await owner.leagues.create("Les Foulées", [competitionSlug]);
 
       expect(league.inviteCode).toMatch(/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/);
       expect(await owner.leagues.listMine()).toEqual([
@@ -24,14 +29,26 @@ export function leagueRepositoryContract(
           inviteCode: league.inviteCode,
           ownerId: owner.userId,
           memberCount: 1,
+          competitionSlugs: [competitionSlug],
         },
       ]);
+    });
+
+    it("creates a league on several competitions", async () => {
+      const { newPlayer, competitionSlug, otherCompetitionSlug } = await setup();
+      const owner = await newPlayer();
+
+      const league = await owner.leagues.create("Deux", [otherCompetitionSlug, competitionSlug]);
+
+      const expected = [competitionSlug, otherCompetitionSlug].sort();
+      expect(league.competitionSlugs).toEqual(expected);
+      expect((await owner.leagues.listMine())[0]?.competitionSlugs).toEqual(expected);
     });
 
     it("lets a friend join with the code, once", async () => {
       const { newPlayer, competitionSlug } = await setup();
       const [owner, friend] = [await newPlayer(), await newPlayer()];
-      const league = await owner.leagues.create("Club", competitionSlug);
+      const league = await owner.leagues.create("Club", [competitionSlug]);
 
       expect(await friend.leagues.join(league.inviteCode)).toEqual({
         outcome: "joined",
@@ -57,7 +74,7 @@ export function leagueRepositoryContract(
     it("hides a league from a player who is not a member", async () => {
       const { newPlayer, competitionSlug } = await setup();
       const [owner, stranger] = [await newPlayer(), await newPlayer()];
-      const league = await owner.leagues.create("Privé", competitionSlug);
+      const league = await owner.leagues.create("Privé", [competitionSlug]);
 
       expect(await stranger.leagues.members(league.id)).toBeNull();
       expect(await stranger.leagues.listMine()).toEqual([]);
@@ -66,7 +83,7 @@ export function leagueRepositoryContract(
     it("asks the owner to hand the league over before leaving, then lets him go", async () => {
       const { newPlayer, competitionSlug } = await setup();
       const [owner, friend] = [await newPlayer(), await newPlayer()];
-      const league = await owner.leagues.create("Relais", competitionSlug);
+      const league = await owner.leagues.create("Relais", [competitionSlug]);
       await friend.leagues.join(league.inviteCode);
 
       expect(await owner.leagues.leave(league.id)).toBe("must_hand_over");
@@ -84,7 +101,7 @@ export function leagueRepositoryContract(
     it("deletes the league when its owner leaves alone", async () => {
       const { newPlayer, competitionSlug } = await setup();
       const owner = await newPlayer();
-      const league = await owner.leagues.create("Solo", competitionSlug);
+      const league = await owner.leagues.create("Solo", [competitionSlug]);
 
       expect(await owner.leagues.leave(league.id)).toBe("left");
 

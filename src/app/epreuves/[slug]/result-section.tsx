@@ -11,7 +11,7 @@ import {
   type CurrentUser,
 } from "@/infra";
 
-import { COMPETITION_SLUG } from "../../competition";
+import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
 import { pointsReasonLabels } from "../../points-labels";
 import { getSessionClient } from "../../session";
@@ -20,6 +20,7 @@ async function load(
   userId: string,
   eventId: string,
 ): Promise<{ mine: Prediction | null; points: MyEventPoints | null } | "error"> {
+  const competition = await currentCompetition();
   try {
     const client = await getSessionClient();
     const [mine, points] = await Promise.all([
@@ -29,7 +30,7 @@ async function load(
       }),
       getMyPoints({ points: createSupabasePointsRepository(client) }).execute({
         userId,
-        competitionSlug: COMPETITION_SLUG,
+        competitionSlug: competition.slug,
       }),
     ]);
     return { mine, points: points.events.find((e) => e.eventId === eventId) ?? null };

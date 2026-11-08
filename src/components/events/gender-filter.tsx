@@ -4,12 +4,20 @@ import { messages } from "@/app/messages.fr";
 import type { EventGender } from "@/domain/event";
 import { cn } from "@/lib/utils";
 
-const options: { value: EventGender | null; href: string; label: string }[] = [
-  { value: null, href: "/epreuves", label: messages.events.filters.all },
-  { value: "F", href: "/epreuves?genre=F", label: messages.events.filters.F },
-  { value: "M", href: "/epreuves?genre=M", label: messages.events.filters.M },
-  { value: "X", href: "/epreuves?genre=X", label: messages.events.filters.X },
+const options: { value: EventGender | null; label: string }[] = [
+  { value: null, label: messages.events.filters.all },
+  { value: "F", label: messages.events.filters.F },
+  { value: "M", label: messages.events.filters.M },
+  { value: "X", label: messages.events.filters.X },
 ];
+
+/** The list filtered on a category, in the competition shown (none: the next one). */
+const hrefOf = (gender: EventGender | null, competition?: string) => {
+  const query = new URLSearchParams();
+  if (competition) query.set("competition", competition);
+  if (gender) query.set("genre", gender);
+  return query.size ? `/epreuves?${query}` : "/epreuves";
+};
 
 /**
  * Filter by category: chips on phones, a side list with counts from md (Officiel boards 02).
@@ -18,9 +26,12 @@ const options: { value: EventGender | null; href: string; label: string }[] = [
 export function GenderFilter({
   selected,
   counts,
+  competition,
 }: {
   selected: EventGender | null;
   counts?: Record<"all" | EventGender, number>;
+  /** Kept in the links when the list shows a chosen competition. */
+  competition?: string;
 }) {
   return (
     <nav
@@ -37,7 +48,7 @@ export function GenderFilter({
           return (
             <li key={option.label}>
               <Link
-                href={option.href}
+                href={hrefOf(option.value, competition)}
                 aria-current={active ? "true" : undefined}
                 className={cn(
                   "inline-flex min-h-11 items-center gap-3 rounded-full px-5 text-sm font-semibold md:flex md:w-full md:justify-between md:rounded-xl md:px-3",

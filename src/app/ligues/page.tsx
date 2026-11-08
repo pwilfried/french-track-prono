@@ -7,7 +7,6 @@ import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { buttonVariants } from "@/components/ui/button";
 
-import { COMPETITION_SLUG, COMPETITION_TEXT } from "../competition";
 import { messages } from "../messages.fr";
 import { leaguePorts } from "./data";
 
@@ -23,7 +22,7 @@ export default async function LeaguesPage() {
       mine.map(async (league) => {
         const ranking = await getLeagueRanking(ports).execute({
           leagueId: league.id,
-          competitionSlug: COMPETITION_SLUG,
+          competitionSlugs: league.competitionSlugs,
         });
         return { league, rank: ranking.find((p) => p.userId === ports.userId)?.rank ?? null };
       }),
@@ -35,7 +34,7 @@ export default async function LeaguesPage() {
 
   return (
     <main id="main" className="flex flex-1 flex-col">
-      <LeagueHero title={messages.leagues.title} subtitle={COMPETITION_TEXT.name} />
+      <LeagueHero title={messages.leagues.title} subtitle={messages.leagues.listSubtitle} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-3 px-4 py-6">
         {rows === "error" ? (
           <ErrorNotice retryHref="/ligues" message={messages.errors.LEAGUES_UNAVAILABLE} />

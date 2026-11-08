@@ -8,6 +8,8 @@ export type League = {
   inviteCode: string;
   ownerId: string;
   memberCount: number;
+  /** The competitions whose points the league adds up. */
+  competitionSlugs: string[];
 };
 
 export type LeagueMember = { userId: string; pseudo: string; avatar: string };
@@ -23,7 +25,7 @@ export type JoinOutcome =
  * (the database functions check the rules), fake = in memory.
  */
 export interface LeagueRepository {
-  create(name: string, competitionSlug: string): Promise<League>;
+  create(name: string, competitionSlugs: string[]): Promise<League>;
   join(code: string): Promise<JoinOutcome>;
   /** The leagues the player is a member of. */
   listMine(): Promise<League[]>;
@@ -37,10 +39,12 @@ type Ports = { leagues: LeagueRepository };
 
 export function createLeague(ports: Ports) {
   return {
-    async execute(input: { name: string; competitionSlug: string }): Promise<League> {
+    async execute(input: { name: string; competitionSlugs: string[] }): Promise<League> {
       const name = validateLeagueName(input.name);
       if (!name.ok) throw new UseCaseError(name.code);
-      return ports.leagues.create(name.name, input.competitionSlug);
+      const competitions = [...new Set(input.competitionSlugs)];
+      if (competitions.length === 0) throw new UseCaseError("LEAGUE_NO_COMPETITION");
+      return ports.leagues.create(name.name, competitions);
     },
   };
 }

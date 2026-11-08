@@ -22,8 +22,8 @@ set local role authenticated;
 
 -- The leaving player owns two leagues: one shared with two friends, one alone.
 select act_as('dddd0000-0000-0000-0000-000000000001');
-insert into ctx (shared, code) select league_id, invite_code from create_league('Partagée', 'ultimate-championship-2026');
-update ctx set alone = (select league_id from create_league('Solo', 'ultimate-championship-2026'));
+insert into ctx (shared, code) select league_id, invite_code from create_league('Partagée', array['ultimate-championship-2026']);
+update ctx set alone = (select league_id from create_league('Solo', array['ultimate-championship-2026']));
 select act_as('dddd0000-0000-0000-0000-000000000002');
 select join_league((select code from ctx));
 select act_as('dddd0000-0000-0000-0000-000000000003');

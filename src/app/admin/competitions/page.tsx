@@ -34,9 +34,7 @@ function CompetitionCard({ c, featured }: { c: CompetitionSummary; featured: boo
       </span>
       <span className="font-display text-xl font-extrabold">{c.name}</span>
       <span className="text-sm text-muted-foreground">
-        {[c.city, messages.adminCompetitions.dates(c.startsOn, c.endsOn)]
-          .filter(Boolean)
-          .join(" · ")}
+        {[c.city, messages.competition.dates(c.startsOn, c.endsOn)].filter(Boolean).join(" · ")}
       </span>
       <span className="grid grid-cols-2 gap-1.5 text-center">
         <span className="rounded-xl bg-background py-2">

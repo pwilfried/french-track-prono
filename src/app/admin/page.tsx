@@ -12,7 +12,7 @@ import {
   createSupabasePointsRepository,
 } from "@/infra";
 
-import { COMPETITION_SLUG, COMPETITION_TEXT, COMPETITION_TIME_ZONE } from "../competition";
+import { currentCompetition } from "../competition";
 import { messages } from "../messages.fr";
 import { adminOnly } from "./guard";
 
@@ -26,13 +26,14 @@ const tagStyle: Record<State, string> = {
 };
 
 async function load(client: Awaited<ReturnType<typeof adminOnly>>["client"]) {
+  const competition = await currentCompetition();
   try {
     const [events, progress] = await Promise.all([
       listEvents({ events: createSupabaseEventReader(createPublicSupabaseClient()) }).execute({
-        competitionSlug: COMPETITION_SLUG,
+        competitionSlug: competition.slug,
         withRounds: true,
       }),
-      createSupabasePointsRepository(client).progress(COMPETITION_SLUG),
+      createSupabasePointsRepository(client).progress(competition.slug),
     ]);
     return { events, progress };
   } catch (error) {
@@ -46,6 +47,7 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{ etat?: string }>;
 }) {
+  const competition = await currentCompetition();
   const { client } = await adminOnly();
   const loaded = await load(client);
   const { etat } = await searchParams;
@@ -70,7 +72,7 @@ export default async function AdminPage({
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: COMPETITION_TIME_ZONE,
+    timeZone: competition.timeZone,
   });
 
   return (
@@ -87,7 +89,7 @@ export default async function AdminPage({
             {messages.admin.title}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {messages.admin.subtitle(COMPETITION_TEXT.name, locked.length)}
+            {messages.admin.subtitle(competition.name, locked.length)}
           </p>
           <Link
             href="/admin/competitions"

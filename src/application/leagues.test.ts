@@ -18,16 +18,20 @@ const league = (id: string, name: string): League => ({
   inviteCode: "K7M2QX",
   ownerId: "me",
   memberCount: 1,
+  competitionSlugs: ["c"],
 });
 
 function repository(
   overrides: Partial<LeagueRepository> = {},
-): LeagueRepository & { created: string[] } {
+): LeagueRepository & { created: string[]; competitions: string[][] } {
   const created: string[] = [];
+  const competitions: string[][] = [];
   return {
     created,
-    create: async (name) => {
+    competitions,
+    create: async (name, slugs) => {
       created.push(name);
+      competitions.push(slugs);
       return league("new", name);
     },
     join: async () => ({ outcome: "joined", leagueId: "l1" }),
@@ -54,18 +58,35 @@ describe("createLeague", () => {
 
     const created = await createLeague({ leagues }).execute({
       name: "  Les   Foulées ",
-      competitionSlug: "c",
+      competitionSlugs: ["c"],
     });
 
     expect(created.name).toBe("Les Foulées");
     expect(leagues.created).toEqual(["Les Foulées"]);
   });
 
+  it("creates a league on several competitions, each counted once", async () => {
+    const leagues = repository();
+
+    await createLeague({ leagues }).execute({ name: "Potes", competitionSlugs: ["a", "b", "a"] });
+
+    expect(leagues.competitions).toEqual([["a", "b"]]);
+  });
+
+  it("refuses a league without competition with LEAGUE_NO_COMPETITION", async () => {
+    const leagues = repository();
+
+    expect(
+      await codeOf(createLeague({ leagues }).execute({ name: "Potes", competitionSlugs: [] })),
+    ).toBe("LEAGUE_NO_COMPETITION");
+    expect(leagues.created).toEqual([]);
+  });
+
   it("refuses an invalid name with LEAGUE_NAME_INVALID, without creating anything", async () => {
     const leagues = repository();
 
     expect(
-      await codeOf(createLeague({ leagues }).execute({ name: "A", competitionSlug: "c" })),
+      await codeOf(createLeague({ leagues }).execute({ name: "A", competitionSlugs: ["c"] })),
     ).toBe("LEAGUE_NAME_INVALID");
     expect(leagues.created).toEqual([]);
   });

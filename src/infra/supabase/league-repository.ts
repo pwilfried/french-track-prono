@@ -9,6 +9,7 @@ type LeagueRow = {
   invite_code: string;
   owner_id: string;
   league_members: { count: number }[];
+  league_competitions: { competitions: { slug: string } | null }[];
 };
 
 const fail = (): never => {
@@ -21,7 +22,7 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
     // Row level security only shows the leagues the player is a member of.
     const { data, error } = await client
       .from("leagues")
-      .select("id, name, invite_code, owner_id, league_members(count)")
+      .select("id, name, invite_code, owner_id, league_members(count), league_competitions(competitions(slug))")
       .returns<LeagueRow[]>();
     if (error) fail();
     return data!.map((row) => ({
@@ -30,22 +31,32 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       inviteCode: row.invite_code,
       ownerId: row.owner_id,
       memberCount: row.league_members[0]?.count ?? 0,
+      competitionSlugs: row.league_competitions
+        .flatMap((lc) => (lc.competitions ? [lc.competitions.slug] : []))
+        .sort(),
     }));
   };
 
   return {
     listMine,
 
-    async create(name, competitionSlug) {
+    async create(name, competitionSlugs) {
       const { data, error } = await client.rpc("create_league", {
         p_name: name,
-        p_competition_slug: competitionSlug,
+        p_competition_slugs: competitionSlugs,
       });
       const row = (data as { league_id: string; invite_code: string }[] | null)?.[0];
       if (error || !row) return fail();
       const { data: user } = await client.auth.getUser();
       if (!user.user) return fail();
-      return { id: row.league_id, name, inviteCode: row.invite_code, ownerId: user.user.id, memberCount: 1 };
+      return {
+        id: row.league_id,
+        name,
+        inviteCode: row.invite_code,
+        ownerId: user.user.id,
+        memberCount: 1,
+        competitionSlugs: [...new Set(competitionSlugs)].sort(),
+      };
     },
 
     async join(code) {

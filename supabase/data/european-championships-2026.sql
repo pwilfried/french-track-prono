@@ -17,10 +17,10 @@
 
 begin;
 
-insert into competitions (slug, name, city, country_code, starts_on, ends_on, level, status)
+insert into competitions (slug, name, city, country_code, starts_on, ends_on, level, status, scope, time_zone)
 values ('european-championships-2026', 'Championnats d''Europe d''athlétisme', 'Birmingham', 'GBR',
-        '2026-11-23', '2026-11-29', 'championnat', 'upcoming')
-on conflict (slug) do nothing;
+        '2026-11-23', '2026-11-29', 'championnat', 'upcoming', 'international', 'Europe/London')
+on conflict (slug) do update set time_zone = excluded.time_zone;
 
 -- ---------- Events (local time in Birmingham) ----------
 insert into events (competition_id, slug, discipline, gender, starts_at, lock_at, is_featured, status)
