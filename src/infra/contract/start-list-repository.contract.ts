@@ -14,7 +14,7 @@ export type StartListWorld = {
   gender: EventGender;
   candidateId: string;
   markInUse: (athleteId: string) => void;
-  /** Makes the event a round leading to a new event, ranks its first two athletes 1 and 2. */
+  /** Makes the event a round leading to a new event, ranks its first three athletes 1 to 3. */
   makeRound: () => Promise<string>;
   admin: StartListRepository;
   player: StartListRepository;
@@ -71,6 +71,28 @@ export function startListRepositoryContract(name: string, world: () => Promise<S
       ).toBe("athlete_in_use");
 
       expect((await w.admin.find(w.eventId)).sort(byId)).toEqual(before);
+    });
+
+    it("lets an admin add an athlete, who becomes a candidate, and refuses a player", async () => {
+      const w = await world();
+      const tag = crypto.randomUUID().slice(0, 8);
+      const athlete = {
+        name: `Inventée ${tag}`,
+        countryCode: "FRA",
+        gender: w.gender,
+        slug: `inventee-${tag}`,
+      };
+
+      expect(await w.player.createAthlete(athlete)).toBe("not_admin");
+      const created = await w.admin.createAthlete(athlete);
+
+      expect(created).not.toBe("not_admin");
+      const candidates = await w.admin.candidates(w.gender);
+      expect(candidates).toContainEqual({
+        athleteId: (created as { athleteId: string }).athleteId,
+        name: athlete.name,
+        countryCode: "FRA",
+      });
     });
 
     it("qualifies the first of a round for the next one, and refuses a round leading nowhere", async () => {

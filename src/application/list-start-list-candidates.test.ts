@@ -10,6 +10,7 @@ describe("listStartListCandidates", () => {
       candidates: async (gender) => (gender === "F" ? women : []),
       find: async () => [],
       replace: async () => "saved",
+      createAthlete: async () => "not_admin",
       promote: async () => "not_admin",
     };
 

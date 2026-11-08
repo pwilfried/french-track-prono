@@ -10,6 +10,7 @@ const repository = (outcome: Awaited<ReturnType<StartListRepository["promote"]>>
     candidates: async () => [],
     find: async () => [],
     replace: async () => "saved",
+    createAthlete: async () => "not_admin",
     promote: async (eventId, top) => {
       calls.push([eventId, top]);
       return outcome;
