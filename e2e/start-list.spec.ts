@@ -58,6 +58,10 @@ test("an admin builds the start list of a final of eight athletes in less than a
   await expect(page.getByRole("status")).toContainText("8 athlètes");
   expect(Date.now() - started).toBeLessThan(60_000);
 
+  // An admin only sees the back-office: back to a player to look at the public pages.
+  sql(
+    `update profiles set is_admin = false where id = (select id from auth.users where email = '${player.email}')`,
+  );
   // Players see the start list on the event page.
   // The loading skeleton is a second <main> for a moment: look for the name itself.
   await page.goto(`/epreuves/${slug}`);

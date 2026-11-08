@@ -10,22 +10,18 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   await page.locator("main").getByRole("link", { name: "Se connecter", exact: true }).click();
   await signUp(page, player);
   await page.waitForURL(/\/epreuves\/f-100m$/);
-  await page.goto("/profil");
-  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Back-office" })).toHaveCount(0);
   sql(
     `update profiles set is_admin = true where id = (select id from auth.users where email = '${player.email}')`,
   );
 
-  // The back-office opens from the profile page.
-  await page.goto("/profil");
-  await page.getByRole("link", { name: "Back-office" }).click();
+  // An admin only sees the back-office: the home page leads there.
+  await page.goto("/");
   await expect(page).toHaveURL(/\/admin\/competitions$/);
   // Every section of the back-office is one tap away, as on the board.
   await expect(
     page.getByRole("navigation", { name: "Sections du back-office" }).getByRole("link"),
   ).toHaveCount(6);
-  // Only the admin interface: no player navigation, and a way out (#295).
+  // Only the admin interface: no player navigation, and a way out.
   await expect(page.getByRole("navigation", { name: "Navigation principale" })).toHaveCount(0);
   await page.getByRole("link", { name: "Barème" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Barème");
@@ -40,8 +36,9 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   await field.locator("xpath=ancestor::form").getByRole("button", { name: "Enregistrer" }).click();
   await expect(page.locator("main").getByRole("alert")).toContainText("nombre positif");
 
-  await page.getByRole("link", { name: "Quitter le back-office" }).click();
-  await expect(page).toHaveURL(/\/profil$/);
+  await page.getByRole("button", { name: "Se déconnecter" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Choisis ta compétition");
 
   sql(`update scoring_rules set value = ${before} where key = 'mark_exact'`);
 });

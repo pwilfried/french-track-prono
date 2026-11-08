@@ -83,19 +83,21 @@ export function ActionNotice({ saved, error }: { saved: boolean; error: string |
   ) : null;
 }
 
-/** Top of every back-office page: the red band, with the way back to the player's app. */
+/** Top of every back-office page: the red band, with signing out (an admin only sees the back-office). */
 export function AdminBand() {
   return (
     <div className="flex items-center justify-between gap-3 bg-primary px-4 text-primary-foreground">
       <p className="py-1 text-[11px] font-extrabold uppercase tracking-[0.14em]">
         {messages.admin.band}
       </p>
-      <Link
-        href="/profil"
-        className="inline-flex min-h-11 items-center text-sm font-bold underline"
-      >
-        {messages.admin.leave}
-      </Link>
+      <form action="/auth/sign-out" method="post">
+        <button
+          type="submit"
+          className="inline-flex min-h-11 items-center text-sm font-bold underline"
+        >
+          {messages.admin.signOut}
+        </button>
+      </form>
     </div>
   );
 }
