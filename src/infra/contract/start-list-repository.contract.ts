@@ -92,11 +92,12 @@ export function startListRepositoryContract(name: string, world: () => Promise<S
       const created = await w.admin.createAthlete(athlete);
 
       expect(created).not.toBe("not_admin");
-      const candidates = await w.admin.candidates(w.gender);
+      const candidates = await w.admin.candidates(w.gender, w.discipline);
       expect(candidates).toContainEqual({
         athleteId: (created as { athleteId: string }).athleteId,
         name: athlete.name,
         countryCode: "FRA",
+        fit: "other",
       });
     });
   });
