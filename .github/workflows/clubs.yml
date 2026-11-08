@@ -1,0 +1,26 @@
+name: Clubs import
+
+# Spike #337: lists the athletics clubs found by the State's company API, kept as an artifact.
+# Run by hand from the Actions tab.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    name: Fetch the athletics clubs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Fetch
+        run: node scripts/clubs/fetch.mjs clubs.csv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clubs
+          path: clubs.csv
