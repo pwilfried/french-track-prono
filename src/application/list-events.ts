@@ -4,17 +4,21 @@ import { compareEvents, type EventDetail, type EventSummary } from "@/domain/eve
 export interface EventReader {
   /** Events of a competition, in any order. An unknown competition gives an empty list. */
   listByCompetition(competitionSlug: string): Promise<EventSummary[]>;
-  /** One event with its start list and results, or null when the competition or event is unknown. */
-  findBySlug(competitionSlug: string, eventSlug: string): Promise<EventDetail | null>;
+  /**
+   * One event with its start list and results, or null when the competition or event is unknown.
+   * A null competition looks in every competition (event slugs are unique).
+   */
+  findBySlug(competitionSlug: string | null, eventSlug: string): Promise<EventDetail | null>;
 }
 
-export type ListEventsInput = { competitionSlug: string };
+/** `withRounds`: heats and semi-finals too (back-office); players see finals only. */
+export type ListEventsInput = { competitionSlug: string; withRounds?: boolean };
 
 export function listEvents(ports: { events: EventReader }) {
   return {
     async execute(input: ListEventsInput): Promise<EventSummary[]> {
       const events = await ports.events.listByCompetition(input.competitionSlug);
-      return [...events].sort(compareEvents);
+      return events.filter((e) => input.withRounds || e.round === "final").sort(compareEvents);
     },
   };
 }

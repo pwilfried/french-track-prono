@@ -1,20 +1,13 @@
-import { createClient } from "@supabase/supabase-js";
 import { describe, it } from "vitest";
 
-import { latestCodeFromMailbox } from "./contract/mailbox";
 import {
   predictionRepositoryContract,
   type EventFixture,
   type PredictionWorld,
 } from "./contract/prediction-repository.contract";
-import {
-  createInMemoryPredictionRepository,
-  createPublicSupabaseClient,
-  createSupabaseEventReader,
-  createSupabasePredictionRepository,
-} from "./index";
-
-const COMPETITION = "ultimate-championship-2026";
+import { createTestCompetition, sql } from "./contract/database";
+import { signedInPlayer } from "./contract/test-player";
+import { createInMemoryPredictionRepository, createSupabasePredictionRepository } from "./index";
 
 function fakeWorld(): PredictionWorld {
   const athletes = ["a1", "a2", "a3", "a4"];
@@ -24,6 +17,7 @@ function fakeWorld(): PredictionWorld {
     { id: "open-1", competitionSlug: "c", lockAt: future, athleteIds: athletes },
     { id: "open-2", competitionSlug: "c", lockAt: future, athleteIds: athletes },
     { id: "locked", competitionSlug: "c", lockAt: past, athleteIds: athletes },
+    { id: "semi", competitionSlug: "c", lockAt: future, athleteIds: athletes, predictable: false },
   ];
   const shared = createInMemoryPredictionRepository({ events: fixtures });
   const event = (id: string): EventFixture => ({
@@ -36,6 +30,7 @@ function fakeWorld(): PredictionWorld {
     newPlayer: async () => ({ userId: crypto.randomUUID(), predictions: shared }),
     openEvents: [event("open-1"), event("open-2")],
     lockedEvent: event("locked"),
+    semiFinal: event("semi"),
   };
 }
 
@@ -46,52 +41,26 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (url && key) {
-  /** Events of the local database, as the contract needs them: two open, one locked. */
+  /** A competition of its own: two open events and one locked event. */
   const realWorld = async (): Promise<PredictionWorld> => {
-    const reader = createSupabaseEventReader(createPublicSupabaseClient());
-    const summaries = await reader.listByCompetition(COMPETITION);
-    const now = Date.now();
-    const open = summaries.filter((e) => Date.parse(e.lockAt) > now);
-    const locked = summaries.find((e) => Date.parse(e.lockAt) <= now);
-    if (open.length < 2 || !locked) {
-      throw new Error(
-        "Needs two open events and one locked event: run `npm run db:open-events` first.",
-      );
-    }
-    const details = await Promise.all(
-      [open[0]!, open[1]!, locked].map((e) => reader.findBySlug(COMPETITION, e.slug)),
-    );
-    const all = details.map((d) => d!);
-    const fixture = (d: (typeof all)[number]): EventFixture => {
-      const ids = d.entries.map((e) => e.athleteId);
-      const outsider = all.flatMap((o) => o.entries).find((e) => !ids.includes(e.athleteId));
-      if (ids.length < 3 || !outsider)
-        throw new Error(`Event ${d.slug} cannot be used by the contract`);
-      return { eventId: d.id, athleteIds: ids, outsiderId: outsider.athleteId };
-    };
-    const [a, b, c] = all.map(fixture) as [EventFixture, EventFixture, EventFixture];
+    const { competitionSlug, events, outsiderId } = createTestCompetition({ open: 4, locked: 1 });
+    // The third open event becomes a semi-final leading to the fourth (a final nobody predicts).
+    sql(`update events set round = 'semi', parent_id = '${events[3]!.eventId}'
+      where id = '${events[2]!.eventId}'`);
+    const [a, b, semi, , c] = events.map((e) => ({
+      eventId: e.eventId,
+      athleteIds: e.athleteIds,
+      outsiderId,
+    })) as [EventFixture, EventFixture, EventFixture, EventFixture, EventFixture];
 
     const newPlayer = async () => {
-      const client = createClient(url, key, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
-      const email = `player-${crypto.randomUUID()}@example.test`;
-      await client.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
-      const token = await latestCodeFromMailbox(email);
-      const { data, error } = await client.auth.verifyOtp({ email, token, type: "email" });
-      if (error || !data.user)
-        throw new Error(`could not sign the test player in: ${error?.message}`);
-      // A prediction needs a profile (foreign key).
-      const profile = await client.from("profiles").insert({
-        id: data.user.id,
-        pseudo: `Joueur ${crypto.randomUUID().slice(0, 8)}`,
-        age_confirmed_at: new Date().toISOString(),
-      });
-      if (profile.error)
-        throw new Error(`could not create the test profile: ${profile.error.message}`);
-      return { userId: data.user.id, predictions: createSupabasePredictionRepository(client) };
+      const player = await signedInPlayer(url, key);
+      return {
+        userId: player.userId,
+        predictions: createSupabasePredictionRepository(player.client),
+      };
     };
-    return { competitionSlug: COMPETITION, newPlayer, openEvents: [a, b], lockedEvent: c };
+    return { competitionSlug, newPlayer, openEvents: [a, b], lockedEvent: c, semiFinal: semi };
   };
   predictionRepositoryContract("Supabase (local)", realWorld);
 } else {

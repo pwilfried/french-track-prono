@@ -3,7 +3,8 @@ import { compareResults, type EventDetail } from "@/domain/event";
 
 import type { EventReader } from "./list-events";
 
-export type GetEventInput = { competitionSlug: string; eventSlug: string };
+/** A null competition finds the event in any competition (the back-office). */
+export type GetEventInput = { competitionSlug: string | null; eventSlug: string };
 
 export function getEvent(ports: { events: EventReader }) {
   return {

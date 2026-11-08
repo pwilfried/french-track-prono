@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { EventDetail } from "@/domain/event";
 
+import { createTestCompetition, sql } from "./contract/database";
 import { eventReaderContract } from "./contract/event-reader.contract";
 import { createInMemoryEventReader, createSupabaseEventReader } from "./index";
 
@@ -18,8 +19,13 @@ const fixture: EventDetail[] = [
     lockAt: "2026-09-12T16:55:00.000Z",
     isFeatured: true,
     status: "finished",
-    entries: [{ athleteId: "a1", name: "A", countryCode: "FRA", seasonBest: null }],
-    results: [{ athleteId: "a1", name: "A", countryCode: "FRA", rank: 1, mark: "9.80" }],
+    round: "final",
+    entries: [{ athleteId: "a1", slug: "a1", name: "A", countryCode: "FRA", seasonBest: null }],
+    results: [
+      { athleteId: "a1", slug: "a1", name: "A", countryCode: "FRA", rank: 1, mark: "9.80" },
+    ],
+    subDisciplines: [],
+    previousRounds: [],
   },
   {
     id: "e2",
@@ -30,15 +36,33 @@ const fixture: EventDetail[] = [
     lockAt: "2026-09-11T16:55:00.000Z",
     isFeatured: false,
     status: "finished",
-    entries: [{ athleteId: "a1", name: "A", countryCode: "FRA", seasonBest: null }],
-    results: [{ athleteId: "a1", name: "A", countryCode: "FRA", rank: 1, mark: "9.80" }],
+    round: "final",
+    entries: [{ athleteId: "a1", slug: "a1", name: "A", countryCode: "FRA", seasonBest: null }],
+    results: [
+      { athleteId: "a1", slug: "a1", name: "A", countryCode: "FRA", rank: 1, mark: "9.80" },
+    ],
+    subDisciplines: [],
+    previousRounds: [],
   },
 ];
 
+const HEPTATHLON = ["100 m haies", "Hauteur", "Poids", "200 m", "Longueur", "Javelot", "800 m"];
+
 eventReaderContract(
   "in-memory fake",
-  () => createInMemoryEventReader({ [COMPETITION]: fixture }),
+  () =>
+    createInMemoryEventReader({
+      [COMPETITION]: fixture,
+      "test-combined": [
+        { ...fixture[1]!, id: "e3", slug: "f-heptathlon", subDisciplines: HEPTATHLON },
+      ],
+    }),
   COMPETITION,
+  () => ({
+    competitionSlug: "test-combined",
+    eventSlug: "f-heptathlon",
+    subDisciplines: HEPTATHLON,
+  }),
 );
 
 // The real adapter runs only when a local Supabase is configured (.env.local or CI).
@@ -48,7 +72,14 @@ const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 if (url && key) {
   const supabaseReader = () => createSupabaseEventReader(createClient(url, key));
 
-  eventReaderContract("Supabase (local)", supabaseReader, COMPETITION);
+  eventReaderContract("Supabase (local)", supabaseReader, COMPETITION, () => {
+    // A heptathlon in a competition of its own, so that the seed counts stay the same.
+    const { competitionSlug, events } = createTestCompetition({ open: 1 });
+    const array = HEPTATHLON.map((d) => `'${d}'`).join(",");
+    const eventSlug = sql(`update events set kind = 'combined', sub_disciplines = array[${array}]
+      where id = '${events[0]!.eventId}' returning slug`);
+    return { competitionSlug, eventSlug, subDisciplines: HEPTATHLON };
+  });
 
   describe("Supabase event reader on the seed", () => {
     it("returns the official podium of the men's 100 m in rank order", async () => {

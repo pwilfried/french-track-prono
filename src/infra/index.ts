@@ -17,10 +17,38 @@ export {
 } from "./supabase/session";
 export { createInMemoryResultStore, type ResultEventFixture } from "./in-memory/result-repository";
 export { createSupabaseResultRepository } from "./supabase/result-repository";
+export { createInMemoryLeagueStore } from "./in-memory/league-repository";
+export { createSupabaseLeagueRepository } from "./supabase/league-repository";
+export { createInMemoryRankingRepository } from "./in-memory/ranking-repository";
+export { createSupabaseRankingRepository } from "./supabase/ranking-repository";
 export { createInMemoryPointsStore } from "./in-memory/points-repository";
 export { createSupabasePointsRepository } from "./supabase/points-repository";
+export { createInMemoryRevealRepository } from "./in-memory/reveal-repository";
+export { createSupabaseRevealRepository } from "./supabase/reveal-repository";
+export { createInMemoryReactionRepository } from "./in-memory/reaction-repository";
+export { createSupabaseReactionRepository } from "./supabase/reaction-repository";
 export {
   createInMemoryPredictionRepository,
   type PredictionEventFixture,
 } from "./in-memory/prediction-repository";
 export { createSupabasePredictionRepository } from "./supabase/prediction-repository";
+export {
+  createInMemoryStartListStore,
+  type StartListAthleteFixture,
+} from "./in-memory/start-list-repository";
+export { createSupabaseStartListRepository } from "./supabase/start-list-repository";
+export { createInMemoryAdminLogStore } from "./in-memory/admin-log-repository";
+export { createSupabaseAdminLogRepository } from "./supabase/admin-log-repository";
+export { createInMemoryAthleteReader } from "./in-memory/athlete-reader";
+export { createSupabaseAthleteReader } from "./supabase/athlete-reader";
+export { createInMemoryDisciplineStore } from "./in-memory/discipline-repository";
+export { createSupabaseDisciplineRepository } from "./supabase/discipline-repository";
+export { createInMemoryAthleteAdminStore } from "./in-memory/athlete-admin-repository";
+export { createSupabaseAthleteAdminRepository } from "./supabase/athlete-admin-repository";
+export { createInMemoryCompetitionAdminStore } from "./in-memory/competition-admin-repository";
+export { createSupabaseCompetitionAdminRepository } from "./supabase/competition-admin-repository";
+export { createInMemoryOddsStore, type OddsEventFixture } from "./in-memory/odds-repository";
+export { createSupabaseOddsRepository } from "./supabase/odds-repository";
+export { createInMemoryScoringRuleStore } from "./in-memory/scoring-rule-repository";
+export { createSupabaseScoringRuleRepository } from "./supabase/scoring-rule-repository";
+export { createSupabaseCompetitionEditRepository } from "./supabase/competition-edit-repository";

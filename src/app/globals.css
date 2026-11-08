@@ -8,9 +8,10 @@
  * uses a darker rouge (#C42818, 5.4:1) in light mode and a lighter one (#FF6B5B) in dark mode.
  */
 :root {
-  --background: #f8f8f8;
+  /* Officiel direction (boards V1, 7 Nov 2026): cream page, beige cards, navy text. */
+  --background: #fdfbf5;
   --foreground: #052b5c;
-  --card: #ffffff;
+  --card: #f1ede1;
   --card-foreground: #052b5c;
   --primary: #e03020;
   --primary-foreground: #ffffff;
@@ -19,12 +20,12 @@
   --nuit: #052b5c;
   --secondary: #ffc857;
   --secondary-foreground: #052b5c;
-  --muted: #e9eef6;
+  --muted: #e7e1d1;
   --muted-foreground: #4a5a78;
   --accent-text: #c42818;
   --success: #2bb673;
-  --success-text: #15804f;
-  --border: #d3dcea;
+  --success-text: #0f6e42;
+  --border: #e0d9c6;
   --ring: #084595;
   --radius: 1.25rem;
   /* Countdown badge: orange from 1 h, red from 10 min before the lock (all pairs AA). */
@@ -34,6 +35,28 @@
   --countdown-very-soon-foreground: #ffffff;
   --countdown-locked: #4a5a78;
   --countdown-locked-foreground: #ffffff;
+  /* Points won (result card): white on green, AA in both themes. */
+  --win: #15804f;
+  --win-foreground: #ffffff;
+  /* Soft surfaces for status chips (chip-bg + chip-text), all pairs audited ≥ AA. */
+  --brand-soft: #d9e4f5;
+  --brand-ink: #082e66;
+  --primary-soft: #fbe3e1;
+  --primary-ink: #7a1a10;
+  --success-soft: #d7eedf;
+  --success-ink: #0f4d29;
+  --gold-soft: #fbeec6;
+  --gold-ink: #6e4a08;
+  /* Medal gradients for PodiumMedals. */
+  --medal-gold-from: #f7d672;
+  --medal-gold-to: #d99a22;
+  --medal-gold-ink: #3a2a05;
+  --medal-silver-from: #e6e8eb;
+  --medal-silver-to: #a9aeb5;
+  --medal-silver-ink: #1b1f26;
+  --medal-bronze-from: #d99464;
+  --medal-bronze-to: #8b4513;
+  --medal-bronze-ink: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -52,6 +75,16 @@
     --countdown-soon-foreground: #ffe3b0;
     --countdown-locked: #a9bbd8;
     --countdown-locked-foreground: #052b5c;
+    --win: #0f5c36;
+    --win-foreground: #ffffff;
+    --brand-soft: #16305e;
+    --brand-ink: #bfd4f3;
+    --primary-soft: #3d1210;
+    --primary-ink: #ffb4a9;
+    --success-soft: #0e2e1b;
+    --success-ink: #8ce4ac;
+    --gold-soft: #3a2a0b;
+    --gold-ink: #f7d37b;
   }
 }
 
@@ -80,9 +113,20 @@
   --color-countdown-locked: var(--countdown-locked);
   --color-countdown-locked-foreground: var(--countdown-locked-foreground);
   --color-ring: var(--ring);
+  --color-win: var(--win);
+  --color-win-foreground: var(--win-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-ink: var(--brand-ink);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-ink: var(--primary-ink);
+  --color-success-soft: var(--success-soft);
+  --color-success-ink: var(--success-ink);
+  --color-gold-soft: var(--gold-soft);
+  --color-gold-ink: var(--gold-ink);
   --radius-card: var(--radius);
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-bricolage), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 }
 
 body {

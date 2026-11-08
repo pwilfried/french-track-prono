@@ -1,0 +1,185 @@
+import Link from "next/link";
+
+import { UseCaseError } from "@/application/errors";
+import { listEvents } from "@/application/list-events";
+import { ErrorNotice } from "@/components/error-notice";
+import { eventPhase } from "@/domain/countdown";
+import type { EventSummary } from "@/domain/event";
+import { cn } from "@/lib/utils";
+import {
+  createPublicSupabaseClient,
+  createSupabaseEventReader,
+  createSupabasePointsRepository,
+} from "@/infra";
+
+import { currentCompetition } from "../competition";
+import { messages } from "../messages.fr";
+import { AdminShell } from "./competitions/admin-shell";
+import { adminOnly } from "./guard";
+
+type State = "open" | "todo" | "entered" | "scored";
+const STATES: State[] = ["open", "todo", "entered", "scored"];
+const tagStyle: Record<State, string> = {
+  open: "bg-brand-soft text-brand-ink",
+  todo: "bg-muted text-foreground",
+  entered: "bg-secondary/40 text-foreground",
+  scored: "bg-success/20 text-success-text",
+};
+
+async function load(client: Awaited<ReturnType<typeof adminOnly>>["client"]) {
+  const competition = await currentCompetition();
+  try {
+    const [events, progress] = await Promise.all([
+      listEvents({ events: createSupabaseEventReader(createPublicSupabaseClient()) }).execute({
+        competitionSlug: competition.slug,
+        withRounds: true,
+      }),
+      createSupabasePointsRepository(client).progress(competition.slug),
+    ]);
+    return { events, progress };
+  } catch (error) {
+    if (error instanceof UseCaseError) return "error" as const;
+    throw error;
+  }
+}
+
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ etat?: string }>;
+}) {
+  const { client } = await adminOnly();
+  const competition = await currentCompetition();
+  const loaded = await load(client);
+  const { etat } = await searchParams;
+  const wanted = STATES.find((s) => s === etat) ?? "todo";
+
+  const now = new Date();
+  const stateOf = (event: EventSummary): State =>
+    eventPhase(now, event.lockAt) === "open"
+      ? "open"
+      : loaded !== "error" && loaded.progress.scored.includes(event.id)
+        ? "scored"
+        : loaded !== "error" && loaded.progress.withResult.includes(event.id)
+          ? "entered"
+          : "todo";
+  const locked =
+    loaded === "error" ? [] : loaded.events.filter((e) => eventPhase(now, e.lockAt) === "locked");
+  const all = loaded === "error" ? [] : loaded.events;
+  const count = (state: State) => all.filter((e) => stateOf(e) === state).length;
+  const shown = all.filter((e) => stateOf(e) === wanted);
+  const time = new Intl.DateTimeFormat("fr-FR", {
+    weekday: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: competition.timeZone,
+  });
+
+  return (
+    <AdminShell title={messages.admin.title} section="results">
+      <p className="text-sm text-muted-foreground">
+        {messages.admin.subtitle(competition.name, locked.length)}
+      </p>
+      {loaded === "error" ? (
+        <ErrorNotice retryHref="/admin" message={messages.errors.POINTS_UNAVAILABLE} />
+      ) : (
+        <>
+          <ul aria-label={messages.admin.statsLabel} className="grid grid-cols-2 gap-2">
+            {[
+              {
+                value: count("open"),
+                label: messages.admin.stats.open,
+                href: "/admin?etat=open",
+              },
+              {
+                value: count("todo"),
+                label: messages.admin.stats.todo,
+                href: "/admin?etat=todo",
+              },
+              {
+                value: count("entered"),
+                label: messages.admin.stats.entered,
+                href: "/admin?etat=entered",
+              },
+              {
+                value: count("scored"),
+                label: messages.admin.stats.scored,
+                href: "/admin?etat=scored",
+              },
+            ].map((tile) => (
+              <li key={tile.label}>
+                <Link
+                  href={tile.href}
+                  className="block min-h-20 rounded-card border border-border bg-card p-3"
+                >
+                  <span className="block font-mono text-3xl font-bold tabular-nums">
+                    {tile.value}
+                  </span>
+                  <span className="block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    {tile.label}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <nav
+            aria-label={messages.admin.filters}
+            className="-mx-4 flex gap-2 overflow-x-auto px-4"
+          >
+            {STATES.map((state) => (
+              <Link
+                key={state}
+                href={`/admin?etat=${state}`}
+                aria-current={state === wanted ? "page" : undefined}
+                className={cn(
+                  "inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-4 font-semibold",
+                  state === wanted
+                    ? "bg-brand text-brand-foreground dark:bg-secondary dark:text-secondary-foreground"
+                    : "border border-border bg-background text-foreground",
+                )}
+              >
+                {messages.admin.filter[state](count(state))}
+              </Link>
+            ))}
+          </nav>
+          {shown.length === 0 ? (
+            <p className="rounded-card bg-muted p-4">{messages.admin.empty}</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {shown.map((event) => (
+                <li key={event.id}>
+                  <Link
+                    href={`/admin/${event.slug}`}
+                    className="flex min-h-16 items-center gap-3 rounded-card border border-border bg-card p-3.5"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block break-words font-bold">
+                        {event.discipline} {messages.events.gender[event.gender].toLowerCase()}
+                        {event.round !== "final" && ` · ${messages.rounds.name[event.round]}`}
+                      </span>
+                      <span className="block text-sm text-muted-foreground first-letter:uppercase">
+                        {time.format(new Date(event.startsAt))}
+                      </span>
+                    </span>
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-extrabold",
+                        tagStyle[stateOf(event)],
+                      )}
+                    >
+                      {messages.admin.state[stateOf(event)]}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
+            {messages.admin.lockedOnly}
+          </p>
+        </>
+      )}
+    </AdminShell>
+  );
+}

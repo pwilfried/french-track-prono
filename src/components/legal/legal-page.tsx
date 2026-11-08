@@ -13,7 +13,7 @@ export function LegalPage({
   sections: readonly Section[];
 }) {
   return (
-    <main className="flex flex-1 flex-col">
+    <main id="main" className="flex flex-1 flex-col">
       <AccountHero title={title} subtitle={subtitle} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-6">
         {sections.map((section) => (

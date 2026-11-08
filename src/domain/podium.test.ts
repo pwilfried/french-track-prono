@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import type { ResultLine } from "./event";
-import { initialsOf, podiumSteps } from "./podium";
+import { podiumSteps, predictionVsOfficial } from "./podium";
 
 const line = (name: string, rank: number): ResultLine => ({
   athleteId: name,
+  slug: name,
   name,
   countryCode: "FRA",
   rank,
@@ -45,20 +46,23 @@ describe("podiumSteps", () => {
   });
 });
 
-describe("initialsOf", () => {
-  it("takes the first letter of the first and last words", () => {
-    expect(initialsOf("Kenny Bednarek")).toBe("KB");
+describe("predictionVsOfficial", () => {
+  const results = [
+    { athleteId: "a", rank: 1 },
+    { athleteId: "b", rank: 2 },
+    { athleteId: "c", rank: 3 },
+    { athleteId: "d", rank: 3 },
+  ];
+
+  it("says exact, on the podium or off for each slot", () => {
+    expect(
+      predictionVsOfficial({ first: "a", second: "c", third: "z" }, results).map((r) => r.outcome),
+    ).toEqual(["exact", "on_podium", "off"]);
   });
 
-  it("uses a single letter for a one-word name", () => {
-    expect(initialsOf("Duplantis")).toBe("D");
-  });
-
-  it("ignores extra spaces and middle names", () => {
-    expect(initialsOf("  Anna  Maria  Lopez ")).toBe("AL");
-  });
-
-  it("uppercases the letters", () => {
-    expect(initialsOf("jean dupont")).toBe("JD");
+  it("counts a tied athlete as exact on the shared place", () => {
+    expect(predictionVsOfficial({ first: "b", second: "a", third: "d" }, results)[2]!.outcome).toBe(
+      "exact",
+    );
   });
 });

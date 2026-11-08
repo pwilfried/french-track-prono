@@ -11,6 +11,7 @@ const event = (slug: string, startsAt: string): EventSummary => ({
   lockAt: startsAt,
   isFeatured: false,
   status: "finished",
+  round: "final",
 });
 
 describe("compareEvents", () => {
@@ -32,6 +33,7 @@ describe("compareEvents", () => {
 
 const line = (name: string, rank: number): ResultLine => ({
   athleteId: name,
+  slug: name,
   name,
   countryCode: "FRA",
   rank,

@@ -25,6 +25,7 @@ function repository(event: EventToScore | null, outcome: "saved" | "not_admin" =
   const stored = new Map<string, ScoreLine[]>();
   const points: PointsRepository = {
     loadEvent: async () => event,
+    progress: async () => ({ withResult: [], scored: [] }),
     findEventScores: async (eventId) => stored.get(eventId) ?? [],
     listMine: async () => [],
     replaceEventScores: async (eventId, lines) => {
@@ -73,6 +74,34 @@ describe("computeEventPoints", () => {
       ["cleo", 0],
     ]);
     expect(lines[0]!.reasons).toContainEqual({ kind: "joker" });
+  });
+
+  it("previews the points without storing them in a dry run", async () => {
+    const { points, stored } = repository(scoredEvent());
+
+    const lines = await computeEventPoints({ points, now: () => NOW }).execute({
+      eventId: "e1",
+      dryRun: true,
+    });
+
+    expect(lines.map((l) => l.points)).toEqual([24, 4, 0]);
+    expect(stored.has("e1")).toBe(false);
+  });
+
+  it("refuses a podium of two ranks with RESULT_INCOMPLETE, and stores nothing", async () => {
+    const { points, stored } = repository(
+      scoredEvent({
+        results: [
+          { athleteId: "A", rank: 1 },
+          { athleteId: "B", rank: 2 },
+        ],
+      }),
+    );
+
+    expect(
+      await codeOf(computeEventPoints({ points, now: () => NOW }).execute({ eventId: "e1" })),
+    ).toBe("RESULT_INCOMPLETE");
+    expect(stored.has("e1")).toBe(false);
   });
 
   it("gives the same points when run twice, without duplicates (S12)", async () => {
@@ -128,5 +157,41 @@ describe("computeEventPoints", () => {
     expect(
       await codeOf(computeEventPoints({ points, now: () => NOW }).execute({ eventId: "e1" })),
     ).toBe("NOT_ADMIN");
+  });
+});
+
+describe("computeEventPoints with odds and marks", () => {
+  it("adds the odds and the marks of each player to his points", async () => {
+    const { points } = repository(
+      scoredEvent({
+        results: [
+          { athleteId: "A", rank: 1, markValue: 10.79 },
+          { athleteId: "B", rank: 2, markValue: 10.87 },
+          { athleteId: "C", rank: 3, markValue: 10.9 },
+        ],
+        predictions: [
+          { ...pick("anna", "A", "B", "C"), marks: { first: 10.8, second: null, third: null } },
+        ],
+        bets: {
+          odds: {
+            proposed: [
+              { athleteId: "A", odds: 2 },
+              { athleteId: "B", odds: 3 },
+              { athleteId: "C", odds: 4 },
+            ],
+            other: 9,
+          },
+          tolerance: 0.05,
+        },
+      }),
+    );
+
+    const [anna] = await computeEventPoints({ points, now: () => NOW }).execute({
+      eventId: "e1",
+      dryRun: true,
+    });
+
+    // Perfect podium 12, odds (2 + 3 + 4) × 3 = 27, mark +5.
+    expect(anna?.points).toBe(44);
   });
 });

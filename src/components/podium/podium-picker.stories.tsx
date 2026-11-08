@@ -2,11 +2,13 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, userEvent, within } from "storybook/test";
 
 import type { Entry } from "@/domain/event";
+import { OTHER_ATHLETE } from "@/domain/podium-draft";
 
-import { PodiumPicker } from "./podium-picker";
+import { PodiumPicker, type PickerAthlete } from "./podium-picker";
 
 const entry = (athleteId: string, name: string, countryCode: string): Entry => ({
   athleteId,
+  slug: athleteId,
   name,
   countryCode,
   seasonBest: null,
@@ -128,5 +130,36 @@ export const Disabled: Story = {
   args: { initialDraft: { first: "lena", second: "ines", third: "mateo" }, disabled: true },
   play: async ({ canvasElement }) => {
     await expect(athlete(canvasElement, "Kofi Mensah")).toBeDisabled();
+  },
+};
+
+// With odds: five proposed athletes (favourite first), their PR and SB, and « autre athlète ».
+const withOdds: PickerAthlete[] = [
+  { ...athletes[0]!, odds: 1.8, personalBest: "10.98", seasonBest: "11.04" },
+  { ...athletes[1]!, odds: 2.5, personalBest: "11.02", seasonBest: "11.10" },
+  { ...athletes[2]!, odds: 3, personalBest: "11.15", seasonBest: null },
+  { ...athletes[3]!, odds: 4, personalBest: null, seasonBest: "11.31" },
+  { ...athletes[4]!, odds: 5, personalBest: "11.31", seasonBest: "11.35" },
+  {
+    athleteId: OTHER_ATHLETE,
+    slug: OTHER_ATHLETE,
+    name: "Autre athlète",
+    countryCode: "",
+    seasonBest: null,
+    odds: 8,
+    personalBest: null,
+  },
+];
+
+/** With odds: « autre athlète » takes a place like an athlete, and only one. */
+export const WithOdds: Story = {
+  args: { athletes: withOdds },
+  play: async ({ canvasElement }) => {
+    await expect(athlete(canvasElement, "Lena Okoro")).toHaveAccessibleName(/cote 1,80$/);
+    await userEvent.click(athlete(canvasElement, "Autre athlète"));
+    await userEvent.click(athlete(canvasElement, "Lena Okoro"));
+    await expect(step(canvasElement, "1re")).toHaveAccessibleName("1re place : Autre athlète");
+    await expect(step(canvasElement, "2e")).toHaveAccessibleName("2e place : Lena Okoro");
+    await expect(within(canvasElement).getByText("×8,00")).toBeVisible();
   },
 };

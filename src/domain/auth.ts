@@ -14,9 +14,12 @@ export function validateEmail(input: string): EmailResult {
   return { ok: true, email };
 }
 
-/** The sign-in code is six digits; spaces and hyphens typed or pasted with it are ignored. */
+/**
+ * The sign-in code is 6 to 10 digits (Supabase lets each project choose its length); spaces and
+ * hyphens typed or pasted with it are ignored.
+ */
 export function validateCode(input: string): CodeResult {
   const code = input.replace(/[\s-]/g, "");
-  if (!/^\d{6}$/.test(code)) return { ok: false, code: "CODE_INVALID" };
+  if (!/^\d{6,10}$/.test(code)) return { ok: false, code: "CODE_INVALID" };
   return { ok: true, code };
 }

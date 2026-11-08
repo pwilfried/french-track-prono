@@ -10,13 +10,27 @@ export function podiumSteps(results: ResultLine[]): PodiumStep[] {
   }));
 }
 
-/** Initials for an avatar: first letter of the first and of the last word. */
-export function initialsOf(name: string): string {
-  const words = name.split(/\s+/).filter(Boolean);
-  const first = words[0];
-  const last = words.length > 1 ? words[words.length - 1] : undefined;
-  return [first, last]
-    .filter((word): word is string => Boolean(word))
-    .map((word) => word.charAt(0).toUpperCase())
-    .join("");
+export type SlotOutcome = "exact" | "on_podium" | "off";
+
+/**
+ * My podium against the official one, slot by slot: exact place (a tie shares the place), on the
+ * podium but elsewhere, or off the podium. Same rule as the scoring.
+ */
+export function predictionVsOfficial(
+  podium: { first: string; second: string; third: string },
+  results: { athleteId: string; rank: number }[],
+): { slot: 1 | 2 | 3; athleteId: string; outcome: SlotOutcome }[] {
+  const rankOf = (id: string) => results.find((r) => r.athleteId === id)?.rank;
+  return (
+    [
+      [1, podium.first],
+      [2, podium.second],
+      [3, podium.third],
+    ] as const
+  ).map(([slot, athleteId]) => {
+    const rank = rankOf(athleteId);
+    const outcome: SlotOutcome =
+      rank === slot ? "exact" : rank !== undefined && rank <= 3 ? "on_podium" : "off";
+    return { slot, athleteId, outcome };
+  });
 }

@@ -61,7 +61,10 @@ select is(
   'Anna',
   'a user cannot change another profile');
 
-select is((select count(*) from profiles), 2::bigint, 'signed-in players can see the profiles');
+select is(
+  (select count(*) from profiles
+   where id in ('aaaaaaaa-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000002')),
+  2::bigint, 'signed-in players can see the profiles');
 
 -- Anonymous visitor ----------------------------------------------------------
 set local role anon;

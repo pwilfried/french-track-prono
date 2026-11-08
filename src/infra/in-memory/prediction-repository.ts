@@ -1,4 +1,5 @@
 import { eventPhase } from "@/domain/countdown";
+import { OTHER_ATHLETE } from "@/domain/podium-draft";
 import type { Prediction, PredictionRepository } from "@/application/save-prediction";
 
 /** What the fake needs to know about an event to apply the same rules as the database. */
@@ -7,6 +8,10 @@ export type PredictionEventFixture = {
   competitionSlug: string;
   lockAt: string;
   athleteIds: string[];
+  /** False for a heat, or a final whose earlier rounds are not finished. Default: true. */
+  predictable?: boolean;
+  /** With odds: the proposed athletes; the player may also put « autre athlète » on one place. */
+  proposed?: string[];
 };
 
 /**
@@ -36,10 +41,14 @@ export function createInMemoryPredictionRepository(options: {
       const event = options.events.find((e) => e.id === prediction.eventId);
       if (!event) throw new Error(`unknown event ${prediction.eventId}`);
       if (eventPhase(now(), event.lockAt) === "locked") return "locked";
+      if (event.predictable === false) return "round_not_ready";
 
-      const { first, second, third } = prediction.podium;
-      if (![first, second, third].every((id) => event.athleteIds.includes(id))) {
-        return "athlete_not_in_event";
+      const picks = [prediction.podium.first, prediction.podium.second, prediction.podium.third];
+      const athletes = picks.filter((id) => id !== OTHER_ATHLETE);
+      if (!athletes.every((id) => event.athleteIds.includes(id))) return "athlete_not_in_event";
+      const proposed = event.proposed;
+      if (proposed ? !athletes.every((id) => proposed.includes(id)) : athletes.length < 3) {
+        return "athlete_not_proposed";
       }
       if (prediction.useJoker) {
         const otherJoker = [...stored.values()].some(

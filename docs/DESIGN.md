@@ -14,6 +14,14 @@
 
 Charte tirée du logo FrenchTrack : un bleu profond en dégradé, un rouge vif, du blanc.
 
+**Direction « Officiel »** (adoptée par le propriétaire le 7 nov. 2026, proposée dans #185) :
+le logo FrenchTrack (`public/brand/frenchtrack.png`, version contour pour les en-têtes bleus)
+suivi de l'étiquette rouge « Prono » ; des étiquettes de statut (`ChipStatus`, six tons :
+neutre, marque, or, ok, chaud, discret) sur des fonds doux (`--*-soft` / `--*-ink`, contrastes
+AA dans les deux thèmes) ; une carte d'épreuve en grille « heure | discipline | statut » ; un
+podium officiel en dégradés or, argent, bronze (`--medal-*`). Un visiteur ne voit pas
+« À pronostiquer » : seulement le compte à rebours.
+
 | Rôle | Couleur | Usage |
 |---|---|---|
 | Bleu FrenchTrack | `#084595` | Fond des écrans d'accueil, liens et éléments de marque en mode clair |
@@ -49,12 +57,16 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 
 ## Composants clés
 
-- **PodiumPicker** : trois marches (or, argent, bronze), on y dépose ou tape un athlète.
-  Sur mobile : tap sur une marche, une feuille s'ouvre avec la liste de départ filtrable.
-- **CountdownBadge** : « Verrouillage dans 12 min » qui passe à l'orange puis au rouge.
+- **PodiumPicker** : trois marches (or, argent, bronze) au-dessus de la liste de départ ; on
+  touche les athlètes dans l'ordre 1er, 2e, 3e, un appui sur un athlète placé le retire, un appui
+  sur une marche la sélectionne (pas de glisser-déposer). Sert aussi à la saisie des résultats.
+- **CountdownBadge** : « Verrouillage dans 12 min », neutre, puis orange dès 1 h et rouge dès
+  10 min (jetons `--countdown-*` dans `globals.css`, contrastes AA), « 🔒 Verrouillé » ensuite ;
+  rien ne clignote.
 - **AthleteChip** : drapeau, nom, record de saison.
 - **PointsToast** : « +9 pts, vainqueur du 100 m trouvé ! » avec petite animation.
-- **LeaderboardRow** : flèche de progression, emoji, flamme si série.
+- **Leaderboard** : place, avatar, pseudo, points ; ex æquo signalés, ma ligne surlignée,
+  raison du départage sous le pseudo (flèche de progression et séries : plus tard).
 - **ShareCard** : image « Mon podium du 100 m » prête pour les réseaux (et pour le podcast).
 
 ## Ton éditorial

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Prediction, PredictionRepository } from "@/application/save-prediction";
+import { OTHER_ATHLETE } from "@/domain/podium-draft";
 
 export type Player = { userId: string; predictions: PredictionRepository };
 
@@ -14,6 +15,8 @@ export type PredictionWorld = {
   openEvents: EventFixture[];
   /** An event already locked. */
   lockedEvent: EventFixture;
+  /** A semi-final still open: rounds before the final are never predicted. */
+  semiFinal: EventFixture;
 };
 
 /**
@@ -48,6 +51,32 @@ export function predictionRepositoryContract(name: string, world: () => Promise<
       expect(await player.predictions.save(wanted)).toBe("saved");
 
       expect(await player.predictions.find(player.userId, wanted.eventId)).toEqual(wanted);
+    });
+
+    it("keeps the marks predicted with the podium", async () => {
+      const w = await world();
+      const player = await w.newPlayer();
+      const wanted: Prediction = {
+        ...prediction(player, w.openEvents[0]!),
+        marks: { first: 10.85, second: null, third: 61.2 },
+      };
+
+      expect(await player.predictions.save(wanted)).toBe("saved");
+
+      expect(await player.predictions.find(player.userId, wanted.eventId)).toEqual(wanted);
+    });
+
+    it("refuses « autre athlète » on an event played without odds", async () => {
+      const w = await world();
+      const player = await w.newPlayer();
+      const event = w.openEvents[0]!;
+      const withOther: Prediction = {
+        ...prediction(player, event),
+        podium: { first: event.athleteIds[0]!, second: OTHER_ATHLETE, third: event.athleteIds[1]! },
+      };
+
+      expect(await player.predictions.save(withOther)).toBe("athlete_not_proposed");
+      expect(await player.predictions.find(player.userId, event.eventId)).toBeNull();
     });
 
     it("replaces the previous prediction when the player saves again", async () => {
@@ -121,6 +150,16 @@ export function predictionRepositoryContract(name: string, world: () => Promise<
       await player.predictions.save(prediction(player, event, true));
 
       expect(await player.predictions.save(prediction(player, event, true))).toBe("saved");
+    });
+
+    it("refuses a round before the final as not open yet", async () => {
+      const w = await world();
+      const player = await w.newPlayer();
+
+      expect(await player.predictions.save(prediction(player, w.semiFinal))).toBe(
+        "round_not_ready",
+      );
+      expect(await player.predictions.find(player.userId, w.semiFinal.eventId)).toBeNull();
     });
   });
 }

@@ -12,3 +12,11 @@ const OPEN_PREFIXES = [
 export function requiresProfile(pathname: string): boolean {
   return !OPEN_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
+
+// Pages an admin can open: the back-office, plus signing in and out (an admin only runs the game).
+const ADMIN_PREFIXES = ["/admin", "/auth", "/connexion", "/bienvenue", "/au-revoir"];
+
+/** True when an admin asking for this page must be sent to the back-office instead. */
+export function sendsAdminToBackOffice(pathname: string): boolean {
+  return !ADMIN_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}

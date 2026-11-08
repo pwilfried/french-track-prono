@@ -64,7 +64,20 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned to skip the flaky `releases/latest` GitHub API call that 503s.
+          version: 3.0.0
+
+      # Never fails the build: only warns when a newer stable CLI than the pinned one exists.
+      - name: Check for a newer Supabase CLI
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          latest="$(gh release view --repo supabase/cli --json tagName --jq .tagName)"
+          current="$(supabase --version)"
+          if [ "${latest#v}" != "$current" ]; then
+            echo "::warning::Supabase CLI $latest is out, the CI is pinned to $current: bump \`version:\` in ci.yml and migrations.yml."
+          fi
 
       - uses: actions/setup-node@v4
         with:
@@ -78,6 +91,10 @@ jobs:
 
       - name: pgTAP tests
         run: supabase test db
+
+      # Static checks of the SQL functions (plpgsql_check): fails on errors, not on warnings.
+      - name: Database lint
+        run: supabase db lint --level error --fail-on error
 
       - name: Install dependencies
         run: npm ci
@@ -119,6 +136,22 @@ jobs:
           RESULT="$(psql "$DB" -tA -c "select count(*) filter (where e.lock_at > now()) > 0 and count(*) filter (where e.lock_at <= now()) > 0 and count(r.event_id) = 0 from events e join competitions c on c.id = e.competition_id left join results r on r.event_id = e.id where c.slug = 'ultimate-championship-2026'")"
           test "$RESULT" = "t"
 
+      # Demo players (local test tooling): twelve players, 24 predictions, idempotent.
+      - name: Local demo players script
+        run: |
+          DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          for i in 1 2; do psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/demo_players.sql; done
+          RESULT="$(psql "$DB" -tA -c "select count(*) from predictions p join auth.users u on u.id = p.user_id where u.email like 'demo-%@example.test'")"
+          test "$RESULT" = "24"
+
+      # One-command points check (local test tooling): demo players, then the two events locked.
+      - name: Local points check script
+        run: |
+          DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/open_events.sql
+          psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/demo_players.sql
+          psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/lock_demo_events.sql
+
       # End-to-end journey (Playwright) on the production build. The events are open after the
       # reopen script above. No retry: see playwright.config.ts.
       - name: Install Chromium for Playwright
@@ -127,7 +160,11 @@ jobs:
       - name: Build the app
         run: npm run build
 
+      # The pages follow the next competition by date; the tests create competitions of their own,
+      # so the journeys are pinned on the seeded Ultimate Championship.
       - name: End-to-end test
+        env:
+          COMPETITION_SLUG: ultimate-championship-2026
         run: npm run test:e2e
 
       - name: Keep the Playwright report on failure

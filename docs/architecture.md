@@ -70,13 +70,18 @@ Numérotées pour la planification. F11 et F12 sont volontairement repoussées.
 | F11 | Séries en feu et badges (repoussée) | Des raisons de revenir |
 | F12 | Cartes à partager, ex. « Mon podium du 100 m » (repoussée) | Faire connaître le jeu et le podcast |
 | F13 | Page de confidentialité, suppression de compte, export des données | Conformité RGPD |
+| F14 | Plusieurs compétitions (internationales, françaises), accueil par type, ligue sur plusieurs compétitions (v0.9) | Jouer toute la saison |
+| F15 | Cotes fixées par l'admin, « Autre athlète », perf pronostiquée par athlète, barème ajustable (v0.9) | Des choix plus fins, plus de suspense |
+| F16 | Page « Comment jouer » et premier prono guidé (v0.9) | Comprendre des règles plus riches |
+| F17 | Ligues publiques jusqu'à 200 joueurs, sans code, noms modérés (v0.10) | Jouer avec la communauté FrenchTrack |
+| F18 | Gestion des profils : pseudo, avatar, e-mail, club ; fiche minimale ; admin chercher, bloquer, supprimer (v0.10) | Un compte que le joueur maîtrise |
 
 Barème (modifiable en base) : 3 points par athlète à la bonne place, 1 point pour un athlète sur
 le podium mais à la mauvaise place, +3 pour un podium parfait, +2 de bonus coup de flair
 (vainqueur choisi par moins de 15 % des joueurs, avec au moins 10 pronos), joker x2.
 
-Points à trancher plus tard : ex æquo sur le podium officiel, athlètes forfaits (0 point),
-relais pronostiqués par équipe (pays).
+Ex æquo : les athlètes partagent la place (décision du 07/11/2026). Forfait : l'athlète ne rapporte
+rien. Reste à trancher : relais pronostiqués par équipe (pays).
 
 ## Stack
 
@@ -90,7 +95,7 @@ Versions vérifiées le 6 novembre 2026 ; à reconfirmer à l'installation (`npm
 | Interface | Tailwind CSS v4 + shadcn/ui | Look moderne et très personnalisable, composants accessibles dont le code nous appartient | MUI, Mantine : plus lourds à personnaliser |
 | Base, comptes, sécurité | Supabase : PostgreSQL, lien magique, Row Level Security | Tout-en-un, tourne en local via Docker, sécurité appliquée en base | Neon + Auth.js : plus d'assemblage pour le même résultat |
 | Hébergement | Vercel Hobby (gratuit) | Déploiement simple depuis GitHub | Netlify, Cloudflare : non évalués, à voir si Vercel pose problème |
-| Tests | Vitest (logique, dont le barème), pgTAP (règles de la base : verrouillage, sécurité), Playwright (parcours principal), Storybook (composants clés seulement : podium, classement, compte à rebours) | Chaque couche testée au plus bas niveau utile | Cypress ; Storybook sur tous les écrans (trop lourd en solo) |
+| Tests | Vitest (logique, dont le barème), pgTAP (règles de la base : verrouillage, sécurité), Playwright (parcours principal), Storybook (composants du design system « Officiel », pas les pages) | Chaque couche testée au plus bas niveau utile | Cypress ; Storybook sur tous les écrans (trop lourd en solo) |
 | Langue de l'interface | Textes français regroupés dans un seul fichier, sans bibliothèque d'i18n | Français seul en v1 (non-objectif 8) | next-intl |
 | Packaging | Aucun : site web + manifeste PWA pour l'écran d'accueil | Pas d'app native (non-objectif 2) | Application native |
 | Documentation utilisateur | Page « Comment ça marche » dans l'app | Une seule source, toujours à jour | Site de documentation séparé |
@@ -147,15 +152,44 @@ tester et à faire évoluer ; une seule implémentation de la règle, donc pas d
 synchroniser avec l'aperçu affiché dans l'interface.
 Conséquences :
 
-- Un cas d'usage `ScoreEvent` (`src/application`) lit résultats, pronos et barème
-  (`scoring_rules`), appelle le domaine, puis enregistre les lignes de `score_events` et
-  `predictions.points_awarded`.
-- L'enregistrement est idempotent (upsert sur `(user_id, event_id)`) et fait en une seule
-  transaction ; il est réservé au serveur (clé `service_role`, admin uniquement). Le détail
-  (fonction SQL d'écriture `record_scores` ou transaction côté serveur) sera tranché en v0.4.
-- Les joueurs ne peuvent pas écrire dans `score_events` (aucune policy d'écriture).
+- Le cas d'usage `computeEventPoints` (`src/application/compute-event-points.ts`) lit le résultat,
+  tous les pronos de l'épreuve et le barème (`scoring_rules`), appelle le domaine, puis remplace
+  les lignes de `score_events` de l'épreuve. Les raisons sont stockées en codes dans
+  `score_events.detail` (`{"reasons": [...]}`), jamais en phrases.
+- L'écriture passe par la fonction SQL `set_event_scores` (une transaction : suppression puis
+  insertion), donc relancer le calcul ne crée aucun doublon (S12). Elle est appelée avec la
+  session de l'admin (`profiles.is_admin`, posé en SQL seulement) : pas de clé `service_role` dans
+  l'application.
+- Les joueurs ne peuvent pas écrire dans `score_events` (policy `admin_write` réservée à l'admin).
 - Alternative écartée : calcul en SQL (`score_event()`), plus atomique mais plus dur à tester
   et à lire pour des agents.
+
+**Pronostics (v0.3).** On compose son podium en touchant les athlètes dans l'ordre (pas de
+glisser-déposer) ; le compte à rebours passe à l'orange à 1 h et au rouge à 10 min du
+verrouillage. La base refuse un prono après `lock_at`, un athlète hors liste de départ, un
+deuxième joker dans la compétition, et la suppression d'un prono après le verrouillage.
+
+**Résultats et points (v0.4).** L'admin saisit le podium officiel dans `/admin` (ex æquo : les
+athlètes partagent la place, décision du propriétaire), puis clique sur « Calculer les points » ;
+le coup de flair est calculé sur tous les pronos de l'épreuve. Le joueur voit le détail dans
+`/mes-points`.
+
+**Ligues et classements (v0.5).** Voir « Modèle de données » pour les règles des ligues. Le
+classement (`src/domain/ranking.ts`, R9) départage aux points, puis aux podiums parfaits, puis
+aux vainqueurs trouvés ; des joueurs toujours égaux partagent la place. Pages : `/ligues`,
+`/ligues/[id]`, `/rejoindre/[code]` (lien d'invitation), `/classement`.
+
+**Suspense (v0.6).** Après le verrouillage, la page d'une épreuve montre le podium de tous les
+joueurs, avec un filtre par ligue (onglets « Tous » puis une ligue par onglet) ; avant, une case
+rappelle que les pronos se dévoilent au verrouillage, et la base ne laisse lire que son propre
+prono. Sous le podium d'un autre joueur : six réactions fixes (🔥 😂 😮 👏 🤡 🎯, pas de texte
+libre), une par joueur et par prono, qu'on retire en la touchant à nouveau ; pas de réaction sur
+son propre prono (décisions du propriétaire, issue #16). La répartition « Qui ont-ils vu
+gagner ? » est calculée sur tous les pronos de l'épreuve, jamais sur la seule ligue
+(`pickDistribution`, `src/domain/reveal.ts`). Le badge « Coup de flair » est lu dans les points
+calculés (`score_events`, raison `flair`) : il suit toujours le barème de la base.
+
+Les décisions du propriétaire prises pendant ces versions sont tracées dans l'issue #112.
 
 ## Modèle de données
 
@@ -164,15 +198,22 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 | Groupe | Tables |
 |---|---|
 | Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions` |
-| Référentiel | `competitions`, `events`, `athletes`, `entries` (liste de départ), `results` |
-| Jeu | `predictions`, `score_events`, `scoring_rules` |
-| Vues | `leaderboard_competition`, `leaderboard_league` |
-| Fonctions | `join_league()`, `enforce_prediction_lock()` (trigger) |
+| Référentiel | `competitions`, `events` (dont `kind` et `sub_disciplines` des épreuves combinées), `athletes`, `entries` (liste de départ), `results`, `athlete_records` (PR, SB, WR, WB) |
+| Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions` |
+| Fonctions | `create_league()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()` |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers`, `badges`, `user_badges` (F11 et plus tard) |
 
 Garanties portées par la base : pronostic impossible après `lock_at`, pronos des autres
 illisibles avant verrouillage, un seul joker par joueur et par compétition, un pronostic
 par joueur et par épreuve, seuls les athlètes engagés sont pronostiquables.
+
+Ligues (v0.5, décisions du propriétaire dans l'issue #112) : code d'invitation de 6 caractères sans
+caractères ambigus (ni 0/O, ni 1/I/L), 50 membres au plus, le créateur passe la main à un membre
+avant de partir (seul, partir supprime la ligue). Depuis la v0.9 (#267), une ligue compte une ou
+plusieurs compétitions choisies par son créateur (`create_league(nom, slugs[])`) et son classement
+additionne leurs points. L'accueil liste les compétitions par type (internationales, françaises) et
+les pages suivent la prochaine compétition par date (`src/app/competition.ts`). Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
+calculé en TypeScript à partir des lignes de points (pas de vue SQL).
 
 Ajouts nécessaires au schéma (à faire dans la version indiquée) :
 
@@ -180,6 +221,47 @@ Ajouts nécessaires au schéma (à faire dans la version indiquée) :
 - `profiles.is_admin` : accès au back-office, réservé à toi (v0.4).
 - Suppression de compte et export des données : fonctions SQL (v0.7).
 - Les tables de questions bonus et de badges ne sont pas utilisées avant leurs versions.
+
+Back-office (v0.8) : la liste de départ, le résultat et le calcul des points passent par les
+fonctions `set_start_list()`, `set_results()` et `set_event_scores()`, avec la session de l'admin.
+Chacune écrit une ligne dans `admin_actions` (journal lisible par les admins seulement, écrit par
+la base elle-même via `private.log_admin_action()`, hors de l'API).
+
+Records (v0.8, issue #196) : le trigger `update_records_from_result` met à jour le PR et le SB
+à chaque ligne de résultat. Les marques texte sont lues par `parse_mark()` (secondes, mètres ou
+points) et comparées par `is_better_mark()` : temps plus bas pour les courses (discipline avec une
+distance en mètres, haies, steeple, marche, relais), valeur plus haute sinon. Le SB repart à zéro
+avec la première course d'une nouvelle année civile. Un résultat corrigé à la baisse ne fait pas
+reculer un record déjà établi. WR et WB se saisissent à la main.
+
+Disciplines (v0.9, issue #257) : la table `disciplines` porte, pour chaque discipline, sa famille,
+son unité (`time`, `distance`, `points`), le sens du classement et la tolérance du prono de
+performance, ajustable par l'admin (`/admin/disciplines`, fonction `set_discipline_tolerance()`).
+`events`, `athlete_disciplines` et `athlete_records` y renvoient par le nom. `lower_is_better()` lit
+la table. Le domaine lit et écrit les marques (`parseMark`, `formatMark` dans
+`src/domain/discipline.ts`).
+
+Compétitions (v0.9, issue #266) : l'admin crée une compétition (`scope` internationale ou
+française, fuseau horaire), ses épreuves (slug unique sur toutes les compétitions) et ses engagés
+(`competition_athletes`, remplie aussi par chaque ligne de liste de départ). Les candidats d'une
+liste de départ sont les engagés de la compétition (tout le monde tant que personne n'est engagé).
+La compétition mise en avant est la prochaine par date (`nextCompetition`).
+
+Cotes (v0.9, issues #259 et #260) : sur une compétition créée dans le back-office
+(`competitions.odds_enabled`), l'admin propose des athlètes de la liste de départ (au moins un, autant qu'il veut ; décision du 08/11/2026) avec une cote positive
+chacun, plus une cote « Autre athlète » (`event_odds`, `athlete_id` nul). La finale n'ouvre aux
+pronos qu'une fois les cotes saisies (`is_predictable()`). Le joueur choisit parmi les athlètes
+proposés ou « Autre athlète » (stocké nul dans `predictions.p1..p3`, une place au plus, FT006
+sinon). Perfs (#261) : `predictions.m1..m3`, dans l'unité de la discipline, verrouillées comme le
+podium. Points : voir « Cas de test du cœur », S14 à S18 ; le barème est éditable dans
+`/admin/bareme` (`admin_set_scoring_rule()`, journalisée).
+
+Tours (v0.8, issue #198) : une série, un quart ou une demi-finale pointe vers le tour qu'il
+alimente (`events.parent_id`). On ne pronostique que les finales, et une finale seulement quand
+tous ses tours précédents sont terminés (`is_predictable()`, vérifié par le trigger de
+verrouillage, code FT001). `promote_to_next_round()` qualifie les N premiers d'un tour (ex æquo
+compris). Pas de colonne `is_predictable` stockée : la règle est calculée, elle ne peut pas
+diverger du statut des tours. Les joueurs ne voient que les finales dans la liste.
 
 ## Versions
 
@@ -194,7 +276,10 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 | v0.5 Ligues et classements | **F4**, **F5** | …deux comptes dans la même ligue voient le même classement, départagé par podiums parfaits puis vainqueurs trouvés |
 | v0.6 Suspense | **F9** (coup de flair), **F10** (révélation + réactions emoji) | …avant verrouillage les pronos des autres sont illisibles (test), après verrouillage ils s'affichent et on peut réagir en emoji |
 | v0.7 Mise en ligne | **F13**, déploiement Vercel + Supabase cloud | …un ami s'inscrit depuis son téléphone sur l'adresse publique, fait un prono et peut supprimer son compte |
-| Plus tard | **F11** (séries, badges), **F12** (cartes à partager), questions bonus | à planifier après la v0.7 |
+| v0.8 Jeu vivant, admin, athlètes, appli | Aperçu du calcul, listes de départ, journal admin, épreuves combinées, appli installable, records, fiche athlète, tours | …l'admin prépare une finale (tours, liste de départ, résultat, calcul) sans toucher à la base, et l'appli s'installe sur le téléphone |
+| v0.9 Cotes et performances | **F14**, **F15**, **F16** | …un joueur choisit des compétitions françaises sur l'accueil, crée sa ligue dessus, pronostique un podium avec cotes et perfs, et ses points comptent cotes et perfs selon le barème réglé par l'admin |
+| v0.10 Ligues publiques et profils | **F17**, **F18** | …un joueur rejoint une ligue publique (200 joueurs au plus) sans code, et gère son profil |
+| Plus tard | **F11** (séries, badges), **F12** (cartes à partager), questions bonus, connexion Google / Apple | à planifier |
 
 ## Cas de test du cœur
 
@@ -219,6 +304,22 @@ Le schéma et le seed ont été exécutés sur Supabase local et sont couverts p
 | S11 | Ex æquo à la 3e place : le prono place l'un ou l'autre des deux en 3e | 3 points de place pour les deux cas : les ex æquo partagent la place (décision du 07/11/2026, #112) |
 | S12 | Enregistrer deux fois le même calcul | mêmes points, aucune ligne en double |
 | S13 | Calculer une épreuve sans résultat saisi | erreur explicite |
+
+**Cotes et perfs (v0.9, #262), en plus du barème ci-dessus.** Sur une épreuve à cotes, chaque athlète
+proposé (ou « Autre athlète ») sur le podium rapporte sa cote × 3 à la bonne place, × 2 à une place
+d'écart, × 1 à deux places, arrondi au point. « Autre athlète » est juste quand un athlète non
+proposé finit à cette place. Une perf rapporte 5 dans la tolérance de la discipline, 2 dans le
+double. Le joker double le tout. Ces valeurs sont des lignes de `scoring_rules`, modifiables dans
+`/admin/bareme`. Cas : cotes A 2, B 3, C 1,5, autre 8 ; résultat A 1er (10.79), B 2e (10.87),
+X 3e non proposé, C 4e ; tolérance 0,05.
+
+| # | Situation | Points attendus |
+|---|---|---|
+| S14 | A, B, C | 21 (3 + 3, cotes 6 + 9) |
+| S15 | C, A, autre athlète | 32 (1 + 3, cotes 2 × 2 + 8 × 3) |
+| S16 | B, C, A avec A seul proposé à 1,8 | 4 (1 + 1, cote 1,8 × 1 = 2) |
+| S17 | A, B, C avec perfs 10.81 et 10.95 | 28 (21 + 5 + 2) |
+| S18 | A, B, C, joker, perf 10.81 | 52 ((21 + 5) × 2) |
 
 **Règles de la base (tests pgTAP)**
 
