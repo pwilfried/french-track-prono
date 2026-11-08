@@ -1,4 +1,5 @@
-import { isBannedLeagueName, validateLeagueName } from "@/domain/league";
+import { isBannedName } from "@/domain/banned-names";
+import { validateLeagueName } from "@/domain/league";
 
 import { UseCaseError } from "./errors";
 
@@ -35,7 +36,7 @@ export function renameReportedLeague(ports: Ports) {
     async execute(input: { leagueId: string; name: string }): Promise<void> {
       const name = validateLeagueName(input.name);
       if (!name.ok) throw new UseCaseError(name.code);
-      if (isBannedLeagueName(name.name)) throw new UseCaseError("LEAGUE_NAME_BANNED");
+      if (isBannedName(name.name)) throw new UseCaseError("LEAGUE_NAME_BANNED");
       const outcome = await ports.moderation.rename(input.leagueId, name.name);
       if (outcome === "not_admin") throw new UseCaseError("NOT_ADMIN");
       if (outcome === "unknown") throw new UseCaseError("LEAGUE_NOT_FOUND");

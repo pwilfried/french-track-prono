@@ -43,6 +43,7 @@ export function createSupabaseProfileRepository(client: SupabaseClient): Profile
         age_confirmed_at: profile.ageConfirmedAt.toISOString(),
       });
       if (!error) return "created";
+      if (error.code === "FT013") throw new UseCaseError("PSEUDO_BANNED");
       if (error.code === "23505") {
         const where = `${error.message} ${error.details ?? ""}`;
         if (where.includes("profiles_pseudo_lower_key")) return "pseudo_taken";

@@ -7,7 +7,6 @@ import {
   LEAGUE_MAX_MEMBERS,
   PUBLIC_LEAGUE_MAX_MEMBERS,
   formatInviteCode,
-  isBannedLeagueName,
   leagueCapacity,
   normalizeInviteCode,
   validateLeagueName,
@@ -87,26 +86,6 @@ describe("validateLeagueName", () => {
   it("accepts a name of exactly 40 characters", () => {
     expect(validateLeagueName("x".repeat(40)).ok).toBe(true);
   });
-});
-
-describe("isBannedLeagueName", () => {
-  it.each([
-    "Ligue officielle",
-    "OFFICIEL FrenchTrack",
-    "La ligue FFA",
-    "F F A des potes",
-    "Les connards",
-    "Bande de CONS",
-    "Enculés du 100 m",
-    "www.monsite.fr",
-    "https //promo",
-    "Gagne sur pari.com",
-  ])("refuses %j", (name) => expect(isBannedLeagueName(name)).toBe(true));
-
-  it.each(["Les Foulées", "Concorde AC", "Constance & co", "Les officiers du sprint ?", "Affalés"])(
-    "accepts %j",
-    (name) => expect(isBannedLeagueName(name)).toBe(false),
-  );
 });
 
 describe("leagueCapacity", () => {
