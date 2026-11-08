@@ -6,7 +6,12 @@ import { redirect } from "next/navigation";
 import { computeEventPoints } from "@/application/compute-event-points";
 import { enterResults, type ResultEntry } from "@/application/enter-results";
 import { UseCaseError, type ErrorCode } from "@/application/errors";
-import { createSupabasePointsRepository, createSupabaseResultRepository } from "@/infra";
+import { setStartList, type StartListEntry } from "@/application/set-start-list";
+import {
+  createSupabasePointsRepository,
+  createSupabaseResultRepository,
+  createSupabaseStartListRepository,
+} from "@/infra";
 
 import { formText } from "../../form-data";
 import { adminOnly } from "../guard";
@@ -65,4 +70,37 @@ export async function computePointsAction(
   }
   revalidatePath("/admin");
   redirect(`/admin/${slug}`);
+}
+
+/** Reads the start list the form sends as JSON; anything malformed becomes an empty list. */
+function entriesOf(data: FormData): StartListEntry[] {
+  try {
+    const parsed: unknown = JSON.parse(formText(data, "entries"));
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((e: { athleteId?: unknown; seasonBest?: unknown }) => ({
+      athleteId: String(e.athleteId ?? ""),
+      seasonBest: typeof e.seasonBest === "string" ? e.seasonBest : null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function saveStartListAction(
+  _: AdminActionState,
+  data: FormData,
+): Promise<AdminActionState> {
+  const { client } = await adminOnly();
+  const slug = formText(data, "slug");
+  try {
+    await setStartList({ startLists: createSupabaseStartListRepository(client) }).execute({
+      eventId: formText(data, "eventId"),
+      entries: entriesOf(data),
+    });
+  } catch (error) {
+    if (error instanceof UseCaseError) return { error: error.code };
+    throw error;
+  }
+  revalidatePath(`/epreuves/${slug}`);
+  redirect(`/admin/${slug}/depart?enregistre=1`);
 }

@@ -16,9 +16,10 @@ import { COMPETITION_SLUG, COMPETITION_TEXT, COMPETITION_TIME_ZONE } from "../co
 import { messages } from "../messages.fr";
 import { adminOnly } from "./guard";
 
-type State = "todo" | "entered" | "scored";
-const STATES: State[] = ["todo", "entered", "scored"];
+type State = "open" | "todo" | "entered" | "scored";
+const STATES: State[] = ["open", "todo", "entered", "scored"];
 const tagStyle: Record<State, string> = {
+  open: "bg-brand-soft text-brand-ink",
   todo: "bg-muted text-foreground",
   entered: "bg-secondary/40 text-foreground",
   scored: "bg-success/20 text-success-text",
@@ -51,15 +52,18 @@ export default async function AdminPage({
 
   const now = new Date();
   const stateOf = (event: EventSummary): State =>
-    loaded !== "error" && loaded.progress.scored.includes(event.id)
-      ? "scored"
-      : loaded !== "error" && loaded.progress.withResult.includes(event.id)
-        ? "entered"
-        : "todo";
+    eventPhase(now, event.lockAt) === "open"
+      ? "open"
+      : loaded !== "error" && loaded.progress.scored.includes(event.id)
+        ? "scored"
+        : loaded !== "error" && loaded.progress.withResult.includes(event.id)
+          ? "entered"
+          : "todo";
   const locked =
     loaded === "error" ? [] : loaded.events.filter((e) => eventPhase(now, e.lockAt) === "locked");
-  const count = (state: State) => locked.filter((e) => stateOf(e) === state).length;
-  const shown = locked.filter((e) => stateOf(e) === wanted);
+  const all = loaded === "error" ? [] : loaded.events;
+  const count = (state: State) => all.filter((e) => stateOf(e) === state).length;
+  const shown = all.filter((e) => stateOf(e) === wanted);
   const time = new Intl.DateTimeFormat("fr-FR", {
     weekday: "short",
     day: "numeric",
@@ -94,9 +98,9 @@ export default async function AdminPage({
             <ul aria-label={messages.admin.statsLabel} className="grid grid-cols-2 gap-2">
               {[
                 {
-                  value: loaded.events.length - locked.length,
+                  value: count("open"),
                   label: messages.admin.stats.open,
-                  href: null,
+                  href: "/admin?etat=open",
                 },
                 {
                   value: count("todo"),
@@ -113,34 +117,21 @@ export default async function AdminPage({
                   label: messages.admin.stats.scored,
                   href: "/admin?etat=scored",
                 },
-              ].map((tile) => {
-                const body = (
-                  <>
+              ].map((tile) => (
+                <li key={tile.label}>
+                  <Link
+                    href={tile.href}
+                    className="block min-h-20 rounded-card border border-border bg-card p-3"
+                  >
                     <span className="block font-mono text-3xl font-bold tabular-nums">
                       {tile.value}
                     </span>
                     <span className="block text-xs font-bold uppercase tracking-wide text-muted-foreground">
                       {tile.label}
                     </span>
-                  </>
-                );
-                return (
-                  <li key={tile.label}>
-                    {tile.href ? (
-                      <Link
-                        href={tile.href}
-                        className="block min-h-20 rounded-card border border-border bg-card p-3"
-                      >
-                        {body}
-                      </Link>
-                    ) : (
-                      <div className="min-h-20 rounded-card border border-border bg-card p-3">
-                        {body}
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
+                  </Link>
+                </li>
+              ))}
             </ul>
             <nav
               aria-label={messages.admin.filters}
