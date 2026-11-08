@@ -5,7 +5,7 @@ import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { listAthletes } from "@/application/list-athletes";
 import { ErrorNotice } from "@/components/error-notice";
 import { flagOf } from "@/domain/flag";
-import { searchAthletes } from "@/domain/start-list";
+import { filterAthletes, searchAthletes, type AthleteFilter } from "@/domain/start-list";
 import type { Discipline } from "@/domain/discipline";
 import { createSupabaseAthleteAdminRepository, createSupabaseDisciplineRepository } from "@/infra";
 
@@ -19,11 +19,22 @@ const field = "min-h-11 w-full rounded-xl border-2 border-border bg-background p
 export default async function AdminAthletesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; erreur?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    discipline?: string;
+    sexe?: string;
+    pays?: string;
+    erreur?: string;
+  }>;
 }) {
   const { client } = await adminOnly();
   const search = await searchParams;
   const q = (search.q ?? "").slice(0, 60);
+  const filter: AthleteFilter = {
+    discipline: search.discipline || undefined,
+    gender: search.sexe === "F" || search.sexe === "M" ? search.sexe : undefined,
+    country: search.pays?.slice(0, 3) || undefined,
+  };
   const error =
     search.erreur && search.erreur in messages.errors
       ? messages.errors[search.erreur as ErrorCode]
@@ -39,7 +50,10 @@ export default async function AdminAthletesPage({
     if (!(error instanceof UseCaseError)) throw error;
     athletes = "error" as const;
   }
-  const shown = athletes === "error" ? [] : searchAthletes(athletes, q).slice(0, 50);
+  const matching = athletes === "error" ? [] : searchAthletes(filterAthletes(athletes, filter), q);
+  const shown = matching.slice(0, 50);
+  const countries =
+    athletes === "error" ? [] : [...new Set(athletes.map((a) => a.countryCode.trim()))].sort();
 
   return (
     <AdminShell title={messages.adminAthletes.title} section="athletes">
@@ -102,24 +116,61 @@ export default async function AdminAthletesPage({
           </button>
         </form>
       </details>
-      <form method="get" role="search" className="flex gap-2">
-        <label htmlFor="athlete-q" className="sr-only">
-          {messages.startList.search}
-        </label>
-        <input
-          id="athlete-q"
-          type="search"
-          name="q"
-          defaultValue={q}
-          placeholder={messages.startList.search}
-          className="min-h-12 flex-1 rounded-xl border-2 border-border bg-card px-3.5 text-base"
-        />
-        <button
-          type="submit"
-          className="min-h-12 rounded-full bg-primary px-5 font-bold text-primary-foreground"
-        >
-          {messages.adminLog.apply}
-        </button>
+      <form method="get" role="search" className="flex flex-col gap-2">
+        <div className="flex gap-2">
+          <label htmlFor="athlete-q" className="sr-only">
+            {messages.startList.search}
+          </label>
+          <input
+            id="athlete-q"
+            type="search"
+            name="q"
+            defaultValue={q}
+            placeholder={messages.startList.search}
+            className="min-h-12 flex-1 rounded-xl border-2 border-border bg-card px-3.5 text-base"
+          />
+          <button
+            type="submit"
+            className="min-h-12 rounded-full bg-primary px-5 font-bold text-primary-foreground"
+          >
+            {messages.adminLog.apply}
+          </button>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <label className="flex flex-col gap-1 text-xs font-semibold">
+            {messages.adminAthletes.filterDiscipline}
+            <select name="discipline" defaultValue={filter.discipline ?? ""} className={field}>
+              <option value="">{messages.adminAthletes.all}</option>
+              {disciplines.map((d) => (
+                <option key={d.name} value={d.name}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-semibold">
+            {messages.adminAthletes.filterGender}
+            <select name="sexe" defaultValue={filter.gender ?? ""} className={field}>
+              <option value="">{messages.adminAthletes.all}</option>
+              <option value="F">{messages.events.gender.F}</option>
+              <option value="M">{messages.events.gender.M}</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-semibold">
+            {messages.adminAthletes.filterCountry}
+            <select name="pays" defaultValue={filter.country ?? ""} className={field}>
+              <option value="">{messages.adminAthletes.all}</option>
+              {countries.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {messages.adminAthletes.found(matching.length)}
+        </p>
       </form>
       {athletes === "error" ? (
         <ErrorNotice retryHref="/admin/athletes" message={messages.errors.ATHLETES_UNAVAILABLE} />

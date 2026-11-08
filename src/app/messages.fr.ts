@@ -515,6 +515,11 @@ export const messages = {
     saved: "✓ Enregistré",
   },
   adminAthletes: {
+    filterDiscipline: "Par discipline",
+    filterGender: "Par sexe",
+    filterCountry: "Par pays",
+    all: "Tous",
+    found: (n: number) => (n <= 1 ? `${n} athlète` : `${n} athlètes`),
     title: "Athlètes",
     saved: "✓ Enregistré.",
     identity: "Identité",

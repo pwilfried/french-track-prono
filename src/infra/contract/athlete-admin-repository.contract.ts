@@ -31,6 +31,9 @@ export function athleteAdminRepositoryContract(
       ).toBe("saved");
       expect(await w.admin.setDiscipline(w.athleteId, "200 m", true)).toBe("saved");
       expect(
+        (await w.admin.list()).find((a) => a.athleteId === w.athleteId)?.disciplines,
+      ).toContain("200 m");
+      expect(
         await w.admin.setRecord(w.athleteId, {
           discipline: "200 m",
           kind: "pr",

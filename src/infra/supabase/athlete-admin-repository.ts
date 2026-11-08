@@ -27,10 +27,13 @@ export function createSupabaseAthleteAdminRepository(client: SupabaseClient): At
     async list() {
       const { data, error } = await client
         .from("athletes")
-        .select("id, slug, name, country_code, gender")
-        .returns<AthleteRow[]>();
+        .select("id, slug, name, country_code, gender, athlete_disciplines(discipline)")
+        .returns<(AthleteRow & { athlete_disciplines: { discipline: string }[] })[]>();
       if (error) throw new UseCaseError("ATHLETES_UNAVAILABLE");
-      return data.map(summary);
+      return data.map((row) => ({
+        ...summary(row),
+        disciplines: row.athlete_disciplines.map((d) => d.discipline),
+      }));
     },
 
     async find(slug) {

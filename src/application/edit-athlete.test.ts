@@ -20,8 +20,22 @@ function repository(isAdmin = true) {
   };
   const athletes: AthleteAdminRepository = {
     list: async () => [
-      { athleteId: "2", slug: "b", name: "Sha'Carri Richardson", countryCode: "USA", gender: "F" },
-      { athleteId: "1", slug: "a", name: "Julien Alfred", countryCode: "LCA", gender: "F" },
+      {
+        athleteId: "2",
+        slug: "b",
+        name: "Sha'Carri Richardson",
+        countryCode: "USA",
+        gender: "F",
+        disciplines: ["100 m"],
+      },
+      {
+        athleteId: "1",
+        slug: "a",
+        name: "Julien Alfred",
+        countryCode: "LCA",
+        gender: "F",
+        disciplines: ["100 m"],
+      },
     ],
     find: async (slug) =>
       slug === "a"

@@ -1,10 +1,10 @@
-import type { AthleteAdminRepository, AthleteSummary, AthleteFile } from "./edit-athlete";
+import type { AthleteAdminRepository, AthleteFile, AthleteListItem } from "./edit-athlete";
 import { UseCaseError } from "./errors";
 
 /** Every athlete for the back-office, by name. */
 export function listAthletes(ports: { athletes: AthleteAdminRepository }) {
   return {
-    async execute(): Promise<AthleteSummary[]> {
+    async execute(): Promise<AthleteListItem[]> {
       return (await ports.athletes.list()).sort((a, b) => a.name.localeCompare(b.name));
     },
   };

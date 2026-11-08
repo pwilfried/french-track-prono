@@ -21,12 +21,13 @@ export function createInMemoryAthleteAdminStore(athletes: AthleteFile[]) {
       };
       return {
         async list() {
-          return stored.map(({ athleteId, slug, name, countryCode, gender }) => ({
+          return stored.map(({ athleteId, slug, name, countryCode, gender, disciplines }) => ({
             athleteId,
             slug,
             name,
             countryCode,
             gender,
+            disciplines: disciplines.map((d) => d.discipline),
           }));
         },
         async find(slug) {
