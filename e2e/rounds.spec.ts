@@ -27,9 +27,11 @@ test("a final opens to predictions once its semi-final is run, and shows the sem
   await expect(page.locator(`a[href="/epreuves/${tag}-semi"]`)).toHaveCount(0);
 
   await page.goto(`/epreuves/${tag}-final`);
-  await expect(page.locator("main")).toContainText(
-    "Les pronos ouvrent quand les tours précédents sont terminés.",
-  );
+  // The loading skeleton is a second <main> while the page streams: wait for the real heading.
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("200 m");
+  await expect(
+    page.getByText("Les pronos ouvrent quand les tours précédents sont terminés."),
+  ).toBeVisible();
   await page.getByText("Perfs des tours précédents (1)").click();
   const semi = page.getByRole("region", { name: "Demi-finale 1" });
   await expect(semi).toContainText("Sha'Carri Richardson");
@@ -38,9 +40,8 @@ test("a final opens to predictions once its semi-final is run, and shows the sem
   // Once the semi-final is finished, the final takes predictions.
   sql(`update events set status = 'finished' where slug = '${tag}-semi'`);
   await page.reload();
-  await expect(
-    page.locator("main").getByRole("link", { name: "Se connecter", exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("200 m");
+  await expect(page.getByText("Connecte-toi pour pronostiquer")).toBeVisible();
 
   sql(`delete from events where slug like '${tag}-%'`);
 });
