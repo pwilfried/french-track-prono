@@ -50,7 +50,10 @@ test("an admin creates a French competition, an event and its entered athletes, 
   }
 
   // The start list of the event offers the entered athletes only.
-  await page.getByRole("link", { name: /Épreuves/ }).click();
+  await page
+    .getByRole("navigation", { name: "Contenu de la compétition" })
+    .getByRole("link", { name: /^Épreuves/ })
+    .click();
   await page.getByRole("list", { name: "épreuves" }).getByRole("link").first().click();
   await page.getByRole("link", { name: /Liste de départ/ }).click();
   const matches = page.getByRole("list", { name: "Athlètes trouvés" }).getByRole("button");
