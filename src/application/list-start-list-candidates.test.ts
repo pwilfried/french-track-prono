@@ -10,6 +10,7 @@ describe("listStartListCandidates", () => {
       candidates: async (gender) => (gender === "F" ? women : []),
       find: async () => [],
       replace: async () => "saved",
+      createAthlete: async () => "not_admin",
     };
 
     expect(await listStartListCandidates({ startLists }).execute({ gender: "F" })).toEqual(women);

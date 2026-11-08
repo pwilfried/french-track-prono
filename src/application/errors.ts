@@ -40,6 +40,7 @@ export type ErrorCode =
   | "START_LIST_INVALID"
   | "START_LIST_IN_USE"
   | "START_LIST_UNAVAILABLE"
+  | "IMPORT_COUNTRY_MISSING"
   | "ADMIN_LOG_UNAVAILABLE";
 
 export class UseCaseError extends Error {
