@@ -27,6 +27,12 @@ test("an admin builds the start list of a final of eight athletes in less than a
   await page.getByRole("link", { name: "Liste de départ (0)" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Liste de départ");
 
+  // Without a search, the athletes of the 100 m are offered first (#301).
+  await expect(page.getByText(/^Athlètes du 100 m \(\d+\)$/)).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: "Athlètes trouvés" }).getByRole("button").first(),
+  ).toBeVisible();
+
   // "ric" puts Richardson first; she joins the start list with her season best.
   const search = page.getByRole("searchbox", { name: "Rechercher un athlète" });
   const matches = page.getByRole("list", { name: "Athlètes trouvés" }).getByRole("button");
