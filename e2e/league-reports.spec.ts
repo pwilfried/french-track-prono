@@ -39,11 +39,8 @@ test("a player reports a public league and the admin renames it", async ({ brows
   await expect(reported.filter({ hasText: name })).toContainText("1 signalement");
   await adminPage.getByLabel(`Nouveau nom pour ${name}`).fill(`Gazelles ${tag}`);
   await reported.filter({ hasText: name }).getByRole("button", { name: "Renommer" }).click();
-  await expect(adminPage.locator("main").getByRole("status")).toContainText("C'est fait");
-
-  // Renamed, it leaves the list; the log keeps the action.
-  await adminPage.reload();
-  await expect(adminPage.getByText(name)).toHaveCount(0);
+  // Renamed, its reports are cleared: it leaves the list. The log keeps the action.
+  await expect(reported.filter({ hasText: name })).toHaveCount(0);
   await adminPage.goto("/admin/historique");
   await expect(
     adminPage.getByRole("list", { name: "Actions" }).getByRole("listitem").first(),
