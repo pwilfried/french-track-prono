@@ -291,6 +291,15 @@ migrations voulues avec un tag.
 `npm audit` dans des versions anciennes de ces paquets. On peut les retirer quand `npm audit` ne
 signale plus rien sans elles (test : les supprimer, `npm install`, `npm audit`).
 
+## Test de la prod après déploiement
+
+Le workflow « Production smoke test » (`.github/workflows/smoke.yml`, script `scripts/smoke.sh`)
+ouvre l'accueil, les épreuves, une page d'épreuve, « Comment jouer », la connexion et les mentions
+légales de www.frenchtrackprono.com : après chaque déploiement de production par Vercel, chaque
+jour à 6 h 17 (heure de Paris en hiver, ce qui repère aussi un projet Supabase en pause) et à la
+demande (onglet Actions → Run workflow). Pas de relance : un échec est signalé par e-mail.
+Pour l'essayer ailleurs : `scripts/smoke.sh http://localhost:3000`.
+
 ## 5. Sécurité : à ne jamais committer
 
 - `.env.local` et tout fichier contenant des clés (déjà dans `.gitignore`)

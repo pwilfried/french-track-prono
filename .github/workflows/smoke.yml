@@ -1,0 +1,27 @@
+name: Production smoke test
+
+# Is production up? (#174) After each production deploy by Vercel, and once a day (a paused
+# Supabase project shows up there too), the main pages of the public site must answer at once.
+# No retry: a failure is reported (GitHub e-mails the owner) and looked at.
+on:
+  deployment_status:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke test of www.frenchtrackprono.com
+    if: >-
+      github.event_name != 'deployment_status' ||
+      (github.event.deployment_status.state == 'success' &&
+       github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the main pages
+        run: scripts/smoke.sh https://www.frenchtrackprono.com
