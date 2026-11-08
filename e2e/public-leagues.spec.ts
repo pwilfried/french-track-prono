@@ -20,7 +20,7 @@ test("a player creates a public league, another finds it in the list and joins w
   // A public league is seen by everyone: a banned name is refused.
   await creatorPage.getByLabel("Nom de la ligue").fill("Ligue officielle");
   await creatorPage.getByRole("button", { name: "Créer la ligue" }).click();
-  await expect(creatorPage.getByRole("alert")).toContainText(
+  await expect(creatorPage.locator("main").getByRole("alert")).toContainText(
     "pas possible pour une ligue publique",
   );
 
