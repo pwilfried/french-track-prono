@@ -1,4 +1,4 @@
-import { normalizeInviteCode, validateLeagueName } from "@/domain/league";
+import { isBannedLeagueName, normalizeInviteCode, validateLeagueName } from "@/domain/league";
 
 import { UseCaseError } from "./errors";
 
@@ -9,6 +9,16 @@ export type League = {
   ownerId: string;
   memberCount: number;
   /** The competitions whose points the league adds up. */
+  competitionSlugs: string[];
+  /** Joined in one tap without a code, up to 200 players (#277). */
+  isPublic: boolean;
+};
+
+/** A public league as listed for players who may join it. */
+export type PublicLeague = {
+  id: string;
+  name: string;
+  memberCount: number;
   competitionSlugs: string[];
 };
 
@@ -25,7 +35,7 @@ export type JoinOutcome =
  * (the database functions check the rules), fake = in memory.
  */
 export interface LeagueRepository {
-  create(name: string, competitionSlugs: string[]): Promise<League>;
+  create(name: string, competitionSlugs: string[], isPublic: boolean): Promise<League>;
   join(code: string): Promise<JoinOutcome>;
   /** The leagues the player is a member of. */
   listMine(): Promise<League[]>;
@@ -38,17 +48,28 @@ export interface LeagueRepository {
     leagueId: string,
     competitionSlug: string,
   ): Promise<"added" | "not_owner" | "unknown" | "started">;
+  /** Every public league. */
+  listPublic(): Promise<PublicLeague[]>;
+  /** Joins a public league without its code; "unknown_code" when it is not a public league. */
+  joinPublic(leagueId: string): Promise<JoinOutcome>;
 }
 
 type Ports = { leagues: LeagueRepository };
 
 export function createLeague(ports: Ports) {
   return {
-    async execute(input: { name: string; competitionSlugs: string[] }): Promise<League> {
+    async execute(input: {
+      name: string;
+      competitionSlugs: string[];
+      isPublic?: boolean;
+    }): Promise<League> {
       const name = validateLeagueName(input.name);
       if (!name.ok) throw new UseCaseError(name.code);
+      const isPublic = input.isPublic ?? false;
+      // Everyone sees a public league: its name is moderated (#277).
+      if (isPublic && isBannedLeagueName(name.name)) throw new UseCaseError("LEAGUE_NAME_BANNED");
       // A league may start without competition: its creator adds them afterwards (#312).
-      return ports.leagues.create(name.name, [...new Set(input.competitionSlugs)]);
+      return ports.leagues.create(name.name, [...new Set(input.competitionSlugs)], isPublic);
     },
   };
 }
@@ -120,6 +141,35 @@ export function addLeagueCompetition(ports: Ports) {
       if (outcome === "not_owner") throw new UseCaseError("NOT_LEAGUE_OWNER");
       if (outcome === "unknown") throw new UseCaseError("COMPETITION_NOT_FOUND");
       if (outcome === "started") throw new UseCaseError("COMPETITION_STARTED");
+    },
+  };
+}
+
+/** The public leagues the player is not in yet, the biggest first. */
+export function listPublicLeagues(ports: Ports) {
+  return {
+    async execute(): Promise<PublicLeague[]> {
+      const [all, mine] = await Promise.all([ports.leagues.listPublic(), ports.leagues.listMine()]);
+      const joined = new Set(mine.map((l) => l.id));
+      return all
+        .filter((l) => !joined.has(l.id))
+        .sort(
+          (a, b) =>
+            b.memberCount - a.memberCount ||
+            a.name.localeCompare(b.name, "fr", { sensitivity: "base" }),
+        );
+    },
+  };
+}
+
+/** Joins a public league in one tap; a player already in it is simply taken to it. */
+export function joinPublicLeague(ports: Ports) {
+  return {
+    async execute(input: { leagueId: string }): Promise<string> {
+      const joined = await ports.leagues.joinPublic(input.leagueId);
+      if (joined.outcome === "unknown_code") throw new UseCaseError("LEAGUE_NOT_FOUND");
+      if (joined.outcome === "full") throw new UseCaseError("LEAGUE_FULL");
+      return joined.leagueId;
     },
   };
 }

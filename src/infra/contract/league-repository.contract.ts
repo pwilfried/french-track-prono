@@ -21,7 +21,7 @@ export function leagueRepositoryContract(
       const { newPlayer, competitionSlug } = await setup();
       const owner = await newPlayer();
 
-      const league = await owner.leagues.create("Les Foulées", [competitionSlug]);
+      const league = await owner.leagues.create("Les Foulées", [competitionSlug], false);
 
       expect(league.inviteCode).toMatch(/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/);
       expect(await owner.leagues.listMine()).toEqual([
@@ -32,6 +32,7 @@ export function leagueRepositoryContract(
           ownerId: owner.userId,
           memberCount: 1,
           competitionSlugs: [competitionSlug],
+          isPublic: false,
         },
       ]);
     });
@@ -40,7 +41,11 @@ export function leagueRepositoryContract(
       const { newPlayer, competitionSlug, otherCompetitionSlug } = await setup();
       const owner = await newPlayer();
 
-      const league = await owner.leagues.create("Deux", [otherCompetitionSlug, competitionSlug]);
+      const league = await owner.leagues.create(
+        "Deux",
+        [otherCompetitionSlug, competitionSlug],
+        false,
+      );
 
       const expected = [competitionSlug, otherCompetitionSlug].sort();
       expect(league.competitionSlugs).toEqual(expected);
@@ -50,7 +55,7 @@ export function leagueRepositoryContract(
     it("creates a league without competition, then its creator adds a coming one", async () => {
       const { newPlayer, comingCompetitionSlug } = await setup();
       const owner = await newPlayer();
-      const league = await owner.leagues.create("Plus tard", []);
+      const league = await owner.leagues.create("Plus tard", [], false);
       expect(league.competitionSlugs).toEqual([]);
 
       expect(await owner.leagues.addCompetition(league.id, comingCompetitionSlug)).toBe("added");
@@ -64,7 +69,7 @@ export function leagueRepositoryContract(
     it("refuses a started or unknown competition, and a player who is not the creator", async () => {
       const { newPlayer, otherCompetitionSlug, comingCompetitionSlug } = await setup();
       const [owner, friend] = [await newPlayer(), await newPlayer()];
-      const league = await owner.leagues.create("Club", []);
+      const league = await owner.leagues.create("Club", [], false);
       await friend.leagues.join(league.inviteCode);
 
       expect(await owner.leagues.addCompetition(league.id, otherCompetitionSlug)).toBe("started");
@@ -75,10 +80,50 @@ export function leagueRepositoryContract(
       expect((await owner.leagues.listMine())[0]?.competitionSlugs).toEqual([]);
     });
 
+    it("lists a public league, which a friend joins without the code", async () => {
+      const { newPlayer, competitionSlug } = await setup();
+      const [owner, friend] = [await newPlayer(), await newPlayer()];
+      const pub = await owner.leagues.create(
+        `Publique ${crypto.randomUUID().slice(0, 8)}`,
+        [competitionSlug],
+        true,
+      );
+      const priv = await owner.leagues.create("Privée", [competitionSlug], false);
+      expect(pub.isPublic).toBe(true);
+
+      const listed = await friend.leagues.listPublic();
+      expect(listed.find((l) => l.id === pub.id)).toEqual({
+        id: pub.id,
+        name: pub.name,
+        memberCount: 1,
+        competitionSlugs: [competitionSlug],
+      });
+      expect(listed.some((l) => l.id === priv.id)).toBe(false);
+
+      expect(await friend.leagues.joinPublic(pub.id)).toEqual({
+        outcome: "joined",
+        leagueId: pub.id,
+      });
+      expect(await friend.leagues.joinPublic(pub.id)).toEqual({
+        outcome: "already_member",
+        leagueId: pub.id,
+      });
+      expect(await friend.leagues.joinPublic(priv.id)).toEqual({ outcome: "unknown_code" });
+    });
+
+    it("refuses a banned name for a public league", async () => {
+      const { newPlayer } = await setup();
+      const owner = await newPlayer();
+
+      await expect(owner.leagues.create("Ligue officielle", [], true)).rejects.toMatchObject({
+        code: "LEAGUE_NAME_BANNED",
+      });
+    });
+
     it("lets a friend join with the code, once", async () => {
       const { newPlayer, competitionSlug } = await setup();
       const [owner, friend] = [await newPlayer(), await newPlayer()];
-      const league = await owner.leagues.create("Club", [competitionSlug]);
+      const league = await owner.leagues.create("Club", [competitionSlug], false);
 
       expect(await friend.leagues.join(league.inviteCode)).toEqual({
         outcome: "joined",
@@ -104,7 +149,7 @@ export function leagueRepositoryContract(
     it("hides a league from a player who is not a member", async () => {
       const { newPlayer, competitionSlug } = await setup();
       const [owner, stranger] = [await newPlayer(), await newPlayer()];
-      const league = await owner.leagues.create("Privé", [competitionSlug]);
+      const league = await owner.leagues.create("Privé", [competitionSlug], false);
 
       expect(await stranger.leagues.members(league.id)).toBeNull();
       expect(await stranger.leagues.listMine()).toEqual([]);
@@ -113,7 +158,7 @@ export function leagueRepositoryContract(
     it("asks the owner to hand the league over before leaving, then lets him go", async () => {
       const { newPlayer, competitionSlug } = await setup();
       const [owner, friend] = [await newPlayer(), await newPlayer()];
-      const league = await owner.leagues.create("Relais", [competitionSlug]);
+      const league = await owner.leagues.create("Relais", [competitionSlug], false);
       await friend.leagues.join(league.inviteCode);
 
       expect(await owner.leagues.leave(league.id)).toBe("must_hand_over");
@@ -131,7 +176,7 @@ export function leagueRepositoryContract(
     it("deletes the league when its owner leaves alone", async () => {
       const { newPlayer, competitionSlug } = await setup();
       const owner = await newPlayer();
-      const league = await owner.leagues.create("Solo", [competitionSlug]);
+      const league = await owner.leagues.create("Solo", [competitionSlug], false);
 
       expect(await owner.leagues.leave(league.id)).toBe("left");
 

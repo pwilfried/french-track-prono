@@ -213,7 +213,10 @@ avant de partir (seul, partir supprime la ligue). Depuis la v0.9 (#267), une lig
 plusieurs compétitions choisies par son créateur (`create_league(nom, slugs[])`) et son classement
 additionne leurs points. Depuis la v0.7 (#312), une ligue peut aussi naître sans compétition :
 son créateur ajoute ensuite des compétitions à venir (`add_league_competition`, code FT009 pour une
-compétition déjà commencée). L'accueil liste les compétitions par type (internationales, françaises) et
+compétition déjà commencée). Ligues publiques (v0.7, #277) : tout joueur en crée une (case « Ligue
+publique »), elle se rejoint d'un appui sans code (`join_public_league`), 200 membres au plus, et
+son nom ne doit contenir aucun mot interdit (`isBannedLeagueName` / `is_banned_league_name`,
+code FT010). L'accueil liste les compétitions par type (internationales, françaises) et
 les pages suivent la prochaine compétition par date (`src/app/competition.ts`). Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
 calculé en TypeScript à partir des lignes de points (pas de vue SQL).
 
