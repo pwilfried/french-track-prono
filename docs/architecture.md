@@ -70,13 +70,18 @@ Numérotées pour la planification. F11 et F12 sont volontairement repoussées.
 | F11 | Séries en feu et badges (repoussée) | Des raisons de revenir |
 | F12 | Cartes à partager, ex. « Mon podium du 100 m » (repoussée) | Faire connaître le jeu et le podcast |
 | F13 | Page de confidentialité, suppression de compte, export des données | Conformité RGPD |
+| F14 | Plusieurs compétitions (internationales, françaises), accueil par type, ligue sur plusieurs compétitions (v0.9) | Jouer toute la saison |
+| F15 | Cotes fixées par l'admin, « Autre athlète », perf pronostiquée par athlète, barème ajustable (v0.9) | Des choix plus fins, plus de suspense |
+| F16 | Page « Comment jouer » et premier prono guidé (v0.9) | Comprendre des règles plus riches |
+| F17 | Ligues publiques jusqu'à 200 joueurs, sans code, noms modérés (v0.10) | Jouer avec la communauté FrenchTrack |
+| F18 | Gestion des profils : pseudo, avatar, e-mail, club ; fiche minimale ; admin chercher, bloquer, supprimer (v0.10) | Un compte que le joueur maîtrise |
 
 Barème (modifiable en base) : 3 points par athlète à la bonne place, 1 point pour un athlète sur
 le podium mais à la mauvaise place, +3 pour un podium parfait, +2 de bonus coup de flair
 (vainqueur choisi par moins de 15 % des joueurs, avec au moins 10 pronos), joker x2.
 
-Points à trancher plus tard : ex æquo sur le podium officiel, athlètes forfaits (0 point),
-relais pronostiqués par équipe (pays).
+Ex æquo : les athlètes partagent la place (décision du 07/11/2026). Forfait : l'athlète ne rapporte
+rien. Reste à trancher : relais pronostiqués par équipe (pays).
 
 ## Stack
 
@@ -242,6 +247,15 @@ française, fuseau horaire), ses épreuves (slug unique sur toutes les compétit
 liste de départ sont les engagés de la compétition (tout le monde tant que personne n'est engagé).
 La compétition mise en avant est la prochaine par date (`nextCompetition`).
 
+Cotes (v0.9, issues #259 et #260) : sur une compétition créée dans le back-office
+(`competitions.odds_enabled`), l'admin propose 5 ou 6 athlètes de la liste de départ avec une cote
+chacun, plus une cote « Autre athlète » (`event_odds`, `athlete_id` nul). La finale n'ouvre aux
+pronos qu'une fois les cotes saisies (`is_predictable()`). Le joueur choisit parmi les athlètes
+proposés ou « Autre athlète » (stocké nul dans `predictions.p1..p3`, une place au plus, FT006
+sinon). Perfs (#261) : `predictions.m1..m3`, dans l'unité de la discipline, verrouillées comme le
+podium. Points : voir « Cas de test du cœur », S14 à S18 ; le barème est éditable dans
+`/admin/bareme` (`admin_set_scoring_rule()`, journalisée).
+
 Tours (v0.8, issue #198) : une série, un quart ou une demi-finale pointe vers le tour qu'il
 alimente (`events.parent_id`). On ne pronostique que les finales, et une finale seulement quand
 tous ses tours précédents sont terminés (`is_predictable()`, vérifié par le trigger de
@@ -262,7 +276,10 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 | v0.5 Ligues et classements | **F4**, **F5** | …deux comptes dans la même ligue voient le même classement, départagé par podiums parfaits puis vainqueurs trouvés |
 | v0.6 Suspense | **F9** (coup de flair), **F10** (révélation + réactions emoji) | …avant verrouillage les pronos des autres sont illisibles (test), après verrouillage ils s'affichent et on peut réagir en emoji |
 | v0.7 Mise en ligne | **F13**, déploiement Vercel + Supabase cloud | …un ami s'inscrit depuis son téléphone sur l'adresse publique, fait un prono et peut supprimer son compte |
-| Plus tard | **F11** (séries, badges), **F12** (cartes à partager), questions bonus | à planifier après la v0.7 |
+| v0.8 Jeu vivant, admin, athlètes, appli | Aperçu du calcul, listes de départ, journal admin, épreuves combinées, appli installable, records, fiche athlète, tours | …l'admin prépare une finale (tours, liste de départ, résultat, calcul) sans toucher à la base, et l'appli s'installe sur le téléphone |
+| v0.9 Cotes et performances | **F14**, **F15**, **F16** | …un joueur choisit des compétitions françaises sur l'accueil, crée sa ligue dessus, pronostique un podium avec cotes et perfs, et ses points comptent cotes et perfs selon le barème réglé par l'admin |
+| v0.10 Ligues publiques et profils | **F17**, **F18** | …un joueur rejoint une ligue publique (200 joueurs au plus) sans code, et gère son profil |
+| Plus tard | **F11** (séries, badges), **F12** (cartes à partager), questions bonus, connexion Google / Apple | à planifier |
 
 ## Cas de test du cœur
 

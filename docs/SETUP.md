@@ -173,6 +173,10 @@ docker exec -i supabase_db_french-track-prono psql -U postgres -c "update profil
 
 3. Recharge la page. `supabase db reset` efface ce droit : refais l'étape 2 après un reset.
 
+Le back-office (`/admin/competitions`) regroupe : Compétitions (créer une compétition, ses épreuves
+et ses engagés, puis les cotes de chaque épreuve), Athlètes, Disciplines (tolérances), Barème
+(points du jeu, cotes et perfs compris) et Historique.
+
 ### Compétition de lancement : Championnats d'Europe (Birmingham)
 
 Les Championnats d'Europe de Birmingham (10-16 août 2026) sont rejoués comme s'ils avaient lieu
@@ -230,8 +234,12 @@ Le code à 6 chiffres marche toujours, sans rien changer.
 
 ## 4 ter. Test de bout en bout (Playwright)
 
-Deux parcours sont testés avec Playwright : « connexion → profil → prono → épreuve verrouillée →
-résultat saisi par l'admin → points », et « deux amis dans la même ligue voient le même classement ».
+Les parcours sont testés avec Playwright (un fichier par parcours dans `e2e/`), dont « connexion →
+profil → prono → épreuve verrouillée → résultat saisi par l'admin → points », « deux amis dans la
+même ligue voient le même classement », « accueil → compétitions françaises → ligue sur deux
+compétitions », le prono avec cotes et « Autre athlète », les perfs, et les écrans d'admin.
+En CI, `COMPETITION_SLUG=ultimate-championship-2026` épingle les pages sur la compétition du seed :
+les tests créent leurs propres compétitions et les suppriment ensuite.
 Ils tournent sur le build de production, contre Supabase local. Ils lisent le code de connexion
 dans la boîte de test (Mailpit) et préparent la base avec `psql` (verrouillage, droit admin,
 points).
