@@ -25,6 +25,22 @@ export function searchAthletes<T extends { name: string }>(athletes: T[], query:
   ].map((n) => n.athlete);
 }
 
+/** Filters of the back-office athlete list; an empty filter keeps everyone. */
+export type AthleteFilter = { discipline?: string; gender?: "F" | "M" | "X"; country?: string };
+
+/** The athletes that match every filter given (discipline, sex, country). */
+export function filterAthletes<
+  T extends { gender: string; countryCode: string; disciplines: string[] },
+>(athletes: T[], filter: AthleteFilter): T[] {
+  const country = filter.country?.trim().toUpperCase();
+  return athletes.filter(
+    (a) =>
+      (!filter.discipline || a.disciplines.includes(filter.discipline)) &&
+      (!filter.gender || a.gender === filter.gender) &&
+      (!country || a.countryCode.trim().toUpperCase() === country),
+  );
+}
+
 /** One to MAX_START_LIST athletes, all different. */
 export function isValidStartList(entries: { athleteId: string }[]): boolean {
   const ids = entries.map((e) => e.athleteId);

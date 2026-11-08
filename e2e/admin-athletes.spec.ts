@@ -30,8 +30,20 @@ test("an admin creates an athlete, adds a discipline with a PR and an SB, shown 
   await expect(page).toHaveURL(new RegExp(`/admin/athletes/${slug}\\?enregistre=1$`));
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
 
-  // She shows in the list.
+  // She shows among the 100 m women of France, not among the men (#300).
   await page.goto("/admin/athletes");
+  await page.getByLabel("Par discipline").selectOption("100 m");
+  await page.getByLabel("Par sexe").selectOption("M");
+  await page.getByRole("button", { name: "Filtrer" }).click();
+  await expect(page.getByText(/^\d+ athlètes?$/)).toBeVisible();
+  await expect(page.getByRole("link", { name: new RegExp(name) })).toHaveCount(0);
+  await page.getByLabel("Par sexe").selectOption("F");
+  await page.getByLabel("Par pays").selectOption("FRA");
+  await page.getByRole("button", { name: "Filtrer" }).click();
+  await expect(page).toHaveURL(/discipline=100\+m&sexe=F&pays=FRA/);
+  await expect(page.getByRole("link", { name: new RegExp(name) })).toBeVisible();
+
+  // She shows in the list.
   await page.getByRole("searchbox", { name: "Rechercher un athlète" }).fill(tag);
   await page.getByRole("button", { name: "Filtrer" }).click();
   await page.getByRole("link", { name: new RegExp(name) }).click();

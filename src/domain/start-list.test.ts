@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { isValidStartList, MAX_START_LIST, searchAthletes, sortByDiscipline } from "./start-list";
+import {
+  filterAthletes,
+  isValidStartList,
+  MAX_START_LIST,
+  searchAthletes,
+  sortByDiscipline,
+} from "./start-list";
 
 const athletes = [
   { id: "1", name: "Julien Alfred" },
@@ -57,5 +63,24 @@ describe("sortByDiscipline", () => {
     ]);
 
     expect(sorted.map((a) => a.name)).toEqual(["Bea", "Cleo", "Anna", "Zoé"]);
+  });
+});
+
+describe("filterAthletes", () => {
+  const athletes = [
+    { name: "Ana", gender: "F" as const, countryCode: "FRA", disciplines: ["100 m", "200 m"] },
+    { name: "Bea", gender: "F" as const, countryCode: "USA", disciplines: ["Saut en longueur"] },
+    { name: "Carl", gender: "M" as const, countryCode: "FRA", disciplines: ["100 m"] },
+  ];
+
+  it("keeps the athletes matching every filter given", () => {
+    expect(
+      filterAthletes(athletes, { discipline: "100 m", gender: "F" }).map((a) => a.name),
+    ).toEqual(["Ana"]);
+    expect(filterAthletes(athletes, { country: "fra" }).map((a) => a.name)).toEqual([
+      "Ana",
+      "Carl",
+    ]);
+    expect(filterAthletes(athletes, {})).toHaveLength(3);
   });
 });

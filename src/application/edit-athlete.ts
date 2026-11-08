@@ -12,6 +12,9 @@ export type AthleteSummary = {
   gender: EventGender;
 };
 
+/** An athlete of the back-office list, with the names of their disciplines (for the filters). */
+export type AthleteListItem = AthleteSummary & { disciplines: string[] };
+
 /** What the back-office shows of an athlete. */
 export type AthleteFile = AthleteSummary & {
   disciplines: { discipline: string; isPrimary: boolean }[];
@@ -23,7 +26,7 @@ type Write = Promise<"saved" | "not_admin">;
 /** Port: athletes in the back-office. Real adapter = Supabase (admin session), fake = in memory. */
 export interface AthleteAdminRepository {
   /** Every athlete, in any order. */
-  list(): Promise<AthleteSummary[]>;
+  list(): Promise<AthleteListItem[]>;
   /** One athlete with disciplines and records; null if unknown. */
   find(slug: string): Promise<AthleteFile | null>;
   update(
