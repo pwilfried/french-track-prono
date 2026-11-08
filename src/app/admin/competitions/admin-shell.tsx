@@ -26,12 +26,7 @@ export function AdminShell({
 }) {
   return (
     <main id="main" className="flex flex-1 flex-col">
-      <p
-        role="note"
-        className="bg-primary px-4 py-1 text-center text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary-foreground"
-      >
-        {messages.admin.band}
-      </p>
+      <AdminBand />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-4">
         {back && (
           <Link
@@ -86,4 +81,21 @@ export function ActionNotice({ saved, error }: { saved: boolean; error: string |
       {messages.adminAthletes.saved}
     </p>
   ) : null;
+}
+
+/** Top of every back-office page: the red band, with the way back to the player's app. */
+export function AdminBand() {
+  return (
+    <div className="flex items-center justify-between gap-3 bg-primary px-4 text-primary-foreground">
+      <p className="py-1 text-[11px] font-extrabold uppercase tracking-[0.14em]">
+        {messages.admin.band}
+      </p>
+      <Link
+        href="/profil"
+        className="inline-flex min-h-11 items-center text-sm font-bold underline"
+      >
+        {messages.admin.leave}
+      </Link>
+    </div>
+  );
 }

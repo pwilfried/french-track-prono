@@ -8,6 +8,7 @@ import { ErrorNotice } from "@/components/error-notice";
 import { createSupabaseAthleteAdminRepository, createSupabaseDisciplineRepository } from "@/infra";
 
 import { messages } from "../../../messages.fr";
+import { AdminBand } from "../../competitions/admin-shell";
 import { adminOnly } from "../../guard";
 import { editAthleteAction, editDisciplineAction, setRecordAction } from "../actions";
 
@@ -45,12 +46,7 @@ export default async function AdminAthletePage({
 
   return (
     <main id="main" className="flex flex-1 flex-col">
-      <p
-        role="note"
-        className="bg-primary px-4 py-1 text-center text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary-foreground"
-      >
-        {messages.admin.band}
-      </p>
+      <AdminBand />
       <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-4">
         <Link
           href="/admin/athletes"

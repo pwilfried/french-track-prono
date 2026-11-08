@@ -208,6 +208,7 @@ export const messages = {
   },
   admin: {
     band: "Back-office",
+    leave: "Quitter le back-office",
     statsLabel: "État de la compétition",
     stats: {
       open: "Ouvertes aux pronos",
