@@ -13,10 +13,14 @@ export function requiresProfile(pathname: string): boolean {
   return !OPEN_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
-// Pages an admin can open: the back-office, plus signing in and out (an admin only runs the game).
-const ADMIN_PREFIXES = ["/admin", "/auth", "/connexion", "/bienvenue", "/au-revoir"];
+const BACK_OFFICE = "/admin/competitions";
 
-/** True when an admin asking for this page must be sent to the back-office instead. */
-export function sendsAdminToBackOffice(pathname: string): boolean {
-  return !ADMIN_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+/**
+ * Where an admin lands after signing in: the back-office, unless they asked for one of its pages.
+ * An admin may then browse the player side and come back (decision of 8 Nov 2026).
+ */
+export function adminLanding(next: string): string {
+  return next === "/admin" || next.startsWith("/admin/") || next.startsWith("/admin?")
+    ? next
+    : BACK_OFFICE;
 }

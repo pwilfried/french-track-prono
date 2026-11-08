@@ -83,21 +83,26 @@ export function ActionNotice({ saved, error }: { saved: boolean; error: string |
   ) : null;
 }
 
-/** Top of every back-office page: the red band, with signing out (an admin only sees the back-office). */
+/** Top of every back-office page: the red band, with a link to the site and signing out. */
 export function AdminBand() {
   return (
     <div className="flex items-center justify-between gap-3 bg-primary px-4 text-primary-foreground">
       <p className="py-1 text-[11px] font-extrabold uppercase tracking-[0.14em]">
         {messages.admin.band}
       </p>
-      <form action="/auth/sign-out" method="post">
-        <button
-          type="submit"
-          className="inline-flex min-h-11 items-center text-sm font-bold underline"
-        >
-          {messages.admin.signOut}
-        </button>
-      </form>
+      <div className="flex items-center gap-4">
+        <Link href="/" className="inline-flex min-h-11 items-center text-sm font-bold underline">
+          {messages.admin.viewSite}
+        </Link>
+        <form action="/auth/sign-out" method="post">
+          <button
+            type="submit"
+            className="inline-flex min-h-11 items-center text-sm font-bold underline"
+          >
+            {messages.admin.signOut}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

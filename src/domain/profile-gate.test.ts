@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { requiresProfile, sendsAdminToBackOffice } from "./profile-gate";
+import { adminLanding, requiresProfile } from "./profile-gate";
 
 describe("requiresProfile", () => {
   it.each(["/", "/epreuves", "/epreuves/100m-hommes", "/profil", "/bienvenuex"])(
@@ -18,14 +18,14 @@ describe("requiresProfile", () => {
   ])("does not need a profile on %s", (path) => expect(requiresProfile(path)).toBe(false));
 });
 
-describe("sendsAdminToBackOffice", () => {
-  it.each(["/", "/epreuves", "/profil", "/ligues/creer", "/regles", "/administration"])(
-    "sends an admin from %s to the back-office",
-    (path) => expect(sendsAdminToBackOffice(path)).toBe(true),
+describe("adminLanding", () => {
+  it.each(["/", "/epreuves", "/profil", "/ligues/creer", "/administration"])(
+    "sends an admin who signs in for %s to the back-office",
+    (path) => expect(adminLanding(path)).toBe("/admin/competitions"),
   );
 
-  it.each(["/admin", "/admin/competitions", "/auth/sign-out", "/connexion", "/bienvenue"])(
-    "lets an admin open %s",
-    (path) => expect(sendsAdminToBackOffice(path)).toBe(false),
+  it.each(["/admin", "/admin/competitions", "/admin/bareme?x=1"])(
+    "keeps the back-office page %s an admin asked for",
+    (path) => expect(adminLanding(path)).toBe(path),
   );
 });

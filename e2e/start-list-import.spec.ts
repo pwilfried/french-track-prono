@@ -39,7 +39,7 @@ test("an admin imports a pasted start list, with fuzzy names and a new athlete",
   await expect(page).toHaveURL(new RegExp(`/admin/${slug}/depart\\?enregistre=1$`));
   await expect(page.locator("main").getByRole("status")).toContainText("3 athlètes");
 
-  // An admin only sees the back-office: back to a player to look at the public pages.
+  // Back to a player to look at the public pages as they see them.
   sql(
     `update profiles set is_admin = false where id = (select id from auth.users where email = '${player.email}')`,
   );

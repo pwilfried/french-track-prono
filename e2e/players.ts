@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { latestCodeFromMailbox } from "../src/infra/contract/mailbox";
+import { clearMailbox, latestCodeFromMailbox } from "../src/infra/contract/mailbox";
 
 /** A new invented player: e-mail on example.test, short pseudo. */
 export function newPlayer(tag: string) {
@@ -22,4 +22,13 @@ export async function signUp(page: Page, player: { email: string; pseudo: string
   await page.locator("label", { hasText: "🦅" }).click();
   await page.getByRole("checkbox", { name: /15 ans/ }).check();
   await page.getByRole("button", { name: "Créer mon profil" }).click();
+}
+
+/** Signs an existing player in again from the sign-in page (already open), with a fresh code. */
+export async function signIn(page: Page, email: string) {
+  await clearMailbox(email);
+  await page.getByLabel("Ton e-mail").fill(email);
+  await page.getByRole("button", { name: "Recevoir mon code" }).click();
+  await page.getByLabel(/code/i).fill(await latestCodeFromMailbox(email));
+  await page.getByRole("button", { name: "Me connecter" }).click();
 }

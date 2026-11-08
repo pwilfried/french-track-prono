@@ -27,3 +27,10 @@ export async function latestCodeFromMailbox(email: string): Promise<string> {
   }
   throw new Error(`no sign-in code found for ${email} in ${mailbox} (${seen})`);
 }
+
+/** Deletes the messages sent to an address, so the next code read is the one asked for next. */
+export async function clearMailbox(email: string): Promise<void> {
+  await fetch(`${mailbox}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`, {
+    method: "DELETE",
+  });
+}
