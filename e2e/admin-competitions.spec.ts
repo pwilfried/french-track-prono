@@ -47,6 +47,31 @@ test("an admin creates a French competition, an event and its entered athletes, 
     page.getByRole("list", { name: "épreuves" }).getByRole("link", { name: /200 m femmes/ }),
   ).toContainText("Pas de prono : ajoute la finale");
 
+  // The heat was a mistake: the admin makes it a final at another time, then deletes it (#293).
+  await page
+    .getByRole("list", { name: "épreuves" })
+    .getByRole("link", { name: /200 m femmes/ })
+    .click();
+  await page.getByText("Modifier l'épreuve").click();
+  await page.getByLabel("Tour").selectOption("final");
+  await page.getByLabel("Horaire (local)").fill("2099-06-27T19:10");
+  await page.getByRole("button", { name: "Enregistrer l'épreuve" }).click();
+  await expect(page.locator('main:not([aria-busy="true"])').getByRole("status")).toContainText(
+    "Enregistré",
+  );
+  await expect(page.getByLabel("Tour")).toHaveValue("final");
+  await expect(page.getByLabel("Horaire (local)")).toHaveValue("2099-06-27T19:10");
+  await page.getByText("Modifier l'épreuve").click();
+  await page.getByRole("button", { name: "Supprimer l'épreuve" }).click();
+  await expect(page).toHaveURL(new RegExp(`/admin/competitions/${slug}\\?enregistre=1$`));
+  await expect(page.getByRole("list", { name: "épreuves" })).not.toContainText("200 m");
+
+  // The competition's name is corrected.
+  await page.getByRole("link", { name: "Modifier", exact: true }).click();
+  await page.getByLabel("Nom", { exact: true }).fill(`${name} bis`);
+  await page.getByRole("button", { name: "Enregistrer les modifications" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(`${name} bis`);
+
   // Two entered athletes.
   await page.getByRole("link", { name: /Engagés/ }).click();
   for (const athlete of ["Sha'Carri Richardson", "Julien Alfred"]) {

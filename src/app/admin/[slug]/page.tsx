@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { computeEventPoints, type ScoreLine } from "@/application/compute-event-points";
-import { UseCaseError } from "@/application/errors";
+import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { getEvent } from "@/application/get-event";
 import { ErrorNotice } from "@/components/error-notice";
 import { PodiumMedals } from "@/components/podium/podium-medals";
@@ -20,9 +20,10 @@ import {
 
 import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
-import { AdminBand } from "../competitions/admin-shell";
+import { ActionNotice, AdminBand } from "../competitions/admin-shell";
 import { adminOnly } from "../guard";
 import { ComputeForm } from "./compute-form";
+import { EventEdit } from "./event-edit";
 import { PromoteForm } from "./promote-form";
 import { ResultForm } from "./result-form";
 import { ScoreTable, type Scored } from "./score-table";
@@ -79,12 +80,16 @@ export default async function AdminEventPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ corriger?: string }>;
+  searchParams: Promise<{ corriger?: string; enregistre?: string; erreur?: string }>;
 }) {
-  const competition = await currentCompetition();
   const { client } = await adminOnly();
   const { slug } = await params;
-  const correcting = (await searchParams).corriger === "1";
+  const search = await searchParams;
+  const correcting = search.corriger === "1";
+  const notice =
+    search.erreur && search.erreur in messages.errors
+      ? messages.errors[search.erreur as ErrorCode]
+      : null;
   const loaded = await load(slug, client);
 
   if (loaded === "error") {
@@ -96,6 +101,8 @@ export default async function AdminEventPage({
   }
 
   const { event, scores, preview } = loaded;
+  // Times in the event's own competition.
+  const competition = await currentCompetition(event.competitionSlug);
   const locked = eventPhase(new Date(), event.lockAt) === "locked";
   const hasResult = event.results.length > 0;
   const scored = scores.length > 0;
@@ -123,10 +130,10 @@ export default async function AdminEventPage({
       <header className="px-4 pt-4">
         <div className="mx-auto max-w-md">
           <Link
-            href="/admin"
+            href={event.competitionSlug ? `/admin/competitions/${event.competitionSlug}` : "/admin"}
             className="inline-flex min-h-11 items-center font-semibold text-brand dark:text-secondary"
           >
-            ‹ {messages.admin.back}
+            ‹ {competition.name}
           </Link>
           <h1 className="mt-1 font-display text-3xl font-extrabold leading-none">
             {event.discipline} {messages.events.gender[event.gender].toLowerCase()}
@@ -164,6 +171,10 @@ export default async function AdminEventPage({
               ))}
             </nav>
           )}
+          <div className="mt-3 flex flex-col gap-3">
+            <ActionNotice saved={!!search.enregistre} error={notice} />
+            <EventEdit event={event} timeZone={competition.timeZone} />
+          </div>
           {hasResult && !correcting && (
             <div className="mt-4 rounded-card border border-border bg-card p-4">
               <PodiumMedals results={event.results} />

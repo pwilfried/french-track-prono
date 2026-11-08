@@ -219,7 +219,6 @@ export const messages = {
     title: "Résultats",
     subtitle: (competition: string, count: number) =>
       `${competition} · ${count} ${count <= 1 ? "épreuve verrouillée" : "épreuves verrouillées"}`,
-    back: "Résultats",
     filters: "Filtrer par état",
     filter: {
       open: (n: number) => `Ouvertes (${n})`,
