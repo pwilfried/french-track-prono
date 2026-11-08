@@ -33,6 +33,11 @@ export interface LeagueRepository {
   members(leagueId: string): Promise<LeagueMember[] | null>;
   leave(leagueId: string): Promise<"left" | "must_hand_over">;
   handOver(leagueId: string, newOwnerId: string): Promise<"done" | "not_owner" | "unknown_member">;
+  /** Adds a coming competition to a league; only its creator may. */
+  addCompetition(
+    leagueId: string,
+    competitionSlug: string,
+  ): Promise<"added" | "not_owner" | "unknown" | "started">;
 }
 
 type Ports = { leagues: LeagueRepository };
@@ -42,9 +47,8 @@ export function createLeague(ports: Ports) {
     async execute(input: { name: string; competitionSlugs: string[] }): Promise<League> {
       const name = validateLeagueName(input.name);
       if (!name.ok) throw new UseCaseError(name.code);
-      const competitions = [...new Set(input.competitionSlugs)];
-      if (competitions.length === 0) throw new UseCaseError("LEAGUE_NO_COMPETITION");
-      return ports.leagues.create(name.name, competitions);
+      // A league may start without competition: its creator adds them afterwards (#312).
+      return ports.leagues.create(name.name, [...new Set(input.competitionSlugs)]);
     },
   };
 }
@@ -105,6 +109,17 @@ export function handOverLeague(ports: Ports) {
       const outcome = await ports.leagues.handOver(input.leagueId, input.newOwnerId);
       if (outcome === "not_owner") throw new UseCaseError("NOT_LEAGUE_OWNER");
       if (outcome === "unknown_member") throw new UseCaseError("LEAGUE_MEMBER_UNKNOWN");
+    },
+  };
+}
+
+export function addLeagueCompetition(ports: Ports) {
+  return {
+    async execute(input: { leagueId: string; competitionSlug: string }): Promise<void> {
+      const outcome = await ports.leagues.addCompetition(input.leagueId, input.competitionSlug);
+      if (outcome === "not_owner") throw new UseCaseError("NOT_LEAGUE_OWNER");
+      if (outcome === "unknown") throw new UseCaseError("COMPETITION_NOT_FOUND");
+      if (outcome === "started") throw new UseCaseError("COMPETITION_STARTED");
     },
   };
 }

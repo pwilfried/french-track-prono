@@ -99,5 +99,17 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       if (error.code === "P0002") return "unknown_member";
       return fail();
     },
+
+    async addCompetition(leagueId, competitionSlug) {
+      const { error } = await client.rpc("add_league_competition", {
+        p_league: leagueId,
+        p_competition_slug: competitionSlug,
+      });
+      if (!error) return "added";
+      if (error.code === "42501") return "not_owner";
+      if (error.code === "P0002") return "unknown";
+      if (error.code === "FT009") return "started";
+      return fail();
+    },
   };
 }

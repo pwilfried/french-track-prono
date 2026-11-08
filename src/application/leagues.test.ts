@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { UseCaseError } from "./errors";
 import {
+  addLeagueCompetition,
   createLeague,
   getLeague,
   handOverLeague,
@@ -39,6 +40,7 @@ function repository(
     members: async () => null,
     leave: async () => "left",
     handOver: async () => "done",
+    addCompetition: async () => "added",
     ...overrides,
   };
 }
@@ -73,13 +75,12 @@ describe("createLeague", () => {
     expect(leagues.competitions).toEqual([["a", "b"]]);
   });
 
-  it("refuses a league without competition with LEAGUE_NO_COMPETITION", async () => {
+  it("creates a league without competition, to complete later", async () => {
     const leagues = repository();
 
-    expect(
-      await codeOf(createLeague({ leagues }).execute({ name: "Potes", competitionSlugs: [] })),
-    ).toBe("LEAGUE_NO_COMPETITION");
-    expect(leagues.created).toEqual([]);
+    await createLeague({ leagues }).execute({ name: "Potes", competitionSlugs: [] });
+
+    expect(leagues.competitions).toEqual([[]]);
   });
 
   it("refuses an invalid name with LEAGUE_NAME_INVALID, without creating anything", async () => {
@@ -185,6 +186,36 @@ describe("leaveLeague and handOverLeague", () => {
 
     expect(
       await codeOf(handOverLeague({ leagues }).execute({ leagueId: "l1", newOwnerId: "x" })),
+    ).toBe(code);
+  });
+});
+
+describe("addLeagueCompetition", () => {
+  it("adds a coming competition to the league of its creator", async () => {
+    const asked: [string, string][] = [];
+    const leagues = repository({
+      addCompetition: async (leagueId, slug) => {
+        asked.push([leagueId, slug]);
+        return "added";
+      },
+    });
+
+    await addLeagueCompetition({ leagues }).execute({ leagueId: "l1", competitionSlug: "euro" });
+
+    expect(asked).toEqual([["l1", "euro"]]);
+  });
+
+  it.each([
+    ["not_owner", "NOT_LEAGUE_OWNER"],
+    ["unknown", "COMPETITION_NOT_FOUND"],
+    ["started", "COMPETITION_STARTED"],
+  ] as const)("turns %s into %s", async (outcome, code) => {
+    const leagues = repository({ addCompetition: async () => outcome });
+
+    expect(
+      await codeOf(
+        addLeagueCompetition({ leagues }).execute({ leagueId: "l1", competitionSlug: "x" }),
+      ),
     ).toBe(code);
   });
 });

@@ -6,12 +6,13 @@ import { getLeague } from "@/application/leagues";
 import { getLeagueRanking } from "@/application/rankings";
 import { ErrorNotice } from "@/components/error-notice";
 import { Leaderboard } from "@/components/leaderboard/leaderboard";
-import { LeaveLeagueForm } from "@/components/leagues/league-forms";
+import { AddLeagueCompetitionForm, LeaveLeagueForm } from "@/components/leagues/league-forms";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { ShareInvite } from "@/components/leagues/share-invite";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+import { currentDay, loadCompetitions } from "../../competition";
 import { messages } from "../../messages.fr";
 import { leaguePorts } from "../data";
 
@@ -45,7 +46,7 @@ export default async function LeaguePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ onglet?: string; nouvelle?: string }>;
+  searchParams: Promise<{ onglet?: string; nouvelle?: string; ajoutee?: string }>;
 }) {
   const { id } = await params;
   // A league id is a UUID: anything else cannot be a league.
@@ -53,7 +54,7 @@ export default async function LeaguePage({
   const query = await searchParams;
   const tab = TABS.find((t) => t === query.onglet) ?? "classement";
   const ports = await leaguePorts(`/ligues/${id}`);
-  const loaded = await load(id, ports);
+  const [loaded, competitions] = await Promise.all([load(id, ports), loadCompetitions()]);
 
   if (loaded === "error") {
     return (
@@ -65,6 +66,12 @@ export default async function LeaguePage({
 
   const { league, members, ranking } = loaded;
   const isOwner = league.ownerId === ports.userId;
+  const known = [...competitions.coming, ...competitions.past];
+  const counted = known.filter((c) => league.competitionSlugs.includes(c.slug));
+  // Only competitions still to come can be added (the database checks it too).
+  const addable = competitions.coming.filter(
+    (c) => !league.competitionSlugs.includes(c.slug) && c.startsOn > currentDay(),
+  );
   const subtitle = [
     messages.leagues.members(league.memberCount),
     messages.leagues.codeShort(league.inviteCode),
@@ -102,6 +109,41 @@ export default async function LeaguePage({
 
         {tab === "classement" && (
           <>
+            {query.ajoutee === "1" && (
+              <p
+                role="status"
+                className="rounded-2xl bg-success/15 px-3.5 py-3 text-sm font-semibold text-success-text"
+              >
+                {messages.leagues.added}
+              </p>
+            )}
+            <section aria-labelledby="league-competitions" className="flex flex-col gap-2">
+              <h2
+                id="league-competitions"
+                className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+              >
+                {messages.leagues.competitionsTitle}
+              </h2>
+              {counted.length === 0 ? (
+                <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
+                  {isOwner ? messages.leagues.noCompetition : messages.leagues.noCompetitionMember}
+                </p>
+              ) : (
+                <ul className="flex flex-wrap gap-2">
+                  {counted.map((c) => (
+                    <li key={c.slug}>
+                      <Link
+                        href={`/competitions/${c.slug}`}
+                        className="inline-flex min-h-11 items-center rounded-full border border-border bg-card px-3.5 text-sm font-semibold"
+                      >
+                        {c.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {isOwner && <AddLeagueCompetitionForm leagueId={id} choices={addable} />}
+            </section>
             <Leaderboard rows={ranking} meId={ports.userId} retryHref={`/ligues/${id}`} />
             <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
               {messages.leagues.tieRule}

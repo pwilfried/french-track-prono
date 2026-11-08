@@ -54,3 +54,52 @@ test("a player picks two French competitions on the home page and his league add
 
   sql(`delete from competitions where slug like '${tag}-%'`);
 });
+
+test("a player creates a league without competition, then adds a coming one to its ranking", async ({
+  page,
+}) => {
+  const tag = `e2e-later-${Date.now() % 1000000}`;
+  const name = `Test plus tard ${tag}`;
+  sql(`with c as (
+      insert into competitions (slug, name, scope, starts_on, ends_on)
+      values ('${tag}', '${name}', 'international', current_date + 320, current_date + 321)
+      returning id
+    )
+    insert into events (competition_id, slug, discipline, gender, starts_at, lock_at)
+    select id, '${tag}-100m', '100 m', 'F', now() + interval '320 days', now() + interval '320 days'
+    from c`);
+  const player = newPlayer("later");
+
+  await page.goto("/ligues");
+  await signUp(page, player);
+  await page.waitForURL(/\/ligues$/);
+  await page.getByRole("link", { name: "Créer une ligue" }).click();
+  await expect(page.getByText("Aucune compétition pour l'instant")).toBeVisible();
+  await page.getByLabel("Nom de la ligue").fill(`Plus tard ${tag}`);
+  await page.getByRole("button", { name: "Créer la ligue" }).click();
+  await expect(page.getByText("Ta ligue est prête")).toBeVisible();
+  const leagueUrl = page.url().split("?")[0]!;
+
+  // The league starts empty; its creator adds the coming competition.
+  await page.goto(leagueUrl);
+  await expect(page.getByText("Pas encore de compétition")).toBeVisible();
+  await page.getByLabel("Ajouter une compétition à venir").selectOption({ label: name });
+  await page.getByRole("button", { name: "Ajouter", exact: true }).click();
+  await expect(page.locator("main").getByRole("status")).toContainText("Compétition ajoutée");
+  await expect(
+    page.getByRole("region", { name: "Compétitions de la ligue" }).getByRole("link", { name }),
+  ).toBeVisible();
+
+  // Its points now count in the league ranking.
+  sql(`insert into score_events (user_id, competition_id, event_id, source, points, reason, detail)
+    select u.id, e.competition_id, e.id, 'prediction', 7, 'prediction',
+           jsonb_build_object('reasons', '[{"kind":"exact","slot":1}]'::jsonb)
+    from auth.users u, events e
+    where u.email = '${player.email}' and e.slug = '${tag}-100m'`);
+  await page.reload();
+  const rows = page.getByRole("list", { name: "Classement" }).getByRole("listitem");
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText("7");
+
+  sql(`delete from competitions where slug = '${tag}'`);
+});

@@ -7,6 +7,7 @@ import { Field } from "@/components/account/field";
 import { SubmitButton } from "@/components/account/submit-button";
 
 import {
+  addLeagueCompetitionAction,
   createLeagueAction,
   handOverLeagueAction,
   joinLeagueAction,
@@ -154,6 +155,56 @@ export function HandOverForm({
       )}
       <SubmitButton pendingLabel={messages.leagues.handingOver}>
         {messages.leagues.handOverSubmit}
+      </SubmitButton>
+    </form>
+  );
+}
+
+/** The creator picks a coming competition that the league does not count yet. */
+export function AddLeagueCompetitionForm({
+  leagueId,
+  choices,
+}: {
+  leagueId: string;
+  choices: { slug: string; name: string }[];
+}) {
+  const [state, action] = useActionState<LeagueFormState, FormData>(addLeagueCompetitionAction, {
+    value: choices[0]?.slug ?? "",
+  });
+  if (choices.length === 0) {
+    return <p className="text-sm text-muted-foreground">{messages.leagues.nothingToAdd}</p>;
+  }
+  return (
+    <form action={action} className="flex flex-col gap-2">
+      <input type="hidden" name="leagueId" value={leagueId} />
+      <label htmlFor="add-competition" className="text-sm font-bold">
+        {messages.leagues.addLabel}
+      </label>
+      <select
+        id="add-competition"
+        name="competition"
+        defaultValue={state.value}
+        aria-invalid={state.error ? true : undefined}
+        aria-describedby={state.error ? "add-competition-error" : undefined}
+        className="min-h-12 rounded-2xl border-2 border-border bg-card px-3 text-base text-card-foreground focus-visible:border-primary focus-visible:outline-none"
+      >
+        {choices.map((c) => (
+          <option key={c.slug} value={c.slug}>
+            {c.name}
+          </option>
+        ))}
+      </select>
+      {state.error && (
+        <p
+          id="add-competition-error"
+          role="alert"
+          className="text-sm font-semibold text-accent-text"
+        >
+          {messages.errors[state.error]}
+        </p>
+      )}
+      <SubmitButton pendingLabel={messages.leagues.adding}>
+        {messages.leagues.addSubmit}
       </SubmitButton>
     </form>
   );

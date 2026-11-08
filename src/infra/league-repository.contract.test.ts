@@ -6,10 +6,15 @@ import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryLeagueStore, createSupabaseLeagueRepository } from "./index";
 
 leagueRepositoryContract("in-memory fake", async () => {
-  const store = createInMemoryLeagueStore();
+  const store = createInMemoryLeagueStore({
+    "ultimate-championship-2026": "started",
+    "contract-league-other": "started",
+    "contract-league-coming": "coming",
+  });
   return {
     competitionSlug: "ultimate-championship-2026",
     otherCompetitionSlug: "contract-league-other",
+    comingCompetitionSlug: "contract-league-coming",
     newPlayer: async () => {
       const userId = crypto.randomUUID();
       return {
@@ -29,9 +34,13 @@ if (url && key) {
     sql(`insert into competitions (slug, name, starts_on, ends_on)
       values ('contract-league-other', 'Test league other', current_date - 400, current_date - 400)
       on conflict (slug) do nothing`);
+    sql(`insert into competitions (slug, name, starts_on, ends_on)
+      values ('contract-league-coming', 'Test league coming', current_date + 400, current_date + 401)
+      on conflict (slug) do nothing`);
     return {
       competitionSlug: "ultimate-championship-2026",
       otherCompetitionSlug: "contract-league-other",
+      comingCompetitionSlug: "contract-league-coming",
       newPlayer: async () => {
         const player = await signedInPlayer(url, key);
         return { userId: player.userId, leagues: createSupabaseLeagueRepository(player.client) };

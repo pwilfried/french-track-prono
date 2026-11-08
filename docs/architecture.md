@@ -211,7 +211,9 @@ Ligues (v0.5, décisions du propriétaire dans l'issue #112) : code d'invitation
 caractères ambigus (ni 0/O, ni 1/I/L), 50 membres au plus, le créateur passe la main à un membre
 avant de partir (seul, partir supprime la ligue). Depuis la v0.9 (#267), une ligue compte une ou
 plusieurs compétitions choisies par son créateur (`create_league(nom, slugs[])`) et son classement
-additionne leurs points. L'accueil liste les compétitions par type (internationales, françaises) et
+additionne leurs points. Depuis la v0.7 (#312), une ligue peut aussi naître sans compétition :
+son créateur ajoute ensuite des compétitions à venir (`add_league_competition`, code FT009 pour une
+compétition déjà commencée). L'accueil liste les compétitions par type (internationales, françaises) et
 les pages suivent la prochaine compétition par date (`src/app/competition.ts`). Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
 calculé en TypeScript à partir des lignes de points (pas de vue SQL).
 

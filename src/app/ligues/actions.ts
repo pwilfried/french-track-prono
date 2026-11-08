@@ -1,9 +1,11 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { UseCaseError, type ErrorCode } from "@/application/errors";
 import {
+  addLeagueCompetition,
   createLeague,
   handOverLeague,
   joinLeague,
@@ -102,4 +104,22 @@ export async function handOverLeagueAction(
     throw error;
   }
   redirect(`/ligues/${leagueId}?onglet=membres`);
+}
+
+/** The creator adds a coming competition; the league ranking counts it at once. */
+export async function addLeagueCompetitionAction(
+  _: LeagueFormState,
+  data: FormData,
+): Promise<LeagueFormState> {
+  const leagueId = formText(data, "leagueId");
+  const competitionSlug = formText(data, "competition");
+  const repository = await leagues(`/ligues/${leagueId}`);
+  try {
+    await addLeagueCompetition({ leagues: repository }).execute({ leagueId, competitionSlug });
+  } catch (error) {
+    if (error instanceof UseCaseError) return { value: competitionSlug, error: error.code };
+    throw error;
+  }
+  revalidatePath(`/ligues/${leagueId}`);
+  redirect(`/ligues/${leagueId}?ajoutee=1`);
 }
