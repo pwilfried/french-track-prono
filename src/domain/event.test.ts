@@ -32,6 +32,7 @@ describe("compareEvents", () => {
 
 const line = (name: string, rank: number): ResultLine => ({
   athleteId: name,
+  slug: name,
   name,
   countryCode: "FRA",
   rank,

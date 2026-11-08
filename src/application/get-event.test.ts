@@ -8,6 +8,7 @@ import type { EventReader } from "./list-events";
 
 const athlete = (slug: string) => ({
   athleteId: slug,
+  slug: slug,
   name: slug.toUpperCase(),
   countryCode: "FRA",
 });
