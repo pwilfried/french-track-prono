@@ -70,6 +70,20 @@ export function createSupabaseAthleteAdminRepository(client: SupabaseClient): At
       };
     },
 
+    async create(fields) {
+      const created = await client.rpc("create_athlete", {
+        p_name: fields.name,
+        p_country: fields.countryCode,
+        p_gender: fields.gender,
+        p_slug: fields.slug,
+      });
+      if (created.error?.code === "42501") return "not_admin";
+      if (created.error) throw new UseCaseError("ATHLETES_UNAVAILABLE");
+      const athleteId = created.data as string;
+      const row = await client.from("athletes").select("slug").eq("id", athleteId).single<{ slug: string }>();
+      if (row.error) throw new UseCaseError("ATHLETES_UNAVAILABLE");
+      return { athleteId, slug: row.data.slug };
+    },
     update: (athleteId, fields) =>
       call("admin_update_athlete", {
         p_athlete: athleteId,

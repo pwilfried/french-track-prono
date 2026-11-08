@@ -1,5 +1,6 @@
 import type { AthleteRecord } from "@/domain/athlete";
 import type { EventGender } from "@/domain/event";
+import { athleteSlug } from "@/domain/start-list-import";
 
 import { UseCaseError } from "./errors";
 
@@ -29,6 +30,13 @@ export interface AthleteAdminRepository {
     athleteId: string,
     fields: { name: string; countryCode: string; gender: EventGender },
   ): Write;
+  /** Adds a new athlete; the slug gets a number if taken. Returns the slug kept. */
+  create(fields: {
+    name: string;
+    countryCode: string;
+    gender: EventGender;
+    slug: string;
+  }): Promise<{ athleteId: string; slug: string } | "not_admin">;
   /** Adds a discipline, or changes whether it is the main one (one main per athlete). */
   setDiscipline(athleteId: string, discipline: string, isPrimary: boolean): Write;
   removeDiscipline(athleteId: string, discipline: string): Write;
@@ -49,22 +57,43 @@ const allowed = async (write: Write) => {
   if ((await write) === "not_admin") throw new UseCaseError("NOT_ADMIN");
 };
 
+/** Name, country and category as the admin typed them, checked; null when invalid. */
+function identity(input: { name: string; countryCode: string; gender: string }) {
+  const name = input.name.trim();
+  const countryCode = input.countryCode.trim().toUpperCase();
+  if (!name || !/^[A-Z]{3}$/.test(countryCode) || !["F", "M", "X"].includes(input.gender)) {
+    return null;
+  }
+  return { name, countryCode, gender: input.gender as EventGender };
+}
+
+/** The admin creates an athlete with their main discipline; returns the athlete's slug. */
+export function createAthlete(ports: { athletes: AthleteAdminRepository }) {
+  return {
+    async execute(input: {
+      name: string;
+      countryCode: string;
+      gender: string;
+      discipline: string;
+    }): Promise<string> {
+      const fields = identity(input);
+      if (!fields || !athleteSlug(fields.name)) throw new UseCaseError("ATHLETE_INVALID");
+      if (!input.discipline) throw new UseCaseError("DISCIPLINE_NOT_FOUND");
+      const created = await ports.athletes.create({ ...fields, slug: athleteSlug(fields.name) });
+      if (created === "not_admin") throw new UseCaseError("NOT_ADMIN");
+      await allowed(ports.athletes.setDiscipline(created.athleteId, input.discipline, true));
+      return created.slug;
+    },
+  };
+}
+
 /** The admin corrects the name, country or gender of an athlete. */
 export function editAthlete(ports: { athletes: AthleteAdminRepository }) {
   return {
     async execute(input: { athleteId: string; name: string; countryCode: string; gender: string }) {
-      const name = input.name.trim();
-      const countryCode = input.countryCode.trim().toUpperCase();
-      if (!name || !/^[A-Z]{3}$/.test(countryCode) || !["F", "M", "X"].includes(input.gender)) {
-        throw new UseCaseError("ATHLETE_INVALID");
-      }
-      await allowed(
-        ports.athletes.update(input.athleteId, {
-          name,
-          countryCode,
-          gender: input.gender as EventGender,
-        }),
-      );
+      const fields = identity(input);
+      if (!fields) throw new UseCaseError("ATHLETE_INVALID");
+      await allowed(ports.athletes.update(input.athleteId, fields));
     },
   };
 }

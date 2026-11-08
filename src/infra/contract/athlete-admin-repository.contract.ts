@@ -89,5 +89,27 @@ export function athleteAdminRepositoryContract(
         }),
       ).toBe("not_admin");
     });
+
+    it("lets an admin create an athlete with a free slug, and refuses a player", async () => {
+      const w = await world();
+      const fields = {
+        name: "Inventée Bis",
+        countryCode: "FRA",
+        gender: "F" as const,
+        slug: w.slug,
+      };
+
+      expect(await w.player.create(fields)).toBe("not_admin");
+      const created = await w.admin.create(fields);
+
+      expect(created).not.toBe("not_admin");
+      const { slug } = created as { slug: string };
+      expect(slug).not.toBe(w.slug);
+      expect(await w.admin.find(slug)).toMatchObject({
+        name: "Inventée Bis",
+        countryCode: "FRA",
+        gender: "F",
+      });
+    });
   });
 }
