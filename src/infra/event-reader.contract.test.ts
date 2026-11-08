@@ -19,11 +19,13 @@ const fixture: EventDetail[] = [
     lockAt: "2026-09-12T16:55:00.000Z",
     isFeatured: true,
     status: "finished",
+    round: "final",
     entries: [{ athleteId: "a1", slug: "a1", name: "A", countryCode: "FRA", seasonBest: null }],
     results: [
       { athleteId: "a1", slug: "a1", name: "A", countryCode: "FRA", rank: 1, mark: "9.80" },
     ],
     subDisciplines: [],
+    previousRounds: [],
   },
   {
     id: "e2",
@@ -34,11 +36,13 @@ const fixture: EventDetail[] = [
     lockAt: "2026-09-11T16:55:00.000Z",
     isFeatured: false,
     status: "finished",
+    round: "final",
     entries: [{ athleteId: "a1", slug: "a1", name: "A", countryCode: "FRA", seasonBest: null }],
     results: [
       { athleteId: "a1", slug: "a1", name: "A", countryCode: "FRA", rank: 1, mark: "9.80" },
     ],
     subDisciplines: [],
+    previousRounds: [],
   },
 ];
 

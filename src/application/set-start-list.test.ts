@@ -18,6 +18,7 @@ function repository(outcome: StartListOutcome = "saved") {
       return outcome;
     },
     createAthlete: async () => "not_admin",
+    promote: async () => "not_admin",
   };
   return { startLists, stored };
 }

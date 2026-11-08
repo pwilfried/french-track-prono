@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { computeEventPoints } from "@/application/compute-event-points";
 import { enterResults, type ResultEntry } from "@/application/enter-results";
+import { promoteToNextRound } from "@/application/promote-to-next-round";
 import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { importStartList, type ImportEntry } from "@/application/import-start-list";
 import { setStartList, type StartListEntry } from "@/application/set-start-list";
@@ -153,4 +154,22 @@ export async function importStartListAction(
   }
   revalidatePath(`/epreuves/${slug}`);
   redirect(`/admin/${slug}/depart?enregistre=1`);
+}
+
+export async function promoteAction(
+  _: AdminActionState & { done?: boolean },
+  data: FormData,
+): Promise<AdminActionState & { done?: boolean }> {
+  const { client } = await adminOnly();
+  try {
+    await promoteToNextRound({ startLists: createSupabaseStartListRepository(client) }).execute({
+      eventId: formText(data, "eventId"),
+      top: Number(formText(data, "top")),
+    });
+  } catch (error) {
+    if (error instanceof UseCaseError) return { error: error.code };
+    throw error;
+  }
+  revalidatePath("/admin");
+  return { done: true };
 }

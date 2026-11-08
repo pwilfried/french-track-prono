@@ -7,8 +7,10 @@ import type {
   EventGender,
   EventStatus,
   EventSummary,
+  PreviousRound,
   ResultLine,
 } from "@/domain/event";
+import { compareRounds, type Round } from "@/domain/rounds";
 
 type EventRow = {
   id: string;
@@ -19,6 +21,7 @@ type EventRow = {
   lock_at: string;
   is_featured: boolean;
   status: EventStatus;
+  round: Round;
 };
 
 type EntryRow = {
@@ -28,7 +31,7 @@ type EntryRow = {
 
 type ResultRow = { athlete_id: string; rank: number; mark: string | null };
 
-const EVENT_COLUMNS = "id, slug, discipline, gender, starts_at, lock_at, is_featured, status";
+const EVENT_COLUMNS = "id, slug, discipline, gender, starts_at, lock_at, is_featured, status, round";
 
 function toSummary(row: EventRow): EventSummary {
   return {
@@ -40,7 +43,54 @@ function toSummary(row: EventRow): EventSummary {
     lockAt: new Date(row.lock_at).toISOString(),
     isFeatured: row.is_featured,
     status: row.status,
+    round: row.round,
   };
+}
+
+type RoundResultRow = {
+  event_id: string;
+  rank: number;
+  mark: string | null;
+  entries: { athletes: { id: string; slug: string; name: string; country_code: string } };
+};
+
+/** The rounds leading to an event (their `parent_id` is the event), with their results. */
+async function previousRounds(client: SupabaseClient, eventId: string): Promise<PreviousRound[]> {
+  const rounds = await client
+    .from("events")
+    .select("id, slug, round, status")
+    .eq("parent_id", eventId)
+    .returns<{ id: string; slug: string; round: Round; status: EventStatus }[]>();
+  if (rounds.error) throw new UseCaseError("EVENTS_UNAVAILABLE");
+  if (rounds.data.length === 0) return [];
+  // Results reach athletes through the start list (composite foreign key on entries).
+  const results = await client
+    .from("results")
+    .select("event_id, rank, mark, entries!inner(athletes!inner(id, slug, name, country_code))")
+    .in(
+      "event_id",
+      rounds.data.map((r) => r.id),
+    )
+    .order("rank")
+    .returns<RoundResultRow[]>();
+  if (results.error) throw new UseCaseError("EVENTS_UNAVAILABLE");
+  return rounds.data
+    .sort((a, b) => compareRounds(a.round, b.round) || a.slug.localeCompare(b.slug))
+    .map((round) => ({
+      slug: round.slug,
+      round: round.round,
+      status: round.status,
+      results: results.data
+        .filter((r) => r.event_id === round.id)
+        .map(({ rank, mark, entries: { athletes: a } }) => ({
+          athleteId: a.id,
+          slug: a.slug,
+          name: a.name,
+          countryCode: a.country_code,
+          rank,
+          mark,
+        })),
+    }));
 }
 
 export function createSupabaseEventReader(client: SupabaseClient): EventReader {
@@ -110,6 +160,7 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
         entries,
         results,
         subDisciplines: found.data.sub_disciplines ?? [],
+        previousRounds: await previousRounds(client, found.data.id),
       };
     },
   };

@@ -12,6 +12,7 @@ const event = (slug: string, startsAt: string, gender: EventGender = "M"): Event
   lockAt: startsAt,
   isFeatured: false,
   status: "finished",
+  round: "final",
 });
 
 describe("groupEventsByDay", () => {

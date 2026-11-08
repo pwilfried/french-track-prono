@@ -5,7 +5,8 @@ import { UseCaseError } from "./errors";
 export type Prediction = { userId: string; eventId: string; podium: Podium; useJoker: boolean };
 
 /** Why a save did not happen, besides success. The database decides, the use case translates. */
-export type SaveOutcome = "saved" | "locked" | "athlete_not_in_event" | "joker_already_used";
+export type SaveOutcome =
+  "saved" | "locked" | "round_not_ready" | "athlete_not_in_event" | "joker_already_used";
 
 /** Port: where predictions are stored. Real adapter = Supabase, fake = in memory. */
 export interface PredictionRepository {
@@ -27,6 +28,7 @@ export type SavePredictionInput = {
 
 const CODES = {
   locked: "PREDICTION_LOCKED",
+  round_not_ready: "ROUND_NOT_READY",
   athlete_not_in_event: "ATHLETE_NOT_IN_EVENT",
   joker_already_used: "JOKER_ALREADY_USED",
 } as const;

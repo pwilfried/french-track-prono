@@ -11,6 +11,7 @@ describe("listStartListCandidates", () => {
       find: async () => [],
       replace: async () => "saved",
       createAthlete: async () => "not_admin",
+      promote: async () => "not_admin",
     };
 
     expect(await listStartListCandidates({ startLists }).execute({ gender: "F" })).toEqual(women);

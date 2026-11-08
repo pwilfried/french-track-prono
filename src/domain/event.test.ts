@@ -11,6 +11,7 @@ const event = (slug: string, startsAt: string): EventSummary => ({
   lockAt: startsAt,
   isFeatured: false,
   status: "finished",
+  round: "final",
 });
 
 describe("compareEvents", () => {
