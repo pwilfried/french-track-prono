@@ -15,11 +15,8 @@ export const messages = {
   },
   app: {
     name: "French Track Prono",
-    nameLine1: "French Track",
-    nameLine2: "Prono",
     short: "FTP",
     home: "French Track Prono, accueil",
-    logoAlt: "French Track",
     skipToContent: "Aller au contenu",
     tagline: "Pronostique les podiums d'athlétisme, chambre tes amis, grimpe au classement.",
     description: "Le jeu de pronostics d'athlétisme de la communauté FrenchTrack.",
@@ -183,7 +180,6 @@ export const messages = {
     linkNote: "Le lien ouvre la ligue directement après connexion.",
     tabs: { ranking: "Classement", members: "Membres", invite: "Inviter" },
     owner: "Créateur",
-    afterEvents: "Classement de la ligue",
     tieRule: "Égalité : podiums parfaits, puis vainqueurs trouvés. Toujours égaux : même place.",
     handOver: "Confier la ligue à un membre",
     handOverTitle: "Confier la ligue",
@@ -382,7 +378,6 @@ export const messages = {
     prediction: "Pas de réseau : ton podium n'est pas enregistré. Réessaie une fois connecté.",
   },
   athlete: {
-    back: "Retour",
     subtitle: (country: string, gender: string) => `${country} · ${gender}`,
     records: "Records",
     pr: "Record perso",
@@ -604,8 +599,6 @@ export const messages = {
     save: "Enregistrer les cotes",
   },
   myPredictions: {
-    predicted: "✓ Pronostiqué",
-    toPredict: "À pronostiquer",
     joker: "🃏 Joker",
   },
   event: {
@@ -630,8 +623,6 @@ export const messages = {
     send: "Recevoir mon code",
     sending: "Envoi…",
     firstTime: "Pas de compte à créer : si c'est ta première fois, il se crée tout seul.",
-    checkTitle: "Vérifie ta boîte mail",
-    sentTo: (email: string) => `Code envoyé à ${email}`,
     waysTitle: "Deux façons de te connecter",
     waysBody: "Tape le code reçu ci-dessous, ou ouvre le lien du message (sur ce téléphone).",
     codeLabel: "Code reçu par e-mail",
@@ -793,7 +784,6 @@ export const messages = {
     save: "Enregistrer mon podium",
     saving: "Enregistrement…",
     saved: "✓ Podium enregistré. Tu peux le modifier jusqu'au verrouillage.",
-    lockedTitle: "Ton podium (verrouillé)",
     jokerUsedHere: "🃏 Joker utilisé sur cette épreuve",
     none: "Tu n'avais pas pronostiqué cette épreuve : 0 point.",
     visitorTitle: "Connecte-toi pour pronostiquer",

@@ -16,6 +16,7 @@ import {
 
 import { currentCompetition } from "../competition";
 import { messages } from "../messages.fr";
+import { paramText } from "../search-params";
 import { pointsReasonLabels } from "../points-labels";
 import { getCurrentUser, getSessionClient } from "../session";
 
@@ -45,10 +46,9 @@ export default async function MyPointsPage({
 }: {
   searchParams: Promise<{ competition?: string | string[] }>;
 }) {
-  const asked = (await searchParams).competition;
-  const competition = await currentCompetition(typeof asked === "string" ? asked : undefined);
-  const here =
-    typeof asked === "string" ? `/mes-points?competition=${competition.slug}` : "/mes-points";
+  const asked = paramText((await searchParams).competition);
+  const competition = await currentCompetition(asked);
+  const here = asked ? `/mes-points?competition=${competition.slug}` : "/mes-points";
   const user = await getCurrentUser();
   if (!user) redirect(`/connexion?next=${encodeURIComponent(here)}`);
   const loaded = await load(user.userId, competition.slug);

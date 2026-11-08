@@ -3,7 +3,8 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { daysUntil, type CompetitionScope } from "@/domain/competition";
 
-import { loadCompetitions } from "../competition";
+import { currentDay, loadCompetitions } from "../competition";
+import { paramList } from "../search-params";
 import { messages } from "../messages.fr";
 
 const SCOPES: CompetitionScope[] = ["international", "france"];
@@ -12,9 +13,6 @@ const tab = (on: boolean) =>
   `flex min-h-11 items-center justify-center rounded-full font-semibold ${
     on ? "bg-brand text-white" : "text-muted-foreground"
   }`;
-
-const list = (value: string | string[] | undefined): string[] =>
-  value === undefined ? [] : Array.isArray(value) ? value : [value];
 
 /**
  * The competitions of one kind (board v0.9 « Choix »): the coming ones to tick for a league (the
@@ -27,8 +25,8 @@ export default async function CompetitionsPage({
 }) {
   const search = await searchParams;
   const scope: CompetitionScope = search.type === "france" ? "france" : "international";
-  const ticked = new Set(list(search.competition));
-  const today = new Date().toISOString().slice(0, 10);
+  const ticked = new Set(paramList(search.competition));
+  const today = currentDay();
   const all = await loadCompetitions();
   const coming = all.coming.filter((c) => c.scope === scope);
   const past = all.past.filter((c) => c.scope === scope);
