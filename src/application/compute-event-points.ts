@@ -1,4 +1,5 @@
 import { eventPhase } from "@/domain/countdown";
+import { missingPodiumRanks } from "@/domain/official-result";
 import {
   flairContext,
   scorePrediction,
@@ -38,22 +39,25 @@ export interface PointsRepository {
 
 /**
  * Computes the points of every player who predicted an event, from its official result. Can be run
- * again (after a corrected result): the lines of the event are replaced, never duplicated.
+ * again (after a corrected result): the lines of the event are replaced, never duplicated. A dry
+ * run makes the same checks and returns the lines that would be stored, without storing them.
  */
 export function computeEventPoints(ports: { points: PointsRepository; now?: () => Date }) {
   const now = ports.now ?? (() => new Date());
   return {
-    async execute(input: { eventId: string }): Promise<ScoreLine[]> {
+    async execute(input: { eventId: string; dryRun?: boolean }): Promise<ScoreLine[]> {
       const event = await ports.points.loadEvent(input.eventId);
       if (!event) throw new UseCaseError("EVENT_NOT_FOUND");
       if (eventPhase(now(), event.lockAt) === "open") throw new UseCaseError("EVENT_NOT_LOCKED");
       if (event.results.length === 0) throw new UseCaseError("RESULT_MISSING");
+      if (missingPodiumRanks(event.results).length > 0) throw new UseCaseError("RESULT_INCOMPLETE");
 
       const context = flairContext(event.predictions);
       const lines = event.predictions.map((prediction) => ({
         userId: prediction.userId,
         ...scorePrediction(prediction, event.results, event.rules, context),
       }));
+      if (input.dryRun) return lines;
       const outcome = await ports.points.replaceEventScores(input.eventId, lines);
       if (outcome === "not_admin") throw new UseCaseError("NOT_ADMIN");
       return lines;

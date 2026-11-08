@@ -17,3 +17,11 @@ export function isValidOfficialPodium(lines: OfficialLine[]): boolean {
       lines.filter((other) => other.rank < line.rank).length === line.rank - 1,
   );
 }
+
+/**
+ * The podium ranks nobody fills yet. A rank skipped because of a tie is not missing: with two
+ * athletes tied first, rank 2 is skipped and only rank 3 can be missing.
+ */
+export function missingPodiumRanks(lines: OfficialLine[]): number[] {
+  return [1, 2, 3].filter((rank) => lines.filter((line) => line.rank <= rank).length < rank);
+}

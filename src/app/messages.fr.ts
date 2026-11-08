@@ -203,7 +203,7 @@ export const messages = {
     saveResult: "Enregistrer le résultat",
     savingResult: "Enregistrement…",
     resultSaved: "✓ Résultat enregistré. Les points ne sont pas encore calculés.",
-    compute: "Calculer les points",
+    compute: "Confirmer le calcul",
     recompute: "Recalculer",
     computing: "Calcul…",
     correct: "Corriger le résultat",
@@ -211,7 +211,20 @@ export const messages = {
       "Calculer peut être relancé après une correction : les points sont remplacés, jamais ajoutés deux fois.",
     computed: (players: number) =>
       `✓ Points calculés pour ${players} ${players <= 1 ? "joueur" : "joueurs"}.`,
-    kpi: { predictions: "pronos", average: "moyenne", best: "meilleur" },
+    kpi: {
+      predictions: "joueurs",
+      total: "points donnés",
+      atZero: "à 0 point",
+      averageAndBest: (average: string, best: number) =>
+        `Moyenne ${average} pts · meilleur score ${best} pts`,
+    },
+    preview: {
+      title: "Aperçu du calcul",
+      note: "Rien n'est encore enregistré : vérifie les points, puis confirme.",
+      detail: "Points qui seront enregistrés",
+    },
+    missingRanks: (ranks: number[]) =>
+      `Podium incomplet : il manque ${ranks.map((r) => (r === 1 ? "la 1re place" : `la ${r}e place`)).join(" et ")}. Corrige le résultat avant de calculer.`,
     detail: "Détail",
     noPrediction: "Personne n'a pronostiqué cette épreuve.",
   },
@@ -419,6 +432,7 @@ export const messages = {
     RANKING_UNAVAILABLE:
       "Le classement n'est pas disponible pour le moment. Réessaie dans un instant.",
     RESULT_MISSING: "Saisis d'abord le résultat officiel de cette épreuve.",
+    RESULT_INCOMPLETE: "Le podium officiel est incomplet : corrige le résultat avant de calculer.",
     EVENT_NOT_LOCKED: "Les pronos de cette épreuve ne sont pas encore fermés.",
     POINTS_UNAVAILABLE:
       "Les points ne sont pas disponibles pour le moment. Réessaie dans un instant.",

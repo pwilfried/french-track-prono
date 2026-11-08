@@ -7,7 +7,7 @@ import { SubmitButton } from "@/components/account/submit-button";
 
 import { computePointsAction, type AdminActionState } from "./actions";
 
-/** "Calculer les points" (or "Recalculer"), with the French message of a refused computation. */
+/** "Confirmer le calcul" (or "Recalculer"), with the French message of a refused computation. */
 export function ComputeForm({
   eventId,
   slug,

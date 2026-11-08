@@ -47,8 +47,11 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   await page.getByRole("button", { name: "Enregistrer le résultat" }).click();
   await expect(page.getByRole("status")).toContainText("Résultat enregistré");
 
-  // Computing the points, then the player sees them.
-  await page.getByRole("button", { name: "Calculer les points" }).click();
+  // A dry run shows the points before anything is stored; confirming stores them.
+  const preview = page.getByRole("region", { name: "Aperçu du calcul" });
+  await expect(preview).toContainText("Rien n'est encore enregistré");
+  await expect(preview.getByRole("listitem").first()).toContainText("12");
+  await page.getByRole("button", { name: "Confirmer le calcul" }).click();
   await expect(page.getByRole("status")).toContainText("Points calculés");
   await page.goto("/mes-points");
   await expect(page.locator("main")).toContainText("+12 pts");

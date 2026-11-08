@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import type { ScoreLine } from "@/application/compute-event-points";
+import { computeEventPoints, type ScoreLine } from "@/application/compute-event-points";
 import { UseCaseError } from "@/application/errors";
 import { getEvent } from "@/application/get-event";
 import { ErrorNotice } from "@/components/error-notice";
@@ -9,6 +9,7 @@ import { PodiumMedals } from "@/components/podium/podium-medals";
 import { buttonVariants } from "@/components/ui/button";
 import { eventPhase } from "@/domain/countdown";
 import type { EventDetail } from "@/domain/event";
+import { missingPodiumRanks } from "@/domain/official-result";
 import type { PodiumDraft } from "@/domain/podium-draft";
 import {
   createPublicSupabaseClient,
@@ -22,27 +23,46 @@ import { messages } from "../../messages.fr";
 import { adminOnly } from "../guard";
 import { ComputeForm } from "./compute-form";
 import { ResultForm } from "./result-form";
+import { ScoreTable, type Scored } from "./score-table";
 
-type Scored = ScoreLine & { pseudo: string };
+type Loaded = {
+  event: EventDetail;
+  /** The stored points of the event, best first. */
+  scores: Scored[];
+  /** Before any computation: the points a computation would store, best first (dry run). */
+  preview: Scored[];
+};
 
 async function load(
   slug: string,
   client: Awaited<ReturnType<typeof adminOnly>>["client"],
-): Promise<{ event: EventDetail; scores: Scored[] } | "error"> {
+): Promise<Loaded | "error"> {
   try {
     const event = await getEvent({
       events: createSupabaseEventReader(createPublicSupabaseClient()),
     }).execute({ competitionSlug: COMPETITION_SLUG, eventSlug: slug });
-    const lines = await createSupabasePointsRepository(client).findEventScores(event.id);
-    // One profile read per scored player: fine for the size of a league of friends.
+    const points = createSupabasePointsRepository(client);
+    const lines = await points.findEventScores(event.id);
+    const canPreview =
+      lines.length === 0 &&
+      event.results.length > 0 &&
+      missingPodiumRanks(event.results).length === 0 &&
+      eventPhase(new Date(), event.lockAt) === "locked";
+    const previewLines = canPreview
+      ? await computeEventPoints({ points }).execute({ eventId: event.id, dryRun: true })
+      : [];
+    // One profile read per player: fine for the size of a league of friends.
     const profiles = createSupabaseProfileRepository(client);
-    const scores = await Promise.all(
-      lines.map(async (line) => ({
-        ...line,
-        pseudo: (await profiles.find(line.userId))?.pseudo ?? "?",
-      })),
-    );
-    return { event, scores: scores.sort((a, b) => b.points - a.points) };
+    const withPseudo = async (rows: ScoreLine[]) =>
+      (
+        await Promise.all(
+          rows.map(async (line) => ({
+            ...line,
+            pseudo: (await profiles.find(line.userId))?.pseudo ?? "?",
+          })),
+        )
+      ).sort((a, b) => b.points - a.points);
+    return { event, scores: await withPseudo(lines), preview: await withPseudo(previewLines) };
   } catch (error) {
     if (error instanceof UseCaseError) {
       if (error.code === "EVENT_NOT_FOUND") notFound();
@@ -72,10 +92,11 @@ export default async function AdminEventPage({
     );
   }
 
-  const { event, scores } = loaded;
+  const { event, scores, preview } = loaded;
   const locked = eventPhase(new Date(), event.lockAt) === "locked";
   const hasResult = event.results.length > 0;
   const scored = scores.length > 0;
+  const missing = missingPodiumRanks(event.results);
   const when = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
     day: "numeric",
@@ -92,7 +113,6 @@ export default async function AdminEventPage({
     .filter((r) => !onSteps.includes(r.athleteId) && r.rank <= 3)
     .map((r) => ({ athleteId: r.athleteId, rank: r.rank as 1 | 2 | 3 }));
   const marks = Object.fromEntries(event.results.map((r) => [r.athleteId, r.mark ?? ""]));
-  const average = scored ? scores.reduce((sum, s) => sum + s.points, 0) / scores.length : 0;
 
   return (
     <main id="main" className="flex flex-1 flex-col">
@@ -144,40 +164,24 @@ export default async function AdminEventPage({
             >
               {scored ? messages.admin.computed(scores.length) : messages.admin.resultSaved}
             </p>
-            {scored && (
-              <>
-                <dl className="grid grid-cols-3 gap-2 text-center">
-                  {[
-                    [messages.admin.kpi.predictions, String(scores.length)],
-                    [
-                      messages.admin.kpi.average,
-                      average.toLocaleString("fr-FR", { maximumFractionDigits: 1 }),
-                    ],
-                    [messages.admin.kpi.best, String(scores[0]!.points)],
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-2xl border border-border bg-card p-2.5">
-                      <dd className="text-2xl font-extrabold">{value}</dd>
-                      <dt className="text-xs font-semibold text-muted-foreground">{label}</dt>
-                    </div>
-                  ))}
-                </dl>
-                <h2 className="pt-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {messages.admin.detail}
+            {scored ? (
+              <ScoreTable lines={scores} title={messages.admin.detail} />
+            ) : missing.length > 0 ? (
+              <p role="alert" className="rounded-card bg-muted p-4 text-sm font-semibold">
+                {messages.admin.missingRanks(missing)}
+              </p>
+            ) : preview.length === 0 ? (
+              <p className="rounded-card bg-muted p-4 text-sm">{messages.admin.noPrediction}</p>
+            ) : (
+              <section aria-labelledby="preview-title" className="flex flex-col gap-3">
+                <h2 id="preview-title" className="font-display text-xl font-extrabold">
+                  {messages.admin.preview.title}
                 </h2>
-                <ul className="flex flex-col">
-                  {scores.map((s) => (
-                    <li
-                      key={s.userId}
-                      className="flex min-h-12 items-center gap-3 border-b border-border py-2"
-                    >
-                      <span className="min-w-0 flex-1 break-words font-semibold">{s.pseudo}</span>
-                      <span className="text-lg font-extrabold text-success-text">{s.points}</span>
-                    </li>
-                  ))}
-                </ul>
-              </>
+                <p className="text-sm text-muted-foreground">{messages.admin.preview.note}</p>
+                <ScoreTable lines={preview} title={messages.admin.preview.detail} />
+              </section>
             )}
-            <ComputeForm eventId={event.id} slug={slug} again={scored} />
+            {missing.length === 0 && <ComputeForm eventId={event.id} slug={slug} again={scored} />}
             <Link
               href={`/admin/${slug}?corriger=1`}
               className={`${buttonVariants({ variant: "muted" })} w-full`}

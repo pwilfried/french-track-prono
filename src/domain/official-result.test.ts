@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isValidOfficialPodium } from "./official-result";
+import { isValidOfficialPodium, missingPodiumRanks } from "./official-result";
 
 const podium = (...ranks: number[]) => ranks.map((rank, i) => ({ athleteId: `a${i}`, rank }));
 
@@ -32,5 +32,21 @@ describe("isValidOfficialPodium", () => {
         { athleteId: "b", rank: 3 },
       ]),
     ).toBe(false);
+  });
+});
+
+describe("missingPodiumRanks", () => {
+  const line = (athleteId: string, rank: number) => ({ athleteId, rank });
+
+  it("finds no missing rank on a full podium, with or without ties", () => {
+    expect(missingPodiumRanks([line("A", 1), line("B", 2), line("C", 3)])).toEqual([]);
+    expect(missingPodiumRanks([line("A", 1), line("B", 1), line("C", 3)])).toEqual([]);
+    expect(missingPodiumRanks([line("A", 1), line("B", 2), line("C", 2)])).toEqual([]);
+  });
+
+  it("names the ranks still empty on a podium of two", () => {
+    expect(missingPodiumRanks([line("A", 1), line("B", 2)])).toEqual([3]);
+    expect(missingPodiumRanks([line("A", 1)])).toEqual([2, 3]);
+    expect(missingPodiumRanks([])).toEqual([1, 2, 3]);
   });
 });
