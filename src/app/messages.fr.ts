@@ -331,6 +331,19 @@ export const messages = {
     rank: (rank: number) => (rank === 1 ? "1re" : `${rank}e`),
     profileOf: (name: string) => `Fiche de ${name}`,
   },
+  rounds: {
+    previous: (n: number) => `Perfs des tours précédents (${n})`,
+    label: (round: "series" | "quarter" | "semi" | "final", n: number) =>
+      ({ series: `Série ${n}`, quarter: `Quart ${n}`, semi: `Demi-finale ${n}`, final: "Finale" })[
+        round
+      ],
+    name: { series: "Série", quarter: "Quart de finale", semi: "Demi-finale", final: "Finale" },
+    noResult: "Pas encore de résultat.",
+    promote: "Qualifier pour le tour suivant",
+    promoteTop: "Nombre de qualifiés",
+    promoted: "✓ Qualifiés ajoutés à la liste de départ du tour suivant.",
+    previousLinks: "Tours précédents",
+  },
   myPredictions: {
     predicted: "✓ Pronostiqué",
     toPredict: "À pronostiquer",
@@ -559,6 +572,8 @@ export const messages = {
     PODIUM_INVALID: "Choisis trois athlètes différents pour ton podium.",
     PREDICTION_LOCKED:
       "Trop tard : cette épreuve vient d'être verrouillée. Ton podium n'a pas été enregistré.",
+    ROUND_NOT_READY: "Les pronos ouvrent quand les tours précédents sont terminés.",
+    ROUND_UNAVAILABLE: "La qualification n'a pas pu être faite. Réessaie.",
     JOKER_ALREADY_USED: "Tu as déjà utilisé ton joker dans cette compétition.",
     PREDICTION_UNAVAILABLE:
       "Ton prono n'est pas disponible pour le moment. Réessaie dans un instant.",

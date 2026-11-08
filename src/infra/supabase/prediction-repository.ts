@@ -56,6 +56,8 @@ export function createSupabasePredictionRepository(client: SupabaseClient): Pred
       const where = `${error.message} ${error.details ?? ""}`;
       // P0001: raised by the lock trigger.
       if (error.code === "P0001") return "locked";
+      // FT001: a heat, or a final whose earlier rounds are not finished.
+      if (error.code === "FT001") return "round_not_ready";
       // 23503: a foreign key to `entries` (event, athlete) failed.
       if (error.code === "23503" && where.includes("entries")) return "athlete_not_in_event";
       // 23505: the unique index of the single joker.

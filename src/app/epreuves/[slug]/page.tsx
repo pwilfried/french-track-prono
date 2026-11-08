@@ -13,6 +13,7 @@ import { PodiumPicker } from "@/components/podium/podium-picker";
 import { eventPhase } from "@/domain/countdown";
 import type { EventDetail } from "@/domain/event";
 import { flagOf } from "@/domain/flag";
+import { canPredictRound } from "@/domain/rounds";
 import { draftFromPodium, emptyDraft } from "@/domain/podium-draft";
 import {
   createPublicSupabaseClient,
@@ -70,6 +71,11 @@ async function PredictionSection({
   open: boolean;
 }) {
   const back = `/epreuves/${slug}`;
+
+  // A final opens once its semi-finals are run: the start list is only known then.
+  if (open && !canPredictRound(event.round, event.previousRounds)) {
+    return <p className="mx-4 rounded-card bg-muted p-4">{messages.errors.ROUND_NOT_READY}</p>;
+  }
 
   if (!user) {
     return (
@@ -219,6 +225,50 @@ export default async function EventPage({
           )}
         </div>
       </header>
+
+      {event.previousRounds.length > 0 && (
+        <details className="mx-auto mt-4 w-full max-w-md px-4">
+          <summary className="flex min-h-11 cursor-pointer items-center font-bold">
+            {messages.rounds.previous(event.previousRounds.length)}
+          </summary>
+          <div className="mt-2 flex flex-col gap-4">
+            {event.previousRounds.map((round, index) => (
+              <section key={round.slug} aria-label={messages.rounds.label(round.round, index + 1)}>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  {messages.rounds.label(round.round, index + 1)} ·{" "}
+                  {messages.events.status[round.status]}
+                </h3>
+                {round.results.length === 0 ? (
+                  <p className="mt-1 text-sm text-muted-foreground">{messages.rounds.noResult}</p>
+                ) : (
+                  <ol className="mt-1 flex flex-col">
+                    {round.results.map((r) => (
+                      <li
+                        key={r.athleteId}
+                        className="flex min-h-11 items-center gap-3 border-b border-border py-1.5"
+                      >
+                        <span className="w-6 shrink-0 text-center font-mono text-sm text-muted-foreground">
+                          {r.rank}
+                        </span>
+                        <span aria-hidden="true">{flagOf(r.countryCode)}</span>
+                        <Link
+                          href={`/athletes/${r.slug}`}
+                          className="min-w-0 flex-1 break-words font-semibold"
+                        >
+                          {r.name}
+                        </Link>
+                        <span className="font-mono text-sm font-semibold tabular-nums">
+                          {r.mark ?? ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </section>
+            ))}
+          </div>
+        </details>
+      )}
 
       <section className="mx-auto w-full max-w-md pt-6" aria-label={messages.picker.podium}>
         {user && winner ? (

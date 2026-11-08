@@ -32,6 +32,14 @@ startListRepositoryContract("in-memory fake", async () => {
     discipline: "100 m",
     candidateId: "a1",
     markInUse: (athleteId) => store.markInUse(eventId, [athleteId]),
+    makeRound: async () => {
+      store.setRound(eventId, "next-round", [
+        { athleteId: "a1", rank: 1 },
+        { athleteId: "a2", rank: 2 },
+        { athleteId: "a3", rank: 3 },
+      ]);
+      return "next-round";
+    },
     admin,
     player: store.session({ isAdmin: false }),
   };
@@ -62,6 +70,17 @@ if (url && key) {
         void sql(
           `insert into results (event_id, athlete_id, rank) values ('${eventId}', '${athleteId}', 1)`,
         ),
+      makeRound: async () => {
+        const next =
+          sql(`insert into events (competition_id, slug, discipline, gender, starts_at, lock_at)
+          select competition_id, slug || '-final', discipline, gender, starts_at + interval '1 day',
+                 lock_at + interval '1 day' from events where id = '${eventId}' returning id`);
+        sql(`update events set round = 'semi', parent_id = '${next}' where id = '${eventId}'`);
+        sql(`insert into results (event_id, athlete_id, rank) values
+          ('${eventId}', '${athleteIds[0]}', 1), ('${eventId}', '${athleteIds[1]}', 2),
+          ('${eventId}', '${athleteIds[2]}', 3)`);
+        return next;
+      },
       admin: createSupabaseStartListRepository(admin.client),
       player: createSupabaseStartListRepository(player.client),
     };

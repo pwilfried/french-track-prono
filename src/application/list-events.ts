@@ -8,13 +8,14 @@ export interface EventReader {
   findBySlug(competitionSlug: string, eventSlug: string): Promise<EventDetail | null>;
 }
 
-export type ListEventsInput = { competitionSlug: string };
+/** `withRounds`: heats and semi-finals too (back-office); players see finals only. */
+export type ListEventsInput = { competitionSlug: string; withRounds?: boolean };
 
 export function listEvents(ports: { events: EventReader }) {
   return {
     async execute(input: ListEventsInput): Promise<EventSummary[]> {
       const events = await ports.events.listByCompetition(input.competitionSlug);
-      return [...events].sort(compareEvents);
+      return events.filter((e) => input.withRounds || e.round === "final").sort(compareEvents);
     },
   };
 }

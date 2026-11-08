@@ -5,7 +5,7 @@ import {
   type EventFixture,
   type PredictionWorld,
 } from "./contract/prediction-repository.contract";
-import { createTestCompetition } from "./contract/database";
+import { createTestCompetition, sql } from "./contract/database";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryPredictionRepository, createSupabasePredictionRepository } from "./index";
 
@@ -17,6 +17,7 @@ function fakeWorld(): PredictionWorld {
     { id: "open-1", competitionSlug: "c", lockAt: future, athleteIds: athletes },
     { id: "open-2", competitionSlug: "c", lockAt: future, athleteIds: athletes },
     { id: "locked", competitionSlug: "c", lockAt: past, athleteIds: athletes },
+    { id: "semi", competitionSlug: "c", lockAt: future, athleteIds: athletes, predictable: false },
   ];
   const shared = createInMemoryPredictionRepository({ events: fixtures });
   const event = (id: string): EventFixture => ({
@@ -29,6 +30,7 @@ function fakeWorld(): PredictionWorld {
     newPlayer: async () => ({ userId: crypto.randomUUID(), predictions: shared }),
     openEvents: [event("open-1"), event("open-2")],
     lockedEvent: event("locked"),
+    semiFinal: event("semi"),
   };
 }
 
@@ -41,12 +43,15 @@ const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 if (url && key) {
   /** A competition of its own: two open events and one locked event. */
   const realWorld = async (): Promise<PredictionWorld> => {
-    const { competitionSlug, events, outsiderId } = createTestCompetition({ open: 2, locked: 1 });
-    const [a, b, c] = events.map((e) => ({
+    const { competitionSlug, events, outsiderId } = createTestCompetition({ open: 4, locked: 1 });
+    // The third open event becomes a semi-final leading to the fourth (a final nobody predicts).
+    sql(`update events set round = 'semi', parent_id = '${events[3]!.eventId}'
+      where id = '${events[2]!.eventId}'`);
+    const [a, b, semi, , c] = events.map((e) => ({
       eventId: e.eventId,
       athleteIds: e.athleteIds,
       outsiderId,
-    })) as [EventFixture, EventFixture, EventFixture];
+    })) as [EventFixture, EventFixture, EventFixture, EventFixture, EventFixture];
 
     const newPlayer = async () => {
       const player = await signedInPlayer(url, key);
@@ -55,7 +60,7 @@ if (url && key) {
         predictions: createSupabasePredictionRepository(player.client),
       };
     };
-    return { competitionSlug, newPlayer, openEvents: [a, b], lockedEvent: c };
+    return { competitionSlug, newPlayer, openEvents: [a, b], lockedEvent: c, semiFinal: semi };
   };
   predictionRepositoryContract("Supabase (local)", realWorld);
 } else {

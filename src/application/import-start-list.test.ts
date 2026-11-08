@@ -15,6 +15,7 @@ function repository(isAdmin = true) {
       stored.set(eventId, entries);
       return "saved";
     },
+    promote: async () => "not_admin",
     createAthlete: async (athlete) => {
       if (!isAdmin) return "not_admin";
       created.push(athlete);

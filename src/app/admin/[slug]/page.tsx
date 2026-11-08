@@ -22,6 +22,7 @@ import { COMPETITION_SLUG, COMPETITION_TIME_ZONE } from "../../competition";
 import { messages } from "../../messages.fr";
 import { adminOnly } from "../guard";
 import { ComputeForm } from "./compute-form";
+import { PromoteForm } from "./promote-form";
 import { ResultForm } from "./result-form";
 import { ScoreTable, type Scored } from "./score-table";
 
@@ -133,6 +134,11 @@ export default async function AdminEventPage({
           <h1 className="mt-1 font-display text-3xl font-extrabold leading-none">
             {event.discipline} {messages.events.gender[event.gender].toLowerCase()}
           </h1>
+          {event.round !== "final" && (
+            <p className="mt-1 text-sm font-bold uppercase tracking-wider text-muted-foreground">
+              {messages.rounds.name[event.round]}
+            </p>
+          )}
           <p className="mt-2 text-sm text-muted-foreground first-letter:uppercase">
             {when.replace(" à ", " · ")}
           </p>
@@ -142,6 +148,19 @@ export default async function AdminEventPage({
           >
             {messages.startList.link(event.entries.length)}
           </Link>
+          {event.previousRounds.length > 0 && (
+            <nav aria-label={messages.rounds.previousLinks} className="mt-2 flex flex-wrap gap-2">
+              {event.previousRounds.map((round, index) => (
+                <Link
+                  key={round.slug}
+                  href={`/admin/${round.slug}`}
+                  className="inline-flex min-h-11 items-center rounded-full border border-border px-4 text-sm font-semibold"
+                >
+                  {messages.rounds.label(round.round, index + 1)}
+                </Link>
+              ))}
+            </nav>
+          )}
           {hasResult && !correcting && (
             <div className="mt-4 rounded-card border border-border bg-card p-4">
               <PodiumMedals results={event.results} />
@@ -187,7 +206,11 @@ export default async function AdminEventPage({
                 <ScoreTable lines={preview} title={messages.admin.preview.detail} />
               </section>
             )}
-            {missing.length === 0 && <ComputeForm eventId={event.id} slug={slug} again={scored} />}
+            {event.round !== "final" ? (
+              <PromoteForm eventId={event.id} slug={slug} />
+            ) : (
+              missing.length === 0 && <ComputeForm eventId={event.id} slug={slug} again={scored} />
+            )}
             <Link
               href={`/admin/${slug}?corriger=1`}
               className={`${buttonVariants({ variant: "muted" })} w-full`}

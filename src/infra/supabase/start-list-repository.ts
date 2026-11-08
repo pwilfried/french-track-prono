@@ -59,6 +59,18 @@ export function createSupabaseStartListRepository(client: SupabaseClient): Start
       throw new UseCaseError("START_LIST_UNAVAILABLE");
     },
 
+    async promote(eventId, top) {
+      const { data, error } = await client.rpc("promote_to_next_round", {
+        p_event: eventId,
+        p_top: top,
+      });
+      if (!error) return data as number;
+      if (error.code === "42501") return "not_admin";
+      // FT002: this round leads to no other round.
+      if (error.code === "FT002") return "no_next_round";
+      throw new UseCaseError("ROUND_UNAVAILABLE");
+    },
+
     async replace(eventId, entries) {
       const { error } = await client.rpc("set_start_list", {
         p_event: eventId,

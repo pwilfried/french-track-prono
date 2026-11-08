@@ -22,9 +22,11 @@ const detail = (overrides: Partial<EventDetail> = {}): EventDetail => ({
   lockAt: "2026-09-12T16:55:00.000Z",
   isFeatured: true,
   status: "finished",
+  round: "final",
   entries: [],
   results: [],
   subDisciplines: [],
+  previousRounds: [],
   ...overrides,
 });
 

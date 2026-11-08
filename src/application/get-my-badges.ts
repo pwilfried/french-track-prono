@@ -22,9 +22,11 @@ export function getMyBadges(ports: {
         ports.predictions.listForCompetition(input.userId, input.competitionSlug),
         ports.events.listByCompetition(input.competitionSlug),
       ]);
+      // Players predict finals only: heats never count for the "every event of a day" badge.
+      const finals = events.filter((e) => e.round === "final");
       const myLines = lines.filter((l) => l.userId === input.userId);
       const computed = new Map(lines.map((l) => [l.eventId, l.eventStartsAt]));
-      const sorted = [...events].sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+      const sorted = [...finals].sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
 
       // A French winner found: read the start list of the few events where the winner was right.
       const pickOf = new Map(predictions.map((p) => [p.eventId, p.podium.first]));

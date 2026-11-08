@@ -30,6 +30,7 @@ async function load(client: Awaited<ReturnType<typeof adminOnly>>["client"]) {
     const [events, progress] = await Promise.all([
       listEvents({ events: createSupabaseEventReader(createPublicSupabaseClient()) }).execute({
         competitionSlug: COMPETITION_SLUG,
+        withRounds: true,
       }),
       createSupabasePointsRepository(client).progress(COMPETITION_SLUG),
     ]);
@@ -172,6 +173,7 @@ export default async function AdminPage({
                       <span className="min-w-0 flex-1">
                         <span className="block break-words font-bold">
                           {event.discipline} {messages.events.gender[event.gender].toLowerCase()}
+                          {event.round !== "final" && ` · ${messages.rounds.name[event.round]}`}
                         </span>
                         <span className="block text-sm text-muted-foreground first-letter:uppercase">
                           {time.format(new Date(event.startsAt))}

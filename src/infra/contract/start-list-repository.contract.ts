@@ -17,6 +17,8 @@ export type StartListWorld = {
   /** An athlete of the gender who runs the discipline. */
   candidateId: string;
   markInUse: (athleteId: string) => void;
+  /** Makes the event a round leading to a new event, ranks its first three athletes 1 to 3. */
+  makeRound: () => Promise<string>;
   admin: StartListRepository;
   player: StartListRepository;
 };
@@ -100,6 +102,19 @@ export function startListRepositoryContract(name: string, world: () => Promise<S
         countryCode: "FRA",
         fit: "other",
       });
+    });
+
+    it("qualifies the first of a round for the next one, and refuses a round leading nowhere", async () => {
+      const w = await world();
+      expect(await w.admin.promote(w.eventId, 2)).toBe("no_next_round");
+      const next = await w.makeRound();
+
+      expect(await w.player.promote(w.eventId, 2)).toBe("not_admin");
+      expect(await w.admin.promote(w.eventId, 2)).toBe(2);
+
+      expect((await w.admin.find(next)).map((e) => e.athleteId).sort()).toEqual(
+        w.athleteIds.slice(0, 2).sort(),
+      );
     });
   });
 }

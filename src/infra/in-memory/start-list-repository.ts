@@ -15,7 +15,12 @@ export type StartListAthleteFixture = Omit<Candidate, "fit"> & {
 export function createInMemoryStartListStore(athletes: StartListAthleteFixture[]) {
   const stored = new Map<string, StartListEntry[]>();
   const inUse = new Map<string, string[]>();
+  const rounds = new Map<string, { next: string; ranked: { athleteId: string; rank: number }[] }>();
   return {
+    /** Declares that a round leads to `next`, with its result. */
+    setRound(eventId: string, next: string, ranked: { athleteId: string; rank: number }[]) {
+      rounds.set(eventId, { next, ranked });
+    },
     /** Marks athletes of an event as predicted or ranked, so they cannot leave its start list. */
     markInUse(eventId: string, athleteIds: string[]) {
       inUse.set(eventId, athleteIds);
@@ -50,6 +55,17 @@ export function createInMemoryStartListStore(athletes: StartListAthleteFixture[]
             gender: athlete.gender,
           });
           return { athleteId };
+        },
+        async promote(eventId, top) {
+          if (!options.isAdmin) return "not_admin";
+          const round = rounds.get(eventId);
+          if (!round) return "no_next_round";
+          const list = stored.get(round.next) ?? [];
+          const joining = round.ranked
+            .filter((r) => r.rank <= top && !list.some((e) => e.athleteId === r.athleteId))
+            .map((r) => ({ athleteId: r.athleteId, seasonBest: null }));
+          stored.set(round.next, [...list, ...joining]);
+          return joining.length;
         },
         async replace(eventId, entries) {
           if (!options.isAdmin) return "not_admin";

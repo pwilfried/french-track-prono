@@ -30,6 +30,11 @@ export interface StartListRepository {
   replace(eventId: string, entries: StartListEntry[]): Promise<StartListOutcome>;
   /** Adds an athlete unknown so far; the slug gets a suffix if already taken. */
   createAthlete(athlete: NewAthlete): Promise<{ athleteId: string } | "not_admin">;
+  /**
+   * Puts the athletes ranked `top` or better in a round on the start list of the round it leads
+   * to; returns how many joined.
+   */
+  promote(eventId: string, top: number): Promise<number | "not_admin" | "no_next_round">;
 }
 
 /** An athlete the admin adds while importing a start list. */
