@@ -26,6 +26,8 @@ type Stored = {
 export function createInMemoryLeagueStore(competitions?: Record<string, "coming" | "started">) {
   const leagues = new Map<string, Stored>();
   const reports = new Map<string, Set<string>>();
+  /** Wrong invite codes per player (#155): after 10, joining with a code is refused. */
+  const wrongCodes = new Map<string, number>();
   const profiles = new Map<string, LeagueMember>();
   const newCode = () => {
     let code = "";
@@ -95,8 +97,12 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
           return view(league);
         },
         async join(code) {
+          if ((wrongCodes.get(me) ?? 0) >= 10) return { outcome: "too_many" };
           const league = [...leagues.values()].find((l) => l.inviteCode === code);
-          if (!league) return { outcome: "unknown_code" };
+          if (!league) {
+            wrongCodes.set(me, (wrongCodes.get(me) ?? 0) + 1);
+            return { outcome: "unknown_code" };
+          }
           if (league.members.includes(me))
             return { outcome: "already_member", leagueId: league.id };
           if (league.members.length >= leagueCapacity(league.isPublic)) return { outcome: "full" };

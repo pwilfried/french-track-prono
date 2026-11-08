@@ -120,6 +120,20 @@ export function leagueRepositoryContract(
       });
     });
 
+    it("refuses to join with a code after ten wrong codes", async () => {
+      const { newPlayer, competitionSlug } = await setup();
+      const [owner, guesser] = [await newPlayer(), await newPlayer()];
+      const league = await owner.leagues.create("Cible", [competitionSlug], false);
+
+      for (let i = 0; i < 10; i += 1) {
+        expect(await guesser.leagues.join(`WRNG${String(i).padStart(2, "2")}`)).toEqual({
+          outcome: "unknown_code",
+        });
+      }
+
+      expect(await guesser.leagues.join(league.inviteCode)).toEqual({ outcome: "too_many" });
+    });
+
     it("lets a friend join with the code, once", async () => {
       const { newPlayer, competitionSlug } = await setup();
       const [owner, friend] = [await newPlayer(), await newPlayer()];

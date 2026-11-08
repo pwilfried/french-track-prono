@@ -28,7 +28,9 @@ export type JoinOutcome =
   | { outcome: "joined"; leagueId: string }
   | { outcome: "already_member"; leagueId: string }
   | { outcome: "unknown_code" }
-  | { outcome: "full" };
+  | { outcome: "full" }
+  /** Too many wrong codes lately: joining with a code waits an hour (#155). */
+  | { outcome: "too_many" };
 
 /**
  * Port: leagues, seen by the signed-in player (each method acts as them). Real adapter = Supabase
@@ -84,6 +86,7 @@ export function joinLeague(ports: Ports) {
       const joined = await ports.leagues.join(code);
       if (joined.outcome === "unknown_code") throw new UseCaseError("LEAGUE_CODE_UNKNOWN");
       if (joined.outcome === "full") throw new UseCaseError("LEAGUE_FULL");
+      if (joined.outcome === "too_many") throw new UseCaseError("LEAGUE_TOO_MANY_ATTEMPTS");
       if (joined.outcome === "already_member") throw new UseCaseError("ALREADY_MEMBER");
       return joined.leagueId;
     },
@@ -171,6 +174,7 @@ export function joinPublicLeague(ports: Ports) {
       const joined = await ports.leagues.joinPublic(input.leagueId);
       if (joined.outcome === "unknown_code") throw new UseCaseError("LEAGUE_NOT_FOUND");
       if (joined.outcome === "full") throw new UseCaseError("LEAGUE_FULL");
+      if (joined.outcome === "too_many") throw new UseCaseError("LEAGUE_TOO_MANY_ATTEMPTS");
       return joined.leagueId;
     },
   };
