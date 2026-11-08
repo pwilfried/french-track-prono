@@ -39,7 +39,8 @@ export type ErrorCode =
   | "DELETION_NOT_CONFIRMED"
   | "START_LIST_INVALID"
   | "START_LIST_IN_USE"
-  | "START_LIST_UNAVAILABLE";
+  | "START_LIST_UNAVAILABLE"
+  | "ADMIN_LOG_UNAVAILABLE";
 
 export class UseCaseError extends Error {
   constructor(readonly code: ErrorCode) {
