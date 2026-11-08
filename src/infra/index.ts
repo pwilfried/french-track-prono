@@ -45,3 +45,5 @@ export { createInMemoryDisciplineStore } from "./in-memory/discipline-repository
 export { createSupabaseDisciplineRepository } from "./supabase/discipline-repository";
 export { createInMemoryAthleteAdminStore } from "./in-memory/athlete-admin-repository";
 export { createSupabaseAthleteAdminRepository } from "./supabase/athlete-admin-repository";
+export { createInMemoryCompetitionAdminStore } from "./in-memory/competition-admin-repository";
+export { createSupabaseCompetitionAdminRepository } from "./supabase/competition-admin-repository";

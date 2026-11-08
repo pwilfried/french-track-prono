@@ -12,8 +12,8 @@ describe("listStartListCandidates", () => {
     ];
     const asked: string[] = [];
     const startLists: StartListRepository = {
-      candidates: async (gender, discipline) => {
-        asked.push(`${gender} ${discipline}`);
+      candidates: async (gender, discipline, eventId) => {
+        asked.push(`${gender} ${discipline} ${eventId}`);
         return gender === "F" ? women : [];
       },
       find: async () => [],
@@ -25,9 +25,10 @@ describe("listStartListCandidates", () => {
     const candidates = await listStartListCandidates({ startLists }).execute({
       gender: "F",
       discipline: "100 m",
+      eventId: "e1",
     });
 
-    expect(asked).toEqual(["F 100 m"]);
+    expect(asked).toEqual(["F 100 m e1"]);
     expect(candidates.map((c) => c.athleteId)).toEqual(["1", "2", "3"]);
   });
 });

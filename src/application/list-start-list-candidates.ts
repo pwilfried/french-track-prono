@@ -9,8 +9,14 @@ import type { Candidate, StartListRepository } from "./set-start-list";
  */
 export function listStartListCandidates(ports: { startLists: StartListRepository }) {
   return {
-    async execute(input: { gender: EventGender; discipline: string }): Promise<Candidate[]> {
-      return sortByDiscipline(await ports.startLists.candidates(input.gender, input.discipline));
+    async execute(input: {
+      gender: EventGender;
+      discipline: string;
+      eventId: string;
+    }): Promise<Candidate[]> {
+      return sortByDiscipline(
+        await ports.startLists.candidates(input.gender, input.discipline, input.eventId),
+      );
     },
   };
 }

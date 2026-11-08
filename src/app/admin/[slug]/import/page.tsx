@@ -11,7 +11,6 @@ import {
   createSupabaseStartListRepository,
 } from "@/infra";
 
-import { COMPETITION_SLUG } from "../../../competition";
 import { messages } from "../../../messages.fr";
 import { adminOnly } from "../../guard";
 import { ImportForm } from "./import-form";
@@ -20,10 +19,10 @@ async function load(slug: string, client: Awaited<ReturnType<typeof adminOnly>>[
   try {
     const event = await getEvent({
       events: createSupabaseEventReader(createPublicSupabaseClient()),
-    }).execute({ competitionSlug: COMPETITION_SLUG, eventSlug: slug });
+    }).execute({ competitionSlug: null, eventSlug: slug });
     const candidates = await listStartListCandidates({
       startLists: createSupabaseStartListRepository(client),
-    }).execute({ gender: event.gender, discipline: event.discipline });
+    }).execute({ gender: event.gender, discipline: event.discipline, eventId: event.id });
     return { event, candidates };
   } catch (error) {
     if (error instanceof UseCaseError) {

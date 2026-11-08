@@ -10,12 +10,26 @@ import type {
 /** The client must carry the admin's session: row level security decides who can write. */
 export function createSupabaseStartListRepository(client: SupabaseClient): StartListRepository {
   return {
-    async candidates(gender, discipline) {
-      const { data, error } = await client
+    async candidates(gender, discipline, eventId) {
+      // The athletes entered in the event's competition; nobody entered yet means everybody.
+      const event = await client
+        .from("events")
+        .select("competition_id")
+        .eq("id", eventId)
+        .maybeSingle<{ competition_id: string }>();
+      if (event.error) throw new UseCaseError("START_LIST_UNAVAILABLE");
+      const entered = await client
+        .from("competition_athletes")
+        .select("athlete_id")
+        .eq("competition_id", event.data?.competition_id ?? "00000000-0000-0000-0000-000000000000")
+        .returns<{ athlete_id: string }[]>();
+      if (entered.error) throw new UseCaseError("START_LIST_UNAVAILABLE");
+      const ids = entered.data.map((row) => row.athlete_id);
+      const query = client
         .from("athletes")
         .select("id, name, country_code, athlete_disciplines(discipline, is_primary)")
-        .eq("gender", gender)
-        .returns<
+        .eq("gender", gender);
+      const { data, error } = await (ids.length > 0 ? query.in("id", ids) : query).returns<
           {
             id: string;
             name: string;

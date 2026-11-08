@@ -107,12 +107,14 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
     },
 
     async findBySlug(competitionSlug, eventSlug) {
-      const found = await client
+      const query = client
         .from("events")
         .select(`${EVENT_COLUMNS}, sub_disciplines, competitions!inner(slug)`)
-        .eq("competitions.slug", competitionSlug)
-        .eq("slug", eventSlug)
-        .maybeSingle<EventRow & { sub_disciplines: string[] | null }>();
+        .eq("slug", eventSlug);
+      const found = await (competitionSlug === null
+        ? query
+        : query.eq("competitions.slug", competitionSlug)
+      ).maybeSingle<EventRow & { sub_disciplines: string[] | null }>();
       if (found.error) throw new UseCaseError("EVENTS_UNAVAILABLE");
       if (!found.data) return null;
 
