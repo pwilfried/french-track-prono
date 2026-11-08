@@ -101,7 +101,7 @@ export default async function AdminCompetitionPage({
     >
       <p className="-mt-2 text-sm text-muted-foreground">
         {messages.adminCompetitions.scope[file.scope]} ·{" "}
-        {[file.city, messages.adminCompetitions.dates(file.startsOn, file.endsOn), file.timeZone]
+        {[file.city, messages.competition.dates(file.startsOn, file.endsOn), file.timeZone]
           .filter(Boolean)
           .join(" · ")}
       </p>

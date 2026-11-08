@@ -13,7 +13,6 @@ import {
 import { normalizeInviteCode } from "@/domain/league";
 import { createSupabaseLeagueRepository } from "@/infra";
 
-import { COMPETITION_SLUG } from "../competition";
 import { formText } from "../form-data";
 import { getCurrentUser, getSessionClient } from "../session";
 
@@ -30,13 +29,17 @@ export async function createLeagueAction(
   data: FormData,
 ): Promise<LeagueFormState> {
   const value = formText(data, "name");
-  const repository = await leagues("/ligues/creer");
+  const competitionSlugs = data
+    .getAll("competition")
+    .filter((v): v is string => typeof v === "string");
+  const back = `/ligues/creer?${new URLSearchParams(competitionSlugs.map((c) => ["competition", c]))}`;
+  const repository = await leagues(back);
   let id: string;
   try {
     id = (
       await createLeague({ leagues: repository }).execute({
         name: value,
-        competitionSlug: COMPETITION_SLUG,
+        competitionSlugs,
       })
     ).id;
   } catch (error) {

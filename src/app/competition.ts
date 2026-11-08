@@ -1,19 +1,64 @@
+import { cache } from "react";
+
+import type { CompetitionSummary } from "@/application/create-competition";
+import { UseCaseError } from "@/application/errors";
+import { listCompetitions } from "@/application/list-competitions";
+import { nextCompetition } from "@/domain/competition";
+import { createPublicSupabaseClient, createSupabaseCompetitionAdminRepository } from "@/infra";
+
 import { messages } from "./messages.fr";
 
-type CompetitionSlug = keyof typeof messages.competitions;
+/** The competition a page shows, with its French place line ("Budapest · 11 – 13 sept. 2026"). */
+export type ShownCompetition = CompetitionSummary & { place: string };
 
-/** Time zone of each competition the app knows; its French name and place live in the messages. */
-const TIME_ZONES: Record<CompetitionSlug, string> = {
-  "ultimate-championship-2026": "Europe/Budapest",
-  "european-championships-2026": "Europe/London",
+const shown = (c: CompetitionSummary): ShownCompetition => ({
+  ...c,
+  place: [c.city, messages.competition.dates(c.startsOn, c.endsOn)].filter(Boolean).join(" · "),
+});
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+/** Every competition (public read), the coming ones first; empty lists when they cannot be read. */
+export const loadCompetitions = cache(
+  async (): Promise<{ coming: ShownCompetition[]; past: ShownCompetition[] }> => {
+    try {
+      const lists = await listCompetitions({
+        competitions: createSupabaseCompetitionAdminRepository(createPublicSupabaseClient()),
+      }).execute({ today: today() });
+      return { coming: lists.coming.map(shown), past: lists.past.map(shown) };
+    } catch (error) {
+      if (error instanceof UseCaseError) return { coming: [], past: [] };
+      throw error;
+    }
+  },
+);
+
+/** Shown when no competition can be read: the pages then tell their own error. */
+const FALLBACK: ShownCompetition = {
+  slug: "ultimate-championship-2026",
+  name: messages.app.name,
+  scope: "international",
+  city: null,
+  countryCode: null,
+  startsOn: "2026-09-11",
+  endsOn: "2026-09-13",
+  timeZone: "Europe/Paris",
+  events: 0,
+  entered: 0,
+  place: "",
 };
 
-const isKnown = (slug: string | undefined): slug is CompetitionSlug =>
-  slug !== undefined && slug in TIME_ZONES;
-
-/** The competition shown by the app, chosen with COMPETITION_SLUG (server environment). */
-export const COMPETITION_SLUG: CompetitionSlug = isKnown(process.env.COMPETITION_SLUG)
-  ? process.env.COMPETITION_SLUG
-  : "ultimate-championship-2026";
-export const COMPETITION_TIME_ZONE = TIME_ZONES[COMPETITION_SLUG];
-export const COMPETITION_TEXT = messages.competitions[COMPETITION_SLUG];
+/**
+ * The competition a page follows: the one asked for (`slug`), else the one set by COMPETITION_SLUG
+ * (server environment, used to pin the tests), else the next one by date.
+ */
+export const currentCompetition = cache(async (slug?: string): Promise<ShownCompetition> => {
+  const { coming, past } = await loadCompetitions();
+  const all = [...coming, ...past];
+  const asked = slug ?? process.env.COMPETITION_SLUG;
+  return (
+    (asked ? all.find((c) => c.slug === asked) : undefined) ??
+    nextCompetition(all, today()) ??
+    FALLBACK
+  );
+});

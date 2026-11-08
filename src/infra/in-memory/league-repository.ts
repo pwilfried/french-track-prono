@@ -1,7 +1,14 @@
 import type { League, LeagueMember, LeagueRepository } from "@/application/leagues";
 import { INVITE_ALPHABET, INVITE_LENGTH, LEAGUE_MAX_MEMBERS } from "@/domain/league";
 
-type Stored = { id: string; name: string; inviteCode: string; ownerId: string; members: string[] };
+type Stored = {
+  id: string;
+  name: string;
+  inviteCode: string;
+  ownerId: string;
+  members: string[];
+  competitionSlugs: string[];
+};
 
 /**
  * Test double of the LeagueRepository port, with the rules of the database. One store shared by
@@ -23,6 +30,7 @@ export function createInMemoryLeagueStore() {
     inviteCode: l.inviteCode,
     ownerId: l.ownerId,
     memberCount: l.members.length,
+    competitionSlugs: [...l.competitionSlugs],
   });
 
   return {
@@ -30,8 +38,9 @@ export function createInMemoryLeagueStore() {
       profiles.set(player.userId, player);
       const me = player.userId;
       return {
-        async create(name) {
+        async create(name, competitionSlugs) {
           const league: Stored = {
+            competitionSlugs: [...new Set(competitionSlugs)].sort(),
             id: crypto.randomUUID(),
             name,
             inviteCode: newCode(),

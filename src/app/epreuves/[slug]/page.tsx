@@ -22,7 +22,7 @@ import {
   type CurrentUser,
 } from "@/infra";
 
-import { COMPETITION_SLUG, COMPETITION_TIME_ZONE } from "../../competition";
+import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
 import { getCurrentUser, getSessionClient } from "../../session";
 import { PredictionForm } from "./prediction-form";
@@ -30,10 +30,11 @@ import { ResultSection } from "./result-section";
 import { RevealHidden, RevealSection } from "./reveal-section";
 
 async function loadEvent(slug: string): Promise<EventDetail | "error"> {
+  const competition = await currentCompetition();
   try {
     const events = createSupabaseEventReader(createPublicSupabaseClient());
     return await getEvent({ events }).execute({
-      competitionSlug: COMPETITION_SLUG,
+      competitionSlug: competition.slug,
       eventSlug: slug,
     });
   } catch (error) {
@@ -134,6 +135,7 @@ export default async function EventPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ ligue?: string | string[] }>;
 }) {
+  const competition = await currentCompetition();
   const { slug } = await params;
   const { ligue } = await searchParams;
   const leagueId = typeof ligue === "string" && ligue !== "" ? ligue : undefined;
@@ -158,7 +160,7 @@ export default async function EventPage({
     month: "long",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: COMPETITION_TIME_ZONE,
+    timeZone: competition.timeZone,
   }).format(new Date(event.startsAt));
   const winner = event.results.find((result) => result.rank === 1);
   const markOf = new Map(event.results.map((result) => [result.athleteId, result.mark]));

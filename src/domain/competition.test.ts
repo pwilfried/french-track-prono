@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  daysUntil,
   competitionSlug,
   eventSlug,
   isValidCompetition,
@@ -67,5 +68,17 @@ describe("nextCompetition", () => {
       "b",
     );
     expect(nextCompetition([], "2027-01-10")).toBeNull();
+  });
+});
+
+describe("daysUntil", () => {
+  it("counts the days before a competition starts, 0 once it is under way", () => {
+    expect(daysUntil("2026-11-20", "2026-11-08")).toBe(12);
+    expect(daysUntil("2026-11-08", "2026-11-08")).toBe(0);
+    expect(daysUntil("2026-11-01", "2026-11-08")).toBe(0);
+  });
+
+  it("is not fooled by a change of daylight saving time", () => {
+    expect(daysUntil("2026-03-30", "2026-03-28")).toBe(2);
   });
 });

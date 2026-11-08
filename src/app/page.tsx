@@ -1,157 +1,135 @@
 import Link from "next/link";
 
-import { UseCaseError } from "@/application/errors";
-import { listEvents } from "@/application/list-events";
-import { listMyPredictions } from "@/application/list-my-predictions";
-import { getGeneralRanking } from "@/application/rankings";
-import { EventCard, type MyEventState } from "@/components/events/event-card";
-import { LockCountdown } from "@/components/home/lock-countdown";
 import { buttonVariants } from "@/components/ui/button";
-import type { EventSummary } from "@/domain/event";
-import { openEvents } from "@/domain/event-list";
-import {
-  createPublicSupabaseClient,
-  createSupabaseEventReader,
-  createSupabasePredictionRepository,
-  createSupabaseRankingRepository,
-} from "@/infra";
+import { daysUntil, type CompetitionScope } from "@/domain/competition";
 
-import { COMPETITION_SLUG, COMPETITION_TEXT, COMPETITION_TIME_ZONE } from "./competition";
+import { loadCompetitions, type ShownCompetition } from "./competition";
 import { messages } from "./messages.fr";
-import { getCurrentUser, getSessionClient } from "./session";
 
-async function loadEvents(): Promise<EventSummary[]> {
-  try {
-    const events = createSupabaseEventReader(createPublicSupabaseClient());
-    return await listEvents({ events }).execute({ competitionSlug: COMPETITION_SLUG });
-  } catch (error) {
-    if (error instanceof UseCaseError) return [];
-    throw error;
+const SCOPES: CompetitionScope[] = ["international", "france"];
+
+const scopeChip: Record<CompetitionScope, string> = {
+  international: "bg-brand-soft text-brand-ink",
+  france: "bg-primary-soft text-primary-ink",
+};
+
+function ScopeIcon({ scope }: { scope: CompetitionScope }) {
+  if (scope === "france") {
+    return (
+      <span aria-hidden="true" className="flex gap-0.5">
+        <span className="h-6 w-2 rounded-sm bg-brand" />
+        <span className="h-6 w-2 rounded-sm border border-border bg-white" />
+        <span className="h-6 w-2 rounded-sm bg-primary" />
+      </span>
+    );
   }
+  return (
+    <svg
+      width="28"
+      height="28"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" />
+    </svg>
+  );
 }
 
-/** The player's rank and predictions; null for a visitor or when they cannot be read. */
-async function loadPlayer(userId: string) {
-  try {
-    const client = await getSessionClient();
-    const [ranking, mine] = await Promise.all([
-      getGeneralRanking({ ranking: createSupabaseRankingRepository(client) }).execute({
-        competitionSlug: COMPETITION_SLUG,
-      }),
-      listMyPredictions({ predictions: createSupabasePredictionRepository(client) }).execute({
-        userId,
-        competitionSlug: COMPETITION_SLUG,
-      }),
-    ]);
-    const me = ranking.find((p) => p.userId === userId);
-    return {
-      rank: me?.rank ?? null,
-      players: ranking.length,
-      mine: new Map<string, MyEventState>(
-        mine.map((p) => [p.eventId, { predicted: true, joker: p.useJoker }]),
-      ),
-    };
-  } catch (error) {
-    if (error instanceof UseCaseError) return null;
-    throw error;
-  }
+function NextCompetition({ c, today }: { c: ShownCompetition; today: string }) {
+  return (
+    <article className="flex flex-col gap-3.5 rounded-card border border-border bg-card p-4">
+      <div className="flex items-center justify-between gap-2">
+        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${scopeChip[c.scope]}`}>
+          {messages.adminCompetitions.scope[c.scope]}
+        </span>
+        <span className="rounded-full bg-gold-soft px-2.5 py-1 font-mono text-xs font-bold text-gold-ink">
+          {messages.start.inDays(daysUntil(c.startsOn, today))}
+        </span>
+      </div>
+      <div className="flex flex-col gap-1">
+        <h3 className="font-display text-[22px] font-extrabold leading-tight">{c.name}</h3>
+        <p className="text-sm text-muted-foreground">
+          {[c.place, messages.start.events(c.events)].filter(Boolean).join(" · ")}
+        </p>
+      </div>
+      <div className="flex gap-2">
+        <Link href={`/ligues/creer?competition=${c.slug}`} className={`${buttonVariants()} flex-1`}>
+          {messages.start.createLeague}
+        </Link>
+        <Link href={`/competitions/${c.slug}`} className={buttonVariants({ variant: "outline" })}>
+          {messages.start.open}
+        </Link>
+      </div>
+    </article>
+  );
 }
 
-/** Home (Officiel board 01): the competition, the next lock, my rank, the next events. */
+/** Home (board v0.9 « Accueil »): the two kinds of competitions, then the next two to come. */
 export default async function Home() {
-  const now = new Date();
-  const [events, user] = await Promise.all([loadEvents(), getCurrentUser()]);
-  const player = user ? await loadPlayer(user.userId) : null;
-  const next = openEvents(events, now, 3);
-  const started = events.some((e) => Date.parse(e.startsAt) <= now.getTime());
+  const today = new Date().toISOString().slice(0, 10);
+  const { coming } = await loadCompetitions();
 
   return (
-    <main id="main" className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-5 md:max-w-5xl">
-      <div className="flex flex-col gap-4 md:grid md:grid-cols-[1fr_300px]">
-        <section className="hero flex flex-col gap-4 rounded-card p-5 md:p-8">
-          <p className="text-xs font-bold uppercase tracking-wide text-[#dce6f5]">
-            {started ? messages.home.current : messages.home.upcoming}
-          </p>
-          <div>
-            <h1 className="font-display text-3xl font-extrabold leading-tight md:text-5xl">
-              {COMPETITION_TEXT.name}
-            </h1>
-            <p className="mt-1 text-[#dce6f5]">{COMPETITION_TEXT.place}</p>
-          </div>
-          {next[0] && <LockCountdown lockAt={next[0].lockAt} />}
-          <div className="flex flex-wrap gap-2">
-            {next[0] && (
-              <Link href={`/epreuves/${next[0].slug}`} className={buttonVariants()}>
-                {messages.home.compose}
-              </Link>
-            )}
-            <Link
-              href="/epreuves"
-              className={`${buttonVariants({ variant: "outline" })} border-white text-white`}
-            >
-              {messages.home.seeAll(events.length)}
-            </Link>
-          </div>
-        </section>
-
-        <aside className="flex flex-col gap-3">
-          {player ? (
-            <Link
-              href="/classement"
-              className="flex min-h-16 items-center gap-4 rounded-card border border-border bg-card p-4"
-            >
-              <span className="font-mono text-3xl font-bold text-brand dark:text-secondary">
-                {player.rank === null ? "–" : `#${player.rank}`}
-              </span>
-              <span>
-                <span className="block font-bold">{messages.home.myRank}</span>
-                <span className="block text-sm text-muted-foreground">
-                  {player.rank === null
-                    ? messages.home.notRanked
-                    : messages.home.players(player.players)}
-                </span>
-              </span>
-            </Link>
-          ) : (
-            <div className="flex flex-col gap-3 rounded-card border border-border bg-card p-4">
-              <p className="text-sm">{messages.app.tagline}</p>
-              {!user && (
-                <Link href="/connexion?next=/epreuves" className={`${buttonVariants()} w-full`}>
-                  {messages.account.signIn}
-                </Link>
-              )}
-            </div>
-          )}
-        </aside>
+    <main id="main" className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-6 md:max-w-3xl">
+      <div className="flex flex-col gap-1.5">
+        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          {messages.start.eyebrow}
+        </p>
+        <h1 className="font-display text-[34px] font-extrabold leading-none">
+          {messages.start.title}
+        </h1>
+        <p className="text-[15px] leading-relaxed text-muted-foreground">{messages.start.intro}</p>
       </div>
 
-      <section className="flex flex-col gap-2" aria-labelledby="next-events">
+      <nav aria-label={messages.start.blocksLabel} className="grid grid-cols-2 gap-3">
+        {SCOPES.map((scope) => (
+          <Link
+            key={scope}
+            href={`/competitions?type=${scope}`}
+            className={`flex min-h-[150px] flex-col justify-between gap-4 rounded-card p-4 ${
+              scope === "international"
+                ? "bg-brand text-white"
+                : "border border-border bg-card text-foreground"
+            }`}
+          >
+            <ScopeIcon scope={scope} />
+            <span className="flex flex-col gap-1">
+              <span className="font-display text-[19px] font-extrabold leading-tight">
+                {messages.start.block[scope]}
+              </span>
+              <span
+                className={`text-sm ${scope === "international" ? "text-[#d9e4f5]" : "text-muted-foreground"}`}
+              >
+                {messages.start.coming(coming.filter((c) => c.scope === scope).length)}
+              </span>
+            </span>
+          </Link>
+        ))}
+      </nav>
+
+      <section aria-labelledby="next-competitions" className="flex flex-col gap-3">
         <h2
-          id="next-events"
+          id="next-competitions"
           className="border-b border-border pb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground"
         >
-          {messages.home.nextEvents}
+          {messages.start.next}
         </h2>
-        {next.length === 0 ? (
+        {coming.length === 0 ? (
           <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
-            {messages.home.noneOpen}
+            {messages.start.none}
           </p>
         ) : (
-          <ul className="grid gap-2 md:grid-cols-3">
-            {next.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                timeZone={COMPETITION_TIME_ZONE}
-                now={now}
-                mine={
-                  player
-                    ? (player.mine.get(event.id) ?? { predicted: false, joker: false })
-                    : undefined
-                }
-              />
+          <div className="grid gap-3 md:grid-cols-2">
+            {coming.slice(0, 2).map((c) => (
+              <NextCompetition key={c.slug} c={c} today={today} />
             ))}
-          </ul>
+          </div>
         )}
       </section>
     </main>

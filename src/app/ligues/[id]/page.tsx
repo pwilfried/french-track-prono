@@ -12,7 +12,6 @@ import { ShareInvite } from "@/components/leagues/share-invite";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-import { COMPETITION_SLUG } from "../../competition";
 import { messages } from "../../messages.fr";
 import { leaguePorts } from "../data";
 
@@ -26,10 +25,11 @@ const TAB_LABEL: Record<Tab, string> = {
 
 async function load(id: string, ports: Awaited<ReturnType<typeof leaguePorts>>) {
   try {
-    const [found, ranking] = await Promise.all([
-      getLeague(ports).execute({ leagueId: id }),
-      getLeagueRanking(ports).execute({ leagueId: id, competitionSlug: COMPETITION_SLUG }),
-    ]);
+    const found = await getLeague(ports).execute({ leagueId: id });
+    const ranking = await getLeagueRanking(ports).execute({
+      leagueId: id,
+      competitionSlugs: found.league.competitionSlugs,
+    });
     return { ...found, ranking };
   } catch (error) {
     if (error instanceof UseCaseError) {

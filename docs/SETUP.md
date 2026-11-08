@@ -191,10 +191,13 @@ En production, le même fichier se charge une fois dans l'éditeur SQL de Supaba
 
 ### Choisir la compétition affichée
 
-L'application affiche une seule compétition, choisie par la variable `COMPETITION_SLUG` dans
-`.env.local` (côté serveur). Sans valeur, c'est l'Ultimate Championship du jeu de test. Les
-compétitions connues, leur fuseau horaire et leur nom en français sont dans
-`src/app/competition.ts` et `src/app/messages.fr.ts`. Relance `npm run dev` après un changement.
+L'accueil liste les compétitions de la base (internationales et françaises). Les pages
+« Épreuves », « Classement », « Mes points » et le back-office suivent la **prochaine compétition
+par date** (celle en cours, sinon la prochaine à commencer ; toutes finies : la plus récente).
+Une compétition se choisit aussi par son lien (`/competitions/<slug>`, `/epreuves?competition=<slug>`).
+La variable `COMPETITION_SLUG` (côté serveur, `.env.local`) force une compétition : la CI s'en sert
+pour épingler les tests de bout en bout sur l'Ultimate Championship. Le nom, la ville, les dates
+et le fuseau horaire viennent de la table `competitions` (back-office « Compétitions »).
 
 ## 4 bis. Connexion : lien du message et téléphone
 

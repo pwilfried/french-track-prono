@@ -104,3 +104,10 @@ export function nextCompetition<T extends { startsOn: string; endsOn: string }>(
   if (coming[0]) return coming[0];
   return [...competitions].sort((a, b) => b.startsOn.localeCompare(a.startsOn))[0] ?? null;
 }
+
+/** Whole days before a competition starts (dates as YYYY-MM-DD); 0 once it is under way. */
+export function daysUntil(startsOn: string, today: string): number {
+  const days =
+    (Date.parse(`${startsOn}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000;
+  return Math.max(0, Math.round(days));
+}

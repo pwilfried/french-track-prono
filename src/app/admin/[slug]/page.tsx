@@ -18,7 +18,7 @@ import {
   createSupabaseProfileRepository,
 } from "@/infra";
 
-import { COMPETITION_TIME_ZONE } from "../../competition";
+import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
 import { adminOnly } from "../guard";
 import { ComputeForm } from "./compute-form";
@@ -80,6 +80,7 @@ export default async function AdminEventPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ corriger?: string }>;
 }) {
+  const competition = await currentCompetition();
   const { client } = await adminOnly();
   const { slug } = await params;
   const correcting = (await searchParams).corriger === "1";
@@ -103,7 +104,7 @@ export default async function AdminEventPage({
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: COMPETITION_TIME_ZONE,
+    timeZone: competition.timeZone,
   }).format(new Date(event.startsAt));
 
   // The form starts from the current result: first athlete of each rank on the steps, the others as ties.

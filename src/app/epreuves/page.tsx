@@ -13,7 +13,7 @@ import {
   createSupabasePredictionRepository,
 } from "@/infra";
 
-import { COMPETITION_SLUG, COMPETITION_TEXT, COMPETITION_TIME_ZONE } from "../competition";
+import { currentCompetition } from "../competition";
 import { messages } from "../messages.fr";
 import { getCurrentUser, getSessionClient } from "../session";
 
@@ -23,10 +23,11 @@ function parseGender(value: string | string[] | undefined): EventGender | null {
   return genders.find((gender) => gender === value) ?? null;
 }
 
-async function loadEvents(): Promise<EventSummary[] | "error"> {
+async function loadEvents(slug?: string): Promise<EventSummary[] | "error"> {
+  const competition = await currentCompetition(slug);
   try {
     const events = createSupabaseEventReader(createPublicSupabaseClient());
-    return await listEvents({ events }).execute({ competitionSlug: COMPETITION_SLUG });
+    return await listEvents({ events }).execute({ competitionSlug: competition.slug });
   } catch (error) {
     // Only known error codes are expected here; anything else is a bug and stays visible.
     if (error instanceof UseCaseError) return "error";
@@ -38,14 +39,15 @@ async function loadEvents(): Promise<EventSummary[] | "error"> {
  * The signed-in player's predictions by event id; null for a visitor, or when they cannot be read
  * (the list still shows, without the marks).
  */
-async function loadMine(): Promise<Map<string, MyEventState> | null> {
+async function loadMine(slug?: string): Promise<Map<string, MyEventState> | null> {
+  const competition = await currentCompetition(slug);
   const user = await getCurrentUser();
   if (!user) return null;
   try {
     const predictions = createSupabasePredictionRepository(await getSessionClient());
     const mine = await listMyPredictions({ predictions }).execute({
       userId: user.userId,
-      competitionSlug: COMPETITION_SLUG,
+      competitionSlug: competition.slug,
     });
     const byEvent = new Map<string, MyEventState>(
       mine.map((p) => [p.eventId, { predicted: true, joker: p.useJoker }]),
@@ -60,10 +62,14 @@ async function loadMine(): Promise<Map<string, MyEventState> | null> {
 export default async function EventsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ genre?: string | string[] }>;
+  searchParams: Promise<{ genre?: string | string[]; competition?: string }>;
 }) {
-  const gender = parseGender((await searchParams).genre);
-  const [loaded, mine] = await Promise.all([loadEvents(), loadMine()]);
+  const search = await searchParams;
+  // A competition chosen on its page (?competition=), the next one by date otherwise.
+  const asked = typeof search.competition === "string" ? search.competition : undefined;
+  const competition = await currentCompetition(asked);
+  const gender = parseGender(search.genre);
+  const [loaded, mine] = await Promise.all([loadEvents(asked), loadMine(asked)]);
   const events = loaded === "error" ? [] : loaded;
   const counts = {
     all: events.length,
@@ -71,12 +77,12 @@ export default async function EventsPage({
     M: filterByGender(events, "M").length,
     X: filterByGender(events, "X").length,
   };
-  const days = groupEventsByDay(filterByGender(events, gender), COMPETITION_TIME_ZONE);
+  const days = groupEventsByDay(filterByGender(events, gender), competition.timeZone);
   const dayLabel = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
     day: "numeric",
     month: "long",
-    timeZone: COMPETITION_TIME_ZONE,
+    timeZone: competition.timeZone,
   });
 
   return (
@@ -87,17 +93,17 @@ export default async function EventsPage({
             {messages.nav.events}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {COMPETITION_TEXT.name} ·{" "}
+            {competition.name} ·{" "}
             {loaded === "error"
-              ? COMPETITION_TEXT.place
-              : messages.events.subtitle(COMPETITION_TEXT.place, events.length)}
+              ? competition.place
+              : messages.events.subtitle(competition.place, events.length)}
           </p>
         </div>
       </header>
 
       <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-5 md:grid md:max-w-5xl md:grid-cols-[200px_1fr] md:items-start md:gap-8">
         <div className="md:sticky md:top-20">
-          <GenderFilter selected={gender} counts={counts} />
+          <GenderFilter selected={gender} counts={counts} competition={asked} />
         </div>
         <div className="flex flex-col gap-5">
           {loaded === "error" ? (
@@ -118,7 +124,7 @@ export default async function EventsPage({
                     <EventCard
                       key={event.id}
                       event={event}
-                      timeZone={COMPETITION_TIME_ZONE}
+                      timeZone={competition.timeZone}
                       mine={
                         mine
                           ? (mine.get(event.id) ?? { predicted: false, joker: false })

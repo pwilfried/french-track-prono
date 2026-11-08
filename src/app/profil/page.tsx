@@ -16,31 +16,32 @@ import {
   createSupabaseRankingRepository,
 } from "@/infra";
 
-import { COMPETITION_SLUG, COMPETITION_TIME_ZONE } from "../competition";
+import { currentCompetition } from "../competition";
 import { messages } from "../messages.fr";
 import { getCurrentUser, getSessionClient } from "../session";
 
 /** Rank, points and predictions of the season; null when they cannot be read. */
 async function loadSeason(userId: string) {
+  const competition = await currentCompetition();
   try {
     const client = await getSessionClient();
     const [ranking, mine, events] = await Promise.all([
       getGeneralRanking({ ranking: createSupabaseRankingRepository(client) }).execute({
-        competitionSlug: COMPETITION_SLUG,
+        competitionSlug: competition.slug,
       }),
       listMyPredictions({ predictions: createSupabasePredictionRepository(client) }).execute({
         userId,
-        competitionSlug: COMPETITION_SLUG,
+        competitionSlug: competition.slug,
       }),
       listEvents({ events: createSupabaseEventReader(createPublicSupabaseClient()) }).execute({
-        competitionSlug: COMPETITION_SLUG,
+        competitionSlug: competition.slug,
       }),
     ]);
     const badges = await getMyBadges({
       ranking: createSupabaseRankingRepository(client),
       predictions: createSupabasePredictionRepository(client),
       events: createSupabaseEventReader(createPublicSupabaseClient()),
-    }).execute({ userId, competitionSlug: COMPETITION_SLUG, timeZone: COMPETITION_TIME_ZONE });
+    }).execute({ userId, competitionSlug: competition.slug, timeZone: competition.timeZone });
     const me = ranking.find((p) => p.userId === userId);
     return {
       rank: me?.rank ?? null,

@@ -11,7 +11,7 @@ import { ErrorNotice } from "@/components/error-notice";
 import { recordRows } from "@/domain/athlete";
 import { createPublicSupabaseClient, createSupabaseAthleteReader } from "@/infra";
 
-import { COMPETITION_SLUG, COMPETITION_TIME_ZONE } from "../../competition";
+import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
 
 async function load(slug: string) {
@@ -38,6 +38,7 @@ export async function generateMetadata({
 }
 
 export default async function AthletePage({ params }: { params: Promise<{ slug: string }> }) {
+  const competition = await currentCompetition();
   const { slug } = await params;
   const athlete = await load(slug);
 
@@ -80,8 +81,8 @@ export default async function AthletePage({ params }: { params: Promise<{ slug: 
               </h2>
               <RecentRaces
                 races={athlete.races}
-                timeZone={COMPETITION_TIME_ZONE}
-                linkable={(race) => race.competitionSlug === COMPETITION_SLUG}
+                timeZone={competition.timeZone}
+                linkable={(race) => race.competitionSlug === competition.slug}
               />
             </section>
           </>

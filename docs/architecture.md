@@ -204,8 +204,10 @@ par joueur et par épreuve, seuls les athlètes engagés sont pronostiquables.
 
 Ligues (v0.5, décisions du propriétaire dans l'issue #112) : code d'invitation de 6 caractères sans
 caractères ambigus (ni 0/O, ni 1/I/L), 50 membres au plus, le créateur passe la main à un membre
-avant de partir (seul, partir supprime la ligue), une ligue compte la compétition en cours à sa
-création. Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
+avant de partir (seul, partir supprime la ligue). Depuis la v0.9 (#267), une ligue compte une ou
+plusieurs compétitions choisies par son créateur (`create_league(nom, slugs[])`) et son classement
+additionne leurs points. L'accueil liste les compétitions par type (internationales, françaises) et
+les pages suivent la prochaine compétition par date (`src/app/competition.ts`). Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
 calculé en TypeScript à partir des lignes de points (pas de vue SQL).
 
 Ajouts nécessaires au schéma (à faire dans la version indiquée) :

@@ -10,11 +10,12 @@ import { buttonVariants } from "@/components/ui/button";
 import type { RankedPlayer } from "@/domain/ranking";
 import { createSupabaseRankingRepository } from "@/infra";
 
-import { COMPETITION_SLUG, COMPETITION_TEXT } from "../competition";
+import { currentCompetition } from "../competition";
 import { messages } from "../messages.fr";
 import { getCurrentUser, getSessionClient } from "../session";
 
 export default async function GeneralRankingPage() {
+  const competition = await currentCompetition();
   const user = await getCurrentUser();
   if (!user) redirect(`/connexion?next=${encodeURIComponent("/classement")}`);
 
@@ -22,7 +23,7 @@ export default async function GeneralRankingPage() {
   try {
     ranking = await getGeneralRanking({
       ranking: createSupabaseRankingRepository(await getSessionClient()),
-    }).execute({ competitionSlug: COMPETITION_SLUG });
+    }).execute({ competitionSlug: competition.slug });
   } catch (error) {
     if (!(error instanceof UseCaseError)) throw error;
     ranking = "error";
@@ -33,7 +34,7 @@ export default async function GeneralRankingPage() {
     <main id="main" className="flex flex-1 flex-col">
       <LeagueHero
         title={messages.ranking.title}
-        subtitle={messages.ranking.subtitle(COMPETITION_TEXT.name)}
+        subtitle={messages.ranking.subtitle(competition.name)}
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
         {ranking === "error" ? (

@@ -14,12 +14,16 @@ import {
   type LeagueFormState,
 } from "@/app/ligues/actions";
 
-export function CreateLeagueForm() {
+/** The league counts the competitions given (sent as hidden fields). */
+export function CreateLeagueForm({ competitionSlugs }: { competitionSlugs: string[] }) {
   const [state, action] = useActionState<LeagueFormState, FormData>(createLeagueAction, {
     value: "",
   });
   return (
     <form action={action} noValidate className="flex flex-col gap-5">
+      {competitionSlugs.map((slug) => (
+        <input key={slug} type="hidden" name="competition" value={slug} />
+      ))}
       <Field
         id="name"
         name="name"

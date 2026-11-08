@@ -49,18 +49,19 @@ export function getGeneralRanking(ports: { ranking: RankingRepository }) {
 }
 
 /**
- * The members of a league, ranked on the league's competition; a member without points is listed
+ * The members of a league, ranked on the league's competitions (their points add up); a member without points is listed
  * with 0. Only a member sees it. Every member gets the same ranking from the same score lines.
  */
 export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: LeagueRepository }) {
   return {
-    async execute(input: { leagueId: string; competitionSlug: string }): Promise<RankingRow[]> {
+    async execute(input: { leagueId: string; competitionSlugs: string[] }): Promise<RankingRow[]> {
       const members = await ports.leagues.members(input.leagueId);
       if (!members) throw new UseCaseError("LEAGUE_NOT_FOUND");
       const ids = new Set(members.map((m) => m.userId));
-      const lines = (await ports.ranking.competitionLines(input.competitionSlug)).filter((l) =>
-        ids.has(l.userId),
+      const perCompetition = await Promise.all(
+        input.competitionSlugs.map((slug) => ports.ranking.competitionLines(slug)),
       );
+      const lines = perCompetition.flat().filter((l) => ids.has(l.userId));
       // Members without any score line yet still appear, with 0 points.
       const zero = members.map((m) => ({
         userId: m.userId,

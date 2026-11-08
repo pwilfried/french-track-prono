@@ -1,9 +1,20 @@
 import { expect, test } from "@playwright/test";
 
-test("a visitor sees the competition, the next events and reaches the full list", async ({
+test("a visitor chooses between the two kinds of competitions", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Choisis ta compétition");
+  const kinds = page.getByRole("navigation", { name: "Types de compétition" });
+  await expect(kinds.getByRole("link")).toHaveCount(2);
+  await kinds.getByRole("link", { name: /Compétitions internationales/ }).click();
+  await expect(page).toHaveURL(/\/competitions\?type=international$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Compétitions internationales");
+});
+
+test("a visitor sees a competition, its next events and reaches the full list", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/competitions/ultimate-championship-2026");
 
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Prochaines épreuves" })).toBeVisible();
@@ -12,7 +23,7 @@ test("a visitor sees the competition, the next events and reaches the full list"
   ).toBeAttached();
 
   await page.getByRole("link", { name: /^Voir les \d+ épreuves$/ }).click();
-  await expect(page).toHaveURL(/\/epreuves$/);
+  await expect(page).toHaveURL(/\/epreuves\?competition=ultimate-championship-2026$/);
 });
 
 test("the app can be installed: the manifest and its icons are served", async ({

@@ -1,14 +1,16 @@
 // Every visible UI string lives here (French only in v1, no i18n library).
 export const messages = {
   /** Name and place of each competition the app can show (see src/app/competition.ts). */
-  competitions: {
-    "ultimate-championship-2026": {
-      name: "Ultimate Championship",
-      place: "Budapest · 11 au 13 septembre 2026",
-    },
-    "european-championships-2026": {
-      name: "Championnats d'Europe",
-      place: "Birmingham · 23 au 29 novembre 2026",
+  competition: {
+    dates: (from: string, to: string) => {
+      const day = (d: string) =>
+        new Date(`${d}T12:00:00Z`).toLocaleDateString("fr-FR", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          timeZone: "UTC",
+        });
+      return from === to ? day(from) : `${day(from)} – ${day(to)}`;
     },
   },
   app: {
@@ -46,6 +48,36 @@ export const messages = {
     notRanked: "Pas encore classé : fais ton premier prono.",
     nextEvents: "Prochaines épreuves",
     noneOpen: "Plus aucune épreuve ouverte aux pronos.",
+  },
+  start: {
+    eyebrow: "Pronostics athlétisme",
+    title: "Choisis ta compétition",
+    intro: "Pronostique les podiums, crée ta ligue entre amis sur une ou plusieurs compétitions.",
+    blocksLabel: "Types de compétition",
+    block: { international: "Compétitions internationales", france: "Compétitions françaises" },
+    coming: (count: number) => (count === 0 ? "Aucune à venir" : `${count} à venir`),
+    next: "Prochaines compétitions",
+    none: "Aucune compétition à venir pour l'instant.",
+    inDays: (days: number) => (days === 0 ? "En cours" : days === 1 ? "Demain" : `Dans ${days} j`),
+    events: (count: number) => (count <= 1 ? `${count} épreuve` : `${count} épreuves`),
+    createLeague: "Créer une ligue",
+    open: "Épreuves",
+  },
+  choice: {
+    back: "Accueil",
+    title: { international: "Compétitions internationales", france: "Compétitions françaises" },
+    intro:
+      "Coche une ou plusieurs compétitions pour créer ta ligue. Les points de toutes les compétitions cochées s'additionnent.",
+    tabsLabel: "Type de compétition",
+    tab: { international: "Internationales", france: "Françaises" },
+    coming: "À venir",
+    noneComing: "Aucune compétition à venir de ce type pour l'instant.",
+    startsIn: (days: number) => (days === 0 ? "En cours" : `J-${days}`),
+    submit: "Créer ma ligue",
+    past: "Terminées",
+    pastHint: "Résultats et classements",
+    see: "Voir",
+    seeLabel: (name: string) => `Voir ${name}`,
   },
   events: {
     subtitle: (place: string, count: number) => `${place} · ${count} épreuves`,
@@ -122,7 +154,13 @@ export const messages = {
     create: "Créer une ligue",
     join: "Rejoindre avec un code",
     createTitle: "Créer une ligue",
-    createSubtitle: (competition: string) => `Elle comptera : ${competition}`,
+    listSubtitle: "Une ligue compte une ou plusieurs compétitions.",
+    createSubtitle: "Une ou plusieurs compétitions, leurs points s'additionnent.",
+    chosen: "Compétitions de la ligue",
+    remove: (name: string) => `Retirer ${name}`,
+    addCompetition: "+ Ajouter une compétition",
+    howTitle: "Comment ça compte ?",
+    how: "Le classement de la ligue additionne les points de toutes ses compétitions. Tu inviteras tes amis avec un code juste après.",
     nameLabel: "Nom de la ligue",
     nameHint: "2 à 40 caractères. Emoji bienvenus.",
     createSubmit: "Créer la ligue",
@@ -434,16 +472,6 @@ export const messages = {
     endsOn: "Fin",
     timeZone: "Fuseau horaire",
     timeZoneHint: "Les horaires des épreuves se saisissent dans l'heure locale de la compétition.",
-    dates: (from: string, to: string) => {
-      const day = (d: string) =>
-        new Date(`${d}T12:00:00Z`).toLocaleDateString("fr-FR", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-          timeZone: "UTC",
-        });
-      return from === to ? day(from) : `${day(from)} – ${day(to)}`;
-    },
     events: "épreuves",
     entered: "engagés",
     tabs: "Contenu de la compétition",
@@ -691,6 +719,7 @@ export const messages = {
       "Les résultats ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     LEAGUE_NAME_INVALID:
       "Ce nom n'est pas valable : 2 à 40 caractères (lettres, chiffres, emoji, ponctuation simple).",
+    LEAGUE_NO_COMPETITION: "Choisis au moins une compétition pour ta ligue.",
     LEAGUE_CODE_UNKNOWN: "Ce code ne correspond à aucune ligue. Vérifie-le auprès de ton ami.",
     ALREADY_MEMBER: "Tu fais déjà partie de cette ligue.",
     LEAGUE_FULL: "Cette ligue est complète (50 membres au maximum).",

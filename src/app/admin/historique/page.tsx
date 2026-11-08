@@ -6,7 +6,7 @@ import { ErrorNotice } from "@/components/error-notice";
 import { buttonVariants } from "@/components/ui/button";
 import { createSupabaseAdminLogRepository } from "@/infra";
 
-import { COMPETITION_TIME_ZONE } from "../../competition";
+import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
 import { adminOnly } from "../guard";
 
@@ -25,6 +25,7 @@ function filterOf(search: Search): AdminLogFilter {
 const field = "min-h-11 w-full rounded-xl border-2 border-border bg-card px-3 text-base";
 
 export default async function AdminLogPage({ searchParams }: { searchParams: Promise<Search> }) {
+  const competition = await currentCompetition();
   const { client } = await adminOnly();
   const filter = filterOf(await searchParams);
   let page;
@@ -41,7 +42,7 @@ export default async function AdminLogPage({ searchParams }: { searchParams: Pro
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: COMPETITION_TIME_ZONE,
+    timeZone: competition.timeZone,
   });
 
   return (
