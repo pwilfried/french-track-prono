@@ -171,8 +171,15 @@ export const messages = {
     predict: "Faire mes pronos",
   },
   admin: {
+    band: "Back-office",
+    statsLabel: "État de la compétition",
+    stats: {
+      open: "Ouvertes aux pronos",
+      todo: "Résultat à saisir",
+      entered: "Points à calculer",
+      scored: "Points calculés",
+    },
     title: "Résultats",
-    badge: "Admin",
     subtitle: (competition: string, count: number) =>
       `${competition} · ${count} ${count <= 1 ? "épreuve verrouillée" : "épreuves verrouillées"}`,
     back: "Résultats",

@@ -70,15 +70,18 @@ export default async function AdminPage({
 
   return (
     <main id="main" className="flex flex-1 flex-col">
-      <header className="hero px-4 pb-6 pt-8">
+      <p
+        role="note"
+        className="bg-primary px-4 py-1 text-center text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary-foreground"
+      >
+        {messages.admin.band}
+      </p>
+      <header className="px-4 pt-6">
         <div className="mx-auto max-w-md">
-          <h1 className="flex items-center gap-3 font-display text-3xl font-extrabold uppercase leading-none">
+          <h1 className="font-display text-3xl font-extrabold leading-none">
             {messages.admin.title}
-            <span className="rounded-full bg-secondary px-3 py-1 font-sans text-sm font-extrabold text-secondary-foreground">
-              {messages.admin.badge}
-            </span>
           </h1>
-          <p className="mt-2 text-[#dce6f5]">
+          <p className="mt-2 text-sm text-muted-foreground">
             {messages.admin.subtitle(COMPETITION_TEXT.name, locked.length)}
           </p>
         </div>
@@ -88,6 +91,57 @@ export default async function AdminPage({
           <ErrorNotice retryHref="/admin" message={messages.errors.POINTS_UNAVAILABLE} />
         ) : (
           <>
+            <ul aria-label={messages.admin.statsLabel} className="grid grid-cols-2 gap-2">
+              {[
+                {
+                  value: loaded.events.length - locked.length,
+                  label: messages.admin.stats.open,
+                  href: null,
+                },
+                {
+                  value: count("todo"),
+                  label: messages.admin.stats.todo,
+                  href: "/admin?etat=todo",
+                },
+                {
+                  value: count("entered"),
+                  label: messages.admin.stats.entered,
+                  href: "/admin?etat=entered",
+                },
+                {
+                  value: count("scored"),
+                  label: messages.admin.stats.scored,
+                  href: "/admin?etat=scored",
+                },
+              ].map((tile) => {
+                const body = (
+                  <>
+                    <span className="block font-mono text-3xl font-bold tabular-nums">
+                      {tile.value}
+                    </span>
+                    <span className="block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      {tile.label}
+                    </span>
+                  </>
+                );
+                return (
+                  <li key={tile.label}>
+                    {tile.href ? (
+                      <Link
+                        href={tile.href}
+                        className="block min-h-20 rounded-card border border-border bg-card p-3"
+                      >
+                        {body}
+                      </Link>
+                    ) : (
+                      <div className="min-h-20 rounded-card border border-border bg-card p-3">
+                        {body}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
             <nav
               aria-label={messages.admin.filters}
               className="-mx-4 flex gap-2 overflow-x-auto px-4"
@@ -100,8 +154,8 @@ export default async function AdminPage({
                   className={cn(
                     "inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-4 font-semibold",
                     state === wanted
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-foreground",
+                      ? "bg-brand text-brand-foreground dark:bg-secondary dark:text-secondary-foreground"
+                      : "border border-border bg-background text-foreground",
                   )}
                 >
                   {messages.admin.filter[state](count(state))}

@@ -5,10 +5,9 @@ import { cn } from "@/lib/utils";
 
 /**
  * Official podium with medal gradients (gold / silver / bronze).
- * - Same `podiumSteps` domain helper as PodiumDisplay (ties share a step).
+ * - `podiumSteps` domain helper (ties share a step).
  * - Each step's text uses its medal's ink color, audited ≥ WCAG AA.
- * Prefer this variant for a result screen; use PodiumDisplay on dark surfaces where a
- * uniform gold reads better.
+ * Used on the event page and in the back-office once the result is in.
  */
 
 type StepStyle = {
