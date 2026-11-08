@@ -13,13 +13,15 @@ describe("web app manifest", () => {
     expect(m.start_url).toBe("/");
     expect(m.display).toBe("standalone");
     expect(m.lang).toBe("fr");
+    expect(m.scope).toBe("/");
+    expect(m.orientation).toBe("portrait");
   });
 
-  it("uses the brand colors", () => {
+  it("uses the cream page colour of the Officiel design", () => {
     const m = manifest();
 
-    expect(m.theme_color).toBe("#084595");
-    expect(m.background_color).toBe("#052b5c");
+    expect(m.theme_color).toBe("#fdfbf5");
+    expect(m.background_color).toBe("#fdfbf5");
   });
 
   it("declares icons that exist, including a maskable one", () => {

@@ -257,6 +257,12 @@ export const messages = {
     saved: (n: number) =>
       `✓ Liste de départ enregistrée : ${n} ${n <= 1 ? "athlète" : "athlètes"}.`,
   },
+  install: {
+    title: "Installe l'appli",
+    body: "Tes pronos en un geste, sur ton écran d'accueil.",
+    install: "Installer",
+    dismiss: "Fermer, ne plus proposer",
+  },
   myPredictions: {
     predicted: "✓ Pronostiqué",
     toPredict: "À pronostiquer",
