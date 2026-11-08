@@ -41,3 +41,5 @@ export { createInMemoryAdminLogStore } from "./in-memory/admin-log-repository";
 export { createSupabaseAdminLogRepository } from "./supabase/admin-log-repository";
 export { createInMemoryAthleteReader } from "./in-memory/athlete-reader";
 export { createSupabaseAthleteReader } from "./supabase/athlete-reader";
+export { createInMemoryDisciplineStore } from "./in-memory/discipline-repository";
+export { createSupabaseDisciplineRepository } from "./supabase/discipline-repository";

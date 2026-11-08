@@ -1,6 +1,6 @@
 import type { EventGender } from "@/domain/event";
 
-export type AdminActionKind = "set_start_list" | "set_results" | "run_scoring";
+export type AdminActionKind = "set_start_list" | "set_results" | "run_scoring" | "set_tolerance";
 
 /** One line of the admin log. */
 export type AdminAction = {
