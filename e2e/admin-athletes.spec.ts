@@ -23,7 +23,7 @@ test("an admin creates an athlete, adds a discipline with a PR and an SB, shown 
   // The admin creates the athlete with her main discipline.
   await page.getByText("Nouvel athlète").click();
   await page.getByLabel("Nom").fill(name);
-  await page.getByLabel("Pays").fill("fra");
+  await page.getByLabel("Pays", { exact: true }).fill("fra");
   await page.getByLabel("Catégorie").selectOption("F");
   await page.getByLabel("Discipline principale").selectOption("100 m");
   await page.getByRole("button", { name: "Créer l'athlète" }).click();
