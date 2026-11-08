@@ -14,6 +14,7 @@ export type StartListWorld = {
   gender: EventGender;
   /** The discipline of the event; the athletes of its start list run it. */
   discipline: string;
+  /** An athlete of the gender who runs the discipline. */
   candidateId: string;
   markInUse: (athleteId: string) => void;
   admin: StartListRepository;
@@ -32,7 +33,7 @@ export function startListRepositoryContract(name: string, world: () => Promise<S
 
       expect(candidates.map((c) => c.athleteId)).toContain(w.candidateId);
       expect(new Set(candidates.map((c) => c.athleteId)).size).toBe(candidates.length);
-      const runner = candidates.find((c) => c.athleteId === w.athleteIds[0]);
+      const runner = candidates.find((c) => c.athleteId === w.candidateId);
       expect(runner?.fit === "primary" || runner?.fit === "discipline").toBe(true);
       expect(
         (await w.admin.candidates(w.gender, "Discipline inconnue")).every((c) => c.fit === "other"),

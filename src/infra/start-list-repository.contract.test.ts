@@ -52,7 +52,11 @@ if (url && key) {
       outsiderId,
       gender: "F",
       discipline: "100 m",
-      candidateId: sql("select id from athletes where gender = 'F' order by id limit 1"),
+      // A woman of the seed who runs the event's discipline (a start list line gives it to her).
+      candidateId: sql(`with a as (select id from athletes where gender = 'F' order by id limit 1),
+        en as (insert into entries (event_id, athlete_id) select '${eventId}', id from a
+               on conflict do nothing)
+        select id from a`),
       // A result line is enough to make an athlete impossible to remove.
       markInUse: (athleteId) =>
         void sql(
