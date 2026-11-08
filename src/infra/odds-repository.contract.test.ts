@@ -37,7 +37,8 @@ if (url && key) {
     const ids = [
       invented,
       ...sql(
-        "select string_agg(id::text, ',' order by id) from (select id from athletes order by id limit 5) a",
+        `select string_agg(id::text, ',' order by id)
+         from (select id from athletes where id <> '${invented}' order by id limit 5) a`,
       ).split(","),
     ];
     const competition = sql(`insert into competitions (slug, name, starts_on, ends_on)

@@ -9,6 +9,7 @@ import { ReactionBar, ReactionSummary } from "@/components/reveal/reaction-bar";
 import { PickDistribution } from "@/components/reveal/pick-distribution";
 import { RevealedPredictionCard } from "@/components/reveal/revealed-prediction-card";
 import type { EventDetail } from "@/domain/event";
+import { OTHER_ATHLETE } from "@/domain/podium-draft";
 import { reactionCounts, type Reaction } from "@/domain/reveal";
 import {
   createSupabaseLeagueRepository,
@@ -68,6 +69,7 @@ export async function RevealSection({
   const { predictions, winnerPicks, leagues } = loaded;
   const winners = new Set(event.results.filter((r) => r.rank === 1).map((r) => r.athleteId));
   const names = new Map(event.entries.map((entry) => [entry.athleteId, entry.name]));
+  names.set(OTHER_ATHLETE, messages.picker.other);
   const nameOf = (athleteId: string) => names.get(athleteId) ?? "?";
   const tabs = [
     { href: base, label: messages.reveal.all, current: !leagueId },

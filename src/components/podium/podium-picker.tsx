@@ -8,6 +8,7 @@ import { flagOf } from "@/domain/flag";
 import {
   emptyDraft,
   nextEmptyStep,
+  OTHER_ATHLETE,
   placeAthlete,
   removeStep,
   stepOf,
@@ -26,6 +27,9 @@ const KEY = { 1: "first", 2: "second", 3: "third" } as const;
 const DISPLAY: Step[] = [2, 1, 3];
 const STEP_HEIGHT = { 1: "min-h-32", 2: "min-h-28", 3: "min-h-24" } as const;
 
+/** An athlete to choose; with odds, also his odds and PR (« autre athlète » is one of them). */
+export type PickerAthlete = Entry & { odds?: number | null; personalBest?: string | null };
+
 /**
  * Compose a podium by tapping: athletes go on the selected step (by default the first empty one),
  * a placed athlete is removed by tapping it again, a step is selected by tapping it. No drag and
@@ -39,7 +43,7 @@ export function PodiumPicker({
   onChange,
   title = messages.picker.podium,
 }: {
-  athletes: Entry[];
+  athletes: PickerAthlete[];
   initialDraft?: PodiumDraft;
   error?: string;
   disabled?: boolean;
@@ -66,6 +70,7 @@ export function PodiumPicker({
   };
 
   const complete = nextEmptyStep(draft) === null;
+  const withOdds = athletes.some((a) => a.odds != null);
 
   return (
     <div className="flex flex-col gap-3">
@@ -98,7 +103,9 @@ export function PodiumPicker({
               {athlete ? (
                 <>
                   <span aria-hidden className="text-lg leading-none">
-                    {flagOf(athlete.countryCode) ?? athlete.countryCode}
+                    {athlete.athleteId === OTHER_ATHLETE
+                      ? "?"
+                      : (flagOf(athlete.countryCode) ?? athlete.countryCode)}
                   </span>
                   <span className="line-clamp-2 break-words hyphens-auto">{athlete.name}</span>
                 </>
@@ -117,37 +124,67 @@ export function PodiumPicker({
       )}
 
       <h2 className="px-4 pt-2 text-xs font-bold tracking-wider text-muted-foreground uppercase">
-        {messages.picker.athletes}
+        {withOdds ? messages.picker.proposed : messages.picker.athletes}
       </h2>
+      {withOdds && !disabled && (
+        <p className="px-4 text-sm text-muted-foreground">{messages.picker.oddsHint}</p>
+      )}
       <ul className="flex flex-col gap-2 px-4">
         {athletes.map((athlete) => {
           const rank = stepOf(draft, athlete.athleteId);
+          const other = athlete.athleteId === OTHER_ATHLETE;
+          const label = messages.picker.athleteLabel(athlete.name, rank);
           return (
             <li key={athlete.athleteId}>
               <button
                 type="button"
                 disabled={disabled}
-                aria-label={messages.picker.athleteLabel(athlete.name, rank)}
+                aria-label={
+                  athlete.odds != null
+                    ? `${label}, ${messages.picker.oddsLabel(athlete.odds)}`
+                    : label
+                }
                 aria-pressed={rank !== null}
                 onClick={() => tapAthlete(athlete.athleteId)}
                 className={cn(
-                  "flex min-h-14 w-full items-center gap-3 rounded-2xl border bg-card px-3.5 py-2 text-left",
+                  "flex min-h-14 w-full items-center gap-3 rounded-2xl border px-3.5 py-2 text-left",
+                  other ? "bg-brand-soft text-brand-ink" : "bg-card",
                   rank !== null ? "border-primary" : "border-border",
                 )}
               >
                 <span aria-hidden className="w-7 shrink-0 text-center text-xl leading-none">
-                  {flagOf(athlete.countryCode) ?? (
-                    <span className="text-xs font-bold">{athlete.countryCode}</span>
-                  )}
+                  {other
+                    ? "?"
+                    : (flagOf(athlete.countryCode) ?? (
+                        <span className="text-xs font-bold">{athlete.countryCode}</span>
+                      ))}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-bold break-words">{athlete.name}</span>
-                  {athlete.seasonBest && (
-                    <span className="block font-mono text-xs text-muted-foreground">
-                      {messages.picker.seasonBest(athlete.seasonBest)}
-                    </span>
+                  {other ? (
+                    <span className="block text-xs">{messages.picker.otherHint}</span>
+                  ) : (
+                    (athlete.personalBest || athlete.seasonBest) && (
+                      <span className="block font-mono text-xs text-muted-foreground">
+                        {[
+                          athlete.personalBest &&
+                            messages.picker.personalBest(athlete.personalBest),
+                          athlete.seasonBest && messages.picker.seasonBest(athlete.seasonBest),
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    )
                   )}
                 </span>
+                {athlete.odds != null && (
+                  <span
+                    aria-hidden
+                    className="shrink-0 font-mono text-[15px] font-bold tabular-nums"
+                  >
+                    {messages.picker.odds(athlete.odds)}
+                  </span>
+                )}
                 {rank !== null ? (
                   <span
                     aria-hidden

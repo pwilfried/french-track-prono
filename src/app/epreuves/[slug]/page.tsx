@@ -4,20 +4,23 @@ import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
 import { getEvent } from "@/application/get-event";
+import { getEventOdds } from "@/application/set-event-odds";
 import { getMyPrediction, type Prediction } from "@/application/save-prediction";
 import { buttonVariants } from "@/components/ui/button";
 import { LockBanner } from "@/components/countdown/lock-banner";
 import { ErrorNotice } from "@/components/error-notice";
 import { PodiumMedals } from "@/components/podium/podium-medals";
-import { PodiumPicker } from "@/components/podium/podium-picker";
+import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
 import { eventPhase } from "@/domain/countdown";
 import type { EventDetail } from "@/domain/event";
 import { flagOf } from "@/domain/flag";
+import { pickChoices } from "@/domain/odds";
 import { canPredictRound } from "@/domain/rounds";
 import { draftFromPodium, emptyDraft } from "@/domain/podium-draft";
 import {
   createPublicSupabaseClient,
   createSupabaseEventReader,
+  createSupabaseOddsRepository,
   createSupabasePredictionRepository,
   type CurrentUser,
 } from "@/infra";
@@ -30,18 +33,32 @@ import { ResultSection } from "./result-section";
 import { RevealHidden, RevealSection } from "./reveal-section";
 
 async function loadEvent(slug: string): Promise<EventDetail | "error"> {
-  const competition = await currentCompetition();
   try {
     const events = createSupabaseEventReader(createPublicSupabaseClient());
-    return await getEvent({ events }).execute({
-      competitionSlug: competition.slug,
-      eventSlug: slug,
-    });
+    // Event slugs are unique: the event opens whatever its competition.
+    return await getEvent({ events }).execute({ competitionSlug: null, eventSlug: slug });
   } catch (error) {
     if (error instanceof UseCaseError) {
       if (error.code === "EVENT_NOT_FOUND") notFound();
       return "error";
     }
+    throw error;
+  }
+}
+
+/**
+ * What the picker offers: the start list, or with odds the proposed athletes and « autre
+ * athlète »; null while the odds of a competition that plays with them are not set.
+ */
+async function loadChoices(event: EventDetail): Promise<PickerAthlete[] | null> {
+  if (!event.oddsRequired) return event.entries;
+  try {
+    const odds = createSupabaseOddsRepository(createPublicSupabaseClient());
+    const found = await getEventOdds({ odds }).execute({ eventId: event.id });
+    if (!found.odds) return null;
+    return pickChoices(event.entries, found.odds, found.marks, messages.picker.other);
+  } catch (error) {
+    if (error instanceof UseCaseError) return null;
     throw error;
   }
 }
@@ -65,17 +82,24 @@ async function PredictionSection({
   slug,
   user,
   open,
+  choices,
 }: {
   event: EventDetail;
   slug: string;
   user: CurrentUser | null;
   open: boolean;
+  choices: PickerAthlete[] | null;
 }) {
   const back = `/epreuves/${slug}`;
 
   // A final opens once its semi-finals are run: the start list is only known then.
   if (open && !canPredictRound(event.round, event.previousRounds)) {
     return <p className="mx-4 rounded-card bg-muted p-4">{messages.errors.ROUND_NOT_READY}</p>;
+  }
+  if (!choices) {
+    return open ? (
+      <p className="mx-4 rounded-card bg-muted p-4">{messages.errors.ODDS_NOT_READY}</p>
+    ) : null;
   }
 
   if (!user) {
@@ -104,7 +128,7 @@ async function PredictionSection({
       <PredictionForm
         eventId={event.id}
         slug={slug}
-        athletes={event.entries}
+        athletes={choices}
         initial={{ draft, useJoker: mine?.useJoker ?? false }}
       />
     );
@@ -118,7 +142,7 @@ async function PredictionSection({
   }
   return (
     <div className="flex flex-col gap-3">
-      <PodiumPicker athletes={event.entries} initialDraft={draft} disabled />
+      <PodiumPicker athletes={choices} initialDraft={draft} disabled />
       {mine.useJoker && (
         <p className="mx-4 rounded-2xl bg-secondary/20 px-3.5 py-3 font-extrabold">
           {messages.prediction.jokerUsedHere}
@@ -150,7 +174,7 @@ export default async function EventPage({
   }
 
   const event = loaded;
-  const user = await getCurrentUser();
+  const [user, choices] = await Promise.all([getCurrentUser(), loadChoices(event)]);
   const open = eventPhase(new Date(), event.lockAt) === "open";
   // The picker already lists the athletes of an open event for a signed-in player.
   const showStartList = !(user && open);
@@ -276,7 +300,7 @@ export default async function EventPage({
         {user && winner ? (
           <ResultSection event={event} slug={slug} user={user} />
         ) : (
-          <PredictionSection event={event} slug={slug} user={user} open={open} />
+          <PredictionSection event={event} slug={slug} user={user} open={open} choices={choices} />
         )}
       </section>
 

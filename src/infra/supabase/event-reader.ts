@@ -109,12 +109,14 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
     async findBySlug(competitionSlug, eventSlug) {
       const query = client
         .from("events")
-        .select(`${EVENT_COLUMNS}, sub_disciplines, competitions!inner(slug)`)
+        .select(`${EVENT_COLUMNS}, sub_disciplines, competitions!inner(slug, odds_enabled)`)
         .eq("slug", eventSlug);
       const found = await (competitionSlug === null
         ? query
         : query.eq("competitions.slug", competitionSlug)
-      ).maybeSingle<EventRow & { sub_disciplines: string[] | null }>();
+      ).maybeSingle<
+        EventRow & { sub_disciplines: string[] | null; competitions: { odds_enabled: boolean } }
+      >();
       if (found.error) throw new UseCaseError("EVENTS_UNAVAILABLE");
       if (!found.data) return null;
 
@@ -163,6 +165,7 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
         results,
         subDisciplines: found.data.sub_disciplines ?? [],
         previousRounds: await previousRounds(client, found.data.id),
+        oddsRequired: found.data.competitions.odds_enabled,
       };
     },
   };

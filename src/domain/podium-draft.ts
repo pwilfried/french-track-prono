@@ -72,3 +72,9 @@ export function isValidPodium(podium: Podium): boolean {
   const ids = [podium.first, podium.second, podium.third];
   return ids.every((id) => id.length > 0) && new Set(ids).size === 3;
 }
+
+/**
+ * « Autre athlète »: with odds, a place can go to any athlete outside the proposed ones. It stands
+ * in the podium like an athlete id, so it can only be on one place.
+ */
+export const OTHER_ATHLETE = "other";
