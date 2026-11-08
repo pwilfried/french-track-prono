@@ -71,6 +71,7 @@ export default async function AthletePage({ params }: { params: Promise<{ slug: 
                 {messages.athlete.records}
               </h2>
               <RecordsRow rows={recordRows(athlete.records)} />
+              <p className="text-xs text-muted-foreground">{messages.athlete.recordsHint}</p>
             </section>
             <section aria-labelledby="races-title" className="flex flex-col gap-2">
               <h2

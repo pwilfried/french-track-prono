@@ -24,7 +24,7 @@ function Mark({ label, record }: { label: string; record: AthleteRecord | null }
   );
 }
 
-/** The records band: per discipline, PR and SB side by side. Scrolls sideways when needed. */
+/** The records band: per discipline, PB and SB side by side. Scrolls sideways when needed. */
 export function RecordsRow({ rows }: { rows: RecordRow[] }) {
   if (rows.length === 0) {
     return <p className="rounded-card bg-muted p-4 text-sm">{messages.athlete.noRecord}</p>;

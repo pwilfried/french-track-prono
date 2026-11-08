@@ -25,7 +25,7 @@ test("a visitor opens an athlete from a start list and sees a PR and a recent ra
   await expect(page).toHaveURL(/\/athletes\/sha-carri-richardson$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Sha'Carri Richardson");
   const records = page.getByRole("region", { name: "Records" });
-  await expect(records.getByText("Record perso").first()).toBeVisible();
+  await expect(records.getByText("PB", { exact: true }).first()).toBeVisible();
   await expect(records.getByText(/^\d+\.\d{2}$/).first()).toBeVisible();
   const races = page.getByRole("region", { name: "Dernières courses" }).getByRole("listitem");
   // Other suites may leave a more recent race for her, so look for this meeting's race by name.
