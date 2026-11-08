@@ -13,7 +13,7 @@ import { PodiumMedals } from "@/components/podium/podium-medals";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
 import { eventPhase } from "@/domain/countdown";
 import type { EventDetail } from "@/domain/event";
-import { formatMark } from "@/domain/discipline";
+import { formatMark, tidyMark } from "@/domain/discipline";
 import { flagOf } from "@/domain/flag";
 import { pickChoices } from "@/domain/odds";
 import { canPredictRound } from "@/domain/rounds";
@@ -57,7 +57,12 @@ async function loadChoices(event: EventDetail): Promise<PickerAthlete[] | null> 
     const odds = createSupabaseOddsRepository(createPublicSupabaseClient());
     const found = await getEventOdds({ odds }).execute({ eventId: event.id });
     if (!found.odds) return null;
-    return pickChoices(event.entries, found.odds, found.marks, messages.picker.other);
+    const unit = event.markUnit;
+    const tidy = (mark: string | null) => (mark && unit ? tidyMark(mark, unit) : mark);
+    const marks = new Map(
+      [...found.marks].map(([id, m]) => [id, { pr: tidy(m.pr), sb: tidy(m.sb) }] as const),
+    );
+    return pickChoices(event.entries, found.odds, marks, messages.picker.other);
   } catch (error) {
     if (error instanceof UseCaseError) return null;
     throw error;

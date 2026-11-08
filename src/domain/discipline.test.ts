@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatMark, isValidTolerance, parseMark, withinTolerance } from "./discipline";
+import { formatMark, isValidTolerance, parseMark, tidyMark, withinTolerance } from "./discipline";
 
 describe("parseMark", () => {
   it("reads times in seconds, minutes and hours", () => {
@@ -48,5 +48,17 @@ describe("isValidTolerance", () => {
     expect(isValidTolerance(0)).toBe(false);
     expect(isValidTolerance(-1)).toBe(false);
     expect(isValidTolerance(Number.NaN)).toBe(false);
+  });
+});
+
+describe("tidyMark", () => {
+  it("writes a mark typed with a comma or one decimal the same way as the others", () => {
+    expect(tidyMark("11,4", "time")).toBe("11.40");
+    expect(tidyMark("11.2", "time")).toBe("11.20");
+    expect(tidyMark("8,1", "distance")).toBe("8.10");
+  });
+
+  it("leaves a mark it cannot read as it was", () => {
+    expect(tidyMark("DNF", "time")).toBe("DNF");
   });
 });

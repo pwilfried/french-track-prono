@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isValidOdds, parseOdds, pickChoices } from "./odds";
+import { firstInvalidOdds, isValidOdds, parseOdds, pickChoices } from "./odds";
 import { OTHER_ATHLETE } from "./podium-draft";
 
 const startList = ["a", "b", "c", "d", "e", "f", "g"];
@@ -8,27 +8,49 @@ const proposed = (n: number) =>
   startList.slice(0, n).map((athleteId, i) => ({ athleteId, odds: 1.5 + i }));
 
 describe("isValidOdds", () => {
-  it("accepts 5 or 6 athletes of the start list and odds for another athlete", () => {
-    expect(isValidOdds({ proposed: proposed(5), other: 8 }, startList)).toBe(true);
-    expect(isValidOdds({ proposed: proposed(6), other: 8 }, startList)).toBe(true);
+  it("accepts any number of athletes of the start list, from one, and odds for another athlete", () => {
+    expect(isValidOdds({ proposed: proposed(1), other: 8 }, startList)).toBe(true);
+    expect(isValidOdds({ proposed: proposed(7), other: 8 }, startList)).toBe(true);
   });
 
-  it("refuses 4 or 7 athletes, a duplicate, an athlete off the start list, and odds of 1 or less", () => {
-    expect(isValidOdds({ proposed: proposed(4), other: 8 }, startList)).toBe(false);
-    expect(isValidOdds({ proposed: proposed(7), other: 8 }, startList)).toBe(false);
+  it("accepts odds of 1 or below, as long as they are positive", () => {
+    expect(isValidOdds({ proposed: [{ athleteId: "a", odds: 1 }], other: 1 }, startList)).toBe(
+      true,
+    );
+    expect(isValidOdds({ proposed: [{ athleteId: "a", odds: 0.5 }], other: 2 }, startList)).toBe(
+      true,
+    );
+  });
+
+  it("refuses no athlete, a duplicate, an athlete off the start list, and odds of 0", () => {
+    expect(isValidOdds({ proposed: [], other: 8 }, startList)).toBe(false);
     expect(
-      isValidOdds({ proposed: [...proposed(4), { athleteId: "a", odds: 3 }], other: 8 }, startList),
+      isValidOdds({ proposed: [...proposed(2), { athleteId: "a", odds: 3 }], other: 8 }, startList),
     ).toBe(false);
+    expect(isValidOdds({ proposed: [{ athleteId: "z", odds: 3 }], other: 8 }, startList)).toBe(
+      false,
+    );
+    expect(isValidOdds({ proposed: [{ athleteId: "a", odds: 0 }], other: 8 }, startList)).toBe(
+      false,
+    );
+    expect(isValidOdds({ proposed: proposed(2), other: 0 }, startList)).toBe(false);
+  });
+});
+
+describe("firstInvalidOdds", () => {
+  it("names the first line whose odds cannot be read or are not positive", () => {
     expect(
-      isValidOdds({ proposed: [...proposed(4), { athleteId: "z", odds: 3 }], other: 8 }, startList),
-    ).toBe(false);
-    expect(isValidOdds({ proposed: proposed(5), other: 1 }, startList)).toBe(false);
-    expect(
-      isValidOdds(
-        { proposed: [...proposed(4), { athleteId: "e", odds: 0.9 }], other: 8 },
-        startList,
+      firstInvalidOdds(
+        [
+          { athleteId: "a", text: "2" },
+          { athleteId: "b", text: "0" },
+        ],
+        "8",
       ),
-    ).toBe(false);
+    ).toBe("b");
+    expect(firstInvalidOdds([{ athleteId: "a", text: "deux" }], "8")).toBe("a");
+    expect(firstInvalidOdds([{ athleteId: "a", text: "1,00" }], "")).toBe(OTHER_ATHLETE);
+    expect(firstInvalidOdds([{ athleteId: "a", text: "1,00" }], "20")).toBeNull();
   });
 });
 

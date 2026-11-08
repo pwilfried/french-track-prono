@@ -39,7 +39,7 @@ describe("setEventOdds", () => {
   it("refuses an invalid set before saving, locked odds, and a player", async () => {
     const ports = repository();
     await expect(
-      setEventOdds(ports).execute({ eventId: "e1", startList, odds: { ...odds, other: 1 } }),
+      setEventOdds(ports).execute({ eventId: "e1", startList, odds: { ...odds, other: 0 } }),
     ).rejects.toEqual(new UseCaseError("ODDS_INVALID"));
     expect(ports.saved.size).toBe(0);
 

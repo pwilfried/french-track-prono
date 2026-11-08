@@ -17,7 +17,7 @@ export interface OddsRepository {
 
 const CODES = { not_admin: "NOT_ADMIN", locked: "ODDS_LOCKED", invalid: "ODDS_INVALID" } as const;
 
-/** The admin sets the odds of an event: 5 or 6 athletes of the start list and another athlete. */
+/** The admin sets the odds of an event: athletes of the start list (at least one) and another athlete. */
 export function setEventOdds(ports: { odds: OddsRepository }) {
   return {
     async execute(input: { eventId: string; startList: string[]; odds: EventOdds }) {

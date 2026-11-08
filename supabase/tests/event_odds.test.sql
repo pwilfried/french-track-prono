@@ -1,7 +1,7 @@
 -- pgTAP: the admin sets the odds of an event before it locks; with odds enabled, predictions open
 -- only once odds are set. Everything is rolled back at the end.
 begin;
-select plan(7);
+select plan(8);
 
 insert into auth.users (id, email) values
   ('cacacaca-0000-0000-0000-000000000001', 'player@example.test'),
@@ -38,8 +38,13 @@ set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub":"cacacaca-0000-0000-0000-000000000002","role":"authenticated"}', true);
 
-select throws_ok($$select admin_set_event_odds((select event_id from fixture), odds_of(4))$$, '22023', null,
-  'four athletes are not enough');
+select throws_ok($$select admin_set_event_odds((select event_id from fixture),
+  jsonb_build_array(jsonb_build_object('athlete_id', null, 'odds', 8)))$$, '22023', null,
+  'at least one athlete is proposed');
+select lives_ok($$select admin_set_event_odds((select event_id from fixture), jsonb_build_array(
+  jsonb_build_object('athlete_id', (select athletes[1] from fixture), 'odds', 1),
+  jsonb_build_object('athlete_id', null, 'odds', 0.8)))$$,
+  'one athlete is enough, and odds of 1 or below are accepted (#294)');
 select lives_ok($$select admin_set_event_odds((select event_id from fixture), odds_of(6))$$,
   'an admin sets odds for six athletes and another athlete');
 select is((select count(*)::int from event_odds where event_id = (select event_id from fixture)), 7,
