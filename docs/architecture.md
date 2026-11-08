@@ -193,7 +193,7 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 | Groupe | Tables |
 |---|---|
 | Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions` |
-| Référentiel | `competitions`, `events`, `athletes`, `entries` (liste de départ), `results` |
+| Référentiel | `competitions`, `events` (dont `kind` et `sub_disciplines` des épreuves combinées), `athletes`, `entries` (liste de départ), `results`, `athlete_records` (PR, SB, WR, WB) |
 | Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions` |
 | Fonctions | `create_league()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()` |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers`, `badges`, `user_badges` (F11 et plus tard) |
@@ -214,6 +214,18 @@ Ajouts nécessaires au schéma (à faire dans la version indiquée) :
 - `profiles.is_admin` : accès au back-office, réservé à toi (v0.4).
 - Suppression de compte et export des données : fonctions SQL (v0.7).
 - Les tables de questions bonus et de badges ne sont pas utilisées avant leurs versions.
+
+Back-office (v0.8) : la liste de départ, le résultat et le calcul des points passent par les
+fonctions `set_start_list()`, `set_results()` et `set_event_scores()`, avec la session de l'admin.
+Chacune écrit une ligne dans `admin_actions` (journal lisible par les admins seulement, écrit par
+la base elle-même via `private.log_admin_action()`, hors de l'API).
+
+Records (v0.8, issue #196) : le trigger `update_records_from_result` met à jour le PR et le SB
+à chaque ligne de résultat. Les marques texte sont lues par `parse_mark()` (secondes, mètres ou
+points) et comparées par `is_better_mark()` : temps plus bas pour les courses (discipline avec une
+distance en mètres, haies, steeple, marche, relais), valeur plus haute sinon. Le SB repart à zéro
+avec la première course d'une nouvelle année civile. Un résultat corrigé à la baisse ne fait pas
+reculer un record déjà établi. WR et WB se saisissent à la main.
 
 ## Versions
 
