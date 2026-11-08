@@ -7,14 +7,10 @@ import { ErrorNotice } from "@/components/error-notice";
 import { nextCompetition } from "@/domain/competition";
 import { createSupabaseCompetitionAdminRepository } from "@/infra";
 
+import { currentDay, SCOPE_CHIP } from "../../competition";
 import { messages } from "../../messages.fr";
 import { adminOnly } from "../guard";
 import { AdminShell } from "./admin-shell";
-
-const scopeChip = {
-  international: "bg-brand-soft text-brand-ink",
-  france: "bg-primary-soft text-primary-ink",
-};
 
 function CompetitionCard({ c, featured }: { c: CompetitionSummary; featured: boolean }) {
   return (
@@ -23,7 +19,7 @@ function CompetitionCard({ c, featured }: { c: CompetitionSummary; featured: boo
       className={`flex flex-col gap-2.5 rounded-card bg-card p-3.5 ${featured ? "border-2 border-brand" : "border border-border"}`}
     >
       <span className="flex items-center justify-between gap-2">
-        <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${scopeChip[c.scope]}`}>
+        <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${SCOPE_CHIP[c.scope]}`}>
           {messages.adminCompetitions.scope[c.scope]}
         </span>
         {featured && (
@@ -54,7 +50,7 @@ function CompetitionCard({ c, featured }: { c: CompetitionSummary; featured: boo
 
 export default async function AdminCompetitionsPage() {
   const { client } = await adminOnly();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = currentDay();
   let lists;
   try {
     lists = await listCompetitions({

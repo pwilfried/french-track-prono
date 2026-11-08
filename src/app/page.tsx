@@ -3,15 +3,10 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { daysUntil, type CompetitionScope } from "@/domain/competition";
 
-import { loadCompetitions, type ShownCompetition } from "./competition";
+import { currentDay, loadCompetitions, SCOPE_CHIP, type ShownCompetition } from "./competition";
 import { messages } from "./messages.fr";
 
 const SCOPES: CompetitionScope[] = ["international", "france"];
-
-const scopeChip: Record<CompetitionScope, string> = {
-  international: "bg-brand-soft text-brand-ink",
-  france: "bg-primary-soft text-primary-ink",
-};
 
 function ScopeIcon({ scope }: { scope: CompetitionScope }) {
   if (scope === "france") {
@@ -45,7 +40,7 @@ function NextCompetition({ c, today }: { c: ShownCompetition; today: string }) {
   return (
     <article className="flex flex-col gap-3.5 rounded-card border border-border bg-card p-4">
       <div className="flex items-center justify-between gap-2">
-        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${scopeChip[c.scope]}`}>
+        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${SCOPE_CHIP[c.scope]}`}>
           {messages.adminCompetitions.scope[c.scope]}
         </span>
         <span className="rounded-full bg-gold-soft px-2.5 py-1 font-mono text-xs font-bold text-gold-ink">
@@ -72,7 +67,7 @@ function NextCompetition({ c, today }: { c: ShownCompetition; today: string }) {
 
 /** Home (board v0.9 « Accueil »): the two kinds of competitions, then the next two to come. */
 export default async function Home() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = currentDay();
   const { coming } = await loadCompetitions();
 
   return (

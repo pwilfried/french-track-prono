@@ -16,7 +16,14 @@ const shown = (c: CompetitionSummary): ShownCompetition => ({
   place: [c.city, messages.competition.dates(c.startsOn, c.endsOn)].filter(Boolean).join(" · "),
 });
 
-const today = () => new Date().toISOString().slice(0, 10);
+/** Colours of the « Internationale » / « Française » chip. */
+export const SCOPE_CHIP = {
+  international: "bg-brand-soft text-brand-ink",
+  france: "bg-primary-soft text-primary-ink",
+} as const;
+
+/** Today as YYYY-MM-DD (UTC), the format of competition dates. */
+export const currentDay = () => new Date().toISOString().slice(0, 10);
 
 /** Every competition (public read), the coming ones first; empty lists when they cannot be read. */
 export const loadCompetitions = cache(
@@ -24,7 +31,7 @@ export const loadCompetitions = cache(
     try {
       const lists = await listCompetitions({
         competitions: createSupabaseCompetitionAdminRepository(createPublicSupabaseClient()),
-      }).execute({ today: today() });
+      }).execute({ today: currentDay() });
       return { coming: lists.coming.map(shown), past: lists.past.map(shown) };
     } catch (error) {
       if (error instanceof UseCaseError) return { coming: [], past: [] };
@@ -58,7 +65,7 @@ export const currentCompetition = cache(async (slug?: string): Promise<ShownComp
   const asked = slug ?? process.env.COMPETITION_SLUG;
   return (
     (asked ? all.find((c) => c.slug === asked) : undefined) ??
-    nextCompetition(all, today()) ??
+    nextCompetition(all, currentDay()) ??
     FALLBACK
   );
 });

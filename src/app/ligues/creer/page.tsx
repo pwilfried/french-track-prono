@@ -4,11 +4,9 @@ import { CreateLeagueForm } from "@/components/leagues/league-forms";
 import { LeagueHero } from "@/components/leagues/league-hero";
 
 import { currentCompetition, loadCompetitions } from "../../competition";
+import { paramList } from "../../search-params";
 import { messages } from "../../messages.fr";
 import { leaguePorts } from "../data";
-
-const list = (value: string | string[] | undefined): string[] =>
-  value === undefined ? [] : Array.isArray(value) ? value : [value];
 
 /** The query string of the page with these competitions. */
 const withCompetitions = (slugs: string[]) =>
@@ -23,7 +21,7 @@ export default async function CreateLeaguePage({
 }: {
   searchParams: Promise<{ competition?: string | string[] }>;
 }) {
-  const asked = [...new Set(list((await searchParams).competition))];
+  const asked = [...new Set(paramList((await searchParams).competition))];
   await leaguePorts(asked.length ? `/ligues/creer?${withCompetitions(asked)}` : "/ligues/creer");
   const { coming, past } = await loadCompetitions();
   const known = [...coming, ...past];

@@ -12,6 +12,7 @@ import { createSupabaseRankingRepository } from "@/infra";
 
 import { currentCompetition } from "../competition";
 import { messages } from "../messages.fr";
+import { paramText } from "../search-params";
 import { getCurrentUser, getSessionClient } from "../session";
 
 export default async function GeneralRankingPage({
@@ -20,10 +21,9 @@ export default async function GeneralRankingPage({
   searchParams: Promise<{ competition?: string | string[] }>;
 }) {
   // A competition chosen on its page (?competition=), the next one by date otherwise.
-  const asked = (await searchParams).competition;
-  const competition = await currentCompetition(typeof asked === "string" ? asked : undefined);
-  const here =
-    typeof asked === "string" ? `/classement?competition=${competition.slug}` : "/classement";
+  const asked = paramText((await searchParams).competition);
+  const competition = await currentCompetition(asked);
+  const here = asked ? `/classement?competition=${competition.slug}` : "/classement";
   const user = await getCurrentUser();
   if (!user) redirect(`/connexion?next=${encodeURIComponent(here)}`);
 

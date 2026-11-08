@@ -15,6 +15,7 @@ import {
 
 import { currentCompetition } from "../competition";
 import { messages } from "../messages.fr";
+import { paramText } from "../search-params";
 import { getCurrentUser, getSessionClient } from "../session";
 
 const genders: EventGender[] = ["F", "M", "X"];
@@ -66,7 +67,7 @@ export default async function EventsPage({
 }) {
   const search = await searchParams;
   // A competition chosen on its page (?competition=), the next one by date otherwise.
-  const asked = typeof search.competition === "string" ? search.competition : undefined;
+  const asked = paramText(search.competition);
   const competition = await currentCompetition(asked);
   const gender = parseGender(search.genre);
   const [loaded, mine] = await Promise.all([loadEvents(asked), loadMine(asked)]);
