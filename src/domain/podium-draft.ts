@@ -6,6 +6,9 @@ export type PodiumDraft = { first: string | null; second: string | null; third: 
 /** A complete podium, ready to be saved. */
 export type Podium = { first: string; second: string; third: string };
 
+/** The marks a player predicts for the athletes of his podium (null: no mark). */
+export type PodiumMarks = { first: number | null; second: number | null; third: number | null };
+
 const KEY = { 1: "first", 2: "second", 3: "third" } as const;
 
 export function emptyDraft(): PodiumDraft {

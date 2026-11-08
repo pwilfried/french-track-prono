@@ -637,6 +637,13 @@ export const messages = {
     proposed: "Athlètes proposés",
     other: "Autre athlète",
     otherHint: "N'importe quel athlète hors de cette liste",
+    marksTitle: "Tes perfs (facultatif)",
+    marksHint: (tolerance: string) =>
+      `Une perf est juste à ${tolerance} près de la marque officielle. Laisse vide pour ne pas parier.`,
+    markLabel: (name: string) => `Perf de ${name}`,
+    markPlaceholder: { time: "10.85", distance: "8.15", points: "8250" },
+    tolerance: (value: number, unit: "time" | "distance" | "points") =>
+      `±${unit === "points" ? Math.round(value) : value.toFixed(2).replace(".", ",")} ${{ time: "s", distance: "m", points: "pts" }[unit]}`,
     oddsHint: "La cote multiplie tes points : plus elle est haute, plus le pari rapporte.",
     step: (rank: 1 | 2 | 3) => ["1er", "2e", "3e"][rank - 1]!,
     stepLabel: (rank: 1 | 2 | 3, name: string | null) =>

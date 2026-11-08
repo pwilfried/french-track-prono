@@ -53,6 +53,19 @@ export function predictionRepositoryContract(name: string, world: () => Promise<
       expect(await player.predictions.find(player.userId, wanted.eventId)).toEqual(wanted);
     });
 
+    it("keeps the marks predicted with the podium", async () => {
+      const w = await world();
+      const player = await w.newPlayer();
+      const wanted: Prediction = {
+        ...prediction(player, w.openEvents[0]!),
+        marks: { first: 10.85, second: null, third: 61.2 },
+      };
+
+      expect(await player.predictions.save(wanted)).toBe("saved");
+
+      expect(await player.predictions.find(player.userId, wanted.eventId)).toEqual(wanted);
+    });
+
     it("refuses « autre athlète » on an event played without odds", async () => {
       const w = await world();
       const player = await w.newPlayer();

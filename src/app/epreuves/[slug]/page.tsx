@@ -13,6 +13,7 @@ import { PodiumMedals } from "@/components/podium/podium-medals";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
 import { eventPhase } from "@/domain/countdown";
 import type { EventDetail } from "@/domain/event";
+import { formatMark } from "@/domain/discipline";
 import { flagOf } from "@/domain/flag";
 import { pickChoices } from "@/domain/odds";
 import { canPredictRound } from "@/domain/rounds";
@@ -122,6 +123,14 @@ async function PredictionSection({
   const mine = await loadMyPrediction(user.userId, event.id);
   if (mine === "error") return <ErrorNotice retryHref={back} />;
   const draft = mine ? draftFromPodium(mine.podium) : emptyDraft();
+  const unit = event.markUnit;
+  const markText = (value: number | null | undefined) =>
+    value != null && unit ? formatMark(value, unit) : "";
+  const marks = {
+    first: markText(mine?.marks?.first),
+    second: markText(mine?.marks?.second),
+    third: markText(mine?.marks?.third),
+  };
 
   if (open) {
     return (
@@ -129,7 +138,9 @@ async function PredictionSection({
         eventId={event.id}
         slug={slug}
         athletes={choices}
-        initial={{ draft, useJoker: mine?.useJoker ?? false }}
+        initial={{ draft, useJoker: mine?.useJoker ?? false, marks }}
+        markUnit={event.markUnit}
+        tolerance={event.tolerance}
       />
     );
   }
@@ -143,6 +154,19 @@ async function PredictionSection({
   return (
     <div className="flex flex-col gap-3">
       <PodiumPicker athletes={choices} initialDraft={draft} disabled />
+      {mine.marks && (
+        <dl className="mx-4 flex flex-col gap-1 rounded-2xl bg-muted px-3.5 py-3 text-sm">
+          {(["first", "second", "third"] as const).map((slot) => {
+            const name = choices.find((c) => c.athleteId === mine.podium[slot])?.name;
+            return marks[slot] && name ? (
+              <div key={slot} className="flex justify-between gap-3">
+                <dt>{messages.picker.markLabel(name)}</dt>
+                <dd className="font-mono font-bold">{marks[slot]}</dd>
+              </div>
+            ) : null;
+          })}
+        </dl>
+      )}
       {mine.useJoker && (
         <p className="mx-4 rounded-2xl bg-secondary/20 px-3.5 py-3 font-extrabold">
           {messages.prediction.jokerUsedHere}

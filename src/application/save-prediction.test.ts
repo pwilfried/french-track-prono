@@ -65,6 +65,50 @@ describe("SavePrediction", () => {
     expect(saved).toEqual([prediction]);
   });
 
+  it("saves the marks typed for the athletes, in the unit of the discipline", async () => {
+    const { repo, saved } = repository();
+
+    await savePrediction({ predictions: repo }).execute({
+      ...input,
+      marks: { first: "10,85", second: "", third: "1:01.20" },
+      markUnit: "time",
+    });
+
+    expect(saved[0]?.marks).toEqual({ first: 10.85, second: null, third: 61.2 });
+  });
+
+  it("saves no marks when none is typed", async () => {
+    const { repo, saved } = repository();
+
+    await savePrediction({ predictions: repo }).execute({
+      ...input,
+      marks: { first: "", second: " ", third: "" },
+      markUnit: "time",
+    });
+
+    expect(saved[0]).not.toHaveProperty("marks");
+  });
+
+  it.each([
+    ["a mark that is not one", { first: "dix", second: "", third: "" }, "time"],
+    ["a mark for « autre athlète »", { first: "", second: "10.90", third: "" }, "time"],
+    ["a mark without a known unit", { first: "10.85", second: "", third: "" }, undefined],
+  ] as const)("refuses %s with MARK_INVALID, saving nothing", async (_, marks, markUnit) => {
+    const { repo, saved } = repository();
+
+    expect(
+      await codeOf(
+        savePrediction({ predictions: repo }).execute({
+          ...input,
+          second: OTHER_ATHLETE,
+          marks,
+          markUnit,
+        }),
+      ),
+    ).toBe("MARK_INVALID");
+    expect(saved).toEqual([]);
+  });
+
   it("saves a podium with « autre athlète » on one place", async () => {
     const { repo, saved } = repository();
 
