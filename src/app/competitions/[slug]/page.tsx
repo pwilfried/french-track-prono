@@ -37,7 +37,7 @@ async function loadPlayer(userId: string, competitionSlug: string) {
     const client = await getSessionClient();
     const [ranking, mine] = await Promise.all([
       getGeneralRanking({ ranking: createSupabaseRankingRepository(client) }).execute({
-        competitionSlug,
+        competitionSlugs: [competitionSlug],
       }),
       listMyPredictions({ predictions: createSupabasePredictionRepository(client) }).execute({
         userId,
@@ -111,7 +111,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ sl
         <aside className="flex flex-col gap-3">
           {player ? (
             <Link
-              href={`/classement?competition=${slug}`}
+              href="/classement"
               className="flex min-h-16 items-center gap-4 rounded-card border border-border bg-card p-4"
             >
               <span className="font-mono text-3xl font-bold text-brand dark:text-secondary">

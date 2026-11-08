@@ -210,7 +210,7 @@ export const messages = {
   },
   ranking: {
     title: "Classement",
-    subtitle: (competition: string) => `Tous les joueurs · ${competition}`,
+    subtitle: "Tous les joueurs · toutes les compétitions",
     mine: (rank: number, of: number, points: number) =>
       `Ta place : ${rank === 1 ? "1er" : `${rank}e`} sur ${of} · ${points} ${points <= 1 ? "pt" : "pts"}`,
     notRanked: "Tu n'as pas encore de points : fais tes pronos pour entrer au classement.",

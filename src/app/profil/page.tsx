@@ -27,7 +27,7 @@ async function loadSeason(userId: string) {
     const client = await getSessionClient();
     const [ranking, mine, events] = await Promise.all([
       getGeneralRanking({ ranking: createSupabaseRankingRepository(client) }).execute({
-        competitionSlug: competition.slug,
+        competitionSlugs: [competition.slug],
       }),
       listMyPredictions({ predictions: createSupabasePredictionRepository(client) }).execute({
         userId,
