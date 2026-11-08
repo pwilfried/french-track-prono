@@ -17,6 +17,13 @@ startListRepositoryContract("in-memory fake", async () => {
       disciplines: ["100 m"],
     })),
     { athleteId: "stranger", name: "Stranger", countryCode: "JAM", gender: "F" },
+    {
+      athleteId: "jumper",
+      name: "Jumper",
+      countryCode: "CUB",
+      gender: "F",
+      disciplines: ["Longueur"],
+    },
     { athleteId: "m1", name: "Man", countryCode: "USA", gender: "M" },
   ]);
   const admin = store.session({ isAdmin: true });
@@ -31,6 +38,8 @@ startListRepositoryContract("in-memory fake", async () => {
     gender: "F",
     discipline: "100 m",
     candidateId: "a1",
+    nonRunnerId: "jumper",
+    enter: (ids) => store.enter(eventId, ids),
     markInUse: (athleteId) => store.markInUse(eventId, [athleteId]),
     makeRound: async () => {
       store.setRound(eventId, "next-round", [
@@ -65,6 +74,15 @@ if (url && key) {
         en as (insert into entries (event_id, athlete_id) select '${eventId}', id from a
                on conflict do nothing)
         select id from a`),
+      // A woman of her own who runs no discipline yet.
+      nonRunnerId: sql(`insert into athletes (slug, name, country_code, gender)
+        values ('contract-nonrunner-${crypto.randomUUID().slice(0, 8)}', 'Sans discipline', 'CUB', 'F')
+        returning id`),
+      enter: (ids) =>
+        void sql(`insert into competition_athletes (competition_id, athlete_id)
+          select e.competition_id, a.id from events e, athletes a
+          where e.id = '${eventId}' and a.id in (${ids.map((id) => `'${id}'`).join(", ")})
+          on conflict do nothing`),
       // A result line is enough to make an athlete impossible to remove.
       markInUse: (athleteId) =>
         void sql(
