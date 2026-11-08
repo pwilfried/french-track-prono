@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
 
-test("an admin creates an athlete, adds a discipline with a PR and an SB, shown on the public page", async ({
+test("an admin creates an athlete, adds a discipline with a PB and an SB, shown on the public page", async ({
   page,
 }) => {
   const tag = `${Date.now() % 1000000}`;
@@ -54,14 +54,14 @@ test("an admin creates an athlete, adds a discipline with a PR and an SB, shown 
 
   // A mark that is not a time is refused with a clear message.
   await page.getByLabel("PB au 200 m").fill("2m10");
-  await page.getByRole("button", { name: "Enregistrer PR et SB du 200 m" }).click();
+  await page.getByRole("button", { name: "Enregistrer PB et SB du 200 m" }).click();
   await expect(page.locator("main").getByRole("alert")).toContainText(
     "ne correspond pas à la discipline",
   );
 
   await page.getByLabel("PB au 200 m").fill("22.10");
   await page.getByLabel("SB au 200 m").fill("22.45");
-  await page.getByRole("button", { name: "Enregistrer PR et SB du 200 m" }).click();
+  await page.getByRole("button", { name: "Enregistrer PB et SB du 200 m" }).click();
   await expect(page.locator("main").getByRole("status")).toHaveText("✓ Enregistré.");
 
   // Back to a player to look at the public pages as they see them.
