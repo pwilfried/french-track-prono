@@ -7,6 +7,7 @@ import { PodiumPicker } from "./podium-picker";
 
 const entry = (athleteId: string, name: string, countryCode: string): Entry => ({
   athleteId,
+  slug: athleteId,
   name,
   countryCode,
   seasonBest: null,

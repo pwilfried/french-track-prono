@@ -23,7 +23,7 @@ type EventRow = {
 
 type EntryRow = {
   season_best: string | null;
-  athletes: { id: string; name: string; country_code: string };
+  athletes: { id: string; slug: string; name: string; country_code: string };
 };
 
 type ResultRow = { athlete_id: string; rank: number; mark: string | null };
@@ -69,7 +69,7 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
       const [entriesQuery, resultsQuery] = await Promise.all([
         client
           .from("entries")
-          .select("season_best, athletes!inner(id, name, country_code)")
+          .select("season_best, athletes!inner(id, slug, name, country_code)")
           .eq("event_id", found.data.id)
           .returns<EntryRow[]>(),
         client
@@ -83,6 +83,7 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
 
       const entries: Entry[] = entriesQuery.data.map((row) => ({
         athleteId: row.athletes.id,
+        slug: row.athletes.slug,
         name: row.athletes.name,
         countryCode: row.athletes.country_code,
         seasonBest: row.season_best,
@@ -95,6 +96,7 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
         return [
           {
             athleteId: entry.athleteId,
+            slug: entry.slug,
             name: entry.name,
             countryCode: entry.countryCode,
             rank: row.rank,
