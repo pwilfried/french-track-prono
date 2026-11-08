@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { isValidOdds, parseOdds } from "./odds";
+import { isValidOdds, parseOdds, pickChoices } from "./odds";
+import { OTHER_ATHLETE } from "./podium-draft";
 
 const startList = ["a", "b", "c", "d", "e", "f", "g"];
 const proposed = (n: number) =>
@@ -37,5 +38,38 @@ describe("parseOdds", () => {
     expect(parseOdds(" 1.80 ")).toBe(1.8);
     expect(parseOdds("abc")).toBeNull();
     expect(parseOdds("")).toBeNull();
+  });
+});
+
+describe("pickChoices", () => {
+  const entry = (athleteId: string, name: string) => ({
+    athleteId,
+    slug: athleteId,
+    name,
+    countryCode: "FRA",
+    seasonBest: null,
+  });
+
+  it("offers the proposed athletes, favourite first, then « autre athlète »", () => {
+    const choices = pickChoices(
+      [entry("a", "Ana"), entry("b", "Bea"), entry("c", "Cleo")],
+      {
+        proposed: [
+          { athleteId: "b", odds: 4 },
+          { athleteId: "a", odds: 1.8 },
+        ],
+        other: 9,
+      },
+      new Map([["a", { athleteId: "a", pr: "10.98", sb: "11.04" }]]),
+      "Autre athlète",
+    );
+
+    expect(choices.map((c) => [c.athleteId, c.odds, c.personalBest])).toEqual([
+      ["a", 1.8, "10.98"],
+      ["b", 4, null],
+      [OTHER_ATHLETE, 9, null],
+    ]);
+    expect(choices[0]?.seasonBest).toBe("11.04");
+    expect(choices[2]?.name).toBe("Autre athlète");
   });
 });

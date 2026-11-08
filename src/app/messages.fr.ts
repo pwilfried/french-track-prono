@@ -631,6 +631,13 @@ export const messages = {
     emptyStep: "Touche un athlète",
     choose: "Choisir",
     seasonBest: (mark: string) => `RS ${mark}`,
+    personalBest: (mark: string) => `RP ${mark}`,
+    odds: (odds: number) => `×${odds.toFixed(2).replace(".", ",")}`,
+    oddsLabel: (odds: number) => `cote ${odds.toFixed(2).replace(".", ",")}`,
+    proposed: "Athlètes proposés",
+    other: "Autre athlète",
+    otherHint: "N'importe quel athlète hors de cette liste",
+    oddsHint: "La cote multiplie tes points : plus elle est haute, plus le pari rapporte.",
     step: (rank: 1 | 2 | 3) => ["1er", "2e", "3e"][rank - 1]!,
     stepLabel: (rank: 1 | 2 | 3, name: string | null) =>
       `${["1re", "2e", "3e"][rank - 1]} place : ${name ?? "vide"}`,
@@ -712,6 +719,7 @@ export const messages = {
     PROFILE_EXISTS: "Tu as déjà un profil.",
     PROFILE_UNAVAILABLE: "Le profil n'est pas disponible pour le moment. Réessaie dans un instant.",
     NOT_ADMIN: "Seul un administrateur peut faire ça.",
+    ATHLETE_NOT_PROPOSED: "Choisis parmi les athlètes proposés ou « Autre athlète ».",
     ATHLETE_NOT_IN_EVENT: "Cet athlète ne participe pas à cette épreuve.",
     RESULT_INVALID:
       "Résultat incomplet : au moins trois athlètes différents, rangs 1 à 3 (les ex æquo partagent un rang).",
@@ -744,6 +752,8 @@ export const messages = {
     PODIUM_INVALID: "Choisis trois athlètes différents pour ton podium.",
     PREDICTION_LOCKED:
       "Trop tard : cette épreuve vient d'être verrouillée. Ton podium n'a pas été enregistré.",
+    ODDS_NOT_READY:
+      "Les cotes de cette épreuve arrivent bientôt : les pronos s'ouvriront avec elles.",
     ROUND_NOT_READY: "Les pronos ouvrent quand les tours précédents sont terminés.",
     ROUND_UNAVAILABLE: "La qualification n'a pas pu être faite. Réessaie.",
     JOKER_ALREADY_USED: "Tu as déjà utilisé ton joker dans cette compétition.",

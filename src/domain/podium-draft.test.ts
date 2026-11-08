@@ -6,6 +6,7 @@ import {
   isComplete,
   nextEmptyStep,
   isValidPodium,
+  OTHER_ATHLETE,
   placeAthlete,
   removeStep,
   stepOf,
@@ -141,5 +142,10 @@ describe("isValidPodium", () => {
   it("refuses a duplicate or an empty step", () => {
     expect(isValidPodium({ first: "a", second: "a", third: "c" })).toBe(false);
     expect(isValidPodium({ first: "a", second: "b", third: "" })).toBe(false);
+  });
+
+  it("accepts « autre athlète » on one place only", () => {
+    expect(isValidPodium({ first: "a", second: OTHER_ATHLETE, third: "c" })).toBe(true);
+    expect(isValidPodium({ first: OTHER_ATHLETE, second: OTHER_ATHLETE, third: "c" })).toBe(false);
   });
 });

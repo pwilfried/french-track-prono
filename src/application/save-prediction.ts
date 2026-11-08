@@ -6,7 +6,12 @@ export type Prediction = { userId: string; eventId: string; podium: Podium; useJ
 
 /** Why a save did not happen, besides success. The database decides, the use case translates. */
 export type SaveOutcome =
-  "saved" | "locked" | "round_not_ready" | "athlete_not_in_event" | "joker_already_used";
+  | "saved"
+  | "locked"
+  | "round_not_ready"
+  | "athlete_not_in_event"
+  | "athlete_not_proposed"
+  | "joker_already_used";
 
 /** Port: where predictions are stored. Real adapter = Supabase, fake = in memory. */
 export interface PredictionRepository {
@@ -30,6 +35,7 @@ const CODES = {
   locked: "PREDICTION_LOCKED",
   round_not_ready: "ROUND_NOT_READY",
   athlete_not_in_event: "ATHLETE_NOT_IN_EVENT",
+  athlete_not_proposed: "ATHLETE_NOT_PROPOSED",
   joker_already_used: "JOKER_ALREADY_USED",
 } as const;
 

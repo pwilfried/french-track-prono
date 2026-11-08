@@ -4,8 +4,7 @@ import { useActionState, useState } from "react";
 
 import { SubmitButton } from "@/components/account/submit-button";
 import { buttonVariants } from "@/components/ui/button";
-import { PodiumPicker } from "@/components/podium/podium-picker";
-import type { Entry } from "@/domain/event";
+import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
 import { isComplete, type PodiumDraft } from "@/domain/podium-draft";
 
 import { messages } from "../../messages.fr";
@@ -20,7 +19,7 @@ export function PredictionForm({
 }: {
   eventId: string;
   slug: string;
-  athletes: Entry[];
+  athletes: PickerAthlete[];
   initial: PredictionState;
 }) {
   const [state, action] = useActionState(savePredictionAction, initial);

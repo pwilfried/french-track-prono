@@ -4,12 +4,14 @@ import { UseCaseError } from "@/application/errors";
 import type { RevealedPrediction, RevealRepository } from "@/application/reveal";
 import { isReaction } from "@/domain/reveal";
 
+import { slotFromRow } from "./podium-slot";
+
 type Row = {
   id: string;
   user_id: string;
-  p1: string;
-  p2: string;
-  p3: string;
+  p1: string | null;
+  p2: string | null;
+  p3: string | null;
   use_joker: boolean;
   profiles: { pseudo: string; avatar_emoji: string };
   reactions: { user_id: string; emoji: string }[];
@@ -50,7 +52,7 @@ export function createSupabaseRevealRepository(client: SupabaseClient): RevealRe
             userId: row.user_id,
             pseudo: row.profiles.pseudo,
             avatar: row.profiles.avatar_emoji,
-            podium: { first: row.p1, second: row.p2, third: row.p3 },
+            podium: { first: slotFromRow(row.p1), second: slotFromRow(row.p2), third: slotFromRow(row.p3) },
             useJoker: row.use_joker,
             flair: flair.has(row.user_id),
             reactions: row.reactions.flatMap((r) =>

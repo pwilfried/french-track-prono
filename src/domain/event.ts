@@ -40,6 +40,8 @@ export type EventDetail = EventSummary & {
   subDisciplines: string[];
   /** The rounds leading to this one (heats, semi-finals...), in running order, with their results. */
   previousRounds: PreviousRound[];
+  /** Its competition plays with odds: predictions open once the admin has set them. */
+  oddsRequired?: boolean;
 };
 
 /** A round leading to an event, as its page shows it. */

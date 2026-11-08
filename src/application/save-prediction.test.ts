@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { OTHER_ATHLETE } from "@/domain/podium-draft";
+
 import { UseCaseError } from "./errors";
 import {
   getMyPrediction,
@@ -63,6 +65,14 @@ describe("SavePrediction", () => {
     expect(saved).toEqual([prediction]);
   });
 
+  it("saves a podium with « autre athlète » on one place", async () => {
+    const { repo, saved } = repository();
+
+    await savePrediction({ predictions: repo }).execute({ ...input, second: OTHER_ATHLETE });
+
+    expect(saved[0]?.podium.second).toBe(OTHER_ATHLETE);
+  });
+
   it.each([
     ["the same athlete twice", { second: "a1" }],
     ["an empty step", { third: "" }],
@@ -78,6 +88,7 @@ describe("SavePrediction", () => {
   it.each([
     ["locked", "PREDICTION_LOCKED"],
     ["athlete_not_in_event", "ATHLETE_NOT_IN_EVENT"],
+    ["athlete_not_proposed", "ATHLETE_NOT_PROPOSED"],
     ["joker_already_used", "JOKER_ALREADY_USED"],
   ] as const)("turns the repository outcome %s into the code %s", async (outcome, code) => {
     const { repo } = repository(outcome);

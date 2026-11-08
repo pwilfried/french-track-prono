@@ -4,7 +4,15 @@ import type { PointsRepository, ScoreLine } from "@/application/compute-event-po
 import { UseCaseError } from "@/application/errors";
 import type { ScoreReason, ScoringRules } from "@/domain/scoring";
 
-type PredictionRow = { user_id: string; p1: string; p2: string; p3: string; use_joker: boolean };
+import { slotFromRow } from "./podium-slot";
+
+type PredictionRow = {
+  user_id: string;
+  p1: string | null;
+  p2: string | null;
+  p3: string | null;
+  use_joker: boolean;
+};
 type ScoreRow = {
   user_id: string;
   event_id: string;
@@ -57,9 +65,9 @@ export function createSupabasePointsRepository(client: SupabaseClient): PointsRe
         results: results.data!.map((r) => ({ athleteId: r.athlete_id, rank: r.rank })),
         predictions: predictions.data!.map((p) => ({
           userId: p.user_id,
-          first: p.p1,
-          second: p.p2,
-          third: p.p3,
+          first: slotFromRow(p.p1),
+          second: slotFromRow(p.p2),
+          third: slotFromRow(p.p3),
           useJoker: p.use_joker,
         })),
         rules: scoring,
