@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { newPlayer, signUp } from "./players";
+import { newPlayer, signIn, signUp } from "./players";
 
 test("an admin adjusts the points of a mark within the tolerance", async ({ page }) => {
   const before = sql("select value from scoring_rules where key = 'mark_exact'");
@@ -14,14 +14,16 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
     `update profiles set is_admin = true where id = (select id from auth.users where email = '${player.email}')`,
   );
 
-  // An admin only sees the back-office: the home page leads there.
+  // An admin may browse the player side: the header leads back to the back-office.
   await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Choisis ta compétition");
+  await page.getByRole("banner").getByRole("link", { name: "Back-office" }).click();
   await expect(page).toHaveURL(/\/admin\/competitions$/);
   // Every section of the back-office is one tap away, as on the board.
   await expect(
     page.getByRole("navigation", { name: "Sections du back-office" }).getByRole("link"),
   ).toHaveCount(6);
-  // Only the admin interface: no player navigation, and a way out.
+  // The back-office has its own interface: no player navigation, and a way to the site.
   await expect(page.getByRole("navigation", { name: "Navigation principale" })).toHaveCount(0);
   await page.getByRole("link", { name: "Barème" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Barème");
@@ -36,8 +38,17 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   await field.locator("xpath=ancestor::form").getByRole("button", { name: "Enregistrer" }).click();
   await expect(page.locator("main").getByRole("alert")).toContainText("nombre positif");
 
+  await page.getByRole("link", { name: "Voir le site" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await page.getByRole("banner").getByRole("link", { name: "Back-office" }).click();
+
+  // Signing in again leads an admin straight to the back-office.
   await page.getByRole("button", { name: "Se déconnecter" }).click();
   await expect(page).toHaveURL(/\/$/);
+  await page.goto("/connexion");
+  await signIn(page, player.email);
+  await expect(page).toHaveURL(/\/admin\/competitions$/);
+  await page.getByRole("link", { name: "Voir le site" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Choisis ta compétition");
 
   sql(`update scoring_rules set value = ${before} where key = 'mark_exact'`);

@@ -10,6 +10,7 @@ import { safeRedirectPath } from "@/domain/redirect";
 import { createSupabaseAuthService, createSupabaseProfileRepository } from "@/infra";
 
 import { formText } from "../form-data";
+import { landingAfterSignIn } from "../landing";
 import { getSessionClient } from "../session";
 
 export type SignInState = {
@@ -52,12 +53,13 @@ export async function signInAction(_: SignInState, data: FormData): Promise<Sign
       email,
       code: formText(data, "code"),
     });
-    return getProfile({ profiles: createSupabaseProfileRepository(client) }).execute({
-      userId: session.userId,
-    });
+    const profile = await getProfile({
+      profiles: createSupabaseProfileRepository(client),
+    }).execute({ userId: session.userId });
+    return profile ? landingAfterSignIn(client, session.userId, next) : null;
   });
   if ("error" in result) return { step: "code", email, error: result.error };
 
   // A new player creates a profile first; they land on `next` afterwards.
-  redirect(result.value ? next : `/bienvenue?next=${encodeURIComponent(next)}`);
+  redirect(result.value ?? `/bienvenue?next=${encodeURIComponent(next)}`);
 }

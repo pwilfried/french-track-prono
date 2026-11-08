@@ -209,6 +209,7 @@ export const messages = {
   admin: {
     band: "Back-office",
     signOut: "Se déconnecter",
+    viewSite: "Voir le site",
     statsLabel: "État de la compétition",
     stats: {
       open: "Ouvertes aux pronos",
@@ -659,6 +660,7 @@ export const messages = {
   account: {
     signIn: "Se connecter",
     myProfile: (pseudo: string) => `Mon profil : ${pseudo}`,
+    backOffice: "Back-office",
   },
   badges: {
     nostradamus: { emoji: "🔮", name: "Nostradamus", rule: "Un podium parfait" },

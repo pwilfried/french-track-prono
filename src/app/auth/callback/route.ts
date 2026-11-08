@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { safeRedirectPath } from "@/domain/redirect";
-import { exchangeEmailLink } from "@/infra";
+import { exchangeEmailLink, readCurrentUser } from "@/infra";
+
+import { landingAfterSignIn } from "../../landing";
 
 import { getSessionClient } from "../../session";
 
@@ -11,8 +13,12 @@ export async function GET(request: NextRequest) {
   const tokenHash = searchParams.get("token_hash");
   const next = safeRedirectPath(searchParams.get("next"));
 
-  if (tokenHash && (await exchangeEmailLink(await getSessionClient(), tokenHash))) {
-    return NextResponse.redirect(new URL(next, origin));
+  const client = await getSessionClient();
+  if (tokenHash && (await exchangeEmailLink(client, tokenHash))) {
+    // A new player is sent on to the profile creation by the proxy; an admin lands on the back-office.
+    const user = await readCurrentUser(client);
+    const target = user ? await landingAfterSignIn(client, user.userId, next) : next;
+    return NextResponse.redirect(new URL(target, origin));
   }
   return NextResponse.redirect(new URL("/connexion?erreur=lien", origin));
 }
