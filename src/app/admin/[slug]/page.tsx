@@ -5,7 +5,7 @@ import type { ScoreLine } from "@/application/compute-event-points";
 import { UseCaseError } from "@/application/errors";
 import { getEvent } from "@/application/get-event";
 import { ErrorNotice } from "@/components/error-notice";
-import { PodiumDisplay } from "@/components/podium/podium-display";
+import { PodiumMedals } from "@/components/podium/podium-medals";
 import { buttonVariants } from "@/components/ui/button";
 import { eventPhase } from "@/domain/countdown";
 import type { EventDetail } from "@/domain/event";
@@ -96,21 +96,29 @@ export default async function AdminEventPage({
 
   return (
     <main id="main" className="flex flex-1 flex-col">
-      <header className="hero px-4 pb-6 pt-6">
+      <p
+        role="note"
+        className="bg-primary px-4 py-1 text-center text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary-foreground"
+      >
+        {messages.admin.band}
+      </p>
+      <header className="px-4 pt-4">
         <div className="mx-auto max-w-md">
-          <Link href="/admin" className="inline-flex min-h-11 items-center font-semibold">
+          <Link
+            href="/admin"
+            className="inline-flex min-h-11 items-center font-semibold text-brand dark:text-secondary"
+          >
             ‹ {messages.admin.back}
           </Link>
-          <h1 className="mt-1 flex flex-wrap items-center gap-2 font-display text-3xl font-extrabold uppercase leading-none">
+          <h1 className="mt-1 font-display text-3xl font-extrabold leading-none">
             {event.discipline} {messages.events.gender[event.gender].toLowerCase()}
-            <span className="rounded-full bg-secondary px-3 py-1 font-sans text-sm font-extrabold text-secondary-foreground">
-              {messages.admin.badge}
-            </span>
           </h1>
-          <p className="mt-2 text-[#dce6f5] first-letter:uppercase">{when.replace(" à ", " · ")}</p>
+          <p className="mt-2 text-sm text-muted-foreground first-letter:uppercase">
+            {when.replace(" à ", " · ")}
+          </p>
           {hasResult && !correcting && (
-            <div className="mt-6">
-              <PodiumDisplay results={event.results} />
+            <div className="mt-4 rounded-card border border-border bg-card p-4">
+              <PodiumMedals results={event.results} />
             </div>
           )}
         </div>
