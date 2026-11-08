@@ -8,10 +8,14 @@ describe("requiresProfile", () => {
     (path) => expect(requiresProfile(path)).toBe(true),
   );
 
-  it.each(["/bienvenue", "/connexion", "/auth/callback", "/auth/sign-out"])(
-    "does not need a profile on %s",
-    (path) => expect(requiresProfile(path)).toBe(false),
-  );
+  it.each([
+    "/bienvenue",
+    "/connexion",
+    "/auth/callback",
+    "/auth/sign-out",
+    "/mentions-legales",
+    "/confidentialite",
+  ])("does not need a profile on %s", (path) => expect(requiresProfile(path)).toBe(false));
 });
 
 describe("sendsAdminToBackOffice", () => {

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 
+import { SiteFooter } from "@/components/legal/site-footer";
 import { BottomNav } from "@/components/shell/bottom-nav";
 import { ServiceWorker } from "@/components/shell/service-worker";
 import { PlayerOnly } from "@/components/shell/player-only";
@@ -80,6 +81,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </PlayerOnly>
         {children}
         <PlayerOnly>
+          <SiteFooter />
           <BottomNav />
         </PlayerOnly>
         <ServiceWorker />
