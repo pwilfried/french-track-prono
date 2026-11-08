@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { computeEventPoints } from "@/application/compute-event-points";
 import { enterResults, type ResultEntry } from "@/application/enter-results";
 import { UseCaseError, type ErrorCode } from "@/application/errors";
+import { importStartList, type ImportEntry } from "@/application/import-start-list";
 import { setStartList, type StartListEntry } from "@/application/set-start-list";
 import {
   createSupabasePointsRepository,
@@ -96,6 +97,55 @@ export async function saveStartListAction(
     await setStartList({ startLists: createSupabaseStartListRepository(client) }).execute({
       eventId: formText(data, "eventId"),
       entries: entriesOf(data),
+    });
+  } catch (error) {
+    if (error instanceof UseCaseError) return { error: error.code };
+    throw error;
+  }
+  revalidatePath(`/epreuves/${slug}`);
+  redirect(`/admin/${slug}/depart?enregistre=1`);
+}
+
+/** Reads the confirmed import the form sends as JSON; anything malformed becomes an empty list. */
+function importOf(data: FormData): ImportEntry[] {
+  try {
+    const parsed: unknown = JSON.parse(formText(data, "entries"));
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(
+      (e: {
+        athleteId?: unknown;
+        newAthlete?: { name?: unknown; countryCode?: unknown };
+        seasonBest?: unknown;
+      }) => {
+        const seasonBest = typeof e.seasonBest === "string" ? e.seasonBest : null;
+        return e.newAthlete
+          ? {
+              newAthlete: {
+                name: String(e.newAthlete.name ?? ""),
+                countryCode: String(e.newAthlete.countryCode ?? ""),
+              },
+              seasonBest,
+            }
+          : { athleteId: String(e.athleteId ?? ""), seasonBest };
+      },
+    );
+  } catch {
+    return [];
+  }
+}
+
+export async function importStartListAction(
+  _: AdminActionState,
+  data: FormData,
+): Promise<AdminActionState> {
+  const { client } = await adminOnly();
+  const slug = formText(data, "slug");
+  const gender = formText(data, "gender");
+  try {
+    await importStartList({ startLists: createSupabaseStartListRepository(client) }).execute({
+      eventId: formText(data, "eventId"),
+      gender: gender === "M" || gender === "X" ? gender : "F",
+      entries: importOf(data),
     });
   } catch (error) {
     if (error instanceof UseCaseError) return { error: error.code };

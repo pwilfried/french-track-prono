@@ -70,5 +70,27 @@ export function startListRepositoryContract(name: string, world: () => Promise<S
 
       expect((await w.admin.find(w.eventId)).sort(byId)).toEqual(before);
     });
+
+    it("lets an admin add an athlete, who becomes a candidate, and refuses a player", async () => {
+      const w = await world();
+      const tag = crypto.randomUUID().slice(0, 8);
+      const athlete = {
+        name: `Inventée ${tag}`,
+        countryCode: "FRA",
+        gender: w.gender,
+        slug: `inventee-${tag}`,
+      };
+
+      expect(await w.player.createAthlete(athlete)).toBe("not_admin");
+      const created = await w.admin.createAthlete(athlete);
+
+      expect(created).not.toBe("not_admin");
+      const candidates = await w.admin.candidates(w.gender);
+      expect(candidates).toContainEqual({
+        athleteId: (created as { athleteId: string }).athleteId,
+        name: athlete.name,
+        countryCode: "FRA",
+      });
+    });
   });
 }

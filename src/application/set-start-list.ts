@@ -22,7 +22,12 @@ export interface StartListRepository {
    * cannot be removed (`athlete_in_use`, nothing changes).
    */
   replace(eventId: string, entries: StartListEntry[]): Promise<StartListOutcome>;
+  /** Adds an athlete unknown so far; the slug gets a suffix if already taken. */
+  createAthlete(athlete: NewAthlete): Promise<{ athleteId: string } | "not_admin">;
 }
+
+/** An athlete the admin adds while importing a start list. */
+export type NewAthlete = { name: string; countryCode: string; gender: EventGender; slug: string };
 
 const CODES = { not_admin: "NOT_ADMIN", athlete_in_use: "START_LIST_IN_USE" } as const;
 
