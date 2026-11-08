@@ -7,6 +7,7 @@ import { getProfile } from "@/application/get-profile";
 import { listEvents } from "@/application/list-events";
 import { listMyPredictions } from "@/application/list-my-predictions";
 import { getGeneralRanking } from "@/application/rankings";
+import { InstallEntry } from "@/components/shell/install-prompt";
 import { buttonVariants } from "@/components/ui/button";
 import {
   createPublicSupabaseClient,
@@ -137,6 +138,7 @@ export default async function ProfilePage() {
           {messages.rules.link}
           <span aria-hidden="true">›</span>
         </Link>
+        <InstallEntry />
       </section>
 
       <section aria-labelledby="badges" className="flex flex-col gap-2">

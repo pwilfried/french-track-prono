@@ -314,6 +314,15 @@ export const messages = {
     body: "Tes pronos en un geste, sur ton écran d'accueil.",
     install: "Installer",
     dismiss: "Fermer, ne plus proposer",
+    // Non-breaking spaces keep the guillemets on the line of their words.
+    ios: {
+      before: "Touche",
+      share: "Partager",
+      after: ", puis « Sur l'écran d'accueil ».",
+    },
+    inApp:
+      "Touche ⋯ en haut de l'écran, puis « Ouvrir dans le navigateur », pour l'ajouter à ton écran d'accueil.",
+    profile: "Installer l'appli",
   },
   adminLog: {
     title: "Historique",
