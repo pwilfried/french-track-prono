@@ -17,6 +17,7 @@ const baseEvent: EventSummary = {
   lockAt: inSeconds(3300),
   isFeatured: true,
   status: "upcoming",
+  round: "final",
 };
 
 const meta = {
@@ -87,6 +88,7 @@ export const Finished: Story = {
     event: {
       ...baseEvent,
       status: "finished",
+      round: "final",
       startsAt: inSeconds(-3600),
       lockAt: inSeconds(-3900),
     },

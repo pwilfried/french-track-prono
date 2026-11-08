@@ -1,3 +1,5 @@
+import type { Round } from "./rounds";
+
 export type EventGender = "F" | "M" | "X";
 export type EventStatus = "upcoming" | "live" | "finished";
 
@@ -12,6 +14,8 @@ export type EventSummary = {
   lockAt: string;
   isFeatured: boolean;
   status: EventStatus;
+  /** Heat, quarter, semi-final or final. Players predict finals only. */
+  round: Round;
 };
 
 /** Orders events by start time, then by slug so the order is stable. */
@@ -34,6 +38,16 @@ export type EventDetail = EventSummary & {
   results: ResultLine[];
   /** The disciplines of a combined event (decathlon...), in order; empty for a single event. */
   subDisciplines: string[];
+  /** The rounds leading to this one (heats, semi-finals...), in running order, with their results. */
+  previousRounds: PreviousRound[];
+};
+
+/** A round leading to an event, as its page shows it. */
+export type PreviousRound = {
+  slug: string;
+  round: Round;
+  status: EventStatus;
+  results: ResultLine[];
 };
 
 /** Orders result lines by rank, then by name so the order of tied athletes is stable. */

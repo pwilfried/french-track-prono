@@ -7,6 +7,8 @@ export type PredictionEventFixture = {
   competitionSlug: string;
   lockAt: string;
   athleteIds: string[];
+  /** False for a heat, or a final whose earlier rounds are not finished. Default: true. */
+  predictable?: boolean;
 };
 
 /**
@@ -36,6 +38,7 @@ export function createInMemoryPredictionRepository(options: {
       const event = options.events.find((e) => e.id === prediction.eventId);
       if (!event) throw new Error(`unknown event ${prediction.eventId}`);
       if (eventPhase(now(), event.lockAt) === "locked") return "locked";
+      if (event.predictable === false) return "round_not_ready";
 
       const { first, second, third } = prediction.podium;
       if (![first, second, third].every((id) => event.athleteIds.includes(id))) {

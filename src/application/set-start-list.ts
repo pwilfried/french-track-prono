@@ -22,6 +22,11 @@ export interface StartListRepository {
    * cannot be removed (`athlete_in_use`, nothing changes).
    */
   replace(eventId: string, entries: StartListEntry[]): Promise<StartListOutcome>;
+  /**
+   * Puts the athletes ranked `top` or better in a round on the start list of the round it leads
+   * to; returns how many joined.
+   */
+  promote(eventId: string, top: number): Promise<number | "not_admin" | "no_next_round">;
 }
 
 const CODES = { not_admin: "NOT_ADMIN", athlete_in_use: "START_LIST_IN_USE" } as const;

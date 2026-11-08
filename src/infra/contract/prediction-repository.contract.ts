@@ -14,6 +14,8 @@ export type PredictionWorld = {
   openEvents: EventFixture[];
   /** An event already locked. */
   lockedEvent: EventFixture;
+  /** A semi-final still open: rounds before the final are never predicted. */
+  semiFinal: EventFixture;
 };
 
 /**
@@ -121,6 +123,16 @@ export function predictionRepositoryContract(name: string, world: () => Promise<
       await player.predictions.save(prediction(player, event, true));
 
       expect(await player.predictions.save(prediction(player, event, true))).toBe("saved");
+    });
+
+    it("refuses a round before the final as not open yet", async () => {
+      const w = await world();
+      const player = await w.newPlayer();
+
+      expect(await player.predictions.save(prediction(player, w.semiFinal))).toBe(
+        "round_not_ready",
+      );
+      expect(await player.predictions.find(player.userId, w.semiFinal.eventId)).toBeNull();
     });
   });
 }

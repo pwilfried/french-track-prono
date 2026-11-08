@@ -16,6 +16,7 @@ const event = (id: string, startsAt: string): EventSummary => ({
   lockAt: startsAt,
   isFeatured: false,
   status: "finished",
+  round: "final",
 });
 const events = [event("e1", "2026-11-23T19:00:00Z"), event("e2", "2026-11-23T20:00:00Z")];
 const reader: EventReader = {
@@ -29,6 +30,7 @@ const reader: EventReader = {
       ],
       results: [],
       subDisciplines: [],
+      previousRounds: [],
     }) as EventDetail,
 };
 const prediction = (eventId: string, first: string): Prediction => ({
