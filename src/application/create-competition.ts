@@ -15,6 +15,8 @@ export type CompetitionSummary = {
   endsOn: string;
   timeZone: string;
   events: number;
+  /** The finals among them: the events players predict. */
+  finals: number;
   entered: number;
 };
 
@@ -46,7 +48,9 @@ export interface CompetitionAdminRepository {
   list(): Promise<CompetitionSummary[]>;
   find(slug: string): Promise<CompetitionFile | null>;
   /** Returns the slug kept (a number is added when taken). */
-  create(c: Omit<CompetitionSummary, "events" | "entered">): Promise<string | "not_admin">;
+  create(
+    c: Omit<CompetitionSummary, "events" | "finals" | "entered">,
+  ): Promise<string | "not_admin">;
   /** Returns the slug kept (a number is added when taken). */
   addEvent(
     competition: string,
