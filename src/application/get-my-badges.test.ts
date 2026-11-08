@@ -25,8 +25,20 @@ const reader: EventReader = {
     ({
       ...events.find((e) => e.slug === slug)!,
       entries: [
-        { athleteId: "fra", name: "Athlète FRA", countryCode: "FRA", seasonBest: null },
-        { athleteId: "gbr", name: "Athlète GBR", countryCode: "GBR", seasonBest: null },
+        {
+          athleteId: "fra",
+          slug: "fra",
+          name: "Athlète FRA",
+          countryCode: "FRA",
+          seasonBest: null,
+        },
+        {
+          athleteId: "gbr",
+          slug: "gbr",
+          name: "Athlète GBR",
+          countryCode: "GBR",
+          seasonBest: null,
+        },
       ],
       results: [],
       subDisciplines: [],

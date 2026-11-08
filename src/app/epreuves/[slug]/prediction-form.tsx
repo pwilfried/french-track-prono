@@ -27,10 +27,21 @@ export function PredictionForm({
   const [complete, setComplete] = useState(isComplete(initial.draft));
   // Locked while saving: the podium is shown read only from then on.
   const locked = state.error === "PREDICTION_LOCKED";
-  const error = state.error ? messages.errors[state.error] : undefined;
+  // Offline, the save would fail without a word: say it, keep the podium as composed.
+  const [offline, setOffline] = useState(false);
+  const error = offline
+    ? messages.offline.prediction
+    : state.error
+      ? messages.errors[state.error]
+      : undefined;
+  const submit = (data: FormData) => {
+    const isOffline = !navigator.onLine;
+    setOffline(isOffline);
+    if (!isOffline) action(data);
+  };
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form action={submit} className="flex flex-col gap-4">
       <input type="hidden" name="eventId" value={eventId} />
       <input type="hidden" name="slug" value={slug} />
       {state.saved && (

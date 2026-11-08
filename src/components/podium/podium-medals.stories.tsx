@@ -7,6 +7,7 @@ import { PodiumMedals } from "./podium-medals";
 
 const line = (name: string, rank: number, mark: string, countryCode = "FRA"): ResultLine => ({
   athleteId: name,
+  slug: name,
   name,
   countryCode,
   rank,

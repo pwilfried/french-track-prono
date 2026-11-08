@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 
 import { BottomNav } from "@/components/shell/bottom-nav";
+import { ServiceWorker } from "@/components/shell/service-worker";
 import { SiteHeader } from "@/components/shell/site-header";
 
 import { messages } from "./messages.fr";
@@ -76,6 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SiteHeader />
         {children}
         <BottomNav />
+        <ServiceWorker />
       </body>
     </html>
   );

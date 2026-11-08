@@ -26,7 +26,7 @@ type EventRow = {
 
 type EntryRow = {
   season_best: string | null;
-  athletes: { id: string; name: string; country_code: string };
+  athletes: { id: string; slug: string; name: string; country_code: string };
 };
 
 type ResultRow = { athlete_id: string; rank: number; mark: string | null };
@@ -51,7 +51,7 @@ type RoundResultRow = {
   event_id: string;
   rank: number;
   mark: string | null;
-  entries: { athletes: { id: string; name: string; country_code: string } };
+  entries: { athletes: { id: string; slug: string; name: string; country_code: string } };
 };
 
 /** The rounds leading to an event (their `parent_id` is the event), with their results. */
@@ -66,7 +66,7 @@ async function previousRounds(client: SupabaseClient, eventId: string): Promise<
   // Results reach athletes through the start list (composite foreign key on entries).
   const results = await client
     .from("results")
-    .select("event_id, rank, mark, entries!inner(athletes!inner(id, name, country_code))")
+    .select("event_id, rank, mark, entries!inner(athletes!inner(id, slug, name, country_code))")
     .in(
       "event_id",
       rounds.data.map((r) => r.id),
@@ -84,6 +84,7 @@ async function previousRounds(client: SupabaseClient, eventId: string): Promise<
         .filter((r) => r.event_id === round.id)
         .map(({ rank, mark, entries: { athletes: a } }) => ({
           athleteId: a.id,
+          slug: a.slug,
           name: a.name,
           countryCode: a.country_code,
           rank,
@@ -118,7 +119,7 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
       const [entriesQuery, resultsQuery] = await Promise.all([
         client
           .from("entries")
-          .select("season_best, athletes!inner(id, name, country_code)")
+          .select("season_best, athletes!inner(id, slug, name, country_code)")
           .eq("event_id", found.data.id)
           .returns<EntryRow[]>(),
         client
@@ -132,6 +133,7 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
 
       const entries: Entry[] = entriesQuery.data.map((row) => ({
         athleteId: row.athletes.id,
+        slug: row.athletes.slug,
         name: row.athletes.name,
         countryCode: row.athletes.country_code,
         seasonBest: row.season_best,
@@ -144,6 +146,7 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
         return [
           {
             athleteId: entry.athleteId,
+            slug: entry.slug,
             name: entry.name,
             countryCode: entry.countryCode,
             rank: row.rank,

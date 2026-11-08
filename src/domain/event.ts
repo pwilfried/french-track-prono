@@ -25,7 +25,7 @@ export function compareEvents(a: EventSummary, b: EventSummary): number {
   return a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0;
 }
 
-type AthleteRef = { athleteId: string; name: string; countryCode: string };
+type AthleteRef = { athleteId: string; slug: string; name: string; countryCode: string };
 
 /** An athlete on the start list of an event. */
 export type Entry = AthleteRef & { seasonBest: string | null };

@@ -305,6 +305,24 @@ export const messages = {
     promoted: "✓ Qualifiés ajoutés à la liste de départ du tour suivant.",
     previousLinks: "Tours précédents",
   },
+  offline: {
+    title: "Pas de réseau",
+    body: "Cette page n'est pas disponible hors ligne. Reviens quand le réseau revient.",
+    retry: "Réessayer",
+    prediction: "Pas de réseau : ton podium n'est pas enregistré. Réessaie une fois connecté.",
+  },
+  athlete: {
+    back: "Retour",
+    subtitle: (country: string, gender: string) => `${country} · ${gender}`,
+    records: "Records",
+    pr: "Record perso",
+    sb: "Meilleure saison",
+    noRecord: "Pas encore de record connu.",
+    races: "Dernières courses",
+    noRace: "Pas encore de résultat dans le jeu.",
+    rank: (rank: number) => (rank === 1 ? "1re" : `${rank}e`),
+    profileOf: (name: string) => `Fiche de ${name}`,
+  },
   myPredictions: {
     predicted: "✓ Pronostiqué",
     toPredict: "À pronostiquer",
@@ -544,6 +562,8 @@ export const messages = {
       "Un athlète déjà pronostiqué ou classé ne peut pas être retiré de la liste de départ.",
     START_LIST_UNAVAILABLE: "La liste de départ n'a pas pu être enregistrée. Réessaie.",
     ADMIN_LOG_UNAVAILABLE: "L'historique n'a pas pu être chargé. Réessaie.",
+    ATHLETE_NOT_FOUND: "Cet athlète n'existe pas.",
+    ATHLETES_UNAVAILABLE: "La fiche athlète n'a pas pu être chargée. Réessaie.",
     retry: "Réessayer",
   },
 } as const;

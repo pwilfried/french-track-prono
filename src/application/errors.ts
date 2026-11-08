@@ -42,7 +42,9 @@ export type ErrorCode =
   | "START_LIST_INVALID"
   | "START_LIST_IN_USE"
   | "START_LIST_UNAVAILABLE"
-  | "ADMIN_LOG_UNAVAILABLE";
+  | "ADMIN_LOG_UNAVAILABLE"
+  | "ATHLETE_NOT_FOUND"
+  | "ATHLETES_UNAVAILABLE";
 
 export class UseCaseError extends Error {
   constructor(readonly code: ErrorCode) {

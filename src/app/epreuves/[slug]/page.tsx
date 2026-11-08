@@ -251,7 +251,12 @@ export default async function EventPage({
                           {r.rank}
                         </span>
                         <span aria-hidden="true">{flagOf(r.countryCode)}</span>
-                        <span className="min-w-0 flex-1 break-words font-semibold">{r.name}</span>
+                        <Link
+                          href={`/athletes/${r.slug}`}
+                          className="min-w-0 flex-1 break-words font-semibold"
+                        >
+                          {r.name}
+                        </Link>
                         <span className="font-mono text-sm font-semibold tabular-nums">
                           {r.mark ?? ""}
                         </span>
@@ -305,7 +310,12 @@ export default async function EventPage({
                       <span className="text-xs font-bold">{entry.countryCode}</span>
                     )}
                   </span>
-                  <span className="min-w-0 flex-1 break-words font-bold">{entry.name}</span>
+                  <Link
+                    href={`/athletes/${entry.slug}`}
+                    className="min-w-0 flex-1 break-words font-bold underline-offset-2 hover:underline"
+                  >
+                    {entry.name}
+                  </Link>
                   <span className="font-mono text-sm font-semibold tabular-nums">
                     {markOf.get(entry.athleteId) ?? entry.seasonBest ?? ""}
                   </span>
