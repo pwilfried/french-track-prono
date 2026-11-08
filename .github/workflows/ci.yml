@@ -67,6 +67,18 @@ jobs:
           # Pinned to skip the flaky `releases/latest` GitHub API call that 503s.
           version: 3.0.0
 
+      # Never fails the build: only warns when a newer stable CLI than the pinned one exists.
+      - name: Check for a newer Supabase CLI
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          latest="$(gh release view --repo supabase/cli --json tagName --jq .tagName)"
+          current="$(supabase --version)"
+          if [ "${latest#v}" != "$current" ]; then
+            echo "::warning::Supabase CLI $latest is out, the CI is pinned to $current: bump \`version:\` in ci.yml and migrations.yml."
+          fi
+
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
