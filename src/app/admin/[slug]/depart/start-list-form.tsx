@@ -5,11 +5,12 @@ import { useActionState, useState } from "react";
 import { messages } from "@/app/messages.fr";
 import { SubmitButton } from "@/components/account/submit-button";
 import { flagOf } from "@/domain/flag";
-import { MAX_START_LIST, searchAthletes } from "@/domain/start-list";
+import { MAX_START_LIST, searchAthletes, type DisciplineFit } from "@/domain/start-list";
 
 import { saveStartListAction, type AdminActionState } from "../actions";
 
 type Athlete = { athleteId: string; name: string; countryCode: string };
+type Candidate = Athlete & { fit: DisciplineFit };
 type Chosen = Athlete & { seasonBest: string };
 
 /** How many matches the search shows at once: enough to pick, short enough to stay on screen. */
@@ -27,14 +28,18 @@ export function StartListForm({
 }: {
   eventId: string;
   slug: string;
-  candidates: Athlete[];
+  /** Those who run the discipline first (see listStartListCandidates). */
+  candidates: Candidate[];
   initial: Chosen[];
 }) {
   const [state, action] = useActionState<AdminActionState, FormData>(saveStartListAction, {});
   const [chosen, setChosen] = useState<Chosen[]>(initial);
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
-  const matches = searchAthletes(candidates, query).slice(0, SHOWN);
+  // Without a search, the athletes of the discipline; a search looks through everybody.
+  const runners = candidates.filter((c) => c.fit !== "other");
+  const pool = query.trim() || runners.length === 0 ? candidates : runners;
+  const matches = searchAthletes(pool, query).slice(0, SHOWN);
   const full = chosen.length >= MAX_START_LIST;
 
   const add = (athlete: Athlete) => {

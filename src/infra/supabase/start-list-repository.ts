@@ -10,17 +10,29 @@ import type {
 /** The client must carry the admin's session: row level security decides who can write. */
 export function createSupabaseStartListRepository(client: SupabaseClient): StartListRepository {
   return {
-    async candidates(gender) {
+    async candidates(gender, discipline) {
       const { data, error } = await client
         .from("athletes")
-        .select("id, name, country_code")
+        .select("id, name, country_code, athlete_disciplines(discipline, is_primary)")
         .eq("gender", gender)
-        .order("name")
-        .returns<{ id: string; name: string; country_code: string }[]>();
+        .returns<
+          {
+            id: string;
+            name: string;
+            country_code: string;
+            athlete_disciplines: { discipline: string; is_primary: boolean }[];
+          }[]
+        >();
       if (error) throw new UseCaseError("START_LIST_UNAVAILABLE");
-      return data.map(
-        (row): Candidate => ({ athleteId: row.id, name: row.name, countryCode: row.country_code }),
-      );
+      return data.map((row): Candidate => {
+        const runs = row.athlete_disciplines.find((d) => d.discipline === discipline);
+        return {
+          athleteId: row.id,
+          name: row.name,
+          countryCode: row.country_code,
+          fit: !runs ? "other" : runs.is_primary ? "primary" : "discipline",
+        };
+      });
     },
 
     async find(eventId) {

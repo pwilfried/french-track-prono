@@ -14,6 +14,7 @@ startListRepositoryContract("in-memory fake", async () => {
       name: athleteId,
       countryCode: "FRA",
       gender: "F" as const,
+      disciplines: ["100 m"],
     })),
     { athleteId: "stranger", name: "Stranger", countryCode: "JAM", gender: "F" },
     { athleteId: "m1", name: "Man", countryCode: "USA", gender: "M" },
@@ -28,6 +29,7 @@ startListRepositoryContract("in-memory fake", async () => {
     athleteIds,
     outsiderId: "stranger",
     gender: "F",
+    discipline: "100 m",
     candidateId: "a1",
     markInUse: (athleteId) => store.markInUse(eventId, [athleteId]),
     admin,
@@ -49,6 +51,7 @@ if (url && key) {
       athleteIds,
       outsiderId,
       gender: "F",
+      discipline: "100 m",
       candidateId: sql("select id from athletes where gender = 'F' order by id limit 1"),
       // A result line is enough to make an athlete impossible to remove.
       markInUse: (athleteId) =>

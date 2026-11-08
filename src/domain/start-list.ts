@@ -35,3 +35,20 @@ export function isValidStartList(entries: { athleteId: string }[]): boolean {
     new Set(ids).size === ids.length
   );
 }
+
+/** How an athlete relates to the discipline of an event. */
+export type DisciplineFit = "primary" | "discipline" | "other";
+
+const FIT_ORDER: DisciplineFit[] = ["primary", "discipline", "other"];
+
+/**
+ * The athletes whose main discipline it is first, then those who also run it, then everybody
+ * else; by name within each group.
+ */
+export function sortByDiscipline<T extends { name: string; fit: DisciplineFit }>(
+  athletes: T[],
+): T[] {
+  return [...athletes].sort(
+    (a, b) => FIT_ORDER.indexOf(a.fit) - FIT_ORDER.indexOf(b.fit) || a.name.localeCompare(b.name),
+  );
+}

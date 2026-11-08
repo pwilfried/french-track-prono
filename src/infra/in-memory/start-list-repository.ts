@@ -1,8 +1,11 @@
 import type { Candidate, StartListEntry, StartListRepository } from "@/application/set-start-list";
 import type { EventGender } from "@/domain/event";
 
-/** An athlete the fake knows, with the gender used to pick candidates. */
-export type StartListAthleteFixture = Candidate & { gender: EventGender };
+/** An athlete the fake knows: gender and disciplines (the first is the main one). */
+export type StartListAthleteFixture = Omit<Candidate, "fit"> & {
+  gender: EventGender;
+  disciplines?: string[];
+};
 
 /**
  * Test double of the StartListRepository port, with the rules of the database: only an admin
@@ -19,11 +22,20 @@ export function createInMemoryStartListStore(athletes: StartListAthleteFixture[]
     },
     session(options: { isAdmin: boolean }): StartListRepository {
       return {
-        async candidates(gender) {
+        async candidates(gender, discipline) {
           return athletes
             .filter((a) => a.gender === gender)
-            .map(({ athleteId, name, countryCode }) => ({ athleteId, name, countryCode }))
-            .sort((a, b) => a.name.localeCompare(b.name));
+            .map(({ athleteId, name, countryCode, disciplines = [] }) => ({
+              athleteId,
+              name,
+              countryCode,
+              fit:
+                disciplines[0] === discipline
+                  ? ("primary" as const)
+                  : disciplines.includes(discipline)
+                    ? ("discipline" as const)
+                    : ("other" as const),
+            }));
         },
         async find(eventId) {
           return (stored.get(eventId) ?? []).map((e) => ({ ...e }));

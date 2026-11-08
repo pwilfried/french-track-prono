@@ -4,14 +4,28 @@ import { listStartListCandidates } from "./list-start-list-candidates";
 import type { Candidate, StartListRepository } from "./set-start-list";
 
 describe("listStartListCandidates", () => {
-  it("asks the start lists for the athletes of the event's gender", async () => {
-    const women: Candidate[] = [{ athleteId: "1", name: "Julien Alfred", countryCode: "LCA" }];
+  it("offers the women of the 100 m first, a main discipline before the others", async () => {
+    const women: Candidate[] = [
+      { athleteId: "3", name: "Yaroslava Mahuchikh", countryCode: "UKR", fit: "other" },
+      { athleteId: "2", name: "Gabby Thomas", countryCode: "USA", fit: "discipline" },
+      { athleteId: "1", name: "Julien Alfred", countryCode: "LCA", fit: "primary" },
+    ];
+    const asked: string[] = [];
     const startLists: StartListRepository = {
-      candidates: async (gender) => (gender === "F" ? women : []),
+      candidates: async (gender, discipline) => {
+        asked.push(`${gender} ${discipline}`);
+        return gender === "F" ? women : [];
+      },
       find: async () => [],
       replace: async () => "saved",
     };
 
-    expect(await listStartListCandidates({ startLists }).execute({ gender: "F" })).toEqual(women);
+    const candidates = await listStartListCandidates({ startLists }).execute({
+      gender: "F",
+      discipline: "100 m",
+    });
+
+    expect(asked).toEqual(["F 100 m"]);
+    expect(candidates.map((c) => c.athleteId)).toEqual(["1", "2", "3"]);
   });
 });

@@ -23,7 +23,7 @@ async function load(slug: string, client: Awaited<ReturnType<typeof adminOnly>>[
     }).execute({ competitionSlug: COMPETITION_SLUG, eventSlug: slug });
     const candidates = await listStartListCandidates({
       startLists: createSupabaseStartListRepository(client),
-    }).execute({ gender: event.gender });
+    }).execute({ gender: event.gender, discipline: event.discipline });
     return { event, candidates };
   } catch (error) {
     if (error instanceof UseCaseError) {
