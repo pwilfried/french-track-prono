@@ -284,6 +284,7 @@ export const messages = {
       set_tolerance: "Tolérance modifiée",
       edit_athlete: "Athlète modifié",
       edit_competition: "Compétition modifiée",
+      set_odds: "Cotes enregistrées",
     },
     noEvent: "Épreuve supprimée",
     size: (
@@ -293,7 +294,8 @@ export const messages = {
         | "run_scoring"
         | "set_tolerance"
         | "edit_athlete"
-        | "edit_competition",
+        | "edit_competition"
+        | "set_odds",
       n: number,
     ) =>
       kind === "set_tolerance"
@@ -302,11 +304,13 @@ export const messages = {
           ? "fiche athlète"
           : kind === "edit_competition"
             ? "compétition"
-            : kind === "run_scoring"
-              ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
-              : kind === "set_results"
-                ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
-                : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
+            : kind === "set_odds"
+              ? `${n} cotes`
+              : kind === "run_scoring"
+                ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
+                : kind === "set_results"
+                  ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
+                  : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
     by: (pseudo: string | null) => (pseudo ? `par ${pseudo}` : "par un compte supprimé"),
   },
   import: {
@@ -459,6 +463,29 @@ export const messages = {
     noAthlete: "Personne n'est engagé : cherche un athlète ci-dessus.",
     athletesList: "Athlètes engagés",
     withdraw: (name: string) => `Retirer ${name} de la compétition`,
+  },
+  odds: {
+    link: "Cotes",
+    title: "Cotes",
+    titleOf: (event: string) => `Cotes · ${event}`,
+    intro:
+      "Choisis 5 ou 6 athlètes de la liste de départ et donne une cote à chacun. Plus elle est basse, plus l'athlète est favori.",
+    notice:
+      "Les pronos s'ouvrent une fois les cotes enregistrées. Elles sont figées au verrouillage.",
+    proposed: "Athlètes proposés",
+    athlete: "Athlète",
+    odds: "Cote",
+    none: "Aucun athlète proposé : choisis-les dans la liste de départ ci-dessous.",
+    oddsOf: (name: string) => `Cote de ${name}`,
+    remove: (name: string) => `Retirer ${name} des athlètes proposés`,
+    other: "Autre athlète",
+    otherOdds: "Cote d'un autre athlète",
+    rest: "Reste de la liste de départ",
+    restEmpty: "Tous les athlètes de la liste de départ sont proposés.",
+    propose: "Proposer",
+    rule: (min: number, max: number) =>
+      `${min} à ${max} athlètes, chaque cote supérieure à 1 (ex. 1,80). « Autre athlète » compte si un athlète hors de cette liste finit à la place pronostiquée.`,
+    save: "Enregistrer les cotes",
   },
   myPredictions: {
     predicted: "✓ Pronostiqué",
@@ -703,6 +730,10 @@ export const messages = {
     ADMIN_LOG_UNAVAILABLE: "L'historique n'a pas pu être chargé. Réessaie.",
     ATHLETE_NOT_FOUND: "Cet athlète n'existe pas.",
     TOLERANCE_INVALID: "La tolérance doit être un nombre supérieur à 0.",
+    ODDS_INVALID:
+      "Propose 5 ou 6 athlètes de la liste de départ, chacun avec une cote supérieure à 1, plus la cote « autre athlète ».",
+    ODDS_LOCKED: "L'épreuve est verrouillée : les cotes ne changent plus.",
+    ODDS_UNAVAILABLE: "Les cotes n'ont pas pu être chargées. Réessaie.",
     COMPETITION_INVALID:
       "Il faut un nom, un type, des dates dans l'ordre, un fuseau horaire valide et un code pays à trois lettres (facultatif).",
     COMPETITION_NOT_FOUND: "Cette compétition n'existe pas.",

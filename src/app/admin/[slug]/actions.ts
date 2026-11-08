@@ -6,12 +6,15 @@ import { redirect } from "next/navigation";
 import { computeEventPoints } from "@/application/compute-event-points";
 import { enterResults, type ResultEntry } from "@/application/enter-results";
 import { promoteToNextRound } from "@/application/promote-to-next-round";
+import { setEventOdds } from "@/application/set-event-odds";
+import { parseOdds } from "@/domain/odds";
 import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { importStartList, type ImportEntry } from "@/application/import-start-list";
 import { setStartList, type StartListEntry } from "@/application/set-start-list";
 import {
   createSupabasePointsRepository,
   createSupabaseResultRepository,
+  createSupabaseOddsRepository,
   createSupabaseStartListRepository,
 } from "@/infra";
 
@@ -172,4 +175,49 @@ export async function promoteAction(
   }
   revalidatePath("/admin");
   return { done: true };
+}
+
+/** Reads the odds the form sends as JSON; anything malformed becomes an invalid set. */
+function oddsOf(data: FormData) {
+  try {
+    const parsed = JSON.parse(formText(data, "odds")) as {
+      proposed?: { athleteId?: unknown; odds?: unknown }[];
+      other?: unknown;
+    };
+    return {
+      proposed: (parsed.proposed ?? []).map((p) => ({
+        athleteId: String(p.athleteId ?? ""),
+        odds: parseOdds(String(p.odds ?? "")) ?? 0,
+      })),
+      other: parseOdds(String(parsed.other ?? "")) ?? 0,
+    };
+  } catch {
+    return { proposed: [], other: 0 };
+  }
+}
+
+export async function saveOddsAction(
+  _: AdminActionState,
+  data: FormData,
+): Promise<AdminActionState> {
+  const { client } = await adminOnly();
+  const slug = formText(data, "slug");
+  let startList: string[] = [];
+  try {
+    startList = (JSON.parse(formText(data, "startList")) as unknown[]).map(String);
+  } catch {
+    startList = [];
+  }
+  try {
+    await setEventOdds({ odds: createSupabaseOddsRepository(client) }).execute({
+      eventId: formText(data, "eventId"),
+      startList,
+      odds: oddsOf(data),
+    });
+  } catch (error) {
+    if (error instanceof UseCaseError) return { error: error.code };
+    throw error;
+  }
+  revalidatePath(`/epreuves/${slug}`);
+  redirect(`/admin/${slug}/cotes?enregistre=1`);
 }
