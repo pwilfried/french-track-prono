@@ -4,6 +4,7 @@ import { UseCaseError } from "@/application/errors";
 import { getEvent } from "@/application/get-event";
 import { getEventOdds } from "@/application/set-event-odds";
 import { ErrorNotice } from "@/components/error-notice";
+import { tidyMark } from "@/domain/discipline";
 import {
   createPublicSupabaseClient,
   createSupabaseEventReader,
@@ -57,6 +58,9 @@ export default async function OddsPage({
     );
   }
   const { event, odds, marks } = loaded;
+  // PR and SB written alike, whatever way they were typed ("11,4" → "11.40").
+  const tidy = (mark: string | null) =>
+    mark && event.markUnit ? tidyMark(mark, event.markUnit) : mark;
   return (
     <AdminShell
       title={messages.odds.titleOf(
@@ -78,8 +82,8 @@ export default async function OddsPage({
             athleteId: e.athleteId,
             name: e.name,
             countryCode: e.countryCode,
-            pr: marks.get(e.athleteId)?.pr ?? null,
-            sb: marks.get(e.athleteId)?.sb ?? e.seasonBest,
+            pr: tidy(marks.get(e.athleteId)?.pr ?? null),
+            sb: tidy(marks.get(e.athleteId)?.sb ?? e.seasonBest),
           }))}
         />
       </div>

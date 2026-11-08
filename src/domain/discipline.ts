@@ -80,3 +80,9 @@ export function withinTolerance(predicted: number, official: number, tolerance: 
 export function isValidTolerance(tolerance: number): boolean {
   return Number.isFinite(tolerance) && tolerance > 0;
 }
+
+/** A mark as the admin typed it ("11,4"), written like the others ("11.40"); unchanged if unreadable. */
+export function tidyMark(text: string, unit: MarkUnit): string {
+  const value = parseMark(text, unit);
+  return value === null ? text : formatMark(value, unit);
+}

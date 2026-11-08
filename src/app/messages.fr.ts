@@ -413,7 +413,7 @@ export const messages = {
       `Exemple : podium parfait = 3 × ${exact} + ${perfect} = ${3 * exact + perfect} points.`,
     oddsTitle: "Les cotes",
     odds: (a: number, b: number, c: number) =>
-      `Sur les compétitions avec cotes, tu choisis parmi 5 ou 6 athlètes proposés ou « Autre athlète ». En plus du podium, chaque athlète rapporte sa cote × ${a} à la bonne place, × ${b} à une place d'écart, × ${c} à deux places.`,
+      `Sur les compétitions avec cotes, tu choisis parmi les athlètes proposés par l'admin ou « Autre athlète ». En plus du podium, chaque athlète rapporte sa cote × ${a} à la bonne place, × ${b} à une place d'écart, × ${c} à deux places.`,
     oddsExample: (odds: string, a: number, points: number) =>
       `Exemple : une athlète à ${odds} à la bonne place rapporte ${odds} × ${a} = ${points} points en plus.`,
     other:
@@ -577,7 +577,7 @@ export const messages = {
     title: "Cotes",
     titleOf: (event: string) => `Cotes · ${event}`,
     intro:
-      "Choisis 5 ou 6 athlètes de la liste de départ et donne une cote à chacun. Plus elle est basse, plus l'athlète est favori.",
+      "Choisis les athlètes de la liste de départ à proposer, autant que tu veux, et donne une cote à chacun. Plus elle est basse, plus l'athlète est favori.",
     notice:
       "Les pronos s'ouvrent une fois les cotes enregistrées. Elles sont figées au verrouillage.",
     proposed: "Athlètes proposés",
@@ -591,8 +591,9 @@ export const messages = {
     rest: "Reste de la liste de départ",
     restEmpty: "Tous les athlètes de la liste de départ sont proposés.",
     propose: "Proposer",
-    rule: (min: number, max: number) =>
-      `${min} à ${max} athlètes, chaque cote supérieure à 1 (ex. 1,80). « Autre athlète » compte si un athlète hors de cette liste finit à la place pronostiquée.`,
+    rule: "Au moins un athlète ; une cote est un nombre positif (ex. 1,80). « Autre athlète » compte si un athlète hors de cette liste finit à la place pronostiquée.",
+    count: (n: number) => (n <= 1 ? `${n} proposé` : `${n} proposés`),
+    invalid: (name: string) => `La cote de « ${name} » doit être un nombre positif (ex. 1,80).`,
     save: "Enregistrer les cotes",
   },
   myPredictions: {
@@ -858,7 +859,7 @@ export const messages = {
     ATHLETE_NOT_FOUND: "Cet athlète n'existe pas.",
     TOLERANCE_INVALID: "La tolérance doit être un nombre supérieur à 0.",
     ODDS_INVALID:
-      "Propose 5 ou 6 athlètes de la liste de départ, chacun avec une cote supérieure à 1, plus la cote « autre athlète ».",
+      "Propose au moins un athlète de la liste de départ, chacun avec une cote positive, plus la cote « autre athlète ».",
     ODDS_LOCKED: "L'épreuve est verrouillée : les cotes ne changent plus.",
     ODDS_UNAVAILABLE: "Les cotes n'ont pas pu être chargées. Réessaie.",
     COMPETITION_INVALID:

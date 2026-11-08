@@ -248,7 +248,7 @@ liste de départ sont les engagés de la compétition (tout le monde tant que pe
 La compétition mise en avant est la prochaine par date (`nextCompetition`).
 
 Cotes (v0.9, issues #259 et #260) : sur une compétition créée dans le back-office
-(`competitions.odds_enabled`), l'admin propose 5 ou 6 athlètes de la liste de départ avec une cote
+(`competitions.odds_enabled`), l'admin propose des athlètes de la liste de départ (au moins un, autant qu'il veut ; décision du 08/11/2026) avec une cote positive
 chacun, plus une cote « Autre athlète » (`event_odds`, `athlete_id` nul). La finale n'ouvre aux
 pronos qu'une fois les cotes saisies (`is_predictable()`). Le joueur choisit parmi les athlètes
 proposés ou « Autre athlète » (stocké nul dans `predictions.p1..p3`, une place au plus, FT006

@@ -5,7 +5,8 @@ import { useActionState, useState } from "react";
 import { messages } from "@/app/messages.fr";
 import { SubmitButton } from "@/components/account/submit-button";
 import { flagOf } from "@/domain/flag";
-import { MAX_PROPOSED, MIN_PROPOSED } from "@/domain/odds";
+import { firstInvalidOdds } from "@/domain/odds";
+import { OTHER_ATHLETE } from "@/domain/podium-draft";
 
 import { saveOddsAction, type AdminActionState } from "../actions";
 
@@ -18,10 +19,12 @@ type Athlete = {
 };
 type Row = Athlete & { odds: string };
 
-const oddsField =
-  "min-h-11 w-full rounded-[10px] border-2 border-border bg-background px-2 text-right font-mono text-[15px] font-bold";
+const oddsField = (wrong: boolean) =>
+  `min-h-11 w-full rounded-[10px] border-2 bg-background px-2 text-right font-mono text-[15px] font-bold ${
+    wrong ? "border-primary" : "border-border"
+  }`;
 
-/** The admin picks 5 or 6 athletes of the start list and types each one's odds, plus another athlete's. */
+/** The admin picks athletes of the start list (as many as he wants) and types each one's odds, plus another athlete's. */
 export function OddsForm({
   eventId,
   slug,
@@ -42,7 +45,10 @@ export function OddsForm({
   );
   const [other, setOther] = useState(initial ? String(initial.other) : "");
   const rest = startList.filter((a) => !rows.some((r) => r.athleteId === a.athleteId));
-  const full = rows.length >= MAX_PROPOSED;
+  // The line found wrong at the last try (athlete id or OTHER_ATHLETE), checked before sending.
+  const [wrong, setWrong] = useState<string | null>(null);
+  const wrongName =
+    wrong === OTHER_ATHLETE ? messages.odds.other : rows.find((r) => r.athleteId === wrong)?.name;
   const marks = (a: Athlete) => (
     <>
       <span className="text-right font-mono text-[13px]">{a.pr ?? "—"}</span>
@@ -51,7 +57,18 @@ export function OddsForm({
   );
 
   return (
-    <form action={action} className="flex flex-col gap-4 px-4">
+    <form
+      action={action}
+      onSubmit={(e) => {
+        const found = firstInvalidOdds(
+          rows.map((r) => ({ athleteId: r.athleteId, text: r.odds })),
+          other,
+        );
+        setWrong(found);
+        if (found || rows.length === 0) e.preventDefault();
+      }}
+      className="flex flex-col gap-4 px-4"
+    >
       <input type="hidden" name="eventId" value={eventId} />
       <input type="hidden" name="slug" value={slug} />
       <input
@@ -74,7 +91,7 @@ export function OddsForm({
           className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground"
         >
           <span>{messages.odds.proposed}</span>
-          <span className="font-mono">{messages.startList.count(rows.length, MAX_PROPOSED)}</span>
+          <span className="font-mono">{messages.odds.count(rows.length)}</span>
         </h2>
         <div
           aria-hidden="true"
@@ -110,7 +127,8 @@ export function OddsForm({
                   )
                 }
                 inputMode="decimal"
-                className={oddsField}
+                aria-invalid={wrong === r.athleteId || undefined}
+                className={oddsField(wrong === r.athleteId)}
               />
               <button
                 type="button"
@@ -131,7 +149,8 @@ export function OddsForm({
               value={other}
               onChange={(e) => setOther(e.target.value)}
               inputMode="decimal"
-              className={oddsField}
+              aria-invalid={wrong === OTHER_ATHLETE || undefined}
+              className={oddsField(wrong === OTHER_ATHLETE)}
             />
             <span />
           </li>
@@ -163,9 +182,8 @@ export function OddsForm({
                 </span>
                 <button
                   type="button"
-                  disabled={full}
                   onClick={() => setRows([...rows, { ...a, odds: "" }])}
-                  className="min-h-11 rounded-full bg-brand-soft px-3.5 text-[13px] font-bold text-brand-ink disabled:opacity-50"
+                  className="min-h-11 rounded-full bg-brand-soft px-3.5 text-[13px] font-bold text-brand-ink"
                 >
                   {messages.odds.propose}
                 </button>
@@ -175,10 +193,13 @@ export function OddsForm({
         )}
       </section>
 
-      <p className="text-sm text-muted-foreground">
-        {messages.odds.rule(MIN_PROPOSED, MAX_PROPOSED)}
-      </p>
-      {state.error && (
+      <p className="text-sm text-muted-foreground">{messages.odds.rule}</p>
+      {wrongName ? (
+        <p role="alert" className="text-sm font-semibold text-accent-text">
+          {messages.odds.invalid(wrongName)}
+        </p>
+      ) : null}
+      {!wrongName && state.error && (
         <p role="alert" className="text-sm font-semibold text-accent-text">
           {messages.errors[state.error]}
         </p>

@@ -4,17 +4,16 @@ import { OTHER_ATHLETE } from "./podium-draft";
 /** The odds of an event: athletes proposed with a multiplier each, and one for any other athlete. */
 export type EventOdds = { proposed: { athleteId: string; odds: number }[]; other: number };
 
-export const MIN_PROPOSED = 5;
-export const MAX_PROPOSED = 6;
+const fine = (odds: number) => Number.isFinite(odds) && odds > 0 && odds < 10000;
 
-const fine = (odds: number) => Number.isFinite(odds) && odds > 1 && odds < 10000;
-
-/** 5 or 6 different athletes of the start list, every odds above 1, odds for another athlete too. */
+/**
+ * At least one athlete of the start list, as many as the admin wants, each once, every odds
+ * positive, and odds for another athlete too.
+ */
 export function isValidOdds(odds: EventOdds, startList: string[]): boolean {
   const ids = odds.proposed.map((p) => p.athleteId);
   return (
-    ids.length >= MIN_PROPOSED &&
-    ids.length <= MAX_PROPOSED &&
+    ids.length >= 1 &&
     new Set(ids).size === ids.length &&
     ids.every((id) => startList.includes(id)) &&
     odds.proposed.every((p) => fine(p.odds)) &&
@@ -27,6 +26,21 @@ export function parseOdds(text: string): number | null {
   const clean = text.trim().replace(",", ".");
   if (!/^\d+(\.\d+)?$/.test(clean)) return null;
   return Math.round(Number(clean) * 100) / 100;
+}
+
+/**
+ * The first line whose odds, as typed, cannot be read or are not positive: an athlete id, or
+ * OTHER_ATHLETE for « autre athlète »; null when every line is fine.
+ */
+export function firstInvalidOdds(
+  proposed: { athleteId: string; text: string }[],
+  other: string,
+): string | null {
+  const wrong = (text: string) => {
+    const odds = parseOdds(text);
+    return odds === null || !fine(odds);
+  };
+  return proposed.find((p) => wrong(p.text))?.athleteId ?? (wrong(other) ? OTHER_ATHLETE : null);
 }
 
 /** An athlete the player can put on the podium, with the odds, PR and SB shown to help him. */

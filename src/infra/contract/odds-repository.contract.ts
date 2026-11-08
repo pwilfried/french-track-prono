@@ -39,14 +39,14 @@ export function oddsRepositoryContract(name: string, world: () => Promise<OddsWo
       expect(await w.player.find(w.openEventId)).toEqual(oddsFor(w.startList.slice(0, 5)));
     });
 
-    it("refuses a player, a locked event and an incomplete set", async () => {
+    it("refuses a player, a locked event and a set without athlete", async () => {
       const w = await world();
 
       expect(await w.player.save(w.openEventId, oddsFor(w.startList.slice(0, 5)))).toBe(
         "not_admin",
       );
       expect(await w.admin.save(w.lockedEventId, oddsFor(w.startList.slice(0, 5)))).toBe("locked");
-      expect(await w.admin.save(w.openEventId, oddsFor(w.startList.slice(0, 4)))).toBe("invalid");
+      expect(await w.admin.save(w.openEventId, { proposed: [], other: 8 })).toBe("invalid");
       expect(await w.admin.find(w.openEventId)).toBeNull();
     });
   });
