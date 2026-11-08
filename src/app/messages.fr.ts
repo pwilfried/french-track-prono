@@ -471,6 +471,10 @@ export const messages = {
         a: "Pas de pénalité : tu ne marques simplement pas de points sur cette épreuve.",
       },
       {
+        q: "Faut-il une ligue pour jouer ?",
+        a: "Oui : pour pronostiquer une épreuve, sois dans une ligue qui compte sa compétition (crée-la, rejoins celle d'un ami ou une ligue publique). Tes points comptent aussi au classement général.",
+      },
+      {
         q: "Je suis dans plusieurs ligues ?",
         a: "Un seul prono par épreuve, compté dans toutes tes ligues et au classement général.",
       },
@@ -834,6 +838,12 @@ export const messages = {
     visitorTitle: "Connecte-toi pour pronostiquer",
     visitorText: "Il faut un compte pour enregistrer ton podium.",
     signIn: "Se connecter",
+    leagueTitle: "Pronostique avec ta ligue",
+    leagueText: (competition: string) =>
+      `Pour pronostiquer, rejoins une ligue qui compte ${competition}. Tes points comptent aussi au classement général.`,
+    leagueCreate: "Créer une ligue avec cette compétition",
+    leagueJoin: "Rejoindre une ligue",
+    leagueAdd: (name: string) => `Ajouter à ma ligue « ${name} »`,
   },
   errors: {
     EVENTS_UNAVAILABLE: "Impossible de charger les épreuves pour le moment.",
@@ -893,6 +903,8 @@ export const messages = {
     ROUND_NOT_READY: "Les pronos ouvrent quand les tours précédents sont terminés.",
     ROUND_UNAVAILABLE: "La qualification n'a pas pu être faite. Réessaie.",
     JOKER_ALREADY_USED: "Tu as déjà utilisé ton joker dans cette compétition.",
+    NO_LEAGUE_FOR_COMPETITION:
+      "Pour pronostiquer, rejoins d'abord une ligue qui compte cette compétition.",
     PREDICTION_UNAVAILABLE:
       "Ton prono n'est pas disponible pour le moment. Réessaie dans un instant.",
     DELETION_NOT_CONFIRMED: "Coche la case pour confirmer la suppression.",

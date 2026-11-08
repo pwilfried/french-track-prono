@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { newPlayer, signUp } from "./players";
+import { joinLeagueFor, newPlayer, signUp } from "./players";
 
 test("a player predicts a podium with a mark for each of his three athletes", async ({ page }) => {
   // An open race (run `npm run db:open-events` first): marks are times.
@@ -19,6 +19,8 @@ test("a player predicts a podium with a mark for each of his three athletes", as
   await page.locator("main").getByRole("link", { name: "Se connecter", exact: true }).click();
   await signUp(page, player);
   await page.waitForURL(new RegExp(`/epreuves/${slug}$`));
+  joinLeagueFor(player.email, "ultimate-championship-2026");
+  await page.reload();
 
   const athletes = page.locator("li > button[aria-pressed]");
   for (const index of [0, 1, 2]) await athletes.nth(index).click();

@@ -14,6 +14,7 @@ import {
   listMyLeagues,
 } from "@/application/leagues";
 import { normalizeInviteCode } from "@/domain/league";
+import { safeRedirectPath } from "@/domain/redirect";
 import { createSupabaseLeagueRepository } from "@/infra";
 
 import { formText } from "../form-data";
@@ -124,7 +125,9 @@ export async function addLeagueCompetitionAction(
     throw error;
   }
   revalidatePath(`/ligues/${leagueId}`);
-  redirect(`/ligues/${leagueId}?ajoutee=1`);
+  // From an event, the player goes back to predict; from the league, the league shows it.
+  const back = formText(data, "back");
+  redirect(back ? safeRedirectPath(back) : `/ligues/${leagueId}?ajoutee=1`);
 }
 
 /** Joins a public league from the list, then opens it. */

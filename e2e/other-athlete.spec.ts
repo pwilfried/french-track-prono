@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { newPlayer, signUp } from "./players";
+import { joinLeagueFor, newPlayer, signUp } from "./players";
 
 test("a player predicts with the odds and puts « autre athlète » on the podium", async ({
   page,
@@ -30,6 +30,8 @@ test("a player predicts with the odds and puts « autre athlète » on the podiu
   await page.locator("main").getByRole("link", { name: "Se connecter", exact: true }).click();
   await signUp(page, player);
   await page.waitForURL(new RegExp(`/epreuves/${tag}-100m$`));
+  joinLeagueFor(player.email, tag);
+  await page.reload();
 
   const choices = page.locator("li > button[aria-pressed]");
   await expect(choices).toHaveCount(6);

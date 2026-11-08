@@ -35,6 +35,13 @@ select semi_id, athletes[i], i, '11.0' || i from fixture, generate_series(1, 3) 
 select ok(not is_predictable((select final_id from fixture)), 'a final waits for its semi-final');
 select ok(not is_predictable((select semi_id from fixture)), 'a semi-final is never predicted');
 
+-- #311: a player predicts from a league of the competition; each test player gets his own.
+insert into leagues (name, owner_id) select 'Test ' || pseudo, id from profiles where created_at = now();
+insert into league_members (league_id, user_id, role)
+select l.id, l.owner_id, 'owner' from leagues l join profiles p on p.id = l.owner_id where p.created_at = now();
+insert into league_competitions (league_id, competition_id)
+select l.id, c.id from leagues l join profiles p on p.id = l.owner_id, competitions c where p.created_at = now();
+
 set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub":"cdcdcdcd-0000-0000-0000-000000000002","role":"authenticated"}', true);

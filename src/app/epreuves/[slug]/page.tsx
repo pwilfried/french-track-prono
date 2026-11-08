@@ -5,10 +5,12 @@ import { notFound } from "next/navigation";
 import { UseCaseError } from "@/application/errors";
 import { getEvent } from "@/application/get-event";
 import { getEventOdds } from "@/application/set-event-odds";
+import { listMyLeagues, type League } from "@/application/leagues";
 import { getMyPrediction, type Prediction } from "@/application/save-prediction";
 import { buttonVariants } from "@/components/ui/button";
 import { LockBanner } from "@/components/countdown/lock-banner";
 import { ErrorNotice } from "@/components/error-notice";
+import { AddToMyLeagueForm } from "@/components/leagues/league-forms";
 import { PodiumMedals } from "@/components/podium/podium-medals";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
 import { eventPhase } from "@/domain/countdown";
@@ -21,6 +23,7 @@ import { draftFromPodium, emptyDraft } from "@/domain/podium-draft";
 import {
   createPublicSupabaseClient,
   createSupabaseEventReader,
+  createSupabaseLeagueRepository,
   createSupabaseOddsRepository,
   createSupabasePredictionRepository,
   type CurrentUser,
@@ -83,18 +86,82 @@ async function loadMyPrediction(
   }
 }
 
+/** The player's leagues; "error" when they cannot be read. */
+async function loadMyLeagues(): Promise<League[] | "error"> {
+  try {
+    const leagues = createSupabaseLeagueRepository(await getSessionClient());
+    return await listMyLeagues({ leagues }).execute();
+  } catch (error) {
+    if (error instanceof UseCaseError) return "error";
+    throw error;
+  }
+}
+
+/**
+ * A player predicts from a league counting the competition (#311): create one with it, join one,
+ * or add the competition to a league he created.
+ */
+function LeagueGate({
+  competitionSlug,
+  competitionName,
+  owned,
+  back,
+}: {
+  competitionSlug: string;
+  competitionName: string;
+  owned: League[];
+  back: string;
+}) {
+  return (
+    <section
+      aria-labelledby="league-gate"
+      className="mx-4 flex flex-col gap-3 rounded-card bg-brand-soft p-4 text-brand-ink"
+    >
+      <h2 id="league-gate" className="font-display text-xl font-extrabold">
+        {messages.prediction.leagueTitle}
+      </h2>
+      <p className="text-sm leading-relaxed">{messages.prediction.leagueText(competitionName)}</p>
+      <Link
+        href={`/ligues/creer?competition=${competitionSlug}`}
+        className={`${buttonVariants()} w-full`}
+      >
+        {messages.prediction.leagueCreate}
+      </Link>
+      {owned.map((league) => (
+        <AddToMyLeagueForm
+          key={league.id}
+          leagueId={league.id}
+          leagueName={league.name}
+          competitionSlug={competitionSlug}
+          back={back}
+        />
+      ))}
+      <Link href="/ligues" className={`${buttonVariants({ variant: "outline" })} w-full`}>
+        {messages.prediction.leagueJoin}
+      </Link>
+    </section>
+  );
+}
+
 async function PredictionSection({
   event,
   slug,
   user,
   open,
   choices,
+  competitionSlug,
+  competitionName,
+  leagues,
 }: {
   event: EventDetail;
   slug: string;
   user: CurrentUser | null;
   open: boolean;
   choices: PickerAthlete[] | null;
+  competitionSlug: string;
+  competitionName: string;
+  /** The player's leagues (read for an open event only), or "error". */
+  leagues: League[] | "error";
 }) {
   const back = `/epreuves/${slug}`;
 
@@ -126,7 +193,17 @@ async function PredictionSection({
   }
 
   const mine = await loadMyPrediction(user.userId, event.id);
-  if (mine === "error") return <ErrorNotice retryHref={back} />;
+  if (mine === "error" || leagues === "error") return <ErrorNotice retryHref={back} />;
+  if (open && !leagues.some((l) => l.competitionSlugs.includes(competitionSlug))) {
+    return (
+      <LeagueGate
+        competitionSlug={competitionSlug}
+        competitionName={competitionName}
+        owned={leagues.filter((l) => l.ownerId === user.userId)}
+        back={back}
+      />
+    );
+  }
   const draft = mine ? draftFromPodium(mine.podium) : emptyDraft();
   const unit = event.markUnit;
   const markText = (value: number | null | undefined) =>
@@ -207,7 +284,12 @@ export default async function EventPage({
   const [user, choices] = await Promise.all([getCurrentUser(), loadChoices(event)]);
   const open = eventPhase(new Date(), event.lockAt) === "open";
   // The picker already lists the athletes of an open event for a signed-in player.
-  const showStartList = !(user && open);
+  // A player outside any league of the competition sees the gate instead of the picker (#311):
+  // he still sees the start list.
+  const leagues = user && open ? await loadMyLeagues() : [];
+  const gated =
+    leagues !== "error" && !leagues.some((l) => l.competitionSlugs.includes(competition.slug));
+  const showStartList = !(user && open) || gated;
   const when = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
     day: "numeric",
@@ -330,7 +412,16 @@ export default async function EventPage({
         {user && winner ? (
           <ResultSection event={event} slug={slug} user={user} />
         ) : (
-          <PredictionSection event={event} slug={slug} user={user} open={open} choices={choices} />
+          <PredictionSection
+            event={event}
+            slug={slug}
+            user={user}
+            open={open}
+            choices={choices}
+            competitionSlug={competition.slug}
+            competitionName={competition.name}
+            leagues={leagues}
+          />
         )}
       </section>
 

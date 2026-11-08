@@ -9,7 +9,8 @@ export function createInMemoryAthleteReader(athletes: AthleteSheet[]): AthleteRe
       if (!athlete) return null;
       return {
         ...athlete,
-        races: [...athlete.races]
+        races: athlete.races
+          .filter((race) => race.startsAt <= new Date().toISOString())
           .sort((a, b) => b.startsAt.localeCompare(a.startsAt))
           .slice(0, races),
       };
