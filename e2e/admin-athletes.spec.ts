@@ -64,6 +64,10 @@ test("an admin creates an athlete, adds a discipline with a PR and an SB, shown 
   await page.getByRole("button", { name: "Enregistrer PR et SB du 200 m" }).click();
   await expect(page.locator("main").getByRole("status")).toHaveText("✓ Enregistré.");
 
+  // An admin only sees the back-office: back to a player to look at the public pages.
+  sql(
+    `update profiles set is_admin = false where id = (select id from auth.users where email = '${player.email}')`,
+  );
   await page.goto(`/athletes/${slug}`);
   const records = page.getByRole("region", { name: "Records" });
   await expect(records).toContainText("200 m");
