@@ -1,5 +1,5 @@
 import type { EventGender } from "@/domain/event";
-import { isValidStartList } from "@/domain/start-list";
+import { isValidStartList, type DisciplineFit } from "@/domain/start-list";
 
 import { UseCaseError } from "./errors";
 
@@ -7,14 +7,20 @@ import { UseCaseError } from "./errors";
 export type StartListEntry = { athleteId: string; seasonBest: string | null };
 
 /** An athlete the admin can put on a start list. */
-export type Candidate = { athleteId: string; name: string; countryCode: string };
+export type Candidate = {
+  athleteId: string;
+  name: string;
+  countryCode: string;
+  /** Whether the athlete runs the event's discipline, as their main one or not. */
+  fit: DisciplineFit;
+};
 
 export type StartListOutcome = "saved" | "not_admin" | "athlete_in_use";
 
 /** Port: start lists. Real adapter = Supabase (the admin's own session), fake = in memory. */
 export interface StartListRepository {
-  /** Every athlete of a gender, by name. */
-  candidates(gender: EventGender): Promise<Candidate[]>;
+  /** Every athlete of a gender, with how they fit the discipline, in any order. */
+  candidates(gender: EventGender, discipline: string): Promise<Candidate[]>;
   /** The start list of an event, in any order; empty when not entered yet. */
   find(eventId: string): Promise<StartListEntry[]>;
   /**

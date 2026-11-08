@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isValidStartList, MAX_START_LIST, searchAthletes } from "./start-list";
+import { isValidStartList, MAX_START_LIST, searchAthletes, sortByDiscipline } from "./start-list";
 
 const athletes = [
   { id: "1", name: "Julien Alfred" },
@@ -44,5 +44,18 @@ describe("isValidStartList", () => {
     expect(isValidStartList(list(...Array.from({ length: 25 }, (_, i) => `a${i}`)))).toBe(false);
     expect(isValidStartList(list("a", "b", "a"))).toBe(false);
     expect(isValidStartList(list("a", ""))).toBe(false);
+  });
+});
+
+describe("sortByDiscipline", () => {
+  it("puts the athletes whose main discipline it is first, then the others who run it, then the rest", () => {
+    const sorted = sortByDiscipline([
+      { name: "Zoé", fit: "other" as const },
+      { name: "Anna", fit: "discipline" as const },
+      { name: "Bea", fit: "primary" as const },
+      { name: "Cleo", fit: "primary" as const },
+    ]);
+
+    expect(sorted.map((a) => a.name)).toEqual(["Bea", "Cleo", "Anna", "Zoé"]);
   });
 });

@@ -14,6 +14,7 @@ startListRepositoryContract("in-memory fake", async () => {
       name: athleteId,
       countryCode: "FRA",
       gender: "F" as const,
+      disciplines: ["100 m"],
     })),
     { athleteId: "stranger", name: "Stranger", countryCode: "JAM", gender: "F" },
     { athleteId: "m1", name: "Man", countryCode: "USA", gender: "M" },
@@ -28,6 +29,7 @@ startListRepositoryContract("in-memory fake", async () => {
     athleteIds,
     outsiderId: "stranger",
     gender: "F",
+    discipline: "100 m",
     candidateId: "a1",
     markInUse: (athleteId) => store.markInUse(eventId, [athleteId]),
     makeRound: async () => {
@@ -57,7 +59,12 @@ if (url && key) {
       athleteIds,
       outsiderId,
       gender: "F",
-      candidateId: sql("select id from athletes where gender = 'F' order by id limit 1"),
+      discipline: "100 m",
+      // A woman of the seed who runs the event's discipline (a start list line gives it to her).
+      candidateId: sql(`with a as (select id from athletes where gender = 'F' order by id limit 1),
+        en as (insert into entries (event_id, athlete_id) select '${eventId}', id from a
+               on conflict do nothing)
+        select id from a`),
       // A result line is enough to make an athlete impossible to remove.
       markInUse: (athleteId) =>
         void sql(

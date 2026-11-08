@@ -12,6 +12,9 @@ export type StartListWorld = {
   athleteIds: string[];
   outsiderId: string;
   gender: EventGender;
+  /** The discipline of the event; the athletes of its start list run it. */
+  discipline: string;
+  /** An athlete of the gender who runs the discipline. */
   candidateId: string;
   markInUse: (athleteId: string) => void;
   /** Makes the event a round leading to a new event, ranks its first three athletes 1 to 3. */
@@ -25,13 +28,18 @@ const byId = (a: StartListEntry, b: StartListEntry) => a.athleteId.localeCompare
 /** Contract of the StartListRepository port, run against the in-memory fake AND Supabase. */
 export function startListRepositoryContract(name: string, world: () => Promise<StartListWorld>) {
   describe(`StartListRepository contract: ${name}`, () => {
-    it("lists the athletes of a gender as candidates", async () => {
+    it("lists the athletes of a gender as candidates, with how they fit the discipline", async () => {
       const w = await world();
 
-      const candidates = await w.admin.candidates(w.gender);
+      const candidates = await w.admin.candidates(w.gender, w.discipline);
 
       expect(candidates.map((c) => c.athleteId)).toContain(w.candidateId);
       expect(new Set(candidates.map((c) => c.athleteId)).size).toBe(candidates.length);
+      const runner = candidates.find((c) => c.athleteId === w.candidateId);
+      expect(runner?.fit === "primary" || runner?.fit === "discipline").toBe(true);
+      expect(
+        (await w.admin.candidates(w.gender, "Discipline inconnue")).every((c) => c.fit === "other"),
+      ).toBe(true);
     });
 
     it("lets an admin replace a start list, removing, adding and updating season bests", async () => {
@@ -87,11 +95,12 @@ export function startListRepositoryContract(name: string, world: () => Promise<S
       const created = await w.admin.createAthlete(athlete);
 
       expect(created).not.toBe("not_admin");
-      const candidates = await w.admin.candidates(w.gender);
+      const candidates = await w.admin.candidates(w.gender, w.discipline);
       expect(candidates).toContainEqual({
         athleteId: (created as { athleteId: string }).athleteId,
         name: athlete.name,
         countryCode: "FRA",
+        fit: "other",
       });
     });
 
