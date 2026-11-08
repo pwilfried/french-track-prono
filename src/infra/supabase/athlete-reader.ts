@@ -16,11 +16,14 @@ type RecordRow = {
 type ResultRow = {
   rank: number;
   mark: string | null;
-  events: {
-    slug: string;
-    discipline: string;
-    starts_at: string;
-    competitions: { slug: string; name: string };
+  // results reach events through the start list (composite foreign key on entries).
+  entries: {
+    events: {
+      slug: string;
+      discipline: string;
+      starts_at: string;
+      competitions: { slug: string; name: string };
+    };
   };
 };
 
@@ -46,7 +49,7 @@ export function createSupabaseAthleteReader(client: SupabaseClient): AthleteRead
         client
           .from("results")
           .select(
-            "rank, mark, events!inner(slug, discipline, starts_at, competitions!inner(slug, name))",
+            "rank, mark, entries!inner(events!inner(slug, discipline, starts_at, competitions!inner(slug, name)))",
           )
           .eq("athlete_id", athlete.id)
           .returns<ResultRow[]>(),
@@ -70,17 +73,15 @@ export function createSupabaseAthleteReader(client: SupabaseClient): AthleteRead
         ),
         // An athlete has few results: sorted here rather than through the embedded table.
         races: results.data
-          .map(
-            (r): AthleteRace => ({
-              competitionSlug: r.events.competitions.slug,
-              eventSlug: r.events.slug,
-              discipline: r.events.discipline,
-              startsAt: new Date(r.events.starts_at).toISOString(),
-              meeting: r.events.competitions.name,
-              rank: r.rank,
-              mark: r.mark,
-            }),
-          )
+          .map(({ rank, mark, entries: { events: e } }): AthleteRace => ({
+            competitionSlug: e.competitions.slug,
+            eventSlug: e.slug,
+            discipline: e.discipline,
+            startsAt: new Date(e.starts_at).toISOString(),
+            meeting: e.competitions.name,
+            rank,
+            mark,
+          }))
           .sort((a, b) => b.startsAt.localeCompare(a.startsAt))
           .slice(0, races),
       };
