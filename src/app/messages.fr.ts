@@ -888,6 +888,8 @@ export const messages = {
     PSEUDO_INVALID:
       "Ce pseudo n'est pas valable : 2 à 24 caractères (lettres, chiffres, espace, _ - .).",
     PSEUDO_TAKEN: "Ce pseudo est déjà pris, essaie-en un autre.",
+    PSEUDO_BANNED:
+      "Ce pseudo n'est pas possible (insulte, nom officiel ou lien). Choisis-en un autre.",
     AVATAR_INVALID: "Choisis un avatar dans la liste.",
     PROFILE_EXISTS: "Tu as déjà un profil.",
     PROFILE_UNAVAILABLE: "Le profil n'est pas disponible pour le moment. Réessaie dans un instant.",
