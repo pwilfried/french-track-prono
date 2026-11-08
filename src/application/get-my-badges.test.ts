@@ -28,6 +28,7 @@ const reader: EventReader = {
         { athleteId: "gbr", name: "Athlète GBR", countryCode: "GBR", seasonBest: null },
       ],
       results: [],
+      subDisciplines: [],
     }) as EventDetail,
 };
 const prediction = (eventId: string, first: string): Prediction => ({

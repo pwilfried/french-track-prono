@@ -190,6 +190,28 @@ export default async function EventPage({
               {messages.events.status[event.status]}
             </span>
           )}
+          {event.subDisciplines.length > 0 && (
+            <section aria-labelledby="combined-title" className="flex flex-col gap-2">
+              <h2
+                id="combined-title"
+                className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+              >
+                {messages.event.combined(event.subDisciplines.length)}
+              </h2>
+              <ol className="flex flex-wrap gap-1.5">
+                {event.subDisciplines.map((discipline, index) => (
+                  <li
+                    key={`${index}-${discipline}`}
+                    className="rounded-full border border-border bg-card px-3 py-1 text-sm font-semibold"
+                  >
+                    <span className="font-mono text-xs text-muted-foreground">{index + 1}</span>{" "}
+                    {discipline}
+                  </li>
+                ))}
+              </ol>
+              <p className="text-sm text-muted-foreground">{messages.event.combinedNote}</p>
+            </section>
+          )}
           {event.results.length > 0 && (
             <div className="rounded-card border border-border bg-card p-4">
               <PodiumMedals results={event.results} />

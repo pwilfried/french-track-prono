@@ -29,7 +29,12 @@ export type Entry = AthleteRef & { seasonBest: string | null };
 /** One line of the official result. Tied athletes share the same rank. */
 export type ResultLine = AthleteRef & { rank: number; mark: string | null };
 
-export type EventDetail = EventSummary & { entries: Entry[]; results: ResultLine[] };
+export type EventDetail = EventSummary & {
+  entries: Entry[];
+  results: ResultLine[];
+  /** The disciplines of a combined event (decathlon...), in order; empty for a single event. */
+  subDisciplines: string[];
+};
 
 /** Orders result lines by rank, then by name so the order of tied athletes is stable. */
 export function compareResults(a: ResultLine, b: ResultLine): number {

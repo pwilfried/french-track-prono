@@ -266,6 +266,8 @@ export const messages = {
     back: "Épreuves",
     final: "Finale",
     title: (discipline: string) => `${discipline} — Finale`,
+    combined: (n: number) => `Épreuve combinée · ${n} disciplines`,
+    combinedNote: "Tu pronostiques le podium final, au total des points.",
     startList: "Liste de départ",
     startListEmpty: "La liste de départ n'est pas encore connue.",
     podium: "Podium officiel",
