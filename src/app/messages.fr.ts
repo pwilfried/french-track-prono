@@ -291,6 +291,12 @@ export const messages = {
           : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
     by: (pseudo: string | null) => (pseudo ? `par ${pseudo}` : "par un compte supprimé"),
   },
+  offline: {
+    title: "Pas de réseau",
+    body: "Cette page n'est pas disponible hors ligne. Reviens quand le réseau revient.",
+    retry: "Réessayer",
+    prediction: "Pas de réseau : ton podium n'est pas enregistré. Réessaie une fois connecté.",
+  },
   athlete: {
     back: "Retour",
     subtitle: (country: string, gender: string) => `${country} · ${gender}`,
