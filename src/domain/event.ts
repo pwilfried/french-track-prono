@@ -1,3 +1,4 @@
+import type { MarkUnit } from "./discipline";
 import type { Round } from "./rounds";
 
 export type EventGender = "F" | "M" | "X";
@@ -42,6 +43,9 @@ export type EventDetail = EventSummary & {
   previousRounds: PreviousRound[];
   /** Its competition plays with odds: predictions open once the admin has set them. */
   oddsRequired?: boolean;
+  /** How its discipline measures a mark, and the tolerance of a predicted mark. */
+  markUnit?: MarkUnit;
+  tolerance?: number;
 };
 
 /** A round leading to an event, as its page shows it. */
