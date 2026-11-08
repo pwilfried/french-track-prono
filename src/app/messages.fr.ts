@@ -313,6 +313,24 @@ export const messages = {
     apply: (n: number) => `Appliquer (${n} ${n <= 1 ? "athlète" : "athlètes"})`,
     applying: "Import…",
   },
+  offline: {
+    title: "Pas de réseau",
+    body: "Cette page n'est pas disponible hors ligne. Reviens quand le réseau revient.",
+    retry: "Réessayer",
+    prediction: "Pas de réseau : ton podium n'est pas enregistré. Réessaie une fois connecté.",
+  },
+  athlete: {
+    back: "Retour",
+    subtitle: (country: string, gender: string) => `${country} · ${gender}`,
+    records: "Records",
+    pr: "Record perso",
+    sb: "Meilleure saison",
+    noRecord: "Pas encore de record connu.",
+    races: "Dernières courses",
+    noRace: "Pas encore de résultat dans le jeu.",
+    rank: (rank: number) => (rank === 1 ? "1re" : `${rank}e`),
+    profileOf: (name: string) => `Fiche de ${name}`,
+  },
   myPredictions: {
     predicted: "✓ Pronostiqué",
     toPredict: "À pronostiquer",
@@ -552,6 +570,8 @@ export const messages = {
     IMPORT_COUNTRY_MISSING:
       "Chaque nouvel athlète a besoin d'un nom et d'un code pays à trois lettres (FRA, USA…).",
     ADMIN_LOG_UNAVAILABLE: "L'historique n'a pas pu être chargé. Réessaie.",
+    ATHLETE_NOT_FOUND: "Cet athlète n'existe pas.",
+    ATHLETES_UNAVAILABLE: "La fiche athlète n'a pas pu être chargée. Réessaie.",
     retry: "Réessayer",
   },
 } as const;

@@ -32,9 +32,13 @@ export async function proxy(request: NextRequest) {
       return redirect;
     }
   }
+  // Tells the service worker whether this page may be kept for offline use (visitors only).
+  response.headers.set("x-ftp-viewer", user ? "player" : "visitor");
   return response;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icons/).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icons/|brand/|sw.js|offline.html).*)",
+  ],
 };
