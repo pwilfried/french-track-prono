@@ -14,10 +14,18 @@ import { currentCompetition } from "../competition";
 import { messages } from "../messages.fr";
 import { getCurrentUser, getSessionClient } from "../session";
 
-export default async function GeneralRankingPage() {
-  const competition = await currentCompetition();
+export default async function GeneralRankingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ competition?: string | string[] }>;
+}) {
+  // A competition chosen on its page (?competition=), the next one by date otherwise.
+  const asked = (await searchParams).competition;
+  const competition = await currentCompetition(typeof asked === "string" ? asked : undefined);
+  const here =
+    typeof asked === "string" ? `/classement?competition=${competition.slug}` : "/classement";
   const user = await getCurrentUser();
-  if (!user) redirect(`/connexion?next=${encodeURIComponent("/classement")}`);
+  if (!user) redirect(`/connexion?next=${encodeURIComponent(here)}`);
 
   let ranking: RankedPlayer[] | "error";
   try {
@@ -38,10 +46,10 @@ export default async function GeneralRankingPage() {
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
         {ranking === "error" ? (
-          <ErrorNotice retryHref="/classement" message={messages.errors.RANKING_UNAVAILABLE} />
+          <ErrorNotice retryHref={here} message={messages.errors.RANKING_UNAVAILABLE} />
         ) : (
           <>
-            <Leaderboard rows={ranking} meId={user.userId} retryHref="/classement" />
+            <Leaderboard rows={ranking} meId={user.userId} retryHref={here} />
             {ranking.length > 0 &&
               (me ? (
                 <p className="sticky bottom-20 rounded-2xl bg-foreground md:bottom-3 px-3.5 py-3 font-extrabold text-background shadow-lg">

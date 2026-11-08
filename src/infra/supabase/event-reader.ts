@@ -118,7 +118,7 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
       ).maybeSingle<
         EventRow & {
           sub_disciplines: string[] | null;
-          competitions: { odds_enabled: boolean };
+          competitions: { slug: string; odds_enabled: boolean };
           disciplines: { unit: MarkUnit; tolerance: number | string } | null;
         }
       >();
@@ -171,6 +171,7 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
         subDisciplines: found.data.sub_disciplines ?? [],
         previousRounds: await previousRounds(client, found.data.id),
         oddsRequired: found.data.competitions.odds_enabled,
+        competitionSlug: found.data.competitions.slug,
         ...(found.data.disciplines
           ? {
               markUnit: found.data.disciplines.unit,

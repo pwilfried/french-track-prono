@@ -19,15 +19,17 @@ import { messages } from "../messages.fr";
 import { pointsReasonLabels } from "../points-labels";
 import { getCurrentUser, getSessionClient } from "../session";
 
-async function load(userId: string): Promise<{ mine: MyPoints; events: EventSummary[] } | "error"> {
-  const competition = await currentCompetition();
+async function load(
+  userId: string,
+  competitionSlug: string,
+): Promise<{ mine: MyPoints; events: EventSummary[] } | "error"> {
   try {
     const [mine, events] = await Promise.all([
       getMyPoints({
         points: createSupabasePointsRepository(await getSessionClient()),
-      }).execute({ userId, competitionSlug: competition.slug }),
+      }).execute({ userId, competitionSlug }),
       listEvents({ events: createSupabaseEventReader(createPublicSupabaseClient()) }).execute({
-        competitionSlug: competition.slug,
+        competitionSlug,
       }),
     ]);
     return { mine, events };
@@ -38,18 +40,25 @@ async function load(userId: string): Promise<{ mine: MyPoints; events: EventSumm
   }
 }
 
-export default async function MyPointsPage() {
-  const competition = await currentCompetition();
+export default async function MyPointsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ competition?: string | string[] }>;
+}) {
+  const asked = (await searchParams).competition;
+  const competition = await currentCompetition(typeof asked === "string" ? asked : undefined);
+  const here =
+    typeof asked === "string" ? `/mes-points?competition=${competition.slug}` : "/mes-points";
   const user = await getCurrentUser();
-  if (!user) redirect(`/connexion?next=${encodeURIComponent("/mes-points")}`);
-  const loaded = await load(user.userId);
+  if (!user) redirect(`/connexion?next=${encodeURIComponent(here)}`);
+  const loaded = await load(user.userId, competition.slug);
 
   return (
     <main id="main" className="flex flex-1 flex-col">
       <AccountHero title={messages.points.title} subtitle={competition.name} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-3 px-4 py-6">
         {loaded === "error" ? (
-          <ErrorNotice retryHref="/mes-points" message={messages.errors.POINTS_UNAVAILABLE} />
+          <ErrorNotice retryHref={here} message={messages.errors.POINTS_UNAVAILABLE} />
         ) : (
           <MyPointsList mine={loaded.mine} events={loaded.events} />
         )}

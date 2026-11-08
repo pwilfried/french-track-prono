@@ -19,8 +19,9 @@ import { getSessionClient } from "../../session";
 async function load(
   userId: string,
   eventId: string,
+  competitionSlug?: string,
 ): Promise<{ mine: Prediction | null; points: MyEventPoints | null } | "error"> {
-  const competition = await currentCompetition();
+  const competition = await currentCompetition(competitionSlug);
   try {
     const client = await getSessionClient();
     const [mine, points] = await Promise.all([
@@ -50,7 +51,7 @@ export async function ResultSection({
   slug: string;
   user: CurrentUser;
 }) {
-  const loaded = await load(user.userId, event.id);
+  const loaded = await load(user.userId, event.id, event.competitionSlug);
   if (loaded === "error") {
     return (
       <div className="mx-4">
