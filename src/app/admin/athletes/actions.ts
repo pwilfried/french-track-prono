@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { listDisciplines } from "@/application/disciplines";
-import { editAthlete, editAthleteDiscipline } from "@/application/edit-athlete";
+import { createAthlete, editAthlete, editAthleteDiscipline } from "@/application/edit-athlete";
 import { UseCaseError } from "@/application/errors";
 import { setAthleteRecord } from "@/application/set-athlete-record";
 import { createSupabaseAthleteAdminRepository, createSupabaseDisciplineRepository } from "@/infra";
@@ -70,4 +70,25 @@ export async function setRecordAction(data: FormData) {
       });
     }
   });
+}
+
+export async function createAthleteAction(data: FormData) {
+  const { client } = await adminOnly();
+  let target: string;
+  try {
+    const slug = await createAthlete({
+      athletes: createSupabaseAthleteAdminRepository(client),
+    }).execute({
+      name: formText(data, "name"),
+      countryCode: formText(data, "countryCode"),
+      gender: formText(data, "gender"),
+      discipline: formText(data, "discipline"),
+    });
+    target = `/admin/athletes/${slug}?enregistre=1`;
+  } catch (error) {
+    if (!(error instanceof UseCaseError)) throw error;
+    target = `/admin/athletes?erreur=${error.code}`;
+  }
+  revalidatePath("/admin/athletes");
+  redirect(target);
 }

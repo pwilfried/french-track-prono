@@ -393,6 +393,9 @@ export const messages = {
     saveRecords: (discipline: string) => `Enregistrer PR et SB du ${discipline}`,
     addDiscipline: "Ajouter une discipline",
     choose: "Choisir…",
+    create: "Nouvel athlète",
+    createSubmit: "Créer l'athlète",
+    mainDiscipline: "Discipline principale",
   },
   myPredictions: {
     predicted: "✓ Pronostiqué",

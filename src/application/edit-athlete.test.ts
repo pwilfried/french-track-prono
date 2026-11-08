@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import type { Discipline } from "@/domain/discipline";
 
-import { editAthlete, editAthleteDiscipline, type AthleteAdminRepository } from "./edit-athlete";
+import {
+  createAthlete,
+  editAthlete,
+  editAthleteDiscipline,
+  type AthleteAdminRepository,
+} from "./edit-athlete";
 import { UseCaseError } from "./errors";
 import { getAthleteFile, listAthletes } from "./list-athletes";
 import { setAthleteRecord } from "./set-athlete-record";
@@ -33,6 +38,10 @@ function repository(isAdmin = true) {
             records: [],
           }
         : null,
+    create: async (fields) => {
+      calls.push(["create", fields]);
+      return isAdmin ? { athleteId: "9", slug: `${fields.slug}-2` } : "not_admin";
+    },
     update: (...args) => write("update", ...args),
     setDiscipline: (...args) => write("setDiscipline", ...args),
     removeDiscipline: (...args) => write("removeDiscipline", ...args),
@@ -158,6 +167,39 @@ describe("athletes in the back-office", () => {
         kind: "pr",
         mark: "21.92",
         date: "",
+      }),
+    ).rejects.toEqual(new UseCaseError("NOT_ADMIN"));
+  });
+
+  it("creates Gémima Joseph with her main discipline and returns her slug", async () => {
+    const { athletes, calls } = repository();
+
+    const slug = await createAthlete({ athletes }).execute({
+      name: "Gémima Joseph",
+      countryCode: "fra",
+      gender: "F",
+      discipline: "200 m",
+    });
+
+    expect(slug).toBe("gemima-joseph-2");
+    expect(calls).toEqual([
+      ["create", { name: "Gémima Joseph", countryCode: "FRA", gender: "F", slug: "gemima-joseph" }],
+      ["setDiscipline", "9", "200 m", true],
+    ]);
+    await expect(
+      createAthlete({ athletes }).execute({
+        name: "X",
+        countryCode: "FRA",
+        gender: "F",
+        discipline: "",
+      }),
+    ).rejects.toEqual(new UseCaseError("DISCIPLINE_NOT_FOUND"));
+    await expect(
+      createAthlete(repository(false)).execute({
+        name: "X",
+        countryCode: "FRA",
+        gender: "F",
+        discipline: "100 m",
       }),
     ).rejects.toEqual(new UseCaseError("NOT_ADMIN"));
   });

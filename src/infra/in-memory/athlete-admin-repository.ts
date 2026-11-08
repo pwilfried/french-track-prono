@@ -33,6 +33,22 @@ export function createInMemoryAthleteAdminStore(athletes: AthleteFile[]) {
           const found = stored.find((a) => a.slug === slug);
           return found ? structuredClone(found) : null;
         },
+        async create(fields) {
+          if (!options.isAdmin) return "not_admin";
+          let slug = fields.slug;
+          for (let n = 2; stored.some((a) => a.slug === slug); n++) slug = `${fields.slug}-${n}`;
+          const athleteId = `new-${stored.length + 1}`;
+          stored.push({
+            athleteId,
+            slug,
+            name: fields.name,
+            countryCode: fields.countryCode,
+            gender: fields.gender,
+            disciplines: [],
+            records: [],
+          });
+          return { athleteId, slug };
+        },
         update: (id, fields) => guard(() => Object.assign(byId(id), fields)),
         setDiscipline: (id, discipline, isPrimary) =>
           guard(() => {

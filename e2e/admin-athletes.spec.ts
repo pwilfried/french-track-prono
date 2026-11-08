@@ -3,14 +3,12 @@ import { expect, test } from "@playwright/test";
 import { sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
 
-test("an admin gives an athlete a discipline with a PR and an SB, shown on the public page", async ({
+test("an admin creates an athlete, adds a discipline with a PR and an SB, shown on the public page", async ({
   page,
 }) => {
-  const slug = `e2e-athlete-${Date.now() % 1000000}`;
-  const name = `Inventée ${slug}`;
-  sql(
-    `insert into athletes (slug, name, country_code, gender) values ('${slug}', '${name}', 'FRA', 'F')`,
-  );
+  const tag = `${Date.now() % 1000000}`;
+  const name = `Inventée E2E ${tag}`;
+  const slug = `inventee-e2e-${tag}`;
   const player = newPlayer("athletes");
   await page.goto("/epreuves/f-100m");
   await page.locator("main").getByRole("link", { name: "Se connecter", exact: true }).click();
@@ -22,7 +20,19 @@ test("an admin gives an athlete a discipline with a PR and an SB, shown on the p
 
   await page.goto("/admin");
   await page.getByRole("link", { name: "Athlètes" }).click();
-  await page.getByRole("searchbox", { name: "Rechercher un athlète" }).fill(slug);
+  // The admin creates the athlete with her main discipline.
+  await page.getByText("Nouvel athlète").click();
+  await page.getByLabel("Nom").fill(name);
+  await page.getByLabel("Pays").fill("fra");
+  await page.getByLabel("Catégorie").selectOption("F");
+  await page.getByLabel("Discipline principale").selectOption("100 m");
+  await page.getByRole("button", { name: "Créer l'athlète" }).click();
+  await expect(page).toHaveURL(new RegExp(`/admin/athletes/${slug}\\?enregistre=1$`));
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+
+  // She shows in the list.
+  await page.goto("/admin/athletes");
+  await page.getByRole("searchbox", { name: "Rechercher un athlète" }).fill(tag);
   await page.getByRole("button", { name: "Filtrer" }).click();
   await page.getByRole("link", { name: new RegExp(name) }).click();
 
