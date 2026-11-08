@@ -53,8 +53,9 @@ test("an admin builds the start list of a final of eight athletes in less than a
   expect(Date.now() - started).toBeLessThan(60_000);
 
   // Players see the start list on the event page.
+  // The loading skeleton is a second <main> for a moment: look for the name itself.
   await page.goto(`/epreuves/${slug}`);
-  await expect(page.locator("main")).toContainText("Sha'Carri Richardson");
+  await expect(page.getByText("Sha'Carri Richardson").first()).toBeVisible();
 
   sql(`delete from events where slug = '${slug}'`);
 });
