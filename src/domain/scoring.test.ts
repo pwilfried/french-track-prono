@@ -8,6 +8,7 @@ import {
   type OfficialLine,
   type ScoringPrediction,
 } from "./scoring";
+import { OTHER_ATHLETE } from "./podium-draft";
 
 const official = (...lines: [string, number][]): OfficialLine[] =>
   lines.map(([athleteId, rank]) => ({ athleteId, rank }));
@@ -144,6 +145,105 @@ describe("scorePrediction properties", () => {
         expect(result).toBeGreaterThanOrEqual(0);
         expect(result).toBeLessThanOrEqual(28);
       }),
+    );
+  });
+});
+
+describe("scorePrediction with odds and marks (v0.9)", () => {
+  // A at 2.00, B at 3.00, C at 1.50 are proposed; X is not, so it is « autre athlète » (8.00).
+  const odds = {
+    proposed: [
+      { athleteId: "A", odds: 2 },
+      { athleteId: "B", odds: 3 },
+      { athleteId: "C", odds: 1.5 },
+    ],
+    other: 8,
+  };
+  const result: OfficialLine[] = [
+    { athleteId: "A", rank: 1, markValue: 10.79 },
+    { athleteId: "B", rank: 2, markValue: 10.87 },
+    { athleteId: "X", rank: 3, markValue: 10.9 },
+    { athleteId: "C", rank: 4, markValue: 11.02 },
+  ];
+  const bets = { odds, tolerance: 0.05 };
+  const score = (p: ScoringPrediction) => scorePrediction(p, result, DEFAULT_RULES, noCrowd, bets);
+
+  it("adds the odds times 3 at the right place: A and B found, C off the podium", () => {
+    // Base 3 + 3, odds 2 × 3 + 3 × 3.
+    expect(score(pick("A", "B", "C")).points).toBe(21);
+  });
+
+  it("gives the odds times 2 one place off, and « autre athlète » found by an athlete not proposed", () => {
+    // Base: A on the podium 1, « autre athlète » 3rd exact 3. Odds: A 2 × 2, other 8 × 3.
+    expect(score(pick("C", "A", OTHER_ATHLETE)).points).toBe(32);
+  });
+
+  it("gives the odds times 1 two places off, rounded to the point", () => {
+    const close = { proposed: [{ athleteId: "A", odds: 1.8 }], other: 5 };
+    // B and A on the podium elsewhere: base 1 + 1; A 3rd for a win: odds 1.8 × 1 = 2 (rounded).
+    const s = scorePrediction(pick("B", "C", "A"), result, DEFAULT_RULES, noCrowd, {
+      odds: close,
+      tolerance: null,
+    });
+    expect(s.points).toBe(1 + 1 + 2);
+    expect(s.reasons).toContainEqual({
+      kind: "odds",
+      slot: 3,
+      odds: 1.8,
+      multiplier: 1,
+      points: 2,
+    });
+  });
+
+  it("adds 5 points for a mark within the tolerance and 2 within twice the tolerance", () => {
+    const s = score({
+      ...pick("A", "B", "C"),
+      marks: { first: 10.81, second: 10.95, third: null },
+    });
+    // 21, then 10.81 for 10.79 (+5) and 10.95 for 10.87 (+2).
+    expect(s.points).toBe(28);
+    expect(s.reasons).toContainEqual({
+      kind: "mark",
+      slot: 1,
+      predicted: 10.81,
+      official: 10.79,
+      points: 5,
+    });
+    expect(s.reasons).toContainEqual({
+      kind: "mark",
+      slot: 2,
+      predicted: 10.95,
+      official: 10.87,
+      points: 2,
+    });
+  });
+
+  it("gives nothing for a mark further than twice the tolerance", () => {
+    expect(
+      score({ ...pick("A", "B", "C"), marks: { first: 10.95, second: null, third: null } }).points,
+    ).toBe(21);
+  });
+
+  it("doubles everything with the joker", () => {
+    expect(
+      score({ ...pick("A", "B", "C", true), marks: { first: 10.81, second: null, third: null } })
+        .points,
+    ).toBe(52);
+  });
+
+  it("is never negative and stays the same when run again", () => {
+    const ids = fc.constantFrom("A", "B", "C", "X", OTHER_ATHLETE);
+    fc.assert(
+      fc.property(
+        fc.uniqueArray(ids, { minLength: 3, maxLength: 3 }),
+        fc.boolean(),
+        (picked, useJoker) => {
+          const p = pick(picked[0]!, picked[1]!, picked[2]!, useJoker);
+          const first = score(p);
+          expect(first.points).toBeGreaterThanOrEqual(0);
+          expect(score(p)).toEqual(first);
+        },
+      ),
     );
   });
 });

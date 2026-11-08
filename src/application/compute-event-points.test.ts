@@ -159,3 +159,39 @@ describe("computeEventPoints", () => {
     ).toBe("NOT_ADMIN");
   });
 });
+
+describe("computeEventPoints with odds and marks", () => {
+  it("adds the odds and the marks of each player to his points", async () => {
+    const { points } = repository(
+      scoredEvent({
+        results: [
+          { athleteId: "A", rank: 1, markValue: 10.79 },
+          { athleteId: "B", rank: 2, markValue: 10.87 },
+          { athleteId: "C", rank: 3, markValue: 10.9 },
+        ],
+        predictions: [
+          { ...pick("anna", "A", "B", "C"), marks: { first: 10.8, second: null, third: null } },
+        ],
+        bets: {
+          odds: {
+            proposed: [
+              { athleteId: "A", odds: 2 },
+              { athleteId: "B", odds: 3 },
+              { athleteId: "C", odds: 4 },
+            ],
+            other: 9,
+          },
+          tolerance: 0.05,
+        },
+      }),
+    );
+
+    const [anna] = await computeEventPoints({ points, now: () => NOW }).execute({
+      eventId: "e1",
+      dryRun: true,
+    });
+
+    // Perfect podium 12, odds (2 + 3 + 4) × 3 = 27, mark +5.
+    expect(anna?.points).toBe(44);
+  });
+});

@@ -288,6 +288,22 @@ Le schéma et le seed ont été exécutés sur Supabase local et sont couverts p
 | S12 | Enregistrer deux fois le même calcul | mêmes points, aucune ligne en double |
 | S13 | Calculer une épreuve sans résultat saisi | erreur explicite |
 
+**Cotes et perfs (v0.9, #262), en plus du barème ci-dessus.** Sur une épreuve à cotes, chaque athlète
+proposé (ou « Autre athlète ») sur le podium rapporte sa cote × 3 à la bonne place, × 2 à une place
+d'écart, × 1 à deux places, arrondi au point. « Autre athlète » est juste quand un athlète non
+proposé finit à cette place. Une perf rapporte 5 dans la tolérance de la discipline, 2 dans le
+double. Le joker double le tout. Ces valeurs sont des lignes de `scoring_rules`, modifiables dans
+`/admin/bareme`. Cas : cotes A 2, B 3, C 1,5, autre 8 ; résultat A 1er (10.79), B 2e (10.87),
+X 3e non proposé, C 4e ; tolérance 0,05.
+
+| # | Situation | Points attendus |
+|---|---|---|
+| S14 | A, B, C | 21 (3 + 3, cotes 6 + 9) |
+| S15 | C, A, autre athlète | 32 (1 + 3, cotes 2 × 2 + 8 × 3) |
+| S16 | B, C, A avec A seul proposé à 1,8 | 4 (1 + 1, cote 1,8 × 1 = 2) |
+| S17 | A, B, C avec perfs 10.81 et 10.95 | 28 (21 + 5 + 2) |
+| S18 | A, B, C, joker, perf 10.81 | 52 ((21 + 5) × 2) |
+
 **Règles de la base (tests pgTAP)**
 
 | # | Situation | Attendu |

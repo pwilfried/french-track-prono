@@ -20,6 +20,10 @@ export function pointsReasonLabels(reasons: ScoreReason[]): { text: string; joke
       if (reason.kind === "exact") labels.push({ text: text[EXACT[reason.slot]], joker: false });
   if (misplaced > 0) labels.push({ text: text.misplaced(misplaced), joker: false });
   if (reasons.some((r) => r.kind === "flair")) labels.push({ text: text.flair, joker: false });
+  const sum = (kind: "odds" | "mark") =>
+    reasons.reduce((total, r) => (r.kind === kind ? total + r.points : total), 0);
+  if (sum("odds") > 0) labels.push({ text: text.odds(sum("odds")), joker: false });
+  if (sum("mark") > 0) labels.push({ text: text.marks(sum("mark")), joker: false });
   if (labels.length === 0) labels.push({ text: text.none, joker: false });
   if (reasons.some((r) => r.kind === "joker")) labels.push({ text: text.joker, joker: true });
   return labels;
