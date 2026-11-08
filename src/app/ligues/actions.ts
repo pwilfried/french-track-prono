@@ -7,6 +7,7 @@ import { UseCaseError, type ErrorCode } from "@/application/errors";
 import {
   addLeagueCompetition,
   createLeague,
+  joinPublicLeague,
   handOverLeague,
   joinLeague,
   leaveLeague,
@@ -19,7 +20,7 @@ import { createSupabaseLeagueRepository } from "@/infra";
 import { formText } from "../form-data";
 import { getCurrentUser, getSessionClient } from "../session";
 
-export type LeagueFormState = { value: string; error?: ErrorCode };
+export type LeagueFormState = { value: string; error?: ErrorCode; isPublic?: boolean };
 
 async function leagues(back: string) {
   const user = await getCurrentUser();
@@ -32,6 +33,7 @@ export async function createLeagueAction(
   data: FormData,
 ): Promise<LeagueFormState> {
   const value = formText(data, "name");
+  const isPublic = formText(data, "public") === "1";
   const competitionSlugs = data
     .getAll("competition")
     .filter((v): v is string => typeof v === "string");
@@ -43,11 +45,12 @@ export async function createLeagueAction(
       await createLeague({ leagues: repository }).execute({
         name: value,
         competitionSlugs,
+        isPublic,
       })
     ).id;
   } catch (error) {
     // Only known error codes are expected here; anything else is a bug and stays visible.
-    if (error instanceof UseCaseError) return { value, error: error.code };
+    if (error instanceof UseCaseError) return { value, error: error.code, isPublic };
     throw error;
   }
   redirect(`/ligues/${id}?onglet=inviter&nouvelle=1`);
@@ -125,4 +128,20 @@ export async function addLeagueCompetitionAction(
   // From an event, the player goes back to predict; from the league, the league shows it.
   const back = formText(data, "back");
   redirect(back ? safeRedirectPath(back) : `/ligues/${leagueId}?ajoutee=1`);
+}
+
+/** Joins a public league from the list, then opens it. */
+export async function joinPublicLeagueAction(
+  _: LeagueFormState,
+  data: FormData,
+): Promise<LeagueFormState> {
+  const leagueId = formText(data, "leagueId");
+  const repository = await leagues("/ligues");
+  try {
+    await joinPublicLeague({ leagues: repository }).execute({ leagueId });
+  } catch (error) {
+    if (error instanceof UseCaseError) return { value: leagueId, error: error.code };
+    throw error;
+  }
+  redirect(`/ligues/${leagueId}`);
 }

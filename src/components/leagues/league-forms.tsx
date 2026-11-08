@@ -9,6 +9,7 @@ import { SubmitButton } from "@/components/account/submit-button";
 import {
   addLeagueCompetitionAction,
   createLeagueAction,
+  joinPublicLeagueAction,
   handOverLeagueAction,
   joinLeagueAction,
   leaveLeagueAction,
@@ -35,6 +36,22 @@ export function CreateLeagueForm({ competitionSlugs }: { competitionSlugs: strin
         maxLength={60}
         autoComplete="off"
       />
+      <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-2xl border-2 border-border bg-card px-3.5 py-3 has-checked:border-primary">
+        <input
+          type="checkbox"
+          name="public"
+          value="1"
+          defaultChecked={state.isPublic}
+          aria-describedby="public-hint"
+          className="mt-0.5 size-5 shrink-0 accent-primary"
+        />
+        <span className="flex flex-col gap-0.5">
+          <span className="font-bold">{messages.leagues.publicLabel}</span>
+          <span id="public-hint" className="text-sm text-muted-foreground">
+            {messages.leagues.publicHint}
+          </span>
+        </span>
+      </label>
       <SubmitButton pendingLabel={messages.leagues.creating}>
         {messages.leagues.createSubmit}
       </SubmitButton>
@@ -235,6 +252,32 @@ export function AddToMyLeagueForm({
       </SubmitButton>
       {state.error && (
         <p role="alert" className="text-sm font-semibold text-accent-text">
+          {messages.errors[state.error]}
+        </p>
+      )}
+    </form>
+  );
+}
+
+/** One tap to join a public league, from the list. */
+export function JoinPublicLeagueForm({ leagueId, name }: { leagueId: string; name: string }) {
+  const [state, action, pending] = useActionState<LeagueFormState, FormData>(
+    joinPublicLeagueAction,
+    { value: leagueId },
+  );
+  return (
+    <form action={action} className="flex shrink-0 flex-col items-end gap-1">
+      <input type="hidden" name="leagueId" value={leagueId} />
+      <button
+        type="submit"
+        disabled={pending}
+        aria-label={messages.leagues.publicJoinLabel(name)}
+        className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60"
+      >
+        {pending ? messages.leagues.publicJoining : messages.leagues.publicJoin}
+      </button>
+      {state.error && (
+        <p role="alert" className="text-xs font-semibold text-accent-text">
           {messages.errors[state.error]}
         </p>
       )}
