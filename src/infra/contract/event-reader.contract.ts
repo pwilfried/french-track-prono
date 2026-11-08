@@ -83,5 +83,13 @@ export function eventReaderContract(
       ).toEqual(event.subDisciplines);
       expect((await reader.findBySlug(knownCompetition, single!.slug))?.subDisciplines).toEqual([]);
     });
+
+    it("finds an event by its slug alone, in any competition", async () => {
+      const reader = create();
+      const [first] = await reader.listByCompetition(knownCompetition);
+
+      expect((await reader.findBySlug(null, first!.slug))?.id).toBe(first!.id);
+      expect(await reader.findBySlug(null, "no-such-event")).toBeNull();
+    });
   });
 }

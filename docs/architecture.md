@@ -234,6 +234,12 @@ performance, ajustable par l'admin (`/admin/disciplines`, fonction `set_discipli
 la table. Le domaine lit et écrit les marques (`parseMark`, `formatMark` dans
 `src/domain/discipline.ts`).
 
+Compétitions (v0.9, issue #266) : l'admin crée une compétition (`scope` internationale ou
+française, fuseau horaire), ses épreuves (slug unique sur toutes les compétitions) et ses engagés
+(`competition_athletes`, remplie aussi par chaque ligne de liste de départ). Les candidats d'une
+liste de départ sont les engagés de la compétition (tout le monde tant que personne n'est engagé).
+La compétition mise en avant est la prochaine par date (`nextCompetition`).
+
 Tours (v0.8, issue #198) : une série, un quart ou une demi-finale pointe vers le tour qu'il
 alimente (`events.parent_id`). On ne pronostique que les finales, et une finale seulement quand
 tous ses tours précédents sont terminés (`is_predictable()`, vérifié par le trigger de

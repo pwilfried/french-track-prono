@@ -15,11 +15,16 @@ export type StartListAthleteFixture = Omit<Candidate, "fit"> & {
 export function createInMemoryStartListStore(athletes: StartListAthleteFixture[]) {
   const stored = new Map<string, StartListEntry[]>();
   const inUse = new Map<string, string[]>();
+  const entered = new Map<string, string[]>();
   const rounds = new Map<string, { next: string; ranked: { athleteId: string; rank: number }[] }>();
   return {
     /** Declares that a round leads to `next`, with its result. */
     setRound(eventId: string, next: string, ranked: { athleteId: string; rank: number }[]) {
       rounds.set(eventId, { next, ranked });
+    },
+    /** Enters athletes in the competition of an event: candidates are then only those. */
+    enter(eventId: string, athleteIds: string[]) {
+      entered.set(eventId, athleteIds);
     },
     /** Marks athletes of an event as predicted or ranked, so they cannot leave its start list. */
     markInUse(eventId: string, athleteIds: string[]) {
@@ -27,9 +32,10 @@ export function createInMemoryStartListStore(athletes: StartListAthleteFixture[]
     },
     session(options: { isAdmin: boolean }): StartListRepository {
       return {
-        async candidates(gender, discipline) {
+        async candidates(gender, discipline, eventId) {
+          const only = entered.get(eventId);
           return athletes
-            .filter((a) => a.gender === gender)
+            .filter((a) => a.gender === gender && (!only || only.includes(a.athleteId)))
             .map(({ athleteId, name, countryCode, disciplines = [] }) => ({
               athleteId,
               name,

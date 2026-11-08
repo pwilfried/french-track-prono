@@ -28,8 +28,8 @@ test("a visitor opens an athlete from a start list and sees a PR and a recent ra
   await expect(records.getByText("Record perso").first()).toBeVisible();
   await expect(records.getByText(/^\d+\.\d{2}$/).first()).toBeVisible();
   const races = page.getByRole("region", { name: "Dernières courses" }).getByRole("listitem");
-  await expect(races.first()).toContainText(`Meeting ${tag}`);
-  await expect(races.first()).toContainText("10.81");
+  // Other suites may leave a more recent race for her, so look for this meeting's race by name.
+  await expect(races.filter({ hasText: `Meeting ${tag}` })).toContainText("10.81");
 
   sql(`delete from competitions where slug = '${tag}'`);
 });

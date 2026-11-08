@@ -18,7 +18,7 @@ import {
   createSupabaseProfileRepository,
 } from "@/infra";
 
-import { COMPETITION_SLUG, COMPETITION_TIME_ZONE } from "../../competition";
+import { COMPETITION_TIME_ZONE } from "../../competition";
 import { messages } from "../../messages.fr";
 import { adminOnly } from "../guard";
 import { ComputeForm } from "./compute-form";
@@ -41,7 +41,7 @@ async function load(
   try {
     const event = await getEvent({
       events: createSupabaseEventReader(createPublicSupabaseClient()),
-    }).execute({ competitionSlug: COMPETITION_SLUG, eventSlug: slug });
+    }).execute({ competitionSlug: null, eventSlug: slug });
     const points = createSupabasePointsRepository(client);
     const lines = await points.findEventScores(event.id);
     const canPreview =

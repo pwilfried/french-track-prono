@@ -283,21 +283,30 @@ export const messages = {
       run_scoring: "Points calculés",
       set_tolerance: "Tolérance modifiée",
       edit_athlete: "Athlète modifié",
+      edit_competition: "Compétition modifiée",
     },
     noEvent: "Épreuve supprimée",
     size: (
-      kind: "set_start_list" | "set_results" | "run_scoring" | "set_tolerance" | "edit_athlete",
+      kind:
+        | "set_start_list"
+        | "set_results"
+        | "run_scoring"
+        | "set_tolerance"
+        | "edit_athlete"
+        | "edit_competition",
       n: number,
     ) =>
       kind === "set_tolerance"
         ? "barème"
         : kind === "edit_athlete"
           ? "fiche athlète"
-          : kind === "run_scoring"
-            ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
-            : kind === "set_results"
-              ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
-              : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
+          : kind === "edit_competition"
+            ? "compétition"
+            : kind === "run_scoring"
+              ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
+              : kind === "set_results"
+                ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
+                : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
     by: (pseudo: string | null) => (pseudo ? `par ${pseudo}` : "par un compte supprimé"),
   },
   import: {
@@ -396,6 +405,60 @@ export const messages = {
     create: "Nouvel athlète",
     createSubmit: "Créer l'athlète",
     mainDiscipline: "Discipline principale",
+  },
+  adminCompetitions: {
+    link: "Compétitions",
+    title: "Compétitions",
+    subtitle: "La prochaine par date est mise en avant sur l'accueil.",
+    sections: "Sections du back-office",
+    section: {
+      competitions: "Compétitions",
+      athletes: "Athlètes",
+      disciplines: "Disciplines",
+      history: "Historique",
+    },
+    create: "+ Nouvelle compétition",
+    newTitle: "Nouvelle compétition",
+    createSubmit: "Créer la compétition",
+    featured: "★ À la une",
+    list: { coming: "À venir", past: "Terminées" },
+    none: "Aucune compétition.",
+    scope: { international: "Internationale", france: "Française" },
+    type: "Type",
+    city: "Ville",
+    startsOn: "Début",
+    endsOn: "Fin",
+    timeZone: "Fuseau horaire",
+    timeZoneHint: "Les horaires des épreuves se saisissent dans l'heure locale de la compétition.",
+    dates: (from: string, to: string) => {
+      const day = (d: string) =>
+        new Date(`${d}T12:00:00Z`).toLocaleDateString("fr-FR", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          timeZone: "UTC",
+        });
+      return from === to ? day(from) : `${day(from)} – ${day(to)}`;
+    },
+    events: "épreuves",
+    entered: "engagés",
+    tabs: "Contenu de la compétition",
+    eventsTab: (n: number) => `Épreuves (${n})`,
+    athletesTab: (n: number) => `Engagés (${n})`,
+    noEvent: "Aucune épreuve : ajoute la première ci-dessous.",
+    entries: (n: number) => `${n} au départ`,
+    addEvent: "+ Ajouter une épreuve",
+    discipline: "Discipline",
+    round: "Tour",
+    localStart: "Horaire (local)",
+    lock: "Verrouillage",
+    lockBefore: (m: number) => (m === 0 ? "Au départ" : `${m} min avant`),
+    addEventSubmit: "Ajouter l'épreuve",
+    enter: "Engager",
+    enterHint: "Les listes de départ se choisissent parmi les engagés. Un athlète absent ?",
+    noAthlete: "Personne n'est engagé : cherche un athlète ci-dessus.",
+    athletesList: "Athlètes engagés",
+    withdraw: (name: string) => `Retirer ${name} de la compétition`,
   },
   myPredictions: {
     predicted: "✓ Pronostiqué",
@@ -640,6 +703,13 @@ export const messages = {
     ADMIN_LOG_UNAVAILABLE: "L'historique n'a pas pu être chargé. Réessaie.",
     ATHLETE_NOT_FOUND: "Cet athlète n'existe pas.",
     TOLERANCE_INVALID: "La tolérance doit être un nombre supérieur à 0.",
+    COMPETITION_INVALID:
+      "Il faut un nom, un type, des dates dans l'ordre, un fuseau horaire valide et un code pays à trois lettres (facultatif).",
+    COMPETITION_NOT_FOUND: "Cette compétition n'existe pas.",
+    COMPETITIONS_UNAVAILABLE: "Les compétitions n'ont pas pu être chargées. Réessaie.",
+    EVENT_INVALID: "Il faut une discipline, une catégorie, un tour, un horaire et un verrouillage.",
+    ATHLETE_ON_START_LIST:
+      "Cet athlète est sur une liste de départ de la compétition : retire-le d'abord.",
     ATHLETE_INVALID: "Il faut un nom, un code pays à trois lettres (FRA, USA…) et un genre.",
     MARK_INVALID:
       "Cette marque ne correspond pas à la discipline (ex. 10.62, 1:56.70, 2.04, 8125).",

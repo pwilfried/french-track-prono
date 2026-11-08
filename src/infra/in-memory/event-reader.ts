@@ -8,6 +8,9 @@ export function createInMemoryEventReader(
   return {
     listByCompetition: async (competitionSlug) => eventsByCompetition[competitionSlug] ?? [],
     findBySlug: async (competitionSlug, eventSlug) =>
-      eventsByCompetition[competitionSlug]?.find((e) => e.slug === eventSlug) ?? null,
+      (competitionSlug === null
+        ? Object.values(eventsByCompetition).flat()
+        : (eventsByCompetition[competitionSlug] ?? [])
+      ).find((e) => e.slug === eventSlug) ?? null,
   };
 }

@@ -31,14 +31,16 @@ export function startListRepositoryContract(name: string, world: () => Promise<S
     it("lists the athletes of a gender as candidates, with how they fit the discipline", async () => {
       const w = await world();
 
-      const candidates = await w.admin.candidates(w.gender, w.discipline);
+      const candidates = await w.admin.candidates(w.gender, w.discipline, w.eventId);
 
       expect(candidates.map((c) => c.athleteId)).toContain(w.candidateId);
       expect(new Set(candidates.map((c) => c.athleteId)).size).toBe(candidates.length);
       const runner = candidates.find((c) => c.athleteId === w.candidateId);
       expect(runner?.fit === "primary" || runner?.fit === "discipline").toBe(true);
       expect(
-        (await w.admin.candidates(w.gender, "Discipline inconnue")).every((c) => c.fit === "other"),
+        (await w.admin.candidates(w.gender, "Discipline inconnue", w.eventId)).every(
+          (c) => c.fit === "other",
+        ),
       ).toBe(true);
     });
 
@@ -81,7 +83,7 @@ export function startListRepositoryContract(name: string, world: () => Promise<S
       expect((await w.admin.find(w.eventId)).sort(byId)).toEqual(before);
     });
 
-    it("lets an admin add an athlete, who becomes a candidate, and refuses a player", async () => {
+    it("lets an admin add an athlete, then put them on the start list, and refuses a player", async () => {
       const w = await world();
       const tag = crypto.randomUUID().slice(0, 8);
       const athlete = {
@@ -95,13 +97,9 @@ export function startListRepositoryContract(name: string, world: () => Promise<S
       const created = await w.admin.createAthlete(athlete);
 
       expect(created).not.toBe("not_admin");
-      const candidates = await w.admin.candidates(w.gender, w.discipline);
-      expect(candidates).toContainEqual({
-        athleteId: (created as { athleteId: string }).athleteId,
-        name: athlete.name,
-        countryCode: "FRA",
-        fit: "other",
-      });
+      const { athleteId } = created as { athleteId: string };
+      expect(await w.admin.replace(w.eventId, [{ athleteId, seasonBest: null }])).toBe("saved");
+      expect((await w.admin.find(w.eventId)).map((e) => e.athleteId)).toEqual([athleteId]);
     });
 
     it("qualifies the first of a round for the next one, and refuses a round leading nowhere", async () => {

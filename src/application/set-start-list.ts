@@ -19,8 +19,11 @@ export type StartListOutcome = "saved" | "not_admin" | "athlete_in_use";
 
 /** Port: start lists. Real adapter = Supabase (the admin's own session), fake = in memory. */
 export interface StartListRepository {
-  /** Every athlete of a gender, with how they fit the discipline, in any order. */
-  candidates(gender: EventGender, discipline: string): Promise<Candidate[]>;
+  /**
+   * The athletes of a gender entered in the event's competition (every athlete of the gender when
+   * the competition has nobody entered yet), with how they fit the discipline, in any order.
+   */
+  candidates(gender: EventGender, discipline: string, eventId: string): Promise<Candidate[]>;
   /** The start list of an event, in any order; empty when not entered yet. */
   find(eventId: string): Promise<StartListEntry[]>;
   /**
