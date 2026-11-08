@@ -130,6 +130,13 @@ export default async function ProfilePage() {
           {messages.points.leaguesLink}
           <span aria-hidden="true">›</span>
         </Link>
+        <Link
+          href="/regles"
+          className="flex min-h-11 items-center justify-between rounded-card border border-border bg-card px-4 font-semibold"
+        >
+          {messages.rules.link}
+          <span aria-hidden="true">›</span>
+        </Link>
       </section>
 
       <section aria-labelledby="badges" className="flex flex-col gap-2">

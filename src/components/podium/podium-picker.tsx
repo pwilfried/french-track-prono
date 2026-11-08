@@ -42,6 +42,7 @@ export function PodiumPicker({
   disabled = false,
   onChange,
   title = messages.picker.podium,
+  helpHref,
 }: {
   athletes: PickerAthlete[];
   initialDraft?: PodiumDraft;
@@ -50,6 +51,8 @@ export function PodiumPicker({
   onChange?: (draft: PodiumDraft) => void;
   /** Heading above the steps ("Ton podium" by default). */
   title?: string;
+  /** Where the « ? » button next to the heading leads (the rules). */
+  helpHref?: string;
 }) {
   const [draft, setDraft] = useState(initialDraft);
   const [selected, setSelected] = useState<Step | null>(null);
@@ -74,9 +77,20 @@ export function PodiumPicker({
 
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="px-4 text-xs font-bold tracking-wider text-muted-foreground uppercase">
-        {title}
-      </h2>
+      <div className="flex items-center justify-between gap-2 px-4">
+        <h2 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+          {title}
+        </h2>
+        {helpHref && (
+          <a
+            href={helpHref}
+            aria-label={messages.rules.helpLabel}
+            className="grid size-11 place-items-center rounded-full bg-brand-soft font-extrabold text-brand-ink"
+          >
+            ?
+          </a>
+        )}
+      </div>
       <div className="grid grid-cols-3 items-end gap-2.5 px-4">
         {DISPLAY.map((step) => {
           const athlete = nameOf(draft[KEY[step]]);
