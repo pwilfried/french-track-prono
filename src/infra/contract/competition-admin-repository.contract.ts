@@ -53,6 +53,7 @@ export function competitionAdminRepositoryContract(
         countryCode: "FRA",
         timeZone: "Europe/Paris",
         events: 1,
+        finals: 1,
       });
       expect(file?.eventList).toEqual([
         {
@@ -65,6 +66,13 @@ export function competitionAdminRepositoryContract(
         },
       ]);
       expect((await w.admin.list()).map((c) => c.slug)).toContain(slug);
+
+      // A heat counts as an event, not as a final players can predict (#296).
+      await w.admin.addEvent(slug, { ...event, slug: `${event.slug}-series`, round: "series" });
+      expect((await w.admin.list()).find((c) => c.slug === slug)).toMatchObject({
+        events: 2,
+        finals: 1,
+      });
       expect(await w.admin.find("no-such-competition")).toBeNull();
     });
 

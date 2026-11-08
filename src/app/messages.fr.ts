@@ -528,6 +528,7 @@ export const messages = {
     mainDiscipline: "Discipline principale",
   },
   adminCompetitions: {
+    needsFinal: "Pas de prono : ajoute la finale",
     title: "Compétitions",
     subtitle: "La prochaine par date est mise en avant sur l'accueil.",
     sections: "Sections du back-office",

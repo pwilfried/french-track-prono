@@ -36,6 +36,17 @@ test("an admin creates a French competition, an event and its entered athletes, 
   await page.getByRole("button", { name: "Ajouter l'épreuve" }).click();
   await expect(page.getByRole("list", { name: "épreuves" })).toContainText("100 m femmes · Finale");
 
+  // A heat without its final is flagged: players only predict finals (#296).
+  await page.getByText("+ Ajouter une épreuve").click();
+  await page.getByLabel("Discipline").selectOption("200 m");
+  await page.getByLabel("Catégorie").selectOption("F");
+  await page.getByLabel("Tour").selectOption("series");
+  await page.getByLabel("Horaire (local)").fill("2099-06-27T18:00");
+  await page.getByRole("button", { name: "Ajouter l'épreuve" }).click();
+  await expect(
+    page.getByRole("list", { name: "épreuves" }).getByRole("link", { name: /200 m femmes/ }),
+  ).toContainText("Pas de prono : ajoute la finale");
+
   // Two entered athletes.
   await page.getByRole("link", { name: /Engagés/ }).click();
   for (const athlete of ["Sha'Carri Richardson", "Julien Alfred"]) {

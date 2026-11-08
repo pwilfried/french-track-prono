@@ -23,6 +23,7 @@ function repository(isAdmin = true) {
         endsOn: "2027-07-02",
         timeZone: "Europe/Paris",
         events: 0,
+        finals: 0,
         entered: 0,
       },
       {
@@ -35,6 +36,7 @@ function repository(isAdmin = true) {
         endsOn: "2026-09-13",
         timeZone: "Europe/Budapest",
         events: 28,
+        finals: 28,
         entered: 90,
       },
       {
@@ -47,6 +49,7 @@ function repository(isAdmin = true) {
         endsOn: "2027-06-27",
         timeZone: "Europe/Paris",
         events: 2,
+        finals: 2,
         entered: 8,
       },
     ],
@@ -62,6 +65,7 @@ function repository(isAdmin = true) {
             endsOn: "2027-06-27",
             timeZone: "Europe/Paris",
             events: 2,
+            finals: 2,
             entered: 2,
             eventList: [
               {

@@ -150,6 +150,17 @@ export default async function AdminCompetitionPage({
                         {messages.adminCompetitions.entries(e.entries)}
                       </span>
                     </span>
+                    {e.round !== "final" &&
+                      !file.eventList.some(
+                        (f) =>
+                          f.round === "final" &&
+                          f.discipline === e.discipline &&
+                          f.gender === e.gender,
+                      ) && (
+                        <span className="rounded-full bg-gold-soft px-2.5 py-1 text-xs font-bold text-gold-ink">
+                          {messages.adminCompetitions.needsFinal}
+                        </span>
+                      )}
                     <span aria-hidden="true">›</span>
                   </Link>
                 </li>

@@ -25,6 +25,7 @@ export function createInMemoryCompetitionAdminStore(athletes: EnteredAthlete[]) 
           return stored.map(({ eventList, athletes: entered, ...c }) => ({
             ...c,
             events: eventList.length,
+            finals: eventList.filter((e) => e.round === "final").length,
             entered: entered.length,
           }));
         },
@@ -34,6 +35,7 @@ export function createInMemoryCompetitionAdminStore(athletes: EnteredAthlete[]) 
             ? {
                 ...structuredClone(found),
                 events: found.eventList.length,
+                finals: found.eventList.filter((e) => e.round === "final").length,
                 entered: found.athletes.length,
               }
             : null;
@@ -41,7 +43,15 @@ export function createInMemoryCompetitionAdminStore(athletes: EnteredAthlete[]) 
         async create(c) {
           if (!options.isAdmin) return "not_admin";
           const slug = free(c.slug, (s) => !!find(s));
-          stored.push({ ...c, slug, events: 0, entered: 0, eventList: [], athletes: [] });
+          stored.push({
+            ...c,
+            slug,
+            events: 0,
+            finals: 0,
+            entered: 0,
+            eventList: [],
+            athletes: [],
+          });
           return slug;
         },
         async addEvent(competition, event) {
