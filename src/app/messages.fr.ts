@@ -282,16 +282,22 @@ export const messages = {
       set_results: "Résultat saisi",
       run_scoring: "Points calculés",
       set_tolerance: "Tolérance modifiée",
+      edit_athlete: "Athlète modifié",
     },
     noEvent: "Épreuve supprimée",
-    size: (kind: "set_start_list" | "set_results" | "run_scoring" | "set_tolerance", n: number) =>
+    size: (
+      kind: "set_start_list" | "set_results" | "run_scoring" | "set_tolerance" | "edit_athlete",
+      n: number,
+    ) =>
       kind === "set_tolerance"
         ? "barème"
-        : kind === "run_scoring"
-          ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
-          : kind === "set_results"
-            ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
-            : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
+        : kind === "edit_athlete"
+          ? "fiche athlète"
+          : kind === "run_scoring"
+            ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
+            : kind === "set_results"
+              ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
+              : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
     by: (pseudo: string | null) => (pseudo ? `par ${pseudo}` : "par un compte supprimé"),
   },
   import: {
@@ -369,6 +375,24 @@ export const messages = {
     save: "Enregistrer",
     saving: "…",
     saved: "✓ Enregistré",
+  },
+  adminAthletes: {
+    link: "Athlètes",
+    title: "Athlètes",
+    saved: "✓ Enregistré.",
+    identity: "Identité",
+    name: "Nom",
+    gender: "Catégorie",
+    disciplines: "Disciplines, PR et SB",
+    noDiscipline: "Aucune discipline : ajoute-en une ci-dessous.",
+    main: "Principale",
+    makeMain: "Principale",
+    remove: (discipline: string) => `Retirer ${discipline}`,
+    mark: (kind: string, discipline: string) => `${kind} au ${discipline}`,
+    date: "Date",
+    saveRecords: (discipline: string) => `Enregistrer PR et SB du ${discipline}`,
+    addDiscipline: "Ajouter une discipline",
+    choose: "Choisir…",
   },
   myPredictions: {
     predicted: "✓ Pronostiqué",
@@ -613,6 +637,10 @@ export const messages = {
     ADMIN_LOG_UNAVAILABLE: "L'historique n'a pas pu être chargé. Réessaie.",
     ATHLETE_NOT_FOUND: "Cet athlète n'existe pas.",
     TOLERANCE_INVALID: "La tolérance doit être un nombre supérieur à 0.",
+    ATHLETE_INVALID: "Il faut un nom, un code pays à trois lettres (FRA, USA…) et un genre.",
+    MARK_INVALID:
+      "Cette marque ne correspond pas à la discipline (ex. 10.62, 1:56.70, 2.04, 8125).",
+    DATE_INVALID: "La date doit être au format AAAA-MM-JJ.",
     DISCIPLINE_NOT_FOUND: "Cette discipline n'existe pas.",
     DISCIPLINES_UNAVAILABLE: "Les disciplines n'ont pas pu être chargées. Réessaie.",
     ATHLETES_UNAVAILABLE: "La fiche athlète n'a pas pu être chargée. Réessaie.",

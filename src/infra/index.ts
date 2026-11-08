@@ -43,3 +43,5 @@ export { createInMemoryAthleteReader } from "./in-memory/athlete-reader";
 export { createSupabaseAthleteReader } from "./supabase/athlete-reader";
 export { createInMemoryDisciplineStore } from "./in-memory/discipline-repository";
 export { createSupabaseDisciplineRepository } from "./supabase/discipline-repository";
+export { createInMemoryAthleteAdminStore } from "./in-memory/athlete-admin-repository";
+export { createSupabaseAthleteAdminRepository } from "./supabase/athlete-admin-repository";

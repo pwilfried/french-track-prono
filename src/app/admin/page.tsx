@@ -101,6 +101,12 @@ export default async function AdminPage({
           >
             {messages.disciplines.link}
           </Link>
+          <Link
+            href="/admin/athletes"
+            className="ml-2 mt-2 inline-flex min-h-11 items-center rounded-full bg-brand-soft px-4 text-sm font-bold text-brand-ink"
+          >
+            {messages.adminAthletes.link}
+          </Link>
         </div>
       </header>
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
