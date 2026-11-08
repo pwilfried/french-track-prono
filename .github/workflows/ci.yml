@@ -64,7 +64,8 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned to skip the flaky `releases/latest` GitHub API call that 503s.
+          version: 3.0.0
 
       - uses: actions/setup-node@v4
         with:

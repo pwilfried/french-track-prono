@@ -49,7 +49,8 @@ jobs:
       - uses: supabase/setup-cli@v1
         if: steps.secrets.outputs.ready == 'true'
         with:
-          version: latest
+          # Pinned to skip the flaky `releases/latest` GitHub API call that 503s.
+          version: 3.0.0
 
       - name: Link the production project
         if: steps.secrets.outputs.ready == 'true'
@@ -86,7 +87,8 @@ jobs:
       - uses: supabase/setup-cli@v1
         if: steps.secrets.outputs.ready == 'true'
         with:
-          version: latest
+          # Pinned to skip the flaky `releases/latest` GitHub API call that 503s.
+          version: 3.0.0
 
       - name: Link the production project
         if: steps.secrets.outputs.ready == 'true'
