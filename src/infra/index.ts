@@ -32,3 +32,8 @@ export {
   type PredictionEventFixture,
 } from "./in-memory/prediction-repository";
 export { createSupabasePredictionRepository } from "./supabase/prediction-repository";
+export {
+  createInMemoryStartListStore,
+  type StartListAthleteFixture,
+} from "./in-memory/start-list-repository";
+export { createSupabaseStartListRepository } from "./supabase/start-list-repository";

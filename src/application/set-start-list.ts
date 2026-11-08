@@ -1,0 +1,45 @@
+import type { EventGender } from "@/domain/event";
+import { isValidStartList } from "@/domain/start-list";
+
+import { UseCaseError } from "./errors";
+
+/** One athlete on a start list, as the admin types it. */
+export type StartListEntry = { athleteId: string; seasonBest: string | null };
+
+/** An athlete the admin can put on a start list. */
+export type Candidate = { athleteId: string; name: string; countryCode: string };
+
+export type StartListOutcome = "saved" | "not_admin" | "athlete_in_use";
+
+/** Port: start lists. Real adapter = Supabase (the admin's own session), fake = in memory. */
+export interface StartListRepository {
+  /** Every athlete of a gender, by name. */
+  candidates(gender: EventGender): Promise<Candidate[]>;
+  /** The start list of an event, in any order; empty when not entered yet. */
+  find(eventId: string): Promise<StartListEntry[]>;
+  /**
+   * Replaces the start list of an event in one go. An athlete already predicted or in the result
+   * cannot be removed (`athlete_in_use`, nothing changes).
+   */
+  replace(eventId: string, entries: StartListEntry[]): Promise<StartListOutcome>;
+}
+
+const CODES = { not_admin: "NOT_ADMIN", athlete_in_use: "START_LIST_IN_USE" } as const;
+
+export function setStartList(ports: { startLists: StartListRepository }) {
+  return {
+    async execute(input: {
+      eventId: string;
+      entries: StartListEntry[];
+    }): Promise<StartListEntry[]> {
+      const entries = input.entries.map((e) => ({
+        athleteId: e.athleteId,
+        seasonBest: e.seasonBest?.trim() || null,
+      }));
+      if (!isValidStartList(entries)) throw new UseCaseError("START_LIST_INVALID");
+      const outcome = await ports.startLists.replace(input.eventId, entries);
+      if (outcome !== "saved") throw new UseCaseError(CODES[outcome]);
+      return entries;
+    },
+  };
+}

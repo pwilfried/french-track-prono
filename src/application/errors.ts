@@ -36,7 +36,10 @@ export type ErrorCode =
   | "PREDICTION_LOCKED"
   | "JOKER_ALREADY_USED"
   | "PREDICTION_UNAVAILABLE"
-  | "DELETION_NOT_CONFIRMED";
+  | "DELETION_NOT_CONFIRMED"
+  | "START_LIST_INVALID"
+  | "START_LIST_IN_USE"
+  | "START_LIST_UNAVAILABLE";
 
 export class UseCaseError extends Error {
   constructor(readonly code: ErrorCode) {
