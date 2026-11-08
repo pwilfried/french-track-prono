@@ -209,3 +209,35 @@ export function AddLeagueCompetitionForm({
     </form>
   );
 }
+
+/** From an event: adds its competition to one of the player's leagues, then comes back. */
+export function AddToMyLeagueForm({
+  leagueId,
+  leagueName,
+  competitionSlug,
+  back,
+}: {
+  leagueId: string;
+  leagueName: string;
+  competitionSlug: string;
+  back: string;
+}) {
+  const [state, action] = useActionState<LeagueFormState, FormData>(addLeagueCompetitionAction, {
+    value: competitionSlug,
+  });
+  return (
+    <form action={action} className="flex flex-col gap-1">
+      <input type="hidden" name="leagueId" value={leagueId} />
+      <input type="hidden" name="competition" value={competitionSlug} />
+      <input type="hidden" name="back" value={back} />
+      <SubmitButton pendingLabel={messages.leagues.adding} variant="muted">
+        {messages.prediction.leagueAdd(leagueName)}
+      </SubmitButton>
+      {state.error && (
+        <p role="alert" className="text-sm font-semibold text-accent-text">
+          {messages.errors[state.error]}
+        </p>
+      )}
+    </form>
+  );
+}

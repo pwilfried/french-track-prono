@@ -10,7 +10,10 @@ export type EventFixture = { eventId: string; athleteIds: string[]; outsiderId: 
 
 export type PredictionWorld = {
   competitionSlug: string;
+  /** A player in a league counting the competition: he may predict. */
   newPlayer(): Promise<Player>;
+  /** A player in no league of the competition (#311). */
+  newPlayerWithoutLeague(): Promise<Player>;
   /** At least two events still open, in the same competition. */
   openEvents: EventFixture[];
   /** An event already locked. */
@@ -114,6 +117,14 @@ export function predictionRepositoryContract(name: string, world: () => Promise<
           [w.openEvents[1]!.eventId, false],
         ].sort(),
       );
+    });
+
+    it("refuses a prediction from a player in no league of the competition", async () => {
+      const w = await world();
+      const loner = await w.newPlayerWithoutLeague();
+
+      expect(await loner.predictions.save(prediction(loner, w.openEvents[0]!))).toBe("no_league");
+      expect(await loner.predictions.find(loner.userId, w.openEvents[0]!.eventId)).toBeNull();
     });
 
     it("refuses a prediction on a locked event", async () => {

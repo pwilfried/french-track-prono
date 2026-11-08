@@ -82,3 +82,14 @@ export function createTestEvent(): {
     outsiderId,
   };
 }
+
+/** Puts a test player in a league of his own counting the competition, so he may predict (#311). */
+export function joinTestLeague(userId: string, competitionSlug: string): void {
+  sql(`with l as (
+      insert into leagues (name, owner_id) values ('Ligue de test', '${userId}') returning id
+    ), m as (
+      insert into league_members (league_id, user_id, role) select id, '${userId}', 'owner' from l
+    )
+    insert into league_competitions (league_id, competition_id)
+    select l.id, c.id from l, competitions c where c.slug = '${competitionSlug}'`);
+}

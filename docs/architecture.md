@@ -213,7 +213,10 @@ avant de partir (seul, partir supprime la ligue). Depuis la v0.9 (#267), une lig
 plusieurs compétitions choisies par son créateur (`create_league(nom, slugs[])`) et son classement
 additionne leurs points. Depuis la v0.7 (#312), une ligue peut aussi naître sans compétition :
 son créateur ajoute ensuite des compétitions à venir (`add_league_competition`, code FT009 pour une
-compétition déjà commencée). L'accueil liste les compétitions par type (internationales, françaises) et
+compétition déjà commencée). Depuis la v0.7 (#311), un joueur ne pronostique une épreuve que
+s'il est dans une ligue qui compte sa compétition (déclencheur `enforce_prediction_lock`, code
+FT011, vérifié pour le rôle `authenticated` seulement) ; le classement général compte tous les
+points, toutes compétitions confondues (#319). L'accueil liste les compétitions par type (internationales, françaises) et
 les pages suivent la prochaine compétition par date (`src/app/competition.ts`). Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
 calculé en TypeScript à partir des lignes de points (pas de vue SQL).
 
