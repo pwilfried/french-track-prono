@@ -284,6 +284,13 @@ export const messages = {
     search: "Rechercher un athlète",
     matches: "Athlètes trouvés",
     noMatch: "Aucun athlète ne correspond.",
+    ofDiscipline: (discipline: string, n: number) =>
+      `${n <= 1 ? "Athlète" : "Athlètes"} du ${discipline} (${n})`,
+    noneOfDiscipline: (discipline: string) =>
+      `Aucun athlète n'a encore le ${discipline} dans ses disciplines : voici toute la catégorie.`,
+    everyone: (n: number) => `Toute la catégorie (${n})`,
+    showEveryone: "Voir tous",
+    showDiscipline: "Seulement la discipline",
     addOne: "Ajouter",
     alreadyIn: "✓ Au départ",
     duplicate: (name: string) => `${name} est déjà au départ.`,

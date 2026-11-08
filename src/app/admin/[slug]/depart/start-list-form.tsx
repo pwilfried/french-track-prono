@@ -25,9 +25,12 @@ export function StartListForm({
   slug,
   candidates,
   initial,
+  discipline,
 }: {
   eventId: string;
   slug: string;
+  /** The event's discipline, to name its athletes. */
+  discipline: string;
   /** Those who run the discipline first (see listStartListCandidates). */
   candidates: Candidate[];
   initial: Chosen[];
@@ -36,10 +39,16 @@ export function StartListForm({
   const [chosen, setChosen] = useState<Chosen[]>(initial);
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
-  // Without a search, the athletes of the discipline; a search looks through everybody.
+  const [everyone, setEveryone] = useState(false);
+  // Without a search, every athlete of the discipline (#301); a search looks through everybody.
   const runners = candidates.filter((c) => c.fit !== "other");
-  const pool = query.trim() || runners.length === 0 ? candidates : runners;
-  const matches = searchAthletes(pool, query).slice(0, SHOWN);
+  const searching = query.trim() !== "";
+  const byDiscipline = !searching && !everyone && runners.length > 0;
+  const matches = searching
+    ? searchAthletes(candidates, query).slice(0, SHOWN)
+    : byDiscipline
+      ? runners
+      : candidates;
   const full = chosen.length >= MAX_START_LIST;
 
   const add = (athlete: Athlete) => {
@@ -147,6 +156,26 @@ export function StartListForm({
           <p role="alert" className="text-sm font-semibold text-accent-text">
             {notice}
           </p>
+        )}
+        {!searching && (
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold">
+              {byDiscipline
+                ? messages.startList.ofDiscipline(discipline, runners.length)
+                : runners.length === 0
+                  ? messages.startList.noneOfDiscipline(discipline)
+                  : messages.startList.everyone(candidates.length)}
+            </p>
+            {runners.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setEveryone(!everyone)}
+                className="min-h-11 shrink-0 text-sm font-bold underline"
+              >
+                {everyone ? messages.startList.showDiscipline : messages.startList.showEveryone}
+              </button>
+            )}
+          </div>
         )}
         {matches.length === 0 ? (
           <p className="text-sm text-muted-foreground">{messages.startList.noMatch}</p>

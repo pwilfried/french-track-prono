@@ -95,6 +95,7 @@ export default async function StartListPage({
               eventId={loaded.event.id}
               slug={slug}
               candidates={loaded.candidates}
+              discipline={loaded.event.discipline}
               initial={loaded.event.entries.map((e) => ({
                 athleteId: e.athleteId,
                 name: e.name,
