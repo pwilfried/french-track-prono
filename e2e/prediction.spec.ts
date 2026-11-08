@@ -53,6 +53,13 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   await expect(preview.getByRole("listitem").first()).toContainText("12");
   await page.getByRole("button", { name: "Confirmer le calcul" }).click();
   await expect(page.getByRole("status")).toContainText("Points calculés");
+
+  // The admin log keeps both actions, newest first.
+  await page.goto("/admin/historique");
+  const log = page.getByRole("list", { name: "Actions" }).getByRole("listitem");
+  await expect(log.nth(0)).toContainText("Points calculés");
+  await expect(log.nth(1)).toContainText("Résultat saisi");
+  await expect(log.nth(0)).toContainText(`par ${player.pseudo}`);
   await page.goto("/mes-points");
   await expect(page.locator("main")).toContainText("+12 pts");
   await expect(page.locator("main")).toContainText("Podium parfait");
