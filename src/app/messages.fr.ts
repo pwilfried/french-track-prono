@@ -406,6 +406,68 @@ export const messages = {
     promoted: "✓ Qualifiés ajoutés à la liste de départ du tour suivant.",
     previousLinks: "Tours précédents",
   },
+  rules: {
+    title: "Comment jouer",
+    intro:
+      "Avant chaque finale, compose ton podium. Les points tombent quand le résultat officiel est saisi.",
+    link: "Comment jouer ?",
+    helpLabel: "Comment jouer : les règles",
+    podiumTitle: "Le podium",
+    podium: (exact: number, wrong: number, perfect: number) =>
+      `Choisis le 1er, le 2e et le 3e. Chaque athlète à la bonne place rapporte ${exact} points, un athlète sur le podium mais à une autre place ${wrong} point${wrong > 1 ? "s" : ""}. Les trois dans l'ordre : ${perfect} points de bonus.`,
+    podiumExample: (exact: number, perfect: number) =>
+      `Exemple : podium parfait = 3 × ${exact} + ${perfect} = ${3 * exact + perfect} points.`,
+    oddsTitle: "Les cotes",
+    odds: (a: number, b: number, c: number) =>
+      `Sur les compétitions avec cotes, tu choisis parmi 5 ou 6 athlètes proposés ou « Autre athlète ». En plus du podium, chaque athlète rapporte sa cote × ${a} à la bonne place, × ${b} à une place d'écart, × ${c} à deux places.`,
+    oddsExample: (odds: string, a: number, points: number) =>
+      `Exemple : une athlète à ${odds} à la bonne place rapporte ${odds} × ${a} = ${points} points en plus.`,
+    other:
+      "« Autre athlète » est juste quand un athlète qui n'était pas proposé finit à cette place.",
+    marksTitle: "Les perfs",
+    marks: (exact: number, near: number) =>
+      `Tu peux aussi pronostiquer la perf de chacun de tes athlètes : ${exact} points si tu es dans la tolérance de la discipline, ${near} dans le double. C'est facultatif.`,
+    tolerancesTitle: "Quelques tolérances",
+    jokerTitle: "Le joker",
+    joker: (multiplier: number) =>
+      `Une fois par compétition, ton joker multiplie par ${multiplier} tous les points d'une épreuve. Choisis-la bien.`,
+    flairTitle: "Le coup de flair",
+    flair: (bonus: number, share: number, players: number) =>
+      `Tu trouves le vainqueur alors que moins de ${Math.round(share * 100)} % des joueurs l'avaient choisi ? +${bonus} points, dès ${players} pronos sur l'épreuve.`,
+    lockTitle: "Le verrouillage",
+    lock: "Tu peux changer ton prono jusqu'au départ de l'épreuve. Ensuite il est figé, et tu découvres ceux de tes amis.",
+    faqTitle: "Questions fréquentes",
+    faq: [
+      {
+        q: "Un athlète de mon podium ne prend pas le départ ?",
+        a: "Il ne rapporte rien. Tant que l'épreuve n'est pas verrouillée, tu peux le remplacer.",
+      },
+      {
+        q: "Deux athlètes finissent ex æquo ?",
+        a: "Ils partagent la place : les mettre l'un ou l'autre à cette place compte comme juste.",
+      },
+      {
+        q: "J'ai oublié de pronostiquer ?",
+        a: "Pas de pénalité : tu ne marques simplement pas de points sur cette épreuve.",
+      },
+      {
+        q: "Je suis dans plusieurs ligues ?",
+        a: "Un seul prono par épreuve, compté dans toutes tes ligues et au classement général.",
+      },
+    ],
+  },
+  tips: {
+    label: "Premier prono : astuces",
+    steps: [
+      "Touche un athlète : il monte sur la marche en surbrillance, le 1er d'abord.",
+      "Touche une marche pour la choisir, ou un athlète placé pour le retirer.",
+      "Le joker double tes points sur une épreuve par compétition. Enregistre, tu peux changer jusqu'au départ.",
+    ],
+    count: (index: number, total: number) => `${index} / ${total}`,
+    next: "Suivant",
+    done: "C'est parti",
+    skip: "Passer",
+  },
   scale: {
     title: "Barème",
     subtitle:

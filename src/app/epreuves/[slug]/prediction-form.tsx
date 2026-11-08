@@ -9,6 +9,7 @@ import type { MarkUnit } from "@/domain/discipline";
 import { isComplete, OTHER_ATHLETE, type PodiumDraft } from "@/domain/podium-draft";
 
 import { messages } from "../../messages.fr";
+import { FirstPredictionTips } from "./first-prediction-tips";
 import { savePredictionAction, type MarkTexts, type PredictionState } from "./actions";
 
 /** The podium of a signed-in player on an open event: compose, joker, save. */
@@ -51,6 +52,7 @@ export function PredictionForm({
       <input type="hidden" name="eventId" value={eventId} />
       <input type="hidden" name="slug" value={slug} />
       {markUnit && <input type="hidden" name="markUnit" value={markUnit} />}
+      <FirstPredictionTips />
       {state.saved && (
         <p
           role="status"
@@ -65,6 +67,7 @@ export function PredictionForm({
         error={error}
         disabled={locked}
         onChange={(next: PodiumDraft) => setDraft(next)}
+        helpHref="/regles"
       />
       {markUnit && !locked && (
         <MarkFields

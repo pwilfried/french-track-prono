@@ -85,6 +85,9 @@ export default async function Home() {
           {messages.start.title}
         </h1>
         <p className="text-[15px] leading-relaxed text-muted-foreground">{messages.start.intro}</p>
+        <Link href="/regles" className="inline-flex min-h-11 items-center self-start font-bold">
+          {messages.rules.link}
+        </Link>
       </div>
 
       <nav aria-label={messages.start.blocksLabel} className="grid grid-cols-2 gap-3">
