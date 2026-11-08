@@ -10,11 +10,17 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   await page.locator("main").getByRole("link", { name: "Se connecter", exact: true }).click();
   await signUp(page, player);
   await page.waitForURL(/\/epreuves\/f-100m$/);
+  await page.goto("/profil");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Back-office" })).toHaveCount(0);
   sql(
     `update profiles set is_admin = true where id = (select id from auth.users where email = '${player.email}')`,
   );
 
-  await page.goto("/admin/competitions");
+  // The back-office opens from the profile page.
+  await page.goto("/profil");
+  await page.getByRole("link", { name: "Back-office" }).click();
+  await expect(page).toHaveURL(/\/admin\/competitions$/);
   await page.getByRole("link", { name: "Barème" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Barème");
   const field = page.getByLabel("Perf dans la tolérance", { exact: true });
