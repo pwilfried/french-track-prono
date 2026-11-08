@@ -56,9 +56,10 @@ export function startListRepositoryContract(name: string, world: () => Promise<S
         (c) => c.athleteId,
       );
 
-      // The athletes of the start list are entered too (the database enters them).
+      // The athletes of the start list are entered too (the database enters them): nobody else.
       expect(ids).toEqual(expect.arrayContaining([w.candidateId, w.nonRunnerId]));
-      expect(ids).not.toContain(w.outsiderId);
+      const entered = new Set([w.candidateId, w.nonRunnerId, ...w.athleteIds]);
+      expect(ids.every((id) => entered.has(id))).toBe(true);
     });
 
     it("offers every runner of the discipline when no entered athlete runs it", async () => {
