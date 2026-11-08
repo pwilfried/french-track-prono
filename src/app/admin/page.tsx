@@ -14,6 +14,7 @@ import {
 
 import { currentCompetition } from "../competition";
 import { messages } from "../messages.fr";
+import { AdminShell } from "./competitions/admin-shell";
 import { adminOnly } from "./guard";
 
 type State = "open" | "todo" | "entered" | "scored";
@@ -76,148 +77,109 @@ export default async function AdminPage({
   });
 
   return (
-    <main id="main" className="flex flex-1 flex-col">
-      <p
-        role="note"
-        className="bg-primary px-4 py-1 text-center text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary-foreground"
-      >
-        {messages.admin.band}
+    <AdminShell title={messages.admin.title} section="results">
+      <p className="text-sm text-muted-foreground">
+        {messages.admin.subtitle(competition.name, locked.length)}
       </p>
-      <header className="px-4 pt-6">
-        <div className="mx-auto max-w-md">
-          <h1 className="font-display text-3xl font-extrabold leading-none">
-            {messages.admin.title}
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {messages.admin.subtitle(competition.name, locked.length)}
-          </p>
-          <Link
-            href="/admin/competitions"
-            className="mr-2 mt-2 inline-flex min-h-11 items-center rounded-full bg-brand px-4 text-sm font-bold text-brand-foreground"
+      {loaded === "error" ? (
+        <ErrorNotice retryHref="/admin" message={messages.errors.POINTS_UNAVAILABLE} />
+      ) : (
+        <>
+          <ul aria-label={messages.admin.statsLabel} className="grid grid-cols-2 gap-2">
+            {[
+              {
+                value: count("open"),
+                label: messages.admin.stats.open,
+                href: "/admin?etat=open",
+              },
+              {
+                value: count("todo"),
+                label: messages.admin.stats.todo,
+                href: "/admin?etat=todo",
+              },
+              {
+                value: count("entered"),
+                label: messages.admin.stats.entered,
+                href: "/admin?etat=entered",
+              },
+              {
+                value: count("scored"),
+                label: messages.admin.stats.scored,
+                href: "/admin?etat=scored",
+              },
+            ].map((tile) => (
+              <li key={tile.label}>
+                <Link
+                  href={tile.href}
+                  className="block min-h-20 rounded-card border border-border bg-card p-3"
+                >
+                  <span className="block font-mono text-3xl font-bold tabular-nums">
+                    {tile.value}
+                  </span>
+                  <span className="block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    {tile.label}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <nav
+            aria-label={messages.admin.filters}
+            className="-mx-4 flex gap-2 overflow-x-auto px-4"
           >
-            {messages.adminCompetitions.link}
-          </Link>
-          <Link
-            href="/admin/historique"
-            className="mt-2 inline-flex min-h-11 items-center rounded-full bg-brand-soft px-4 text-sm font-bold text-brand-ink"
-          >
-            {messages.adminLog.link}
-          </Link>
-          <Link
-            href="/admin/disciplines"
-            className="ml-2 mt-2 inline-flex min-h-11 items-center rounded-full bg-brand-soft px-4 text-sm font-bold text-brand-ink"
-          >
-            {messages.disciplines.link}
-          </Link>
-          <Link
-            href="/admin/athletes"
-            className="ml-2 mt-2 inline-flex min-h-11 items-center rounded-full bg-brand-soft px-4 text-sm font-bold text-brand-ink"
-          >
-            {messages.adminAthletes.link}
-          </Link>
-        </div>
-      </header>
-      <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
-        {loaded === "error" ? (
-          <ErrorNotice retryHref="/admin" message={messages.errors.POINTS_UNAVAILABLE} />
-        ) : (
-          <>
-            <ul aria-label={messages.admin.statsLabel} className="grid grid-cols-2 gap-2">
-              {[
-                {
-                  value: count("open"),
-                  label: messages.admin.stats.open,
-                  href: "/admin?etat=open",
-                },
-                {
-                  value: count("todo"),
-                  label: messages.admin.stats.todo,
-                  href: "/admin?etat=todo",
-                },
-                {
-                  value: count("entered"),
-                  label: messages.admin.stats.entered,
-                  href: "/admin?etat=entered",
-                },
-                {
-                  value: count("scored"),
-                  label: messages.admin.stats.scored,
-                  href: "/admin?etat=scored",
-                },
-              ].map((tile) => (
-                <li key={tile.label}>
+            {STATES.map((state) => (
+              <Link
+                key={state}
+                href={`/admin?etat=${state}`}
+                aria-current={state === wanted ? "page" : undefined}
+                className={cn(
+                  "inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-4 font-semibold",
+                  state === wanted
+                    ? "bg-brand text-brand-foreground dark:bg-secondary dark:text-secondary-foreground"
+                    : "border border-border bg-background text-foreground",
+                )}
+              >
+                {messages.admin.filter[state](count(state))}
+              </Link>
+            ))}
+          </nav>
+          {shown.length === 0 ? (
+            <p className="rounded-card bg-muted p-4">{messages.admin.empty}</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {shown.map((event) => (
+                <li key={event.id}>
                   <Link
-                    href={tile.href}
-                    className="block min-h-20 rounded-card border border-border bg-card p-3"
+                    href={`/admin/${event.slug}`}
+                    className="flex min-h-16 items-center gap-3 rounded-card border border-border bg-card p-3.5"
                   >
-                    <span className="block font-mono text-3xl font-bold tabular-nums">
-                      {tile.value}
+                    <span className="min-w-0 flex-1">
+                      <span className="block break-words font-bold">
+                        {event.discipline} {messages.events.gender[event.gender].toLowerCase()}
+                        {event.round !== "final" && ` · ${messages.rounds.name[event.round]}`}
+                      </span>
+                      <span className="block text-sm text-muted-foreground first-letter:uppercase">
+                        {time.format(new Date(event.startsAt))}
+                      </span>
                     </span>
-                    <span className="block text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                      {tile.label}
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-extrabold",
+                        tagStyle[stateOf(event)],
+                      )}
+                    >
+                      {messages.admin.state[stateOf(event)]}
                     </span>
                   </Link>
                 </li>
               ))}
             </ul>
-            <nav
-              aria-label={messages.admin.filters}
-              className="-mx-4 flex gap-2 overflow-x-auto px-4"
-            >
-              {STATES.map((state) => (
-                <Link
-                  key={state}
-                  href={`/admin?etat=${state}`}
-                  aria-current={state === wanted ? "page" : undefined}
-                  className={cn(
-                    "inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-4 font-semibold",
-                    state === wanted
-                      ? "bg-brand text-brand-foreground dark:bg-secondary dark:text-secondary-foreground"
-                      : "border border-border bg-background text-foreground",
-                  )}
-                >
-                  {messages.admin.filter[state](count(state))}
-                </Link>
-              ))}
-            </nav>
-            {shown.length === 0 ? (
-              <p className="rounded-card bg-muted p-4">{messages.admin.empty}</p>
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {shown.map((event) => (
-                  <li key={event.id}>
-                    <Link
-                      href={`/admin/${event.slug}`}
-                      className="flex min-h-16 items-center gap-3 rounded-card border border-border bg-card p-3.5"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block break-words font-bold">
-                          {event.discipline} {messages.events.gender[event.gender].toLowerCase()}
-                          {event.round !== "final" && ` · ${messages.rounds.name[event.round]}`}
-                        </span>
-                        <span className="block text-sm text-muted-foreground first-letter:uppercase">
-                          {time.format(new Date(event.startsAt))}
-                        </span>
-                      </span>
-                      <span
-                        className={cn(
-                          "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-extrabold",
-                          tagStyle[stateOf(event)],
-                        )}
-                      >
-                        {messages.admin.state[stateOf(event)]}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
-              {messages.admin.lockedOnly}
-            </p>
-          </>
-        )}
-      </div>
-    </main>
+          )}
+          <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
+            {messages.admin.lockedOnly}
+          </p>
+        </>
+      )}
+    </AdminShell>
   );
 }

@@ -300,7 +300,6 @@ export const messages = {
     dismiss: "Fermer, ne plus proposer",
   },
   adminLog: {
-    link: "Historique",
     title: "Historique",
     subtitle: "Les 50 dernières actions du back-office.",
     filters: "Filtrer l'historique",
@@ -487,7 +486,6 @@ export const messages = {
     saved: "Enregistré.",
   },
   disciplines: {
-    link: "Disciplines",
     title: "Disciplines",
     subtitle:
       "Tolérance du prono de performance : l'écart maximal pour qu'une marque pronostiquée soit juste.",
@@ -510,7 +508,6 @@ export const messages = {
     saved: "✓ Enregistré",
   },
   adminAthletes: {
-    link: "Athlètes",
     title: "Athlètes",
     saved: "✓ Enregistré.",
     identity: "Identité",
@@ -531,13 +528,13 @@ export const messages = {
     mainDiscipline: "Discipline principale",
   },
   adminCompetitions: {
-    link: "Compétitions",
     title: "Compétitions",
     subtitle: "La prochaine par date est mise en avant sur l'accueil.",
     sections: "Sections du back-office",
     section: {
       competitions: "Compétitions",
       athletes: "Athlètes",
+      results: "Résultats",
       disciplines: "Disciplines",
       scale: "Barème",
       history: "Historique",

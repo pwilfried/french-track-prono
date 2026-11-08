@@ -21,6 +21,10 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   await page.goto("/profil");
   await page.getByRole("link", { name: "Back-office" }).click();
   await expect(page).toHaveURL(/\/admin\/competitions$/);
+  // Every section of the back-office is one tap away, as on the board.
+  await expect(
+    page.getByRole("navigation", { name: "Sections du back-office" }).getByRole("link"),
+  ).toHaveCount(6);
   await page.getByRole("link", { name: "Barème" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Barème");
   const field = page.getByLabel("Perf dans la tolérance", { exact: true });

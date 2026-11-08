@@ -5,6 +5,7 @@ import { messages } from "../../messages.fr";
 
 const SECTIONS = [
   ["/admin/competitions", "competitions"],
+  ["/admin", "results"],
   ["/admin/athletes", "athletes"],
   ["/admin/disciplines", "disciplines"],
   ["/admin/bareme", "scale"],
