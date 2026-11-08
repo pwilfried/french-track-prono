@@ -227,6 +227,13 @@ distance en mètres, haies, steeple, marche, relais), valeur plus haute sinon. L
 avec la première course d'une nouvelle année civile. Un résultat corrigé à la baisse ne fait pas
 reculer un record déjà établi. WR et WB se saisissent à la main.
 
+Tours (v0.8, issue #198) : une série, un quart ou une demi-finale pointe vers le tour qu'il
+alimente (`events.parent_id`). On ne pronostique que les finales, et une finale seulement quand
+tous ses tours précédents sont terminés (`is_predictable()`, vérifié par le trigger de
+verrouillage, code FT001). `promote_to_next_round()` qualifie les N premiers d'un tour (ex æquo
+compris). Pas de colonne `is_predictable` stockée : la règle est calculée, elle ne peut pas
+diverger du statut des tours. Les joueurs ne voient que les finales dans la liste.
+
 ## Versions
 
 Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
