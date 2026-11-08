@@ -12,6 +12,7 @@ import {
 } from "@/infra";
 
 import { messages } from "../../../messages.fr";
+import { AdminBand } from "../../competitions/admin-shell";
 import { adminOnly } from "../../guard";
 import { ImportForm } from "./import-form";
 
@@ -40,12 +41,7 @@ export default async function ImportPage({ params }: { params: Promise<{ slug: s
 
   return (
     <main id="main" className="flex flex-1 flex-col">
-      <p
-        role="note"
-        className="bg-primary px-4 py-1 text-center text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary-foreground"
-      >
-        {messages.admin.band}
-      </p>
+      <AdminBand />
       <header className="px-4 pt-4">
         <div className="mx-auto max-w-md">
           <Link

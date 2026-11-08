@@ -26,8 +26,9 @@ function filterOf(search: Search): AdminLogFilter {
 const field = "min-h-11 w-full rounded-xl border-2 border-border bg-card px-3 text-base";
 
 export default async function AdminLogPage({ searchParams }: { searchParams: Promise<Search> }) {
-  const competition = await currentCompetition();
+  // The admin check first: it reads the session, so the page is never built ahead.
   const { client } = await adminOnly();
+  const competition = await currentCompetition();
   const filter = filterOf(await searchParams);
   let page;
   try {
