@@ -18,6 +18,17 @@ describe("pointsReasonLabels", () => {
     ).toEqual(["Podium parfait", "Joker ×2"]);
   });
 
+  it("sums the points won with the odds and with the marks", () => {
+    expect(
+      texts([
+        { kind: "exact", slot: 1 },
+        { kind: "odds", slot: 1, odds: 2, multiplier: 3, points: 6 },
+        { kind: "odds", slot: 3, odds: 1.8, multiplier: 1, points: 2 },
+        { kind: "mark", slot: 1, predicted: 10.81, official: 10.79, points: 5 },
+      ]),
+    ).toEqual(["Vainqueur trouvé", "Cotes +8", "Perf juste +5"]);
+  });
+
   it("lists the athletes found, counts the misplaced ones and the flair", () => {
     expect(
       texts([

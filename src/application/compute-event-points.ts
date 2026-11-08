@@ -3,6 +3,7 @@ import { missingPodiumRanks } from "@/domain/official-result";
 import {
   flairContext,
   scorePrediction,
+  type EventBets,
   type OfficialLine,
   type ScoreReason,
   type ScoringPrediction,
@@ -18,6 +19,8 @@ export type EventToScore = {
   /** All the predictions of the event (readable by everyone once the event is locked). */
   predictions: (ScoringPrediction & { userId: string })[];
   rules: ScoringRules;
+  /** v0.9: odds and the tolerance of a mark, when the event plays with them. */
+  bets?: EventBets;
 };
 
 /** One score line: the points of one player on one event, with the reasons. */
@@ -55,7 +58,7 @@ export function computeEventPoints(ports: { points: PointsRepository; now?: () =
       const context = flairContext(event.predictions);
       const lines = event.predictions.map((prediction) => ({
         userId: prediction.userId,
-        ...scorePrediction(prediction, event.results, event.rules, context),
+        ...scorePrediction(prediction, event.results, event.rules, context, event.bets),
       }));
       if (input.dryRun) return lines;
       const outcome = await ports.points.replaceEventScores(input.eventId, lines);

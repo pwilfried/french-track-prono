@@ -138,6 +138,8 @@ export const messages = {
         count === 1 ? "1 athlète mal placé" : `${count} athlètes mal placés`,
       perfect: "Podium parfait",
       flair: "Coup de flair",
+      odds: (points: number) => `Cotes +${points}`,
+      marks: (points: number) => `Perf juste +${points}`,
       joker: "Joker ×2",
       none: "Aucun athlète sur le podium",
     },
@@ -404,6 +406,29 @@ export const messages = {
     promoted: "✓ Qualifiés ajoutés à la liste de départ du tour suivant.",
     previousLinks: "Tours précédents",
   },
+  scale: {
+    title: "Barème",
+    subtitle:
+      "Les points de chaque pronostic. Un changement compte pour les calculs lancés ensuite, pas pour les points déjà donnés.",
+    groups: { podium: "Podium", bonus: "Coup de flair et joker", odds: "Cotes", marks: "Perfs" },
+    rules: {
+      exact_slot: "Bon athlète à la bonne place",
+      wrong_place: "Athlète sur le podium, mauvaise place",
+      perfect_podium: "Bonus podium parfait",
+      flair_bonus: "Bonus coup de flair",
+      flair_threshold: "Coup de flair : part maximale des joueurs (0 à 1)",
+      flair_min_players: "Coup de flair : pronos minimum sur l'épreuve",
+      joker_multiplier: "Multiplicateur du joker",
+      odds_exact: "Cote × … à la bonne place",
+      odds_one_off: "Cote × … à une place d'écart",
+      odds_two_off: "Cote × … à deux places d'écart",
+      mark_exact: "Perf dans la tolérance",
+      mark_near: "Perf dans le double de la tolérance",
+    } as Record<string, string>,
+    save: "Enregistrer",
+    saving: "…",
+    saved: "Enregistré.",
+  },
   disciplines: {
     link: "Disciplines",
     title: "Disciplines",
@@ -457,6 +482,7 @@ export const messages = {
       competitions: "Compétitions",
       athletes: "Athlètes",
       disciplines: "Disciplines",
+      scale: "Barème",
       history: "Historique",
     },
     create: "+ Nouvelle compétition",
@@ -759,6 +785,11 @@ export const messages = {
     PODIUM_INVALID: "Choisis trois athlètes différents pour ton podium.",
     PREDICTION_LOCKED:
       "Trop tard : cette épreuve vient d'être verrouillée. Ton podium n'a pas été enregistré.",
+    SCORING_RULE_INVALID:
+      "Une valeur du barème est un nombre positif (le seuil du coup de flair : au plus 1).",
+    SCORING_RULE_UNKNOWN: "Cette ligne du barème n'existe pas.",
+    SCORING_RULES_UNAVAILABLE:
+      "Le barème ne peut pas être lu pour l'instant. Réessaie dans un moment.",
     ODDS_NOT_READY:
       "Les cotes de cette épreuve arrivent bientôt : les pronos s'ouvriront avec elles.",
     ROUND_NOT_READY: "Les pronos ouvrent quand les tours précédents sont terminés.",

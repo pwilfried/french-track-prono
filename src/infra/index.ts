@@ -49,3 +49,5 @@ export { createInMemoryCompetitionAdminStore } from "./in-memory/competition-adm
 export { createSupabaseCompetitionAdminRepository } from "./supabase/competition-admin-repository";
 export { createInMemoryOddsStore, type OddsEventFixture } from "./in-memory/odds-repository";
 export { createSupabaseOddsRepository } from "./supabase/odds-repository";
+export { createInMemoryScoringRuleStore } from "./in-memory/scoring-rule-repository";
+export { createSupabaseScoringRuleRepository } from "./supabase/scoring-rule-repository";
