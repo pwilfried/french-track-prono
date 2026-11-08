@@ -151,6 +151,7 @@ async function PredictionSection({
   choices,
   competitionSlug,
   competitionName,
+  leagues,
 }: {
   event: EventDetail;
   slug: string;
@@ -159,6 +160,8 @@ async function PredictionSection({
   choices: PickerAthlete[] | null;
   competitionSlug: string;
   competitionName: string;
+  /** The player's leagues (read for an open event only), or "error". */
+  leagues: League[] | "error";
 }) {
   const back = `/epreuves/${slug}`;
 
@@ -189,10 +192,7 @@ async function PredictionSection({
     );
   }
 
-  const [mine, leagues] = await Promise.all([
-    loadMyPrediction(user.userId, event.id),
-    open ? loadMyLeagues() : Promise.resolve([]),
-  ]);
+  const mine = await loadMyPrediction(user.userId, event.id);
   if (mine === "error" || leagues === "error") return <ErrorNotice retryHref={back} />;
   if (open && !leagues.some((l) => l.competitionSlugs.includes(competitionSlug))) {
     return (
@@ -284,7 +284,12 @@ export default async function EventPage({
   const [user, choices] = await Promise.all([getCurrentUser(), loadChoices(event)]);
   const open = eventPhase(new Date(), event.lockAt) === "open";
   // The picker already lists the athletes of an open event for a signed-in player.
-  const showStartList = !(user && open);
+  // A player outside any league of the competition sees the gate instead of the picker (#311):
+  // he still sees the start list.
+  const leagues = user && open ? await loadMyLeagues() : [];
+  const gated =
+    leagues !== "error" && !leagues.some((l) => l.competitionSlugs.includes(competition.slug));
+  const showStartList = !(user && open) || gated;
   const when = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
     day: "numeric",
@@ -415,6 +420,7 @@ export default async function EventPage({
             choices={choices}
             competitionSlug={competition.slug}
             competitionName={competition.name}
+            leagues={leagues}
           />
         )}
       </section>
