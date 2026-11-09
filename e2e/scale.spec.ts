@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
+import { adminMenu } from "./admin";
 import { newPlayer, signIn, signUp } from "./players";
 
 test("an admin adjusts the points of a mark within the tolerance", async ({ page }) => {
@@ -20,12 +21,14 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   await page.getByRole("banner").getByRole("link", { name: "Back-office" }).click();
   await expect(page).toHaveURL(/\/admin\/competitions$/);
   // Every section of the back-office is one tap away, as on the board.
-  await expect(
-    page.getByRole("navigation", { name: "Sections du back-office" }).getByRole("link"),
-  ).toHaveCount(9);
+  // On a phone, the menu is a drop-down that names the current section.
+  await expect(adminMenu(page).locator("summary")).toHaveText("Compétitions");
+  await adminMenu(page).locator("summary").click();
+  await expect(adminMenu(page).getByRole("link")).toHaveCount(9);
+  await expect(adminMenu(page).getByText("Communauté")).toBeVisible();
   // The back-office has its own interface: no player navigation, and a way to the site.
   await expect(page.getByRole("navigation", { name: "Navigation principale" })).toHaveCount(0);
-  await page.getByRole("link", { name: "Barème" }).click();
+  await adminMenu(page).getByRole("link", { name: "Barème" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Barème");
   const field = page.getByLabel("Perf dans la tolérance", { exact: true });
   await field.fill("6");
