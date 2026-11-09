@@ -49,7 +49,7 @@ export default async function AdminClubsPage() {
   const pending = rows.filter((c) => !c.validated).length;
 
   return (
-    <AdminShell title={text.title} section="clubs">
+    <AdminShell title={text.title} section="clubs" wide>
       <p className="text-sm text-muted-foreground">
         {clubs === "error" ? text.subtitle : text.summary(rows.length, pending)}
       </p>

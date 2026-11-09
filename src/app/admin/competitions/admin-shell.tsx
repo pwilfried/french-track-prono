@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { cn } from "@/lib/utils";
+
 import { messages } from "../../messages.fr";
 import { AdminMenuWithTodo, type AdminSection } from "./admin-menu";
 
@@ -9,11 +11,14 @@ export function AdminShell({
   title,
   back,
   section,
+  wide = false,
   children,
 }: {
   title: ReactNode;
   back?: { href: string; label: string };
   section?: AdminSection;
+  /** A list page (#380): the content takes the whole width beside the menu. */
+  wide?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -24,7 +29,12 @@ export function AdminShell({
           // No Suspense: a streamed menu would replace a drop-down already opened.
           <AdminMenuWithTodo section={section} />
         )}
-        <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-4 lg:max-w-2xl lg:py-8">
+        <div
+          className={cn(
+            "mx-auto flex w-full min-w-0 flex-col gap-4 px-4 py-4 lg:py-8",
+            wide ? "max-w-md md:max-w-none lg:px-8" : "max-w-md lg:max-w-2xl",
+          )}
+        >
           {back && (
             <Link
               href={back.href}
