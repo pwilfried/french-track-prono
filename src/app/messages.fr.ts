@@ -834,6 +834,7 @@ export const messages = {
     },
   },
   picker: {
+    profileLabel: (name: string) => `Fiche de ${name}`,
     podium: "Mon podium",
     athletes: "Liste de départ",
     emptyStep: "Touche un athlète",
