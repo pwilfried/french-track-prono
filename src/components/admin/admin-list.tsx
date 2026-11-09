@@ -326,7 +326,7 @@ export function AdminList<T>(props: AdminListProps<T>) {
               <div className="hidden overflow-x-auto md:block">
                 <table
                   aria-label={props.label}
-                  className="w-full border-separate border-spacing-0 overflow-hidden rounded-2xl border border-border bg-card"
+                  className="w-full min-w-[40rem] border-separate border-spacing-0 overflow-hidden rounded-2xl border border-border bg-card"
                 >
                   <thead>
                     <tr className="text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
@@ -541,7 +541,7 @@ function DetailPanel({
   return (
     <aside
       aria-label={title}
-      className="fixed inset-0 z-40 flex flex-col gap-4 overflow-y-auto bg-background p-4 md:sticky md:top-4 md:z-auto md:w-96 md:shrink-0 md:rounded-2xl md:border md:border-border md:bg-card md:p-5"
+      className="fixed inset-0 z-40 flex flex-col gap-4 overflow-y-auto bg-background p-4 md:sticky md:top-4 md:z-auto md:w-80 xl:w-96 md:shrink-0 md:rounded-2xl md:border md:border-border md:bg-card md:p-5"
     >
       <div className="flex items-start justify-between gap-3">
         <h2 className="font-display text-2xl font-extrabold leading-tight">{title}</h2>

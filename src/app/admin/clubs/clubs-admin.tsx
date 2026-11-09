@@ -50,7 +50,7 @@ const columns: ListColumn<ClubRow>[] = [
     label: text.column.name,
     sort: (a, b) => a.name.localeCompare(b.name, "fr"),
     cell: (c) => (
-      <span className="flex flex-col [overflow-wrap:anywhere]">
+      <span className="flex min-w-40 flex-col break-words">
         {c.name}
         {c.duplicate && (
           <span className="text-xs font-semibold text-accent-text">
@@ -216,7 +216,7 @@ function ClubDetail({
           {text.nameLabel}
           <input name="name" defaultValue={club.name} maxLength={120} className={field} />
         </label>
-        <div className="grid grid-cols-[1fr_6rem] gap-2">
+        <div className="grid grid-cols-[minmax(0,1fr)_5rem] gap-2">
           <label className="flex flex-col gap-1 text-sm font-bold">
             {text.cityLabel}
             <input name="city" defaultValue={club.city} maxLength={80} className={field} />
