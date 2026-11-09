@@ -978,6 +978,11 @@ export const messages = {
     strong: "Mes disciplines fortes",
     noStrong: "Tes disciplines fortes apparaîtront après quelques épreuves calculées.",
   },
+  globalError: {
+    title: "Oups, la page est tombée",
+    body: "Une erreur nous empêche de l'afficher. On est prévenus ; réessaie dans un instant.",
+    retry: "Réessayer",
+  },
   notifications: {
     title: "Notifications",
     description:

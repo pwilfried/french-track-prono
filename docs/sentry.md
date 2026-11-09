@@ -28,6 +28,15 @@ Sans DSN, rien n'est envoyé ; en local et en mode fake (`FTP_FAKE_DB=1`) non pl
 
 Le DSN n'est pas un secret (il finit dans le navigateur) ; le jeton, si.
 
+## Être prévenu
+
+- Sentry envoie un e-mail à chaque nouveau problème (règle d'alerte par défaut du projet : à
+  garder active). Les erreurs avalées par un `catch` pour garder la page debout (tableau de bord,
+  menu admin, listes admin, partage, notifications, service worker) passent par `reportError`
+  (`src/lib/report-error.ts`) ; une erreur de rendu, par `src/app/global-error.tsx`.
+- Les jobs planifiés (notifications push, comptes inactifs, import des clubs) échouent en cas de
+  problème : GitHub prévient le propriétaire par e-mail.
+
 ## Vérifier
 
 Après le déploiement, une erreur volontaire (par exemple dans la console du navigateur sur le

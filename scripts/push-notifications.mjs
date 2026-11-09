@@ -58,6 +58,7 @@ async function main() {
 
   const due = await query("select * from private.push_due()");
   const forgotten = [];
+  let failed = 0;
   for (const notification of due) {
     const payload = JSON.stringify(notificationOf(notification));
     for (const device of notification.devices) {
@@ -68,10 +69,12 @@ async function main() {
           { TTL: notification.kind === "reminder" ? 15 * 60 : 24 * 3600, urgency: "high" },
         );
       } catch (error) {
-        // 404 and 410: the device unsubscribed. Anything else is retried by nobody: logged.
+        // 404 and 410: the device unsubscribed. Anything else is logged and fails the run.
         if (error.statusCode === 404 || error.statusCode === 410) forgotten.push(device.endpoint);
-        else
+        else {
+          failed += 1;
           console.error(`push failed (${error.statusCode ?? "network"}): ${error.body ?? error}`);
+        }
       }
     }
   }
@@ -86,6 +89,8 @@ async function main() {
   console.log(
     `${due.length} notification(s) envoyée(s), ${forgotten.length} appareil(s) oublié(s).`,
   );
+  // A failed send makes the run fail: GitHub e-mails the owner (#195).
+  if (failed) process.exitCode = 1;
 }
 
 await main();

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { messages } from "@/app/messages.fr";
 import type { PushDevice } from "@/application/push-subscriptions";
 import { buttonVariants } from "@/components/ui/button";
+import { reportError } from "@/lib/report-error";
 
 export type NotificationState = "unsupported" | "denied" | "off" | "on" | "busy" | "failed";
 
@@ -119,7 +120,8 @@ export function NotificationOptIn({
           : false;
       if (!saved) await subscription.unsubscribe();
       setState(saved ? "on" : "failed");
-    } catch {
+    } catch (error) {
+      reportError(error, "notifications-on");
       setState("failed");
     }
   }

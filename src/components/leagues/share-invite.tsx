@@ -5,6 +5,7 @@ import { useState } from "react";
 import { messages } from "@/app/messages.fr";
 import { buttonVariants } from "@/components/ui/button";
 import { formatInviteCode } from "@/domain/league";
+import { reportError } from "@/lib/report-error";
 
 /**
  * The invite code, big and easy to read, with the phone's share sheet for the link (when the
@@ -31,8 +32,9 @@ export function ShareInvite({ code, leagueName }: { code: string; leagueName: st
           url: link(),
         });
         return;
-      } catch {
-        // Cancelled by the player: nothing to do.
+      } catch (error) {
+        // Cancelled by the player: nothing to do (not reported either).
+        reportError(error, "share-invite");
         return;
       }
     }
