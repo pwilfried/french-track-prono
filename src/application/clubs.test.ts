@@ -11,6 +11,9 @@ function fakeClubs(clubs: Omit<Club, "id" | "validated">[]): ClubDirectory {
     async search(query, limit) {
       return all.filter((club) => matchesClub(query, club)).slice(0, limit);
     },
+    async propose() {
+      return "banned";
+    },
   };
 }
 

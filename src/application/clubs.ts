@@ -16,6 +16,11 @@ export type Club = {
  */
 export interface ClubDirectory {
   search(query: string, limit: number): Promise<Club[]>;
+  /**
+   * A club the signed-in player typed: saved "to validate", or the same one already there
+   * (accents and case ignored). "banned" for a name with banned words.
+   */
+  propose(name: string, city: string): Promise<Club | "banned">;
 }
 
 /** Below this many letters the list would be too long to help. */
