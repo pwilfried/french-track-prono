@@ -877,6 +877,21 @@ export const messages = {
     bleus: { emoji: "🇫🇷", name: "Bleus", rule: "Un vainqueur français trouvé" },
     fidele: { emoji: "📅", name: "Fidèle", rule: "Un prono sur chaque épreuve d'une journée" },
   },
+  clubRanking: {
+    title: "Classement des clubs",
+    podium: "Podium des clubs",
+    myClub: (name: string, rank: number, clubs: number) =>
+      `${name} : ${rank === 1 ? "1er" : `${rank}e`} sur ${clubs}`,
+    average: (points: string) => `${points} pts de moyenne`,
+    notRanked: (name: string, min: number) =>
+      `${name} n'est pas encore classé : il faut ${min} joueurs du club avec des points.`,
+    addClub: "Ajoute ton club pour le faire grimper",
+    empty: "Aucun club classé pour l'instant.",
+    rank: (rank: number) => `${rank === 1 ? "1er" : `${rank}e`} :`,
+    players: (n: number) => `${n} joueur${n > 1 ? "s" : ""}`,
+    rule: (min: number) =>
+      `Moyenne des points des joueurs du club, toutes compétitions, à partir de ${min} joueurs.`,
+  },
   profile: {
     title: "Mon profil",
     season: "Saison",

@@ -5,6 +5,7 @@ import { UseCaseError } from "./errors";
 import type { LeagueMember, LeagueRepository } from "./leagues";
 import {
   getGeneralRanking,
+  getClubRanking,
   countsInLeague,
   getLeagueRanking,
   type RankingLine,
@@ -204,5 +205,24 @@ describe("a league counts only the predictions made as a member (#376)", () => {
         },
       ),
     );
+  });
+});
+
+describe("getClubRanking", () => {
+  const inClub = (userId: string, points: number, clubId: string | null): RankingLine => ({
+    ...line(userId, points),
+    ...(clubId ? { clubId, club: `Club ${clubId}` } : {}),
+  });
+
+  it("adds up each player's points over the competitions, then averages them per club", async () => {
+    const result = await getClubRanking({
+      ranking: ranking([], {
+        c1: [inClub("a", 10, "x"), inClub("b", 4, "x"), inClub("c", 1, "x"), inClub("d", 9, null)],
+        c2: [inClub("a", 5, "x"), inClub("e", 50, "y")],
+      }),
+    }).execute({ competitionSlugs: ["c1", "c2"] });
+
+    // Club x: (15 + 4 + 1) / 3; club y has a single player and is not ranked.
+    expect(result).toEqual([{ clubId: "x", name: "Club x", players: 3, average: 6.7, rank: 1 }]);
   });
 });
