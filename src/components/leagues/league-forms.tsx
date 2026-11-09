@@ -18,9 +18,17 @@ import {
 } from "@/app/ligues/actions";
 
 /** The league counts the competitions given (sent as hidden fields). */
-export function CreateLeagueForm({ competitionSlugs }: { competitionSlugs: string[] }) {
+export function CreateLeagueForm({
+  competitionSlugs,
+  isPublic = false,
+}: {
+  competitionSlugs: string[];
+  /** Ticks « Ligue publique » from the start (the home's « Créer une ligue publique », #369). */
+  isPublic?: boolean;
+}) {
   const [state, action] = useActionState<LeagueFormState, FormData>(createLeagueAction, {
     value: "",
+    isPublic,
   });
   return (
     <form action={action} noValidate className="flex flex-col gap-5">

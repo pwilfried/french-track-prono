@@ -24,12 +24,12 @@ describe("safeRedirectPath", () => {
     "/\tevil",
     "/%2F/evil",
   ])("refuses %j and falls back", (input) => {
-    expect(safeRedirectPath(input)).toBe("/epreuves");
+    expect(safeRedirectPath(input)).toBe("/");
   });
 
   it("falls back when the value is missing", () => {
-    expect(safeRedirectPath(null)).toBe("/epreuves");
-    expect(safeRedirectPath(undefined)).toBe("/epreuves");
+    expect(safeRedirectPath(null)).toBe("/");
+    expect(safeRedirectPath(undefined)).toBe("/");
   });
 
   it("uses the given fallback", () => {

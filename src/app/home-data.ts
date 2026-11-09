@@ -29,6 +29,9 @@ import { getSessionClient } from "./session";
 export type PlayerHome = {
   pseudo: string;
   competition: ShownCompetition;
+  /** A player predicts from a league counting the competition (#311); without one, the home
+   * offers to create a private or a public league (#369). */
+  hasLeagueForCompetition: boolean;
   /** The finals still open, the next first. */
   finals: OpenFinal[];
   general: { me: RankingRow | null; total: number; podium: RankingRow[] } | null;
@@ -101,6 +104,7 @@ export async function loadPlayerHome(userId: string): Promise<PlayerHome | null>
   return {
     pseudo: profile.pseudo,
     competition,
+    hasLeagueForCompetition: leagues.some((l) => l.competitionSlugs.includes(competition.slug)),
     finals: events ? openFinals(events, predicted, new Date()) : [],
     general: general
       ? {

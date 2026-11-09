@@ -20,6 +20,9 @@ const heading = "text-xs font-bold uppercase tracking-wide text-muted-foreground
 export type PlayerHomeProps = {
   pseudo: string;
   competitionName: string;
+  competitionSlug: string;
+  /** False: the next final offers to create a private or a public league first (#369). */
+  hasLeagueForCompetition: boolean;
   timeZone: string;
   now: Date;
   finals: OpenFinal[];
@@ -30,7 +33,9 @@ export type PlayerHomeProps = {
 
 /** The signed-in player's home (#346, board A+): what to do next, where they stand. */
 export function PlayerHome(props: PlayerHomeProps) {
-  const { pseudo, competitionName, timeZone, now, finals, general, league, lastResult } = props;
+  const { pseudo, competitionName, competitionSlug, hasLeagueForCompetition, timeZone, now } =
+    props;
+  const { finals, general, league, lastResult } = props;
   const next = finals[0];
   const left = next ? countdown(now, next.lockAt) : null;
   const when = new Intl.DateTimeFormat("fr-FR", {
@@ -68,12 +73,43 @@ export function PlayerHome(props: PlayerHomeProps) {
           <h2 id="next-final" className="font-display text-[26px] font-extrabold leading-tight">
             {eventName(next)}
           </h2>
-          <p className="text-sm text-[#d9e4f5]">
-            {next.predicted ? text.podiumDone : text.podiumEmpty}
-          </p>
-          <Link href={`/epreuves/${next.slug}`} className={cn(buttonVariants(), "w-full")}>
-            {next.predicted ? text.editPodium : messages.home.compose}
-          </Link>
+          {hasLeagueForCompetition ? (
+            <>
+              <p className="text-sm text-[#d9e4f5]">
+                {next.predicted ? text.podiumDone : text.podiumEmpty}
+              </p>
+              <Link href={`/epreuves/${next.slug}`} className={cn(buttonVariants(), "w-full")}>
+                {next.predicted ? text.editPodium : messages.home.compose}
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-[#d9e4f5]">{text.leagueFirst}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  href={`/ligues/creer?competition=${encodeURIComponent(competitionSlug)}`}
+                  className={buttonVariants()}
+                >
+                  {text.createPrivate}
+                </Link>
+                <Link
+                  href={`/ligues/creer?competition=${encodeURIComponent(competitionSlug)}&publique=1`}
+                  className={cn(
+                    buttonVariants({ variant: "outline" }),
+                    "bg-transparent text-white",
+                  )}
+                >
+                  {text.createPublic}
+                </Link>
+              </div>
+              <Link
+                href="/ligues"
+                className="inline-flex min-h-11 items-center self-center text-sm font-bold text-white underline underline-offset-4"
+              >
+                {text.joinPublic}
+              </Link>
+            </>
+          )}
         </section>
       ) : (
         <p className={cn(card, "text-sm text-muted-foreground")}>{text.noFinal}</p>
