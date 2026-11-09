@@ -32,7 +32,7 @@ export async function AccountMenu({ returnTo }: { returnTo: string }) {
     <div className="flex min-w-0 items-center gap-2">
       {admin && (
         <Link
-          href="/admin/competitions"
+          href="/admin/tableau-de-bord"
           className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-primary px-3.5 text-sm font-bold text-primary-foreground"
         >
           {messages.account.backOffice}

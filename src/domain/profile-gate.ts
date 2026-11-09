@@ -13,7 +13,7 @@ export function requiresProfile(pathname: string): boolean {
   return !OPEN_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
-const BACK_OFFICE = "/admin/competitions";
+const BACK_OFFICE = "/admin/tableau-de-bord";
 
 /**
  * Where an admin lands after signing in: the back-office, unless they asked for one of its pages.

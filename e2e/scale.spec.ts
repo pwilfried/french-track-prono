@@ -19,12 +19,19 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await page.getByRole("banner").getByRole("link", { name: "Back-office" }).click();
-  await expect(page).toHaveURL(/\/admin\/competitions$/);
+  await expect(page).toHaveURL(/\/admin\/tableau-de-bord$/);
+  // The dashboard says what is left to do, each tile leading to its page.
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Bonjour ${player.pseudo}`);
+  await expect(page.getByRole("link", { name: /Clubs à valider/ })).toHaveAttribute(
+    "href",
+    "/admin/clubs",
+  );
+  await expect(page.getByRole("heading", { name: "Prochaine compétition" })).toBeVisible();
   // Every section of the back-office is one tap away, as on the board.
   // On a phone, the menu is a drop-down that names the current section.
-  await expect(adminMenu(page).locator("summary")).toHaveText("Compétitions");
+  await expect(adminMenu(page).locator("summary")).toHaveText("Tableau de bord");
   await adminMenu(page).locator("summary").click();
-  await expect(adminMenu(page).getByRole("link")).toHaveCount(9);
+  await expect(adminMenu(page).getByRole("link")).toHaveCount(10);
   await expect(adminMenu(page).getByText("Communauté")).toBeVisible();
   // The back-office has its own interface: no player navigation, and a way to the site.
   await expect(page.getByRole("navigation", { name: "Navigation principale" })).toHaveCount(0);
@@ -50,7 +57,7 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   await expect(page).toHaveURL(/\/$/);
   await page.goto("/connexion");
   await signIn(page, player.email);
-  await expect(page).toHaveURL(/\/admin\/competitions$/);
+  await expect(page).toHaveURL(/\/admin\/tableau-de-bord$/);
   await page.getByRole("link", { name: "Voir le site" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 

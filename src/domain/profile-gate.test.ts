@@ -21,7 +21,7 @@ describe("requiresProfile", () => {
 describe("adminLanding", () => {
   it.each(["/", "/epreuves", "/profil", "/ligues/creer", "/administration"])(
     "sends an admin who signs in for %s to the back-office",
-    (path) => expect(adminLanding(path)).toBe("/admin/competitions"),
+    (path) => expect(adminLanding(path)).toBe("/admin/tableau-de-bord"),
   );
 
   it.each(["/admin", "/admin/competitions", "/admin/bareme?x=1"])(
