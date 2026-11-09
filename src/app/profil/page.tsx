@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
+import { getClubNotices } from "@/application/club-notices";
 import { getMyBadges } from "@/application/get-my-badges";
 import { getProfile } from "@/application/get-profile";
 import { getPlayerDetails } from "@/application/player-details";
@@ -9,9 +10,11 @@ import { listEvents } from "@/application/list-events";
 import { listMyPredictions } from "@/application/list-my-predictions";
 import { getGeneralRanking } from "@/application/rankings";
 import { InstallEntry } from "@/components/shell/install-prompt";
+import { ClubNotices } from "@/components/account/club-notices";
 import { buttonVariants } from "@/components/ui/button";
 import {
   createPublicSupabaseClient,
+  createSupabaseClubNoticeRepository,
   createSupabaseEventReader,
   createSupabasePlayerDetailsRepository,
   createSupabasePredictionRepository,
@@ -73,7 +76,7 @@ export default async function ProfilePage({
     profiles: createSupabaseProfileRepository(client),
   }).execute({ userId: user.userId });
   if (!profile) redirect(`/bienvenue?next=${encodeURIComponent("/profil")}`);
-  const [season, details, params] = await Promise.all([
+  const [season, details, params, clubNotices] = await Promise.all([
     loadSeason(user.userId),
     getPlayerDetails({ details: createSupabasePlayerDetailsRepository(client) })
       .execute({ userId: user.userId })
@@ -82,6 +85,12 @@ export default async function ProfilePage({
         throw error;
       }),
     searchParams,
+    getClubNotices({ notices: createSupabaseClubNoticeRepository(client) })
+      .execute()
+      .catch((error: unknown) => {
+        if (error instanceof UseCaseError) return [];
+        throw error;
+      }),
   ]);
   const notice = params.email
     ? messages.changeEmail.done
@@ -105,6 +114,7 @@ export default async function ProfilePage({
   return (
     <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-6">
       <h1 className="sr-only">{text.title}</h1>
+      <ClubNotices notices={clubNotices} />
       {notice ? (
         <p role="status" className="rounded-card bg-muted p-4 font-semibold">
           {notice}
