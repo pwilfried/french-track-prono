@@ -265,6 +265,21 @@ sinon). Perfs (#261) : `predictions.m1..m3`, dans l'unité de la discipline, ver
 podium. Points : voir « Cas de test du cœur », S14 à S18 ; le barème est éditable dans
 `/admin/bareme` (`admin_set_scoring_rule()`, journalisée).
 
+Profils (v0.10, décisions dans `docs/decisions/profils.md`) : une seule liste de mots interdits
+(`src/domain/banned-names.ts` et `is_banned_name()`, FT013) pour les ligues publiques, les pseudos
+et les clubs saisis. Clubs : table `clubs` (SIREN unique, `source` import ou joueur, `validated`),
+remplie chaque mois par le workflow « Clubs import » (API Recherche d'entreprises) ; recherche
+`search_clubs()` sans accents ni casse ; un club saisi par un joueur (`propose_club()`) reste
+« à valider » et invisible des autres. `profiles.club_id` est public (fiche minimale ouverte depuis
+un classement) ; sexe et disciplines vivent dans `player_details`, lisible par son seul
+propriétaire. L'e-mail de connexion se change avec un code envoyé sur la nouvelle adresse
+(`EmailChangeService`). L'admin cherche, bloque (`profiles.blocked_at` : plus de prono ni de ligue,
+FT014, et ses lignes ne sont plus lues par les autres joueurs) ou supprime un joueur
+(`private.delete_account()`, partagé avec « Supprimer mon compte »), et crée une discipline
+(`create_discipline()`). Un compte sans activité depuis 24 mois est supprimé après un e-mail de
+prévenance (workflow « Inactive accounts »). Épreuves et accueil suivent d'abord les compétitions
+des ligues du joueur (`competitionsForPlayer`).
+
 Tours (v0.8, issue #198) : une série, un quart ou une demi-finale pointe vers le tour qu'il
 alimente (`events.parent_id`). On ne pronostique que les finales, et une finale seulement quand
 tous ses tours précédents sont terminés (`is_predictable()`, vérifié par le trigger de
