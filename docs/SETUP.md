@@ -300,6 +300,15 @@ jour à 6 h 17 (heure de Paris en hiver, ce qui repère aussi un projet Supabase
 demande (onglet Actions → Run workflow). Pas de relance : un échec est signalé par e-mail.
 Pour l'essayer ailleurs : `scripts/smoke.sh http://localhost:3000`.
 
+## Import des clubs d'athlétisme
+
+Le workflow « Clubs import » (le 2 de chaque mois, ou à la main depuis l'onglet Actions) lit les
+clubs sportifs actifs de l'API Recherche d'entreprises (`scripts/clubs/fetch.mjs`), écarte les
+autres sports et remet les noms en forme (`scripts/clubs/import.mjs`, règles dans
+`src/domain/club.ts`), puis les envoie à `import_clubs()` en prod par l'API de gestion Supabase
+(mêmes secrets que les migrations). Un club = un SIREN : relancer ne crée pas de doublon.
+Les fichiers produits restent en artefact « clubs » pour vérification.
+
 ## 5. Sécurité : à ne jamais committer
 
 - `.env.local` et tout fichier contenant des clés (déjà dans `.gitignore`)

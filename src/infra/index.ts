@@ -53,3 +53,5 @@ export { createSupabaseOddsRepository } from "./supabase/odds-repository";
 export { createInMemoryScoringRuleStore } from "./in-memory/scoring-rule-repository";
 export { createSupabaseScoringRuleRepository } from "./supabase/scoring-rule-repository";
 export { createSupabaseCompetitionEditRepository } from "./supabase/competition-edit-repository";
+export { createInMemoryClubDirectory, type ClubFixture } from "./in-memory/club-directory";
+export { createSupabaseClubDirectory } from "./supabase/club-directory";
