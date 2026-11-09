@@ -352,6 +352,7 @@ export const messages = {
       set_odds: "Cotes enregistrées",
       set_rule: "Barème modifié",
       moderate_league: "Ligue modérée",
+      moderate_player: "Joueur modéré",
     },
     noEvent: "Épreuve supprimée",
     size: (
@@ -364,26 +365,29 @@ export const messages = {
         | "edit_competition"
         | "set_odds"
         | "set_rule"
-        | "moderate_league",
+        | "moderate_league"
+        | "moderate_player",
       n: number,
     ) =>
       kind === "set_rule"
         ? "barème"
         : kind === "moderate_league"
           ? "ligue publique"
-          : kind === "set_tolerance"
-            ? "barème"
-            : kind === "edit_athlete"
-              ? "fiche athlète"
-              : kind === "edit_competition"
-                ? "compétition"
-                : kind === "set_odds"
-                  ? `${n} cotes`
-                  : kind === "run_scoring"
-                    ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
-                    : kind === "set_results"
-                      ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
-                      : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
+          : kind === "moderate_player"
+            ? "compte joueur"
+            : kind === "set_tolerance"
+              ? "barème"
+              : kind === "edit_athlete"
+                ? "fiche athlète"
+                : kind === "edit_competition"
+                  ? "compétition"
+                  : kind === "set_odds"
+                    ? `${n} cotes`
+                    : kind === "run_scoring"
+                      ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
+                      : kind === "set_results"
+                        ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
+                        : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
     by: (pseudo: string | null) => (pseudo ? `par ${pseudo}` : "par un compte supprimé"),
   },
   import: {
@@ -604,6 +608,7 @@ export const messages = {
       disciplines: "Disciplines",
       scale: "Barème",
       leagues: "Ligues",
+      players: "Joueurs",
       history: "Historique",
     },
     create: "+ Nouvelle compétition",
@@ -922,6 +927,26 @@ export const messages = {
     remove: "Supprimer la ligue",
     removing: "Suppression…",
     removeConfirm: "Je confirme la suppression de cette ligue et de ses membres",
+    done: "✓ C'est fait.",
+  },
+  adminPlayers: {
+    title: "Joueurs",
+    subtitle:
+      "Cherche un joueur par son pseudo. Bloqué, il ne pronostique plus, ne rejoint plus de ligue et sort des classements. Chaque action est notée dans l'historique.",
+    searchLabel: "Pseudo",
+    search: "Chercher",
+    hint: "Tape au moins 2 lettres.",
+    empty: "Aucun joueur trouvé.",
+    blocked: "Bloqué",
+    admin: "Admin",
+    since: (date: string) => `Inscrit le ${date}`,
+    block: "Bloquer",
+    unblock: "Débloquer",
+    pending: "…",
+    remove: "Supprimer le compte",
+    removing: "Suppression…",
+    removeConfirm: (pseudo: string) =>
+      `Je confirme la suppression définitive du compte de ${pseudo}`,
     done: "✓ C'est fait.",
   },
   errors: {
