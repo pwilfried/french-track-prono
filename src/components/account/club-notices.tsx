@@ -27,7 +27,7 @@ export function ClubNotices({ notices }: { notices: ClubNotice[] }) {
           </p>
           <form action={dismissClubNoticeAction}>
             <input type="hidden" name="id" value={notice.id} />
-            <button type="submit" className="min-h-11 rounded-full bg-muted px-4 text-sm font-bold">
+            <button type="submit" className="min-h-11 rounded-full border-2 border-border px-4 text-sm font-bold">
               {text.dismiss}
             </button>
           </form>
