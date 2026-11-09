@@ -19,7 +19,7 @@ set local role anon;
 select is((select count(*)::int from search_clubs('creteil')), 1, 'search ignores accents and case');
 select is((select name from search_clubs('BOULOGNE athle')), 'ACBB Athlétisme', 'every word must match');
 select is((select count(*)::int from search_clubs('')), 0, 'an empty query finds nothing');
-select is((select count(*)::int from search_clubs('foulees')), 0, 'a club to validate is not public');
+select is((select count(*)::int from search_clubs('cachees')), 0, 'a club to validate is not public');
 
 select throws_ok($$select import_clubs('[]')$$, '42501', null, 'the app cannot import clubs');
 
