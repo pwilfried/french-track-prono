@@ -22,7 +22,7 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   // Every section of the back-office is one tap away, as on the board.
   await expect(
     page.getByRole("navigation", { name: "Sections du back-office" }).getByRole("link"),
-  ).toHaveCount(8);
+  ).toHaveCount(9);
   // The back-office has its own interface: no player navigation, and a way to the site.
   await expect(page.getByRole("navigation", { name: "Navigation principale" })).toHaveCount(0);
   await page.getByRole("link", { name: "Barème" }).click();

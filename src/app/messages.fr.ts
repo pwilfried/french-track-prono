@@ -412,6 +412,7 @@ export const messages = {
       moderate_league: "Ligue modérée",
       moderate_player: "Joueur modéré",
       create_discipline: "Discipline créée",
+      moderate_club: "Club modifié",
     },
     noEvent: "Épreuve supprimée",
     size: (
@@ -426,7 +427,8 @@ export const messages = {
         | "set_rule"
         | "moderate_league"
         | "moderate_player"
-        | "create_discipline",
+        | "create_discipline"
+        | "moderate_club",
       n: number,
     ) =>
       kind === "set_rule"
@@ -437,19 +439,21 @@ export const messages = {
             ? "compte joueur"
             : kind === "create_discipline"
               ? "discipline"
-              : kind === "set_tolerance"
-                ? "barème"
-                : kind === "edit_athlete"
-                  ? "fiche athlète"
-                  : kind === "edit_competition"
-                    ? "compétition"
-                    : kind === "set_odds"
-                      ? `${n} cotes`
-                      : kind === "run_scoring"
-                        ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
-                        : kind === "set_results"
-                          ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
-                          : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
+              : kind === "moderate_club"
+                ? "club"
+                : kind === "set_tolerance"
+                  ? "barème"
+                  : kind === "edit_athlete"
+                    ? "fiche athlète"
+                    : kind === "edit_competition"
+                      ? "compétition"
+                      : kind === "set_odds"
+                        ? `${n} cotes`
+                        : kind === "run_scoring"
+                          ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
+                          : kind === "set_results"
+                            ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
+                            : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
     by: (pseudo: string | null) => (pseudo ? `par ${pseudo}` : "par un compte supprimé"),
   },
   import: {
@@ -681,6 +685,7 @@ export const messages = {
       scale: "Barème",
       leagues: "Ligues",
       players: "Joueurs",
+      clubs: "Clubs",
       history: "Historique",
     },
     create: "+ Nouvelle compétition",
@@ -1003,6 +1008,32 @@ export const messages = {
     remove: "Supprimer la ligue",
     removing: "Suppression…",
     removeConfirm: "Je confirme la suppression de cette ligue et de ses membres",
+    done: "✓ C'est fait.",
+  },
+  adminClubs: {
+    title: "Clubs",
+    subtitle:
+      "Les clubs importés chaque mois et ceux saisis par les joueurs. Valide, corrige, ajoute ou supprime ; chaque action est notée dans l'historique.",
+    searchLabel: "Nom ou ville",
+    search: "Chercher",
+    pendingOnly: "À valider seulement",
+    empty: "Aucun club pour cette recherche.",
+    pending: "À valider",
+    source: { import: "Importé", player: "Saisi par un joueur", admin: "Ajouté par l'admin" },
+    players: (n: number) => `${n} ${n <= 1 ? "joueur" : "joueurs"}`,
+    nameLabel: "Nom",
+    cityLabel: "Ville",
+    departmentLabel: "Département",
+    newClub: "+ Nouveau club",
+    create: "Créer le club",
+    save: "Enregistrer",
+    edit: "Modifier",
+    validate: "Valider",
+    pendingAction: "…",
+    remove: "Supprimer le club",
+    removing: "Suppression…",
+    removeConfirm: (name: string) =>
+      `Je confirme la suppression de ${name} (ses joueurs n'auront plus de club)`,
     done: "✓ C'est fait.",
   },
   adminPlayers: {
