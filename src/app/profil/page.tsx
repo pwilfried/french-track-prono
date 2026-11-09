@@ -7,8 +7,10 @@ import { getMyBadges } from "@/application/get-my-badges";
 import { getProfile } from "@/application/get-profile";
 import { getPlayerDetails } from "@/application/player-details";
 import { getMySeason } from "@/application/get-my-season";
+import { getMyPredictionHistory } from "@/application/list-my-predictions";
 import { InstallEntry } from "@/components/shell/install-prompt";
 import { ClubNotices } from "@/components/account/club-notices";
+import { LatestPredictions } from "@/components/profile/prediction-history";
 import {
   BestShot,
   SeasonCurve,
@@ -22,6 +24,7 @@ import {
   createSupabaseDisciplineRepository,
   createSupabaseEventReader,
   createSupabasePlayerDetailsRepository,
+  createSupabasePointsRepository,
   createSupabasePredictionRepository,
   createSupabaseProfileRepository,
   createSupabaseRankingRepository,
@@ -39,7 +42,7 @@ async function loadSeason(userId: string) {
   try {
     const client = await getSessionClient();
     const events = createSupabaseEventReader(createPublicSupabaseClient());
-    const [season, badges] = await Promise.all([
+    const [season, badges, latest] = await Promise.all([
       getMySeason({
         ranking: createSupabaseRankingRepository(client),
         predictions: createSupabasePredictionRepository(client),
@@ -51,8 +54,13 @@ async function loadSeason(userId: string) {
         predictions: createSupabasePredictionRepository(client),
         events,
       }).execute({ userId, competitionSlug: competition.slug, timeZone: competition.timeZone }),
+      getMyPredictionHistory({
+        predictions: createSupabasePredictionRepository(client),
+        events,
+        points: createSupabasePointsRepository(client),
+      }).execute({ userId, competitionSlugs: slugs.length ? slugs : [competition.slug], limit: 3 }),
     ]);
-    return { ...season, badges };
+    return { ...season, badges, latest };
   } catch (error) {
     if (error instanceof UseCaseError) return null;
     throw error;
@@ -144,6 +152,7 @@ export default async function ProfilePage({
         <>
           <SeasonTiles stats={season.stats} />
           <SeasonCurve curve={season.stats.curve} />
+          <LatestPredictions lines={season.latest} />
           <BestShot best={season.stats.bestShot} />
           <StrongFamilies families={season.stats.families} />
         </>
