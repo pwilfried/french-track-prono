@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  competitionsForPlayer,
   daysUntil,
   competitionSlug,
   eventSlug,
@@ -91,5 +92,28 @@ describe("utcToZoned", () => {
     expect(utcToZoned(zonedToUtc("2027-03-28T03:15", "Europe/Paris"), "Europe/Paris")).toBe(
       "2027-03-28T03:15",
     );
+  });
+});
+
+describe("competitionsForPlayer", () => {
+  const c = (slug: string, startsOn: string, endsOn = startsOn) => ({ slug, startsOn, endsOn });
+  const all = [
+    c("past", "2026-10-01"),
+    c("france", "2026-12-10"),
+    c("europe", "2026-11-23", "2026-11-29"),
+    c("monde", "2027-03-01"),
+    c("live", "2026-11-08", "2026-11-10"),
+  ];
+
+  it("puts the coming competitions of my leagues first, each group in date order", () => {
+    const { mine, others } = competitionsForPlayer(all, ["monde", "europe", "past"], "2026-11-09");
+    expect(mine.map((x) => x.slug)).toEqual(["europe", "monde"]);
+    expect(others.map((x) => x.slug)).toEqual(["live", "france"]);
+  });
+
+  it("gives every coming competition to a player without league", () => {
+    const { mine, others } = competitionsForPlayer(all, [], "2026-11-09");
+    expect(mine).toEqual([]);
+    expect(others.map((x) => x.slug)).toEqual(["live", "europe", "france", "monde"]);
   });
 });
