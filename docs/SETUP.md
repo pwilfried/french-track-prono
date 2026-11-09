@@ -346,6 +346,11 @@ Règles : migration `20261109030000_inactive_accounts.sql` (testées en pgTAP). 
 ceux des migrations : `RESEND_API_KEY` et `RESEND_FROM` (environnement « production »). Sans eux,
 personne n'est prévenu, donc personne n'est supprimé.
 
+## Sentry (erreurs en prod)
+
+Optionnel : voir `docs/sentry.md` (compte UE, `NEXT_PUBLIC_SENTRY_DSN` dans Vercel, jeton pour
+les source maps dans l'environnement GitHub « production »).
+
 ## Import des clubs d'athlétisme
 
 Le workflow « Clubs import » (le 2 de chaque mois, ou à la main depuis l'onglet Actions) lit les
