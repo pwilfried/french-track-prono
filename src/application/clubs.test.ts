@@ -1,10 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import { createInMemoryClubDirectory } from "@/infra";
+import { matchesClub } from "@/domain/club";
 
-import { searchClubs } from "./clubs";
+import { searchClubs, type Club, type ClubDirectory } from "./clubs";
 
-const clubs = createInMemoryClubDirectory([
+// Application tests do not import the infra layer: a few lines of fake are enough here.
+function fakeClubs(clubs: Omit<Club, "id" | "validated">[]): ClubDirectory {
+  const all = clubs.map((club, i) => ({ ...club, id: String(i), validated: true }));
+  return {
+    async search(query, limit) {
+      return all.filter((club) => matchesClub(query, club)).slice(0, limit);
+    },
+  };
+}
+
+const clubs = fakeClubs([
   { name: "US Créteil Athlétisme", city: "Créteil", department: "94" },
   {
     name: "Athletic Club de Boulogne Billancourt (ACBB)",
