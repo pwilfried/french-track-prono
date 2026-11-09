@@ -9,7 +9,7 @@ type Row = {
   event_id: string;
   points: number;
   detail: { reasons?: ScoreReason[] };
-  profiles: { pseudo: string; avatar_emoji: string; club: { name: string } | null };
+  profiles: { pseudo: string; avatar_emoji: string; club: { id: string; name: string } | null };
   events: { starts_at: string; lock_at: string };
 };
 
@@ -19,7 +19,7 @@ export function createSupabaseRankingRepository(client: SupabaseClient): Ranking
     async competitionLines(competitionSlug) {
       const { data, error } = await client
         .from("score_events")
-        .select("user_id, event_id, points, detail, profiles!inner(pseudo, avatar_emoji, club:clubs(name)), events!inner(starts_at, lock_at, competitions!inner(slug))")
+        .select("user_id, event_id, points, detail, profiles!inner(pseudo, avatar_emoji, club:clubs(id, name)), events!inner(starts_at, lock_at, competitions!inner(slug))")
         .eq("events.competitions.slug", competitionSlug)
         .returns<Row[]>();
       if (error) throw new UseCaseError("RANKING_UNAVAILABLE");
@@ -29,7 +29,7 @@ export function createSupabaseRankingRepository(client: SupabaseClient): Ranking
           pseudo: row.profiles.pseudo,
           avatar: row.profiles.avatar_emoji,
           // Only when there is one: the line stays as the contract describes it otherwise.
-          ...(row.profiles.club ? { club: row.profiles.club.name } : {}),
+          ...(row.profiles.club ? { club: row.profiles.club.name, clubId: row.profiles.club.id } : {}),
           points: row.points,
           reasons: row.detail.reasons ?? [],
           eventId: row.event_id,
