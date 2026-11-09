@@ -64,7 +64,7 @@ export const messages = {
     podiumEmpty: "Ton podium est vide",
     podiumDone: "✓ Ton podium est posé",
     editPodium: "Modifier mon podium",
-    leagueFirst: "Pour pronostiquer, entre dans une ligue de cette compétition.",
+    leagueFirst: "Joue aussi contre tes amis : crée ou rejoins une ligue de cette compétition.",
     createPrivate: "Ligue privée",
     createPublic: "Ligue publique",
     joinPublic: "ou rejoins une ligue publique",
@@ -1004,11 +1004,12 @@ export const messages = {
     visitorTitle: "Connecte-toi pour pronostiquer",
     visitorText: "Il faut un compte pour enregistrer ton podium.",
     signIn: "Se connecter",
-    leagueTitle: "Pronostique avec ta ligue",
+    leagueTitle: "Joue aussi avec tes amis",
     leagueText: (competition: string) =>
-      `Pour pronostiquer, rejoins une ligue qui compte ${competition}. Tes points comptent aussi au classement général.`,
-    leagueCreate: "Créer une ligue avec cette compétition",
-    leagueJoin: "Rejoindre une ligue",
+      `Ton podium compte au classement général et à celui de ${competition}. Dans une ligue, tu te mesures aussi à tes amis.`,
+    leagueCreate: "Créer une ligue privée",
+    leagueCreatePublic: "Créer une ligue publique",
+    leagueJoin: "Rejoindre une ligue publique",
     leagueAdd: (name: string) => `Ajouter à ma ligue « ${name} »`,
   },
   moderation: {
@@ -1148,8 +1149,6 @@ export const messages = {
     ROUND_NOT_READY: "Les pronos ouvrent quand les tours précédents sont terminés.",
     ROUND_UNAVAILABLE: "La qualification n'a pas pu être faite. Réessaie.",
     JOKER_ALREADY_USED: "Tu as déjà utilisé ton joker dans cette compétition.",
-    NO_LEAGUE_FOR_COMPETITION:
-      "Pour pronostiquer, rejoins d'abord une ligue qui compte cette compétition.",
     PREDICTION_UNAVAILABLE:
       "Ton prono n'est pas disponible pour le moment. Réessaie dans un instant.",
     DELETION_NOT_CONFIRMED: "Coche la case pour confirmer la suppression.",

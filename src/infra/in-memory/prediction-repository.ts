@@ -22,8 +22,6 @@ export type PredictionEventFixture = {
 export function createInMemoryPredictionRepository(options: {
   events: PredictionEventFixture[];
   now?: () => Date;
-  /** Whether the player is in a league counting the competition (#311). Default: always. */
-  inLeague?: (userId: string, competitionSlug: string) => boolean;
 }): PredictionRepository {
   const now = options.now ?? (() => new Date());
   const stored = new Map<string, Prediction>();
@@ -44,9 +42,6 @@ export function createInMemoryPredictionRepository(options: {
       if (!event) throw new Error(`unknown event ${prediction.eventId}`);
       if (eventPhase(now(), event.lockAt) === "locked") return "locked";
       if (event.predictable === false) return "round_not_ready";
-      if (options.inLeague && !options.inLeague(prediction.userId, event.competitionSlug)) {
-        return "no_league";
-      }
 
       const picks = [prediction.podium.first, prediction.podium.second, prediction.podium.third];
       const athletes = picks.filter((id) => id !== OTHER_ATHLETE);

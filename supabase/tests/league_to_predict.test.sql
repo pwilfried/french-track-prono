@@ -1,4 +1,4 @@
--- pgTAP: a player predicts only from a league counting the competition (#311).
+-- pgTAP: a player predicts with or without a league (#311, then #375 on 9 Nov 2026).
 -- Run with `supabase test db`. Everything is rolled back at the end.
 begin;
 select plan(3);
@@ -48,11 +48,11 @@ $$;
 set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub":"dddd0000-0000-0000-0000-000000000001","role":"authenticated"}', true);
-select throws_ok(
+select lives_ok(
   $$insert into predictions (user_id, event_id, p1, p2, p3)
     values ('dddd0000-0000-0000-0000-000000000001', 'dddddddd-0000-0000-0000-00000000000e',
             test_pick(1), test_pick(2), test_pick(3))$$,
-  'FT011', null, 'a player in no league of the competition cannot predict');
+  'a player in no league of the competition predicts too');
 
 select set_config('request.jwt.claims',
   '{"sub":"dddd0000-0000-0000-0000-000000000002","role":"authenticated"}', true);
@@ -62,18 +62,9 @@ select lives_ok(
             test_pick(1), test_pick(2), test_pick(3))$$,
   'a member of a league counting the competition predicts');
 
--- Once his league counts the competition too, the loner may predict.
-reset role;
-insert into league_competitions (league_id, competition_id)
-select 'dddddddd-0000-0000-0000-0000000000a2'::uuid, id from competitions where slug = 'test-league-to-predict';
-set local role authenticated;
-select set_config('request.jwt.claims',
-  '{"sub":"dddd0000-0000-0000-0000-000000000001","role":"authenticated"}', true);
-select lives_ok(
-  $$insert into predictions (user_id, event_id, p1, p2, p3)
-    values ('dddd0000-0000-0000-0000-000000000001', 'dddddddd-0000-0000-0000-00000000000e',
-            test_pick(1), test_pick(2), test_pick(3))$$,
-  'adding the competition to his league lets him predict');
+select ok(not in_league_of_competition('dddd0000-0000-0000-0000-000000000001',
+  (select id from competitions where slug = 'test-league-to-predict')),
+  'the pages can still tell he has no league of the competition');
 
 select * from finish();
 rollback;

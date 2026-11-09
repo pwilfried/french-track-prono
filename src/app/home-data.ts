@@ -31,8 +31,8 @@ import { getSessionClient } from "./session";
 export type PlayerHome = {
   pseudo: string;
   competition: ShownCompetition;
-  /** A player predicts from a league counting the competition (#311); without one, the home
-   * offers to create a private or a public league (#369). */
+  /** Without a league counting the competition, the home suggests one (#375); predicting never
+   * needs one. */
   hasLeagueForCompetition: boolean;
   /** The finals still open, the next first. */
   finals: OpenFinal[];

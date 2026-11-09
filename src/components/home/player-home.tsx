@@ -21,7 +21,7 @@ export type PlayerHomeProps = {
   pseudo: string;
   competitionName: string;
   competitionSlug: string;
-  /** False: the next final offers to create a private or a public league first (#369). */
+  /** False: under the podium button, the card suggests a private or public league (#375). */
   hasLeagueForCompetition: boolean;
   timeZone: string;
   now: Date;
@@ -73,22 +73,22 @@ export function PlayerHome(props: PlayerHomeProps) {
           <h2 id="next-final" className="font-display text-[26px] font-extrabold leading-tight">
             {eventName(next)}
           </h2>
-          {hasLeagueForCompetition ? (
-            <>
-              <p className="text-sm text-[#d9e4f5]">
-                {next.predicted ? text.podiumDone : text.podiumEmpty}
-              </p>
-              <Link href={`/epreuves/${next.slug}`} className={cn(buttonVariants(), "w-full")}>
-                {next.predicted ? text.editPodium : messages.home.compose}
-              </Link>
-            </>
-          ) : (
-            <>
+          <p className="text-sm text-[#d9e4f5]">
+            {next.predicted ? text.podiumDone : text.podiumEmpty}
+          </p>
+          <Link href={`/epreuves/${next.slug}`} className={cn(buttonVariants(), "w-full")}>
+            {next.predicted ? text.editPodium : messages.home.compose}
+          </Link>
+          {hasLeagueForCompetition ? null : (
+            <div className="flex flex-col gap-2 border-t border-white/20 pt-3">
               <p className="text-sm text-[#d9e4f5]">{text.leagueFirst}</p>
               <div className="grid grid-cols-2 gap-2">
                 <Link
                   href={`/ligues/creer?competition=${encodeURIComponent(competitionSlug)}`}
-                  className={buttonVariants()}
+                  className={cn(
+                    buttonVariants({ variant: "outline" }),
+                    "border-white/70 bg-transparent text-white",
+                  )}
                 >
                   {text.createPrivate}
                 </Link>
@@ -108,7 +108,7 @@ export function PlayerHome(props: PlayerHomeProps) {
               >
                 {text.joinPublic}
               </Link>
-            </>
+            </div>
           )}
         </section>
       ) : (

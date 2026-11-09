@@ -19,11 +19,7 @@ function fakeWorld(): PredictionWorld {
     { id: "locked", competitionSlug: "c", lockAt: past, athleteIds: athletes },
     { id: "semi", competitionSlug: "c", lockAt: future, athleteIds: athletes, predictable: false },
   ];
-  const loners = new Set<string>();
-  const shared = createInMemoryPredictionRepository({
-    events: fixtures,
-    inLeague: (userId) => !loners.has(userId),
-  });
+  const shared = createInMemoryPredictionRepository({ events: fixtures });
   const event = (id: string): EventFixture => ({
     eventId: id,
     athleteIds: athletes,
@@ -32,11 +28,7 @@ function fakeWorld(): PredictionWorld {
   return {
     competitionSlug: "c",
     newPlayer: async () => ({ userId: crypto.randomUUID(), predictions: shared }),
-    newPlayerWithoutLeague: async () => {
-      const userId = crypto.randomUUID();
-      loners.add(userId);
-      return { userId, predictions: shared };
-    },
+    newPlayerWithoutLeague: async () => ({ userId: crypto.randomUUID(), predictions: shared }),
     openEvents: [event("open-1"), event("open-2")],
     lockedEvent: event("locked"),
     semiFinal: event("semi"),
