@@ -2,11 +2,17 @@ import { cache } from "react";
 
 import type { CompetitionSummary } from "@/application/create-competition";
 import { UseCaseError } from "@/application/errors";
+import { listMyLeagues, type League } from "@/application/leagues";
 import { listCompetitions } from "@/application/list-competitions";
-import { nextCompetition } from "@/domain/competition";
-import { createPublicSupabaseClient, createSupabaseCompetitionAdminRepository } from "@/infra";
+import { competitionsForPlayer, nextCompetition } from "@/domain/competition";
+import {
+  createPublicSupabaseClient,
+  createSupabaseCompetitionAdminRepository,
+  createSupabaseLeagueRepository,
+} from "@/infra";
 
 import { messages } from "./messages.fr";
+import { getCurrentUser, getSessionClient } from "./session";
 
 /** The competition a page shows, with its French place line ("Budapest · 11 – 13 sept. 2026"). */
 export type ShownCompetition = CompetitionSummary & { place: string };
@@ -69,4 +75,33 @@ export const currentCompetition = cache(async (slug?: string): Promise<ShownComp
     nextCompetition(all, currentDay()) ??
     FALLBACK
   );
+});
+
+/** The signed-in player's leagues, by name; empty for a visitor or when they cannot be read. */
+export const loadMyLeagues = cache(async (): Promise<League[]> => {
+  const user = await getCurrentUser();
+  if (!user) return [];
+  try {
+    return await listMyLeagues({
+      leagues: createSupabaseLeagueRepository(await getSessionClient()),
+    }).execute();
+  } catch (error) {
+    if (error instanceof UseCaseError) return [];
+    throw error;
+  }
+});
+
+/**
+ * The competitions still to come, those of the player's leagues first (#352), and the one to show
+ * by default: the next one of their leagues, unless COMPETITION_SLUG pins one for the tests.
+ */
+export const playerCompetitions = cache(async () => {
+  const [lists, leagues] = await Promise.all([loadCompetitions(), loadMyLeagues()]);
+  const choices = competitionsForPlayer(
+    [...lists.coming, ...lists.past],
+    leagues.flatMap((league) => league.competitionSlugs),
+    currentDay(),
+  );
+  const preferred = process.env.COMPETITION_SLUG ? undefined : choices.mine[0]?.slug;
+  return { ...choices, preferred };
 });

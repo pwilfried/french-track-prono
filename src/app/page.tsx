@@ -1,10 +1,14 @@
 import Link from "next/link";
 
+import { PlayerHome } from "@/components/home/player-home";
+import { TrackBackground } from "@/components/home/track-background";
 import { buttonVariants } from "@/components/ui/button";
 import { daysUntil, type CompetitionScope } from "@/domain/competition";
 
 import { currentDay, loadCompetitions, SCOPE_CHIP, type ShownCompetition } from "./competition";
+import { loadPlayerHome } from "./home-data";
 import { messages } from "./messages.fr";
+import { getCurrentUser } from "./session";
 
 const SCOPES: CompetitionScope[] = ["international", "france"];
 
@@ -65,71 +69,96 @@ function NextCompetition({ c, today }: { c: ShownCompetition; today: string }) {
   );
 }
 
-/** Home (board v0.9 « Accueil »): the two kinds of competitions, then the next two to come. */
+/**
+ * Home: a running track behind (#346). A signed-in player first sees what to do next and where they
+ * stand (board A+); everyone sees the two kinds of competitions, then the next two to come.
+ */
 export default async function Home() {
   const today = currentDay();
-  const { coming } = await loadCompetitions();
+  const user = await getCurrentUser();
+  const [{ coming }, player] = await Promise.all([
+    loadCompetitions(),
+    user ? loadPlayerHome(user.userId) : Promise.resolve(null),
+  ]);
 
   return (
-    <main id="main" className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-6 md:max-w-3xl">
-      <div className="flex flex-col gap-1.5">
-        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          {messages.start.eyebrow}
-        </p>
-        <h1 className="font-display text-[34px] font-extrabold leading-none">
-          {messages.start.title}
-        </h1>
-        <p className="text-[15px] leading-relaxed text-muted-foreground">{messages.start.intro}</p>
-        <Link href="/regles" className="inline-flex min-h-11 items-center self-start font-bold">
-          {messages.rules.link}
-        </Link>
-      </div>
-
-      <nav aria-label={messages.start.blocksLabel} className="grid grid-cols-2 gap-3">
-        {SCOPES.map((scope) => (
-          <Link
-            key={scope}
-            href={`/competitions?type=${scope}`}
-            className={`flex min-h-[150px] flex-col justify-between gap-4 rounded-card p-4 ${
-              scope === "international"
-                ? "bg-brand text-white"
-                : "border border-border bg-card text-foreground"
-            }`}
-          >
-            <ScopeIcon scope={scope} />
-            <span className="flex flex-col gap-1">
-              <span className="font-display text-[19px] font-extrabold leading-tight">
-                {messages.start.block[scope]}
-              </span>
-              <span
-                className={`text-sm ${scope === "international" ? "text-[#d9e4f5]" : "text-muted-foreground"}`}
-              >
-                {messages.start.coming(coming.filter((c) => c.scope === scope).length)}
-              </span>
-            </span>
-          </Link>
-        ))}
-      </nav>
-
-      <section aria-labelledby="next-competitions" className="flex flex-col gap-3">
-        <h2
-          id="next-competitions"
-          className="border-b border-border pb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground"
-        >
-          {messages.start.next}
-        </h2>
-        {coming.length === 0 ? (
-          <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
-            {messages.start.none}
-          </p>
+    <main id="main" className="relative isolate flex flex-1 flex-col overflow-hidden">
+      <TrackBackground />
+      <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-6 md:max-w-3xl">
+        {player ? (
+          <PlayerHome
+            pseudo={player.pseudo}
+            competitionName={player.competition.name}
+            timeZone={player.competition.timeZone}
+            now={new Date()}
+            finals={player.finals}
+            general={player.general}
+            league={player.league}
+            lastResult={player.lastResult}
+          />
         ) : (
-          <div className="grid gap-3 md:grid-cols-2">
-            {coming.slice(0, 2).map((c) => (
-              <NextCompetition key={c.slug} c={c} today={today} />
-            ))}
+          <div className="flex flex-col gap-1.5">
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              {messages.start.eyebrow}
+            </p>
+            <h1 className="font-display text-[34px] font-extrabold leading-none">
+              {messages.start.title}
+            </h1>
+            <p className="text-[15px] leading-relaxed text-muted-foreground">
+              {messages.start.intro}
+            </p>
+            <Link href="/regles" className="inline-flex min-h-11 items-center self-start font-bold">
+              {messages.rules.link}
+            </Link>
           </div>
         )}
-      </section>
+
+        <nav aria-label={messages.start.blocksLabel} className="grid grid-cols-2 gap-3">
+          {SCOPES.map((scope) => (
+            <Link
+              key={scope}
+              href={`/competitions?type=${scope}`}
+              className={`flex min-h-[150px] flex-col justify-between gap-4 rounded-card p-4 ${
+                scope === "international"
+                  ? "bg-brand text-white"
+                  : "border border-border bg-card text-foreground"
+              }`}
+            >
+              <ScopeIcon scope={scope} />
+              <span className="flex flex-col gap-1">
+                <span className="font-display text-[19px] font-extrabold leading-tight">
+                  {messages.start.block[scope]}
+                </span>
+                <span
+                  className={`text-sm ${scope === "international" ? "text-[#d9e4f5]" : "text-muted-foreground"}`}
+                >
+                  {messages.start.coming(coming.filter((c) => c.scope === scope).length)}
+                </span>
+              </span>
+            </Link>
+          ))}
+        </nav>
+
+        <section aria-labelledby="next-competitions" className="flex flex-col gap-3">
+          <h2
+            id="next-competitions"
+            className="border-b border-border pb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground"
+          >
+            {messages.start.next}
+          </h2>
+          {coming.length === 0 ? (
+            <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
+              {messages.start.none}
+            </p>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {coming.slice(0, 2).map((c) => (
+                <NextCompetition key={c.slug} c={c} today={today} />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </main>
   );
 }
