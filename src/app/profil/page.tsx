@@ -7,8 +7,10 @@ import { getMyBadges } from "@/application/get-my-badges";
 import { getProfile } from "@/application/get-profile";
 import { getPlayerDetails } from "@/application/player-details";
 import { getMySeason } from "@/application/get-my-season";
+import { getClubRanking } from "@/application/rankings";
 import { InstallEntry } from "@/components/shell/install-prompt";
 import { ClubNotices } from "@/components/account/club-notices";
+import { ClubRanking } from "@/components/profile/club-ranking";
 import {
   BestShot,
   SeasonCurve,
@@ -31,7 +33,7 @@ import { currentCompetition, loadCompetitions } from "../competition";
 import { messages } from "../messages.fr";
 import { getCurrentUser, getSessionClient } from "../session";
 
-/** The season over every competition, and the badges of the current one; null when unreadable. */
+/** The season and the club ranking over every competition, the badges of the current one; null when unreadable. */
 async function loadSeason(userId: string) {
   const competition = await currentCompetition();
   const { coming, past } = await loadCompetitions();
@@ -39,7 +41,7 @@ async function loadSeason(userId: string) {
   try {
     const client = await getSessionClient();
     const events = createSupabaseEventReader(createPublicSupabaseClient());
-    const [season, badges] = await Promise.all([
+    const [season, badges, clubs] = await Promise.all([
       getMySeason({
         ranking: createSupabaseRankingRepository(client),
         predictions: createSupabasePredictionRepository(client),
@@ -51,8 +53,11 @@ async function loadSeason(userId: string) {
         predictions: createSupabasePredictionRepository(client),
         events,
       }).execute({ userId, competitionSlug: competition.slug, timeZone: competition.timeZone }),
+      getClubRanking({ ranking: createSupabaseRankingRepository(client) }).execute({
+        competitionSlugs: slugs.length ? slugs : [competition.slug],
+      }),
     ]);
-    return { ...season, badges };
+    return { ...season, badges, clubs };
   } catch (error) {
     if (error instanceof UseCaseError) return null;
     throw error;
@@ -146,6 +151,10 @@ export default async function ProfilePage({
           <SeasonCurve curve={season.stats.curve} />
           <BestShot best={season.stats.bestShot} />
           <StrongFamilies families={season.stats.families} />
+          <ClubRanking
+            clubs={season.clubs}
+            myClub={details?.club?.validated ? details.club : null}
+          />
         </>
       )}
 
