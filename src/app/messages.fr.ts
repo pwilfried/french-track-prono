@@ -27,6 +27,7 @@ export const messages = {
     events: "Épreuves",
     ranking: "Classement",
     league: "Ma ligue",
+    leagues: "Ligues",
     profile: "Profil",
   },
   home: {
@@ -400,6 +401,7 @@ export const messages = {
       set_odds: "Cotes enregistrées",
       set_rule: "Barème modifié",
       moderate_league: "Ligue modérée",
+      moderate_player: "Joueur modéré",
     },
     noEvent: "Épreuve supprimée",
     size: (
@@ -412,26 +414,29 @@ export const messages = {
         | "edit_competition"
         | "set_odds"
         | "set_rule"
-        | "moderate_league",
+        | "moderate_league"
+        | "moderate_player",
       n: number,
     ) =>
       kind === "set_rule"
         ? "barème"
         : kind === "moderate_league"
           ? "ligue publique"
-          : kind === "set_tolerance"
-            ? "barème"
-            : kind === "edit_athlete"
-              ? "fiche athlète"
-              : kind === "edit_competition"
-                ? "compétition"
-                : kind === "set_odds"
-                  ? `${n} cotes`
-                  : kind === "run_scoring"
-                    ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
-                    : kind === "set_results"
-                      ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
-                      : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
+          : kind === "moderate_player"
+            ? "compte joueur"
+            : kind === "set_tolerance"
+              ? "barème"
+              : kind === "edit_athlete"
+                ? "fiche athlète"
+                : kind === "edit_competition"
+                  ? "compétition"
+                  : kind === "set_odds"
+                    ? `${n} cotes`
+                    : kind === "run_scoring"
+                      ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
+                      : kind === "set_results"
+                        ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
+                        : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
     by: (pseudo: string | null) => (pseudo ? `par ${pseudo}` : "par un compte supprimé"),
   },
   import: {
@@ -652,6 +657,7 @@ export const messages = {
       disciplines: "Disciplines",
       scale: "Barème",
       leagues: "Ligues",
+      players: "Joueurs",
       history: "Historique",
     },
     create: "+ Nouvelle compétition",
@@ -866,6 +872,7 @@ export const messages = {
     },
   },
   picker: {
+    profileLabel: (name: string) => `Fiche de ${name}`,
     podium: "Mon podium",
     athletes: "Liste de départ",
     emptyStep: "Touche un athlète",
@@ -972,12 +979,37 @@ export const messages = {
     removeConfirm: "Je confirme la suppression de cette ligue et de ses membres",
     done: "✓ C'est fait.",
   },
+  adminPlayers: {
+    title: "Joueurs",
+    subtitle:
+      "Cherche un joueur par son pseudo. Bloqué, il ne pronostique plus, ne rejoint plus de ligue et sort des classements. Chaque action est notée dans l'historique.",
+    searchLabel: "Pseudo",
+    search: "Chercher",
+    hint: "Tape au moins 2 lettres.",
+    empty: "Aucun joueur trouvé.",
+    blocked: "Bloqué",
+    admin: "Admin",
+    since: (date: string) => `Inscrit le ${date}`,
+    block: "Bloquer",
+    unblock: "Débloquer",
+    pending: "…",
+    remove: "Supprimer le compte",
+    removing: "Suppression…",
+    removeConfirm: (pseudo: string) =>
+      `Je confirme la suppression définitive du compte de ${pseudo}`,
+    done: "✓ C'est fait.",
+  },
   errors: {
     EVENTS_UNAVAILABLE: "Impossible de charger les épreuves pour le moment.",
     EVENT_NOT_FOUND: "Cette épreuve n'existe pas.",
     EMAIL_INVALID: "Cette adresse e-mail n'a pas l'air valide.",
     CODE_INVALID: "Code incorrect ou expiré. Vérifie-le ou demande-en un nouveau.",
     AUTH_UNAVAILABLE: "La connexion ne marche pas pour le moment. Réessaie dans un instant.",
+    ACCOUNT_BLOCKED:
+      "Ton compte est bloqué par l'équipe : tu ne peux plus pronostiquer ni rejoindre de ligue. Écris-nous pour en savoir plus.",
+    PLAYER_UNKNOWN: "Ce joueur n'existe plus (ou c'est un admin).",
+    PLAYERS_UNAVAILABLE:
+      "La liste des joueurs est indisponible pour le moment. Réessaie dans un instant.",
     EMAIL_UNCHANGED: "C'est déjà ton adresse de connexion.",
     EMAIL_TAKEN: "Cette adresse est déjà utilisée par un autre compte.",
     AGE_NOT_CONFIRMED: "Tu dois avoir 15 ans ou plus pour jouer.",

@@ -81,6 +81,8 @@ export function createSupabasePredictionRepository(client: SupabaseClient): Pred
       if (error.code === "FT001") return "round_not_ready";
       // FT011: the player is in no league counting this competition.
       if (error.code === "FT011") return "no_league";
+      // FT014: the admin blocked this account (#343).
+      if (error.code === "FT014") throw new UseCaseError("ACCOUNT_BLOCKED");
       // FT006: an athlete that is not proposed (odds), or « autre athlète » without odds.
       if (error.code === "FT006") return "athlete_not_proposed";
       // 23503: a foreign key to `entries` (event, athlete) failed.
