@@ -978,6 +978,18 @@ export const messages = {
     strong: "Mes disciplines fortes",
     noStrong: "Tes disciplines fortes apparaîtront après quelques épreuves calculées.",
   },
+  notifications: {
+    title: "Notifications",
+    description:
+      "Un rappel avant le verrouillage d'une finale pas encore pronostiquée, et tes points dès qu'ils tombent. Une par heure au plus.",
+    turnOn: "Activer sur cet appareil",
+    turnOff: "Désactiver sur cet appareil",
+    on: "Activées sur cet appareil.",
+    denied: "Ton navigateur bloque les notifications de ce site : autorise-les dans ses réglages.",
+    unsupported:
+      "Ton navigateur ne gère pas les notifications. Sur iPhone, ajoute d'abord l'appli à l'écran d'accueil.",
+    failed: "Les notifications n'ont pas pu être activées. Réessaie dans un instant.",
+  },
   editProfile: {
     title: "Modifier mon profil",
     subtitle: "Ton pseudo, ton avatar, ton club. Sexe et disciplines restent privés.",
@@ -1397,6 +1409,8 @@ export const messages = {
       "Les ligues ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     CLUBS_UNAVAILABLE:
       "La liste des clubs est indisponible pour le moment. Réessaie dans un instant.",
+    NOTIFICATIONS_UNAVAILABLE:
+      "Les notifications ne peuvent pas être activées pour le moment. Réessaie dans un instant.",
     SEX_INVALID: "Choisis Femme, Homme ou « Je préfère ne pas le dire ».",
     CLUB_NAME_INVALID: "Le nom du club doit faire entre 2 et 120 caractères.",
     CLUB_NAME_BANNED: "Ce nom de club n'est pas possible (insulte, nom officiel ou lien).",
@@ -1523,6 +1537,7 @@ export const messages = {
             "Ton pseudo et ton avatar emoji, visibles des autres joueurs.",
             "Tes pronos (podiums et perfs), tes points, tes ligues et tes réactions. Tes pronos sont visibles des autres une fois l'épreuve verrouillée.",
             "La date à laquelle tu as confirmé avoir 15 ans ou plus.",
+            "Si tu actives les notifications : l'adresse d'envoi que ton navigateur nous donne pour cet appareil, supprimée dès que tu les désactives. Les notifications passent par le service de ton navigateur (Google, Apple ou Mozilla), qui les transmet chiffrées sans pouvoir les lire.",
           ],
         },
         {

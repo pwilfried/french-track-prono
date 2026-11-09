@@ -69,5 +69,7 @@ export { createInMemoryClubAdminStore } from "./in-memory/club-admin-repository"
 export { createSupabaseClubAdminRepository } from "./supabase/club-admin-repository";
 export { createInMemoryClubNoticeStore } from "./in-memory/club-notice-repository";
 export { createSupabaseClubNoticeRepository } from "./supabase/club-notice-repository";
+export { createInMemoryPushSubscriptionStore } from "./in-memory/push-subscription-repository";
+export { createSupabasePushSubscriptionRepository } from "./supabase/push-subscription-repository";
 export { createInMemoryReadinessStore } from "./in-memory/readiness-reader";
 export { createSupabaseReadinessReader } from "./supabase/readiness-reader";

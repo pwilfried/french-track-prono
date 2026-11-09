@@ -346,6 +346,20 @@ Règles : migration `20261109030000_inactive_accounts.sql` (testées en pgTAP). 
 ceux des migrations : `RESEND_API_KEY` et `RESEND_FROM` (environnement « production »). Sans eux,
 personne n'est prévenu, donc personne n'est supprimé.
 
+## Notifications push
+
+Le workflow « Push notifications » (toutes les 5 minutes, ou à la main) envoie aux joueurs qui
+les ont activées depuis leur profil un rappel avant le verrouillage d'une finale qu'ils n'ont pas
+pronostiquée, et leurs points une fois calculés (règles dans
+`supabase/migrations/20261109100000_push_notifications.sql`). Mise en route, une seule fois :
+
+1. Générer une paire de clés : `npx web-push generate-vapid-keys`.
+2. GitHub, environnement « production » : secrets `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY`.
+3. Vercel, variables d'environnement de production : `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (la clé
+   publique seulement), puis redéployer (tag). Sans elle, le bouton n'apparaît pas.
+
+La clé privée ne va jamais dans Vercel ni dans le dépôt. Sur iPhone, les notifications ne
+marchent qu'une fois l'appli ajoutée à l'écran d'accueil (iOS 16.4 ou plus).
 ## Sentry (erreurs en prod)
 
 Optionnel : voir `docs/sentry.md` (compte UE, `NEXT_PUBLIC_SENTRY_DSN` dans Vercel, jeton pour
