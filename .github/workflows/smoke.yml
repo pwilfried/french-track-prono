@@ -2,7 +2,9 @@ name: Production smoke test
 
 # Is production up? (#174) After each production deploy by Vercel, and once a day (a paused
 # Supabase project shows up there too), the main pages of the public site must answer at once.
-# No retry: a failure is reported (GitHub e-mails the owner) and looked at.
+# No retry: a failure is reported (GitHub e-mails the owner) and looked at. The jobs of this
+# repository that use the « production » environment (push notifications every 5 minutes) also
+# create deployments: those are not Vercel's and are skipped.
 on:
   deployment_status:
   schedule:
@@ -18,7 +20,8 @@ jobs:
     if: >-
       github.event_name != 'deployment_status' ||
       (github.event.deployment_status.state == 'success' &&
-       github.event.deployment.environment == 'Production')
+       github.event.deployment.environment == 'Production' &&
+       github.event.deployment.creator.login != 'github-actions[bot]')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

@@ -12,6 +12,7 @@ import { getMyPredictionHistory } from "@/application/list-my-predictions";
 import { getClubRanking } from "@/application/rankings";
 import { BadgeGrid } from "@/components/profile/badge-grid";
 import { InstallEntry } from "@/components/shell/install-prompt";
+import { NotificationOptIn } from "@/components/account/notification-opt-in";
 import { ClubNotices } from "@/components/account/club-notices";
 import { ClubRanking } from "@/components/profile/club-ranking";
 import { LatestPredictions } from "@/components/profile/prediction-history";
@@ -36,6 +37,7 @@ import {
 
 import { currentCompetition, seasonCompetitionSlugs } from "../competition";
 import { messages } from "../messages.fr";
+import { turnOffNotificationsAction, turnOnNotificationsAction } from "../push-actions";
 import { getCurrentUser, getSessionClient } from "../session";
 
 /** The season and the club ranking over every competition, the badges of the current one; null when unreadable. */
@@ -198,6 +200,10 @@ export default async function ProfilePage({
           <span aria-hidden="true">›</span>
         </Link>
         <InstallEntry />
+        <NotificationOptIn
+          turnOn={turnOnNotificationsAction}
+          turnOff={turnOffNotificationsAction}
+        />
       </section>
 
       {season && <BadgeGrid progress={season.badges} />}

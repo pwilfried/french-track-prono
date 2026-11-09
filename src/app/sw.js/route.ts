@@ -64,6 +64,28 @@ self.addEventListener("fetch", (event) => {
     }
   }
 });
+
+// Notifications (#203): { title, body, url } sent by the « Push notifications » workflow.
+self.addEventListener("push", (event) => {
+  const data = event.data ? event.data.json() : {};
+  event.waitUntil(self.registration.showNotification(data.title || "French Track Prono", {
+    body: data.body,
+    icon: "/icons/icon-192.png",
+    tag: data.tag,
+    data: { url: typeof data.url === "string" && data.url.startsWith("/") ? data.url : "/" },
+  }));
+});
+
+// A touch opens the page, in the app's window when it is already open.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data.url, self.location.origin).href;
+  event.waitUntil(self.clients.matchAll({ type: "window" }).then((windows) => {
+    const open = windows[0];
+    if (!open) return self.clients.openWindow(url);
+    return open.navigate(url).then((client) => (client || open).focus()).catch(() => self.clients.openWindow(url));
+  }));
+});
 `;
 
 export function GET() {
