@@ -20,7 +20,10 @@ test("a player changes pseudo and club, then signs in with a new address", async
   await page.waitForURL(/\/profil\?enregistre=1$/);
   await expect(page.getByText("Ton profil est à jour.")).toBeVisible();
   await expect(page.getByText(pseudo).first()).toBeVisible();
-  await expect(page.getByText("Stade Imaginaire Athlétisme")).toBeVisible();
+  // The club also shows in the header (validated clubs) and the club ranking: check the account.
+  await expect(
+    page.getByRole("region", { name: "Compte" }).getByText("Stade Imaginaire Athlétisme"),
+  ).toBeVisible();
 
   // A banned pseudo is refused
   await page.getByRole("link", { name: "Modifier mon profil" }).click();
