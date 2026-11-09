@@ -1,4 +1,9 @@
 // Every visible UI string lives here (French only in v1, no i18n library).
+
+/** « 1er », « 2e »… */
+const ordinal = (rank: number) => (rank === 1 ? "1er" : `${rank}e`);
+const GENDER = { F: "Femmes", M: "Hommes", X: "Mixte" } as const;
+
 export const messages = {
   /** Name and place of each competition the app can show (see src/app/competition.ts). */
   competition: {
@@ -135,7 +140,10 @@ export const messages = {
     },
     category: "Catégorie",
     filters: { all: "Toutes", F: "Femmes", M: "Hommes", X: "Mixte" },
-    gender: { F: "Femmes", M: "Hommes", X: "Mixte" },
+    gender: GENDER,
+    /** « 100 m femmes ». */
+    name: (discipline: string, gender: keyof typeof GENDER) =>
+      `${discipline} ${GENDER[gender].toLowerCase()}`,
     genderInitial: { F: "F", M: "H", X: "X" },
     status: { upcoming: "À venir", live: "En cours", finished: "Terminé" },
     featured: "Phare",
@@ -159,7 +167,7 @@ export const messages = {
     label: "Classement",
     me: "Toi",
     tie: "ex æquo",
-    position: (rank: number) => (rank === 1 ? "1er" : `${rank}e`),
+    position: (rank: number) => ordinal(rank),
     points: (points: number) => `${points} ${points <= 1 ? "point" : "points"}`,
     perfect: (n: number) => (n === 1 ? "1 podium parfait" : `${n} podiums parfaits`),
     winners: (n: number) => (n === 1 ? "1 vainqueur trouvé" : `${n} vainqueurs trouvés`),
@@ -176,7 +184,7 @@ export const messages = {
     noClub: "Club non renseigné",
     rank: "Rang",
     rankOf: (rank: number, total: number) =>
-      `${rank === 1 ? "1er" : `${rank}e`} sur ${total} ${total <= 1 ? "joueur" : "joueurs"}`,
+      `${ordinal(rank)} sur ${total} ${total <= 1 ? "joueur" : "joueurs"}`,
   },
   points: {
     title: "Mes points",
@@ -211,7 +219,7 @@ export const messages = {
     members: (n: number) => `${n} ${n <= 1 ? "membre" : "membres"}`,
     codeShort: (code: string) => `code ${code}`,
     createdByMe: "créée par toi",
-    rankOf: (rank: number, of: number) => `${rank === 1 ? "1er" : `${rank}e`} sur ${of}`,
+    rankOf: (rank: number, of: number) => `${ordinal(rank)} sur ${of}`,
     emptyTitle: "Joue entre amis",
     emptyText: "Crée une ligue et partage son code, ou rejoins celle d'un ami.",
     create: "Créer une ligue",
@@ -293,7 +301,7 @@ export const messages = {
     scopeLabel: "Choisir le classement",
     general: "Général",
     mine: (rank: number, of: number, points: number) =>
-      `Ta place : ${rank === 1 ? "1er" : `${rank}e`} sur ${of} · ${points} ${points <= 1 ? "pt" : "pts"}`,
+      `Ta place : ${ordinal(rank)} sur ${of} · ${points} ${points <= 1 ? "pt" : "pts"}`,
     notRanked: "Tu n'as pas encore de points : fais tes pronos pour entrer au classement.",
     predict: "Faire mes pronos",
   },
@@ -882,11 +890,9 @@ export const messages = {
     title: "Ma saison",
     points: "pts",
     rank: (rank: number, players: number) =>
-      `${rank === 1 ? "1er" : `${rank}e`} sur ${players} joueur${players > 1 ? "s" : ""}`,
+      `${ordinal(rank)} sur ${players} joueur${players > 1 ? "s" : ""}`,
     notRanked: "Pas encore classé",
     bestShot: "MON MEILLEUR COUP",
-    bestPerfect: (event: string) => `Podium parfait au ${event}`,
-    bestPoints: (points: number) => `+${points} pts`,
     noBestShot: "À venir…",
     footer: "Pronostique les podiums d'athlé avec FrenchTrack",
     share: "Partager ma carte de saison",
@@ -916,13 +922,13 @@ export const messages = {
     title: "Classement des clubs",
     podium: "Podium des clubs",
     myClub: (name: string, rank: number, clubs: number) =>
-      `${name} : ${rank === 1 ? "1er" : `${rank}e`} sur ${clubs}`,
+      `${name} : ${ordinal(rank)} sur ${clubs}`,
     average: (points: string) => `${points} pts de moyenne`,
     notRanked: (name: string, min: number) =>
       `${name} n'est pas encore classé : il faut ${min} joueurs du club avec des points.`,
     addClub: "Ajoute ton club pour le faire grimper",
     empty: "Aucun club classé pour l'instant.",
-    rank: (rank: number) => `${rank === 1 ? "1er" : `${rank}e`} :`,
+    rank: (rank: number) => `${ordinal(rank)} :`,
     players: (n: number) => `${n} joueur${n > 1 ? "s" : ""}`,
     rule: (min: number) =>
       `Moyenne des points des joueurs du club, toutes compétitions, à partir de ${min} joueurs.`,
@@ -946,7 +952,7 @@ export const messages = {
     joined: (club: string | null, date: string) =>
       `${club ? `${club} · ` : ""}joueur depuis le ${date}`,
     pointsShort: "pts",
-    rankOf: (rank: number, players: number) => `${rank === 1 ? "1er" : `${rank}e`} sur ${players}`,
+    rankOf: (rank: number, players: number) => `${ordinal(rank)} sur ${players}`,
     notRanked: "pas encore classé",
     myStats: "Mes stats",
     stat: {
@@ -1206,7 +1212,7 @@ export const messages = {
     membersLoading: "Chargement des membres…",
     owner: "Créateur",
     points: (n: number) => `${n} pts`,
-    rank: (n: number) => (n === 1 ? "1er" : `${n}e`),
+    rank: (n: number) => ordinal(n),
     removeMember: (pseudo: string) => `Retirer ${pseudo}`,
     removeMemberTitle: (pseudo: string) => `Retirer ${pseudo} de la ligue ?`,
     removeMemberBody: "Il pourra la rejoindre à nouveau s'il a le code ou si elle est publique.",
@@ -1317,7 +1323,7 @@ export const messages = {
     notRanked: "—",
     leaguesTitle: "Ses ligues",
     leagueRank: (name: string, rank: number, size: number) =>
-      `${name} · ${rank === 1 ? "1er" : `${rank}e`} sur ${size}`,
+      `${name} · ${ordinal(rank)} sur ${size}`,
     noLeague: "Aucune ligue.",
     leaguesLoading: "Chargement des ligues…",
     reportsTitle: "Signalements",

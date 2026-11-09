@@ -34,15 +34,14 @@ import {
   createSupabaseRankingRepository,
 } from "@/infra";
 
-import { currentCompetition, loadCompetitions } from "../competition";
+import { currentCompetition, seasonCompetitionSlugs } from "../competition";
 import { messages } from "../messages.fr";
 import { getCurrentUser, getSessionClient } from "../session";
 
 /** The season and the club ranking over every competition, the badges of the current one; null when unreadable. */
 async function loadSeason(userId: string) {
   const competition = await currentCompetition();
-  const { coming, past } = await loadCompetitions();
-  const slugs = [...coming, ...past].map((c) => c.slug);
+  const slugs = await seasonCompetitionSlugs();
   try {
     const client = await getSessionClient();
     const events = createSupabaseEventReader(createPublicSupabaseClient());
@@ -52,20 +51,20 @@ async function loadSeason(userId: string) {
         predictions: createSupabasePredictionRepository(client),
         events,
         disciplines: createSupabaseDisciplineRepository(createPublicSupabaseClient()),
-      }).execute({ userId, competitionSlugs: slugs.length ? slugs : [competition.slug] }),
+      }).execute({ userId, competitionSlugs: slugs }),
       getMyBadges({
         ranking: createSupabaseRankingRepository(client),
         predictions: createSupabasePredictionRepository(client),
         events,
       }).execute({ userId, competitionSlug: competition.slug, timeZone: competition.timeZone }),
       getClubRanking({ ranking: createSupabaseRankingRepository(client) }).execute({
-        competitionSlugs: slugs.length ? slugs : [competition.slug],
+        competitionSlugs: slugs,
       }),
       getMyPredictionHistory({
         predictions: createSupabasePredictionRepository(client),
         events,
         points: createSupabasePointsRepository(client),
-      }).execute({ userId, competitionSlugs: slugs.length ? slugs : [competition.slug], limit: 3 }),
+      }).execute({ userId, competitionSlugs: slugs, limit: 3 }),
     ]);
     return { ...season, badges, clubs, latest };
   } catch (error) {

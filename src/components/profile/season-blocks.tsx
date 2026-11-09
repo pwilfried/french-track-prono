@@ -3,7 +3,7 @@ import type { SeasonStats } from "@/domain/player-season";
 
 const text = messages.profile;
 const eventName = (line: { discipline: string; gender: "F" | "M" | "X" }) =>
-  `${line.discipline} ${messages.events.gender[line.gender].toLowerCase()}`;
+  messages.events.name(line.discipline, line.gender);
 const heading = "text-xs font-bold uppercase tracking-wider text-muted-foreground";
 
 /** « Mes stats »: six figures of the season (#384). */

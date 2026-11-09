@@ -146,7 +146,7 @@ export default async function AdminCompetitionPage({
                   >
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="font-bold">
-                        {e.discipline} {messages.events.gender[e.gender].toLowerCase()} ·{" "}
+                        {messages.events.name(e.discipline, e.gender)} ·{" "}
                         {messages.rounds.name[e.round]}
                       </span>
                       <span className="text-sm text-muted-foreground">

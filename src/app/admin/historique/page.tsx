@@ -79,7 +79,7 @@ export default async function AdminLogPage({ searchParams }: { searchParams: Pro
                 <option value="">{messages.adminLog.allEvents}</option>
                 {page.events.map((e) => (
                   <option key={e.id} value={e.id}>
-                    {e.discipline} {messages.events.gender[e.gender].toLowerCase()}
+                    {messages.events.name(e.discipline, e.gender)}
                   </option>
                 ))}
               </select>
@@ -123,7 +123,7 @@ export default async function AdminLogPage({ searchParams }: { searchParams: Pro
                   <span className="break-words text-sm">
                     {a.event ? (
                       <Link href={`/admin/${a.event.slug}`} className="font-semibold underline">
-                        {a.event.discipline} {messages.events.gender[a.event.gender].toLowerCase()}
+                        {messages.events.name(a.event.discipline, a.event.gender)}
                       </Link>
                     ) : (
                       messages.adminLog.noEvent

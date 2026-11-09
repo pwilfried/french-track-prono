@@ -12,7 +12,7 @@ const text = messages.playerHome;
 const PODCAST = "https://podcastics.com/podcast/french-track";
 
 const eventName = (event: Pick<EventSummary, "discipline" | "gender">) =>
-  `${event.discipline} ${messages.events.gender[event.gender].toLowerCase()}`;
+  messages.events.name(event.discipline, event.gender);
 
 const card = "rounded-card border border-border bg-card/90 p-4 backdrop-blur-sm";
 const heading = "text-xs font-bold uppercase tracking-wide text-muted-foreground";

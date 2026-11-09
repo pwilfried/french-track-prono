@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
 import { getMyPredictionHistory, type MyPredictionLine } from "@/application/list-my-predictions";
 import { AccountHero } from "@/components/account/account-hero";
 import { ErrorNotice } from "@/components/error-notice";
+import { CompetitionChips } from "@/components/events/competition-chips";
 import { PredictionLineCard } from "@/components/profile/prediction-history";
 import {
   createPublicSupabaseClient,
@@ -54,28 +54,15 @@ export default async function MyPredictionsPage({
       <AccountHero title={text.title} subtitle={competition.name} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-3 px-4 py-6">
         {all.length > 1 && (
-          <nav aria-label={text.chooseCompetition} className="-mx-4 overflow-x-auto px-4">
-            <ul className="flex gap-2">
-              {all.map((c) => {
-                const active = c.slug === competition.slug;
-                return (
-                  <li key={c.slug} className="shrink-0">
-                    <Link
-                      href={`/profil/pronos?competition=${encodeURIComponent(c.slug)}`}
-                      aria-current={active ? "page" : undefined}
-                      className={`inline-flex min-h-11 items-center whitespace-nowrap rounded-full border-2 px-4 text-sm font-semibold ${
-                        active
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border bg-card"
-                      }`}
-                    >
-                      {c.name}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
+          <CompetitionChips
+            label={text.chooseCompetition}
+            chips={all.map((c) => ({
+              key: c.slug,
+              href: `/profil/pronos?competition=${encodeURIComponent(c.slug)}`,
+              name: c.name,
+              active: c.slug === competition.slug,
+            }))}
+          />
         )}
         {lines === "error" ? (
           <ErrorNotice retryHref={here} message={messages.errors.POINTS_UNAVAILABLE} />

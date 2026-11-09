@@ -99,9 +99,7 @@ function MyPointsList({ mine, events }: { mine: MyPoints; events: EventSummary[]
         <ul className="flex flex-col gap-2">
           {lines.map((line) => {
             const event = byId.get(line.eventId);
-            const title = event
-              ? `${event.discipline} ${messages.events.gender[event.gender].toLowerCase()}`
-              : "";
+            const title = event ? messages.events.name(event.discipline, event.gender) : "";
             return (
               <li key={line.eventId}>
                 <Link
