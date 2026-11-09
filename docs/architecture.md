@@ -301,6 +301,16 @@ des joueurs du club, 3 joueurs au moins) ; derniers pronos et historique complet
 (`seasonCardOf`, `src/domain/season-card.ts` : pseudo, avatar, chiffres de la saison, club validé)
 et se partage par le partage natif du téléphone, ou se télécharge à défaut.
 
+Notifications push (#203) : le joueur les active par appareil depuis son profil (opt-in
+explicite, désactivation en un geste). Les abonnements (`push_subscriptions`) ne s'écrivent que
+par `save_push_subscription()` et `delete_push_subscription()`. Toutes les 5 minutes, le workflow
+« Push notifications » lit `private.push_due()` et envoie, avec la bibliothèque `web-push` et les
+clés VAPID : un rappel jusqu'à 20 minutes avant le verrouillage d'une finale non pronostiquée,
+seulement dans une compétition où le joueur a déjà fait un prono, puis ses points une fois
+calculés. Une notification par heure au plus, jamais deux fois la même (`push_log`), rien pour un
+joueur bloqué. Pas de clé service_role : le workflow passe par l'API Management de Supabase,
+comme « Inactive accounts ».
+
 Tours (v0.8, issue #198) : une série, un quart ou une demi-finale pointe vers le tour qu'il
 alimente (`events.parent_id`). On ne pronostique que les finales, et une finale seulement quand
 tous ses tours précédents sont terminés (`is_predictable()`, vérifié par le trigger de

@@ -157,7 +157,10 @@ jobs:
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
 
+      # A test push key (its private half was thrown away): the notifications button shows up.
       - name: Build the app
+        env:
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: BLPG-ATns5ecNrsztBZUK5mdAxlPfYsSMPkz24H7SBxl4RTTpZHGYMLX60hboJ2uWQhiXiZCv68QAg-x8V4TjqA
         run: npm run build
 
       # The pages follow the next competition by date; the tests create competitions of their own,
