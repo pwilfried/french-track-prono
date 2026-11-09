@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ClubNotices } from "@/components/account/club-notices";
 import { PlayerHome } from "@/components/home/player-home";
 import { buttonVariants } from "@/components/ui/button";
 import { daysUntil, type CompetitionScope } from "@/domain/competition";
@@ -83,6 +84,7 @@ export default async function Home() {
   return (
     <main id="main" className="flex flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-6 md:max-w-3xl">
+        {player ? <ClubNotices notices={player.clubNotices} /> : null}
         {player ? (
           <PlayerHome
             pseudo={player.pseudo}

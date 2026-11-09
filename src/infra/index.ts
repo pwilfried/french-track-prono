@@ -67,3 +67,5 @@ export { createInMemoryPlayerStore } from "./in-memory/player-moderation-reposit
 export { createSupabasePlayerModerationRepository } from "./supabase/player-moderation-repository";
 export { createInMemoryClubAdminStore } from "./in-memory/club-admin-repository";
 export { createSupabaseClubAdminRepository } from "./supabase/club-admin-repository";
+export { createInMemoryClubNoticeStore } from "./in-memory/club-notice-repository";
+export { createSupabaseClubNoticeRepository } from "./supabase/club-notice-repository";

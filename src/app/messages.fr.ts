@@ -47,6 +47,15 @@ export const messages = {
     nextEvents: "Prochaines épreuves",
     noneOpen: "Plus aucune épreuve ouverte aux pronos.",
   },
+  clubNotices: {
+    validated: (club: string) =>
+      `Ton club « ${club} » est validé : les autres joueurs le voient sur ta fiche.`,
+    renamed: (club: string, name: string) =>
+      `Ton club « ${club} » s'appelle maintenant « ${name} ».`,
+    removed: (club: string) =>
+      `Le club « ${club} » a été retiré de la liste. Choisis ton club dans ton profil.`,
+    dismiss: "OK",
+  },
   playerHome: {
     hello: (pseudo: string) => `Salut ${pseudo}`,
     nextFinalIn: (duration: string) => `Prochaine finale dans ${duration}`,

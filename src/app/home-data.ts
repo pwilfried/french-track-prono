@@ -1,3 +1,4 @@
+import { getClubNotices, type ClubNotice } from "@/application/club-notices";
 import { getMyPoints } from "@/application/get-my-points";
 import { getProfile } from "@/application/get-profile";
 import { listEvents } from "@/application/list-events";
@@ -8,6 +9,7 @@ import type { EventSummary } from "@/domain/event";
 import { openFinals, type OpenFinal } from "@/domain/home";
 import {
   createPublicSupabaseClient,
+  createSupabaseClubNoticeRepository,
   createSupabaseEventReader,
   createSupabaseLeagueRepository,
   createSupabasePointsRepository,
@@ -37,6 +39,7 @@ export type PlayerHome = {
   general: { me: RankingRow | null; total: number; podium: RankingRow[] } | null;
   league: { id: string; name: string; me: RankingRow | null } | null;
   lastResult: { event: EventSummary; points: number | null } | null;
+  clubNotices: ClubNotice[];
 };
 
 async function safely<T>(load: () => Promise<T>): Promise<T | null> {
@@ -63,7 +66,7 @@ export async function loadPlayerHome(userId: string): Promise<PlayerHome | null>
   const competition = await currentCompetition(choices.preferred);
   const ranking = createSupabaseRankingRepository(client);
 
-  const [events, mine, myPoints, general, leagueRows] = await Promise.all([
+  const [events, mine, myPoints, general, leagueRows, clubNotices] = await Promise.all([
     safely(() =>
       listEvents({ events: createSupabaseEventReader(createPublicSupabaseClient()) }).execute({
         competitionSlug: competition.slug,
@@ -94,6 +97,7 @@ export async function loadPlayerHome(userId: string): Promise<PlayerHome | null>
           }),
         )
       : Promise.resolve(null),
+    safely(() => getClubNotices({ notices: createSupabaseClubNoticeRepository(client) }).execute()),
   ]);
 
   const predicted = new Set((mine ?? []).map((p) => p.eventId));
@@ -102,6 +106,7 @@ export async function loadPlayerHome(userId: string): Promise<PlayerHome | null>
     .sort((a, b) => b.startsAt.localeCompare(a.startsAt))[0];
 
   return {
+    clubNotices: clubNotices ?? [],
     pseudo: profile.pseudo,
     competition,
     hasLeagueForCompetition: leagues.some((l) => l.competitionSlugs.includes(competition.slug)),
