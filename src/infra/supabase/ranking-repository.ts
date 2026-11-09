@@ -9,7 +9,7 @@ type Row = {
   event_id: string;
   points: number;
   detail: { reasons?: ScoreReason[] };
-  profiles: { pseudo: string; avatar_emoji: string };
+  profiles: { pseudo: string; avatar_emoji: string; club: { name: string } | null };
   events: { starts_at: string };
 };
 
@@ -19,7 +19,7 @@ export function createSupabaseRankingRepository(client: SupabaseClient): Ranking
     async competitionLines(competitionSlug) {
       const { data, error } = await client
         .from("score_events")
-        .select("user_id, event_id, points, detail, profiles!inner(pseudo, avatar_emoji), events!inner(starts_at, competitions!inner(slug))")
+        .select("user_id, event_id, points, detail, profiles!inner(pseudo, avatar_emoji, club:clubs(name)), events!inner(starts_at, competitions!inner(slug))")
         .eq("events.competitions.slug", competitionSlug)
         .returns<Row[]>();
       if (error) throw new UseCaseError("RANKING_UNAVAILABLE");
@@ -28,6 +28,7 @@ export function createSupabaseRankingRepository(client: SupabaseClient): Ranking
           userId: row.user_id,
           pseudo: row.profiles.pseudo,
           avatar: row.profiles.avatar_emoji,
+          club: row.profiles.club?.name ?? null,
           points: row.points,
           reasons: row.detail.reasons ?? [],
           eventId: row.event_id,

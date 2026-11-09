@@ -39,5 +39,15 @@ test("the general ranking adds up the points of every competition", async ({ pag
     .filter({ hasText: player.pseudo });
   await expect(mine).toContainText("73");
 
+  // Touching the pseudo shows the minimal card: club and rank, no e-mail (#342).
+  sql(`update profiles set club_id = (select id from clubs where name = 'Athlé Club des Tests')
+       where pseudo = '${player.pseudo}'`);
+  await page.reload();
+  await page.getByRole("button", { name: `Voir la fiche de ${player.pseudo}` }).click();
+  const card = page.getByRole("region", { name: `Fiche de ${player.pseudo}` });
+  await expect(card).toContainText("Athlé Club des Tests");
+  await expect(card).toContainText(/sur \d+ joueurs?/);
+  await expect(card).not.toContainText("@");
+
   sql(`delete from competitions where slug like '${tag}-%'`);
 });
