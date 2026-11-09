@@ -7,11 +7,13 @@ import { getMyBadges } from "@/application/get-my-badges";
 import { getProfile } from "@/application/get-profile";
 import { getPlayerDetails } from "@/application/player-details";
 import { getMySeason } from "@/application/get-my-season";
+import { getMyPredictionHistory } from "@/application/list-my-predictions";
 import { getClubRanking } from "@/application/rankings";
 import { BadgeGrid } from "@/components/profile/badge-grid";
 import { InstallEntry } from "@/components/shell/install-prompt";
 import { ClubNotices } from "@/components/account/club-notices";
 import { ClubRanking } from "@/components/profile/club-ranking";
+import { LatestPredictions } from "@/components/profile/prediction-history";
 import {
   BestShot,
   SeasonCurve,
@@ -25,6 +27,7 @@ import {
   createSupabaseDisciplineRepository,
   createSupabaseEventReader,
   createSupabasePlayerDetailsRepository,
+  createSupabasePointsRepository,
   createSupabasePredictionRepository,
   createSupabaseProfileRepository,
   createSupabaseRankingRepository,
@@ -42,7 +45,7 @@ async function loadSeason(userId: string) {
   try {
     const client = await getSessionClient();
     const events = createSupabaseEventReader(createPublicSupabaseClient());
-    const [season, badges, clubs] = await Promise.all([
+    const [season, badges, clubs, latest] = await Promise.all([
       getMySeason({
         ranking: createSupabaseRankingRepository(client),
         predictions: createSupabasePredictionRepository(client),
@@ -57,8 +60,13 @@ async function loadSeason(userId: string) {
       getClubRanking({ ranking: createSupabaseRankingRepository(client) }).execute({
         competitionSlugs: slugs.length ? slugs : [competition.slug],
       }),
+      getMyPredictionHistory({
+        predictions: createSupabasePredictionRepository(client),
+        events,
+        points: createSupabasePointsRepository(client),
+      }).execute({ userId, competitionSlugs: slugs.length ? slugs : [competition.slug], limit: 3 }),
     ]);
-    return { ...season, badges, clubs };
+    return { ...season, badges, clubs, latest };
   } catch (error) {
     if (error instanceof UseCaseError) return null;
     throw error;
@@ -150,6 +158,7 @@ export default async function ProfilePage({
         <>
           <SeasonTiles stats={season.stats} />
           <SeasonCurve curve={season.stats.curve} />
+          <LatestPredictions lines={season.latest} />
           <BestShot best={season.stats.bestShot} />
           <StrongFamilies families={season.stats.families} />
           <ClubRanking

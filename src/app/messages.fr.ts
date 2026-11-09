@@ -877,6 +877,23 @@ export const messages = {
     bleus: { emoji: "🇫🇷", name: "Bleus", rule: "Un vainqueur français trouvé" },
     fidele: { emoji: "📅", name: "Fidèle", rule: "Un prono sur chaque épreuve d'une journée" },
   },
+  predictionHistory: {
+    latest: "Mes derniers pronos",
+    all: "Tous mes pronos",
+    title: "Tous mes pronos",
+    empty: "Pas encore de prono : choisis une épreuve et compose ton podium.",
+    emptyCompetition: "Aucun prono sur cette compétition.",
+    pending: "En attente",
+    joker: "Joker",
+    other: "Autre athlète",
+    chooseCompetition: "Choisir la compétition",
+    hit: {
+      exact: "bonne place",
+      misplaced: "sur le podium, mauvaise place",
+      missed: "pas sur le podium",
+      pending: "",
+    },
+  },
   clubRanking: {
     title: "Classement des clubs",
     podium: "Podium des clubs",
