@@ -885,8 +885,10 @@ export const messages = {
     email: "E-mail",
     private: "Privé",
     badges: "Badges",
-    noBadge:
-      "Pas encore de badge : un podium parfait, un coup de flair ou une série de 5 en débloquent.",
+    badgeEarned: "Gagné",
+    badgeLocked: "À débloquer",
+    nextBadge: (name: string, left: number) => `Prochain : ${name} (encore ${left})`,
+    allBadges: "Tous les badges sont à toi !",
     emailPrivate: "Ton e-mail reste privé : il n'apparaît jamais dans l'application.",
     signOut: "Se déconnecter",
     signingOut: "Déconnexion…",
