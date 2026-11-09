@@ -360,6 +360,10 @@ pronostiquée, et leurs points une fois calculés (règles dans
 
 La clé privée ne va jamais dans Vercel ni dans le dépôt. Sur iPhone, les notifications ne
 marchent qu'une fois l'appli ajoutée à l'écran d'accueil (iOS 16.4 ou plus).
+## Sentry (erreurs en prod)
+
+Optionnel : voir `docs/sentry.md` (compte UE, `NEXT_PUBLIC_SENTRY_DSN` dans Vercel, jeton pour
+les source maps dans l'environnement GitHub « production »).
 
 ## Import des clubs d'athlétisme
 

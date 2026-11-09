@@ -87,9 +87,20 @@ export type ErrorCode =
   | "DISCIPLINES_UNAVAILABLE"
   | "ATHLETES_UNAVAILABLE";
 
+let reportUnavailable: ((code: ErrorCode) => void) | undefined;
+
+/**
+ * Called with every « …_UNAVAILABLE » error: the database or a service did not answer, which the
+ * player only sees as a message. Wired to Sentry at start-up (src/instrumentation.ts, #195).
+ */
+export function onUnavailable(report: (code: ErrorCode) => void): void {
+  reportUnavailable = report;
+}
+
 export class UseCaseError extends Error {
   constructor(readonly code: ErrorCode) {
     super(code);
     this.name = "UseCaseError";
+    if (code.endsWith("_UNAVAILABLE")) reportUnavailable?.(code);
   }
 }

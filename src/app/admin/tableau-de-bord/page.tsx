@@ -23,6 +23,7 @@ import { messages } from "../../messages.fr";
 import { AdminShell } from "../competitions/admin-shell";
 import { adminOnly } from "../guard";
 import { DashboardView } from "./dashboard-view";
+import { reportError } from "@/lib/report-error";
 
 const text = messages.adminDashboard;
 const DAY = 24 * 60 * 60 * 1000;
@@ -31,7 +32,8 @@ const DAY = 24 * 60 * 60 * 1000;
 async function orNull<T>(read: () => Promise<T>): Promise<T | null> {
   try {
     return await read();
-  } catch {
+  } catch (error) {
+    reportError(error, "admin-dashboard");
     return null;
   }
 }
