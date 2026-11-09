@@ -27,3 +27,38 @@ test("an admin adjusts the tolerance of the 100 m", async ({ page }) => {
 
   sql(`update disciplines set tolerance = ${before} where name = '100 m'`);
 });
+
+test("an admin creates a discipline, then uses it for an event", async ({ page }) => {
+  const tag = `${Date.now() % 1000000}`;
+  const name = `Mile E2E ${tag}`;
+  const competition = `e2e-disc-${tag}`;
+  sql(`insert into competitions (slug, name, starts_on, ends_on)
+       values ('${competition}', 'Test discipline ${tag}', '2099-07-01', '2099-07-02')`);
+  const player = newPlayer("disc");
+  await page.goto("/profil");
+  await signUp(page, player);
+  await page.waitForURL(/\/profil$/);
+  sql(`update profiles set is_admin = true
+       where id = (select id from auth.users where email = '${player.email}')`);
+
+  await page.goto("/admin/disciplines");
+  await page.getByText("+ Nouvelle discipline").click();
+  await page.getByLabel("Nom", { exact: true }).fill(name);
+  await page.getByLabel("Famille").selectOption("middle");
+  await page.getByLabel("Unité").selectOption("time");
+  await page.getByLabel("Le meilleur").selectOption("lower");
+  await page.getByLabel("Tolérance du prono de performance").fill("0,5");
+  await page.getByRole("button", { name: "Créer la discipline" }).click();
+  await expect(page.getByRole("status")).toContainText(`${name} est créée`);
+  await expect(page.getByLabel(`Tolérance du ${name}`)).toHaveValue("0.5");
+
+  await page.goto(`/admin/competitions/${competition}`);
+  await page.getByLabel("Discipline").selectOption(name);
+  await page.getByLabel("Catégorie").selectOption("M");
+  await page.getByLabel("Horaire (local)").fill("2099-07-01T20:00");
+  await page.getByRole("button", { name: "Ajouter l'épreuve" }).click();
+  await expect(page.getByRole("list", { name: "épreuves" })).toContainText(`${name} hommes`);
+
+  sql(`delete from competitions where slug = '${competition}'`);
+  sql(`delete from disciplines where name = '${name}'`);
+});

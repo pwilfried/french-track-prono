@@ -364,6 +364,7 @@ export const messages = {
       set_rule: "Barème modifié",
       moderate_league: "Ligue modérée",
       moderate_player: "Joueur modéré",
+      create_discipline: "Discipline créée",
     },
     noEvent: "Épreuve supprimée",
     size: (
@@ -377,7 +378,8 @@ export const messages = {
         | "set_odds"
         | "set_rule"
         | "moderate_league"
-        | "moderate_player",
+        | "moderate_player"
+        | "create_discipline",
       n: number,
     ) =>
       kind === "set_rule"
@@ -386,19 +388,21 @@ export const messages = {
           ? "ligue publique"
           : kind === "moderate_player"
             ? "compte joueur"
-            : kind === "set_tolerance"
-              ? "barème"
-              : kind === "edit_athlete"
-                ? "fiche athlète"
-                : kind === "edit_competition"
-                  ? "compétition"
-                  : kind === "set_odds"
-                    ? `${n} cotes`
-                    : kind === "run_scoring"
-                      ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
-                      : kind === "set_results"
-                        ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
-                        : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
+            : kind === "create_discipline"
+              ? "discipline"
+              : kind === "set_tolerance"
+                ? "barème"
+                : kind === "edit_athlete"
+                  ? "fiche athlète"
+                  : kind === "edit_competition"
+                    ? "compétition"
+                    : kind === "set_odds"
+                      ? `${n} cotes`
+                      : kind === "run_scoring"
+                        ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
+                        : kind === "set_results"
+                          ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
+                          : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
     by: (pseudo: string | null) => (pseudo ? `par ${pseudo}` : "par un compte supprimé"),
   },
   import: {
@@ -564,6 +568,16 @@ export const messages = {
     },
     unit: { time: "s", distance: "m", points: "pts" },
     direction: { lower: "temps le plus bas", higher: "valeur la plus haute" },
+    newDiscipline: "+ Nouvelle discipline",
+    nameLabel: "Nom",
+    familyLabel: "Famille",
+    unitLabel: "Unité",
+    unitName: { time: "Temps (s)", distance: "Distance (m)", points: "Points" },
+    directionLabel: "Le meilleur",
+    toleranceLabel: "Tolérance du prono de performance",
+    create: "Créer la discipline",
+    creating: "Création…",
+    created: (name: string) => `✓ ${name} est créée : elle est proposée pour les épreuves.`,
     tolerance: (name: string) => `Tolérance du ${name}`,
     save: "Enregistrer",
     saving: "…",
@@ -1068,6 +1082,8 @@ export const messages = {
       "Cette marque ne correspond pas à la discipline (ex. 10.62, 1:56.70, 2.04, 8125).",
     DATE_INVALID: "La date doit être au format AAAA-MM-JJ.",
     DISCIPLINE_NOT_FOUND: "Cette discipline n'existe pas.",
+    DISCIPLINE_EXISTS: "Cette discipline existe déjà.",
+    DISCIPLINE_NAME_INVALID: "Donne un nom (2 à 40 caractères), une famille et une unité.",
     DISCIPLINES_UNAVAILABLE: "Les disciplines n'ont pas pu être chargées. Réessaie.",
     ATHLETES_UNAVAILABLE: "La fiche athlète n'a pas pu être chargée. Réessaie.",
     retry: "Réessayer",

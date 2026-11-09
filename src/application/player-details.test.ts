@@ -39,6 +39,9 @@ function world() {
     async setTolerance() {
       return "not_admin";
     },
+    async create() {
+      return "not_admin";
+    },
   };
   return {
     clubs,

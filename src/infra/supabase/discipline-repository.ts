@@ -44,5 +44,22 @@ export function createSupabaseDisciplineRepository(client: SupabaseClient): Disc
       if (error.code === "FT003") return "unknown";
       throw new UseCaseError("DISCIPLINES_UNAVAILABLE");
     },
+
+    async create(discipline) {
+      const { error } = await client.rpc("create_discipline", {
+        p_name: discipline.name,
+        p_family: discipline.family,
+        p_unit: discipline.unit,
+        p_lower_is_better: discipline.lowerIsBetter,
+        p_tolerance: discipline.tolerance,
+      });
+      if (!error) return "created";
+      if (error.code === "42501") return "not_admin";
+      if (error.code === "23505") return "exists";
+      if (error.code === "22023" || error.code === "23514") {
+        throw new UseCaseError("DISCIPLINE_NAME_INVALID");
+      }
+      throw new UseCaseError("DISCIPLINES_UNAVAILABLE");
+    },
   };
 }

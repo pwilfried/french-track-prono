@@ -40,5 +40,21 @@ export function disciplineRepositoryContract(name: string, world: () => Promise<
         await w.restore();
       }
     });
+
+    it("lets an admin add a discipline once, and refuses a player", async () => {
+      const w = await world();
+      const name = `Test ${crypto.randomUUID().slice(0, 8)}`;
+      const discipline = {
+        name,
+        family: "hurdles" as const,
+        unit: "time" as const,
+        lowerIsBetter: true,
+        tolerance: 0.05,
+      };
+      expect(await w.player.create(discipline)).toBe("not_admin");
+      expect(await w.admin.create(discipline)).toBe("created");
+      expect(await w.admin.create({ ...discipline, name: name.toUpperCase() })).toBe("exists");
+      expect((await w.player.list()).find((d) => d.name === name)).toMatchObject(discipline);
+    });
   });
 }
