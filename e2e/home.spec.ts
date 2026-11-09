@@ -68,8 +68,8 @@ test("a signed-in player sees the next final on the home page and opens it", asy
 
   // Without a league of the competition, the card offers to create one first (#369).
   const card = page.getByRole("region").filter({ hasText: "entre dans une ligue" });
-  await expect(card.getByRole("link", { name: "Ligue privée" })).toBeVisible();
-  await card.getByRole("link", { name: "Ligue publique" }).click();
+  await expect(card.getByRole("link", { name: "Ligue privée", exact: true })).toBeVisible();
+  await card.getByRole("link", { name: "Ligue publique", exact: true }).click();
   await expect(page).toHaveURL(/\/ligues\/creer\?competition=.+&publique=1$/);
   await expect(page.getByRole("checkbox", { name: /Ligue publique/ })).toBeChecked();
 
