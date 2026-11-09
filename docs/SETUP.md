@@ -291,6 +291,15 @@ migrations voulues avec un tag.
 `npm audit` dans des versions anciennes de ces paquets. On peut les retirer quand `npm audit` ne
 signale plus rien sans elles (test : les supprimer, `npm install`, `npm audit`).
 
+## Déploiements Vercel
+
+Seule la branche `main` est déployée (`vercel.json`, `git.deploymentEnabled`) : les branches de
+travail (`feat/`, `fix/`, `chore/`, `docs/`…) et la branche `boards` ne créent plus de
+déploiement de prévisualisation. Le plan gratuit limite le nombre de déploiements par jour ; le
+9 novembre 2026, les prévisualisations de chaque PR l'ont épuisé et la mise en prod de #373 a été
+refusée (« Deployment rate limited »). La CI teste déjà chaque PR, la prévisualisation n'apporte
+rien de plus.
+
 ## Test de la prod après déploiement
 
 Le workflow « Production smoke test » (`.github/workflows/smoke.yml`, script `scripts/smoke.sh`)
