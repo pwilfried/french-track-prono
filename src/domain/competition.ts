@@ -113,6 +113,25 @@ export function nextCompetition<T extends { startsOn: string; endsOn: string }>(
   return [...competitions].sort((a, b) => b.startsOn.localeCompare(a.startsOn))[0] ?? null;
 }
 
+/**
+ * The competitions still to come or under way, in date order, split for the « Épreuves » picker
+ * (#352): first those counted by one of the player's leagues, then the others.
+ */
+export function competitionsForPlayer<T extends { slug: string; startsOn: string; endsOn: string }>(
+  competitions: T[],
+  myLeagueSlugs: string[],
+  today: string,
+): { mine: T[]; others: T[] } {
+  const mineSet = new Set(myLeagueSlugs);
+  const coming = competitions
+    .filter((c) => c.endsOn >= today)
+    .sort((a, b) => a.startsOn.localeCompare(b.startsOn) || a.slug.localeCompare(b.slug));
+  return {
+    mine: coming.filter((c) => mineSet.has(c.slug)),
+    others: coming.filter((c) => !mineSet.has(c.slug)),
+  };
+}
+
 /** Whole days before a competition starts (dates as YYYY-MM-DD); 0 once it is under way. */
 export function daysUntil(startsOn: string, today: string): number {
   const days =

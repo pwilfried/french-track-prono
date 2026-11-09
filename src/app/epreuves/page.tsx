@@ -1,19 +1,23 @@
 import { listEvents } from "@/application/list-events";
+import { listMyLeagues } from "@/application/leagues";
 import { listMyPredictions } from "@/application/list-my-predictions";
 import { UseCaseError } from "@/application/errors";
 import { ErrorNotice } from "@/components/error-notice";
+import { CompetitionPicker } from "@/components/events/competition-picker";
 import { EventCard, type MyEventState } from "@/components/events/event-card";
 import { GenderFilter } from "@/components/events/gender-filter";
 import { InstallPrompt } from "@/components/shell/install-prompt";
+import { competitionsForPlayer } from "@/domain/competition";
 import type { EventGender, EventSummary } from "@/domain/event";
 import { filterByGender, groupEventsByDay } from "@/domain/event-list";
 import {
   createPublicSupabaseClient,
   createSupabaseEventReader,
+  createSupabaseLeagueRepository,
   createSupabasePredictionRepository,
 } from "@/infra";
 
-import { currentCompetition } from "../competition";
+import { currentCompetition, currentDay, loadCompetitions } from "../competition";
 import { messages } from "../messages.fr";
 import { paramText } from "../search-params";
 import { getCurrentUser, getSessionClient } from "../session";
@@ -60,14 +64,34 @@ async function loadMine(slug?: string): Promise<Map<string, MyEventState> | null
   }
 }
 
+/** The competitions counted by the signed-in player's leagues; empty for a visitor or on trouble. */
+async function myLeagueCompetitions(): Promise<string[]> {
+  const user = await getCurrentUser();
+  if (!user) return [];
+  try {
+    const leagues = await listMyLeagues({
+      leagues: createSupabaseLeagueRepository(await getSessionClient()),
+    }).execute();
+    return leagues.flatMap((league) => league.competitionSlugs);
+  } catch (error) {
+    if (error instanceof UseCaseError) return [];
+    throw error;
+  }
+}
+
 export default async function EventsPage({
   searchParams,
 }: {
   searchParams: Promise<{ genre?: string | string[]; competition?: string }>;
 }) {
   const search = await searchParams;
-  // A competition chosen on its page (?competition=), the next one by date otherwise.
-  const asked = paramText(search.competition);
+  // A competition chosen (?competition=), else the one pinned for the tests (COMPETITION_SLUG),
+  // else the next one of my leagues (#352), else the next one by date.
+  const [lists, mySlugs] = await Promise.all([loadCompetitions(), myLeagueCompetitions()]);
+  const choices = competitionsForPlayer([...lists.coming, ...lists.past], mySlugs, currentDay());
+  const asked =
+    paramText(search.competition) ??
+    (process.env.COMPETITION_SLUG ? undefined : choices.mine[0]?.slug);
   const competition = await currentCompetition(asked);
   const gender = parseGender(search.genre);
   const [loaded, mine] = await Promise.all([loadEvents(asked), loadMine(asked)]);
@@ -99,6 +123,13 @@ export default async function EventsPage({
               ? competition.place
               : messages.events.subtitle(competition.place, events.length)}
           </p>
+          <div className="mt-4">
+            <CompetitionPicker
+              mine={choices.mine}
+              others={choices.others}
+              selected={competition.slug}
+            />
+          </div>
         </div>
       </header>
 

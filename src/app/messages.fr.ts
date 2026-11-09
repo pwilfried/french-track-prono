@@ -80,6 +80,12 @@ export const messages = {
   events: {
     subtitle: (place: string, count: number) => `${place} · ${count} épreuves`,
     filtersLabel: "Filtrer les épreuves",
+    picker: {
+      label: "Choisir la compétition",
+      mine: "Mes ligues",
+      others: "Autres compétitions",
+      coming: "Compétitions à venir",
+    },
     category: "Catégorie",
     filters: { all: "Toutes", F: "Femmes", M: "Hommes", X: "Mixte" },
     gender: { F: "Femmes", M: "Hommes", X: "Mixte" },
