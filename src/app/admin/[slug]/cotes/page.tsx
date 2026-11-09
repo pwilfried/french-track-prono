@@ -63,9 +63,7 @@ export default async function OddsPage({
     mark && event.markUnit ? tidyMark(mark, event.markUnit) : mark;
   return (
     <AdminShell
-      title={messages.odds.titleOf(
-        `${event.discipline} ${messages.events.gender[event.gender].toLowerCase()}`,
-      )}
+      title={messages.odds.titleOf(messages.events.name(event.discipline, event.gender))}
       back={back}
     >
       <p className="-mt-2 text-sm text-muted-foreground">{messages.odds.intro}</p>

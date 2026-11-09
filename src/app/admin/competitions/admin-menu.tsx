@@ -104,7 +104,7 @@ function Links({ section, todo }: { section: AdminSection; todo: AdminTodo | nul
  * The back-office menu: a side column on a computer, a drop-down on a phone (no script needed).
  * The counters say what waits in Résultats, Clubs and Ligues.
  */
-export function AdminMenu({ section, todo }: { section: AdminSection; todo: AdminTodo | null }) {
+function AdminMenu({ section, todo }: { section: AdminSection; todo: AdminTodo | null }) {
   return (
     <>
       <nav

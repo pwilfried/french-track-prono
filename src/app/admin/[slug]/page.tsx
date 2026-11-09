@@ -136,7 +136,7 @@ export default async function AdminEventPage({
             ‹ {competition.name}
           </Link>
           <h1 className="mt-1 font-display text-3xl font-extrabold leading-none">
-            {event.discipline} {messages.events.gender[event.gender].toLowerCase()}
+            {messages.events.name(event.discipline, event.gender)}
           </h1>
           {event.round !== "final" && (
             <p className="mt-1 text-sm font-bold uppercase tracking-wider text-muted-foreground">

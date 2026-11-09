@@ -77,6 +77,13 @@ export const currentCompetition = cache(async (slug?: string): Promise<ShownComp
   );
 });
 
+/** Every competition of the season (the profile and its card add them up), else the current one. */
+export async function seasonCompetitionSlugs(): Promise<string[]> {
+  const { coming, past } = await loadCompetitions();
+  const slugs = [...coming, ...past].map((c) => c.slug);
+  return slugs.length ? slugs : [(await currentCompetition()).slug];
+}
+
 /** The signed-in player's leagues, by name; empty for a visitor or when they cannot be read. */
 export const loadMyLeagues = cache(async (): Promise<League[]> => {
   const user = await getCurrentUser();

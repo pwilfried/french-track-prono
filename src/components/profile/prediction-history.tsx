@@ -28,7 +28,7 @@ export function PredictionLineCard({ line }: { line: MyPredictionLine }) {
       <span className="flex items-center gap-3">
         <span className="min-w-0 flex-1">
           <span className="block break-words font-extrabold">
-            {line.discipline} {messages.events.gender[line.gender].toLowerCase()}
+            {messages.events.name(line.discipline, line.gender)}
           </span>
           <span className="text-xs text-muted-foreground">
             {date}

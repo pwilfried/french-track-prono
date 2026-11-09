@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { UseCaseError } from "@/application/errors";
 import { getGeneralRanking } from "@/application/rankings";
 import { ErrorNotice } from "@/components/error-notice";
+import { CompetitionChips } from "@/components/events/competition-chips";
 import { Leaderboard } from "@/components/leaderboard/leaderboard";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { buttonVariants } from "@/components/ui/button";
@@ -54,32 +55,15 @@ export default async function GeneralRankingPage({
         }
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
-        <nav aria-label={messages.ranking.scopeLabel} className="-mx-4 overflow-x-auto px-4">
-          <ul className="flex gap-2">
-            {[{ slug: null, name: messages.ranking.general }, ...all].map((c) => {
-              const active = (c.slug ?? null) === (chosen?.slug ?? null);
-              return (
-                <li key={c.slug ?? "general"} className="shrink-0">
-                  <Link
-                    href={
-                      c.slug
-                        ? `/classement?competition=${encodeURIComponent(c.slug)}`
-                        : "/classement"
-                    }
-                    aria-current={active ? "page" : undefined}
-                    className={`inline-flex min-h-11 items-center whitespace-nowrap rounded-full border-2 px-4 text-sm font-semibold ${
-                      active
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-card"
-                    }`}
-                  >
-                    {c.name}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+        <CompetitionChips
+          label={messages.ranking.scopeLabel}
+          chips={[{ slug: null, name: messages.ranking.general }, ...all].map((c) => ({
+            key: c.slug ?? "general",
+            href: c.slug ? `/classement?competition=${encodeURIComponent(c.slug)}` : "/classement",
+            name: c.name,
+            active: (c.slug ?? null) === (chosen?.slug ?? null),
+          }))}
+        />
         {ranking === "error" ? (
           <ErrorNotice retryHref={here} message={messages.errors.RANKING_UNAVAILABLE} />
         ) : (

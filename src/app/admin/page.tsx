@@ -155,7 +155,7 @@ export default async function AdminPage({
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block break-words font-bold">
-                        {event.discipline} {messages.events.gender[event.gender].toLowerCase()}
+                        {messages.events.name(event.discipline, event.gender)}
                         {event.round !== "final" && ` · ${messages.rounds.name[event.round]}`}
                       </span>
                       <span className="block text-sm text-muted-foreground first-letter:uppercase">

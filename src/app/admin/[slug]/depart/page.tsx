@@ -68,7 +68,7 @@ export default async function StartListPage({
           </Link>
           {loaded !== "error" && (
             <p className="mt-2 text-sm text-muted-foreground">
-              {loaded.event.discipline} {messages.events.gender[loaded.event.gender].toLowerCase()}
+              {messages.events.name(loaded.event.discipline, loaded.event.gender)}
             </p>
           )}
         </div>

@@ -246,7 +246,7 @@ export function DashboardView({
                 <span className="flex-1 font-semibold">
                   {messages.adminLog.kind[action.kind]}
                   {action.event
-                    ? ` · ${action.event.discipline} ${messages.events.gender[action.event.gender].toLowerCase()}`
+                    ? ` · ${messages.events.name(action.event.discipline, action.event.gender)}`
                     : ""}
                 </span>
                 <span className="text-xs text-muted-foreground">{action.admin?.pseudo ?? ""}</span>

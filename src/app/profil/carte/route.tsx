@@ -15,7 +15,7 @@ import {
   createSupabaseRankingRepository,
 } from "@/infra";
 
-import { currentCompetition, loadCompetitions } from "../../competition";
+import { seasonCompetitionSlugs } from "../../competition";
 import { messages } from "../../messages.fr";
 import { getCurrentUser, getSessionClient } from "../../session";
 
@@ -33,9 +33,7 @@ export async function GET() {
   }).execute({ userId: user.userId });
   if (!profile) return new Response(null, { status: 404 });
 
-  const competition = await currentCompetition();
-  const { coming, past } = await loadCompetitions();
-  const slugs = [...coming, ...past].map((c) => c.slug);
+  const slugs = await seasonCompetitionSlugs();
   let card;
   try {
     const [season, details] = await Promise.all([
@@ -46,7 +44,7 @@ export async function GET() {
         disciplines: createSupabaseDisciplineRepository(createPublicSupabaseClient()),
       }).execute({
         userId: user.userId,
-        competitionSlugs: slugs.length ? slugs : [competition.slug],
+        competitionSlugs: slugs,
       }),
       getPlayerDetails({ details: createSupabasePlayerDetailsRepository(client) }).execute({
         userId: user.userId,
@@ -62,9 +60,7 @@ export async function GET() {
     throw error;
   }
 
-  const event = card.best
-    ? `${card.best.discipline} ${messages.events.gender[card.best.gender].toLowerCase()}`
-    : null;
+  const event = card.best ? messages.events.name(card.best.discipline, card.best.gender) : null;
   return new ImageResponse(
     <div
       style={{
@@ -131,11 +127,15 @@ export async function GET() {
       >
         <div style={{ fontSize: 34, letterSpacing: 4, opacity: 0.8 }}>{text.bestShot}</div>
         <div style={{ fontSize: 54, fontWeight: 700, textAlign: "center" }}>
-          {event ? (card.best?.perfect ? text.bestPerfect(event) : event) : text.noBestShot}
+          {event
+            ? card.best?.perfect
+              ? messages.profile.bestPerfect(event)
+              : event
+            : text.noBestShot}
         </div>
         {card.best && (
           <div style={{ fontSize: 60, fontWeight: 700, color: gold }}>
-            {text.bestPoints(card.best.points)}
+            {messages.profile.bestPoints(card.best.points)}
           </div>
         )}
       </div>
