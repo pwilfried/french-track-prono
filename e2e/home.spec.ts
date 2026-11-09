@@ -80,3 +80,10 @@ test("a signed-in player sees the next final on the home page and opens it", asy
   await next.getByRole("link", { name: "Composer mon podium" }).click();
   await expect(page).toHaveURL(new RegExp(`/epreuves/${slug}$`));
 });
+
+test("the header's sign-in link brings a player back to the home page", async ({ page }) => {
+  await page.goto("/regles");
+  await expect(
+    page.getByRole("banner").getByRole("link", { name: "Se connecter", exact: true }),
+  ).toHaveAttribute("href", "/connexion?next=%2F");
+});
