@@ -21,8 +21,9 @@ test("the admin validates a club typed by a player, then renames it", async ({ p
   await expect(adminMenu(page).getByRole("link", { name: /^Clubs \d+ à traiter$/ })).toBeVisible();
   await adminMenu(page).locator("summary").click();
 
+  // The search finds a club from its words in any order, not only its exact name (#412).
   const search = page.getByLabel("Nom ou ville");
-  await search.fill(typed);
+  await search.fill(`${tag} zclub FOULÉES`);
   const list = page.getByRole("list", { name: "Clubs" });
   const row = list.getByRole("listitem").filter({ hasText: typed });
   await expect(row).toContainText("À valider");
