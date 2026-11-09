@@ -1,3 +1,4 @@
+import { rankClubs, type ClubRank } from "@/domain/club-ranking";
 import { rankChanges, rankPlayers, streaks, totalsOf, type RankedPlayer } from "@/domain/ranking";
 import type { ScoreReason } from "@/domain/scoring";
 
@@ -10,6 +11,8 @@ export type RankingLine = {
   avatar: string;
   /** The player's club, shown on their card (#342); null or absent when none or not visible. */
   club?: string | null;
+  /** Id of that club: the club ranking groups by it (#386). */
+  clubId?: string | null;
   points: number;
   reasons: ScoreReason[];
   eventId: string;
@@ -60,6 +63,32 @@ export function getGeneralRanking(ports: { ranking: RankingRepository }) {
         input.competitionSlugs.map((slug) => ports.ranking.competitionLines(slug)),
       );
       return rank(perCompetition.flat());
+    },
+  };
+}
+
+/** Clubs ranked on the average points of their players over the competitions given (#386). */
+export function getClubRanking(ports: { ranking: RankingRepository }) {
+  return {
+    async execute(input: { competitionSlugs: string[] }): Promise<ClubRank[]> {
+      const perCompetition = await Promise.all(
+        input.competitionSlugs.map((slug) => ports.ranking.competitionLines(slug)),
+      );
+      const lines = perCompetition.flat();
+      const clubOf = new Map(
+        lines
+          .filter((l) => l.clubId)
+          .map((l) => [l.userId, { id: l.clubId!, name: l.club ?? null }]),
+      );
+      const points = new Map<string, number>();
+      for (const l of lines) points.set(l.userId, (points.get(l.userId) ?? 0) + l.points);
+      return rankClubs(
+        [...points].map(([userId, total]) => ({
+          clubId: clubOf.get(userId)?.id ?? null,
+          club: clubOf.get(userId)?.name ?? null,
+          points: total,
+        })),
+      );
     },
   };
 }
