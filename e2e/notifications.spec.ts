@@ -6,11 +6,13 @@ import { newPlayer, signUp } from "./players";
 
 const text = messages.notifications;
 
-// The browser's push service is not reachable from the CI: the subscription is simulated, the
-// rest (permission, button, server action, database) is real. The CI build has a test push key.
-test("a player turns notifications on for this device, then off", async ({ page, context }) => {
-  await context.grantPermissions(["notifications"]);
+// Headless Chromium denies notifications and cannot reach a push service: the permission and the
+// subscription are simulated, the rest (button, server action, database) is real. The CI build
+// has a test push key.
+test("a player turns notifications on for this device, then off", async ({ page }) => {
   await page.addInitScript(() => {
+    Object.defineProperty(Notification, "permission", { get: () => "granted" });
+    Notification.requestPermission = async () => "granted";
     const KEY = "e2e.push";
     const subscription = (endpoint: string) => ({
       endpoint,
