@@ -17,6 +17,7 @@ function profiles(): ProfileRepository {
     find: async (userId) => byUser.get(userId) ?? null,
     isAdmin: async () => false,
     create: async () => "created",
+    update: async () => "updated",
     deleteMine: async (userId) => void byUser.delete(userId),
   };
 }

@@ -2,22 +2,17 @@
 
 import { useActionState } from "react";
 
+import { AvatarPicker } from "@/components/account/avatar-picker";
 import { ClubPicker } from "@/components/account/club-picker";
 import { DisciplinePicker } from "@/components/account/discipline-picker";
 import { Field } from "@/components/account/field";
+import { SexPicker } from "@/components/account/sex-picker";
 import { SubmitButton } from "@/components/account/submit-button";
 import type { Discipline } from "@/domain/discipline";
-import { AVATARS } from "@/domain/profile";
 
 import { findClubsAction } from "../club-actions";
 import { messages } from "../messages.fr";
 import { createProfileAction, type WelcomeState } from "./actions";
-
-const SEXES = [
-  { value: "F", label: messages.welcome.sexF },
-  { value: "M", label: messages.welcome.sexM },
-  { value: "", label: messages.welcome.sexNone },
-];
 
 export function WelcomeForm({
   next,
@@ -63,62 +58,9 @@ export function WelcomeForm({
         maxLength={40}
       />
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-          {messages.welcome.avatarLabel}
-        </legend>
-        <div className="grid grid-cols-4 gap-2.5">
-          {AVATARS.map((avatar) => (
-            <label key={avatar} className="cursor-pointer">
-              <input
-                type="radio"
-                name="avatar"
-                value={avatar}
-                defaultChecked={state.avatar === avatar}
-                className="peer sr-only"
-              />
-              <span
-                aria-hidden="true"
-                className="grid aspect-square min-h-16 place-items-center rounded-2xl border-2 border-border bg-card text-3xl peer-checked:border-primary peer-checked:bg-muted peer-checked:ring-4 peer-checked:ring-primary/25 peer-focus-visible:ring-4 peer-focus-visible:ring-ring"
-              >
-                {avatar}
-              </span>
-            </label>
-          ))}
-        </div>
-        {avatarError ? (
-          <p role="alert" className="text-sm font-semibold text-accent-text">
-            {avatarError}
-          </p>
-        ) : null}
-      </fieldset>
+      <AvatarPicker chosen={state.avatar} error={avatarError} />
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-          {messages.welcome.sexLabel}
-        </legend>
-        <div className="flex flex-wrap gap-2">
-          {SEXES.map((sex) => (
-            <label key={sex.value} className="cursor-pointer">
-              <input
-                type="radio"
-                name="sex"
-                value={sex.value}
-                defaultChecked={state.sex === sex.value}
-                className="peer sr-only"
-              />
-              <span className="inline-flex min-h-11 items-center rounded-full border-2 border-border bg-card px-4 text-sm font-semibold peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:ring-4 peer-focus-visible:ring-ring">
-                {sex.label}
-              </span>
-            </label>
-          ))}
-        </div>
-        {sexError ? (
-          <p role="alert" className="text-sm font-semibold text-accent-text">
-            {sexError}
-          </p>
-        ) : null}
-      </fieldset>
+      <SexPicker chosen={state.sex} error={sexError} />
 
       <DisciplinePicker disciplines={disciplines} chosen={state.disciplines} />
 

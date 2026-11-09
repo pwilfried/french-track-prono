@@ -22,6 +22,16 @@ export function createInMemoryProfileRepository(
       byUser.set(profile.userId, profile);
       return "created";
     },
+    async update(userId, change) {
+      const mine = byUser.get(userId);
+      if (!mine) return "updated";
+      const key = change.pseudo.toLowerCase();
+      for (const other of byUser.values()) {
+        if (other.userId !== userId && other.pseudo.toLowerCase() === key) return "pseudo_taken";
+      }
+      byUser.set(userId, { ...mine, ...change });
+      return "updated";
+    },
     async deleteMine(userId) {
       byUser.delete(userId);
     },

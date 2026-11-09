@@ -52,6 +52,17 @@ export function createSupabaseProfileRepository(client: SupabaseClient): Profile
       throw new UseCaseError("PROFILE_UNAVAILABLE");
     },
 
+    async update(userId, change) {
+      const { error } = await client
+        .from("profiles")
+        .update({ pseudo: change.pseudo, avatar_emoji: change.avatar })
+        .eq("id", userId);
+      if (!error) return "updated";
+      if (error.code === "FT013") throw new UseCaseError("PSEUDO_BANNED");
+      if (error.code === "23505") return "pseudo_taken";
+      throw new UseCaseError("PROFILE_UNAVAILABLE");
+    },
+
     // The database function deletes the caller (auth.uid()), whatever id is given.
     async deleteMine() {
       const { error } = await client.rpc("delete_my_account");

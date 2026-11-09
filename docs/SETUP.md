@@ -300,6 +300,16 @@ jour à 6 h 17 (heure de Paris en hiver, ce qui repère aussi un projet Supabase
 demande (onglet Actions → Run workflow). Pas de relance : un échec est signalé par e-mail.
 Pour l'essayer ailleurs : `scripts/smoke.sh http://localhost:3000`.
 
+## Réglages Auth de la prod (Supabase, à la main)
+
+Le fichier `supabase/config.toml` ne règle que le Supabase local. En prod (Authentication) :
+
+| Où | Réglage |
+|---|---|
+| Sign In / Providers → Email | « Confirm email » désactivé ; « Secure email change » **désactivé** (le code va seulement à la nouvelle adresse) ; OTP valable 600 s |
+| Emails → Templates → Magic Link et Confirm signup | contenu de `supabase/templates/sign_in.html` |
+| Emails → Templates → Change Email Address | sujet « Confirme ta nouvelle adresse French Track Prono », contenu de `supabase/templates/email_change.html` |
+
 ## Import des clubs d'athlétisme
 
 Le workflow « Clubs import » (le 2 de chaque mois, ou à la main depuis l'onglet Actions) lit les
