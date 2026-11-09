@@ -80,3 +80,19 @@ end $$;
 
 revoke execute on function propose_club(text, text) from public, anon;
 grant execute on function propose_club(text, text) to authenticated;
+
+-- The search lists validated clubs only, even for the player who typed one.
+create or replace function search_clubs(p_query text, p_limit int default 20)
+returns table (id uuid, name text, city text, department text, validated boolean)
+language sql stable security invoker set search_path = public as $$
+  with q as (
+    select array_remove(string_to_array(club_search_key(coalesce(p_query, '')), ' '), '') as words
+  )
+  select c.id, c.name, c.city, c.department, c.validated
+  from clubs c, q
+  where c.validated
+    and cardinality(q.words) > 0
+    and not exists (select 1 from unnest(q.words) w where position(w in c.search_key) = 0)
+  order by (c.search_key like q.words[1] || '%') desc, c.name
+  limit least(greatest(p_limit, 1), 50)
+$$;
