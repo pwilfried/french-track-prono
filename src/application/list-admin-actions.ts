@@ -9,7 +9,8 @@ export type AdminActionKind =
   | "edit_competition"
   | "set_odds"
   | "set_rule"
-  | "moderate_league";
+  | "moderate_league"
+  | "moderate_player";
 
 /** One line of the admin log. */
 export type AdminAction = {

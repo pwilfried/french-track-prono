@@ -58,3 +58,15 @@ test("two friends in the same league see the same ranking", async ({ browser }) 
   await expect(rows.nth(0)).toContainText(anna.pseudo);
   await expect(rows.nth(1)).toContainText(bob.pseudo);
 });
+
+test("a player opens their leagues from the bottom bar", async ({ page }) => {
+  const player = newPlayer("tab");
+  await page.goto("/profil");
+  await signUp(page, player);
+  await page.waitForURL(/\/profil$/);
+
+  const bar = page.getByRole("navigation", { name: "Navigation principale" }).last();
+  await bar.getByRole("link", { name: "Ligues" }).click();
+  await page.waitForURL(/\/ligues$/);
+  await expect(bar.getByRole("link", { name: "Ligues" })).toHaveAttribute("aria-current", "page");
+});
