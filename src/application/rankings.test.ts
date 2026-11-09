@@ -1,9 +1,11 @@
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import { UseCaseError } from "./errors";
 import type { LeagueMember, LeagueRepository } from "./leagues";
 import {
   getGeneralRanking,
+  countsInLeague,
   getLeagueRanking,
   type RankingLine,
   type RankingRepository,
@@ -142,5 +144,65 @@ describe("getLeagueRanking", () => {
         competitionSlugs: ["c"],
       }),
     ).rejects.toEqual(new UseCaseError("LEAGUE_NOT_FOUND"));
+  });
+});
+
+describe("a league counts only the predictions made as a member (#376)", () => {
+  const at = (iso: string, l: RankingLine): RankingLine => ({ ...l, eventLockAt: iso });
+
+  it("leaves out an event locked before the player joined", async () => {
+    // given Ana in the league since the start, Bob who joined on 10 Nov
+    const members = [
+      { ...member("ana"), joinedAt: "2026-11-01T00:00:00.000Z" },
+      { ...member("bob"), joinedAt: "2026-11-10T00:00:00.000Z" },
+    ];
+    // when both scored on an event locked on 5 Nov and on one locked on 12 Nov
+    const lines = [
+      at("2026-11-05T18:00:00.000Z", line("ana", 10)),
+      at("2026-11-05T18:00:00.000Z", line("bob", 12)),
+      at("2026-11-12T18:00:00.000Z", line("ana", 3)),
+      at("2026-11-12T18:00:00.000Z", line("bob", 4)),
+    ];
+    const result = await getLeagueRanking({
+      ranking: ranking(lines),
+      leagues: leagues(members),
+    }).execute({ leagueId: "l", competitionSlugs: ["c"] });
+    // then Bob's 12 points from before he joined do not count in this league
+    expect(result.map((r) => [r.pseudo, r.points])).toEqual([
+      ["ANA", 13],
+      ["BOB", 4],
+    ]);
+  });
+
+  it("counts an event when a date is unknown", () => {
+    expect(countsInLeague(undefined, "2026-11-05T18:00:00.000Z")).toBe(true);
+    expect(countsInLeague("2026-11-10T00:00:00.000Z", undefined)).toBe(true);
+    expect(countsInLeague("2026-11-10T00:00:00.000Z", "2026-11-10T00:00:00.000Z")).toBe(true);
+  });
+
+  it("gives the same ranking whatever the order of the score lines", async () => {
+    const members = [
+      { ...member("ana"), joinedAt: "2026-11-01T00:00:00.000Z" },
+      { ...member("bob"), joinedAt: "2026-11-10T00:00:00.000Z" },
+    ];
+    const lines = [
+      at("2026-11-05T18:00:00.000Z", line("bob", 12)),
+      at("2026-11-12T18:00:00.000Z", line("ana", 3)),
+      at("2026-11-12T18:00:00.000Z", line("bob", 4)),
+      at("2026-11-13T18:00:00.000Z", line("ana", 7)),
+    ];
+    const rank = (ls: RankingLine[]) =>
+      getLeagueRanking({ ranking: ranking(ls), leagues: leagues(members) })
+        .execute({ leagueId: "l", competitionSlugs: ["c"] })
+        .then((rows) => rows.map((r) => [r.userId, r.points, r.rank]));
+    const expected = await rank(lines);
+    await fc.assert(
+      fc.asyncProperty(
+        fc.shuffledSubarray(lines, { minLength: lines.length }),
+        async (shuffled) => {
+          expect(await rank(shuffled)).toEqual(expected);
+        },
+      ),
+    );
   });
 });

@@ -39,6 +39,19 @@ test("the general ranking adds up the points of every competition", async ({ pag
     .filter({ hasText: player.pseudo });
   await expect(mine).toContainText("73");
 
+  // The ranking of one competition counts its points only (#376).
+  await page
+    .getByRole("navigation", { name: "Choisir le classement" })
+    .getByRole("link", { name: `Test général ${tag} 0` })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`competition=${tag}-0$`));
+  await expect(
+    page
+      .getByRole("list", { name: "Classement" })
+      .getByRole("listitem")
+      .filter({ hasText: player.pseudo }),
+  ).toContainText("40");
+
   // Touching the pseudo shows the minimal card: club and rank, no e-mail (#342).
   sql(`update profiles set club_id = (select id from clubs where name = 'Athlé Club des Tests')
        where pseudo = '${player.pseudo}'`);

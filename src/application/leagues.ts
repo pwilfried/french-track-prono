@@ -23,7 +23,14 @@ export type PublicLeague = {
   competitionSlugs: string[];
 };
 
-export type LeagueMember = { userId: string; pseudo: string; avatar: string; club?: string | null };
+export type LeagueMember = {
+  userId: string;
+  pseudo: string;
+  avatar: string;
+  club?: string | null;
+  /** When they joined, ISO 8601: only the events locked after count in the league (#376). */
+  joinedAt?: string;
+};
 
 export type JoinOutcome =
   | { outcome: "joined"; leagueId: string }
