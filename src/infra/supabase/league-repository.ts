@@ -83,14 +83,24 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
     async members(leagueId) {
       const { data, error } = await client
         .from("league_members")
-        .select("user_id, profiles!inner(pseudo, avatar_emoji)")
+        .select("user_id, profiles!inner(pseudo, avatar_emoji, club:clubs(name))")
         .eq("league_id", leagueId)
-        .returns<{ user_id: string; profiles: { pseudo: string; avatar_emoji: string } }[]>();
+        .returns<
+          {
+            user_id: string;
+            profiles: { pseudo: string; avatar_emoji: string; club: { name: string } | null };
+          }[]
+        >();
       if (error) fail();
       // A non member reads no row (row level security); a league has at least its owner.
       if (data!.length === 0) return null;
       return data!.map(
-        (row): LeagueMember => ({ userId: row.user_id, pseudo: row.profiles.pseudo, avatar: row.profiles.avatar_emoji }),
+        (row): LeagueMember => ({
+          userId: row.user_id,
+          pseudo: row.profiles.pseudo,
+          avatar: row.profiles.avatar_emoji,
+          club: row.profiles.club?.name ?? null,
+        }),
       );
     },
 

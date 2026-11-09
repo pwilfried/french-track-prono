@@ -5,8 +5,13 @@ import { buttonVariants } from "@/components/ui/button";
 import type { RankedPlayer } from "@/domain/ranking";
 import { cn } from "@/lib/utils";
 
+import { PlayerCard } from "./player-card";
+import { PlayerName, RankingItem } from "./player-name";
+
 export type LeaderboardRow = RankedPlayer & {
   avatar?: string;
+  /** Shown on the player's card (#342). */
+  club?: string | null;
   /** Places won (+) or lost (−) since the last computed event; null or absent: not shown. */
   change?: number | null;
   /** Events in a row with points; shown from 2. */
@@ -98,11 +103,22 @@ export function Leaderboard({
         const me = row.userId === meId;
         const detail = detailOf(row, me);
         return (
-          <li
+          <RankingItem
             key={row.userId}
-            aria-current={me ? "true" : undefined}
+            current={me}
+            cardId={`player-card-${row.userId}`}
+            card={
+              <PlayerCard
+                id={`player-card-${row.userId}`}
+                pseudo={row.pseudo}
+                avatar={row.avatar ?? ""}
+                club={row.club ?? null}
+                rank={row.rank}
+                total={rows.length}
+              />
+            }
             className={cn(
-              "flex min-h-14 items-center gap-2.5 rounded-xl px-2 py-1.5",
+              "flex flex-col rounded-xl px-2 py-1.5",
               me && "bg-brand-soft text-brand-ink",
             )}
           >
@@ -122,7 +138,7 @@ export function Leaderboard({
               {row.avatar ?? "🏃"}
             </span>
             <span className="min-w-0 flex-1 font-bold [overflow-wrap:anywhere]">
-              {row.pseudo}
+              <PlayerName pseudo={row.pseudo}>{row.pseudo}</PlayerName>
               {row.streak !== undefined && row.streak >= 2 && (
                 <span className="ml-1.5 whitespace-nowrap text-sm text-accent-text">
                   <span aria-hidden>🔥{row.streak}</span>
@@ -145,7 +161,7 @@ export function Leaderboard({
               <span className="sr-only">{messages.leaderboard.points(row.points)}</span>
               {row.change !== undefined && row.change !== null && <Change change={row.change} />}
             </span>
-          </li>
+          </RankingItem>
         );
       })}
     </ol>

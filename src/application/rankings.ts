@@ -8,6 +8,8 @@ export type RankingLine = {
   userId: string;
   pseudo: string;
   avatar: string;
+  /** The player's club, shown on their card (#342); null or absent when none or not visible. */
+  club?: string | null;
   points: number;
   reasons: ScoreReason[];
   eventId: string;
@@ -22,7 +24,12 @@ export interface RankingRepository {
 }
 
 /** A ranked player with the avatar shown next to the pseudo and the places won since the last event. */
-export type RankingRow = RankedPlayer & { avatar: string; change: number | null; streak: number };
+export type RankingRow = RankedPlayer & {
+  avatar: string;
+  club: string | null;
+  change: number | null;
+  streak: number;
+};
 
 const rank = (lines: RankingLine[]): RankingRow[] => {
   const byUser = new Map(lines.map((l) => [l.userId, l]));
@@ -34,6 +41,7 @@ const rank = (lines: RankingLine[]): RankingRow[] => {
   return rankPlayers(totalsOf(lines, pseudoOf)).map((player) => ({
     ...player,
     avatar: byUser.get(player.userId)?.avatar ?? "",
+    club: lines.find((l) => l.userId === player.userId && l.club)?.club ?? null,
     change: changes.get(player.userId) ?? null,
     streak: streakOf.get(player.userId) ?? 0,
   }));
@@ -73,6 +81,7 @@ export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: L
         userId: m.userId,
         pseudo: m.pseudo,
         avatar: m.avatar,
+        club: m.club ?? null,
         points: 0,
         reasons: [],
         eventId: "",
