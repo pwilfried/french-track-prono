@@ -1,9 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { lookUpProfile } from "@/application/get-profile";
 import { requiresProfile } from "@/domain/profile-gate";
-import { createSessionClient, readCurrentUser } from "@/infra";
-
-import { lookUpProfile } from "./app/profile-lookup";
+import { createSessionClient, createSupabaseProfileRepository, readCurrentUser } from "@/infra";
 
 /** Refreshes the session cookie on every page request, so the visitor stays signed in. */
 export async function proxy(request: NextRequest) {
@@ -28,7 +27,9 @@ export async function proxy(request: NextRequest) {
   };
   if (user && requiresProfile(pathname)) {
     // If the profile cannot be read, let the page load rather than block everyone.
-    const profile = await lookUpProfile(client, user.userId);
+    const profile = await lookUpProfile({
+      profiles: createSupabaseProfileRepository(client),
+    }).execute({ userId: user.userId });
     if (profile === null) {
       const target = new URL("/bienvenue", request.url);
       target.searchParams.set("next", pathname + search);
