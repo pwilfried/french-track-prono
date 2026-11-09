@@ -23,7 +23,9 @@ export function ClubNotices({ notices }: { notices: ClubNotice[] }) {
               ? text.validated(notice.clubName)
               : notice.kind === "renamed"
                 ? text.renamed(notice.clubName, notice.newName ?? "")
-                : text.removed(notice.clubName)}
+                : notice.kind === "merged"
+                  ? text.merged(notice.clubName, notice.newName ?? "")
+                  : text.removed(notice.clubName)}
           </p>
           <form action={dismissClubNoticeAction}>
             <input type="hidden" name="id" value={notice.id} />

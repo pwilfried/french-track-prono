@@ -29,6 +29,7 @@ const club = (id: string, validated: boolean): AdminClub => ({
   source: "player",
   validated,
   playerCount: 1,
+  createdAt: "2026-11-08T10:00:00.000Z",
 });
 
 function ports(overrides: Partial<AdminTodoPorts> = {}): AdminTodoPorts {
@@ -50,6 +51,7 @@ function ports(overrides: Partial<AdminTodoPorts> = {}): AdminTodoPorts {
       save: async () => "unknown",
       validate: async () => "unknown",
       remove: async () => "unknown",
+      merge: async () => "unknown",
     },
     moderation: {
       listReported: async () => [{ id: "l1", name: "L", reportCount: 2, memberCount: 3 }],
@@ -85,6 +87,7 @@ describe("admin to-do counters", () => {
           save: async () => "unknown",
           validate: async () => "unknown",
           remove: async () => "unknown",
+          merge: async () => "unknown",
         },
       }),
     ).execute({ competitionSlug: "uc-2026", now: NOW });

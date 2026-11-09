@@ -11,6 +11,8 @@ export type AdminClub = {
   source: "import" | "player" | "admin";
   validated: boolean;
   playerCount: number;
+  /** ISO 8601: when the club was imported or typed. */
+  createdAt: string;
 };
 
 export type ClubFields = { name: string; city: string; department: string };
@@ -20,13 +22,15 @@ export type ClubFields = { name: string; city: string; department: string };
  * and logs each action), fake = in memory.
  */
 export interface ClubAdminRepository {
-  /** Clubs whose name or town contains the query, those to validate first, 50 at most. */
-  list(query: string, pendingOnly: boolean): Promise<AdminClub[] | "not_admin">;
+  /** Clubs whose name or town contains the query, those to validate first; 50 unless `limit`. */
+  list(query: string, pendingOnly: boolean, limit?: number): Promise<AdminClub[] | "not_admin">;
   /** Creates (id null) or edits a club; returns its id. */
   save(id: string | null, club: ClubFields): Promise<string | "not_admin" | "unknown" | "banned">;
   validate(id: string): Promise<"done" | "not_admin" | "unknown">;
   /** Deletes a club; its players simply have no club any more. */
   remove(id: string): Promise<"done" | "not_admin" | "unknown">;
+  /** Moves the players of `fromId` to `intoId` (they get a notice), then deletes `fromId`. */
+  merge(fromId: string, intoId: string): Promise<number | "not_admin" | "unknown" | "same">;
 }
 
 type Ports = { clubs: ClubAdminRepository };
@@ -35,12 +39,22 @@ const check = (outcome: string) => {
   if (outcome === "not_admin") throw new UseCaseError("NOT_ADMIN");
   if (outcome === "unknown") throw new UseCaseError("CLUB_UNKNOWN");
   if (outcome === "banned") throw new UseCaseError("CLUB_NAME_BANNED");
+  if (outcome === "same") throw new UseCaseError("CLUB_MERGE_SAME");
 };
 
 export function listAdminClubs(ports: Ports) {
   return {
-    async execute(input: { query: string; pendingOnly: boolean }): Promise<AdminClub[]> {
-      const clubs = await ports.clubs.list(input.query.trim().slice(0, 80), input.pendingOnly);
+    async execute(input: {
+      query: string;
+      pendingOnly: boolean;
+      /** Every club, for the back-office list (#381). */
+      all?: boolean;
+    }): Promise<AdminClub[]> {
+      const clubs = await ports.clubs.list(
+        input.query.trim().slice(0, 80),
+        input.pendingOnly,
+        input.all ? 5000 : undefined,
+      );
       if (clubs === "not_admin") throw new UseCaseError("NOT_ADMIN");
       return clubs;
     },
@@ -77,6 +91,19 @@ export function deleteClub(ports: Ports) {
   return {
     async execute(input: { id: string }): Promise<void> {
       check(await ports.clubs.remove(input.id));
+    },
+  };
+}
+
+/** Merges a duplicate into the right club (#381); returns how many players moved. */
+export function mergeClub(ports: Ports) {
+  return {
+    async execute(input: { fromId: string; intoId: string }): Promise<number> {
+      if (input.fromId === input.intoId) throw new UseCaseError("CLUB_MERGE_SAME");
+      const outcome = await ports.clubs.merge(input.fromId, input.intoId);
+      if (typeof outcome === "number") return outcome;
+      check(outcome);
+      throw new UseCaseError("CLUB_UNKNOWN");
     },
   };
 }

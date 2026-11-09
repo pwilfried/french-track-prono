@@ -13,6 +13,9 @@ clubAdminContract("in-memory fake", async () => {
     async playerClub(name) {
       return store.add({ name, city: "", department: "", source: "player", validated: false });
     },
+    async playerOn(clubId) {
+      store.join(clubId);
+    },
   };
 });
 
@@ -30,6 +33,9 @@ if (url && key) {
       async playerClub(name) {
         return sql(`insert into clubs (name, source, created_by)
           values ('${name.replaceAll("'", "''")}', 'player', '${player.userId}') returning id`);
+      },
+      async playerOn(clubId) {
+        sql(`update profiles set club_id = '${clubId}' where id = '${player.userId}'`);
       },
     };
   });

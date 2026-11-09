@@ -7,6 +7,8 @@ export type ClubAdminWorld = {
   notAdmin: ClubAdminRepository;
   /** A club a player typed, not validated yet; returns its id. */
   playerClub(name: string): Promise<string>;
+  /** A player chooses this club. */
+  playerOn(clubId: string): Promise<void>;
 };
 
 const tag = () =>
@@ -52,6 +54,27 @@ export function clubAdminContract(name: string, world: () => Promise<ClubAdminWo
       expect(await w.admin.remove(id)).toBe("done");
       expect(await w.admin.remove(id)).toBe("unknown");
       expect(await w.admin.list(t, false)).toEqual([]);
+    });
+
+    it("merges a duplicate into the right club with its players", async () => {
+      const w = await world();
+      const t = tag();
+      const typed = await w.playerClub(`AC ${t}`);
+      const right = await w.admin.save(null, {
+        name: `Athletic Club ${t}`,
+        city: "",
+        department: "",
+      });
+      if (typeof right !== "string" || right === "not_admin") throw new Error("not created");
+      await w.playerOn(typed);
+
+      expect(await w.admin.merge(typed, typed)).toBe("same");
+      expect(await w.admin.merge(typed, right)).toBe(1);
+      expect(await w.admin.merge(typed, right)).toBe("unknown");
+      const left = await w.admin.list(t, false, 5000);
+      expect(left !== "not_admin" && left.map((c) => [c.id, c.playerCount])).toEqual([[right, 1]]);
+      expect(left !== "not_admin" && Date.parse(left[0]!.createdAt) > 0).toBe(true);
+      expect(await w.notAdmin.merge(right, typed)).toBe("not_admin");
     });
 
     it("refuses banned words and a player who is not admin", async () => {

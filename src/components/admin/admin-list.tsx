@@ -22,6 +22,15 @@ export type ListColumn<T> = {
 
 export type ListFilter<T> = { key: string; label: string; test: (item: T) => boolean };
 
+/** A drop-down filter (origin, department…); its first option keeps every row. */
+export type ListSelect<T> = {
+  key: string;
+  label: string;
+  all: string;
+  options: { value: string; label: string }[];
+  test: (item: T, value: string) => boolean;
+};
+
 /** What an action tells the admin: a short message, with Annuler when it can be undone. */
 export type ListFeedback =
   { message: string; undo?: () => Promise<void> | void } | { error: string };
@@ -56,6 +65,7 @@ export type AdminListProps<T> = {
   searchPlaceholder?: string;
   filters?: ListFilter<T>[];
   defaultFilter?: string;
+  selects?: ListSelect<T>[];
   bulkActions?: BulkAction[];
   renderDetail?: (item: T, context: DetailContext) => ReactNode;
   pageSize?: number;
@@ -77,6 +87,7 @@ export function AdminList<T>(props: AdminListProps<T>) {
     getLabel,
     columns,
     filters = [],
+    selects = [],
     bulkActions = [],
     pageSize = 25,
     status = "ready",
@@ -85,6 +96,7 @@ export function AdminList<T>(props: AdminListProps<T>) {
   const [filterKey, setFilterKey] = useState<string | null>(
     props.defaultFilter ?? filters[0]?.key ?? null,
   );
+  const [choices, setChoices] = useState<Record<string, string>>({});
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [descending, setDescending] = useState(false);
   const [page, setPage] = useState(1);
@@ -103,13 +115,15 @@ export function AdminList<T>(props: AdminListProps<T>) {
       viewList(items, {
         query,
         matches: (item, q) => normalizeSearch(props.searchText(item)).includes(q),
-        filter: filter?.test,
+        filter: (item) =>
+          (!filter || filter.test(item)) &&
+          selects.every((s) => !choices[s.key] || s.test(item, choices[s.key]!)),
         sort: column?.sort,
         descending,
         page,
         pageSize,
       }),
-    [items, query, filter, column, descending, page, pageSize, props],
+    [items, query, filter, selects, choices, column, descending, page, pageSize, props],
   );
   const open = openId ? items.find((item) => getId(item) === openId) : undefined;
 
@@ -204,7 +218,7 @@ export function AdminList<T>(props: AdminListProps<T>) {
             className="min-w-0 flex-1 bg-transparent outline-none"
           />
         </label>
-        {filters.length > 0 && (
+        {filters.length + selects.length > 0 && (
           <div role="group" aria-label={text.filters} className="flex flex-wrap gap-2">
             {filters.map((f) => {
               const active = f.key === filterKey;
@@ -228,6 +242,29 @@ export function AdminList<T>(props: AdminListProps<T>) {
                 </button>
               );
             })}
+            {selects.map((s) => (
+              <label key={s.key} className="inline-flex">
+                <span className="sr-only">{s.label}</span>
+                <select
+                  value={choices[s.key] ?? ""}
+                  onChange={(event) => {
+                    setChoices((current) => ({ ...current, [s.key]: event.target.value }));
+                    setPage(1);
+                  }}
+                  className={cn(
+                    "min-h-11 rounded-full border-2 bg-card px-3.5 text-sm font-semibold text-foreground",
+                    choices[s.key] ? "border-brand" : "border-border",
+                  )}
+                >
+                  <option value="">{s.all}</option>
+                  {s.options.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ))}
           </div>
         )}
       </div>
@@ -286,102 +323,108 @@ export function AdminList<T>(props: AdminListProps<T>) {
             </p>
           ) : (
             <>
-              <table
-                aria-label={props.label}
-                className="hidden w-full border-separate border-spacing-0 overflow-hidden rounded-2xl border border-border bg-card md:table"
-              >
-                <thead>
-                  <tr className="text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                    {bulkActions.length > 0 && (
-                      <th scope="col" className="w-12 border-b border-border px-3 py-2">
-                        <input
-                          type="checkbox"
-                          checked={allOnPage}
-                          onChange={toggleAll}
-                          aria-label={text.selectAll}
-                          className="size-5 accent-brand"
-                        />
-                      </th>
-                    )}
-                    {columns.map((c) => (
-                      <th
-                        key={c.key}
-                        scope="col"
-                        aria-sort={
-                          sortKey === c.key ? (descending ? "descending" : "ascending") : undefined
-                        }
-                        className={cn(
-                          "border-b border-border px-3 py-2",
-                          c.numeric && "text-right",
-                        )}
-                      >
-                        {c.sort ? (
-                          <button
-                            type="button"
-                            onClick={() => sortBy(c.key)}
-                            className="inline-flex min-h-11 items-center gap-1 uppercase"
-                          >
-                            {c.label}
-                            <span aria-hidden="true">
-                              {sortKey === c.key ? (descending ? "▼" : "▲") : ""}
-                            </span>
-                          </button>
-                        ) : (
-                          c.label
-                        )}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {view.rows.map((item) => {
-                    const id = getId(item);
-                    return (
-                      <tr
-                        key={id}
-                        className={cn(
-                          openId === id && "bg-brand-soft",
-                          selected.has(id) && "bg-brand-soft/60",
-                        )}
-                      >
-                        {bulkActions.length > 0 && (
-                          <td className="border-b border-border px-3 py-2">
-                            <input
-                              type="checkbox"
-                              checked={selected.has(id)}
-                              onChange={() => toggle(id)}
-                              aria-label={text.select(getLabel(item))}
-                              className="size-5 accent-brand"
-                            />
-                          </td>
-                        )}
-                        {columns.map((c, index) => (
-                          <td
-                            key={c.key}
-                            className={cn(
-                              "border-b border-border px-3 py-2",
-                              c.numeric && "text-right font-mono",
-                            )}
-                          >
-                            {index === 0 && props.renderDetail ? (
-                              <button
-                                type="button"
-                                onClick={() => setOpenId(id)}
-                                aria-label={text.open(getLabel(item))}
-                                className="min-h-11 text-left font-bold hover:underline"
-                              >
-                                {c.cell(item)}
-                              </button>
-                            ) : (
-                              c.cell(item)
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div className="hidden overflow-x-auto md:block">
+                <table
+                  aria-label={props.label}
+                  className="w-full min-w-[40rem] border-separate border-spacing-0 overflow-hidden rounded-2xl border border-border bg-card"
+                >
+                  <thead>
+                    <tr className="text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      {bulkActions.length > 0 && (
+                        <th scope="col" className="w-12 border-b border-border px-3 py-2">
+                          <input
+                            type="checkbox"
+                            checked={allOnPage}
+                            onChange={toggleAll}
+                            aria-label={text.selectAll}
+                            className="size-5 accent-brand"
+                          />
+                        </th>
+                      )}
+                      {columns.map((c) => (
+                        <th
+                          key={c.key}
+                          scope="col"
+                          aria-sort={
+                            sortKey === c.key
+                              ? descending
+                                ? "descending"
+                                : "ascending"
+                              : undefined
+                          }
+                          className={cn(
+                            "border-b border-border px-3 py-2",
+                            c.numeric && "text-right",
+                          )}
+                        >
+                          {c.sort ? (
+                            <button
+                              type="button"
+                              onClick={() => sortBy(c.key)}
+                              className="inline-flex min-h-11 items-center gap-1 uppercase"
+                            >
+                              {c.label}
+                              <span aria-hidden="true">
+                                {sortKey === c.key ? (descending ? "▼" : "▲") : ""}
+                              </span>
+                            </button>
+                          ) : (
+                            c.label
+                          )}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {view.rows.map((item) => {
+                      const id = getId(item);
+                      return (
+                        <tr
+                          key={id}
+                          className={cn(
+                            openId === id && "bg-brand-soft",
+                            selected.has(id) && "bg-brand-soft/60",
+                          )}
+                        >
+                          {bulkActions.length > 0 && (
+                            <td className="border-b border-border px-3 py-2">
+                              <input
+                                type="checkbox"
+                                checked={selected.has(id)}
+                                onChange={() => toggle(id)}
+                                aria-label={text.select(getLabel(item))}
+                                className="size-5 accent-brand"
+                              />
+                            </td>
+                          )}
+                          {columns.map((c, index) => (
+                            <td
+                              key={c.key}
+                              className={cn(
+                                "border-b border-border px-3 py-2",
+                                c.numeric && "text-right font-mono",
+                              )}
+                            >
+                              {index === 0 && props.renderDetail ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenId(id)}
+                                  aria-label={text.open(getLabel(item))}
+                                  className="min-h-11 text-left font-bold hover:underline"
+                                >
+                                  {c.cell(item)}
+                                </button>
+                              ) : (
+                                c.cell(item)
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
 
               <ul aria-label={props.label} className="flex flex-col gap-2 md:hidden">
                 {view.rows.map((item) => {
@@ -498,7 +541,7 @@ function DetailPanel({
   return (
     <aside
       aria-label={title}
-      className="fixed inset-0 z-40 flex flex-col gap-4 overflow-y-auto bg-background p-4 md:sticky md:top-4 md:z-auto md:w-96 md:shrink-0 md:rounded-2xl md:border md:border-border md:bg-card md:p-5"
+      className="fixed inset-0 z-40 flex flex-col gap-4 overflow-y-auto bg-background p-4 md:sticky md:top-4 md:z-auto md:w-80 xl:w-96 md:shrink-0 md:rounded-2xl md:border md:border-border md:bg-card md:p-5"
     >
       <div className="flex items-start justify-between gap-3">
         <h2 className="font-display text-2xl font-extrabold leading-tight">{title}</h2>

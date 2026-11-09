@@ -199,3 +199,74 @@ export function matchesClub(query: string, club: { name: string; city: string })
   const haystack = searchKey(`${club.name} ${club.city}`);
   return words.every((word) => haystack.includes(word));
 }
+
+// Words every club name may carry: they say nothing about which club it is.
+const GENERIC_WORDS = new Set([
+  ...SMALL_WORDS,
+  "ac",
+  "as",
+  "us",
+  "ca",
+  "ea",
+  "ec",
+  "es",
+  "club",
+  "clubs",
+  "athletic",
+  "athletique",
+  "athle",
+  "athletisme",
+  "association",
+  "sport",
+  "sports",
+  "sportif",
+  "sportive",
+  "running",
+  "run",
+  "team",
+  "union",
+  "entente",
+  "stade",
+]);
+
+/** The words that tell a club apart: no accents, no generic words, no initials in brackets. */
+function telling(name: string): Set<string> {
+  return new Set(
+    searchKey(name.replace(/\([^)]*\)/g, " "))
+      .split(" ")
+      .filter((word) => word.length > 1 && !GENERIC_WORDS.has(word) && !/^\d+$/.test(word)),
+  );
+}
+
+export type ClubLike = {
+  id: string;
+  name: string;
+  city: string;
+  department: string;
+  validated: boolean;
+};
+
+/**
+ * The club this one probably duplicates (#381): same department or same town, and every telling
+ * word of the shorter name is in the other. A validated club, then the most shared words, win.
+ */
+export function likelyDuplicate<T extends ClubLike>(club: ClubLike, clubs: readonly T[]): T | null {
+  const words = telling(club.name);
+  if (words.size === 0) return null;
+  const town = searchKey(club.city);
+  let best: { club: T; score: number } | null = null;
+  for (const other of clubs) {
+    if (other.id === club.id) continue;
+    const near =
+      (club.department !== "" && other.department === club.department) ||
+      (town !== "" && searchKey(other.city) === town);
+    if (!near) continue;
+    const others = telling(other.name);
+    if (others.size === 0) continue;
+    const [small, large] = words.size <= others.size ? [words, others] : [others, words];
+    if (![...small].every((word) => large.has(word))) continue;
+    const score = small.size * 2 + (other.validated ? 1 : 0);
+    if (!best || score > best.score) best = { club: other, score };
+  }
+  return best?.club ?? null;
+}

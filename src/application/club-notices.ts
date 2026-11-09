@@ -1,7 +1,7 @@
 /** What the admin did to the club a player chose (#372). */
 export type ClubNotice = {
   id: string;
-  kind: "validated" | "renamed" | "removed";
+  kind: "validated" | "renamed" | "removed" | "merged";
   clubName: string;
   newName: string | null;
 };
