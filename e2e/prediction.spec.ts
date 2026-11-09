@@ -80,4 +80,11 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   // The perfect podium earns the Nostradamus badge on the profile.
   await page.goto("/profil");
   await expect(page.getByRole("listitem").filter({ hasText: "Nostradamus" })).toBeVisible();
+  // The redesigned profile (#384): the best shot and the season figures.
+  await expect(page.getByRole("region", { name: "Mon meilleur coup" })).toContainText(
+    "Podium parfait",
+  );
+  await expect(page.getByRole("region", { name: "Mon meilleur coup" })).toContainText("+12 pts");
+  await expect(page.getByRole("region", { name: "Mes stats" })).toContainText("podiums parfaits");
+  await expect(page.getByRole("img", { name: /Points cumulés : de 0 à \d+/ })).toBeVisible();
 });

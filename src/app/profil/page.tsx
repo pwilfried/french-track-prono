@@ -6,15 +6,20 @@ import { getClubNotices } from "@/application/club-notices";
 import { getMyBadges } from "@/application/get-my-badges";
 import { getProfile } from "@/application/get-profile";
 import { getPlayerDetails } from "@/application/player-details";
-import { listEvents } from "@/application/list-events";
-import { listMyPredictions } from "@/application/list-my-predictions";
-import { getGeneralRanking } from "@/application/rankings";
+import { getMySeason } from "@/application/get-my-season";
 import { InstallEntry } from "@/components/shell/install-prompt";
 import { ClubNotices } from "@/components/account/club-notices";
+import {
+  BestShot,
+  SeasonCurve,
+  SeasonTiles,
+  StrongFamilies,
+} from "@/components/profile/season-blocks";
 import { buttonVariants } from "@/components/ui/button";
 import {
   createPublicSupabaseClient,
   createSupabaseClubNoticeRepository,
+  createSupabaseDisciplineRepository,
   createSupabaseEventReader,
   createSupabasePlayerDetailsRepository,
   createSupabasePredictionRepository,
@@ -22,40 +27,32 @@ import {
   createSupabaseRankingRepository,
 } from "@/infra";
 
-import { currentCompetition } from "../competition";
+import { currentCompetition, loadCompetitions } from "../competition";
 import { messages } from "../messages.fr";
 import { getCurrentUser, getSessionClient } from "../session";
 
-/** Rank, points and predictions of the season; null when they cannot be read. */
+/** The season over every competition, and the badges of the current one; null when unreadable. */
 async function loadSeason(userId: string) {
   const competition = await currentCompetition();
+  const { coming, past } = await loadCompetitions();
+  const slugs = [...coming, ...past].map((c) => c.slug);
   try {
     const client = await getSessionClient();
-    const [ranking, mine, events] = await Promise.all([
-      getGeneralRanking({ ranking: createSupabaseRankingRepository(client) }).execute({
-        competitionSlugs: [competition.slug],
-      }),
-      listMyPredictions({ predictions: createSupabasePredictionRepository(client) }).execute({
-        userId,
-        competitionSlug: competition.slug,
-      }),
-      listEvents({ events: createSupabaseEventReader(createPublicSupabaseClient()) }).execute({
-        competitionSlug: competition.slug,
-      }),
+    const events = createSupabaseEventReader(createPublicSupabaseClient());
+    const [season, badges] = await Promise.all([
+      getMySeason({
+        ranking: createSupabaseRankingRepository(client),
+        predictions: createSupabasePredictionRepository(client),
+        events,
+        disciplines: createSupabaseDisciplineRepository(createPublicSupabaseClient()),
+      }).execute({ userId, competitionSlugs: slugs.length ? slugs : [competition.slug] }),
+      getMyBadges({
+        ranking: createSupabaseRankingRepository(client),
+        predictions: createSupabasePredictionRepository(client),
+        events,
+      }).execute({ userId, competitionSlug: competition.slug, timeZone: competition.timeZone }),
     ]);
-    const badges = await getMyBadges({
-      ranking: createSupabaseRankingRepository(client),
-      predictions: createSupabasePredictionRepository(client),
-      events: createSupabaseEventReader(createPublicSupabaseClient()),
-    }).execute({ userId, competitionSlug: competition.slug, timeZone: competition.timeZone });
-    const me = ranking.find((p) => p.userId === userId);
-    return {
-      rank: me?.rank ?? null,
-      points: me?.points ?? 0,
-      predicted: mine.length,
-      events: events.length,
-      badges,
-    };
+    return { ...season, badges };
   } catch (error) {
     if (error instanceof UseCaseError) return null;
     throw error;
@@ -105,12 +102,6 @@ export default async function ProfilePage({
     timeZone: "Europe/Paris",
   }).format(profile.ageConfirmedAt);
   const text = messages.profile;
-  const tiles = [
-    { value: season?.rank ? `#${season.rank}` : "–", label: text.rank },
-    { value: season ? String(season.points) : "–", label: text.points },
-    { value: season ? `${season.predicted}/${season.events}` : "–", label: text.predictions },
-  ];
-
   return (
     <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-6">
       <h1 className="sr-only">{text.title}</h1>
@@ -120,18 +111,43 @@ export default async function ProfilePage({
           {notice}
         </p>
       ) : null}
-      <div className="flex items-center gap-4">
+      <section
+        aria-labelledby="me"
+        className="flex flex-col items-center gap-1 rounded-card bg-brand-ink px-4 py-6 text-center text-brand-foreground dark:bg-card dark:text-foreground"
+      >
         <span
           aria-hidden="true"
-          className="grid size-20 shrink-0 place-items-center rounded-full border-2 border-brand bg-card text-4xl dark:border-secondary"
+          className="grid size-20 place-items-center rounded-full border-2 border-secondary bg-card text-4xl"
         >
           {profile.avatar}
         </span>
-        <div className="min-w-0">
-          <p className="break-words font-display text-2xl font-extrabold">{profile.pseudo}</p>
-          <p className="font-mono text-sm text-muted-foreground">{text.since(since)}</p>
-        </div>
-      </div>
+        <p id="me" className="break-words font-display text-2xl font-extrabold">
+          {profile.pseudo}
+        </p>
+        <p className="text-sm opacity-80">
+          {text.joined(details?.club?.validated ? details.club.name : null, since)}
+        </p>
+        <p className="mt-2 flex items-baseline gap-2">
+          <span className="font-mono text-4xl font-bold text-secondary">
+            {season ? season.points : "–"}
+          </span>
+          <span className="text-sm">
+            {text.pointsShort} ·{" "}
+            <strong>
+              {season?.rank ? text.rankOf(season.rank, season.players) : text.notRanked}
+            </strong>
+          </span>
+        </p>
+      </section>
+
+      {season && (
+        <>
+          <SeasonTiles stats={season.stats} />
+          <SeasonCurve curve={season.stats.curve} />
+          <BestShot best={season.stats.bestShot} />
+          <StrongFamilies families={season.stats.families} />
+        </>
+      )}
 
       <section aria-labelledby="season" className="flex flex-col gap-2">
         <h2
@@ -140,19 +156,6 @@ export default async function ProfilePage({
         >
           {text.season}
         </h2>
-        <ul className="grid grid-cols-3 gap-2">
-          {tiles.map((tile) => (
-            <li
-              key={tile.label}
-              className="flex flex-col items-center gap-1 rounded-card border border-border bg-card px-2 py-3"
-            >
-              <span className="font-mono text-2xl font-bold tabular-nums">{tile.value}</span>
-              <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                {tile.label}
-              </span>
-            </li>
-          ))}
-        </ul>
         <Link
           href="/mes-points"
           className="flex min-h-11 items-center justify-between rounded-card border border-border bg-card px-4 font-semibold"
