@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   deleteClub,
+  mergeClub,
   listAdminClubs,
   saveClub,
   validateClub,
@@ -21,6 +22,7 @@ function fakeClubs(isAdmin = true) {
       source: "player",
       validated: false,
       playerCount: 1,
+      createdAt: "2026-11-08T10:00:00.000Z",
     },
   ];
   const clubs: ClubAdminRepository = {
@@ -39,6 +41,7 @@ function fakeClubs(isAdmin = true) {
           source: "admin",
           validated: true,
           playerCount: 0,
+          createdAt: "2026-11-09T10:00:00.000Z",
         });
         return `c${all.length}`;
       }
@@ -58,6 +61,16 @@ function fakeClubs(isAdmin = true) {
       if (index < 0) return "unknown";
       all.splice(index, 1);
       return "done";
+    },
+    async merge(fromId, intoId) {
+      if (!isAdmin) return "not_admin";
+      if (fromId === intoId) return "same";
+      const from = all.find((c) => c.id === fromId);
+      const into = all.find((c) => c.id === intoId);
+      if (!from || !into) return "unknown";
+      into.playerCount += from.playerCount;
+      all.splice(all.indexOf(from), 1);
+      return from.playerCount;
     },
   };
   return { clubs, all };
@@ -113,5 +126,31 @@ describe("the admin manages clubs", () => {
     await expect(
       listAdminClubs(fakeClubs(false)).execute({ query: "", pendingOnly: false }),
     ).rejects.toEqual(new UseCaseError("NOT_ADMIN"));
+  });
+
+  it("merges a duplicate into the right club, its players with it", async () => {
+    // given a club a player typed and the imported club it duplicates
+    const world = fakeClubs();
+    const right = await saveClub(world).execute({
+      id: null,
+      name: "Étoile de Sceaux",
+      city: "Sceaux",
+      department: "92",
+    });
+    // when the admin merges the duplicate into it
+    const moved = await mergeClub(world).execute({ fromId: "c1", intoId: right });
+    // then its player moved over and the duplicate is gone
+    expect(moved).toBe(1);
+    expect(world.all.map((c) => [c.id, c.playerCount])).toEqual([[right, 1]]);
+  });
+
+  it("refuses to merge a club into itself or into an unknown club", async () => {
+    const world = fakeClubs();
+    await expect(mergeClub(world).execute({ fromId: "c1", intoId: "c1" })).rejects.toThrow(
+      new UseCaseError("CLUB_MERGE_SAME"),
+    );
+    await expect(mergeClub(world).execute({ fromId: "c1", intoId: "zz" })).rejects.toThrow(
+      new UseCaseError("CLUB_UNKNOWN"),
+    );
   });
 });

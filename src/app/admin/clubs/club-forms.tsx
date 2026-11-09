@@ -5,12 +5,7 @@ import { useActionState } from "react";
 import { messages } from "@/app/messages.fr";
 import { SubmitButton } from "@/components/account/submit-button";
 
-import {
-  deleteClubAction,
-  saveClubAction,
-  validateClubAction,
-  type ClubActionState,
-} from "./actions";
+import { saveClubAction, type ClubActionState } from "./actions";
 
 const text = messages.adminClubs;
 const field =
@@ -69,39 +64,6 @@ export function ClubForm({
       </div>
       <SubmitButton pendingLabel={text.pendingAction} variant={club ? "muted" : "default"}>
         {club ? text.save : text.create}
-      </SubmitButton>
-      <Outcome state={state} />
-    </form>
-  );
-}
-
-export function ValidateClubForm({ id }: { id: string }) {
-  const [state, action] = useActionState<ClubActionState, FormData>(validateClubAction, {});
-  return (
-    <form action={action} className="flex flex-col gap-1.5">
-      <input type="hidden" name="id" value={id} />
-      <SubmitButton pendingLabel={text.pendingAction}>{text.validate}</SubmitButton>
-      <Outcome state={state} />
-    </form>
-  );
-}
-
-export function DeleteClubForm({ id, name }: { id: string; name: string }) {
-  const [state, action] = useActionState<ClubActionState, FormData>(deleteClubAction, {});
-  return (
-    <form action={action} className="flex flex-col gap-1.5">
-      <input type="hidden" name="id" value={id} />
-      <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          name="confirm"
-          value="1"
-          className="size-5 shrink-0 accent-primary"
-        />
-        {text.removeConfirm(name)}
-      </label>
-      <SubmitButton pendingLabel={text.removing} variant="muted">
-        {text.remove}
       </SubmitButton>
       <Outcome state={state} />
     </form>

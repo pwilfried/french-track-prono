@@ -40,6 +40,15 @@ const props: AdminListProps<Club> = {
     { key: "all", label: "Tous", test: () => true },
     { key: "pending", label: "À valider", test: (c) => !c.validated },
   ],
+  selects: [
+    {
+      key: "city",
+      label: "Ville",
+      all: "Toutes les villes",
+      options: clubs.map((c) => ({ value: c.city, label: c.city })),
+      test: (c, city) => c.city === city,
+    },
+  ],
   bulkActions: [
     {
       key: "validate",
@@ -92,6 +101,9 @@ export const Default: Story = {
     await userEvent.type(canvas.getByLabelText("Chercher un club"), "etoile");
     await expect(canvas.getByText("1–1 sur 1")).toBeInTheDocument();
     await userEvent.clear(canvas.getByLabelText("Chercher un club"));
+    await userEvent.selectOptions(canvas.getByLabelText("Ville"), "Testville");
+    await expect(canvas.getByText("1–1 sur 1")).toBeInTheDocument();
+    await userEvent.selectOptions(canvas.getByLabelText("Ville"), "");
     await userEvent.click(canvas.getByRole("button", { name: "À valider · 2" }));
     await expect(canvas.getByText("1–2 sur 2")).toBeInTheDocument();
     await userEvent.click(canvas.getByRole("button", { name: "Ouvrir Foulées de Fictiville" }));

@@ -22,6 +22,15 @@ export type ListColumn<T> = {
 
 export type ListFilter<T> = { key: string; label: string; test: (item: T) => boolean };
 
+/** A drop-down filter (origin, department…); its first option keeps every row. */
+export type ListSelect<T> = {
+  key: string;
+  label: string;
+  all: string;
+  options: { value: string; label: string }[];
+  test: (item: T, value: string) => boolean;
+};
+
 /** What an action tells the admin: a short message, with Annuler when it can be undone. */
 export type ListFeedback =
   { message: string; undo?: () => Promise<void> | void } | { error: string };
@@ -56,6 +65,7 @@ export type AdminListProps<T> = {
   searchPlaceholder?: string;
   filters?: ListFilter<T>[];
   defaultFilter?: string;
+  selects?: ListSelect<T>[];
   bulkActions?: BulkAction[];
   renderDetail?: (item: T, context: DetailContext) => ReactNode;
   pageSize?: number;
@@ -77,6 +87,7 @@ export function AdminList<T>(props: AdminListProps<T>) {
     getLabel,
     columns,
     filters = [],
+    selects = [],
     bulkActions = [],
     pageSize = 25,
     status = "ready",
@@ -85,6 +96,7 @@ export function AdminList<T>(props: AdminListProps<T>) {
   const [filterKey, setFilterKey] = useState<string | null>(
     props.defaultFilter ?? filters[0]?.key ?? null,
   );
+  const [choices, setChoices] = useState<Record<string, string>>({});
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [descending, setDescending] = useState(false);
   const [page, setPage] = useState(1);
@@ -103,13 +115,15 @@ export function AdminList<T>(props: AdminListProps<T>) {
       viewList(items, {
         query,
         matches: (item, q) => normalizeSearch(props.searchText(item)).includes(q),
-        filter: filter?.test,
+        filter: (item) =>
+          (!filter || filter.test(item)) &&
+          selects.every((s) => !choices[s.key] || s.test(item, choices[s.key]!)),
         sort: column?.sort,
         descending,
         page,
         pageSize,
       }),
-    [items, query, filter, column, descending, page, pageSize, props],
+    [items, query, filter, selects, choices, column, descending, page, pageSize, props],
   );
   const open = openId ? items.find((item) => getId(item) === openId) : undefined;
 
@@ -204,7 +218,7 @@ export function AdminList<T>(props: AdminListProps<T>) {
             className="min-w-0 flex-1 bg-transparent outline-none"
           />
         </label>
-        {filters.length > 0 && (
+        {filters.length + selects.length > 0 && (
           <div role="group" aria-label={text.filters} className="flex flex-wrap gap-2">
             {filters.map((f) => {
               const active = f.key === filterKey;
@@ -228,6 +242,29 @@ export function AdminList<T>(props: AdminListProps<T>) {
                 </button>
               );
             })}
+            {selects.map((s) => (
+              <label key={s.key} className="inline-flex">
+                <span className="sr-only">{s.label}</span>
+                <select
+                  value={choices[s.key] ?? ""}
+                  onChange={(event) => {
+                    setChoices((current) => ({ ...current, [s.key]: event.target.value }));
+                    setPage(1);
+                  }}
+                  className={cn(
+                    "min-h-11 rounded-full border-2 bg-card px-3.5 text-sm font-semibold text-foreground",
+                    choices[s.key] ? "border-brand" : "border-border",
+                  )}
+                >
+                  <option value="">{s.all}</option>
+                  {s.options.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ))}
           </div>
         )}
       </div>
