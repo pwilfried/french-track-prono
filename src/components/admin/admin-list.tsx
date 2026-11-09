@@ -402,7 +402,7 @@ export function AdminList<T>(props: AdminListProps<T>) {
                               key={c.key}
                               className={cn(
                                 "border-b border-border px-3 py-2",
-                                c.numeric && "text-right font-mono",
+                                c.numeric && "whitespace-nowrap text-right font-mono",
                               )}
                             >
                               {index === 0 && props.renderDetail ? (
