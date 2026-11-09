@@ -163,3 +163,21 @@ export const WithOdds: Story = {
     await expect(within(canvasElement).getByText("×8,00")).toBeVisible();
   },
 };
+
+/** Each athlete opens their page (#336), except « autre athlète »; the tap still places them. */
+export const WithAthletePages: Story = {
+  args: {
+    athletes: withOdds,
+    athleteHref: (a: PickerAthlete) => `/athletes/${a.slug}`,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("link", { name: "Fiche de Lena Okoro" })).toHaveAttribute(
+      "href",
+      "/athletes/lena",
+    );
+    await expect(canvas.queryByRole("link", { name: /Fiche de Autre athlète/ })).toBeNull();
+    await userEvent.click(athlete(canvasElement, "Lena Okoro"));
+    await expect(step(canvasElement, "1re")).toHaveAccessibleName("1re place : Lena Okoro");
+  },
+};

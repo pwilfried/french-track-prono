@@ -68,6 +68,8 @@ export function PredictionForm({
         disabled={locked}
         onChange={(next: PodiumDraft) => setDraft(next)}
         helpHref="/regles"
+        athleteHref={(athlete) => `/athletes/${athlete.slug}`}
+        draftKey={`podium-draft:${eventId}`}
       />
       {markUnit && !locked && (
         <MarkFields

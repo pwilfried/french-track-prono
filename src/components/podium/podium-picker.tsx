@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { messages } from "@/app/messages.fr";
 import type { Entry } from "@/domain/event";
@@ -43,6 +44,8 @@ export function PodiumPicker({
   onChange,
   title = messages.picker.podium,
   helpHref,
+  athleteHref,
+  draftKey,
 }: {
   athletes: PickerAthlete[];
   initialDraft?: PodiumDraft;
@@ -53,8 +56,32 @@ export function PodiumPicker({
   title?: string;
   /** Where the « ? » button next to the heading leads (the rules). */
   helpHref?: string;
+  /** The page of an athlete (#336): each athlete then gets a « Fiche » link. */
+  athleteHref?: (athlete: PickerAthlete) => string;
+  /**
+   * Keeps the podium being composed in this tab (sessionStorage), so that opening an athlete's
+   * page and coming back does not lose it.
+   */
+  draftKey?: string;
 }) {
   const [draft, setDraft] = useState(initialDraft);
+  useEffect(() => {
+    if (!draftKey || disabled) return;
+    try {
+      const kept = JSON.parse(sessionStorage.getItem(draftKey) ?? "null") as PodiumDraft | null;
+      const known = (id: string | null) => id === null || athletes.some((a) => a.athleteId === id);
+      if (kept && known(kept.first) && known(kept.second) && known(kept.third)) {
+        // Read once the page is on screen: the server cannot see this tab's storage.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setDraft(kept);
+        onChange?.(kept);
+      }
+    } catch {
+      // No storage (private window): the podium starts from the saved one.
+    }
+    // Only when the page opens: later changes come from the player.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [selected, setSelected] = useState<Step | null>(null);
   const active = selected ?? nextEmptyStep(draft);
   const nameOf = (id: string | null) => athletes.find((a) => a.athleteId === id) ?? null;
@@ -63,6 +90,13 @@ export function PodiumPicker({
     setDraft(next);
     setSelected(null);
     onChange?.(next);
+    if (draftKey) {
+      try {
+        sessionStorage.setItem(draftKey, JSON.stringify(next));
+      } catch {
+        // No storage: the podium is only lost if the player leaves the page.
+      }
+    }
   };
 
   const tapAthlete = (athleteId: string) => {
@@ -149,7 +183,7 @@ export function PodiumPicker({
           const other = athlete.athleteId === OTHER_ATHLETE;
           const label = messages.picker.athleteLabel(athlete.name, rank);
           return (
-            <li key={athlete.athleteId}>
+            <li key={athlete.athleteId} className="flex items-stretch gap-2">
               <button
                 type="button"
                 disabled={disabled}
@@ -161,7 +195,7 @@ export function PodiumPicker({
                 aria-pressed={rank !== null}
                 onClick={() => tapAthlete(athlete.athleteId)}
                 className={cn(
-                  "flex min-h-14 w-full items-center gap-3 rounded-2xl border px-3.5 py-2 text-left",
+                  "flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-2xl border px-3.5 py-2 text-left",
                   other ? "bg-brand-soft text-brand-ink" : "bg-card",
                   rank !== null ? "border-primary" : "border-border",
                 )}
@@ -217,6 +251,28 @@ export function PodiumPicker({
                   )
                 )}
               </button>
+              {athleteHref && !other ? (
+                <Link
+                  href={athleteHref(athlete)}
+                  aria-label={messages.picker.profileLabel(athlete.name)}
+                  className="grid w-12 shrink-0 place-items-center rounded-2xl border border-border bg-card text-brand dark:text-secondary"
+                >
+                  <svg
+                    aria-hidden
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 11v6" />
+                    <path d="M12 7.5v.01" />
+                  </svg>
+                </Link>
+              ) : null}
             </li>
           );
         })}
