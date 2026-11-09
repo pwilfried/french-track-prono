@@ -29,7 +29,7 @@ const siren = () => String(Math.floor(100_000_000 + Math.random() * 899_999_999)
 
 if (url && key) {
   clubDirectoryContract("Supabase (local)", async () => ({
-    directory: createSupabaseClubDirectory(createPublicSupabaseClient(url, key)),
+    directory: createSupabaseClubDirectory(createPublicSupabaseClient()),
     async importClubs(clubs) {
       const rows = clubs.map((club) => ({ ...club, siren: siren() }));
       sql(`select import_clubs(${quote(JSON.stringify(rows))}::jsonb)`);
