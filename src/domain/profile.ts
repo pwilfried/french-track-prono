@@ -1,4 +1,7 @@
-export type PseudoResult = { ok: true; pseudo: string } | { ok: false; code: "PSEUDO_INVALID" };
+import { isBannedName } from "./banned-names";
+
+export type PseudoResult =
+  { ok: true; pseudo: string } | { ok: false; code: "PSEUDO_INVALID" | "PSEUDO_BANNED" };
 
 const MIN_LENGTH = 2;
 const MAX_LENGTH = 24;
@@ -12,6 +15,8 @@ export function validatePseudo(input: string): PseudoResult {
   if (length < MIN_LENGTH || length > MAX_LENGTH || !ALLOWED.test(pseudo)) {
     return { ok: false, code: "PSEUDO_INVALID" };
   }
+  // Seen by every player: the same banned words as public leagues (#344).
+  if (isBannedName(pseudo)) return { ok: false, code: "PSEUDO_BANNED" };
   return { ok: true, pseudo };
 }
 

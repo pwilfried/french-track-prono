@@ -1,4 +1,5 @@
-import { isBannedLeagueName, normalizeInviteCode, validateLeagueName } from "@/domain/league";
+import { isBannedName } from "@/domain/banned-names";
+import { normalizeInviteCode, validateLeagueName } from "@/domain/league";
 
 import { UseCaseError } from "./errors";
 
@@ -71,7 +72,7 @@ export function createLeague(ports: Ports) {
       if (!name.ok) throw new UseCaseError(name.code);
       const isPublic = input.isPublic ?? false;
       // Everyone sees a public league: its name is moderated (#277).
-      if (isPublic && isBannedLeagueName(name.name)) throw new UseCaseError("LEAGUE_NAME_BANNED");
+      if (isPublic && isBannedName(name.name)) throw new UseCaseError("LEAGUE_NAME_BANNED");
       // A league may start without competition: its creator adds them afterwards (#312).
       return ports.leagues.create(name.name, [...new Set(input.competitionSlugs)], isPublic);
     },

@@ -87,3 +87,10 @@ describe("avatars", () => {
     expect(isAvatar(DEFAULT_AVATAR)).toBe(true);
   });
 });
+
+describe("validatePseudo and banned words", () => {
+  it.each(["Le Connard", "SuperConnard", "Officiel FFA"])(
+    "refuses %j with PSEUDO_BANNED",
+    (pseudo) => expect(validatePseudo(pseudo)).toEqual({ ok: false, code: "PSEUDO_BANNED" }),
+  );
+});

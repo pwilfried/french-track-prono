@@ -1,12 +1,8 @@
 import type { LeagueModerationRepository } from "@/application/league-moderation";
 import type { League, LeagueMember, LeagueRepository } from "@/application/leagues";
-import {
-  INVITE_ALPHABET,
-  INVITE_LENGTH,
-  isBannedLeagueName,
-  leagueCapacity,
-} from "@/domain/league";
+import { INVITE_ALPHABET, INVITE_LENGTH, leagueCapacity } from "@/domain/league";
 import { UseCaseError } from "@/application/errors";
+import { isBannedName } from "@/domain/banned-names";
 
 type Stored = {
   id: string;
@@ -83,7 +79,7 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
       const me = player.userId;
       return {
         async create(name, competitionSlugs, isPublic) {
-          if (isPublic && isBannedLeagueName(name)) throw new UseCaseError("LEAGUE_NAME_BANNED");
+          if (isPublic && isBannedName(name)) throw new UseCaseError("LEAGUE_NAME_BANNED");
           const league: Stored = {
             isPublic,
             competitionSlugs: [...new Set(competitionSlugs)].sort(),
