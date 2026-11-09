@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { listMyPredictions } from "./list-my-predictions";
+import type { EventDetail, EventSummary } from "@/domain/event";
+
+import type { EventReader } from "./list-events";
+import { getMyPredictionHistory, listMyPredictions } from "./list-my-predictions";
 import type { Prediction, PredictionRepository } from "./save-prediction";
 
 const prediction = (userId: string, eventId: string, useJoker = false): Prediction => ({
@@ -34,5 +37,99 @@ describe("listMyPredictions", () => {
     const result = await useCase.execute({ userId: "me", competitionSlug: "c" });
 
     expect(result.map((p) => p.userId)).toEqual(["me"]);
+  });
+});
+
+describe("getMyPredictionHistory", () => {
+  const event = (id: string, startsAt: string): EventSummary => ({
+    id,
+    slug: `${id}-slug`,
+    discipline: "100 m",
+    gender: "F",
+    startsAt,
+    lockAt: startsAt,
+    isFeatured: false,
+    status: "finished",
+    round: "final",
+  });
+  const athlete = (athleteId: string) => ({
+    athleteId,
+    slug: athleteId,
+    name: `Athlète ${athleteId.toUpperCase()}`,
+    countryCode: "FRA",
+  });
+  // Competition c1: e1 (with a result), e2; competition c2: e3, the latest.
+  const byCompetition: Record<string, EventSummary[]> = {
+    c1: [event("e1", "2026-11-20T19:00:00Z"), event("e2", "2026-11-21T19:00:00Z")],
+    c2: [event("e3", "2026-11-25T19:00:00Z")],
+  };
+  const reads: string[] = [];
+  const events: EventReader = {
+    listByCompetition: async (slug) => byCompetition[slug] ?? [],
+    findBySlug: async (slug, eventSlug) => {
+      reads.push(eventSlug);
+      const summary = byCompetition[slug!]!.find((e) => e.slug === eventSlug)!;
+      return {
+        ...summary,
+        entries: ["a", "b", "c"].map((id) => ({ ...athlete(id), seasonBest: null })),
+        results:
+          summary.id === "e1"
+            ? [
+                { ...athlete("a"), rank: 1, mark: null },
+                { ...athlete("c"), rank: 2, mark: null },
+                { ...athlete("z"), rank: 3, mark: null },
+              ]
+            : [],
+        subDisciplines: [],
+        previousRounds: [],
+      } satisfies EventDetail;
+    },
+  };
+  const ports = {
+    predictions: {
+      ...repositoryWith([]),
+      listForCompetition: async (_: string, slug: string) =>
+        (byCompetition[slug] ?? []).map((e) => prediction("me", e.id, e.id === "e1")),
+    },
+    events,
+    points: {
+      listMine: async (_: string, slug: string) =>
+        slug === "c1" ? [{ eventId: "e1", userId: "me", points: 6, reasons: [] }] : [],
+    },
+  };
+
+  it("lists the latest event first, with the outcome of each pick and the points", async () => {
+    const lines = await getMyPredictionHistory(ports).execute({
+      userId: "me",
+      competitionSlugs: ["c1", "c2"],
+    });
+
+    expect(lines.map((l) => [l.eventSlug, l.points])).toEqual([
+      ["e3-slug", null],
+      ["e2-slug", null],
+      ["e1-slug", 6],
+    ]);
+    expect(lines[2]).toMatchObject({
+      competitionSlug: "c1",
+      joker: true,
+      picks: [
+        { name: "Athlète A", hit: "exact" },
+        { name: "Athlète B", hit: "missed" },
+        { name: "Athlète C", hit: "misplaced" },
+      ],
+    });
+    expect(lines[0]!.picks.every((p) => p.hit === "pending")).toBe(true);
+  });
+
+  it("reads the athletes of the lines kept only", async () => {
+    reads.length = 0;
+    const lines = await getMyPredictionHistory(ports).execute({
+      userId: "me",
+      competitionSlugs: ["c1", "c2"],
+      limit: 1,
+    });
+
+    expect(lines.map((l) => l.eventSlug)).toEqual(["e3-slug"]);
+    expect(reads).toEqual(["e3-slug"]);
   });
 });

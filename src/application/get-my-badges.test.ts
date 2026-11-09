@@ -69,6 +69,9 @@ const ranking = (lines: RankingLine[]): RankingRepository => ({
   competitionLines: async () => lines,
 });
 
+const earned = (progress: { badge: string; current: number; target: number }[]) =>
+  progress.filter((p) => p.current >= p.target).map((p) => p.badge);
+
 describe("getMyBadges", () => {
   it("gives Bleus for a French winner found and Fidèle for a fully predicted day", async () => {
     const badges = await getMyBadges({
@@ -77,7 +80,7 @@ describe("getMyBadges", () => {
       events: reader,
     }).execute({ userId: "me", competitionSlug: "c", timeZone: "Europe/London" });
 
-    expect(badges).toEqual(["bleus", "fidele"]);
+    expect(earned(badges)).toEqual(["bleus", "fidele"]);
   });
 
   it("gives no Bleus when the winner found is not French", async () => {
@@ -87,6 +90,11 @@ describe("getMyBadges", () => {
       events: reader,
     }).execute({ userId: "me", competitionSlug: "c", timeZone: "Europe/London" });
 
-    expect(badges).toEqual([]);
+    expect(earned(badges)).toEqual([]);
+    expect(badges.find((b) => b.badge === "chasseur")).toEqual({
+      badge: "chasseur",
+      current: 1,
+      target: 3,
+    });
   });
 });

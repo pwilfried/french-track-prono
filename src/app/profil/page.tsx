@@ -7,8 +7,14 @@ import { getMyBadges } from "@/application/get-my-badges";
 import { getProfile } from "@/application/get-profile";
 import { getPlayerDetails } from "@/application/player-details";
 import { getMySeason } from "@/application/get-my-season";
+import { ShareSeasonCard } from "@/components/profile/share-season-card";
+import { getMyPredictionHistory } from "@/application/list-my-predictions";
+import { getClubRanking } from "@/application/rankings";
+import { BadgeGrid } from "@/components/profile/badge-grid";
 import { InstallEntry } from "@/components/shell/install-prompt";
 import { ClubNotices } from "@/components/account/club-notices";
+import { ClubRanking } from "@/components/profile/club-ranking";
+import { LatestPredictions } from "@/components/profile/prediction-history";
 import {
   BestShot,
   SeasonCurve,
@@ -22,6 +28,7 @@ import {
   createSupabaseDisciplineRepository,
   createSupabaseEventReader,
   createSupabasePlayerDetailsRepository,
+  createSupabasePointsRepository,
   createSupabasePredictionRepository,
   createSupabaseProfileRepository,
   createSupabaseRankingRepository,
@@ -31,7 +38,7 @@ import { currentCompetition, loadCompetitions } from "../competition";
 import { messages } from "../messages.fr";
 import { getCurrentUser, getSessionClient } from "../session";
 
-/** The season over every competition, and the badges of the current one; null when unreadable. */
+/** The season and the club ranking over every competition, the badges of the current one; null when unreadable. */
 async function loadSeason(userId: string) {
   const competition = await currentCompetition();
   const { coming, past } = await loadCompetitions();
@@ -39,7 +46,7 @@ async function loadSeason(userId: string) {
   try {
     const client = await getSessionClient();
     const events = createSupabaseEventReader(createPublicSupabaseClient());
-    const [season, badges] = await Promise.all([
+    const [season, badges, clubs, latest] = await Promise.all([
       getMySeason({
         ranking: createSupabaseRankingRepository(client),
         predictions: createSupabasePredictionRepository(client),
@@ -51,8 +58,16 @@ async function loadSeason(userId: string) {
         predictions: createSupabasePredictionRepository(client),
         events,
       }).execute({ userId, competitionSlug: competition.slug, timeZone: competition.timeZone }),
+      getClubRanking({ ranking: createSupabaseRankingRepository(client) }).execute({
+        competitionSlugs: slugs.length ? slugs : [competition.slug],
+      }),
+      getMyPredictionHistory({
+        predictions: createSupabasePredictionRepository(client),
+        events,
+        points: createSupabasePointsRepository(client),
+      }).execute({ userId, competitionSlugs: slugs.length ? slugs : [competition.slug], limit: 3 }),
     ]);
-    return { ...season, badges };
+    return { ...season, badges, clubs, latest };
   } catch (error) {
     if (error instanceof UseCaseError) return null;
     throw error;
@@ -142,10 +157,16 @@ export default async function ProfilePage({
 
       {season && (
         <>
+          <ShareSeasonCard />
           <SeasonTiles stats={season.stats} />
           <SeasonCurve curve={season.stats.curve} />
+          <LatestPredictions lines={season.latest} />
           <BestShot best={season.stats.bestShot} />
           <StrongFamilies families={season.stats.families} />
+          <ClubRanking
+            clubs={season.clubs}
+            myClub={details?.club?.validated ? details.club : null}
+          />
         </>
       )}
 
@@ -180,34 +201,7 @@ export default async function ProfilePage({
         <InstallEntry />
       </section>
 
-      <section aria-labelledby="badges" className="flex flex-col gap-2">
-        <h2
-          id="badges"
-          className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
-        >
-          {text.badges}
-        </h2>
-        {season && season.badges.length > 0 ? (
-          <ul className="flex flex-wrap gap-2">
-            {season.badges.map((badge) => {
-              const b = messages.badges[badge];
-              return (
-                <li
-                  key={badge}
-                  title={b.rule}
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-gold-soft px-3 text-sm font-bold text-gold-ink"
-                >
-                  <span aria-hidden="true">{b.emoji}</span>
-                  {b.name}
-                  <span className="sr-only">: {b.rule}</span>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">{text.noBadge}</p>
-        )}
-      </section>
+      {season && <BadgeGrid progress={season.badges} />}
 
       <section aria-labelledby="account" className="flex flex-col gap-2">
         <h2

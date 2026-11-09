@@ -79,7 +79,12 @@ test("a new player predicts a perfect podium, the admin enters the result and th
 
   // The perfect podium earns the Nostradamus badge on the profile.
   await page.goto("/profil");
-  await expect(page.getByRole("listitem").filter({ hasText: "Nostradamus" })).toBeVisible();
+  await expect(page.getByRole("listitem").filter({ hasText: "Nostradamus" })).toHaveAttribute(
+    "data-earned",
+    "true",
+  );
+  // The badges grid (#385): locked badges stay listed, and the next one is named.
+  await expect(page.getByRole("region", { name: "Badges" })).toContainText("Prochain :");
   // The redesigned profile (#384): the best shot and the season figures.
   await expect(page.getByRole("region", { name: "Mon meilleur coup" })).toContainText(
     "Podium parfait",
@@ -87,4 +92,17 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   await expect(page.getByRole("region", { name: "Mon meilleur coup" })).toContainText("+12 pts");
   await expect(page.getByRole("region", { name: "Mes stats" })).toContainText("podiums parfaits");
   await expect(page.getByRole("img", { name: /Points cumulés : de 0 à \d+/ })).toBeVisible();
+
+  // My latest predictions (#387): the event with its points, then every prediction of the competition.
+  const latest = page.getByRole("region", { name: "Mes derniers pronos" });
+  await expect(latest.getByRole("listitem").first()).toContainText("+12 pts");
+  await latest.getByRole("link", { name: "Tous mes pronos" }).click();
+  await page.waitForURL(/\/profil\/pronos/);
+  // Other tests add competitions: open the one of this event.
+  await page.goto("/profil/pronos?competition=ultimate-championship-2026");
+  const mine = page.locator("main").getByRole("link", { name: /\+12 pts/ });
+  await expect(mine).toBeVisible();
+  await expect(mine.getByText("bonne place")).toHaveCount(3);
+  await mine.click();
+  await page.waitForURL(new RegExp(`/epreuves/${slug}$`));
 });
