@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 
 import { rankPlayers } from "@/domain/ranking";
 
@@ -69,6 +69,25 @@ export const WithChanges: Story = {
     await expect(canvas.getAllByRole("listitem")[4]).not.toHaveTextContent("▲");
     await expect(canvas.getAllByRole("listitem")[0]).toHaveTextContent("🔥3");
     await expect(canvas.getAllByRole("listitem")[2]).not.toHaveTextContent("🔥");
+  },
+};
+
+/** Touching a pseudo opens the player's card under the row (#342). */
+export const OpensPlayerCard: Story = {
+  args: {
+    rows: rows.map((r) => ({ ...r, club: r.userId === "1" ? "Foulées de Fictiville" : null })),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const name = canvas.getByRole("button", { name: "Voir la fiche de Démo Gazelle" });
+    await expect(name).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(name);
+    await expect(name).toHaveAttribute("aria-expanded", "true");
+    const card = canvas.getByRole("region", { name: "Fiche de Démo Gazelle" });
+    await expect(card).toHaveTextContent("Foulées de Fictiville");
+    await expect(card).toHaveTextContent("1er sur 6 joueurs");
+    await userEvent.click(name);
+    await expect(canvas.queryByRole("region")).toBeNull();
   },
 };
 

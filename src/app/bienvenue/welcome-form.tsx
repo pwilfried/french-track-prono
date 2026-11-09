@@ -2,25 +2,47 @@
 
 import { useActionState } from "react";
 
+import { AvatarPicker } from "@/components/account/avatar-picker";
+import { ClubPicker } from "@/components/account/club-picker";
+import { DisciplinePicker } from "@/components/account/discipline-picker";
 import { Field } from "@/components/account/field";
+import { SexPicker } from "@/components/account/sex-picker";
 import { SubmitButton } from "@/components/account/submit-button";
-import { AVATARS } from "@/domain/profile";
+import type { Discipline } from "@/domain/discipline";
 
+import { findClubsAction } from "../club-actions";
 import { messages } from "../messages.fr";
 import { createProfileAction, type WelcomeState } from "./actions";
 
-export function WelcomeForm({ next }: { next: string }) {
+export function WelcomeForm({
+  next,
+  disciplines,
+}: {
+  next: string;
+  disciplines: Pick<Discipline, "name" | "family">[];
+}) {
   const [state, action] = useActionState<WelcomeState, FormData>(createProfileAction, {
     pseudo: "",
     avatar: "",
     ageConfirmed: false,
+    sex: "",
+    disciplines: [],
+    club: null,
+    newClubName: "",
+    newClubCity: "",
   });
   const error = state.error;
   const text = error ? messages.errors[error] : undefined;
   const pseudoError = error === "PSEUDO_INVALID" || error === "PSEUDO_TAKEN" ? text : undefined;
   const avatarError = error === "AVATAR_INVALID" ? text : undefined;
   const ageError = error === "AGE_NOT_CONFIRMED" ? text : undefined;
-  const generalError = text && !pseudoError && !avatarError && !ageError ? text : undefined;
+  const sexError = error === "SEX_INVALID" ? text : undefined;
+  const clubError =
+    error === "CLUB_NAME_INVALID" || error === "CLUB_NAME_BANNED" || error === "CLUB_UNKNOWN"
+      ? text
+      : undefined;
+  const generalError =
+    text && !pseudoError && !avatarError && !ageError && !sexError && !clubError ? text : undefined;
 
   return (
     <form action={action} noValidate className="flex flex-col gap-5">
@@ -36,35 +58,21 @@ export function WelcomeForm({ next }: { next: string }) {
         maxLength={40}
       />
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-          {messages.welcome.avatarLabel}
-        </legend>
-        <div className="grid grid-cols-4 gap-2.5">
-          {AVATARS.map((avatar) => (
-            <label key={avatar} className="cursor-pointer">
-              <input
-                type="radio"
-                name="avatar"
-                value={avatar}
-                defaultChecked={state.avatar === avatar}
-                className="peer sr-only"
-              />
-              <span
-                aria-hidden="true"
-                className="grid aspect-square min-h-16 place-items-center rounded-2xl border-2 border-border bg-card text-3xl peer-checked:border-primary peer-checked:bg-muted peer-checked:ring-4 peer-checked:ring-primary/25 peer-focus-visible:ring-4 peer-focus-visible:ring-ring"
-              >
-                {avatar}
-              </span>
-            </label>
-          ))}
-        </div>
-        {avatarError ? (
-          <p role="alert" className="text-sm font-semibold text-accent-text">
-            {avatarError}
-          </p>
-        ) : null}
-      </fieldset>
+      <AvatarPicker chosen={state.avatar} error={avatarError} />
+
+      <SexPicker chosen={state.sex} error={sexError} />
+
+      <DisciplinePicker disciplines={disciplines} chosen={state.disciplines} />
+
+      <ClubPicker
+        initial={{
+          club: state.club,
+          newClubName: state.newClubName,
+          newClubCity: state.newClubCity,
+        }}
+        search={findClubsAction}
+        error={clubError}
+      />
 
       <div className="flex flex-col gap-1">
         <label className="flex min-h-12 cursor-pointer items-center gap-3">

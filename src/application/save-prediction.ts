@@ -19,7 +19,9 @@ export type SaveOutcome =
   | "round_not_ready"
   | "athlete_not_in_event"
   | "athlete_not_proposed"
-  | "joker_already_used";
+  | "joker_already_used"
+  /** The player is in no league counting the competition of the event (#311). */
+  | "no_league";
 
 /** Port: where predictions are stored. Real adapter = Supabase, fake = in memory. */
 export interface PredictionRepository {
@@ -66,6 +68,7 @@ const CODES = {
   round_not_ready: "ROUND_NOT_READY",
   athlete_not_in_event: "ATHLETE_NOT_IN_EVENT",
   athlete_not_proposed: "ATHLETE_NOT_PROPOSED",
+  no_league: "NO_LEAGUE_FOR_COMPETITION",
   joker_already_used: "JOKER_ALREADY_USED",
 } as const;
 

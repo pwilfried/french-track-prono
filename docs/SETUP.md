@@ -175,7 +175,7 @@ docker exec -i supabase_db_french-track-prono psql -U postgres -c "update profil
 
 Le back-office (`/admin/competitions`) regroupe : Compétitions (créer une compétition, ses épreuves
 et ses engagés, puis les cotes de chaque épreuve), Athlètes, Disciplines (tolérances), Barème
-(points du jeu, cotes et perfs compris) et Historique. À la connexion, un admin arrive sur le
+(points du jeu, cotes et perfs compris), Ligues (ligues publiques signalées) et Historique. À la connexion, un admin arrive sur le
 back-office ; « Voir le site » (bandeau rouge) ouvre le côté joueur, et « Back-office » (en-tête)
 y ramène.
 
@@ -290,6 +290,34 @@ migrations voulues avec un tag.
 `@joshwooding/vite-plugin-react-docgen-typescript`. Elles corrigent des failles signalées par
 `npm audit` dans des versions anciennes de ces paquets. On peut les retirer quand `npm audit` ne
 signale plus rien sans elles (test : les supprimer, `npm install`, `npm audit`).
+
+## Test de la prod après déploiement
+
+Le workflow « Production smoke test » (`.github/workflows/smoke.yml`, script `scripts/smoke.sh`)
+ouvre l'accueil, les épreuves, une page d'épreuve, « Comment jouer », la connexion et les mentions
+légales de www.frenchtrackprono.com : après chaque déploiement de production par Vercel, chaque
+jour à 6 h 17 (heure de Paris en hiver, ce qui repère aussi un projet Supabase en pause) et à la
+demande (onglet Actions → Run workflow). Pas de relance : un échec est signalé par e-mail.
+Pour l'essayer ailleurs : `scripts/smoke.sh http://localhost:3000`.
+
+## Réglages Auth de la prod (Supabase, à la main)
+
+Le fichier `supabase/config.toml` ne règle que le Supabase local. En prod (Authentication) :
+
+| Où | Réglage |
+|---|---|
+| Sign In / Providers → Email | « Confirm email » désactivé ; « Secure email change » **désactivé** (le code va seulement à la nouvelle adresse) ; OTP valable 600 s |
+| Emails → Templates → Magic Link et Confirm signup | contenu de `supabase/templates/sign_in.html` |
+| Emails → Templates → Change Email Address | sujet « Confirme ta nouvelle adresse French Track Prono », contenu de `supabase/templates/email_change.html` |
+
+## Import des clubs d'athlétisme
+
+Le workflow « Clubs import » (le 2 de chaque mois, ou à la main depuis l'onglet Actions) lit les
+clubs sportifs actifs de l'API Recherche d'entreprises (`scripts/clubs/fetch.mjs`), écarte les
+autres sports et remet les noms en forme (`scripts/clubs/import.mjs`, règles dans
+`src/domain/club.ts`), puis les envoie à `import_clubs()` en prod par l'API de gestion Supabase
+(mêmes secrets que les migrations). Un club = un SIREN : relancer ne crée pas de doublon.
+Les fichiers produits restent en artefact « clubs » pour vérification.
 
 ## 5. Sécurité : à ne jamais committer
 

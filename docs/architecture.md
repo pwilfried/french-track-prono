@@ -73,8 +73,8 @@ Numérotées pour la planification. F11 et F12 sont volontairement repoussées.
 | F14 | Plusieurs compétitions (internationales, françaises), accueil par type, ligue sur plusieurs compétitions (v0.9) | Jouer toute la saison |
 | F15 | Cotes fixées par l'admin, « Autre athlète », perf pronostiquée par athlète, barème ajustable (v0.9) | Des choix plus fins, plus de suspense |
 | F16 | Page « Comment jouer » et premier prono guidé (v0.9) | Comprendre des règles plus riches |
-| F17 | Ligues publiques jusqu'à 200 joueurs, sans code, noms modérés (v0.10) | Jouer avec la communauté FrenchTrack |
-| F18 | Gestion des profils : pseudo, avatar, e-mail, club ; fiche minimale ; admin chercher, bloquer, supprimer (v0.10) | Un compte que le joueur maîtrise |
+| F17 | Ligues publiques jusqu'à 200 joueurs, sans code, noms modérés, signalement (v0.7) | Jouer avec la communauté FrenchTrack |
+| F18 | Gestion des profils : pseudo, avatar, e-mail, club, disciplines ; fiche minimale ; admin chercher, bloquer, supprimer (v0.10, `docs/decisions/profils.md`) | Un compte que le joueur maîtrise |
 
 Barème (modifiable en base) : 3 points par athlète à la bonne place, 1 point pour un athlète sur
 le podium mais à la mauvaise place, +3 pour un podium parfait, +2 de bonus coup de flair
@@ -213,7 +213,14 @@ avant de partir (seul, partir supprime la ligue). Depuis la v0.9 (#267), une lig
 plusieurs compétitions choisies par son créateur (`create_league(nom, slugs[])`) et son classement
 additionne leurs points. Depuis la v0.7 (#312), une ligue peut aussi naître sans compétition :
 son créateur ajoute ensuite des compétitions à venir (`add_league_competition`, code FT009 pour une
-compétition déjà commencée). L'accueil liste les compétitions par type (internationales, françaises) et
+compétition déjà commencée). Ligues publiques (v0.7, #277) : tout joueur en crée une (case « Ligue
+publique »), elle se rejoint d'un appui sans code (`join_public_league`), 200 membres au plus, et
+son nom ne doit contenir aucun mot interdit (`isBannedLeagueName` / `is_banned_league_name`,
+code FT010) ; un joueur peut la signaler (`report_league`) et l'admin la renomme ou la supprime
+depuis le back-office (Ligues, action journalisée `moderate_league`, #321). Depuis la v0.7 (#311), un joueur ne pronostique une épreuve que s'il est dans une
+ligue qui compte sa compétition (déclencheur `enforce_prediction_lock`, code FT011, vérifié pour le
+rôle `authenticated` seulement) ; le classement général compte tous les points, toutes
+compétitions confondues (#319). L'accueil liste les compétitions par type (internationales, françaises) et
 les pages suivent la prochaine compétition par date (`src/app/competition.ts`). Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
 calculé en TypeScript à partir des lignes de points (pas de vue SQL).
 
@@ -229,7 +236,7 @@ fonctions `set_start_list()`, `set_results()` et `set_event_scores()`, avec la s
 Chacune écrit une ligne dans `admin_actions` (journal lisible par les admins seulement, écrit par
 la base elle-même via `private.log_admin_action()`, hors de l'API).
 
-Records (v0.8, issue #196) : le trigger `update_records_from_result` met à jour le PR et le SB
+Records (v0.8, issue #196) : le trigger `update_records_from_result` met à jour le PB (`kind = 'pr'` en base) et le SB
 à chaque ligne de résultat. Les marques texte sont lues par `parse_mark()` (secondes, mètres ou
 points) et comparées par `is_better_mark()` : temps plus bas pour les courses (discipline avec une
 distance en mètres, haies, steeple, marche, relais), valeur plus haute sinon. Le SB repart à zéro
@@ -277,10 +284,10 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 | v0.4 Back-office et points | **F6**, **F7** | …l'admin saisit un podium, lance le calcul, et les points de joueurs de test correspondent aux cas chiffrés (podium parfait = 12, avec joker = 24) |
 | v0.5 Ligues et classements | **F4**, **F5** | …deux comptes dans la même ligue voient le même classement, départagé par podiums parfaits puis vainqueurs trouvés |
 | v0.6 Suspense | **F9** (coup de flair), **F10** (révélation + réactions emoji) | …avant verrouillage les pronos des autres sont illisibles (test), après verrouillage ils s'affichent et on peut réagir en emoji |
-| v0.7 Mise en ligne | **F13**, déploiement Vercel + Supabase cloud | …un ami s'inscrit depuis son téléphone sur l'adresse publique, fait un prono et peut supprimer son compte |
+| v0.7 Mise en ligne | **F13**, **F17**, déploiement Vercel + Supabase cloud, domaine, e-mails Resend, pages légales, ligue obligatoire pour pronostiquer, classement général toutes compétitions, test de la prod | …un ami s'inscrit depuis son téléphone sur l'adresse publique, fait un prono et peut supprimer son compte |
 | v0.8 Jeu vivant, admin, athlètes, appli | Aperçu du calcul, listes de départ, journal admin, épreuves combinées, appli installable, records, fiche athlète, tours | …l'admin prépare une finale (tours, liste de départ, résultat, calcul) sans toucher à la base, et l'appli s'installe sur le téléphone |
 | v0.9 Cotes et performances | **F14**, **F15**, **F16** | …un joueur choisit des compétitions françaises sur l'accueil, crée sa ligue dessus, pronostique un podium avec cotes et perfs, et ses points comptent cotes et perfs selon le barème réglé par l'admin |
-| v0.10 Ligues publiques et profils | **F17**, **F18** | …un joueur rejoint une ligue publique (200 joueurs au plus) sans code, et gère son profil |
+| v0.10 Profils et inscription | **F18**, inscription enrichie (club, sexe, disciplines), captcha, installation sur iPhone | …un joueur s'inscrit avec son club et ses disciplines, et gère son profil |
 | Plus tard | **F11** (séries, badges), **F12** (cartes à partager), questions bonus, connexion Google / Apple | à planifier |
 
 ## Cas de test du cœur

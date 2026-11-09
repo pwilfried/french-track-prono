@@ -261,4 +261,10 @@ join events e on e.competition_id = c.id and e.slug = s.event_slug
 join athletes a on a.slug = s.athlete_slug
 on conflict do nothing;
 
+-- Invented athletics clubs, for local tests (#340). Production imports the real ones.
+insert into clubs (name, city, department, source, validated) values
+  ('Athlé Club des Tests', 'Testville', '75', 'import', true),
+  ('Foulées de Fictiville', 'Fictiville', '69', 'import', true),
+  ('Stade Imaginaire Athlétisme', 'Songeville', '13', 'import', true);
+
 commit;

@@ -5,7 +5,7 @@ import {
   type EventFixture,
   type PredictionWorld,
 } from "./contract/prediction-repository.contract";
-import { createTestCompetition, sql } from "./contract/database";
+import { createTestCompetition, joinTestLeague, sql } from "./contract/database";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryPredictionRepository, createSupabasePredictionRepository } from "./index";
 
@@ -19,7 +19,11 @@ function fakeWorld(): PredictionWorld {
     { id: "locked", competitionSlug: "c", lockAt: past, athleteIds: athletes },
     { id: "semi", competitionSlug: "c", lockAt: future, athleteIds: athletes, predictable: false },
   ];
-  const shared = createInMemoryPredictionRepository({ events: fixtures });
+  const loners = new Set<string>();
+  const shared = createInMemoryPredictionRepository({
+    events: fixtures,
+    inLeague: (userId) => !loners.has(userId),
+  });
   const event = (id: string): EventFixture => ({
     eventId: id,
     athleteIds: athletes,
@@ -28,6 +32,11 @@ function fakeWorld(): PredictionWorld {
   return {
     competitionSlug: "c",
     newPlayer: async () => ({ userId: crypto.randomUUID(), predictions: shared }),
+    newPlayerWithoutLeague: async () => {
+      const userId = crypto.randomUUID();
+      loners.add(userId);
+      return { userId, predictions: shared };
+    },
     openEvents: [event("open-1"), event("open-2")],
     lockedEvent: event("locked"),
     semiFinal: event("semi"),
@@ -53,14 +62,26 @@ if (url && key) {
       outsiderId,
     })) as [EventFixture, EventFixture, EventFixture, EventFixture, EventFixture];
 
-    const newPlayer = async () => {
+    const newPlayerWithoutLeague = async () => {
       const player = await signedInPlayer(url, key);
       return {
         userId: player.userId,
         predictions: createSupabasePredictionRepository(player.client),
       };
     };
-    return { competitionSlug, newPlayer, openEvents: [a, b], lockedEvent: c, semiFinal: semi };
+    const newPlayer = async () => {
+      const player = await newPlayerWithoutLeague();
+      joinTestLeague(player.userId, competitionSlug);
+      return player;
+    };
+    return {
+      competitionSlug,
+      newPlayer,
+      newPlayerWithoutLeague,
+      openEvents: [a, b],
+      lockedEvent: c,
+      semiFinal: semi,
+    };
   };
   predictionRepositoryContract("Supabase (local)", realWorld);
 } else {

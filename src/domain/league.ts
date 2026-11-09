@@ -5,6 +5,12 @@ export const LEAGUE_NAME_MIN = 2;
 export const LEAGUE_NAME_MAX = 40;
 /** Decided by the owner (issue #112). */
 export const LEAGUE_MAX_MEMBERS = 50;
+/** A public league, joined without a code (issue #277). */
+export const PUBLIC_LEAGUE_MAX_MEMBERS = 200;
+
+/** How many players a league can hold. */
+export const leagueCapacity = (isPublic: boolean) =>
+  isPublic ? PUBLIC_LEAGUE_MAX_MEMBERS : LEAGUE_MAX_MEMBERS;
 
 /**
  * An invite code as typed: spaces and dashes removed, upper case. Returns null when it cannot be a

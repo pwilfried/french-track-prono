@@ -8,6 +8,7 @@ type LeagueRow = {
   name: string;
   invite_code: string;
   owner_id: string;
+  is_public: boolean;
   league_members: { count: number }[];
   league_competitions: { competitions: { slug: string } | null }[];
 };
@@ -22,7 +23,7 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
     // Row level security only shows the leagues the player is a member of.
     const { data, error } = await client
       .from("leagues")
-      .select("id, name, invite_code, owner_id, league_members(count), league_competitions(competitions(slug))")
+      .select("id, name, invite_code, owner_id, is_public, league_members(count), league_competitions(competitions(slug))")
       .returns<LeagueRow[]>();
     if (error) fail();
     return data!.map((row) => ({
@@ -34,17 +35,21 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       competitionSlugs: row.league_competitions
         .flatMap((lc) => (lc.competitions ? [lc.competitions.slug] : []))
         .sort(),
+      isPublic: row.is_public,
     }));
   };
 
   return {
     listMine,
 
-    async create(name, competitionSlugs) {
+    async create(name, competitionSlugs, isPublic) {
       const { data, error } = await client.rpc("create_league", {
         p_name: name,
         p_competition_slugs: competitionSlugs,
+        p_public: isPublic,
       });
+      if (error?.code === "FT010") throw new UseCaseError("LEAGUE_NAME_BANNED");
+      if (error?.code === "FT014") throw new UseCaseError("ACCOUNT_BLOCKED");
       const row = (data as { league_id: string; invite_code: string }[] | null)?.[0];
       if (error || !row) return fail();
       const { data: user } = await client.auth.getUser();
@@ -56,6 +61,7 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
         ownerId: user.user.id,
         memberCount: 1,
         competitionSlugs: [...new Set(competitionSlugs)].sort(),
+        isPublic,
       };
     },
 
@@ -63,10 +69,13 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       const before = new Set((await listMine()).map((l) => l.id));
       const { data, error } = await client.rpc("join_league", { p_code: code });
       if (error) {
-        if (error.code === "P0002") return { outcome: "unknown_code" };
         if (error.code === "54000") return { outcome: "full" };
+        if (error.code === "FT012") return { outcome: "too_many" };
+        if (error.code === "FT014") throw new UseCaseError("ACCOUNT_BLOCKED");
         return fail();
       }
+      // An unknown code answers nothing (the database remembers the failed attempt).
+      if (!data) return { outcome: "unknown_code" };
       const leagueId = data as string;
       return { outcome: before.has(leagueId) ? "already_member" : "joined", leagueId };
     },
@@ -74,14 +83,24 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
     async members(leagueId) {
       const { data, error } = await client
         .from("league_members")
-        .select("user_id, profiles!inner(pseudo, avatar_emoji)")
+        .select("user_id, profiles!inner(pseudo, avatar_emoji, club:clubs(name))")
         .eq("league_id", leagueId)
-        .returns<{ user_id: string; profiles: { pseudo: string; avatar_emoji: string } }[]>();
+        .returns<
+          {
+            user_id: string;
+            profiles: { pseudo: string; avatar_emoji: string; club: { name: string } | null };
+          }[]
+        >();
       if (error) fail();
       // A non member reads no row (row level security); a league has at least its owner.
       if (data!.length === 0) return null;
       return data!.map(
-        (row): LeagueMember => ({ userId: row.user_id, pseudo: row.profiles.pseudo, avatar: row.profiles.avatar_emoji }),
+        (row): LeagueMember => ({
+          userId: row.user_id,
+          pseudo: row.profiles.pseudo,
+          avatar: row.profiles.avatar_emoji,
+          club: row.profiles.club?.name ?? null,
+        }),
       );
     },
 
@@ -109,6 +128,38 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       if (error.code === "42501") return "not_owner";
       if (error.code === "P0002") return "unknown";
       if (error.code === "FT009") return "started";
+      return fail();
+    },
+
+    async listPublic() {
+      const { data, error } = await client.rpc("list_public_leagues");
+      if (error) return fail();
+      return (
+        data as { league_id: string; name: string; member_count: number; competition_slugs: string[] }[]
+      ).map((row) => ({
+        id: row.league_id,
+        name: row.name,
+        memberCount: Number(row.member_count),
+        competitionSlugs: row.competition_slugs,
+      }));
+    },
+
+    async joinPublic(leagueId) {
+      const before = new Set((await listMine()).map((l) => l.id));
+      const { error } = await client.rpc("join_public_league", { p_league: leagueId });
+      if (error) {
+        if (error.code === "P0002" || error.code === "22P02") return { outcome: "unknown_code" };
+        if (error.code === "54000") return { outcome: "full" };
+        if (error.code === "FT014") throw new UseCaseError("ACCOUNT_BLOCKED");
+        return fail();
+      }
+      return { outcome: before.has(leagueId) ? "already_member" : "joined", leagueId };
+    },
+
+    async report(leagueId) {
+      const { error } = await client.rpc("report_league", { p_league: leagueId });
+      if (!error) return "reported";
+      if (error.code === "P0002" || error.code === "22P02") return "unknown";
       return fail();
     },
   };

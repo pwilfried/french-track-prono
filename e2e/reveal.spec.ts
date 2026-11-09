@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { newPlayer, signUp } from "./players";
+import { joinLeagueFor, newPlayer, signUp } from "./players";
 
 test("a player cannot see a friend's podium before the lock, sees it after and reacts to it", async ({
   browser,
@@ -22,6 +22,8 @@ test("a player cannot see a friend's podium before the lock, sees it after and r
   await annaPage.goto(`/connexion?next=/epreuves/${slug}`);
   await signUp(annaPage, anna);
   await annaPage.waitForURL(new RegExp(`/epreuves/${slug}$`));
+  joinLeagueFor(anna.email, "ultimate-championship-2026");
+  await annaPage.reload();
   const athletes = annaPage.locator("li > button[aria-pressed]");
   for (const index of [0, 1, 2]) await athletes.nth(index).click();
   await annaPage.getByRole("button", { name: "Enregistrer mon podium" }).click();

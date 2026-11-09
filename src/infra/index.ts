@@ -19,6 +19,7 @@ export { createInMemoryResultStore, type ResultEventFixture } from "./in-memory/
 export { createSupabaseResultRepository } from "./supabase/result-repository";
 export { createInMemoryLeagueStore } from "./in-memory/league-repository";
 export { createSupabaseLeagueRepository } from "./supabase/league-repository";
+export { createSupabaseLeagueModerationRepository } from "./supabase/league-moderation-repository";
 export { createInMemoryRankingRepository } from "./in-memory/ranking-repository";
 export { createSupabaseRankingRepository } from "./supabase/ranking-repository";
 export { createInMemoryPointsStore } from "./in-memory/points-repository";
@@ -52,3 +53,15 @@ export { createSupabaseOddsRepository } from "./supabase/odds-repository";
 export { createInMemoryScoringRuleStore } from "./in-memory/scoring-rule-repository";
 export { createSupabaseScoringRuleRepository } from "./supabase/scoring-rule-repository";
 export { createSupabaseCompetitionEditRepository } from "./supabase/competition-edit-repository";
+export {
+  createInMemoryClubDirectory,
+  type ClubFixture,
+  type InMemoryClubDirectory,
+} from "./in-memory/club-directory";
+export { createInMemoryPlayerDetailsRepository } from "./in-memory/player-details-repository";
+export { createSupabasePlayerDetailsRepository } from "./supabase/player-details-repository";
+export { createSupabaseClubDirectory } from "./supabase/club-directory";
+export { createInMemoryEmailChangeService } from "./in-memory/email-change-service";
+export { createSupabaseEmailChangeService } from "./supabase/email-change-service";
+export { createInMemoryPlayerStore } from "./in-memory/player-moderation-repository";
+export { createSupabasePlayerModerationRepository } from "./supabase/player-moderation-repository";

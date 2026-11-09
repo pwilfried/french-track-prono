@@ -7,7 +7,10 @@ export type AdminActionKind =
   | "set_tolerance"
   | "edit_athlete"
   | "edit_competition"
-  | "set_odds";
+  | "set_odds"
+  | "set_rule"
+  | "moderate_league"
+  | "moderate_player";
 
 /** One line of the admin log. */
 export type AdminAction = {

@@ -134,6 +134,7 @@ describe("SavePrediction", () => {
     ["athlete_not_in_event", "ATHLETE_NOT_IN_EVENT"],
     ["athlete_not_proposed", "ATHLETE_NOT_PROPOSED"],
     ["joker_already_used", "JOKER_ALREADY_USED"],
+    ["no_league", "NO_LEAGUE_FOR_COMPETITION"],
   ] as const)("turns the repository outcome %s into the code %s", async (outcome, code) => {
     const { repo } = repository(outcome);
 

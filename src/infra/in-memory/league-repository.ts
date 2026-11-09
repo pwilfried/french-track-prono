@@ -1,5 +1,8 @@
+import type { LeagueModerationRepository } from "@/application/league-moderation";
 import type { League, LeagueMember, LeagueRepository } from "@/application/leagues";
-import { INVITE_ALPHABET, INVITE_LENGTH, LEAGUE_MAX_MEMBERS } from "@/domain/league";
+import { INVITE_ALPHABET, INVITE_LENGTH, leagueCapacity } from "@/domain/league";
+import { UseCaseError } from "@/application/errors";
+import { isBannedName } from "@/domain/banned-names";
 
 type Stored = {
   id: string;
@@ -8,6 +11,7 @@ type Stored = {
   ownerId: string;
   members: string[];
   competitionSlugs: string[];
+  isPublic: boolean;
 };
 
 /**
@@ -17,6 +21,9 @@ type Stored = {
  */
 export function createInMemoryLeagueStore(competitions?: Record<string, "coming" | "started">) {
   const leagues = new Map<string, Stored>();
+  const reports = new Map<string, Set<string>>();
+  /** Wrong invite codes per player (#155): after 10, joining with a code is refused. */
+  const wrongCodes = new Map<string, number>();
   const profiles = new Map<string, LeagueMember>();
   const newCode = () => {
     let code = "";
@@ -32,15 +39,49 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
     ownerId: l.ownerId,
     memberCount: l.members.length,
     competitionSlugs: [...l.competitionSlugs],
+    isPublic: l.isPublic,
   });
 
   return {
+    /** The admin's moderation of the same leagues (#321). */
+    moderation(options: { isAdmin: boolean }): LeagueModerationRepository {
+      return {
+        async listReported() {
+          if (!options.isAdmin) return "not_admin";
+          return [...reports.entries()]
+            .filter(([id, by]) => leagues.has(id) && by.size > 0)
+            .map(([id, by]) => ({
+              id,
+              name: leagues.get(id)!.name,
+              reportCount: by.size,
+              memberCount: leagues.get(id)!.members.length,
+            }))
+            .sort((a, b) => b.reportCount - a.reportCount || a.name.localeCompare(b.name));
+        },
+        async rename(leagueId, name) {
+          if (!options.isAdmin) return "not_admin";
+          const league = leagues.get(leagueId);
+          if (!league) return "unknown";
+          league.name = name;
+          reports.delete(leagueId);
+          return "done";
+        },
+        async remove(leagueId) {
+          if (!options.isAdmin) return "not_admin";
+          if (!leagues.delete(leagueId)) return "unknown";
+          reports.delete(leagueId);
+          return "done";
+        },
+      };
+    },
     session(player: LeagueMember): LeagueRepository {
       profiles.set(player.userId, player);
       const me = player.userId;
       return {
-        async create(name, competitionSlugs) {
+        async create(name, competitionSlugs, isPublic) {
+          if (isPublic && isBannedName(name)) throw new UseCaseError("LEAGUE_NAME_BANNED");
           const league: Stored = {
+            isPublic,
             competitionSlugs: [...new Set(competitionSlugs)].sort(),
             id: crypto.randomUUID(),
             name,
@@ -52,11 +93,15 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
           return view(league);
         },
         async join(code) {
+          if ((wrongCodes.get(me) ?? 0) >= 10) return { outcome: "too_many" };
           const league = [...leagues.values()].find((l) => l.inviteCode === code);
-          if (!league) return { outcome: "unknown_code" };
+          if (!league) {
+            wrongCodes.set(me, (wrongCodes.get(me) ?? 0) + 1);
+            return { outcome: "unknown_code" };
+          }
           if (league.members.includes(me))
             return { outcome: "already_member", leagueId: league.id };
-          if (league.members.length >= LEAGUE_MAX_MEMBERS) return { outcome: "full" };
+          if (league.members.length >= leagueCapacity(league.isPublic)) return { outcome: "full" };
           league.members.push(me);
           return { outcome: "joined", leagueId: league.id };
         },
@@ -96,6 +141,29 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
             league.competitionSlugs = [...league.competitionSlugs, competitionSlug].sort();
           }
           return "added";
+        },
+        async listPublic() {
+          return [...leagues.values()]
+            .filter((l) => l.isPublic)
+            .map((l) => ({
+              id: l.id,
+              name: l.name,
+              memberCount: l.members.length,
+              competitionSlugs: [...l.competitionSlugs],
+            }));
+        },
+        async joinPublic(leagueId) {
+          const league = leagues.get(leagueId);
+          if (!league?.isPublic) return { outcome: "unknown_code" };
+          if (league.members.includes(me)) return { outcome: "already_member", leagueId };
+          if (league.members.length >= leagueCapacity(true)) return { outcome: "full" };
+          league.members.push(me);
+          return { outcome: "joined", leagueId };
+        },
+        async report(leagueId) {
+          if (!leagues.get(leagueId)?.isPublic) return "unknown";
+          reports.set(leagueId, (reports.get(leagueId) ?? new Set()).add(me));
+          return "reported";
         },
       };
     },

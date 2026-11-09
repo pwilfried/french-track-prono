@@ -60,6 +60,29 @@ export function profileRepositoryContract(name: string, newPlayer: () => Promise
       expect(await player.profiles.create(profileOf(player))).toBe("profile_exists");
     });
 
+    it("changes my pseudo and avatar, but not to a pseudo already taken", async () => {
+      const player = await newPlayer();
+      const other = await newPlayer();
+      const taken = pseudo();
+      await player.profiles.create(profileOf(player));
+      await other.profiles.create(profileOf(other, taken));
+
+      const fresh = pseudo();
+      expect(await player.profiles.update(player.userId, { pseudo: fresh, avatar: "🦊" })).toBe(
+        "updated",
+      );
+      expect(await player.profiles.find(player.userId)).toMatchObject({
+        pseudo: fresh,
+        avatar: "🦊",
+      });
+      expect(
+        await player.profiles.update(player.userId, { pseudo: taken.toUpperCase(), avatar: "🦊" }),
+      ).toBe("pseudo_taken");
+      expect(await player.profiles.update(player.userId, { pseudo: fresh, avatar: "🐢" })).toBe(
+        "updated",
+      );
+    });
+
     it("deletes my account: my profile is gone and my pseudo is free again", async () => {
       const player = await newPlayer();
       const other = await newPlayer();

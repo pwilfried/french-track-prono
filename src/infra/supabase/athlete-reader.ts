@@ -82,6 +82,8 @@ export function createSupabaseAthleteReader(client: SupabaseClient): AthleteRead
             rank,
             mark,
           }))
+          // Races already run only: the most recent first.
+          .filter((race) => race.startsAt <= new Date().toISOString())
           .sort((a, b) => b.startsAt.localeCompare(a.startsAt))
           .slice(0, races),
       };

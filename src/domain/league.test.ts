@@ -4,7 +4,10 @@ import { describe, expect, it } from "vitest";
 import {
   INVITE_ALPHABET,
   INVITE_LENGTH,
+  LEAGUE_MAX_MEMBERS,
+  PUBLIC_LEAGUE_MAX_MEMBERS,
   formatInviteCode,
+  leagueCapacity,
   normalizeInviteCode,
   validateLeagueName,
 } from "./league";
@@ -82,5 +85,13 @@ describe("validateLeagueName", () => {
 
   it("accepts a name of exactly 40 characters", () => {
     expect(validateLeagueName("x".repeat(40)).ok).toBe(true);
+  });
+});
+
+describe("leagueCapacity", () => {
+  it("lets 200 players in a public league and 50 in a private one", () => {
+    expect(leagueCapacity(true)).toBe(PUBLIC_LEAGUE_MAX_MEMBERS);
+    expect(PUBLIC_LEAGUE_MAX_MEMBERS).toBe(200);
+    expect(leagueCapacity(false)).toBe(LEAGUE_MAX_MEMBERS);
   });
 });

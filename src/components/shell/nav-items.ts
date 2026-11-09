@@ -14,11 +14,15 @@ export const DESKTOP_NAV: NavItem[] = [
   { href: "/ligues", label: messages.nav.league, icon: "league" },
 ];
 
-/** Mobile bottom bar (boards V1): Accueil, Épreuves, Classement, Profil. */
+/**
+ * Mobile bottom bar: Accueil, Épreuves, Classement, Ligues, Profil. The leagues got their tab once
+ * they became the way to predict (#351).
+ */
 export const MOBILE_NAV: NavItem[] = [
   { href: "/", label: messages.nav.home, icon: "home" },
   { href: "/epreuves", label: messages.nav.events, icon: "events" },
   { href: "/classement", label: messages.nav.ranking, icon: "ranking" },
+  { href: "/ligues", label: messages.nav.leagues, icon: "league" },
   { href: "/profil", label: messages.nav.profile, icon: "profile" },
 ];
 

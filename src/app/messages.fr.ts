@@ -27,6 +27,7 @@ export const messages = {
     events: "Épreuves",
     ranking: "Classement",
     league: "Ma ligue",
+    leagues: "Ligues",
     profile: "Profil",
   },
   home: {
@@ -114,6 +115,16 @@ export const messages = {
     loading: "Chargement du classement…",
     error: "Le classement n'est pas disponible pour le moment. Réessaie dans un instant.",
   },
+  playerCard: {
+    open: (pseudo: string) => `Voir la fiche de ${pseudo}`,
+    label: (pseudo: string) => `Fiche de ${pseudo}`,
+    pseudo: "Pseudo",
+    club: "Club",
+    noClub: "Club non renseigné",
+    rank: "Rang",
+    rankOf: (rank: number, total: number) =>
+      `${rank === 1 ? "1er" : `${rank}e`} sur ${total} ${total <= 1 ? "joueur" : "joueurs"}`,
+  },
   points: {
     title: "Mes points",
     total: (points: number, events: number) =>
@@ -165,6 +176,20 @@ export const messages = {
     adding: "Ajout…",
     added: "✓ Compétition ajoutée au classement de la ligue.",
     nothingToAdd: "Toutes les compétitions à venir sont déjà dans la ligue.",
+    publicLabel: "Ligue publique",
+    publicHint:
+      "Tout le monde peut la trouver et la rejoindre sans code, jusqu'à 200 joueurs. Son nom doit rester correct.",
+    publicBadge: "Publique",
+    publicTitle: "Ligues publiques",
+    publicEmpty: "Pas encore de ligue publique à rejoindre. Crée la première !",
+    publicJoin: "Rejoindre",
+    publicJoinLabel: (name: string) => `Rejoindre la ligue publique ${name}`,
+    publicJoining: "…",
+    publicPlaces: (n: number, max: number) => `${n} / ${max} joueurs`,
+    report: "Signaler",
+    reportLabel: (name: string) => `Signaler la ligue ${name} à l'admin`,
+    reporting: "…",
+    reported: "✓ Signalée à l'admin. Merci !",
     chosen: "Compétitions de la ligue",
     remove: (name: string) => `Retirer ${name}`,
     addCompetition: "+ Ajouter une compétition",
@@ -345,6 +370,9 @@ export const messages = {
       edit_athlete: "Athlète modifié",
       edit_competition: "Compétition modifiée",
       set_odds: "Cotes enregistrées",
+      set_rule: "Barème modifié",
+      moderate_league: "Ligue modérée",
+      moderate_player: "Joueur modéré",
     },
     noEvent: "Épreuve supprimée",
     size: (
@@ -355,22 +383,31 @@ export const messages = {
         | "set_tolerance"
         | "edit_athlete"
         | "edit_competition"
-        | "set_odds",
+        | "set_odds"
+        | "set_rule"
+        | "moderate_league"
+        | "moderate_player",
       n: number,
     ) =>
-      kind === "set_tolerance"
+      kind === "set_rule"
         ? "barème"
-        : kind === "edit_athlete"
-          ? "fiche athlète"
-          : kind === "edit_competition"
-            ? "compétition"
-            : kind === "set_odds"
-              ? `${n} cotes`
-              : kind === "run_scoring"
-                ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
-                : kind === "set_results"
-                  ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
-                  : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
+        : kind === "moderate_league"
+          ? "ligue publique"
+          : kind === "moderate_player"
+            ? "compte joueur"
+            : kind === "set_tolerance"
+              ? "barème"
+              : kind === "edit_athlete"
+                ? "fiche athlète"
+                : kind === "edit_competition"
+                  ? "compétition"
+                  : kind === "set_odds"
+                    ? `${n} cotes`
+                    : kind === "run_scoring"
+                      ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
+                      : kind === "set_results"
+                        ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
+                        : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
     by: (pseudo: string | null) => (pseudo ? `par ${pseudo}` : "par un compte supprimé"),
   },
   import: {
@@ -404,8 +441,9 @@ export const messages = {
   athlete: {
     subtitle: (country: string, gender: string) => `${country} · ${gender}`,
     records: "Records",
-    pr: "Record perso",
-    sb: "Meilleure saison",
+    pr: "PB",
+    sb: "SB",
+    recordsHint: "PB : record personnel · SB : meilleure perf de la saison",
     noRecord: "Pas encore de record connu.",
     races: "Dernières courses",
     noRace: "Pas encore de résultat dans le jeu.",
@@ -468,6 +506,14 @@ export const messages = {
       {
         q: "J'ai oublié de pronostiquer ?",
         a: "Pas de pénalité : tu ne marques simplement pas de points sur cette épreuve.",
+      },
+      {
+        q: "Que veulent dire PB et SB ?",
+        a: "PB : le record personnel de l'athlète dans la discipline. SB : sa meilleure perf de la saison. Ils t'aident à choisir ton podium et tes perfs.",
+      },
+      {
+        q: "Faut-il une ligue pour jouer ?",
+        a: "Oui : pour pronostiquer une épreuve, sois dans une ligue qui compte sa compétition (crée-la, rejoins celle d'un ami ou une ligue publique). Tes points comptent aussi au classement général.",
       },
       {
         q: "Je suis dans plusieurs ligues ?",
@@ -543,14 +589,14 @@ export const messages = {
     identity: "Identité",
     name: "Nom",
     gender: "Catégorie",
-    disciplines: "Disciplines, PR et SB",
+    disciplines: "Disciplines, PB et SB",
     noDiscipline: "Aucune discipline : ajoute-en une ci-dessous.",
     main: "Principale",
     makeMain: "Principale",
     remove: (discipline: string) => `Retirer ${discipline}`,
     mark: (kind: string, discipline: string) => `${kind} au ${discipline}`,
     date: "Date",
-    saveRecords: (discipline: string) => `Enregistrer PR et SB du ${discipline}`,
+    saveRecords: (discipline: string) => `Enregistrer PB et SB du ${discipline}`,
     addDiscipline: "Ajouter une discipline",
     choose: "Choisir…",
     create: "Nouvel athlète",
@@ -581,6 +627,8 @@ export const messages = {
       results: "Résultats",
       disciplines: "Disciplines",
       scale: "Barème",
+      leagues: "Ligues",
+      players: "Joueurs",
       history: "Historique",
     },
     create: "+ Nouvelle compétition",
@@ -611,7 +659,8 @@ export const messages = {
     lockBefore: (m: number) => (m === 0 ? "Au départ" : `${m} min avant`),
     addEventSubmit: "Ajouter l'épreuve",
     enter: "Engager",
-    enterHint: "Les listes de départ se choisissent parmi les engagés. Un athlète absent ?",
+    enterHint:
+      "Les listes de départ se choisissent parmi les engagés (tous les athlètes de la discipline si aucun engagé ne la court). Un athlète absent ?",
     noAthlete: "Personne n'est engagé : cherche un athlète ci-dessus.",
     athletesList: "Athlètes engagés",
     withdraw: (name: string) => `Retirer ${name} de la compétition`,
@@ -708,6 +757,32 @@ export const messages = {
     signingOut: "Déconnexion…",
     deleteLink: "Supprimer mon compte",
   },
+  editProfile: {
+    title: "Modifier mon profil",
+    subtitle: "Ton pseudo, ton avatar, ton club. Sexe et disciplines restent privés.",
+    link: "Modifier mon profil",
+    save: "Enregistrer",
+    saving: "Enregistrement…",
+    saved: "Ton profil est à jour.",
+    cancel: "Retour au profil",
+    club: "Club",
+    noClub: "Aucun club",
+    toValidate: "à valider",
+  },
+  changeEmail: {
+    title: "Changer d'e-mail",
+    current: (email: string) => `Tu te connectes avec ${email}.`,
+    link: "Changer",
+    emailLabel: "Ta nouvelle adresse",
+    emailHint: "On t'y envoie un code. Ton adresse ne change qu'une fois le code saisi.",
+    send: "Recevoir un code",
+    sending: "Envoi…",
+    sent: (email: string) => `Code envoyé à ${email}. Saisis-le ici (valable 10 minutes).`,
+    codeLabel: "Code reçu",
+    confirm: "Confirmer ma nouvelle adresse",
+    confirming: "Vérification…",
+    done: "Ta nouvelle adresse est enregistrée : utilise-la pour te connecter.",
+  },
   deleteAccount: {
     title: "Supprimer mon compte",
     subtitle: "C'est définitif.",
@@ -729,8 +804,28 @@ export const messages = {
     avatarLabel: "Ton avatar",
     ageLabel: "J'ai 15 ans ou plus",
     ageHint: "Obligatoire pour jouer.",
+    sexLabel: "Tu es (facultatif)",
+    sexF: "Femme",
+    sexM: "Homme",
+    sexNone: "Je préfère ne pas le dire",
+    disciplinesLabel: "Tes disciplines (facultatif)",
+    disciplinesHint: "Coche celles que tu pratiques, autant que tu veux. Visible par toi seul.",
     submit: "Créer mon profil",
     submitting: "Création…",
+  },
+  clubPicker: {
+    legend: "Ton club (facultatif)",
+    searchLabel: "Cherche ton club",
+    searchHint:
+      "Tape quelques lettres du nom ou de la ville. Ton club est visible par les autres joueurs.",
+    results: "Clubs trouvés",
+    none: "Aucun club trouvé.",
+    change: "Changer",
+    missing: "Mon club n'est pas dans la liste",
+    newNameLabel: "Nom de ton club",
+    newNameHint: "Il sera vérifié par l'équipe avant d'apparaître dans la liste.",
+    newCityLabel: "Ville du club",
+    backToSearch: "Chercher dans la liste",
   },
   countdown: {
     locksIn: (duration: string) => `Verrouillage dans ${duration}`,
@@ -752,8 +847,8 @@ export const messages = {
     athletes: "Liste de départ",
     emptyStep: "Touche un athlète",
     choose: "Choisir",
-    seasonBest: (mark: string) => `RS ${mark}`,
-    personalBest: (mark: string) => `RP ${mark}`,
+    seasonBest: (mark: string) => `SB ${mark}`,
+    personalBest: (mark: string) => `PB ${mark}`,
     odds: (odds: number) => `×${odds.toFixed(2).replace(".", ",")}`,
     oddsLabel: (odds: number) => `cote ${odds.toFixed(2).replace(".", ",")}`,
     proposed: "Athlètes proposés",
@@ -832,6 +927,47 @@ export const messages = {
     visitorTitle: "Connecte-toi pour pronostiquer",
     visitorText: "Il faut un compte pour enregistrer ton podium.",
     signIn: "Se connecter",
+    leagueTitle: "Pronostique avec ta ligue",
+    leagueText: (competition: string) =>
+      `Pour pronostiquer, rejoins une ligue qui compte ${competition}. Tes points comptent aussi au classement général.`,
+    leagueCreate: "Créer une ligue avec cette compétition",
+    leagueJoin: "Rejoindre une ligue",
+    leagueAdd: (name: string) => `Ajouter à ma ligue « ${name} »`,
+  },
+  moderation: {
+    title: "Ligues signalées",
+    subtitle:
+      "Les ligues publiques signalées par les joueurs. Renomme ou supprime ; chaque action est notée dans l'historique.",
+    empty: "Aucune ligue signalée pour le moment.",
+    reports: (n: number) => `${n} ${n <= 1 ? "signalement" : "signalements"}`,
+    members: (n: number) => `${n} ${n <= 1 ? "membre" : "membres"}`,
+    renameLabel: (name: string) => `Nouveau nom pour ${name}`,
+    rename: "Renommer",
+    renaming: "…",
+    remove: "Supprimer la ligue",
+    removing: "Suppression…",
+    removeConfirm: "Je confirme la suppression de cette ligue et de ses membres",
+    done: "✓ C'est fait.",
+  },
+  adminPlayers: {
+    title: "Joueurs",
+    subtitle:
+      "Cherche un joueur par son pseudo. Bloqué, il ne pronostique plus, ne rejoint plus de ligue et sort des classements. Chaque action est notée dans l'historique.",
+    searchLabel: "Pseudo",
+    search: "Chercher",
+    hint: "Tape au moins 2 lettres.",
+    empty: "Aucun joueur trouvé.",
+    blocked: "Bloqué",
+    admin: "Admin",
+    since: (date: string) => `Inscrit le ${date}`,
+    block: "Bloquer",
+    unblock: "Débloquer",
+    pending: "…",
+    remove: "Supprimer le compte",
+    removing: "Suppression…",
+    removeConfirm: (pseudo: string) =>
+      `Je confirme la suppression définitive du compte de ${pseudo}`,
+    done: "✓ C'est fait.",
   },
   errors: {
     EVENTS_UNAVAILABLE: "Impossible de charger les épreuves pour le moment.",
@@ -839,10 +975,19 @@ export const messages = {
     EMAIL_INVALID: "Cette adresse e-mail n'a pas l'air valide.",
     CODE_INVALID: "Code incorrect ou expiré. Vérifie-le ou demande-en un nouveau.",
     AUTH_UNAVAILABLE: "La connexion ne marche pas pour le moment. Réessaie dans un instant.",
+    ACCOUNT_BLOCKED:
+      "Ton compte est bloqué par l'équipe : tu ne peux plus pronostiquer ni rejoindre de ligue. Écris-nous pour en savoir plus.",
+    PLAYER_UNKNOWN: "Ce joueur n'existe plus (ou c'est un admin).",
+    PLAYERS_UNAVAILABLE:
+      "La liste des joueurs est indisponible pour le moment. Réessaie dans un instant.",
+    EMAIL_UNCHANGED: "C'est déjà ton adresse de connexion.",
+    EMAIL_TAKEN: "Cette adresse est déjà utilisée par un autre compte.",
     AGE_NOT_CONFIRMED: "Tu dois avoir 15 ans ou plus pour jouer.",
     PSEUDO_INVALID:
       "Ce pseudo n'est pas valable : 2 à 24 caractères (lettres, chiffres, espace, _ - .).",
     PSEUDO_TAKEN: "Ce pseudo est déjà pris, essaie-en un autre.",
+    PSEUDO_BANNED:
+      "Ce pseudo n'est pas possible (insulte, nom officiel ou lien). Choisis-en un autre.",
     AVATAR_INVALID: "Choisis un avatar dans la liste.",
     PROFILE_EXISTS: "Tu as déjà un profil.",
     PROFILE_UNAVAILABLE: "Le profil n'est pas disponible pour le moment. Réessaie dans un instant.",
@@ -855,9 +1000,13 @@ export const messages = {
       "Les résultats ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     LEAGUE_NAME_INVALID:
       "Ce nom n'est pas valable : 2 à 40 caractères (lettres, chiffres, emoji, ponctuation simple).",
+    LEAGUE_NAME_BANNED:
+      "Ce nom n'est pas possible pour une ligue publique (insulte, nom officiel ou lien). Choisis-en un autre.",
     LEAGUE_CODE_UNKNOWN: "Ce code ne correspond à aucune ligue. Vérifie-le auprès de ton ami.",
     ALREADY_MEMBER: "Tu fais déjà partie de cette ligue.",
     LEAGUE_FULL: "Cette ligue est complète (50 membres au maximum).",
+    LEAGUE_TOO_MANY_ATTEMPTS:
+      "Trop de codes erronés : réessaie dans une heure, ou demande le lien d'invitation à ton ami.",
     LEAGUE_NOT_FOUND: "Cette ligue n'existe pas ou tu n'en fais pas partie.",
     LEAGUE_OWNER_MUST_HAND_OVER:
       "Tu as créé cette ligue : confie-la d'abord à un autre membre avant de la quitter.",
@@ -865,6 +1014,12 @@ export const messages = {
     LEAGUE_MEMBER_UNKNOWN: "Ce joueur ne fait pas partie de la ligue.",
     LEAGUES_UNAVAILABLE:
       "Les ligues ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+    CLUBS_UNAVAILABLE:
+      "La liste des clubs est indisponible pour le moment. Réessaie dans un instant.",
+    SEX_INVALID: "Choisis Femme, Homme ou « Je préfère ne pas le dire ».",
+    CLUB_NAME_INVALID: "Le nom du club doit faire entre 2 et 120 caractères.",
+    CLUB_NAME_BANNED: "Ce nom de club n'est pas possible (insulte, nom officiel ou lien).",
+    CLUB_UNKNOWN: "Ce club n'existe plus dans la liste. Cherche-le à nouveau.",
     RANKING_UNAVAILABLE:
       "Le classement n'est pas disponible pour le moment. Réessaie dans un instant.",
     RESULT_MISSING: "Saisis d'abord le résultat officiel de cette épreuve.",
@@ -889,6 +1044,8 @@ export const messages = {
     ROUND_NOT_READY: "Les pronos ouvrent quand les tours précédents sont terminés.",
     ROUND_UNAVAILABLE: "La qualification n'a pas pu être faite. Réessaie.",
     JOKER_ALREADY_USED: "Tu as déjà utilisé ton joker dans cette compétition.",
+    NO_LEAGUE_FOR_COMPETITION:
+      "Pour pronostiquer, rejoins d'abord une ligue qui compte cette compétition.",
     PREDICTION_UNAVAILABLE:
       "Ton prono n'est pas disponible pour le moment. Réessaie dans un instant.",
     DELETION_NOT_CONFIRMED: "Coche la case pour confirmer la suppression.",

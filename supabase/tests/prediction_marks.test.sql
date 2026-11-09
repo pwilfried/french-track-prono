@@ -18,6 +18,13 @@ select e.id as event_id, array(select id from athletes order by id limit 3) as a
 insert into entries (event_id, athlete_id) select event_id, unnest(athletes) from fixture;
 grant select on fixture to authenticated;
 
+-- #311: a player predicts from a league of the competition; each test player gets his own.
+insert into leagues (name, owner_id) select 'Test ' || pseudo, id from profiles where created_at = now();
+insert into league_members (league_id, user_id, role)
+select l.id, l.owner_id, 'owner' from leagues l join profiles p on p.id = l.owner_id where p.created_at = now();
+insert into league_competitions (league_id, competition_id)
+select l.id, c.id from leagues l join profiles p on p.id = l.owner_id, competitions c where p.created_at = now();
+
 set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub":"cdcdcdcd-0000-0000-0000-000000000001","role":"authenticated"}', true);
