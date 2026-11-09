@@ -22,14 +22,8 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   await signUp(page, player);
   await page.waitForURL(new RegExp(`/epreuves/${slug}$`));
 
-  // A player predicts from a league of the competition: he creates one from the event.
-  await expect(page.getByRole("heading", { name: "Pronostique avec ta ligue" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Enregistrer mon podium" })).toHaveCount(0);
-  await page.getByRole("link", { name: "Créer une ligue avec cette compétition" }).click();
-  await page.getByLabel("Nom de la ligue").fill("Ma ligue E2E");
-  await page.getByRole("button", { name: "Créer la ligue" }).click();
-  await expect(page.getByText("Ta ligue est prête")).toBeVisible();
-  await page.goto(`/epreuves/${slug}`);
+  // No league needed to predict (#375): a league is only suggested under the podium.
+  await expect(page.getByRole("heading", { name: "Joue aussi avec tes amis" })).toBeVisible();
 
   // Compose the podium with the first three athletes, then save.
   const athletes = page.locator("li > button[aria-pressed]");

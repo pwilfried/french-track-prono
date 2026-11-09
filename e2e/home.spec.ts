@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { joinLeagueFor, newPlayer, signUp } from "./players";
+import { newPlayer, signUp } from "./players";
 
 test("a visitor chooses between the two kinds of competitions", async ({ page }) => {
   await page.goto("/");
@@ -66,17 +66,13 @@ test("a signed-in player sees the next final on the home page and opens it", asy
   await expect(page.getByText(`Salut ${player.pseudo}`)).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Prochaine finale dans");
 
-  // Without a league of the competition, the card offers to create one first (#369).
-  const card = page.getByRole("region").filter({ hasText: "entre dans une ligue" });
-  await expect(card.getByRole("link", { name: "Ligue privée", exact: true })).toBeVisible();
-  await card.getByRole("link", { name: "Ligue publique", exact: true }).click();
-  await expect(page).toHaveURL(/\/ligues\/creer\?competition=.+&publique=1$/);
-  await expect(page.getByRole("checkbox", { name: /Ligue publique/ })).toBeChecked();
-
-  joinLeagueFor(player.email, "ultimate-championship-2026");
-  await page.goto("/");
+  // Without a league, the card still offers the podium first and suggests a league (#375).
   const next = page.getByRole("region", { name: /./ }).filter({ hasText: "Ton podium est vide" });
-  await expect(next).toBeVisible();
+  await expect(next.getByRole("link", { name: "Ligue privée", exact: true })).toBeVisible();
+  await expect(next.getByRole("link", { name: "Ligue publique", exact: true })).toHaveAttribute(
+    "href",
+    /\/ligues\/creer\?competition=.+&publique=1$/,
+  );
   await next.getByRole("link", { name: "Composer mon podium" }).click();
   await expect(page).toHaveURL(new RegExp(`/epreuves/${slug}$`));
 });

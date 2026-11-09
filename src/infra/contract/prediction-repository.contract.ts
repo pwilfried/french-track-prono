@@ -119,12 +119,12 @@ export function predictionRepositoryContract(name: string, world: () => Promise<
       );
     });
 
-    it("refuses a prediction from a player in no league of the competition", async () => {
+    it("accepts a prediction from a player in no league (decision of 9 Nov 2026, #375)", async () => {
       const w = await world();
       const loner = await w.newPlayerWithoutLeague();
 
-      expect(await loner.predictions.save(prediction(loner, w.openEvents[0]!))).toBe("no_league");
-      expect(await loner.predictions.find(loner.userId, w.openEvents[0]!.eventId)).toBeNull();
+      expect(await loner.predictions.save(prediction(loner, w.openEvents[0]!))).toBe("saved");
+      expect(await loner.predictions.find(loner.userId, w.openEvents[0]!.eventId)).not.toBeNull();
     });
 
     it("refuses a prediction on a locked event", async () => {
