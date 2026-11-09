@@ -6,14 +6,15 @@ test("a visitor opens an athlete from a start list and sees a PR and a recent ra
   page,
 }) => {
   // The open-events script removes the competition's results, so she gets a race of her own: a
-  // past meeting in a competition of its own (the records trigger keeps her PR up to date).
+  // meeting run a minute ago in a competition of its own, so it is her latest race whatever the
+  // other suites leave (the records trigger keeps her PR up to date).
   const tag = `e2e-${Date.now() % 1000000}`;
   sql(`with c as (
       insert into competitions (slug, name, starts_on, ends_on)
-      values ('${tag}', 'Meeting ${tag}', current_date - 30, current_date - 30) returning id
+      values ('${tag}', 'Meeting ${tag}', current_date, current_date) returning id
     ), e as (
       insert into events (competition_id, slug, discipline, gender, starts_at, lock_at)
-      select id, '${tag}-100m', '100 m', 'F', now() - interval '30 days', now() - interval '30 days'
+      select id, '${tag}-100m', '100 m', 'F', now() - interval '1 minute', now() - interval '1 minute'
       from c returning id
     ), a as (select id from athletes where slug = 'sha-carri-richardson'),
     en as (insert into entries (event_id, athlete_id) select e.id, a.id from e, a returning event_id, athlete_id)
