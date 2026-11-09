@@ -23,7 +23,7 @@ export type PublicLeague = {
   competitionSlugs: string[];
 };
 
-export type LeagueMember = { userId: string; pseudo: string; avatar: string };
+export type LeagueMember = { userId: string; pseudo: string; avatar: string; club?: string | null };
 
 export type JoinOutcome =
   | { outcome: "joined"; leagueId: string }

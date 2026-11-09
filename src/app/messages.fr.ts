@@ -114,6 +114,16 @@ export const messages = {
     loading: "Chargement du classement…",
     error: "Le classement n'est pas disponible pour le moment. Réessaie dans un instant.",
   },
+  playerCard: {
+    open: (pseudo: string) => `Voir la fiche de ${pseudo}`,
+    label: (pseudo: string) => `Fiche de ${pseudo}`,
+    pseudo: "Pseudo",
+    club: "Club",
+    noClub: "Club non renseigné",
+    rank: "Rang",
+    rankOf: (rank: number, total: number) =>
+      `${rank === 1 ? "1er" : `${rank}e`} sur ${total} ${total <= 1 ? "joueur" : "joueurs"}`,
+  },
   points: {
     title: "Mes points",
     total: (points: number, events: number) =>
