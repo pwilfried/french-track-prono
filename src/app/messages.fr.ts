@@ -1080,22 +1080,65 @@ export const messages = {
   adminPlayers: {
     title: "Joueurs",
     subtitle:
-      "Cherche un joueur par son pseudo. Bloqué, il ne pronostique plus, ne rejoint plus de ligue et sort des classements. Chaque action est notée dans l'historique.",
-    searchLabel: "Pseudo",
-    search: "Chercher",
-    hint: "Tape au moins 2 lettres.",
-    empty: "Aucun joueur trouvé.",
+      "Bloqué, un joueur ne pronostique plus, ne rejoint plus de ligue et sort des classements. Chaque action est notée dans l'historique.",
+    summary: (total: number, active: number, blocked: number) =>
+      `${total} inscrits · ${active} actifs cette semaine · ${blocked} ${blocked <= 1 ? "bloqué" : "bloqués"}`,
+    listLabel: "Joueurs",
+    searchLabel: "Chercher un joueur",
+    searchPlaceholder: "Pseudo",
+    filter: {
+      all: "Tous",
+      fresh: "Nouveaux",
+      idle: "Inactifs 30 j",
+      noPrediction: "Sans prono",
+      blocked: "Bloqués",
+    },
+    club: "Club",
+    clubAll: "Club : tous",
+    column: {
+      player: "Joueur",
+      club: "Club",
+      points: "Points",
+      predictions: "Pronos",
+      leagues: "Ligues",
+      activity: "Dernière activité",
+      joined: "Inscription",
+    },
+    points: (n: number) => `${n} pts`,
+    predictions: (n: number) => `${n} ${n <= 1 ? "prono" : "pronos"}`,
     blocked: "Bloqué",
     admin: "Admin",
+    noClub: "Sans club",
     since: (date: string) => `Inscrit le ${date}`,
+    stat: { rank: "général", predictions: "pronos", leagues: "ligues" },
+    notRanked: "—",
+    leaguesTitle: "Ses ligues",
+    leagueRank: (name: string, rank: number, size: number) =>
+      `${name} · ${rank === 1 ? "1er" : `${rank}e`} sur ${size}`,
+    noLeague: "Aucune ligue.",
+    leaguesLoading: "Chargement des ligues…",
+    reportsTitle: "Signalements",
+    reports: (n: number) =>
+      n === 0
+        ? "Aucun"
+        : `${n} ${n <= 1 ? "signalement reçu" : "signalements reçus"} par ses ligues publiques`,
     block: "Bloquer",
     unblock: "Débloquer",
-    pending: "…",
-    remove: "Supprimer le compte",
-    removing: "Suppression…",
-    removeConfirm: (pseudo: string) =>
-      `Je confirme la suppression définitive du compte de ${pseudo}`,
-    done: "✓ C'est fait.",
+    blockedCount: (n: number) => (n <= 1 ? "Joueur bloqué." : `${n} joueurs bloqués.`),
+    unblockedCount: (n: number) => (n <= 1 ? "Joueur débloqué." : `${n} joueurs débloqués.`),
+    remove: "Supprimer…",
+    removeMany: "Supprimer",
+    removeTitle: (count: number, pseudo?: string) =>
+      pseudo
+        ? `Supprimer le compte de ${pseudo} ?`
+        : `Supprimer ${count <= 1 ? "ce compte" : `ces ${count} comptes`} ?`,
+    removeBody: "Pronos, points et ligues créées partent avec le compte. C'est définitif.",
+    removeSubmit: "Supprimer",
+    removedCount: (n: number) => (n <= 1 ? "Compte supprimé." : `${n} comptes supprimés.`),
+    adminNote: "Un admin ne se bloque ni ne se supprime.",
+    today: "Aujourd'hui",
+    yesterday: "Hier",
+    daysAgo: (n: number) => `Il y a ${n} j`,
   },
   errors: {
     EVENTS_UNAVAILABLE: "Impossible de charger les épreuves pour le moment.",
