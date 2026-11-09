@@ -11,7 +11,7 @@ test("a visitor opens an athlete from a start list and sees a PR and a recent ra
   const tag = `e2e-${Date.now() % 1000000}`;
   sql(`with c as (
       insert into competitions (slug, name, starts_on, ends_on)
-      values ('${tag}', 'Meeting ${tag}', current_date, current_date) returning id
+      values ('${tag}', 'Meeting ${tag}', current_date - 1, current_date - 1) returning id
     ), e as (
       insert into events (competition_id, slug, discipline, gender, starts_at, lock_at)
       select id, '${tag}-100m', '100 m', 'F', now() - interval '1 minute', now() - interval '1 minute'
