@@ -1,16 +1,18 @@
 name: Database migrations
 
 # The production schema follows the repository, never by hand (issue #170):
-#   * a pushed `vX.Y.Z` tag applies the migrations to the production project;
+#   * a pushed `vX.Y.Z` tag applies the migrations to the production project, then deploys that
+#     commit to Vercel production (#405): the code never runs ahead of its schema;
 #   * a pull request touching `supabase/migrations` shows what would be applied (dry run).
 # Secrets (GitHub > Settings > Secrets and variables > Actions, environment "production"):
-#   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, SUPABASE_PROJECT_REF.
+#   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, SUPABASE_PROJECT_REF,
+#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (docs/SETUP.md, « Déploiements Vercel »).
 # Until the production project exists the jobs say so and stop without failing.
 
 on:
   push:
     tags: ["v*.*.*"]
-  # Run by hand from the Actions tab (or the API) to apply main's migrations without a new tag.
+  # Run by hand from the Actions tab (or the API): main's migrations, then main deployed.
   workflow_dispatch:
   pull_request:
     paths: ["supabase/migrations/**"]
@@ -97,3 +99,44 @@ jobs:
       - name: Apply the migrations
         if: steps.secrets.outputs.ready == 'true'
         run: supabase db push --remote --yes --password "$SUPABASE_DB_PASSWORD"
+
+  # Merges into main no longer deploy (vercel.json): production follows the tags, after the schema.
+  deploy:
+    name: Deploy to Vercel production
+    needs: apply
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      # Unlike the migrations, a missing secret fails: production would silently stop moving.
+      - name: Check the Vercel secrets
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::error::VERCEL_TOKEN, VERCEL_ORG_ID and VERCEL_PROJECT_ID are needed (docs/SETUP.md)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # The production environment variables come from the Vercel project, as for a Git deploy.
+      - name: Pull the production settings
+        run: npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Build
+        run: npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
+
+      - name: Deploy
+        run: npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
+      # A CLI deploy creates no GitHub deployment, so the smoke workflow is not triggered: run it here.
+      - name: Smoke test of production
+        run: scripts/smoke.sh https://www.frenchtrackprono.com

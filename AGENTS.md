@@ -44,6 +44,7 @@ titres de PR en anglais. Dialogue avec le propriétaire en français.
 4. PR → CI verte → relecture du propriétaire → fusion.
 5. Quand toutes les issues d'un milestone sont fermées : issues `refactor-check` et `docs-check`
    traitées, critère « It works when… » vérifié à la main, puis tag `vX.Y.Z` posé par le propriétaire.
+   Le tag met la version en prod : migrations, puis déploiement Vercel (`docs/SETUP.md`).
 
 ## Screenshots in PRs
 

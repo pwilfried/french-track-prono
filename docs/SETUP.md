@@ -293,19 +293,36 @@ signale plus rien sans elles (test : les supprimer, `npm install`, `npm audit`).
 
 ## Déploiements Vercel
 
-Seule la branche `main` est déployée (`vercel.json`, `git.deploymentEnabled`) : les branches de
-travail (`feat/`, `fix/`, `chore/`, `docs/`…) et la branche `boards` ne créent plus de
-déploiement de prévisualisation. Le plan gratuit limite le nombre de déploiements par jour ; le
-9 novembre 2026, les prévisualisations de chaque PR l'ont épuisé et la mise en prod de #373 a été
-refusée (« Deployment rate limited »). La CI teste déjà chaque PR, la prévisualisation n'apporte
-rien de plus.
+La production suit les **tags de version**, pas `main` (#405) : pousser un tag `vX.Y.Z` lance le
+workflow « Database migrations » (`.github/workflows/migrations.yml`), qui applique d'abord les
+migrations au projet Supabase de prod, puis construit et déploie ce commit sur Vercel en
+production (`vercel pull`, `vercel build --prod`, `vercel deploy --prebuilt --prod`), et enfin
+lance le test de fumée. Le code ne tourne donc jamais en prod avant son schéma.
+
+- Une fusion dans `main` ne déploie plus rien (`vercel.json`, `git.deploymentEnabled`), pas plus
+  que les branches de travail (`feat/`, `fix/`, `chore/`, `docs/`…) et la branche `boards`. Le plan
+  gratuit limite le nombre de déploiements par jour : le 9 novembre 2026, les prévisualisations de
+  chaque PR l'ont épuisé et la mise en prod de #373 a été refusée (« Deployment rate limited »).
+- Redéployer `main` à la main : onglet Actions → « Database migrations » → Run workflow.
+- Secrets de l'environnement GitHub `production` (Settings → Environments → production), en plus
+  de ceux de Supabase :
+
+| Secret | Où le trouver |
+|---|---|
+| `VERCEL_TOKEN` | Vercel → Account Settings → Tokens, portée limitée à l'équipe du projet |
+| `VERCEL_ORG_ID` | Vercel → Team Settings → General → Team ID (`orgId` dans `.vercel/project.json` après `vercel link`) |
+| `VERCEL_PROJECT_ID` | Vercel → Project Settings → General → Project ID |
+
+Sans ces trois secrets, le job de déploiement échoue (exprès : la prod ne doit pas rester figée
+sans qu'on le voie). Les variables d'environnement de l'application restent dans Vercel ;
+`vercel pull` les récupère pour le build.
 
 ## Test de la prod après déploiement
 
 Le workflow « Production smoke test » (`.github/workflows/smoke.yml`, script `scripts/smoke.sh`)
 ouvre l'accueil, les épreuves, une page d'épreuve, « Comment jouer », la connexion et les mentions
-légales de www.frenchtrackprono.com : après chaque déploiement de production par Vercel, chaque
-jour à 6 h 17 (heure de Paris en hiver, ce qui repère aussi un projet Supabase en pause) et à la
+légales de www.frenchtrackprono.com : après chaque déploiement de production (lancé aussi en fin
+de workflow de déploiement, #405), chaque jour à 6 h 17 (heure de Paris en hiver, ce qui repère aussi un projet Supabase en pause) et à la
 demande (onglet Actions → Run workflow). Pas de relance : un échec est signalé par e-mail.
 Pour l'essayer ailleurs : `scripts/smoke.sh http://localhost:3000`.
 
