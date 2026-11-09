@@ -39,6 +39,9 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **Typo** : titre sportif en capitales, Bricolage Grotesque (variable, hébergée dans le projet),
   Inter pour le texte. Chiffres tabulaires pour les chronos et classements.
 - **Formes** : coins très arrondis, ombres douces, motif de couloirs de piste sur le dégradé bleu.
+- **Fond piste** (accueil, v0.10, #346) : un virage de piste en traits fins, 8 couloirs numérotés
+  (`TrackBackground`), décoratif (`aria-hidden`), sans animation ; opacité 0,14 en sombre, 0,08 en
+  clair. Les cartes posées dessus gardent un fond presque opaque pour la lisibilité.
 - **Titre** : « FRENCH TRACK » en blanc, « PRONO » dans une étiquette rouge légèrement inclinée,
   en écho au logo.
 - **Mascotte** (idée) : un petit sprinter-emoji qui réagit (🏃 😎 🤯 🔥).

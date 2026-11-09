@@ -44,6 +44,13 @@ dans le code (`src/domain`) et en base.
 
 - **Chercher** un joueur par pseudo (back-office « Joueurs »).
 - **Bloquer** un compte : il ne pronostique plus, ne crée ni ne rejoint de ligue, et disparaît
-  du classement général et des classements de ligue tant qu'il est bloqué. Débloquer le rétablit.
+  du classement général et des classements de ligue tant qu'il est bloqué (l'admin, lui, voit
+  toujours ses lignes). Débloquer le rétablit.
 - **Supprimer** un compte, comme si le joueur le faisait lui-même.
 - L'admin ne renomme pas les pseudos. Chaque action est notée dans l'Historique.
+- Un admin ne peut être ni bloqué ni supprimé depuis le back-office.
+
+## Livraison
+
+v0.10 : #344 (mots interdits), #339 (clubs), #340 (inscription), #341 (profil et e-mail),
+#342 (fiche minimale), #343 (admin « Joueurs »).
