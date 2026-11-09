@@ -308,6 +308,7 @@ Le fichier `supabase/config.toml` ne règle que le Supabase local. En prod (Auth
 |---|---|
 | Sign In / Providers → Email | « Confirm email » désactivé ; « Secure email change » **désactivé** (le code va seulement à la nouvelle adresse) ; OTP valable 600 s |
 | Emails → Templates → Magic Link et Confirm signup | contenu de `supabase/templates/sign_in.html` |
+| Attack Protection → Captcha | Turnstile activé avec la **clé secrète** du widget Cloudflare ; la clé publique va dans Vercel (`NEXT_PUBLIC_TURNSTILE_SITE_KEY`, #331). Sans clé publique, la page de connexion n'affiche pas de captcha (local, CI). **Ordre** : clé publique dans Vercel et redéploiement d'abord, captcha Supabase ensuite (sinon plus personne ne reçoit de code) |
 | Emails → Templates → Change Email Address | sujet « Confirme ta nouvelle adresse French Track Prono », contenu de `supabase/templates/email_change.html` |
 
 ## Comptes inactifs (2 ans)

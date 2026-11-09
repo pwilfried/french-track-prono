@@ -19,14 +19,17 @@ const isDev = process.env.NODE_ENV !== "production";
 const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 
 // Next.js injects inline scripts and styles, hence 'unsafe-inline' (a nonce-based policy would
-// force dynamic rendering everywhere). The browser only talks to this site and Supabase.
+// force dynamic rendering everywhere). The browser only talks to this site and Supabase, plus
+// Cloudflare Turnstile for the captcha of the sign-in page (#331).
+const turnstile = "https://challenges.cloudflare.com";
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' ${turnstile}${isDev ? " 'unsafe-eval'" : ""}`,
+  `frame-src ${turnstile}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  `connect-src 'self' ${supabaseOrigin}${isDev ? " ws:" : ""}`.trim(),
+  `connect-src 'self' ${supabaseOrigin} ${turnstile}${isDev ? " ws:" : ""}`.trim(),
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

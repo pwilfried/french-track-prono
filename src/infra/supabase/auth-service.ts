@@ -5,11 +5,12 @@ import type { AuthService } from "@/application/request-magic-link";
 
 export function createSupabaseAuthService(client: SupabaseClient): AuthService {
   return {
-    async sendEmailCode(email, redirectTo) {
+    async sendEmailCode(email, redirectTo, captchaToken) {
       const { error } = await client.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: redirectTo, shouldCreateUser: true },
+        options: { emailRedirectTo: redirectTo, shouldCreateUser: true, captchaToken },
       });
+      if (error?.code === "captcha_failed") throw new UseCaseError("CAPTCHA_FAILED");
       if (error) throw new UseCaseError("AUTH_UNAVAILABLE");
     },
 

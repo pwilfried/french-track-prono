@@ -7,20 +7,32 @@ export type AuthSession = { userId: string };
 
 /** Port: e-mail sign-in (Supabase Auth in production, memory in tests). */
 export interface AuthService {
-  /** Sends one message holding a magic link and a 6-digit code. Throws AUTH_UNAVAILABLE on failure. */
-  sendEmailCode(email: string, redirectTo?: string): Promise<void>;
+  /**
+   * Sends one message holding a magic link and a 6-digit code. Throws CAPTCHA_FAILED when the
+   * captcha token is refused, AUTH_UNAVAILABLE on any other failure.
+   */
+  sendEmailCode(email: string, redirectTo?: string, captchaToken?: string): Promise<void>;
   /** Signs in with the code. Returns null when the code is wrong, expired or already used. */
   verifyEmailCode(email: string, code: string): Promise<AuthSession | null>;
 }
 
-export type RequestMagicLinkInput = { email: string; redirectTo?: string };
+export type RequestMagicLinkInput = {
+  email: string;
+  redirectTo?: string;
+  /** The Turnstile token, when the sign-in page shows the captcha (#331). */
+  captchaToken?: string;
+};
 
 export function requestMagicLink(ports: { auth: AuthService }) {
   return {
     async execute(input: RequestMagicLinkInput): Promise<void> {
       const email = validateEmail(input.email);
       if (!email.ok) throw new UseCaseError(email.code);
-      await ports.auth.sendEmailCode(email.email, input.redirectTo);
+      await ports.auth.sendEmailCode(
+        email.email,
+        input.redirectTo,
+        input.captchaToken || undefined,
+      );
     },
   };
 }

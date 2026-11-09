@@ -4,10 +4,10 @@ import { UseCaseError } from "./errors";
 import { requestMagicLink, type AuthService } from "./request-magic-link";
 
 const authSpy = () => {
-  const sent: { email: string; redirectTo: string | undefined }[] = [];
+  const sent: { email: string; redirectTo: string | undefined; captchaToken?: string }[] = [];
   const auth: AuthService = {
-    sendEmailCode: async (email, redirectTo) => {
-      sent.push({ email, redirectTo });
+    sendEmailCode: async (email, redirectTo, captchaToken) => {
+      sent.push(captchaToken ? { email, redirectTo, captchaToken } : { email, redirectTo });
     },
     verifyEmailCode: async () => null,
   };
@@ -15,6 +15,18 @@ const authSpy = () => {
 };
 
 describe("requestMagicLink", () => {
+  it("passes the captcha token when the sign-in page shows the captcha", async () => {
+    const { auth, sent } = authSpy();
+
+    await requestMagicLink({ auth }).execute({ email: "anna@example.test", captchaToken: "tok" });
+    await requestMagicLink({ auth }).execute({ email: "bob@example.test", captchaToken: "" });
+
+    expect(sent).toEqual([
+      { email: "anna@example.test", redirectTo: undefined, captchaToken: "tok" },
+      { email: "bob@example.test", redirectTo: undefined },
+    ]);
+  });
+
   it("sends the link and code to the cleaned address", async () => {
     const { auth, sent } = authSpy();
 
