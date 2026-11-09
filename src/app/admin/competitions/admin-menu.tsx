@@ -20,6 +20,7 @@ export type AdminSection = keyof typeof text.section;
 
 /** The sections of the back-office, in three groups, plus the history at the end. */
 const GROUPS: { key: keyof typeof text.groups | null; items: [string, AdminSection][] }[] = [
+  { key: null, items: [["/admin/tableau-de-bord", "dashboard"]] },
   {
     key: "game",
     items: [
@@ -55,8 +56,11 @@ const COUNTED: Partial<Record<AdminSection, keyof AdminTodo>> = {
 function Links({ section, todo }: { section: AdminSection; todo: AdminTodo | null }) {
   return GROUPS.map((group) => (
     <div
-      key={group.key ?? "other"}
-      className={cn("flex flex-col gap-1", !group.key && "mt-2 border-t border-border pt-2")}
+      key={group.key ?? group.items[0]![1]}
+      className={cn(
+        "flex flex-col gap-1",
+        !group.key && group.items[0]![1] === "history" && "mt-2 border-t border-border pt-2",
+      )}
     >
       {group.key && (
         <p className="px-3 pb-1 pt-3 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
