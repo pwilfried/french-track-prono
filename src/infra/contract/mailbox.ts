@@ -19,7 +19,7 @@ export async function latestCodeFromMailbox(email: string): Promise<string> {
       // The template is HTML: read the text part when there is one, else the HTML without tags.
       const body = message.Text || (message.HTML ?? "").replace(/<[^>]+>/g, " ");
       // Mailpit may render the bold code with markers around it: allow a few non-digits before it.
-      const match = /Code de connexion\D{0,20}(\d{6})/.exec(body);
+      const match = /Code de (?:connexion|confirmation)\D{0,20}(\d{6})/.exec(body);
       if (match?.[1]) return match[1];
       seen = `message "${message.Subject}" without the code, start of body: ${body.replace(/\s+/g, " ").slice(0, 600)}`;
     }

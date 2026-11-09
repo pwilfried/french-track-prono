@@ -9,7 +9,8 @@ export type CookieAdapter = {
   setAll(cookies: CookieToSet[]): void;
 };
 
-export type CurrentUser = { userId: string };
+/** The signed-in user; the e-mail is only shown to the player themselves (#341). */
+export type CurrentUser = { userId: string; email: string };
 
 /** Supabase client bound to the visitor's cookies. Anon key only: safe next to the app. */
 export function createSessionClient(cookies: CookieAdapter): SupabaseClient {
@@ -34,7 +35,7 @@ export function createSessionClient(cookies: CookieAdapter): SupabaseClient {
 export async function readCurrentUser(client: SupabaseClient): Promise<CurrentUser | null> {
   const { data, error } = await client.auth.getUser();
   if (error || !data.user) return null;
-  return { userId: data.user.id };
+  return { userId: data.user.id, email: data.user.email ?? "" };
 }
 
 /** Turns the link of the e-mail into a session. Works in any browser (no stored verifier). */

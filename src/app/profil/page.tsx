@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { UseCaseError } from "@/application/errors";
 import { getMyBadges } from "@/application/get-my-badges";
 import { getProfile } from "@/application/get-profile";
+import { getPlayerDetails } from "@/application/player-details";
 import { listEvents } from "@/application/list-events";
 import { listMyPredictions } from "@/application/list-my-predictions";
 import { getGeneralRanking } from "@/application/rankings";
@@ -11,6 +12,7 @@ import { buttonVariants } from "@/components/ui/button";
 import {
   createPublicSupabaseClient,
   createSupabaseEventReader,
+  createSupabasePlayerDetailsRepository,
   createSupabasePredictionRepository,
   createSupabaseProfileRepository,
   createSupabaseRankingRepository,
@@ -57,15 +59,34 @@ async function loadSeason(userId: string) {
 }
 
 /** Board 06: avatar and pseudo, the season in three figures, the account. */
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ enregistre?: string; email?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) redirect(`/connexion?next=${encodeURIComponent("/profil")}`);
 
+  const client = await getSessionClient();
   const profile = await getProfile({
-    profiles: createSupabaseProfileRepository(await getSessionClient()),
+    profiles: createSupabaseProfileRepository(client),
   }).execute({ userId: user.userId });
   if (!profile) redirect(`/bienvenue?next=${encodeURIComponent("/profil")}`);
-  const season = await loadSeason(user.userId);
+  const [season, details, params] = await Promise.all([
+    loadSeason(user.userId),
+    getPlayerDetails({ details: createSupabasePlayerDetailsRepository(client) })
+      .execute({ userId: user.userId })
+      .catch((error: unknown) => {
+        if (error instanceof UseCaseError) return null;
+        throw error;
+      }),
+    searchParams,
+  ]);
+  const notice = params.email
+    ? messages.changeEmail.done
+    : params.enregistre
+      ? messages.editProfile.saved
+      : null;
 
   const since = new Intl.DateTimeFormat("fr-FR", {
     day: "2-digit",
@@ -83,6 +104,11 @@ export default async function ProfilePage() {
   return (
     <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-6">
       <h1 className="sr-only">{text.title}</h1>
+      {notice ? (
+        <p role="status" className="rounded-card bg-muted p-4 font-semibold">
+          {notice}
+        </p>
+      ) : null}
       <div className="flex items-center gap-4">
         <span
           aria-hidden="true"
@@ -184,14 +210,40 @@ export default async function ProfilePage() {
           </div>
           <div className="flex min-h-14 items-center justify-between gap-3 px-4 py-2">
             <div className="min-w-0">
-              <dt className="text-sm font-bold">{text.email}</dt>
-              <dd className="text-sm text-muted-foreground">{text.emailPrivate}</dd>
+              <dt className="text-sm font-bold">{messages.editProfile.club}</dt>
+              <dd className="break-words text-sm text-muted-foreground">
+                {details?.club
+                  ? `${details.club.name}${details.club.validated ? "" : ` (${messages.editProfile.toValidate})`}`
+                  : messages.editProfile.noClub}
+              </dd>
             </div>
-            <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-bold">
-              {text.private}
-            </span>
+          </div>
+          <div className="flex min-h-14 items-center justify-between gap-3 px-4 py-2">
+            <div className="min-w-0">
+              <dt className="text-sm font-bold">
+                {text.email}{" "}
+                <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs font-bold">
+                  {text.private}
+                </span>
+              </dt>
+              <dd className="break-all text-sm text-muted-foreground">{user.email}</dd>
+            </div>
+            <Link
+              href="/profil/email"
+              aria-label={messages.changeEmail.title}
+              className="inline-flex min-h-11 shrink-0 items-center font-semibold text-primary underline underline-offset-4"
+            >
+              {messages.changeEmail.link}
+            </Link>
           </div>
         </dl>
+        <p className="text-sm text-muted-foreground">{text.emailPrivate}</p>
+        <Link
+          href="/profil/modifier"
+          className={`${buttonVariants({ variant: "outline" })} w-full`}
+        >
+          {messages.editProfile.link}
+        </Link>
       </section>
 
       <form action="/auth/sign-out" method="post">
