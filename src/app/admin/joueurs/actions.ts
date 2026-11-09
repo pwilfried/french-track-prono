@@ -3,49 +3,60 @@
 import { revalidatePath } from "next/cache";
 
 import { UseCaseError, type ErrorCode } from "@/application/errors";
-import { deletePlayer, setPlayerBlocked } from "@/application/player-moderation";
+import {
+  deletePlayer,
+  getPlayerLeagues,
+  setPlayerBlocked,
+  type PlayerLeague,
+} from "@/application/player-moderation";
 import { createSupabasePlayerModerationRepository } from "@/infra";
 
-import { formText } from "../../form-data";
 import { adminOnly } from "../guard";
 
-export type PlayerActionState = { error?: ErrorCode; done?: boolean };
+export type PlayerListResult = { error?: ErrorCode; count?: number };
 
 async function players() {
   const { client } = await adminOnly();
   return createSupabasePlayerModerationRepository(client);
 }
 
-export async function setBlockedAction(
-  _: PlayerActionState,
-  data: FormData,
-): Promise<PlayerActionState> {
+async function run(work: () => Promise<number>): Promise<PlayerListResult> {
   try {
-    await setPlayerBlocked({ players: await players() }).execute({
-      playerId: formText(data, "playerId"),
-      blocked: formText(data, "blocked") === "1",
-    });
+    const count = await work();
+    revalidatePath("/admin/joueurs");
+    return { count };
   } catch (error) {
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
   }
-  revalidatePath("/admin/joueurs");
-  return { done: true };
 }
 
-export async function deletePlayerAction(
-  _: PlayerActionState,
-  data: FormData,
-): Promise<PlayerActionState> {
-  if (formText(data, "confirm") !== "1") return { error: "DELETION_NOT_CONFIRMED" };
+export async function setBlockedAction(ids: string[], blocked: boolean): Promise<PlayerListResult> {
+  const repository = await players();
+  return run(async () => {
+    for (const playerId of ids)
+      await setPlayerBlocked({ players: repository }).execute({ playerId, blocked });
+    return ids.length;
+  });
+}
+
+/** Deletion is confirmed in the page's confirmation window before this runs. */
+export async function deletePlayersAction(ids: string[]): Promise<PlayerListResult> {
+  const repository = await players();
+  return run(async () => {
+    for (const playerId of ids) await deletePlayer({ players: repository }).execute({ playerId });
+    return ids.length;
+  });
+}
+
+/** The leagues of a player, read when the admin opens their sheet. */
+export async function playerLeaguesAction(
+  playerId: string,
+): Promise<{ leagues?: PlayerLeague[]; error?: ErrorCode }> {
   try {
-    await deletePlayer({ players: await players() }).execute({
-      playerId: formText(data, "playerId"),
-    });
+    return { leagues: await getPlayerLeagues({ players: await players() }).execute({ playerId }) };
   } catch (error) {
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
   }
-  revalidatePath("/admin/joueurs");
-  return { done: true };
 }

@@ -1,14 +1,37 @@
-import { searchKey } from "@/domain/club";
-import type { ModeratedPlayer, PlayerModerationRepository } from "@/application/player-moderation";
+import type {
+  ModeratedPlayer,
+  PlayerLeague,
+  PlayerModerationRepository,
+} from "@/application/player-moderation";
+
+type NewPlayer = Pick<ModeratedPlayer, "id" | "pseudo" | "avatar" | "isAdmin" | "joinedAt"> &
+  Partial<ModeratedPlayer>;
 
 /** Test double of the PlayerModerationRepository port: one store, a session per admin or not. */
-export function createInMemoryPlayerStore(players: Omit<ModeratedPlayer, "blocked">[] = []) {
-  const all = new Map<string, ModeratedPlayer>(
-    players.map((p) => [p.id, { ...p, blocked: false }]),
-  );
+export function createInMemoryPlayerStore(players: NewPlayer[] = []) {
+  const all = new Map<string, ModeratedPlayer>();
+  const leagues = new Map<string, PlayerLeague[]>();
+  const add = (player: NewPlayer) =>
+    all.set(player.id, {
+      blocked: false,
+      club: null,
+      points: 0,
+      predictions: 0,
+      leagues: 0,
+      lastActiveAt: player.joinedAt,
+      reports: 0,
+      ...player,
+    });
+  players.forEach(add);
   return {
-    add(player: Omit<ModeratedPlayer, "blocked">) {
-      all.set(player.id, { ...player, blocked: false });
+    add,
+    /** The player is alone in a new league. */
+    joinLeague(playerId: string, name: string) {
+      const list = leagues.get(playerId) ?? [];
+      list.push({ id: crypto.randomUUID(), name, memberCount: 1, rank: 1 });
+      leagues.set(playerId, list);
+      const player = all.get(playerId);
+      if (player) player.leagues = list.length;
     },
     session({ isAdmin }: { isAdmin: boolean }): PlayerModerationRepository {
       const target = (id: string) => {
@@ -16,17 +39,15 @@ export function createInMemoryPlayerStore(players: Omit<ModeratedPlayer, "blocke
         return player && !player.isAdmin ? player : null;
       };
       return {
-        async search(query) {
+        async list() {
           if (!isAdmin) return "not_admin";
           return [...all.values()]
-            .filter((p) => searchKey(p.pseudo).includes(searchKey(query.trim())))
-            .sort(
-              (a, b) =>
-                Number(b.blocked) - Number(a.blocked) ||
-                a.pseudo.toLowerCase().localeCompare(b.pseudo.toLowerCase()),
-            )
-            .slice(0, 30)
+            .sort((a, b) => b.joinedAt.localeCompare(a.joinedAt))
             .map((p) => ({ ...p }));
+        },
+        async leaguesOf(id) {
+          if (!isAdmin) return "not_admin";
+          return (leagues.get(id) ?? []).map((l) => ({ ...l }));
         },
         async setBlocked(id, blocked) {
           if (!isAdmin) return "not_admin";

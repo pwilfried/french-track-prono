@@ -44,21 +44,26 @@ test("the admin blocks a player, who leaves the general ranking, then unblocks t
   await expect(ranking.getByText(target)).toBeVisible();
 
   await page.goto("/admin/joueurs");
-  await page.getByRole("searchbox", { name: "Pseudo" }).fill(`cible e2e ${tag}`);
-  await page.getByRole("button", { name: "Chercher" }).click();
-  const row = page
-    .getByRole("list", { name: "Joueurs" })
-    .getByRole("listitem")
-    .filter({ hasText: target });
-  await row.getByRole("button", { name: "Bloquer" }).click();
+  await page.getByLabel("Chercher un joueur").fill(`cible e2e ${tag}`);
+  const list = page.getByRole("list", { name: "Joueurs" });
+  const row = list.getByRole("listitem").filter({ hasText: target });
+  await expect(row).toContainText("12 pts");
+  // The sheet: rank, predictions, leagues and reports, never the e-mail.
+  await row.getByRole("button", { name: `Ouvrir ${target}` }).click();
+  const sheet = page.getByRole("complementary", { name: target });
+  await expect(sheet).toContainText("Aucune ligue.");
+  await expect(sheet).toContainText("Signalements");
+  await expect(sheet).not.toContainText("@example.test");
+  await sheet.getByRole("button", { name: "Bloquer" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Joueur bloqué." })).toBeVisible();
   await expect(row.getByText("Bloqué", { exact: true })).toBeVisible();
 
   await viewerPage.reload();
   await expect(ranking).toBeVisible();
   await expect(viewerPage.getByText(target)).toHaveCount(0);
 
-  await page.goto(`/admin/joueurs?q=${encodeURIComponent(target)}`);
-  await row.getByRole("button", { name: "Débloquer" }).click();
+  await sheet.getByRole("button", { name: "Débloquer" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Joueur débloqué." })).toBeVisible();
   await expect(row.getByText("Bloqué", { exact: true })).toHaveCount(0);
   await viewerPage.reload();
   await expect(ranking.getByText(target)).toBeVisible();
