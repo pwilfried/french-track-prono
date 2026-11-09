@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
+import { openAdminSection } from "./admin";
 import { newPlayer, signUp } from "./players";
 
 test("an admin creates a French competition, an event and its entered athletes, used by the start list", async ({
@@ -19,7 +20,7 @@ test("an admin creates a French competition, an event and its entered athletes, 
   );
 
   await page.goto("/admin");
-  await page.getByRole("link", { name: "Compétitions", exact: true }).first().click();
+  await openAdminSection(page, "Compétitions");
   await page.getByRole("link", { name: "+ Nouvelle compétition" }).click();
   await page.getByLabel("Française").check();
   await page.getByLabel("Nom", { exact: true }).fill(name);

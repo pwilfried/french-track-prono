@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
+import { openAdminSection } from "./admin";
 import { newPlayer, signUp } from "./players";
 
 test("an admin creates an athlete, adds a discipline with a PB and an SB, shown on the public page", async ({
@@ -19,7 +20,7 @@ test("an admin creates an athlete, adds a discipline with a PB and an SB, shown 
   );
 
   await page.goto("/admin");
-  await page.getByRole("link", { name: "Athlètes" }).click();
+  await openAdminSection(page, "Athlètes");
   // The admin creates the athlete with her main discipline.
   await page.getByText("Nouvel athlète").click();
   await page.getByLabel("Nom").fill(name);

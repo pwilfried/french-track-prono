@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
+import { adminMenu } from "./admin";
 import { newPlayer, signUp } from "./players";
 
 test("the admin validates a club typed by a player, then renames it", async ({ page }) => {
@@ -15,6 +16,9 @@ test("the admin validates a club typed by a player, then renames it", async ({ p
   sql(`insert into clubs (name, city, source) values ('${typed}', 'Nulle-Part', 'player')`);
 
   await page.goto("/admin/clubs");
+  // The menu counts the clubs waiting for the admin.
+  await adminMenu(page).locator("summary").click();
+  await expect(adminMenu(page).getByRole("link", { name: /^Clubs \d+ à traiter$/ })).toBeVisible();
   const list = page.getByRole("list", { name: "Clubs" });
   const row = list.getByRole("listitem").filter({ hasText: typed });
   await expect(row).toContainText("À valider");
