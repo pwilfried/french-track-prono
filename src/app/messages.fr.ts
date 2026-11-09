@@ -691,7 +691,7 @@ export const messages = {
     subtitle: "La prochaine par date est mise en avant sur l'accueil.",
     sections: "Sections du back-office",
     groups: { game: "Jeu", data: "Données", community: "Communauté" },
-    todo: (count: number) => `, ${count} à traiter`,
+    todo: (count: number) => `${count} à traiter`,
     section: {
       competitions: "Compétitions",
       athletes: "Athlètes",
