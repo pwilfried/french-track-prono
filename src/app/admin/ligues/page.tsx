@@ -1,53 +1,56 @@
 import { UseCaseError } from "@/application/errors";
-import { listReportedLeagues, type ReportedLeague } from "@/application/league-moderation";
+import { listAdminLeagues, type AdminLeague } from "@/application/league-moderation";
 import { ErrorNotice } from "@/components/error-notice";
 import { createSupabaseLeagueModerationRepository } from "@/infra";
 
 import { messages } from "../../messages.fr";
 import { AdminShell } from "../competitions/admin-shell";
 import { adminOnly } from "../guard";
-import { DeleteLeagueForm, RenameLeagueForm } from "./moderation-forms";
+import { LeaguesAdmin, type LeagueRow } from "./leagues-admin";
 
-const text = messages.moderation;
+const text = messages.adminLeagues;
+const day = new Intl.DateTimeFormat("fr-FR", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "Europe/Paris",
+});
 
-/** The public leagues reported by players (#321): the admin renames or deletes them. */
-export default async function ReportedLeaguesPage() {
+/** Back-office « Ligues » (#321, #383): every league, the reported ones first. */
+export default async function AdminLeaguesPage() {
   const { client } = await adminOnly();
-  let leagues: ReportedLeague[] | "error";
+  let leagues: AdminLeague[] | "error";
   try {
-    leagues = await listReportedLeagues({
+    leagues = await listAdminLeagues({
       moderation: createSupabaseLeagueModerationRepository(client),
     }).execute();
   } catch (error) {
     if (!(error instanceof UseCaseError)) throw error;
     leagues = "error";
   }
+  const rows: LeagueRow[] =
+    leagues === "error"
+      ? []
+      : leagues.map((league) => ({
+          ...league,
+          createdLabel: day.format(new Date(league.createdAt)),
+        }));
 
   return (
-    <AdminShell title={text.title} section="leagues">
-      <p className="text-sm text-muted-foreground">{text.subtitle}</p>
+    <AdminShell title={text.title} section="leagues" wide>
+      <p className="text-sm text-muted-foreground">
+        {leagues === "error"
+          ? text.subtitle
+          : text.summary(
+              rows.length,
+              rows.filter((l) => l.isPublic).length,
+              rows.filter((l) => l.reportCount > 0).length,
+            )}
+      </p>
       {leagues === "error" ? (
         <ErrorNotice retryHref="/admin/ligues" message={messages.errors.LEAGUES_UNAVAILABLE} />
-      ) : leagues.length === 0 ? (
-        <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">{text.empty}</p>
       ) : (
-        <ul aria-label={text.title} className="flex flex-col gap-3">
-          {leagues.map((league) => (
-            <li
-              key={league.id}
-              className="flex flex-col gap-3 rounded-card border border-border bg-card p-3.5"
-            >
-              <div>
-                <p className="break-words font-extrabold">{league.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {text.reports(league.reportCount)} · {text.members(league.memberCount)}
-                </p>
-              </div>
-              <RenameLeagueForm leagueId={league.id} name={league.name} />
-              <DeleteLeagueForm leagueId={league.id} />
-            </li>
-          ))}
-        </ul>
+        <LeaguesAdmin leagues={rows} />
       )}
     </AdminShell>
   );

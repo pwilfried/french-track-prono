@@ -47,8 +47,8 @@ export function getAdminTodo(ports: AdminTodoPorts) {
           (list) => list.length,
         ),
         orNull(
-          () => ports.moderation.listReported(),
-          (list) => list.length,
+          () => ports.moderation.list(),
+          (list) => list.filter((league) => league.reportCount > 0).length,
         ),
       ]);
       return { results, clubs, leagues };

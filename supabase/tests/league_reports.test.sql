@@ -34,13 +34,13 @@ select throws_ok($$ select report_league('eeeeeeee-0000-0000-0000-0000000000a2')
 select act_as('eeee0000-0000-0000-0000-000000000001');
 select is((select count(*) from league_reports), 0::bigint,
   'a player does not see the reports of others');
-select throws_ok($$ select * from admin_list_reported_leagues() $$, '42501', null,
-  'only the admin sees the reported leagues');
+select throws_ok($$ select * from admin_list_leagues() $$, '42501', null,
+  'only the admin lists the leagues');
 select throws_ok($$ select admin_rename_league('eeeeeeee-0000-0000-0000-0000000000a1', 'Autre nom') $$,
   '42501', null, 'only the admin renames a league');
 
 select act_as('eeee0000-0000-0000-0000-000000000003');
-select is((select report_count from admin_list_reported_leagues()
+select is((select report_count from admin_list_leagues()
            where league_id = 'eeeeeeee-0000-0000-0000-0000000000a1'), 1::bigint,
   'the admin sees the league reported once');
 select lives_ok($$ select admin_rename_league('eeeeeeee-0000-0000-0000-0000000000a1', 'Les Gazelles') $$,

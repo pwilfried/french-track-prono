@@ -217,7 +217,10 @@ compétition déjà commencée). Ligues publiques (v0.7, #277) : tout joueur en 
 publique »), elle se rejoint d'un appui sans code (`join_public_league`), 200 membres au plus, et
 son nom ne doit contenir aucun mot interdit (`isBannedLeagueName` / `is_banned_league_name`,
 code FT010) ; un joueur peut la signaler (`report_league`) et l'admin la renomme ou la supprime
-depuis le back-office (Ligues, action journalisée `moderate_league`, #321). La v0.7 (#311) exigeait une ligue
+depuis le back-office (Ligues, action journalisée `moderate_league`, #321). Depuis la v0.11 (#383),
+le back-office liste toutes les ligues (`admin_list_leagues()`), efface des signalements infondés
+(`admin_dismiss_league_reports()`), lit les membres avec leur rang (`admin_league_members()`, même
+règle que `countsInLeague`) et retire un membre (`admin_remove_league_member()`, jamais le créateur). La v0.7 (#311) exigeait une ligue
 de la compétition pour pronostiquer (FT011) ; la règle est retirée le 9 novembre 2026 (#375) : on
 pronostique sans ligue, et les pages suggèrent seulement d'en créer ou d'en rejoindre une ; le classement général compte tous les points, toutes
 compétitions confondues (#319), et l'onglet Classement donne aussi celui de chaque compétition
