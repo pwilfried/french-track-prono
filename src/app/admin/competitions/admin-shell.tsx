@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Suspense, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { messages } from "../../messages.fr";
-import { AdminMenu, AdminMenuWithTodo, type AdminSection } from "./admin-menu";
+import { AdminMenuWithTodo, type AdminSection } from "./admin-menu";
 
 /** The back-office band, the back link, the title and the sections menu of an admin page. */
 export function AdminShell({
@@ -21,9 +21,8 @@ export function AdminShell({
       <AdminBand />
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col lg:flex-row">
         {section && (
-          <Suspense fallback={<AdminMenu section={section} todo={null} />}>
-            <AdminMenuWithTodo section={section} />
-          </Suspense>
+          // No Suspense: a streamed menu would replace a drop-down already opened.
+          <AdminMenuWithTodo section={section} />
         )}
         <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-4 lg:max-w-2xl lg:py-8">
           {back && (
