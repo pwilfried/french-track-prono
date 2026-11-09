@@ -98,10 +98,11 @@ async function loadMyLeagues(): Promise<League[] | "error"> {
 }
 
 /**
- * A player predicts from a league counting the competition (#311): create one with it, join one,
- * or add the competition to a league he created.
+ * A suggestion under the podium for a player in no league of the competition (#375): create a
+ * private or public one, join a public one, or add the competition to a league he created.
+ * Predicting never waits for it.
  */
-function LeagueGate({
+function LeagueSuggestion({
   competitionSlug,
   competitionName,
   owned,
@@ -114,19 +115,24 @@ function LeagueGate({
 }) {
   return (
     <section
-      aria-labelledby="league-gate"
+      aria-labelledby="league-suggestion"
       className="mx-4 flex flex-col gap-3 rounded-card bg-brand-soft p-4 text-brand-ink"
     >
-      <h2 id="league-gate" className="font-display text-xl font-extrabold">
+      <h2 id="league-suggestion" className="font-display text-xl font-extrabold">
         {messages.prediction.leagueTitle}
       </h2>
       <p className="text-sm leading-relaxed">{messages.prediction.leagueText(competitionName)}</p>
-      <Link
-        href={`/ligues/creer?competition=${competitionSlug}`}
-        className={`${buttonVariants()} w-full`}
-      >
-        {messages.prediction.leagueCreate}
-      </Link>
+      <div className="grid grid-cols-2 gap-2">
+        <Link href={`/ligues/creer?competition=${competitionSlug}`} className={buttonVariants()}>
+          {messages.prediction.leagueCreate}
+        </Link>
+        <Link
+          href={`/ligues/creer?competition=${competitionSlug}&publique=1`}
+          className={buttonVariants({ variant: "outline" })}
+        >
+          {messages.prediction.leagueCreatePublic}
+        </Link>
+      </div>
       {owned.map((league) => (
         <AddToMyLeagueForm
           key={league.id}
@@ -193,17 +199,19 @@ async function PredictionSection({
   }
 
   const mine = await loadMyPrediction(user.userId, event.id);
-  if (mine === "error" || leagues === "error") return <ErrorNotice retryHref={back} />;
-  if (open && !leagues.some((l) => l.competitionSlugs.includes(competitionSlug))) {
-    return (
-      <LeagueGate
+  if (mine === "error") return <ErrorNotice retryHref={back} />;
+  // Leagues that cannot be read only hide the suggestion: predicting never waits for them.
+  const suggestion =
+    open &&
+    leagues !== "error" &&
+    !leagues.some((l) => l.competitionSlugs.includes(competitionSlug)) ? (
+      <LeagueSuggestion
         competitionSlug={competitionSlug}
         competitionName={competitionName}
         owned={leagues.filter((l) => l.ownerId === user.userId)}
         back={back}
       />
-    );
-  }
+    ) : null;
   const draft = mine ? draftFromPodium(mine.podium) : emptyDraft();
   const unit = event.markUnit;
   const markText = (value: number | null | undefined) =>
@@ -216,14 +224,17 @@ async function PredictionSection({
 
   if (open) {
     return (
-      <PredictionForm
-        eventId={event.id}
-        slug={slug}
-        athletes={choices}
-        initial={{ draft, useJoker: mine?.useJoker ?? false, marks }}
-        markUnit={event.markUnit}
-        tolerance={event.tolerance}
-      />
+      <div className="flex flex-col gap-5">
+        <PredictionForm
+          eventId={event.id}
+          slug={slug}
+          athletes={choices}
+          initial={{ draft, useJoker: mine?.useJoker ?? false, marks }}
+          markUnit={event.markUnit}
+          tolerance={event.tolerance}
+        />
+        {suggestion}
+      </div>
     );
   }
   if (!mine) {
@@ -284,12 +295,8 @@ export default async function EventPage({
   const [user, choices] = await Promise.all([getCurrentUser(), loadChoices(event)]);
   const open = eventPhase(new Date(), event.lockAt) === "open";
   // The picker already lists the athletes of an open event for a signed-in player.
-  // A player outside any league of the competition sees the gate instead of the picker (#311):
-  // he still sees the start list.
   const leagues = user && open ? await loadMyLeagues() : [];
-  const gated =
-    leagues !== "error" && !leagues.some((l) => l.competitionSlugs.includes(competition.slug));
-  const showStartList = !(user && open) || gated;
+  const showStartList = !(user && open);
   const when = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
     day: "numeric",
