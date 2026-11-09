@@ -8,6 +8,7 @@ const profiles = (admins: string[]): ProfileRepository => ({
   find: async () => null,
   create: async () => "created",
   isAdmin: async (userId) => admins.includes(userId),
+  update: async () => "updated",
   deleteMine: async () => {},
 });
 

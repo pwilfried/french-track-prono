@@ -5,6 +5,8 @@ export type ErrorCode =
   | "EMAIL_INVALID"
   | "CODE_INVALID"
   | "AUTH_UNAVAILABLE"
+  | "EMAIL_UNCHANGED"
+  | "EMAIL_TAKEN"
   | "AGE_NOT_CONFIRMED"
   | "PSEUDO_INVALID"
   | "PSEUDO_TAKEN"

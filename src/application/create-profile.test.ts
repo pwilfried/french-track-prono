@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createProfile, type Profile, type ProfileRepository } from "./create-profile";
 import { UseCaseError } from "./errors";
 import { getProfile } from "./get-profile";
+import { updateProfile } from "./update-profile";
 
 // Application tests do not import the infra layer: a few lines of fake are enough here.
 function fakeProfiles(): ProfileRepository {
@@ -22,6 +23,15 @@ function fakeProfiles(): ProfileRepository {
       if (taken) return "pseudo_taken";
       all.set(profile.userId, profile);
       return "created";
+    },
+    async update(userId, change) {
+      const taken = [...all.values()].some(
+        (p) => p.userId !== userId && p.pseudo.toLowerCase() === change.pseudo.toLowerCase(),
+      );
+      if (taken) return "pseudo_taken";
+      const mine = all.get(userId);
+      if (mine) all.set(userId, { ...mine, ...change });
+      return "updated";
     },
     async deleteMine(userId) {
       all.delete(userId);
@@ -116,5 +126,40 @@ describe("GetProfile", () => {
     const { get } = setup();
 
     expect(await get.execute({ userId: "nobody" })).toBeNull();
+  });
+});
+
+describe("a player changes their pseudo and avatar", () => {
+  async function withTwoPlayers() {
+    const profiles = fakeProfiles();
+    const create = createProfile({ profiles });
+    await create.execute({ userId: "u1", pseudo: "Gazelle", avatar: "🦅", ageConfirmed: true });
+    await create.execute({ userId: "u2", pseudo: "Guépard", avatar: "🐆", ageConfirmed: true });
+    return profiles;
+  }
+
+  it("saves a new pseudo and avatar", async () => {
+    // given a player with a profile, when they pick a new pseudo and the fox
+    const profiles = await withTwoPlayers();
+    await updateProfile({ profiles }).execute({ userId: "u1", pseudo: " Antilope ", avatar: "🦊" });
+    // then their profile shows them
+    expect(await profiles.find("u1")).toMatchObject({ pseudo: "Antilope", avatar: "🦊" });
+  });
+
+  it.each([
+    [{ pseudo: "guépard" }, "PSEUDO_TAKEN"],
+    [{ pseudo: "SuperConnard" }, "PSEUDO_BANNED"],
+    [{ pseudo: "x" }, "PSEUDO_INVALID"],
+    [{ avatar: "🍕" }, "AVATAR_INVALID"],
+  ])("refuses %j with %s", async (change, code) => {
+    const profiles = await withTwoPlayers();
+    await expect(
+      updateProfile({ profiles }).execute({
+        userId: "u1",
+        pseudo: "Gazelle",
+        avatar: "🦅",
+        ...change,
+      }),
+    ).rejects.toEqual(new UseCaseError(code as never));
   });
 });
