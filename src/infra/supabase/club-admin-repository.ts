@@ -17,15 +17,22 @@ const outcomeOf = (error: { code?: string } | null) => {
 /** The client must carry the admin's session: the database functions check the admin. */
 export function createSupabaseClubAdminRepository(client: SupabaseClient): ClubAdminRepository {
   return {
-    async list(query, pendingOnly) {
+    async list(query, pendingOnly, limit = 50) {
       const { data, error } = await client.rpc("admin_list_clubs", {
         p_query: query,
         p_pending_only: pendingOnly,
+        p_limit: limit,
       });
       if (error) return error.code === "42501" ? "not_admin" : fail();
-      return (
-        data as (Omit<AdminClub, "playerCount"> & { player_count: number })[]
-      ).map(({ player_count, ...club }) => ({ ...club, playerCount: Number(player_count) }));
+      type Row = Omit<AdminClub, "playerCount" | "createdAt"> & {
+        player_count: number;
+        created_at: string;
+      };
+      return (data as Row[]).map(({ player_count, created_at, ...club }) => ({
+        ...club,
+        playerCount: Number(player_count),
+        createdAt: new Date(created_at).toISOString(),
+      }));
     },
 
     async save(id, club) {
@@ -49,6 +56,16 @@ export function createSupabaseClubAdminRepository(client: SupabaseClient): ClubA
     async remove(id) {
       const { error } = await client.rpc("admin_delete_club", { p_club: id });
       return outcomeOf(error);
+    },
+
+    async merge(fromId, intoId) {
+      const { data, error } = await client.rpc("admin_merge_club", {
+        p_from: fromId,
+        p_into: intoId,
+      });
+      if (!error) return Number(data);
+      if (error.code === "22023") return "same";
+      return outcomeOf(error) as "not_admin" | "unknown";
     },
   };
 }

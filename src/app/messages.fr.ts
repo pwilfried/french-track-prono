@@ -54,6 +54,8 @@ export const messages = {
       `Ton club « ${club} » s'appelle maintenant « ${name} ».`,
     removed: (club: string) =>
       `Le club « ${club} » a été retiré de la liste. Choisis ton club dans ton profil.`,
+    merged: (club: string, name: string) =>
+      `Ton club « ${club} » existait déjà : tu es maintenant au club « ${name} ».`,
     dismiss: "OK",
   },
   playerHome: {
@@ -1073,9 +1075,50 @@ export const messages = {
     pendingAction: "…",
     remove: "Supprimer le club",
     removing: "Suppression…",
-    removeConfirm: (name: string) =>
-      `Je confirme la suppression de ${name} (ses joueurs n'auront plus de club)`,
     done: "✓ C'est fait.",
+    summary: (total: number, pending: number) =>
+      `${total} ${total <= 1 ? "club" : "clubs"} · ${pending} à valider`,
+    listLabel: "Clubs",
+    searchPlaceholder: "Nom ou ville",
+    filter: { pending: "À valider", validated: "Validés", withPlayers: "Avec joueurs" },
+    origin: "Origine",
+    originAll: "Origine : toutes",
+    originShort: { import: "Import", player: "Joueur", admin: "Admin" },
+    department: "Département",
+    departmentAll: "Département : tous",
+    column: {
+      name: "Nom",
+      city: "Ville",
+      department: "Dép.",
+      origin: "Origine",
+      players: "Joueurs",
+      added: "Ajouté le",
+      status: "Statut",
+    },
+    validated: "Validé",
+    likely: (name: string) => `⚠ Ressemble à ${name}`,
+    added: (date: string, source: string) => `Ajouté le ${date} · ${source}`,
+    removeMany: "Supprimer",
+    removeTitle: (count: number) =>
+      count <= 1 ? "Supprimer ce club ?" : `Supprimer ces ${count} clubs ?`,
+    removeBody: "Leurs joueurs n'auront plus de club et recevront un message. C'est définitif.",
+    removeSubmit: "Supprimer",
+    validatedCount: (n: number) => (n <= 1 ? "Club validé." : `${n} clubs validés.`),
+    removedCount: (n: number) => (n <= 1 ? "Club supprimé." : `${n} clubs supprimés.`),
+    saved: "Club enregistré.",
+    duplicate: "Doublon probable",
+    mergeInto: (name: string) => `Fusionner dans ${name}`,
+    mergeHint: "Ses joueurs passent sur ce club et reçoivent un message.",
+    mergeOther: "Fusionner dans un autre club",
+    mergeSearch: "Club où fusionner",
+    mergeTitle: (from: string, into: string) => `Fusionner « ${from} » dans « ${into} » ?`,
+    mergeBody:
+      "Le club en double disparaît ; ses joueurs passent sur l'autre et reçoivent un message.",
+    mergeSubmit: "Fusionner",
+    merged: (name: string, players: number) =>
+      `Fusionné dans ${name} : ${players} ${players <= 1 ? "joueur déplacé" : "joueurs déplacés"}.`,
+    validateAsIs: "Valider tel quel",
+    removeOne: "Supprimer",
   },
   adminPlayers: {
     title: "Joueurs",
@@ -1192,6 +1235,7 @@ export const messages = {
     CLUB_NAME_INVALID: "Le nom du club doit faire entre 2 et 120 caractères.",
     CLUB_NAME_BANNED: "Ce nom de club n'est pas possible (insulte, nom officiel ou lien).",
     CLUB_UNKNOWN: "Ce club n'existe plus dans la liste. Cherche-le à nouveau.",
+    CLUB_MERGE_SAME: "Choisis un autre club que celui à fusionner.",
     RANKING_UNAVAILABLE:
       "Le classement n'est pas disponible pour le moment. Réessaie dans un instant.",
     RESULT_MISSING: "Saisis d'abord le résultat officiel de cette épreuve.",

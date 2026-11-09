@@ -272,7 +272,10 @@ Profils (v0.10, décisions dans `docs/decisions/profils.md`) : une seule liste d
 et les clubs saisis. Clubs : table `clubs` (SIREN unique, `source` import ou joueur, `validated`),
 remplie chaque mois par le workflow « Clubs import » (API Recherche d'entreprises) ; recherche
 `search_clubs()` sans accents ni casse ; un club saisi par un joueur (`propose_club()`) reste
-« à valider » et invisible des autres. `profiles.club_id` est public (fiche minimale ouverte depuis
+« à valider » et invisible des autres. Dans le back-office (v0.11, #381), la liste signale un
+doublon probable (`likelyDuplicate()` dans `src/domain/club.ts` : même département ou même ville,
+mots distinctifs communs) et l'admin le fusionne (`admin_merge_club()`) : ses joueurs passent sur
+le bon club et reçoivent une notice « merged ». `profiles.club_id` est public (fiche minimale ouverte depuis
 un classement) ; sexe et disciplines vivent dans `player_details`, lisible par son seul
 propriétaire. L'e-mail de connexion se change avec un code envoyé sur la nouvelle adresse
 (`EmailChangeService`). L'admin cherche, bloque (`profiles.blocked_at` : plus de prono ni de ligue,

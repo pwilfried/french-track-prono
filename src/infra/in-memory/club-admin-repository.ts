@@ -3,19 +3,26 @@ import { isBannedName } from "@/domain/banned-names";
 import { searchKey } from "@/domain/club";
 
 /** Test double of the ClubAdminRepository port: one store, a session per admin or not. */
-export function createInMemoryClubAdminStore(clubs: Omit<AdminClub, "id" | "playerCount">[] = []) {
+type NewClub = Omit<AdminClub, "id" | "playerCount" | "createdAt">;
+
+export function createInMemoryClubAdminStore(clubs: NewClub[] = []) {
   const all = new Map<string, AdminClub>();
-  const add = (club: Omit<AdminClub, "id" | "playerCount">) => {
+  const add = (club: NewClub) => {
     const id = crypto.randomUUID();
-    all.set(id, { ...club, id, playerCount: 0 });
+    all.set(id, { ...club, id, playerCount: 0, createdAt: new Date().toISOString() });
     return id;
   };
   clubs.forEach(add);
   return {
     add,
+    /** A player chooses this club. */
+    join(id: string) {
+      const club = all.get(id);
+      if (club) club.playerCount += 1;
+    },
     session({ isAdmin }: { isAdmin: boolean }): ClubAdminRepository {
       return {
-        async list(query, pendingOnly) {
+        async list(query, pendingOnly, limit = 50) {
           if (!isAdmin) return "not_admin";
           const key = searchKey(query);
           return [...all.values()]
@@ -27,7 +34,7 @@ export function createInMemoryClubAdminStore(clubs: Omit<AdminClub, "id" | "play
               (a, b) =>
                 Number(a.validated) - Number(b.validated) || a.name.localeCompare(b.name, "fr"),
             )
-            .slice(0, 50)
+            .slice(0, Math.min(Math.max(limit, 1), 5000))
             .map((c) => ({ ...c }));
         },
         async save(id, club) {
@@ -49,6 +56,16 @@ export function createInMemoryClubAdminStore(clubs: Omit<AdminClub, "id" | "play
         async remove(id) {
           if (!isAdmin) return "not_admin";
           return all.delete(id) ? "done" : "unknown";
+        },
+        async merge(fromId, intoId) {
+          if (!isAdmin) return "not_admin";
+          if (fromId === intoId) return "same";
+          const from = all.get(fromId);
+          const into = all.get(intoId);
+          if (!from || !into) return "unknown";
+          into.playerCount += from.playerCount;
+          all.delete(fromId);
+          return from.playerCount;
         },
       };
     },
