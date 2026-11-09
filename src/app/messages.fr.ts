@@ -287,6 +287,9 @@ export const messages = {
   ranking: {
     title: "Classement",
     subtitle: "Tous les joueurs · toutes les compétitions",
+    competitionSubtitle: (name: string) => `Tous les joueurs · ${name}`,
+    scopeLabel: "Choisir le classement",
+    general: "Général",
     mine: (rank: number, of: number, points: number) =>
       `Ta place : ${rank === 1 ? "1er" : `${rank}e`} sur ${of} · ${points} ${points <= 1 ? "pt" : "pts"}`,
     notRanked: "Tu n'as pas encore de points : fais tes pronos pour entrer au classement.",

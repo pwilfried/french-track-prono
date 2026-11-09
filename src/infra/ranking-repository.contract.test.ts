@@ -14,6 +14,7 @@ const lines = (
   bobPseudo: string,
   eventId: string,
   eventStartsAt: string,
+  eventLockAt: string,
 ): RankingLine[] => [
   {
     userId: ana,
@@ -23,6 +24,7 @@ const lines = (
     reasons: [{ kind: "perfect_podium" }, { kind: "joker" }],
     eventId,
     eventStartsAt,
+    eventLockAt,
   },
   {
     userId: bob,
@@ -32,11 +34,20 @@ const lines = (
     reasons: [{ kind: "exact", slot: 1 }],
     eventId,
     eventStartsAt,
+    eventLockAt,
   },
 ];
 
 rankingRepositoryContract("in-memory fake", async () => {
-  const expected = lines("ana", "bob", "Ana", "Bob", "e1", "2026-11-23T19:00:00.000Z");
+  const expected = lines(
+    "ana",
+    "bob",
+    "Ana",
+    "Bob",
+    "e1",
+    "2026-11-23T19:00:00.000Z",
+    "2026-11-23T18:55:00.000Z",
+  );
   return {
     competitionSlug: "c",
     expected,
@@ -53,11 +64,14 @@ if (url && key) {
     const [ana, bob] = await Promise.all([signedInPlayer(url, key), signedInPlayer(url, key)]);
     const pseudoOf = (id: string) => sql(`select pseudo from profiles where id = '${id}'`);
     const { competitionSlug, eventId } = createTestEvent();
-    const startsAt = new Date(
-      sql(
-        `select to_char(starts_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') from events where id = '${eventId}'`,
-      ),
-    ).toISOString();
+    const isoOf = (column: string) =>
+      new Date(
+        sql(
+          `select to_char(${column} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') from events where id = '${eventId}'`,
+        ),
+      ).toISOString();
+    const startsAt = isoOf("starts_at");
+    const lockAt = isoOf("lock_at");
     const expected = lines(
       ana.userId,
       bob.userId,
@@ -65,6 +79,7 @@ if (url && key) {
       pseudoOf(bob.userId),
       eventId,
       startsAt,
+      lockAt,
     );
     for (const l of expected) {
       sql(`insert into score_events (user_id, competition_id, event_id, source, points, reason, detail)

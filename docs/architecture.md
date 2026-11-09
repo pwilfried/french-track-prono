@@ -220,7 +220,9 @@ code FT010) ; un joueur peut la signaler (`report_league`) et l'admin la renomme
 depuis le back-office (Ligues, action journalisée `moderate_league`, #321). La v0.7 (#311) exigeait une ligue
 de la compétition pour pronostiquer (FT011) ; la règle est retirée le 9 novembre 2026 (#375) : on
 pronostique sans ligue, et les pages suggèrent seulement d'en créer ou d'en rejoindre une ; le classement général compte tous les points, toutes
-compétitions confondues (#319). L'accueil liste les compétitions par type (internationales, françaises) et
+compétitions confondues (#319), et l'onglet Classement donne aussi celui de chaque compétition
+(#376). Dans une ligue, un membre ne compte que les épreuves verrouillées après son arrivée
+(`countsInLeague`, #376) : un prono fait avant d'y entrer reste au général et à la compétition. L'accueil liste les compétitions par type (internationales, françaises) et
 les pages suivent la prochaine compétition par date (`src/app/competition.ts`). Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
 calculé en TypeScript à partir des lignes de points (pas de vue SQL).
 

@@ -25,6 +25,12 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
   /** Wrong invite codes per player (#155): after 10, joining with a code is refused. */
   const wrongCodes = new Map<string, number>();
   const profiles = new Map<string, LeagueMember>();
+  /** When each player joined each league (`${leagueId}:${userId}`), for the league ranking. */
+  const joinedAt = new Map<string, string>();
+  const enter = (league: Stored, userId: string) => {
+    league.members.push(userId);
+    joinedAt.set(`${league.id}:${userId}`, new Date().toISOString());
+  };
   const newCode = () => {
     let code = "";
     for (let i = 0; i < INVITE_LENGTH; i += 1) {
@@ -87,8 +93,9 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
             name,
             inviteCode: newCode(),
             ownerId: me,
-            members: [me],
+            members: [],
           };
+          enter(league, me);
           leagues.set(league.id, league);
           return view(league);
         },
@@ -102,7 +109,7 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
           if (league.members.includes(me))
             return { outcome: "already_member", leagueId: league.id };
           if (league.members.length >= leagueCapacity(league.isPublic)) return { outcome: "full" };
-          league.members.push(me);
+          enter(league, me);
           return { outcome: "joined", leagueId: league.id };
         },
         async listMine() {
@@ -111,7 +118,10 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
         async members(leagueId) {
           const league = leagues.get(leagueId);
           if (!league || !league.members.includes(me)) return null;
-          return league.members.map((id) => profiles.get(id)!);
+          return league.members.map((id) => ({
+            ...profiles.get(id)!,
+            joinedAt: joinedAt.get(`${leagueId}:${id}`),
+          }));
         },
         async leave(leagueId) {
           const league = leagues.get(leagueId);
@@ -157,7 +167,7 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
           if (!league?.isPublic) return { outcome: "unknown_code" };
           if (league.members.includes(me)) return { outcome: "already_member", leagueId };
           if (league.members.length >= leagueCapacity(true)) return { outcome: "full" };
-          league.members.push(me);
+          enter(league, me);
           return { outcome: "joined", leagueId };
         },
         async report(leagueId) {

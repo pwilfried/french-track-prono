@@ -15,6 +15,8 @@ export type RankingLine = {
   eventId: string;
   /** Start of the event, ISO 8601: orders the events to find the last computed one. */
   eventStartsAt: string;
+  /** Lock of the event, ISO 8601: a league counts it for a member who joined before (#376). */
+  eventLockAt?: string;
 };
 
 /** Port: the score lines a ranking is made of. Real adapter = Supabase, fake = in memory. */
@@ -62,6 +64,12 @@ export function getGeneralRanking(ports: { ranking: RankingRepository }) {
   };
 }
 
+/** True when the event locked after the member joined (or when either date is unknown). */
+export function countsInLeague(joinedAt: string | undefined, eventLockAt: string | undefined) {
+  if (!joinedAt || !eventLockAt) return true;
+  return Date.parse(eventLockAt) >= Date.parse(joinedAt);
+}
+
 /**
  * The members of a league, ranked on the league's competitions (their points add up); a member without points is listed
  * with 0. Only a member sees it. Every member gets the same ranking from the same score lines.
@@ -71,11 +79,16 @@ export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: L
     async execute(input: { leagueId: string; competitionSlugs: string[] }): Promise<RankingRow[]> {
       const members = await ports.leagues.members(input.leagueId);
       if (!members) throw new UseCaseError("LEAGUE_NOT_FOUND");
-      const ids = new Set(members.map((m) => m.userId));
+      const joinedAt = new Map(members.map((m) => [m.userId, m.joinedAt]));
       const perCompetition = await Promise.all(
         input.competitionSlugs.map((slug) => ports.ranking.competitionLines(slug)),
       );
-      const lines = perCompetition.flat().filter((l) => ids.has(l.userId));
+      // Only the predictions made as a member count in a league (decision of 9 Nov 2026, #376):
+      // an event locked before the player joined stays out of this league's ranking.
+      const lines = perCompetition
+        .flat()
+        .filter((l) => joinedAt.has(l.userId))
+        .filter((l) => countsInLeague(joinedAt.get(l.userId), l.eventLockAt));
       // Members without any score line yet still appear, with 0 points.
       const zero = members.map((m) => ({
         userId: m.userId,
