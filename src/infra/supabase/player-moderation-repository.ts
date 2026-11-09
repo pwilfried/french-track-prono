@@ -19,8 +19,8 @@ export function createSupabasePlayerModerationRepository(
   client: SupabaseClient,
 ): PlayerModerationRepository {
   return {
-    async search(query) {
-      const { data, error } = await client.rpc("admin_search_players", { p_query: query });
+    async list() {
+      const { data, error } = await client.rpc("admin_list_players");
       if (error) return error.code === "42501" ? "not_admin" : fail();
       return (
         data as {
@@ -30,6 +30,12 @@ export function createSupabasePlayerModerationRepository(
           blocked: boolean;
           is_admin: boolean;
           joined_at: string;
+          club: string | null;
+          points: number;
+          predictions: number;
+          leagues: number;
+          last_active_at: string;
+          reports: number;
         }[]
       ).map((row) => ({
         id: row.user_id,
@@ -38,6 +44,25 @@ export function createSupabasePlayerModerationRepository(
         blocked: row.blocked,
         isAdmin: row.is_admin,
         joinedAt: new Date(row.joined_at).toISOString(),
+        club: row.club,
+        points: Number(row.points),
+        predictions: Number(row.predictions),
+        leagues: Number(row.leagues),
+        lastActiveAt: new Date(row.last_active_at).toISOString(),
+        reports: Number(row.reports),
+      }));
+    },
+
+    async leaguesOf(playerId) {
+      const { data, error } = await client.rpc("admin_player_leagues", { p_user: playerId });
+      if (error) return error.code === "42501" ? "not_admin" : fail();
+      return (
+        data as { league_id: string; name: string; member_count: number; rank: number }[]
+      ).map((row) => ({
+        id: row.league_id,
+        name: row.name,
+        memberCount: Number(row.member_count),
+        rank: Number(row.rank),
       }));
     },
 

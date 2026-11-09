@@ -1,70 +1,63 @@
 import { UseCaseError } from "@/application/errors";
-import { searchPlayers, type ModeratedPlayer } from "@/application/player-moderation";
+import { listAdminPlayers, type AdminPlayer } from "@/application/player-moderation";
 import { ErrorNotice } from "@/components/error-notice";
 import { createSupabasePlayerModerationRepository } from "@/infra";
 
 import { messages } from "../../messages.fr";
-import { paramText } from "../../search-params";
 import { AdminShell } from "../competitions/admin-shell";
 import { adminOnly } from "../guard";
-import { PlayerList } from "./player-list";
+import { PlayersAdmin, type PlayerRow } from "./players-admin";
 
 const text = messages.adminPlayers;
+const DAY = 24 * 60 * 60 * 1000;
+const day = new Intl.DateTimeFormat("fr-FR", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "Europe/Paris",
+});
 
-/** Back-office « Joueurs » (#343): find a player by pseudo, block, unblock or delete them. */
-export default async function AdminPlayersPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+function activityLabel(now: number, iso: string): string {
+  const days = Math.floor((now - Date.parse(iso)) / DAY);
+  return days <= 0 ? text.today : days === 1 ? text.yesterday : text.daysAgo(days);
+}
+
+/** Back-office « Joueurs » (#343, #382): every player, what they do, block or delete. */
+export default async function AdminPlayersPage() {
   const { client } = await adminOnly();
-  const query = (paramText((await searchParams).q) ?? "").trim();
-  let players: ModeratedPlayer[] | "error" | null = null;
-  if (query.length >= 2) {
-    try {
-      players = await searchPlayers({
-        players: createSupabasePlayerModerationRepository(client),
-      }).execute({ query });
-    } catch (error) {
-      if (!(error instanceof UseCaseError)) throw error;
-      players = "error";
-    }
+  let players: AdminPlayer[] | "error";
+  try {
+    players = await listAdminPlayers({
+      players: createSupabasePlayerModerationRepository(client),
+    }).execute();
+  } catch (error) {
+    if (!(error instanceof UseCaseError)) throw error;
+    players = "error";
   }
+  const now = new Date().getTime();
+  const rows: PlayerRow[] =
+    players === "error"
+      ? []
+      : players.map((player) => ({
+          ...player,
+          joinedLabel: day.format(new Date(player.joinedAt)),
+          activityLabel: activityLabel(now, player.lastActiveAt),
+          isNew: now - Date.parse(player.joinedAt) < 7 * DAY,
+          isIdle: now - Date.parse(player.lastActiveAt) > 30 * DAY,
+        }));
+  const active = rows.filter((p) => now - Date.parse(p.lastActiveAt) < 7 * DAY).length;
 
   return (
-    <AdminShell title={text.title} section="players">
-      <p className="text-sm text-muted-foreground">{text.subtitle}</p>
-      <form role="search" action="/admin/joueurs" className="flex items-end gap-2">
-        <label className="flex flex-1 flex-col gap-1.5">
-          <span className="text-sm font-bold">{text.searchLabel}</span>
-          <input
-            type="search"
-            name="q"
-            defaultValue={query}
-            minLength={2}
-            maxLength={40}
-            autoComplete="off"
-            className="min-h-12 rounded-2xl border-2 border-border bg-card px-3.5 text-base focus-visible:border-primary focus-visible:outline-none"
-          />
-        </label>
-        <button
-          type="submit"
-          className="min-h-12 rounded-2xl bg-primary px-4 font-bold text-primary-foreground"
-        >
-          {text.search}
-        </button>
-      </form>
-      {players === null ? (
-        <p className="text-sm text-muted-foreground">{text.hint}</p>
-      ) : players === "error" ? (
-        <ErrorNotice
-          retryHref={`/admin/joueurs?q=${encodeURIComponent(query)}`}
-          message={messages.errors.PLAYERS_UNAVAILABLE}
-        />
-      ) : players.length === 0 ? (
-        <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">{text.empty}</p>
+    <AdminShell title={text.title} section="players" wide>
+      <p className="text-sm text-muted-foreground">
+        {players === "error"
+          ? text.subtitle
+          : text.summary(rows.length, active, rows.filter((p) => p.blocked).length)}
+      </p>
+      {players === "error" ? (
+        <ErrorNotice retryHref="/admin/joueurs" message={messages.errors.PLAYERS_UNAVAILABLE} />
       ) : (
-        <PlayerList players={players} />
+        <PlayersAdmin players={rows} />
       )}
     </AdminShell>
   );

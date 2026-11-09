@@ -27,7 +27,7 @@ set local role authenticated;
 -- A player cannot moderate, nor unblock themselves.
 select set_config('request.jwt.claims',
   '{"sub":"eeeeeeee-0000-0000-0000-000000000002","role":"authenticated"}', true);
-select throws_ok($$select * from admin_search_players('gi')$$, '42501', null, 'a player cannot search players');
+select throws_ok($$select * from admin_list_players()$$, '42501', null, 'a player cannot list players');
 select throws_ok($$select admin_set_player_blocked('eeeeeeee-0000-0000-0000-000000000003', true)$$,
   '42501', null, 'a player cannot block');
 select throws_ok($$update profiles set blocked_at = now() where id = auth.uid()$$,
@@ -36,10 +36,10 @@ select throws_ok($$update profiles set blocked_at = now() where id = auth.uid()$
 -- The admin finds Fred without the accent, then blocks him.
 select set_config('request.jwt.claims',
   '{"sub":"eeeeeeee-0000-0000-0000-000000000001","role":"authenticated"}', true);
-select is((select pseudo from admin_search_players('fredo')), 'Frédo', 'search ignores accents and case');
+select is((select points::int from admin_list_players() where pseudo = 'Frédo'), 10, 'the list gives the points of each player');
 select lives_ok($$select admin_set_player_blocked('eeeeeeee-0000-0000-0000-000000000002', true)$$,
   'the admin blocks a player');
-select is((select blocked from admin_search_players('fredo')), true, 'the player shows as blocked');
+select is((select blocked from admin_list_players() where pseudo = 'Frédo'), true, 'the player shows as blocked');
 select is((select payload->>'action' from admin_actions where action = 'moderate_player' order by at desc limit 1),
   'block', 'the block is logged');
 select throws_ok($$select admin_set_player_blocked('eeeeeeee-0000-0000-0000-000000000001', true)$$,

@@ -278,7 +278,9 @@ mots distinctifs communs) et l'admin le fusionne (`admin_merge_club()`) : ses jo
 le bon club et reçoivent une notice « merged ». `profiles.club_id` est public (fiche minimale ouverte depuis
 un classement) ; sexe et disciplines vivent dans `player_details`, lisible par son seul
 propriétaire. L'e-mail de connexion se change avec un code envoyé sur la nouvelle adresse
-(`EmailChangeService`). L'admin cherche, bloque (`profiles.blocked_at` : plus de prono ni de ligue,
+(`EmailChangeService`). L'admin voit la liste de tous les joueurs (v0.11, #382 :
+`admin_list_players()`, points, pronos, ligues, dernière activité, signalements reçus, jamais
+l'e-mail ; `admin_player_leagues()` donne le rang dans chaque ligue), bloque (`profiles.blocked_at` : plus de prono ni de ligue,
 FT014, et ses lignes ne sont plus lues par les autres joueurs) ou supprime un joueur
 (`private.delete_account()`, partagé avec « Supprimer mon compte »), et crée une discipline
 (`create_discipline()`). Un compte sans activité depuis 24 mois est supprimé après un e-mail de
