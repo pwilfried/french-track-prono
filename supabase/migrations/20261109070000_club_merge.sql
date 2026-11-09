@@ -47,6 +47,8 @@ begin
   if v_from is null or v_into is null then
     raise exception 'unknown club' using errcode = 'P0002';
   end if;
+  -- The club kept is the reference: merging into it validates it (players see it again).
+  update clubs set validated = true where id = p_into and not validated;
   insert into club_notices (profile_id, kind, club_name, new_name)
   select p.id, 'merged', v_from, v_into from profiles p where p.club_id = p_from;
   update profiles set club_id = p_into where club_id = p_from;

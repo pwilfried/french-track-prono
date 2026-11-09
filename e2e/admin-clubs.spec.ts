@@ -61,9 +61,8 @@ test("the admin merges a typed club into the imported one and its player is told
   await playerPage.goto("/profil");
   await signUp(playerPage, player);
   await playerPage.waitForURL(/\/profil$/);
-  sql(
-    `insert into clubs (name, city, department, source) values ('${typed}', 'Zmerge${tag}', '92', 'player')`,
-  );
+  sql(`insert into clubs (name, city, department, source, created_by)
+       select '${typed}', 'Zmerge${tag}', '92', 'player', id from profiles where pseudo = '${player.pseudo}'`);
   sql(`update profiles set club_id = (select id from clubs where name = '${typed}')
        where pseudo = '${player.pseudo}'`);
 

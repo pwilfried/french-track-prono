@@ -8,9 +8,10 @@ insert into auth.users (id, email) values
 insert into profiles (id, pseudo, age_confirmed_at, is_admin) values
   ('cececece-0000-0000-0000-000000000001', 'Admin Fusion', now(), true),
   ('cececece-0000-0000-0000-000000000002', 'Gazelle Zmerge', now(), false);
-insert into clubs (id, name, city, department, source, validated) values
-  ('cececece-1111-0000-0000-000000000001', 'AC Zmerge', 'Zmerge', '92', 'player', false),
-  ('cececece-1111-0000-0000-000000000002', 'Athletic Club de Zmerge', 'Zmerge', '92', 'import', true);
+insert into clubs (id, name, city, department, source, validated, created_by) values
+  ('cececece-1111-0000-0000-000000000001', 'AC Zmerge', 'Zmerge', '92', 'player', false,
+   'cececece-0000-0000-0000-000000000002'),
+  ('cececece-1111-0000-0000-000000000002', 'Athletic Club de Zmerge', 'Zmerge', '92', 'import', true, null);
 update profiles set club_id = 'cececece-1111-0000-0000-000000000001'
   where id = 'cececece-0000-0000-0000-000000000002';
 
