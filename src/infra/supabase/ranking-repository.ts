@@ -28,7 +28,8 @@ export function createSupabaseRankingRepository(client: SupabaseClient): Ranking
           userId: row.user_id,
           pseudo: row.profiles.pseudo,
           avatar: row.profiles.avatar_emoji,
-          club: row.profiles.club?.name ?? null,
+          // Only when there is one: the line stays as the contract describes it otherwise.
+          ...(row.profiles.club ? { club: row.profiles.club.name } : {}),
           points: row.points,
           reasons: row.detail.reasons ?? [],
           eventId: row.event_id,
