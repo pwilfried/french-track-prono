@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { messages } from "@/app/messages.fr";
-import { normalizeSearch, viewList } from "@/domain/list-view";
+import { matchesWords, viewList } from "@/domain/list-view";
 import { cn } from "@/lib/utils";
 import { reportError } from "@/lib/report-error";
 
@@ -115,7 +115,7 @@ export function AdminList<T>(props: AdminListProps<T>) {
     () =>
       viewList(items, {
         query,
-        matches: (item, q) => normalizeSearch(props.searchText(item)).includes(q),
+        matches: (item, q) => matchesWords(props.searchText(item), q),
         filter: (item) =>
           (!filter || filter.test(item)) &&
           selects.every((s) => !choices[s.key] || s.test(item, choices[s.key]!)),

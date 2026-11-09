@@ -3,6 +3,18 @@ export function normalizeSearch(text: string): string {
   return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 }
 
+/**
+ * Whether every word of the search is somewhere in the text, in any order (#412): « bondy athle »
+ * finds « Athlé Bondy ». Accents, case and punctuation are ignored. The query is already normalized.
+ */
+export function matchesWords(text: string, normalizedQuery: string): boolean {
+  const haystack = normalizeSearch(text).replace(/[^a-z0-9]+/g, " ");
+  return normalizedQuery
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .every((word) => haystack.includes(word));
+}
+
 export type ListViewOptions<T> = {
   /** The search as typed; it is normalized before `matches` sees it. An empty search keeps all. */
   query: string;

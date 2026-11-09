@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { normalizeSearch, viewList } from "./list-view";
+import { matchesWords, normalizeSearch, viewList } from "./list-view";
 
 type Row = { id: string; name: string; players: number };
 const rows: Row[] = [
@@ -71,5 +71,21 @@ describe("list view", () => {
         },
       ),
     );
+  });
+});
+
+describe("matchesWords (#412)", () => {
+  it("finds a name from its words in any order, without accents, case or punctuation", () => {
+    expect(matchesWords("Athlé-Club Bondy · Bondy", normalizeSearch("bondy athle"))).toBe(true);
+    expect(matchesWords("Étoile de Sceaux", normalizeSearch("sceaux etoile"))).toBe(true);
+    expect(matchesWords("Athlé Club des Tests", normalizeSearch("athle club"))).toBe(true);
+  });
+
+  it("needs every word", () => {
+    expect(matchesWords("Athlé Club des Tests", normalizeSearch("athle sceaux"))).toBe(false);
+  });
+
+  it("keeps everything for an empty search", () => {
+    expect(matchesWords("Athlé Club des Tests", "")).toBe(true);
   });
 });
