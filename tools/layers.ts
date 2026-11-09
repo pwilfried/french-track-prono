@@ -27,10 +27,11 @@ const EXTERNAL_ALLOWED: Record<Layer, boolean> = {
 };
 
 const IMPORT_PATTERNS = [
-  // Not preceded by a word character, a dash or a dot: "start-list-import" is a name, not a keyword.
-  /(?<![\w$.-])(?:import|export)\s[^'"`;]*?\sfrom\s*["']([^"']+)["']/g, // import x from "y" / export * from "y"
-  /(?<![\w$.-])import\s*["']([^"']+)["']/g, // import "y"
-  /(?<![\w$.-])import\(\s*["']([^"']+)["']\s*\)/g, // import("y")
+  // Not preceded by a word character, a dash, a dot or a quote: "start-list-import" is a name and
+  // "import" a string, not the keyword.
+  /(?<![\w$.'"`-])(?:import|export)\s[^'"`;]*?\sfrom\s*["']([^"']+)["']/g, // import x from "y" / export * from "y"
+  /(?<![\w$.'"`-])import\s*["']([^"']+)["']/g, // import "y"
+  /(?<![\w$.'"`-])import\(\s*["']([^"']+)["']\s*\)/g, // import("y")
 ];
 
 function importsOf(content: string): string[] {

@@ -65,3 +65,5 @@ export { createInMemoryEmailChangeService } from "./in-memory/email-change-servi
 export { createSupabaseEmailChangeService } from "./supabase/email-change-service";
 export { createInMemoryPlayerStore } from "./in-memory/player-moderation-repository";
 export { createSupabasePlayerModerationRepository } from "./supabase/player-moderation-repository";
+export { createInMemoryClubAdminStore } from "./in-memory/club-admin-repository";
+export { createSupabaseClubAdminRepository } from "./supabase/club-admin-repository";

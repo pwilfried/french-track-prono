@@ -11,6 +11,7 @@ const SECTIONS = [
   ["/admin/bareme", "scale"],
   ["/admin/ligues", "leagues"],
   ["/admin/joueurs", "players"],
+  ["/admin/clubs", "clubs"],
   ["/admin/historique", "history"],
 ] as const;
 

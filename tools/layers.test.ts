@@ -22,6 +22,17 @@ describe("checkLayers", () => {
     expect(violations).toEqual([]);
   });
 
+  it('does not mistake the string "import" in a type for an import', () => {
+    const violations = checkLayers([
+      {
+        path: "src/application/club-admin.ts",
+        content: 'type Source = "import" | "player" | "admin";\nconst a = "x";',
+      },
+    ]);
+
+    expect(violations).toEqual([]);
+  });
+
   it("rejects a domain file that imports the application layer", () => {
     const violations = checkLayers([file("src/domain/scoring.ts", "@/application/score-event")]);
 
