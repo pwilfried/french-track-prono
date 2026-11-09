@@ -79,7 +79,12 @@ test("a new player predicts a perfect podium, the admin enters the result and th
 
   // The perfect podium earns the Nostradamus badge on the profile.
   await page.goto("/profil");
-  await expect(page.getByRole("listitem").filter({ hasText: "Nostradamus" })).toBeVisible();
+  await expect(page.getByRole("listitem").filter({ hasText: "Nostradamus" })).toHaveAttribute(
+    "data-earned",
+    "true",
+  );
+  // The badges grid (#385): locked badges stay listed, and the next one is named.
+  await expect(page.getByRole("region", { name: "Badges" })).toContainText("Prochain :");
   // The redesigned profile (#384): the best shot and the season figures.
   await expect(page.getByRole("region", { name: "Mon meilleur coup" })).toContainText(
     "Podium parfait",
