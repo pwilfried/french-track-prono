@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
+import { openAdminSection } from "./admin";
 import { newPlayer, signUp } from "./players";
 
 test("an admin adjusts the tolerance of the 100 m", async ({ page }) => {
@@ -15,7 +16,7 @@ test("an admin adjusts the tolerance of the 100 m", async ({ page }) => {
   );
 
   await page.goto("/admin");
-  await page.getByRole("link", { name: "Disciplines" }).click();
+  await openAdminSection(page, "Disciplines");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Disciplines");
   const field = page.getByLabel("Tolérance du 100 m", { exact: true });
   await field.fill("0,03");
