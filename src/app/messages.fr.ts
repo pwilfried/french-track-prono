@@ -27,6 +27,7 @@ export const messages = {
     events: "Épreuves",
     ranking: "Classement",
     league: "Ma ligue",
+    leagues: "Ligues",
     profile: "Profil",
   },
   home: {
