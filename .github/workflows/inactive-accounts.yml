@@ -1,0 +1,31 @@
+name: Inactive accounts
+
+# #314: warns the players without activity for 23 months, deletes those still silent at 24
+# months (CNIL). Daily, or by hand from the Actions tab. Secrets (environment "production"):
+# SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF (as for the migrations), RESEND_API_KEY and
+# RESEND_FROM (the sender, e.g. "French Track Prono <contact@frenchtrackprono.com>").
+on:
+  schedule:
+    - cron: "41 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inactive:
+    name: Warn and delete inactive accounts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      RESEND_FROM: ${{ secrets.RESEND_FROM }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: node scripts/inactive-accounts.mjs

@@ -310,6 +310,15 @@ Le fichier `supabase/config.toml` ne règle que le Supabase local. En prod (Auth
 | Emails → Templates → Magic Link et Confirm signup | contenu de `supabase/templates/sign_in.html` |
 | Emails → Templates → Change Email Address | sujet « Confirme ta nouvelle adresse French Track Prono », contenu de `supabase/templates/email_change.html` |
 
+## Comptes inactifs (2 ans)
+
+Le workflow « Inactive accounts » (chaque nuit, ou à la main) prévient par e-mail les joueurs
+sans activité (connexion, prono ou réaction) depuis 23 mois, puis supprime à 24 mois ceux qui
+n'ont rien fait depuis l'e-mail (au moins 3 semaines après), comme « Supprimer mon compte ».
+Règles : migration `20261109030000_inactive_accounts.sql` (testées en pgTAP). Secrets en plus de
+ceux des migrations : `RESEND_API_KEY` et `RESEND_FROM` (environnement « production »). Sans eux,
+personne n'est prévenu, donc personne n'est supprimé.
+
 ## Import des clubs d'athlétisme
 
 Le workflow « Clubs import » (le 2 de chaque mois, ou à la main depuis l'onglet Actions) lit les
