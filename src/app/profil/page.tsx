@@ -7,6 +7,7 @@ import { getMyBadges } from "@/application/get-my-badges";
 import { getProfile } from "@/application/get-profile";
 import { getPlayerDetails } from "@/application/player-details";
 import { getMySeason } from "@/application/get-my-season";
+import { ShareSeasonCard } from "@/components/profile/share-season-card";
 import { getMyPredictionHistory } from "@/application/list-my-predictions";
 import { getClubRanking } from "@/application/rankings";
 import { BadgeGrid } from "@/components/profile/badge-grid";
@@ -156,6 +157,7 @@ export default async function ProfilePage({
 
       {season && (
         <>
+          <ShareSeasonCard />
           <SeasonTiles stats={season.stats} />
           <SeasonCurve curve={season.stats.curve} />
           <LatestPredictions lines={season.latest} />
