@@ -24,6 +24,9 @@ playerModerationContract("in-memory fake", async () => {
       store.add({ id, pseudo, avatar: "🦊", isAdmin: false, joinedAt: new Date().toISOString() });
       return id;
     },
+    async joinLeague(playerId, name) {
+      store.joinLeague(playerId, name);
+    },
   };
 });
 
@@ -45,6 +48,12 @@ if (url && key) {
           `update profiles set pseudo = '${pseudo.replaceAll("'", "''")}' where id = '${other.userId}'`,
         );
         return other.userId;
+      },
+      async joinLeague(playerId, name) {
+        const league = sql(`insert into leagues (name, owner_id)
+          values ('${name.replaceAll("'", "''")}', '${playerId}') returning id`);
+        sql(`insert into league_members (league_id, user_id, role)
+          values ('${league}', '${playerId}', 'owner')`);
       },
     };
   });
