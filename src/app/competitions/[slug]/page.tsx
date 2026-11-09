@@ -130,7 +130,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ sl
             <div className="flex flex-col gap-3 rounded-card border border-border bg-card p-4">
               <p className="text-sm">{messages.app.tagline}</p>
               {!user && (
-                <Link href="/connexion?next=/epreuves" className={`${buttonVariants()} w-full`}>
+                <Link href="/connexion" className={`${buttonVariants()} w-full`}>
                   {messages.account.signIn}
                 </Link>
               )}

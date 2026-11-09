@@ -30,7 +30,7 @@ export function Captcha() {
     const id = window.turnstile.render(box.current, {
       sitekey: SITE_KEY,
       language: "fr",
-      appearance: "interaction-only",
+      appearance: "always",
     });
     return () => window.turnstile?.remove(id);
   }, [ready]);

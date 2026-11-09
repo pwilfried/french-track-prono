@@ -12,7 +12,7 @@ export function SiteHeader() {
           <BrandLink />
           <DesktopNav />
         </div>
-        <AccountMenu returnTo="/epreuves" />
+        <AccountMenu returnTo="/" />
       </div>
     </header>
   );
