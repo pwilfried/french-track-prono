@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { setDisciplineTolerance } from "@/application/disciplines";
+import { createDiscipline, setDisciplineTolerance } from "@/application/disciplines";
 import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { createSupabaseDisciplineRepository } from "@/infra";
 
@@ -29,4 +29,29 @@ export async function saveToleranceAction(
   }
   revalidatePath("/admin/disciplines");
   return { saved: true };
+}
+
+export type CreateDisciplineState = { error?: ErrorCode; created?: string };
+
+/** « Nouvelle discipline » (#292). */
+export async function createDisciplineAction(
+  _: CreateDisciplineState,
+  data: FormData,
+): Promise<CreateDisciplineState> {
+  const { client } = await adminOnly();
+  const name = formText(data, "name");
+  try {
+    await createDiscipline({ disciplines: createSupabaseDisciplineRepository(client) }).execute({
+      name,
+      family: formText(data, "family"),
+      unit: formText(data, "unit"),
+      lowerIsBetter: formText(data, "direction") === "lower",
+      tolerance: Number(formText(data, "tolerance").replace(",", ".")),
+    });
+  } catch (error) {
+    if (error instanceof UseCaseError) return { error: error.code };
+    throw error;
+  }
+  revalidatePath("/admin/disciplines");
+  return { created: name.replace(/\s+/g, " ").trim() };
 }

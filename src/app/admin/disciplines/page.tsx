@@ -7,6 +7,7 @@ import { createSupabaseDisciplineRepository } from "@/infra";
 import { messages } from "../../messages.fr";
 import { AdminShell } from "../competitions/admin-shell";
 import { adminOnly } from "../guard";
+import { CreateDisciplineForm } from "./create-discipline-form";
 import { ToleranceForm } from "./tolerance-form";
 
 export default async function DisciplinesPage() {
@@ -25,6 +26,7 @@ export default async function DisciplinesPage() {
   return (
     <AdminShell title={messages.disciplines.title} section="disciplines">
       <p className="text-sm text-muted-foreground">{messages.disciplines.subtitle}</p>
+      <CreateDisciplineForm />
       {disciplines === "error" ? (
         <ErrorNotice
           retryHref="/admin/disciplines"

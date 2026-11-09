@@ -17,6 +17,13 @@ export function createInMemoryDisciplineStore(disciplines: Discipline[]) {
           found.tolerance = tolerance;
           return "saved";
         },
+        async create(discipline) {
+          if (!options.isAdmin) return "not_admin";
+          const key = discipline.name.toLowerCase();
+          if (stored.some((d) => d.name.toLowerCase() === key)) return "exists";
+          stored.push({ ...discipline });
+          return "created";
+        },
       };
     },
   };
