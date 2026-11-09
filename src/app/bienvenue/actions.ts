@@ -13,41 +13,24 @@ import {
   createSupabaseProfileRepository,
 } from "@/infra";
 
+import { readPlayerDetails, type PlayerDetailsFields } from "../player-details-form";
 import { formText } from "../form-data";
 import { getCurrentUser, getSessionClient } from "../session";
 
-export type WelcomeState = {
+export type WelcomeState = PlayerDetailsFields & {
   pseudo: string;
   avatar: string;
   ageConfirmed: boolean;
-  sex: string;
-  disciplines: string[];
-  club: { id: string; name: string; city: string } | null;
-  newClubName: string;
-  newClubCity: string;
   error?: ErrorCode;
 };
 
 export async function createProfileAction(_: WelcomeState, data: FormData): Promise<WelcomeState> {
-  const clubId = formText(data, "clubId");
+  const { fields, input: details } = readPlayerDetails(data);
   const state: WelcomeState = {
     pseudo: formText(data, "pseudo"),
     avatar: formText(data, "avatar"),
     ageConfirmed: data.get("age") === "on",
-    sex: formText(data, "sex"),
-    disciplines: data.getAll("discipline").filter((d): d is string => typeof d === "string"),
-    club: clubId
-      ? { id: clubId, name: formText(data, "clubName"), city: formText(data, "clubCity") }
-      : null,
-    newClubName: formText(data, "newClubName"),
-    newClubCity: formText(data, "newClubCity"),
-  };
-  const details = {
-    sex: state.sex,
-    disciplines: state.disciplines,
-    clubId,
-    newClubName: state.newClubName,
-    newClubCity: state.newClubCity,
+    ...fields,
   };
 
   const user = await getCurrentUser();

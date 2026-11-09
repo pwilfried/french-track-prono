@@ -4,21 +4,11 @@ import { useActionState } from "react";
 
 import { messages } from "@/app/messages.fr";
 import { SubmitButton } from "@/components/account/submit-button";
+import { DISCIPLINE_FAMILIES, MARK_UNITS } from "@/domain/discipline";
 
 import { createDisciplineAction, type CreateDisciplineState } from "./actions";
 
 const text = messages.disciplines;
-const FAMILIES = [
-  "sprint",
-  "hurdles",
-  "middle",
-  "long",
-  "relay",
-  "horizontal_jumps",
-  "vertical_jumps",
-  "throws",
-  "combined",
-] as const;
 const field =
   "min-h-11 rounded-xl border-2 border-border bg-background px-2.5 text-base focus-visible:border-primary focus-visible:outline-none";
 
@@ -44,7 +34,7 @@ export function CreateDisciplineForm() {
         <label className="flex flex-col gap-1 text-sm font-bold">
           {text.familyLabel}
           <select name="family" defaultValue="sprint" className={field}>
-            {FAMILIES.map((family) => (
+            {DISCIPLINE_FAMILIES.map((family) => (
               <option key={family} value={family}>
                 {text.family[family]}
               </option>
@@ -54,9 +44,11 @@ export function CreateDisciplineForm() {
         <label className="flex flex-col gap-1 text-sm font-bold">
           {text.unitLabel}
           <select name="unit" defaultValue="time" className={field}>
-            <option value="time">{text.unitName.time}</option>
-            <option value="distance">{text.unitName.distance}</option>
-            <option value="points">{text.unitName.points}</option>
+            {MARK_UNITS.map((unit) => (
+              <option key={unit} value={unit}>
+                {text.unitName[unit]}
+              </option>
+            ))}
           </select>
         </label>
         <label className="flex flex-col gap-1 text-sm font-bold">

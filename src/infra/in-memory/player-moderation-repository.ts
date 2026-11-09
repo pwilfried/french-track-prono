@@ -1,6 +1,5 @@
+import { searchKey } from "@/domain/club";
 import type { ModeratedPlayer, PlayerModerationRepository } from "@/application/player-moderation";
-
-const plain = (text: string) => text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
 /** Test double of the PlayerModerationRepository port: one store, a session per admin or not. */
 export function createInMemoryPlayerStore(players: Omit<ModeratedPlayer, "blocked">[] = []) {
@@ -20,7 +19,7 @@ export function createInMemoryPlayerStore(players: Omit<ModeratedPlayer, "blocke
         async search(query) {
           if (!isAdmin) return "not_admin";
           return [...all.values()]
-            .filter((p) => plain(p.pseudo).includes(plain(query.trim())))
+            .filter((p) => searchKey(p.pseudo).includes(searchKey(query.trim())))
             .sort(
               (a, b) =>
                 Number(b.blocked) - Number(a.blocked) ||
