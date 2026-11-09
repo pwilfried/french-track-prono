@@ -55,8 +55,8 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
 | Ligue | Classement, derniers pronos révélés, réactions emoji |
 | Classement général | Top de la communauté, ma progression |
-| Profil | Pseudo, avatar emoji, badges, série en cours |
-| Back-office (toi) | Créer compétition/épreuves, saisir les résultats, lancer le calcul |
+| Profil | Pseudo, avatar emoji, club ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager |
+| Back-office (toi) | Tableau de bord (choses à faire, préparation), compétitions et épreuves, résultats et calcul, listes des clubs, joueurs et ligues |
 
 ## Composants clés
 
@@ -70,7 +70,15 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **PointsToast** : « +9 pts, vainqueur du 100 m trouvé ! » avec petite animation.
 - **Leaderboard** : place, avatar, pseudo, points ; ex æquo signalés, ma ligne surlignée,
   raison du départage sous le pseudo (flèche de progression et séries : plus tard).
-- **ShareCard** : image « Mon podium du 100 m » prête pour les réseaux (et pour le podcast).
+- **Carte « Ma saison »** (`/profil/carte`) : image verticale 1080×1920 prête pour les stories,
+  partagée par le partage natif ou téléchargée ; « Mon podium du 100 m » viendra plus tard.
+- **Liste du back-office** (clubs, joueurs, ligues) : recherche, puces de filtre avec leur
+  nombre, tableau triable, actions groupées sur la sélection, panneau de détail ; même gabarit
+  pour les trois listes.
+- **Menu admin** : entrées groupées par rubrique, le tableau de bord en tête.
+- **BadgeGrid** : badges gagnés en couleur, les autres grisés avec leur règle ; dessous, le
+  prochain badge et ce qu'il reste à faire pour l'obtenir.
+- **CompetitionChips** : puces d'une compétition à l'autre (classement, historique des pronos).
 
 ## Ton éditorial
 

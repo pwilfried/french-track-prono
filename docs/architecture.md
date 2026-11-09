@@ -47,13 +47,13 @@ septembre 2026 (déjà terminée, rejouée dans une base de test).
   mise en pause des projets gratuits après inactivité, limites d'usage commercial si un
   sponsor arrive.
 - Les faits (noms, résultats, marques) sont utilisés avec la source citée ; pas de logos officiels.
-- Code dans un dépôt privé, sans licence open source tant qu'on n'a pas décidé de le publier.
+- Code dans un dépôt public, sans licence open source pour l'instant.
 - Accessibilité : contrastes AA, cibles tactiles de 44 px, animations réduites respectées.
 - Les secrets (clé service role) restent côté serveur et hors du dépôt.
 
 ## Fonctionnalités
 
-Numérotées pour la planification. F11 et F12 sont volontairement repoussées.
+Numérotées pour la planification. F11 et F12, d'abord repoussées, arrivent avec le profil de la v0.11.
 
 | # | Fonctionnalité | Valeur |
 |---|---|---|
@@ -67,8 +67,8 @@ Numérotées pour la planification. F11 et F12 sont volontairement repoussées.
 | F8 | Joker (un par compétition, double les points d'une épreuve) | Un choix stratégique |
 | F9 | Bonus « coup de flair » (points en plus si on trouve un vainqueur peu choisi) | Récompenser l'audace |
 | F10 | Pronos des autres révélés après verrouillage, plus réactions emoji | Suspense et chambrage |
-| F11 | Séries en feu et badges (repoussée) | Des raisons de revenir |
-| F12 | Cartes à partager, ex. « Mon podium du 100 m » (repoussée) | Faire connaître le jeu et le podcast |
+| F11 | Séries en feu et badges, avec leur progression dans le profil (v0.11) | Des raisons de revenir |
+| F12 | Carte « Ma saison » à partager depuis le profil (v0.11) ; carte « Mon podium du 100 m » plus tard | Faire connaître le jeu et le podcast |
 | F13 | Page de confidentialité, suppression de compte, export des données | Conformité RGPD |
 | F14 | Plusieurs compétitions (internationales, françaises), accueil par type, ligue sur plusieurs compétitions (v0.9) | Jouer toute la saison |
 | F15 | Cotes fixées par l'admin, « Autre athlète », perf pronostiquée par athlète, barème ajustable (v0.9) | Des choix plus fins, plus de suspense |
@@ -201,7 +201,7 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 | Référentiel | `competitions`, `events` (dont `kind` et `sub_disciplines` des épreuves combinées), `athletes`, `entries` (liste de départ), `results`, `athlete_records` (PR, SB, WR, WB) |
 | Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions` |
 | Fonctions | `create_league()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()` |
-| Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers`, `badges`, `user_badges` (F11 et plus tard) |
+| Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers` ; `badges` et `user_badges` restent vides : les badges sont calculés (v0.11) |
 
 Garanties portées par la base : pronostic impossible après `lock_at`, pronos des autres
 illisibles avant verrouillage, un seul joker par joueur et par compétition, un pronostic
@@ -234,7 +234,7 @@ Ajouts nécessaires au schéma (à faire dans la version indiquée) :
 - `profiles.age_confirmed_at` : case « 15 ans ou plus » (v0.2, fait : obligatoire en base). Le pseudo est unique sans tenir compte de la casse.
 - `profiles.is_admin` : accès au back-office, réservé à toi (v0.4).
 - Suppression de compte et export des données : fonctions SQL (v0.7).
-- Les tables de questions bonus et de badges ne sont pas utilisées avant leurs versions.
+- Les tables de questions bonus ne sont pas utilisées avant leur version ; celles des badges ne servent pas, les badges étant calculés.
 
 Back-office (v0.8) : la liste de départ, le résultat et le calcul des points passent par les
 fonctions `set_start_list()`, `set_results()` et `set_event_scores()`, avec la session de l'admin.
@@ -292,6 +292,15 @@ FT014, et ses lignes ne sont plus lues par les autres joueurs) ou supprime un jo
 prévenance (workflow « Inactive accounts »). Épreuves et accueil suivent d'abord les compétitions
 des ligues du joueur (`competitionsForPlayer`).
 
+Profil vivant (v0.11) : tout est calculé en TypeScript à partir des pronos et des points, rien
+n'est stocké en plus. Badges et progression vers chacun (`badgeProgress`, `src/domain/badges.ts`,
+#385) ; classement des clubs (`rankClubs`, `src/domain/club-ranking.ts`, #386 : moyenne des points
+des joueurs du club, 3 joueurs au moins) ; derniers pronos et historique complet sur
+`/profil/pronos` (`pickHits`, `src/domain/prediction-history.ts`, #387) ; carte « Ma saison »
+(`/profil/carte`, image 1080×1920 via `next/og`, #388) qui ne reprend que des données publiques
+(`seasonCardOf`, `src/domain/season-card.ts` : pseudo, avatar, chiffres de la saison, club validé)
+et se partage par le partage natif du téléphone, ou se télécharge à défaut.
+
 Tours (v0.8, issue #198) : une série, un quart ou une demi-finale pointe vers le tour qu'il
 alimente (`events.parent_id`). On ne pronostique que les finales, et une finale seulement quand
 tous ses tours précédents sont terminés (`is_predictable()`, vérifié par le trigger de
@@ -315,7 +324,8 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 | v0.8 Jeu vivant, admin, athlètes, appli | Aperçu du calcul, listes de départ, journal admin, épreuves combinées, appli installable, records, fiche athlète, tours | …l'admin prépare une finale (tours, liste de départ, résultat, calcul) sans toucher à la base, et l'appli s'installe sur le téléphone |
 | v0.9 Cotes et performances | **F14**, **F15**, **F16** | …un joueur choisit des compétitions françaises sur l'accueil, crée sa ligue dessus, pronostique un podium avec cotes et perfs, et ses points comptent cotes et perfs selon le barème réglé par l'admin |
 | v0.10 Profils et inscription | **F18**, inscription enrichie (club, sexe, disciplines), captcha, installation sur iPhone | …un joueur s'inscrit avec son club et ses disciplines, et gère son profil |
-| Plus tard | **F11** (séries, badges), **F12** (cartes à partager), questions bonus, connexion Google / Apple | à planifier |
+| v0.11 Back-office et profil | Tableau de bord admin, listes filtrables (clubs, joueurs, ligues), **F11**, **F12** (carte « Ma saison »), classement des clubs, historique des pronos | …un admin traite tout ce qui est à faire depuis un tableau de bord, trouve en deux gestes un club, un joueur ou une ligue grâce aux filtres, et un joueur ouvre un profil vivant (stats, courbe, badges, club) |
+| Plus tard | Carte « Mon podium du 100 m », questions bonus, connexion Google / Apple | à planifier |
 
 ## Cas de test du cœur
 
