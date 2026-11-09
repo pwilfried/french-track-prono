@@ -1,4 +1,9 @@
-import { isValidTolerance, type Discipline } from "@/domain/discipline";
+import {
+  DISCIPLINE_FAMILIES,
+  isValidTolerance,
+  MARK_UNITS,
+  type Discipline,
+} from "@/domain/discipline";
 
 import { UseCaseError } from "./errors";
 
@@ -12,18 +17,6 @@ export interface DisciplineRepository {
   create(discipline: Discipline): Promise<"created" | "not_admin" | "exists">;
 }
 
-const FAMILY_ORDER = [
-  "sprint",
-  "hurdles",
-  "middle",
-  "long",
-  "relay",
-  "horizontal_jumps",
-  "vertical_jumps",
-  "throws",
-  "combined",
-];
-
 /** The disciplines by family (sprint first, combined events last), then by name. */
 export function listDisciplines(ports: { disciplines: DisciplineRepository }) {
   return {
@@ -31,7 +24,7 @@ export function listDisciplines(ports: { disciplines: DisciplineRepository }) {
       const all = await ports.disciplines.list();
       return all.sort(
         (a, b) =>
-          FAMILY_ORDER.indexOf(a.family) - FAMILY_ORDER.indexOf(b.family) ||
+          DISCIPLINE_FAMILIES.indexOf(a.family) - DISCIPLINE_FAMILIES.indexOf(b.family) ||
           a.name.localeCompare(b.name, "fr", { numeric: true }),
       );
     },
@@ -50,19 +43,6 @@ export function setDisciplineTolerance(ports: { disciplines: DisciplineRepositor
   };
 }
 
-const FAMILIES: Discipline["family"][] = [
-  "sprint",
-  "hurdles",
-  "middle",
-  "long",
-  "relay",
-  "horizontal_jumps",
-  "vertical_jumps",
-  "throws",
-  "combined",
-];
-const UNITS: Discipline["unit"][] = ["time", "distance", "points"];
-
 /** The admin adds a discipline: name, family, unit, which way is better, tolerance (#292). */
 export function createDiscipline(ports: { disciplines: DisciplineRepository }) {
   return {
@@ -75,8 +55,8 @@ export function createDiscipline(ports: { disciplines: DisciplineRepository }) {
     }): Promise<void> {
       const name = input.name.replace(/\s+/g, " ").trim();
       if (name.length < 2 || name.length > 40) throw new UseCaseError("DISCIPLINE_NAME_INVALID");
-      const family = FAMILIES.find((f) => f === input.family);
-      const unit = UNITS.find((u) => u === input.unit);
+      const family = DISCIPLINE_FAMILIES.find((f) => f === input.family);
+      const unit = MARK_UNITS.find((u) => u === input.unit);
       if (!family || !unit) throw new UseCaseError("DISCIPLINE_NAME_INVALID");
       if (!isValidTolerance(input.tolerance)) throw new UseCaseError("TOLERANCE_INVALID");
       const outcome = await ports.disciplines.create({

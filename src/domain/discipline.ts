@@ -12,6 +12,21 @@ export type DisciplineFamily =
   | "combined"
   | "relay";
 
+/** Every family, in the order they are shown: sprint first, combined events last. */
+export const DISCIPLINE_FAMILIES: DisciplineFamily[] = [
+  "sprint",
+  "hurdles",
+  "middle",
+  "long",
+  "relay",
+  "horizontal_jumps",
+  "vertical_jumps",
+  "throws",
+  "combined",
+];
+
+export const MARK_UNITS: MarkUnit[] = ["time", "distance", "points"];
+
 /** A discipline: how its marks read, which way is better, and the prediction tolerance. */
 export type Discipline = {
   name: string;
