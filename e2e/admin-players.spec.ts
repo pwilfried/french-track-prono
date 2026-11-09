@@ -5,6 +5,7 @@ import { newPlayer, signUp } from "./players";
 
 test("the admin blocks a player, who leaves the general ranking, then unblocks them", async ({
   page,
+  browser,
 }) => {
   // A competition of its own and a player with points in it.
   const tag = `${Date.now() % 1000000}`;
@@ -33,7 +34,13 @@ test("the admin blocks a player, who leaves the general ranking, then unblocks t
   await signUp(page, admin);
   await page.waitForURL(/\/classement$/);
   sql(`update profiles set is_admin = true where pseudo = '${admin.pseudo}'`);
-  const ranking = page.getByRole("list", { name: "Classement" });
+  // Another player watches the general ranking (an admin still sees every line).
+  const viewer = newPlayer("viewer");
+  const viewerPage = await (await browser.newContext()).newPage();
+  await viewerPage.goto("/classement");
+  await signUp(viewerPage, viewer);
+  await viewerPage.waitForURL(/\/classement$/);
+  const ranking = viewerPage.getByRole("list", { name: "Classement" });
   await expect(ranking.getByText(target)).toBeVisible();
 
   await page.goto("/admin/joueurs");
@@ -46,15 +53,15 @@ test("the admin blocks a player, who leaves the general ranking, then unblocks t
   await row.getByRole("button", { name: "Bloquer" }).click();
   await expect(row.getByText("Bloqué", { exact: true })).toBeVisible();
 
-  await page.goto("/classement");
-  await expect(page.getByRole("list", { name: "Classement" })).toBeVisible();
-  await expect(page.getByText(target)).toHaveCount(0);
+  await viewerPage.reload();
+  await expect(ranking).toBeVisible();
+  await expect(viewerPage.getByText(target)).toHaveCount(0);
 
   await page.goto(`/admin/joueurs?q=${encodeURIComponent(target)}`);
   await row.getByRole("button", { name: "Débloquer" }).click();
   await expect(row.getByText("Bloqué", { exact: true })).toHaveCount(0);
-  await page.goto("/classement");
-  await expect(page.getByRole("list", { name: "Classement" }).getByText(target)).toBeVisible();
+  await viewerPage.reload();
+  await expect(ranking.getByText(target)).toBeVisible();
 
   expect(
     sql(`select count(*) from admin_actions where action = 'moderate_player'
