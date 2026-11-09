@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
 import { getSessionClient } from "../../session";
+import { reportError } from "@/lib/report-error";
 
 const text = messages.adminCompetitions;
 
@@ -153,8 +154,9 @@ export async function AdminMenuWithTodo({ section }: { section: AdminSection }) 
       clubs: createSupabaseClubAdminRepository(client),
       moderation: createSupabaseLeagueModerationRepository(client),
     }).execute({ competitionSlug: competition.slug, now: new Date() });
-  } catch {
+  } catch (error) {
     // The menu still works without its counters.
+    reportError(error, "admin-menu");
   }
   return <AdminMenu section={section} todo={todo} />;
 }

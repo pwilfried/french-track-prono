@@ -11,11 +11,13 @@ export type ClubAdminWorld = {
   playerOn(clubId: string): Promise<void>;
 };
 
+// Letters only, 16 per character: a digit becomes g to p (the old "x" for every digit made
+// "Zcxxxxxx" common enough for two tests of one run to collide).
 const tag = () =>
   `Zc${crypto
     .randomUUID()
     .slice(0, 6)
-    .replace(/[^a-z]/g, "x")}`;
+    .replace(/[0-9]/g, (d) => String.fromCharCode(103 + Number(d)))}`;
 
 /** Contract of the ClubAdminRepository port (#366), run against the fake AND Supabase. */
 export function clubAdminContract(name: string, world: () => Promise<ClubAdminWorld>) {

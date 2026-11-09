@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { messages } from "@/app/messages.fr";
 import { normalizeSearch, viewList } from "@/domain/list-view";
 import { cn } from "@/lib/utils";
+import { reportError } from "@/lib/report-error";
 
 const text = messages.adminList;
 
@@ -136,7 +137,8 @@ export function AdminList<T>(props: AdminListProps<T>) {
     async (action: () => Promise<ListFeedback>) => {
       try {
         notify(await action());
-      } catch {
+      } catch (error) {
+        reportError(error, "admin-list");
         notify({ error: text.failed });
       }
     },

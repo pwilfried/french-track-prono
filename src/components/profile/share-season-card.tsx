@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { messages } from "@/app/messages.fr";
 import { buttonVariants } from "@/components/ui/button";
+import { reportError } from "@/lib/report-error";
 
 const text = messages.seasonCard;
 
@@ -36,7 +37,8 @@ export function ShareSeasonCard() {
         URL.revokeObjectURL(url);
       }
       setState("idle");
-    } catch {
+    } catch (error) {
+      reportError(error, "share-season-card");
       setState("error");
     }
   }
