@@ -96,7 +96,7 @@ export function PlayerHome(props: PlayerHomeProps) {
                   href={`/ligues/creer?competition=${encodeURIComponent(competitionSlug)}&publique=1`}
                   className={cn(
                     buttonVariants({ variant: "outline" }),
-                    "bg-transparent text-white",
+                    "border-white/70 bg-transparent text-white",
                   )}
                 >
                   {text.createPublic}
