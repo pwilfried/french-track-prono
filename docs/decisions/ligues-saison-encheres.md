@@ -1,5 +1,8 @@
 # Ligues de saison avec enchères sur les athlètes (spike #62)
 
+> **Remplacé** par le cahier des charges du propriétaire : voir `french-track-manager.md` (F19,
+> versions v0.12 à v0.16). Les propositions ci-dessous ne sont plus d'actualité.
+
 Étude du 9 novembre 2026 sur l'idée du propriétaire (6 novembre 2026). Les réponses ci-dessous
 sont des propositions : chacune est à trancher par le propriétaire avant d'écrire la moindre
 issue.
