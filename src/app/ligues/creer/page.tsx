@@ -19,9 +19,10 @@ const withCompetitions = (slugs: string[]) =>
 export default async function CreateLeaguePage({
   searchParams,
 }: {
-  searchParams: Promise<{ competition?: string | string[] }>;
+  searchParams: Promise<{ competition?: string | string[]; publique?: string }>;
 }) {
-  const asked = [...new Set(paramList((await searchParams).competition))];
+  const params = await searchParams;
+  const asked = [...new Set(paramList(params.competition))];
   await leaguePorts(asked.length ? `/ligues/creer?${withCompetitions(asked)}` : "/ligues/creer");
   const { coming, past } = await loadCompetitions();
   const known = [...coming, ...past];
@@ -82,7 +83,7 @@ export default async function CreateLeaguePage({
           <p className="text-sm leading-relaxed">{messages.leagues.how}</p>
         </div>
 
-        <CreateLeagueForm competitionSlugs={slugs} />
+        <CreateLeagueForm competitionSlugs={slugs} isPublic={params.publique === "1"} />
       </div>
     </main>
   );

@@ -1,4 +1,5 @@
-const DEFAULT_FALLBACK = "/epreuves";
+// After signing in without a page asked for, a player lands on the home (#369).
+const DEFAULT_FALLBACK = "/";
 
 /**
  * Accepts only a path inside the app ("/something", optionally with a query).

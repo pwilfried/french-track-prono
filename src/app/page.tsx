@@ -87,6 +87,8 @@ export default async function Home() {
           <PlayerHome
             pseudo={player.pseudo}
             competitionName={player.competition.name}
+            competitionSlug={player.competition.slug}
+            hasLeagueForCompetition={player.hasLeagueForCompetition}
             timeZone={player.competition.timeZone}
             now={new Date()}
             finals={player.finals}
