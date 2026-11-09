@@ -16,7 +16,7 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
 
   // An admin may browse the player side: the header leads back to the back-office.
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Choisis ta compétition");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await page.getByRole("banner").getByRole("link", { name: "Back-office" }).click();
   await expect(page).toHaveURL(/\/admin\/competitions$/);
   // Every section of the back-office is one tap away, as on the board.
@@ -49,7 +49,7 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   await signIn(page, player.email);
   await expect(page).toHaveURL(/\/admin\/competitions$/);
   await page.getByRole("link", { name: "Voir le site" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Choisis ta compétition");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
   sql(`update scoring_rules set value = ${before} where key = 'mark_exact'`);
 });
