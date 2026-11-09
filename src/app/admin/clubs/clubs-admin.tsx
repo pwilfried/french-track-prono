@@ -188,7 +188,7 @@ function ClubDetail({
           <button
             type="button"
             onClick={() => merge(club.duplicate!)}
-            className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand-ink px-4 font-bold text-brand-foreground"
+            className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-4 font-bold text-brand-foreground"
           >
             {text.mergeInto(club.duplicate.name)}
           </button>
