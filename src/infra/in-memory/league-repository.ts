@@ -52,17 +52,48 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
     /** The admin's moderation of the same leagues (#321). */
     moderation(options: { isAdmin: boolean }): LeagueModerationRepository {
       return {
-        async listReported() {
+        async list() {
           if (!options.isAdmin) return "not_admin";
-          return [...reports.entries()]
-            .filter(([id, by]) => leagues.has(id) && by.size > 0)
-            .map(([id, by]) => ({
-              id,
-              name: leagues.get(id)!.name,
-              reportCount: by.size,
-              memberCount: leagues.get(id)!.members.length,
-            }))
-            .sort((a, b) => b.reportCount - a.reportCount || a.name.localeCompare(b.name));
+          return [...leagues.values()].reverse().map((l) => ({
+            id: l.id,
+            name: l.name,
+            emoji: "🏆",
+            isPublic: l.isPublic,
+            owner: profiles.get(l.ownerId)?.pseudo ?? null,
+            createdAt: joinedAt.get(`${l.id}:${l.ownerId}`) ?? new Date().toISOString(),
+            memberCount: l.members.length,
+            reportCount: reports.get(l.id)?.size ?? 0,
+            competitions: [...l.competitionSlugs],
+          }));
+        },
+        async members(leagueId) {
+          if (!options.isAdmin) return "not_admin";
+          const league = leagues.get(leagueId);
+          if (!league) return [];
+          // No points in this double: every member shares the first place.
+          return league.members.map((id) => ({
+            userId: id,
+            pseudo: profiles.get(id)?.pseudo ?? id,
+            avatar: profiles.get(id)?.avatar ?? "🏃",
+            isOwner: id === league.ownerId,
+            joinedAt: joinedAt.get(`${leagueId}:${id}`) ?? new Date().toISOString(),
+            points: 0,
+            rank: 1,
+          }));
+        },
+        async dismissReports(leagueId) {
+          if (!options.isAdmin) return "not_admin";
+          if (!leagues.has(leagueId)) return "unknown";
+          reports.delete(leagueId);
+          return "done";
+        },
+        async removeMember(leagueId, userId) {
+          if (!options.isAdmin) return "not_admin";
+          const league = leagues.get(leagueId);
+          if (!league || !league.members.includes(userId)) return "unknown";
+          if (league.ownerId === userId) return "owner";
+          league.members = league.members.filter((id) => id !== userId);
+          return "done";
         },
         async rename(leagueId, name) {
           if (!options.isAdmin) return "not_admin";

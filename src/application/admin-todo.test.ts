@@ -4,6 +4,7 @@ import type { EventSummary } from "@/domain/event";
 
 import { getAdminTodo, type AdminTodoPorts } from "./admin-todo";
 import type { AdminClub } from "./club-admin";
+import type { AdminLeague } from "./league-moderation";
 
 const NOW = new Date("2026-08-10T12:00:00Z");
 
@@ -32,6 +33,18 @@ const club = (id: string, validated: boolean): AdminClub => ({
   createdAt: "2026-11-08T10:00:00.000Z",
 });
 
+const league = (id: string, reportCount: number): AdminLeague => ({
+  id,
+  name: id,
+  emoji: "🏆",
+  isPublic: true,
+  owner: "Patronne",
+  createdAt: "2026-11-08T10:00:00.000Z",
+  memberCount: 3,
+  reportCount,
+  competitions: [],
+});
+
 function ports(overrides: Partial<AdminTodoPorts> = {}): AdminTodoPorts {
   return {
     events: {
@@ -54,7 +67,10 @@ function ports(overrides: Partial<AdminTodoPorts> = {}): AdminTodoPorts {
       merge: async () => "unknown",
     },
     moderation: {
-      listReported: async () => [{ id: "l1", name: "L", reportCount: 2, memberCount: 3 }],
+      list: async () => [league("l1", 2), league("l2", 0)],
+      members: async () => [],
+      dismissReports: async () => "unknown",
+      removeMember: async () => "unknown",
       rename: async () => "unknown",
       remove: async () => "unknown",
     },
@@ -76,9 +92,12 @@ describe("admin to-do counters", () => {
     const todo = await getAdminTodo(
       ports({
         moderation: {
-          listReported: async () => {
+          list: async () => {
             throw new Error("down");
           },
+          members: async () => [],
+          dismissReports: async () => "unknown",
+          removeMember: async () => "unknown",
           rename: async () => "unknown",
           remove: async () => "unknown",
         },
