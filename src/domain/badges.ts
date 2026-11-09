@@ -20,14 +20,17 @@ export type BadgeInput = {
 const STREAK = 5;
 const HUNTER = 3;
 
+/** How far a player is from a badge: earned when `current` reaches `target`. */
+export type BadgeProgress = { badge: Badge; current: number; target: number };
+
 /**
  * Nostradamus: a perfect podium. Chasseur: 3 winners found. Flair: a coup de flair. Série: 5
  * computed events in a row with at least 1 point, at any time. Bleus: a French winner found.
  * Fidèle: a prediction on every event of a competition day.
  */
-export function badgesOf(input: BadgeInput): Badge[] {
-  const has = (kind: ScoreReason["kind"]) =>
-    input.myLines.some((l) => l.reasons.some((r) => r.kind === kind));
+export function badgeProgress(input: BadgeInput): BadgeProgress[] {
+  const count = (kind: ScoreReason["kind"]) =>
+    input.myLines.filter((l) => l.reasons.some((r) => r.kind === kind)).length;
   const winners = input.myLines.filter((l) =>
     l.reasons.some((r) => r.kind === "exact" && r.slot === 1),
   ).length;
@@ -43,15 +46,43 @@ export function badgesOf(input: BadgeInput): Badge[] {
     best = Math.max(best, run);
   }
 
-  const earned: Record<Badge, boolean> = {
-    nostradamus: has("perfect_podium"),
-    chasseur: winners >= HUNTER,
-    flair: has("flair"),
-    serie: best >= STREAK,
-    bleus: input.frenchWinnerEvents.size > 0,
-    fidele: input.days.some(
-      (day) => day.length > 0 && day.every((id) => input.predictedEventIds.has(id)),
-    ),
+  // Fidèle: the day closest to being fully predicted.
+  const days = input.days.filter((day) => day.length > 0);
+  const day = days
+    .map((d) => ({
+      current: d.filter((id) => input.predictedEventIds.has(id)).length,
+      target: d.length,
+    }))
+    .sort((a, b) => a.target - a.current - (b.target - b.current))[0] ?? { current: 0, target: 1 };
+
+  const raw: Record<Badge, [number, number]> = {
+    nostradamus: [count("perfect_podium"), 1],
+    chasseur: [winners, HUNTER],
+    flair: [count("flair"), 1],
+    // Once earned it stays; until then only the ongoing run brings it closer.
+    serie: [best >= STREAK ? STREAK : run, STREAK],
+    bleus: [input.frenchWinnerEvents.size, 1],
+    fidele: [day.current, day.target],
   };
-  return BADGES.filter((b) => earned[b]);
+  return BADGES.map((badge) => {
+    const [current, target] = raw[badge];
+    return { badge, current: Math.min(current, target), target };
+  });
+}
+
+/** The badges earned, in display order. */
+export function badgesOf(input: BadgeInput): Badge[] {
+  return badgeProgress(input)
+    .filter((p) => p.current >= p.target)
+    .map((p) => p.badge);
+}
+
+/** The locked badge with the fewest steps left (display order breaks ties); null when all earned. */
+export function nextBadge(progress: BadgeProgress[]): (BadgeProgress & { left: number }) | null {
+  return (
+    progress
+      .filter((p) => p.current < p.target)
+      .map((p) => ({ ...p, left: p.target - p.current }))
+      .sort((a, b) => a.left - b.left)[0] ?? null
+  );
 }
