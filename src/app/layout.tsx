@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 
+import { TrackBackground } from "@/components/home/track-background";
 import { SiteFooter } from "@/components/legal/site-footer";
 import { BottomNav } from "@/components/shell/bottom-nav";
 import { ServiceWorker } from "@/components/shell/service-worker";
@@ -69,7 +70,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="fr"
       className={`${display.variable} ${inter.variable} ${mono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col pb-16 md:pb-0">
+      <body className="relative isolate min-h-full flex flex-col pb-16 md:pb-0">
+        <TrackBackground />
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-card focus:px-3 focus:py-2 focus:font-semibold focus:text-card-foreground focus:ring-2 focus:ring-ring"
