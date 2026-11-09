@@ -41,7 +41,11 @@ export async function signInAction(_: SignInState, data: FormData): Promise<Sign
   if (intent === "send" || intent === "resend") {
     const resend = intent === "resend";
     const result = await codeOf(() =>
-      requestMagicLink({ auth: createSupabaseAuthService(client) }).execute({ email }),
+      requestMagicLink({ auth: createSupabaseAuthService(client) }).execute({
+        email,
+        // Turnstile puts its token in this field of the form (#331).
+        captchaToken: formText(data, "cf-turnstile-response"),
+      }),
     );
     if ("error" in result) return { step: resend ? "code" : "email", email, error: result.error };
     return { step: "code", email: email.trim().toLowerCase(), resent: resend || undefined };

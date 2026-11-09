@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { Captcha } from "@/components/account/captcha";
 import { Field } from "@/components/account/field";
 import { SubmitButton } from "@/components/account/submit-button";
 
@@ -34,6 +35,7 @@ export function SignInForm({ next, linkError }: { next: string; linkError: boole
             {messages.signIn.linkInvalid}
           </p>
         ) : null}
+        <Captcha />
         <SubmitButton intent="send" pendingLabel={messages.signIn.sending}>
           {messages.signIn.send}
         </SubmitButton>
@@ -68,6 +70,7 @@ export function SignInForm({ next, linkError }: { next: string; linkError: boole
           {messages.signIn.resent}
         </p>
       ) : null}
+      <Captcha />
       <SubmitButton intent="verify" pendingLabel={messages.signIn.verifying}>
         {messages.signIn.verify}
       </SubmitButton>

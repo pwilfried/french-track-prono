@@ -758,6 +758,9 @@ export const messages = {
     seedNote:
       "Seuls les podiums sont chargés dans le jeu de test. Les listes de départ complètes viendront plus tard.",
   },
+  captcha: {
+    label: "Vérification anti-robot",
+  },
   signIn: {
     title: "Connexion",
     subtitle: "Sans mot de passe : un code arrive par e-mail.",
@@ -1028,6 +1031,7 @@ export const messages = {
     EMAIL_INVALID: "Cette adresse e-mail n'a pas l'air valide.",
     CODE_INVALID: "Code incorrect ou expiré. Vérifie-le ou demande-en un nouveau.",
     AUTH_UNAVAILABLE: "La connexion ne marche pas pour le moment. Réessaie dans un instant.",
+    CAPTCHA_FAILED: "La vérification anti-robot n'a pas abouti. Coche-la à nouveau puis réessaie.",
     ACCOUNT_BLOCKED:
       "Ton compte est bloqué par l'équipe : tu ne peux plus pronostiquer ni rejoindre de ligue. Écris-nous pour en savoir plus.",
     PLAYER_UNKNOWN: "Ce joueur n'existe plus (ou c'est un admin).",
