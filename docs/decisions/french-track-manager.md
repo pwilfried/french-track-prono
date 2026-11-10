@@ -4,7 +4,7 @@
 
 Règles du cahier des charges fonctionnel du propriétaire, version 1.1 (phases 1 à 5 validées), mises
 dans le dépôt le 9 novembre 2026. Elles remplacent les propositions du spike #62
-(`ligues-saison-encheres.md`). Plan des versions : #415 ; questions ouvertes : #416.
+(`ligues-saison-encheres.md`). Plan des versions : #415 ; questions : #416, #440, #441.
 
 ## Le jeu
 
@@ -64,21 +64,20 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - La sélection est validée avant le début de la compétition (athlètes de son équipe, chacun une
   fois, quotas et maximum respectés), puis **verrouillée** au début. Sans sélection validée :
   **0 point** pour la compétition.
-- Plus tard, en option payante : un mercato secondaire (acheter, vendre, échanger). Hors version 1,
-  et à confronter à la règle « pas d'argent réel » (#416).
+- Pas de mercato secondaire payant : le budget reste en crédits virtuels (#416).
 
 ## 4. Points (v0.15)
 
 **Score d'une compétition = points du barème hongrois + bonus sportifs + points de pronostics.**
 
 - **Barème hongrois** : chaque athlète aligné rapporte des points selon sa performance réelle ;
-  la place n'entre pas dans ce calcul. French Track Prono n'a pas encore ce barème (#428, source
-  des tables dans #416).
+  la place n'entre pas dans ce calcul. Tables World Athletics (#428) ; DNS, DNF, DQ = 0 point.
 - **Bonus sportifs**, tous cumulables, valeurs fixées par l'admin : 1re, 2e, 3e place, record
   personnel, meilleure performance de la saison, record national, continental et du monde.
 - **Saisie** : l'admin entre places, performances et indicateurs de records ; le calcul est
   automatique.
-- **Pronostics classiques obligatoires** sur chaque compétition éligible, verrouillés au départ ;
+- **Pronostics classiques obligatoires** sur toutes les épreuves de chaque compétition éligible,
+  verrouillés au départ ;
   sans pronostic, 0 sur cette partie.
 
 ## 5. Championnat (v0.16)
@@ -94,17 +93,24 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - **Palmarès** conservé : champion, classement final, statistiques individuelles, victoires / nuls
   / défaites, points Manager marqués, historique des confrontations directes.
 
-## Questions ouvertes (#416)
+## Réponses du propriétaire (#416, 10 novembre 2026)
 
-À trancher par le propriétaire ; les réponses seront ajoutées ici.
+- **DNS, DNF, DQ**, performance invalide ou résultat officiel manquant : l'athlète reste aligné et
+  rapporte **0 point**.
+- **Résultat corrigé** après la première saisie : **recalcul complet** du score de la compétition,
+  des confrontations déjà jouées et du classement.
+- **Clôture du mercato** : l'**admin de la ligue** choisit la date et le mode de clôture parmi
+  ceux que l'admin de French Track Prono autorise.
+- **Barème hongrois** : tables de cotation **World Athletics**. Le droit de les embarquer dans
+  l'app reste à vérifier dans #428.
+- **Saisie des performances** : au minimum celles des athlètes alignés par au moins un
+  participant ; l'admin peut aussi saisir tous les résultats de la compétition pour qu'ils
+  soient visibles dans l'app.
+- **Pronostics obligatoires** : ceux de **toutes les épreuves** pronostiquables de la compétition.
+- **Monnaie** : crédits virtuels uniquement, rien de payant. Le mercato secondaire payant est hors
+  périmètre.
 
-- Résultats DNS, DNF, DQ, performances invalides ou résultat officiel manquant.
-- Résultats corrigés après leur première saisie.
-- Nombre de compétitions éligibles face aux 2 × (n − 1) journées d'un aller-retour (6 à 4 joueurs,
-  22 à 12 joueurs).
-- Qui choisit la date et le mode de clôture du mercato (admin de French Track Prono ou de la
-  ligue).
-- Source et droit d'utilisation des tables du barème hongrois.
-- Saisie des performances de tous les athlètes alignés.
-- Prix de référence : fixé à la main ou calculé.
-- Périmètre des pronostics obligatoires.
+## Questions encore ouvertes
+
+- Compétitions éligibles face aux 2 × (n − 1) journées d'un aller-retour : #440 (bloque #432).
+- Prix de référence fixé à la main ou calculé : #441 (bloque #421).
