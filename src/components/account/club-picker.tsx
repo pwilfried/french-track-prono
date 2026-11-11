@@ -50,7 +50,7 @@ export function ClubPicker({
   const shown = query.trim().length >= 2 ? found : null;
 
   return (
-    <fieldset className="flex flex-col gap-2">
+    <fieldset className="flex flex-col gap-3">
       <legend className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
         {text.legend}
       </legend>

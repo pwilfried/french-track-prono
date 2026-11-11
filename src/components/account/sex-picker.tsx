@@ -9,7 +9,7 @@ const SEXES = [
 /** Femme, Homme or « Je préfère ne pas le dire » (#340). Sends `sex`. */
 export function SexPicker({ chosen, error }: { chosen: string; error?: string }) {
   return (
-    <fieldset className="flex flex-col gap-2">
+    <fieldset className="flex flex-col gap-3">
       <legend className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
         {messages.welcome.sexLabel}
       </legend>
