@@ -1,0 +1,49 @@
+name: agents-merge
+
+# Merges Claude's green PRs, sends red or conflicting ones back to Claude, retries the work waiting
+# for quota, and starts the next agent:ready issues of the milestone (two at a time by default).
+# Runs after every CI or agents run, every hour, or by hand. See ci/agents/merge-sweep.sh.
+# Stop everything: disable this workflow (Actions, agents-merge, "…", Disable workflow).
+on:
+  workflow_run:
+    workflows: [CI, agents]
+    types: [completed]
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  AGENTS_OWNER: ${{ vars.AGENTS_OWNER }}
+
+concurrency:
+  group: agents-merge
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.name == 'agents' ||
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      checks: read
+      statuses: read
+      actions: read
+    steps:
+      # The workflow of main, never a PR's: workflow_run always runs the default branch's file.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - env:
+          BOT_TOKEN: ${{ github.token }}
+          PAT_TOKEN: ${{ secrets.AGENTS_PAT || github.token }}
+          EVENT: ${{ github.event_name }}
+          AGENTS_CLAUDE_SLOTS: ${{ vars.AGENTS_CLAUDE_SLOTS || '2' }}
+        run: ci/agents/merge-sweep.sh
