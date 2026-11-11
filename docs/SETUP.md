@@ -386,17 +386,33 @@ personne n'est prévenu, donc personne n'est supprimé.
 
 ## Notifications push
 
-Le workflow « Push notifications » (toutes les 5 minutes, ou à la main) envoie aux joueurs qui
-les ont activées depuis leur profil un rappel avant le verrouillage d'une finale qu'ils n'ont pas
-pronostiquée, et leurs points une fois calculés (règles dans
-`supabase/migrations/20261109100000_push_notifications.sql`). Mise en route, une seule fois :
+Les joueurs qui les ont activées depuis leur profil reçoivent un rappel avant le verrouillage
+d'une finale qu'ils n'ont pas pronostiquée (dans les 20 minutes avant), et leurs points une fois
+calculés (règles dans `supabase/migrations/20261109100000_push_notifications.sql`).
+
+L'envoi tourne dans Supabase (#502) : chaque minute, `pg_cron` appelle l'Edge Function
+`push-notifications` (`supabase/functions/`), qui envoie ce qui est dû. La logique d'envoi est
+dans `supabase/functions/_shared/push.mjs`, partagée avec le workflow « Push notifications »,
+qui ne se lance plus qu'à la main (une tâche planifiée de GitHub part en retard, ou pas du tout).
+
+Mise en route, une seule fois :
 
 1. Générer une paire de clés : `npx web-push generate-vapid-keys`.
 2. GitHub, environnement « production » : secrets `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY`.
 3. Vercel, variables d'environnement de production : `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (la clé
-   publique seulement), puis redéployer (tag). Sans elle, le bouton n'apparaît pas.
+   publique seulement).
+4. Poser un tag (une version) : le workflow « Database migrations », après les migrations, déploie
+   l'Edge Function, lui donne ses secrets (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` et un
+   `PUSH_CRON_SECRET` tiré au hasard à chaque version), puis écrit dans Supabase Vault l'adresse
+   de la fonction et ce même secret (`private.push_set_secrets`). Sans les clés VAPID, rien n'est
+   déployé et `pg_cron` n'appelle rien. Sans `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, le bouton
+   n'apparaît pas.
 
-La clé privée ne va jamais dans Vercel ni dans le dépôt. Sur iPhone, les notifications ne
+Vérifier : Supabase > Integrations > Cron, tâche `push-notifications` (un passage par minute) ;
+Edge Functions > `push-notifications` > Logs (« n notification(s) envoyée(s) »). Une réponse 401
+veut dire que le secret de la fonction et celui de Vault diffèrent : reposer un tag les réaligne.
+
+La clé privée ne va jamais dans Vercel ni dans le dépôt ; aucun secret dans une migration. Sur iPhone, les notifications ne
 marchent qu'une fois l'appli ajoutée à l'écran d'accueil (iOS 16.4 ou plus).
 ## Sentry (erreurs en prod)
 
