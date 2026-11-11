@@ -439,6 +439,7 @@ export const messages = {
       moderate_player: "Joueur modéré",
       create_discipline: "Discipline créée",
       moderate_club: "Club modifié",
+      set_manager_rules: "Règles Manager modifiées",
     },
     noEvent: "Épreuve supprimée",
     size: (
@@ -454,10 +455,11 @@ export const messages = {
         | "moderate_league"
         | "moderate_player"
         | "create_discipline"
-        | "moderate_club",
+        | "moderate_club"
+        | "set_manager_rules",
       n: number,
     ) =>
-      kind === "set_rule"
+      kind === "set_rule" || kind === "set_manager_rules"
         ? "barème"
         : kind === "moderate_league"
           ? "ligue publique"
@@ -628,6 +630,53 @@ export const messages = {
     saving: "…",
     saved: "Enregistré.",
   },
+  managerRules: {
+    title: "Règles Manager",
+    subtitle:
+      "Les règles générales de French Track Manager. Une ligue copie les règles en vigueur à sa création et les garde : un changement ne touche que les ligues créées ensuite.",
+    team: "Budget et équipe",
+    budget: "Budget de départ (crédits)",
+    teamSize: "Taille d'une équipe",
+    quotas: "Quotas de l'équipe (minimum et maximum par sexe)",
+    quotaHint: "Une famille à 0 au maximum ne se recrute pas.",
+    family: "Famille",
+    sex: { F: "Femmes", M: "Hommes" },
+    min: "min",
+    max: "max",
+    quotaLabel: (sex: string, family: string, bound: string) => `${family}, ${sex}, ${bound}`,
+    lineup: "Alignement",
+    lineupMax: "Athlètes alignés au plus",
+    lineupMin: "Minimum aligné par famille",
+    mercato: "Mercato",
+    firstHours: "Durée des premiers tours (heures)",
+    longRounds: "Nombre de premiers tours",
+    nextHours: "Durée des tours suivants (heures)",
+    closeModes: "Clôtures autorisées",
+    closeMode: {
+      budgets_spent: "Plus aucun budget",
+      last_bidder: "Choix du dernier enchérisseur",
+      scheduled: "Date programmée",
+    },
+    bonuses: "Bonus sportifs (points)",
+    bonus: {
+      first: "1re place",
+      second: "2e place",
+      third: "3e place",
+      personal_best: "Record personnel",
+      season_best: "Meilleure perf de la saison",
+      national_record: "Record national",
+      area_record: "Record continental",
+      world_record: "Record du monde",
+    },
+    season: "Saison",
+    startsOn: "Début",
+    endsOn: "Fin",
+    competitions: "Compétitions éligibles",
+    noCompetition: "Aucune compétition à venir.",
+    save: "Enregistrer les règles",
+    saving: "…",
+    saved: "Règles enregistrées. Les prochaines ligues les utiliseront.",
+  },
   disciplines: {
     title: "Disciplines",
     subtitle:
@@ -770,6 +819,7 @@ export const messages = {
       results: "Résultats",
       disciplines: "Disciplines",
       scale: "Barème",
+      manager: "Manager",
       leagues: "Ligues",
       players: "Joueurs",
       clubs: "Clubs",
@@ -1482,6 +1532,9 @@ export const messages = {
     DISCIPLINE_NAME_INVALID: "Donne un nom (2 à 40 caractères), une famille et une unité.",
     DISCIPLINES_UNAVAILABLE: "Les disciplines n'ont pas pu être chargées. Réessaie.",
     ATHLETES_UNAVAILABLE: "La fiche athlète n'a pas pu être chargée. Réessaie.",
+    MANAGER_RULES_INVALID:
+      "Ces règles ne permettent pas de jouer : vérifie que les quotas remplissent l'équipe, que l'alignement y tient et qu'un mode de clôture est coché.",
+    MANAGER_RULES_UNAVAILABLE: "Les règles Manager n'ont pas pu être chargées. Réessaie.",
     retry: "Réessayer",
   },
   legal: {
