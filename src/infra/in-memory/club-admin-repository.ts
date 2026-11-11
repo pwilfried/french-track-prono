@@ -1,6 +1,6 @@
 import type { AdminClub, ClubAdminRepository } from "@/application/club-admin";
 import { isBannedName } from "@/domain/banned-names";
-import { searchKey } from "@/domain/club";
+import { matchesClub, searchKey } from "@/domain/club";
 
 /** Test double of the ClubAdminRepository port: one store, a session per admin or not. */
 type NewClub = Omit<AdminClub, "id" | "playerCount" | "createdAt">;
@@ -24,12 +24,10 @@ export function createInMemoryClubAdminStore(clubs: NewClub[] = []) {
       return {
         async list(query, pendingOnly, limit = 50) {
           if (!isAdmin) return "not_admin";
-          const key = searchKey(query);
+          // Same word rule as the sign-up search; an empty query lists every club.
+          const everyClub = searchKey(query) === "";
           return [...all.values()]
-            .filter(
-              (c) =>
-                (!pendingOnly || !c.validated) && searchKey(`${c.name} ${c.city}`).includes(key),
-            )
+            .filter((c) => (!pendingOnly || !c.validated) && (everyClub || matchesClub(query, c)))
             .sort(
               (a, b) =>
                 Number(a.validated) - Number(b.validated) || a.name.localeCompare(b.name, "fr"),

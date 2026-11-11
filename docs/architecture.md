@@ -331,7 +331,8 @@ Fonctions SQL (#457) : règle pour toute nouvelle fonction, vérifiée par
 - une fonction appelée par l'application : `revoke execute … from public, anon` puis
   `grant execute … to authenticated`. Depuis #457, une nouvelle fonction n'est plus exécutable par
   `anon` par défaut ; l'ouvrir à `anon` demande de l'ajouter, avec sa raison, à la liste du test
-  (aujourd'hui `search_clubs()` et `club_search_key()`, pour le choix du club avant l'inscription).
+  (aujourd'hui `search_clubs()`, `club_search_key()` et `club_key_matches()`, pour le choix du
+  club avant l'inscription).
   Une fonction appelée par une policy ouverte à `anon` doit y figurer, sinon les lectures publiques
   cassent ;
 - une fonction `admin_*` commence par `if not is_admin() then raise … using errcode = '42501'` ;

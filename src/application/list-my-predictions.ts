@@ -13,6 +13,20 @@ export function listMyPredictions(ports: { predictions: PredictionRepository }) 
   };
 }
 
+/** Whether the player has predicted at least once in the competitions given (#476). */
+export function hasPredicted(ports: { predictions: PredictionRepository }) {
+  return {
+    async execute(input: { userId: string; competitionSlugs: string[] }): Promise<boolean> {
+      const lists = await Promise.all(
+        input.competitionSlugs.map((slug) =>
+          ports.predictions.listForCompetition(input.userId, slug),
+        ),
+      );
+      return lists.some((list) => list.length > 0);
+    },
+  };
+}
+
 /** One past or coming prediction, as the profile and « Tous mes pronos » show it (#387). */
 export type MyPredictionLine = {
   competitionSlug: string;
