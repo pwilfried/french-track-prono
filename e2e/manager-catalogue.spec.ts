@@ -30,7 +30,11 @@ test("the admin prices an athlete, who then shows in the catalogue of a Manager 
       .locator("xpath=ancestor::form")
       .getByRole("button")
       .click();
-    await expect(page.getByRole("alert")).toContainText("nombre entier de crédits");
+    // Scoped to <main> so Next.js's __next-route-announcer__ (also role="alert", outside main)
+    // doesn't trip Playwright's strict mode.
+    await expect(page.getByRole("main").getByRole("alert")).toContainText(
+      "nombre entier de crédits",
+    );
     await page.getByLabel("Prix (crédits)").fill("14");
     await page
       .getByLabel("Prix (crédits)")
