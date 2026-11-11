@@ -35,6 +35,15 @@ export function clubAdminContract(name: string, world: () => Promise<ClubAdminWo
       expect(all !== "not_admin" && all[0]).toMatchObject({ id, validated: true });
     });
 
+    it("finds a club whose words are in another order than the query", async () => {
+      const w = await world();
+      const t = tag();
+      const id = await w.playerClub(`Foulées ${t} Athlé`);
+
+      const found = await w.admin.list(`athle foulees ${t}`, false);
+      expect(found !== "not_admin" && found.map((c) => c.id)).toEqual([id]);
+    });
+
     it("creates, renames and deletes a club", async () => {
       const w = await world();
       const t = tag();
