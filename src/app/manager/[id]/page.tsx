@@ -4,7 +4,7 @@ import { UseCaseError } from "@/application/errors";
 import { getManagerLeague, type ManagerLeagueFile } from "@/application/manager-leagues";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
-import { formatInviteCode } from "@/domain/league";
+import { ShareInvite } from "@/components/leagues/share-invite";
 import {
   canStartManagerSeason,
   MANAGER_LEAGUE_MAX,
@@ -58,12 +58,12 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
         </p>
 
         {isOwner && !league.isPublic && (
-          <p className="flex items-center justify-between gap-3 rounded-card border border-border bg-card p-3.5">
-            <span className="font-semibold">{text.inviteCode}</span>
-            <span className="font-mono text-xl font-bold tracking-widest">
-              {formatInviteCode(league.inviteCode)}
-            </span>
-          </p>
+          <ShareInvite
+            code={league.inviteCode}
+            leagueName={league.name}
+            path={`/manager/rejoindre?code=${league.inviteCode}`}
+            shareText={text.shareText(league.name)}
+          />
         )}
 
         <section aria-labelledby="participants" className="flex flex-col gap-2">

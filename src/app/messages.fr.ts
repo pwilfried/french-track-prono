@@ -239,13 +239,24 @@ export const messages = {
     ready: "Prêt : la saison peut être lancée.",
     notReady: (min: number, max: number) =>
       `Il faut de ${min} à ${max} participants, en nombre pair, pour lancer la saison.`,
-    inviteCode: "Code d'invitation",
     rules: "Règles de la ligue",
     budget: (n: number) => `${n} crédits de budget`,
     teamSize: (n: number) => `Équipes de ${n} athlètes`,
     lineup: (n: number) => `${n} athlètes alignés au plus par compétition`,
     competitions: (n: number) =>
       `${n} ${n <= 1 ? "compétition éligible" : "compétitions éligibles"}`,
+    publicTitle: "Ligues publiques",
+    publicEmpty: "Aucune ligue publique avec des places libres pour l'instant.",
+    joinLeague: (name: string) => `Rejoindre la ligue ${name}`,
+    join: "Rejoindre",
+    joining: "…",
+    joinWithCode: "Rejoindre avec un code",
+    joinTitle: "Rejoindre une ligue Manager",
+    joinSubtitle: "Avec le code ou le lien reçu du créateur.",
+    codeLabel: "Code d'invitation",
+    codeHint: "6 caractères, par exemple K7M 2QX.",
+    joinSubmit: "Rejoindre la ligue",
+    shareText: (name: string) => `Rejoins ma ligue French Track Manager « ${name} »`,
   },
   leagues: {
     title: "Mes ligues",
@@ -1569,6 +1580,7 @@ export const messages = {
     MANAGER_RULES_INVALID:
       "Ces règles ne permettent pas de jouer : vérifie que les quotas remplissent l'équipe, que l'alignement y tient et qu'un mode de clôture est coché.",
     MANAGER_RULES_UNAVAILABLE: "Les règles Manager n'ont pas pu être chargées. Réessaie.",
+    MERCATO_OPEN: "Le mercato de cette ligue a commencé : les inscriptions sont closes.",
     retry: "Réessayer",
   },
   legal: {
