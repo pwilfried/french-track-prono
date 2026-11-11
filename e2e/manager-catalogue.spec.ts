@@ -55,7 +55,9 @@ test("the admin prices an athlete, who then shows in the catalogue of a Manager 
     await page.getByRole("button", { name: "Filtrer" }).click();
     const card = page.getByRole("article", { name });
     await expect(card).toContainText("14 cr.");
-    await expect(card).toContainText("Libre");
+    // A free athlete shows no status label since #503: only a taken one says "Pris".
+    await expect(card).not.toContainText("Pris");
+    await expect(card).not.toContainText("Libre");
     await expect(page.getByRole("status")).toHaveText("1 athlète");
 
     await page.getByLabel("Sexe").selectOption({ label: "Hommes" });
