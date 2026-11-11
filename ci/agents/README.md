@@ -14,7 +14,11 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
 4. CI verte : la PR est fusionnée (squash), après y avoir fusionné `main` si elle était en retard.
    CI rouge ou conflit : la PR repart à Claude avec les logs (3 essais, puis le propriétaire).
 5. Une PR fusionnée qui touche l'interface laisse une issue `needs-human` « Check the UI of #n ».
-6. Le tag (mise en prod) reste fait à la main par le propriétaire.
+6. Quand le milestone `vX.Y …` qui suit le dernier tag n'a plus d'issue ouverte et que tous les
+   runs du dernier commit de `main` sont verts, `release.sh` pose le tag annoté `vX.Y.0` avec
+   `AGENTS_PAT`, ce qui lance la mise en prod (`migrations.yml`). Une release GitHub liste les PR
+   (sa notification prévient les propriétaires) et le milestone est fermé. `main` rouge : pas de
+   tag, un avertissement dans le run, nouvel essai à la vérification suivante.
 
 Une issue n'est jamais prise si elle a `needs-human`, `agent:blocked` ou `after-ui`, ou si une
 issue qui la bloque est encore ouverte (lien GitHub « blocked by » ou ligne `Blocked by #n`).
@@ -70,4 +74,4 @@ sont créés avec cette PR.
 - Les captures d'écran 390 px (clair et sombre) : Claude ne les produit pas sur le runner ; l'issue
   « Check the UI of #n » sert à regarder l'écran après la fusion.
 - La base Supabase locale (pgTAP, adaptateurs, e2e) : Claude ne la lance pas, la CI de la PR le fait.
-- Le tag de version et la mise en prod.
+- Un tag de correctif (`vX.Y.Z` hors milestone) : à la main, comme avant.
