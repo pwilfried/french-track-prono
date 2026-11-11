@@ -1,26 +1,13 @@
 import { messages } from "@/app/messages.fr";
 import { ChipStatus } from "@/components/ui/chip-status";
-import type { DisciplineFamily } from "@/domain/discipline";
+import { flagOf } from "@/domain/flag";
 import type { CatalogueAthlete } from "@/domain/manager-catalogue";
 import { cn } from "@/lib/utils";
 
 const text = messages.catalogue;
 
-/** A sign per family of events, to scan the catalogue by eye (#503). */
-const FAMILY_SIGN: Record<DisciplineFamily, string> = {
-  sprint: "⚡",
-  hurdles: "🚧",
-  middle: "🏃",
-  long: "🛣️",
-  relay: "🤝",
-  horizontal_jumps: "➡️",
-  vertical_jumps: "⬆️",
-  throws: "🥏",
-  combined: "🏅",
-};
-
 /**
- * One athlete of the mercato catalogue, on one compact line (#503): who, which event, PB (the
+ * One athlete of the mercato catalogue, on one compact line (#503): flag, who, which event, PB (the
  * SB only when it differs), the price or « Recruté ». `children` goes at the bottom: the
  * player's bid while the mercato is open (#422).
  */
@@ -43,9 +30,9 @@ export function CatalogueCard({
       <div className="flex items-center gap-3">
         <span
           aria-hidden
-          className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-lg"
+          className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-2xl"
         >
-          {FAMILY_SIGN[athlete.family]}
+          {flagOf(countryCode) ?? <span className="text-xs font-bold">{countryCode}</span>}
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="break-words font-extrabold leading-tight">{name}</h3>

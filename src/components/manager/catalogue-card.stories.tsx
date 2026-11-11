@@ -87,7 +87,6 @@ export const LongNameNoRecords: Story = {
       ...meta.args.athlete,
       name: "Marie-Charlotte de La Tour-Fictive-Longuenom",
       discipline: "3000 m steeple",
-      family: "long",
       pb: null,
       sb: null,
       price: 125,
