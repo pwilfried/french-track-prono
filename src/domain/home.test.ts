@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { EventSummary } from "./event";
-import { openFinals } from "./home";
+import { firstFinalToPredict, openFinals } from "./home";
 
 const event = (
   id: string,
@@ -41,5 +41,27 @@ describe("openFinals", () => {
 
   it("is empty once every final is locked", () => {
     expect(openFinals([event("a", "2026-11-23T12:00:00Z")], new Set(), now)).toEqual([]);
+  });
+});
+
+describe("firstFinalToPredict", () => {
+  const now = new Date("2026-11-23T12:00:00Z");
+
+  it("leads a visitor to the first final still open", () => {
+    expect(
+      firstFinalToPredict(
+        [
+          event("late", "2026-11-25T19:00:00Z"),
+          event("locked", "2026-11-23T11:00:00Z"),
+          event("heat", "2026-11-23T18:00:00Z", "series"),
+          event("soon", "2026-11-23T20:40:00Z"),
+        ],
+        now,
+      ),
+    ).toBe("soon");
+  });
+
+  it("is null when no final is open", () => {
+    expect(firstFinalToPredict([event("a", "2026-11-23T11:00:00Z")], now)).toBeNull();
   });
 });

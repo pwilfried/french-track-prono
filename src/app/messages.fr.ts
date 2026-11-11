@@ -99,10 +99,37 @@ export const messages = {
     podcastText: "Les analyses et les invités avant chaque grand rendez-vous.",
     podcastLink: "Écouter",
   },
+  visitorHome: {
+    eyebrow: "Pronostics d'athlétisme",
+    title: "Devine le podium. Bats tes amis.",
+    intro:
+      "Avant chaque finale, tu choisis le 1er, le 2e et le 3e. Plus tu vises juste, plus tu marques de points.",
+    play: "Faire mon premier prono",
+    free: "Gratuit, sans argent en jeu. Un e-mail suffit pour jouer.",
+    howTitle: "Comment ça marche",
+    steps: (exact: number, perfect: number) => [
+      {
+        title: "Choisis une finale",
+        text: "Chaque épreuve affiche son compte à rebours avant le départ.",
+      },
+      {
+        title: "Compose ton podium",
+        text: "Trois taps : 1er, 2e, 3e. Tu peux changer d'avis jusqu'au départ.",
+      },
+      {
+        title: "Marque des points",
+        text: `${exact} point${exact > 1 ? "s" : ""} par athlète à la bonne place, ${perfect} pour le podium parfait.`,
+      },
+    ],
+    allRules: "Toutes les règles",
+    nextTitle: "Prochaine compétition",
+    seeEvents: "Voir les épreuves",
+    friendsTitle: "Encore mieux entre amis",
+    friends:
+      "Crée une ligue, partage le code, et regarde le classement bouger après chaque finale.",
+    createLeague: "Créer une ligue",
+  },
   start: {
-    eyebrow: "Pronostics athlétisme",
-    title: "Choisis ta compétition",
-    intro: "Pronostique les podiums, crée ta ligue entre amis sur une ou plusieurs compétitions.",
     blocksLabel: "Types de compétition",
     block: { international: "Compétitions internationales", france: "Compétitions françaises" },
     coming: (count: number) => (count === 0 ? "Aucune à venir" : `${count} à venir`),

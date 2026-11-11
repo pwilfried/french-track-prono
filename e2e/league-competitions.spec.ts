@@ -22,10 +22,7 @@ test("a player picks two French competitions on the home page and his league add
   }
   const player = newPlayer("multi");
 
-  await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Choisis ta compétition");
-  await page.getByRole("link", { name: /Compétitions françaises/ }).click();
-  await expect(page).toHaveURL(/\/competitions\?type=france$/);
+  await page.goto("/competitions?type=france");
   for (const name of names) await page.getByRole("checkbox", { name: new RegExp(name) }).check();
   await page.getByRole("button", { name: "Créer ma ligue" }).click();
 

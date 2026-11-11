@@ -1,13 +1,25 @@
 import Link from "next/link";
 
+import { UseCaseError } from "@/application/errors";
+import { listEvents } from "@/application/list-events";
 import { ClubNotices } from "@/components/account/club-notices";
 import { PlayerHome } from "@/components/home/player-home";
+import { VisitorHome } from "@/components/home/visitor-home";
 import { buttonVariants } from "@/components/ui/button";
 import { daysUntil, type CompetitionScope } from "@/domain/competition";
+import { firstFinalToPredict } from "@/domain/home";
+import { createPublicSupabaseClient, createSupabaseEventReader } from "@/infra";
 
-import { currentDay, loadCompetitions, SCOPE_CHIP, type ShownCompetition } from "./competition";
+import {
+  currentCompetition,
+  currentDay,
+  loadCompetitions,
+  SCOPE_CHIP,
+  type ShownCompetition,
+} from "./competition";
 import { loadPlayerHome } from "./home-data";
 import { messages } from "./messages.fr";
+import { loadScale } from "./scale";
 import { getCurrentUser } from "./session";
 
 const SCOPES: CompetitionScope[] = ["international", "france"];
@@ -70,8 +82,49 @@ function NextCompetition({ c, today }: { c: ShownCompetition; today: string }) {
 }
 
 /**
+ * The visitor's home (#439): the sign-in, then the first open final of the next competition; the
+ * card shows that competition while it is to come or has finals still open.
+ */
+async function Visitor({ coming, today }: { coming: ShownCompetition[]; today: string }) {
+  const competition = await currentCompetition();
+  const [scale, events] = await Promise.all([
+    loadScale(),
+    listEvents({ events: createSupabaseEventReader(createPublicSupabaseClient()) })
+      .execute({ competitionSlug: competition.slug })
+      .catch((error: unknown) => {
+        if (error instanceof UseCaseError) return [];
+        throw error;
+      }),
+  ]);
+  const final = firstFinalToPredict(events, new Date());
+  const shown = final || coming.some((c) => c.slug === competition.slug) ? competition : null;
+  const exact = scale.exact_slot ?? 0;
+
+  return (
+    <VisitorHome
+      playHref={
+        final ? `/connexion?next=${encodeURIComponent(`/epreuves/${final}`)}` : "/connexion"
+      }
+      exactPoints={exact}
+      perfectPoints={3 * exact + (scale.perfect_podium ?? 0)}
+      competition={
+        shown && {
+          slug: shown.slug,
+          scope: shown.scope,
+          name: shown.name,
+          place: shown.place,
+          finals: shown.finals,
+          daysLeft: Math.max(0, daysUntil(shown.startsOn, today)),
+        }
+      }
+    />
+  );
+}
+
+/**
  * Home: a running track behind (#346). A signed-in player first sees what to do next and where they
- * stand (board A+); everyone sees the two kinds of competitions, then the next two to come.
+ * stand (board A+), then the two kinds of competitions and the next two to come; a visitor sees how
+ * to play and one button to a first prediction (#439).
  */
 export default async function Home() {
   const today = currentDay();
@@ -81,39 +134,32 @@ export default async function Home() {
     user ? loadPlayerHome(user.userId) : Promise.resolve(null),
   ]);
 
+  if (!player) {
+    return (
+      <main id="main" className="flex flex-1 flex-col">
+        <div className="mx-auto flex w-full max-w-md flex-col px-4 py-6">
+          <Visitor coming={coming} today={today} />
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main id="main" className="flex flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-6 md:max-w-3xl">
-        {player ? <ClubNotices notices={player.clubNotices} /> : null}
-        {player ? (
-          <PlayerHome
-            pseudo={player.pseudo}
-            competitionName={player.competition.name}
-            competitionSlug={player.competition.slug}
-            hasLeagueForCompetition={player.hasLeagueForCompetition}
-            timeZone={player.competition.timeZone}
-            now={new Date()}
-            finals={player.finals}
-            general={player.general}
-            league={player.league}
-            lastResult={player.lastResult}
-          />
-        ) : (
-          <div className="flex flex-col gap-1.5">
-            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-              {messages.start.eyebrow}
-            </p>
-            <h1 className="font-display text-[34px] font-extrabold leading-none">
-              {messages.start.title}
-            </h1>
-            <p className="text-[15px] leading-relaxed text-muted-foreground">
-              {messages.start.intro}
-            </p>
-            <Link href="/regles" className="inline-flex min-h-11 items-center self-start font-bold">
-              {messages.rules.link}
-            </Link>
-          </div>
-        )}
+        <ClubNotices notices={player.clubNotices} />
+        <PlayerHome
+          pseudo={player.pseudo}
+          competitionName={player.competition.name}
+          competitionSlug={player.competition.slug}
+          hasLeagueForCompetition={player.hasLeagueForCompetition}
+          timeZone={player.competition.timeZone}
+          now={new Date()}
+          finals={player.finals}
+          general={player.general}
+          league={player.league}
+          lastResult={player.lastResult}
+        />
 
         <nav aria-label={messages.start.blocksLabel} className="grid grid-cols-2 gap-3">
           {SCOPES.map((scope) => (

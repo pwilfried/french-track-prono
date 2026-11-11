@@ -4,7 +4,11 @@ test("a visitor opens « Comment jouer » from the home page and reads the scale
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "Comment jouer ?" }).click();
+  // The third step of « Comment ça marche » reads its points from the scale (#439).
+  await expect(
+    page.getByText(/\d+ points? par athlète à la bonne place, \d+ pour le podium parfait/),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Toutes les règles" }).click();
 
   await expect(page).toHaveURL(/\/regles$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Comment jouer");
