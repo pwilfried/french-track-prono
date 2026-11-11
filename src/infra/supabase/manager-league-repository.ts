@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { UseCaseError } from "@/application/errors";
-import type { ManagerLeagueRepository } from "@/application/manager-leagues";
+import type { JoinOutcome, ManagerLeagueRepository } from "@/application/manager-leagues";
 import type { ManagerRules } from "@/domain/manager-rules";
 
 type LeagueRow = {
@@ -21,6 +21,17 @@ const league = (row: LeagueRow, memberCount: number) => ({
   memberCount,
 });
 
+/** What a join function answered: the league, or why the player stays out. */
+function outcome(result: { data: unknown; error: { code: string } | null }): JoinOutcome {
+  const { data, error } = result;
+  if (!error) return typeof data === "string" ? { outcome: "joined", leagueId: data } : { outcome: "unknown" };
+  if (error.code === "P0002" || error.code === "22P02") return { outcome: "unknown" };
+  if (error.code === "54000") return { outcome: "full" };
+  if (error.code === "FT012") return { outcome: "too_many" };
+  if (error.code === "FT015") return { outcome: "mercato_open" };
+  throw new UseCaseError("LEAGUES_UNAVAILABLE");
+}
+
 /** The player's session: row level security shows them the leagues they are in only. */
 export function createSupabaseManagerLeagueRepository(client: SupabaseClient): ManagerLeagueRepository {
   return {
@@ -33,6 +44,24 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
       if (error?.code === "23514") throw new UseCaseError("LEAGUE_NAME_INVALID");
       if (error || typeof data !== "string") throw new UseCaseError("LEAGUES_UNAVAILABLE");
       return { id: data };
+    },
+
+    async join(code) {
+      return outcome(await client.rpc("join_manager_league", { p_code: code }));
+    },
+
+    async joinPublic(id) {
+      return outcome(await client.rpc("join_public_manager_league", { p_league: id }));
+    },
+
+    async listPublic() {
+      const { data, error } = await client.rpc("list_public_manager_leagues");
+      if (error) throw new UseCaseError("LEAGUES_UNAVAILABLE");
+      return (data as { league_id: string; name: string; member_count: number }[]).map((row) => ({
+        id: row.league_id,
+        name: row.name,
+        memberCount: Number(row.member_count),
+      }));
     },
 
     async listMine() {

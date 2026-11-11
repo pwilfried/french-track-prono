@@ -29,7 +29,8 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - Les règles sont **figées à la création** de la ligue : tous ses participants jouent avec les
   mêmes paramètres.
 - Écrans : back-office › Manager pour les règles (#418) ; `/manager` pour les ligues, depuis
-  « Mes ligues » (#419). Les ligues Manager ont leurs propres tables, à part des ligues de pronos.
+  « Mes ligues » (#419) ; inscription en un geste à une ligue publique, ou par code et lien
+  `/manager/rejoindre?code=…` pour une privée, close à l'ouverture du mercato (#420). Les ligues Manager ont leurs propres tables, à part des ligues de pronos.
 - Les valeurs posées par la migration de #418 (budget 100, équipe
   de 12, alignement de 8, bonus…) sont un point de départ à ajuster par le propriétaire.
 
