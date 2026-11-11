@@ -52,3 +52,20 @@ pr_meta_args() {
     (.labels[].name | select(startswith("agent:") | not) | "--label\n" + .),
     (if .milestone then "--milestone\n" + .milestone.title else empty end)'
 }
+
+# Conventional PR title (AGENTS.md): the subject of the branch's first commit when it is one,
+# otherwise the issue title with a type taken from the issue's labels.
+# Args: first commit subject, issue title, labels (comma-separated).
+pr_title() {
+  local subject=$1 title=$2 labels=",$3," type=chore
+  if [[ $subject =~ ^(feat|fix|chore|docs|test|refactor|perf|ci|build|style)(\([^\)]+\))?!?:\ .+ ]]; then
+    echo "$subject"
+    return
+  fi
+  case $labels in
+    *,feature,*) type=feat ;;
+    *,bug,*) type=fix ;;
+    *,docs,*) type=docs ;;
+  esac
+  echo "$type: $title"
+}
