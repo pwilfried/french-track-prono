@@ -384,6 +384,13 @@ Règles : migration `20261109030000_inactive_accounts.sql` (testées en pgTAP). 
 ceux des migrations : `RESEND_API_KEY` et `RESEND_FROM` (environnement « production »). Sans eux,
 personne n'est prévenu, donc personne n'est supprimé.
 
+## Tours d'enchères du Manager
+
+Le workflow « Manager rounds » (toutes les 5 minutes, ou à la main) clôt les tours d'enchères
+du mercato French Track Manager dont l'heure est passée et attribue les athlètes (règles dans
+`supabase/migrations/20261111170000_manager_awards.sql`). Il rejoue sans double attribution. Pas
+de secret en plus de ceux des migrations (`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`).
+
 ## Notifications push
 
 Les joueurs qui les ont activées depuis leur profil reçoivent un rappel avant le verrouillage

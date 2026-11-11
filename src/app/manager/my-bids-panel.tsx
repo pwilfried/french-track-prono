@@ -3,10 +3,36 @@ import { messages } from "@/app/messages.fr";
 
 const text = messages.catalogue;
 
-/** The budget, the credits the bids reserve and those left, then the player's own bids (#422). */
+const roundEnd = new Intl.DateTimeFormat("fr-FR", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Europe/Paris",
+});
+
+/** One line of a list: an athlete's name and an amount of credits, with an optional note. */
+function Line({ name, amount, note }: { name: string; amount: number; note?: string }) {
+  return (
+    <li className="flex justify-between gap-3">
+      <span className="min-w-0 break-words font-semibold">
+        {name}
+        {note && <span className="font-normal text-muted-foreground"> · {note}</span>}
+      </span>
+      <span className="shrink-0 font-mono font-bold tabular-nums">{text.price(amount)}</span>
+    </li>
+  );
+}
+
+/**
+ * The budget, the credits spent on the athletes won, reserved by the bids and left; when the open
+ * round ends; then the athletes won and the player's own bids (#422, #423).
+ */
 export function MyBidsPanel({ bids }: { bids: MyBidsView }) {
   const figures = [
     [text.budget, bids.budget],
+    [text.spent, bids.spent],
     [text.reserved, bids.reserved],
     [text.left, bids.available],
   ] as const;
@@ -21,7 +47,7 @@ export function MyBidsPanel({ bids }: { bids: MyBidsView }) {
       >
         {text.budgetTitle}
       </h2>
-      <dl className="grid grid-cols-3 gap-2 text-center">
+      <dl className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
         {figures.map(([label, value]) => (
           <div key={label} className="rounded-xl bg-muted px-2 py-2">
             <dt className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -31,7 +57,24 @@ export function MyBidsPanel({ bids }: { bids: MyBidsView }) {
           </div>
         ))}
       </dl>
+      {bids.roundEndsAt && (
+        <p className="text-sm font-semibold">
+          {text.roundEnds(roundEnd.format(new Date(bids.roundEndsAt)))}
+        </p>
+      )}
       <p className="text-sm text-muted-foreground">{text.secret}</p>
+      <h3 id="my-team" className="text-sm font-bold">
+        {text.myTeam}
+      </h3>
+      {bids.team.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{text.noTeam}</p>
+      ) : (
+        <ul aria-labelledby="my-team" className="flex flex-col gap-1 text-sm">
+          {bids.team.map((a) => (
+            <Line key={a.athleteId} name={a.name} amount={a.amount} note={text.wonIn(a.round)} />
+          ))}
+        </ul>
+      )}
       <h3 id="my-bids" className="text-sm font-bold">
         {text.myBids}
       </h3>
@@ -40,12 +83,7 @@ export function MyBidsPanel({ bids }: { bids: MyBidsView }) {
       ) : (
         <ul aria-labelledby="my-bids" className="flex flex-col gap-1 text-sm">
           {bids.bids.map((b) => (
-            <li key={b.athleteId} className="flex justify-between gap-3">
-              <span className="min-w-0 break-words font-semibold">{b.name}</span>
-              <span className="shrink-0 font-mono font-bold tabular-nums">
-                {text.price(b.amount)}
-              </span>
-            </li>
+            <Line key={b.athleteId} name={b.name} amount={b.amount} />
           ))}
         </ul>
       )}
