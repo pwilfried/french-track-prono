@@ -27,7 +27,7 @@ export function DisciplinePicker({
           key={family}
           role="group"
           aria-labelledby={`family-${family}`}
-          className="flex flex-col gap-1.5"
+          className="flex flex-col gap-2"
         >
           <span id={`family-${family}`} className="font-bold">
             {messages.disciplines.family[family]}
