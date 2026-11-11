@@ -55,6 +55,8 @@ function bids(mine: MyManagerBids | "not_member", answer: BidOutcome = "placed")
 const open: MyManagerBids = {
   budget: 100,
   mercatoOpen: true,
+  roundEndsAt: "2027-01-03T10:00:00.000Z",
+  team: [],
   bids: [
     { athleteId: "a1", amount: 30, bidAt: "2027-01-02T10:00:00.000Z" },
     { athleteId: "a2", amount: 25, bidAt: "2027-01-01T10:00:00.000Z" },
@@ -69,11 +71,36 @@ describe("getMyManagerBids", () => {
       leagueId: "l1",
     });
 
-    expect(view).toMatchObject({ budget: 100, reserved: 55, available: 45, mercatoOpen: true });
+    expect(view).toMatchObject({
+      budget: 100,
+      spent: 0,
+      reserved: 55,
+      available: 45,
+      mercatoOpen: true,
+      roundEndsAt: "2027-01-03T10:00:00.000Z",
+    });
     expect(view.bids.map((b) => [b.name, b.amount, b.price])).toEqual([
       ["Anna Fictive", 25, 15],
       ["Zoé Fictive", 30, 10],
     ]);
+  });
+
+  it("shows the athletes won at the close of a round and the budget left", async () => {
+    // Given a participant who won Anna for 40 in round 1 and bids 30 on Zoé in round 2
+    const { repository } = bids({
+      ...open,
+      team: [{ athleteId: "a2", amount: 40, round: 1 }],
+      bids: [{ athleteId: "a1", amount: 30, bidAt: "2027-01-04T10:00:00.000Z" }],
+    });
+
+    // When they open the catalogue
+    const view = await getMyManagerBids({ bids: repository, catalogue }).execute({
+      leagueId: "l1",
+    });
+
+    // Then the 40 is spent, the 30 reserved, and 30 credits are left
+    expect(view).toMatchObject({ budget: 100, spent: 40, reserved: 30, available: 30 });
+    expect(view.team).toEqual([{ athleteId: "a2", name: "Anna Fictive", amount: 40, round: 1 }]);
   });
 
   it("answers LEAGUE_NOT_FOUND to a player who is not in the league", async () => {
@@ -115,6 +142,8 @@ describe("placeManagerBid", () => {
     ["mercato_closed", "MERCATO_NOT_OPEN"],
     ["not_in_catalogue", "ATHLETE_NOT_IN_CATALOGUE"],
     ["not_member", "LEAGUE_NOT_FOUND"],
+    ["taken", "ATHLETE_TAKEN"],
+    ["round_closing", "ROUND_CLOSING"],
   ] as const)("turns a refused bid (%s) into %s", async (answer, code) => {
     const { repository } = bids(open, answer);
 

@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "storybook-static/**",
+    // Deno code (Edge Functions): `npm:` imports and the Deno global.
+    "supabase/functions/push-notifications/**",
   ]),
 ]);
 
