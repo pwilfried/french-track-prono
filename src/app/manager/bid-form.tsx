@@ -41,12 +41,16 @@ export function BidForm({
 
   if (!open) {
     return (
-      <div className="ml-auto flex items-center gap-2">
-        {current !== null && <ChipStatus tone="brand">{text.myBid(current)}</ChipStatus>}
+      <div className="flex flex-col gap-2">
+        {current !== null && (
+          <ChipStatus tone="brand" className="justify-center">
+            {text.myBid(current)}
+          </ChipStatus>
+        )}
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className={`${buttonVariants({ variant: current !== null ? "outline" : "default" })} px-5 text-sm`}
+          className={`${buttonVariants({ variant: current !== null ? "outline" : "default" })} w-full px-3 text-sm`}
         >
           {current !== null ? text.change : text.bid}
         </button>
@@ -55,7 +59,7 @@ export function BidForm({
   }
 
   return (
-    <form action={action} className="flex basis-full flex-col gap-2 border-t border-border pt-3">
+    <form action={action} className="flex flex-col gap-2 border-t border-border pt-3">
       <input type="hidden" name="league" value={leagueId} />
       <input type="hidden" name="athlete" value={athleteId} />
       <div className="flex items-center gap-2">
