@@ -11,9 +11,20 @@ import { reportError } from "@/lib/report-error";
  * The invite code, big and easy to read, with the phone's share sheet for the link (when the
  * browser has one) and a copy button as the fallback.
  */
-export function ShareInvite({ code, leagueName }: { code: string; leagueName: string }) {
+export function ShareInvite({
+  code,
+  leagueName,
+  path = `/rejoindre/${code}`,
+  shareText = messages.leagues.shareText(leagueName),
+}: {
+  code: string;
+  leagueName: string;
+  /** Where the link leads: the prediction leagues by default, `/manager/rejoindre…` for Manager. */
+  path?: string;
+  shareText?: string;
+}) {
   const [copied, setCopied] = useState(false);
-  const link = () => `${window.location.origin}/rejoindre/${code}`;
+  const link = () => `${window.location.origin}${path}`;
 
   const copy = async () => {
     try {
@@ -28,7 +39,7 @@ export function ShareInvite({ code, leagueName }: { code: string; leagueName: st
       try {
         await navigator.share({
           title: leagueName,
-          text: messages.leagues.shareText(leagueName),
+          text: shareText,
           url: link(),
         });
         return;

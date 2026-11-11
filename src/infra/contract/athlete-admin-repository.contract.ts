@@ -74,6 +74,16 @@ export function athleteAdminRepositoryContract(
       );
     });
 
+    it("lets an admin set and remove the Manager price, not a player", async () => {
+      const w = await world();
+
+      expect(await w.player.setPrice(w.athleteId, 12)).toBe("not_admin");
+      expect(await w.admin.setPrice(w.athleteId, 12)).toBe("saved");
+      expect((await w.admin.find(w.slug))?.managerPrice).toBe(12);
+      expect(await w.admin.setPrice(w.athleteId, null)).toBe("saved");
+      expect((await w.admin.find(w.slug))?.managerPrice).toBeNull();
+    });
+
     it("refuses every write from a player", async () => {
       const w = await world();
 

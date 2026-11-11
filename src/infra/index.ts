@@ -73,3 +73,9 @@ export { createInMemoryPushSubscriptionStore } from "./in-memory/push-subscripti
 export { createSupabasePushSubscriptionRepository } from "./supabase/push-subscription-repository";
 export { createInMemoryReadinessStore } from "./in-memory/readiness-reader";
 export { createSupabaseReadinessReader } from "./supabase/readiness-reader";
+export { createInMemoryManagerRuleStore } from "./in-memory/manager-rule-repository";
+export { createSupabaseManagerRuleRepository } from "./supabase/manager-rule-repository";
+export { createInMemoryManagerLeagueStore } from "./in-memory/manager-league-repository";
+export { createSupabaseManagerLeagueRepository } from "./supabase/manager-league-repository";
+export { createInMemoryManagerCatalogue } from "./in-memory/manager-catalogue-repository";
+export { createSupabaseManagerCatalogue } from "./supabase/manager-catalogue-repository";
