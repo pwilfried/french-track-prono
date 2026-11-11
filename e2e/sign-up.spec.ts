@@ -4,12 +4,20 @@ import { sql } from "../src/infra/contract/database";
 import { clearMailbox, latestCodeFromMailbox } from "../src/infra/contract/mailbox";
 import { newPlayer } from "./players";
 
-test("a new player gives sex, two sprint disciplines and a club found in the list", async ({
+test("a visitor taps « Faire mon premier prono », signs up and lands on the first open final", async ({
   page,
 }) => {
+  // The first final still open of the competition (run `npm run db:open-events` first).
+  const slug = sql(
+    `select e.slug from events e join competitions c on c.id = e.competition_id
+     where c.slug = 'ultimate-championship-2026' and e.round = 'final' and e.lock_at > now()
+     order by e.starts_at, e.slug limit 1`,
+  );
+  expect(slug, "no open final: run npm run db:open-events").not.toBe("");
   const player = newPlayer("signup");
   await clearMailbox(player.email);
-  await page.goto("/profil");
+  await page.goto("/");
+  await page.getByRole("link", { name: "Faire mon premier prono" }).click();
   await page.waitForURL(/\/connexion/);
   await page.getByLabel("Ton e-mail").fill(player.email);
   await page.getByRole("button", { name: "Recevoir mon code" }).click();
@@ -27,7 +35,7 @@ test("a new player gives sex, two sprint disciplines and a club found in the lis
   await expect(page.getByRole("button", { name: "Changer" })).toBeVisible();
   await page.getByRole("checkbox", { name: /15 ans/ }).check();
   await page.getByRole("button", { name: "Créer mon profil" }).click();
-  await page.waitForURL(/\/profil$/);
+  await page.waitForURL(new RegExp(`/epreuves/${slug}$`));
 
   const profile = `(select id from profiles where pseudo = '${player.pseudo}')`;
   expect(sql(`select sex from player_details where profile_id = ${profile}`)).toBe("F");
