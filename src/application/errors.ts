@@ -85,7 +85,9 @@ export type ErrorCode =
   | "DISCIPLINE_EXISTS"
   | "DISCIPLINE_NAME_INVALID"
   | "DISCIPLINES_UNAVAILABLE"
-  | "ATHLETES_UNAVAILABLE";
+  | "ATHLETES_UNAVAILABLE"
+  | "MANAGER_RULES_INVALID"
+  | "MANAGER_RULES_UNAVAILABLE";
 
 let reportUnavailable: ((code: ErrorCode) => void) | undefined;
 
