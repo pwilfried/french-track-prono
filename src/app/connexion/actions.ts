@@ -10,7 +10,6 @@ import { safeRedirectPath } from "@/domain/redirect";
 import { createSupabaseAuthService, createSupabaseProfileRepository } from "@/infra";
 
 import { formText } from "../form-data";
-import { landingAfterSignIn } from "../landing";
 import { getSessionClient } from "../session";
 
 export type SignInState = {
@@ -60,10 +59,11 @@ export async function signInAction(_: SignInState, data: FormData): Promise<Sign
     const profile = await getProfile({
       profiles: createSupabaseProfileRepository(client),
     }).execute({ userId: session.userId });
-    return profile ? landingAfterSignIn(client, session.userId, next) : null;
+    return profile ? next : null;
   });
   if ("error" in result) return { step: "code", email, error: result.error };
 
-  // A new player creates a profile first; they land on `next` afterwards.
+  // Everyone, admins included, lands on `next` (the home page by default; decision of 11 Nov
+  // 2026). A new player creates a profile first; they land on `next` afterwards.
   redirect(result.value ?? `/bienvenue?next=${encodeURIComponent(next)}`);
 }
