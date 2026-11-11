@@ -106,7 +106,16 @@ export const messages = {
       "Avant chaque finale, tu choisis le 1er, le 2e et le 3e. Plus tu vises juste, plus tu marques de points.",
     play: "Faire mon premier prono",
     free: "Gratuit, sans argent en jeu. Un e-mail suffit pour jouer.",
-    howTitle: "Comment ça marche",
+    nextTitle: "Prochaine compétition",
+    seeEvents: "Voir les épreuves",
+    friendsTitle: "Encore mieux entre amis",
+    friends:
+      "Crée une ligue, partage le code, et regarde le classement bouger après chaque finale.",
+    createLeague: "Créer une ligue",
+  },
+  /** The three steps, on the visitor's home and on the player's until a first prediction. */
+  howItWorks: {
+    title: "Comment ça marche",
     steps: (exact: number, perfect: number) => [
       {
         title: "Choisis une finale",
@@ -122,12 +131,6 @@ export const messages = {
       },
     ],
     allRules: "Toutes les règles",
-    nextTitle: "Prochaine compétition",
-    seeEvents: "Voir les épreuves",
-    friendsTitle: "Encore mieux entre amis",
-    friends:
-      "Crée une ligue, partage le code, et regarde le classement bouger après chaque finale.",
-    createLeague: "Créer une ligue",
   },
   start: {
     blocksLabel: "Types de compétition",
