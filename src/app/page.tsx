@@ -3,6 +3,7 @@ import Link from "next/link";
 import { UseCaseError } from "@/application/errors";
 import { listEvents } from "@/application/list-events";
 import { ClubNotices } from "@/components/account/club-notices";
+import { HowItWorks } from "@/components/home/how-it-works";
 import { PlayerHome } from "@/components/home/player-home";
 import { VisitorHome } from "@/components/home/visitor-home";
 import { buttonVariants } from "@/components/ui/button";
@@ -81,6 +82,12 @@ function NextCompetition({ c, today }: { c: ShownCompetition; today: string }) {
   );
 }
 
+/** The points « Comment ça marche » reads from the scale. */
+function stepPoints(scale: Record<string, number>) {
+  const exact = scale.exact_slot ?? 0;
+  return { exactPoints: exact, perfectPoints: 3 * exact + (scale.perfect_podium ?? 0) };
+}
+
 /**
  * The visitor's home (#439): the sign-in, then the first open final of the next competition; the
  * card shows that competition while it is to come or has finals still open.
@@ -98,15 +105,13 @@ async function Visitor({ coming, today }: { coming: ShownCompetition[]; today: s
   ]);
   const final = firstFinalToPredict(events, new Date());
   const shown = final || coming.some((c) => c.slug === competition.slug) ? competition : null;
-  const exact = scale.exact_slot ?? 0;
 
   return (
     <VisitorHome
       playHref={
         final ? `/connexion?next=${encodeURIComponent(`/epreuves/${final}`)}` : "/connexion"
       }
-      exactPoints={exact}
-      perfectPoints={3 * exact + (scale.perfect_podium ?? 0)}
+      {...stepPoints(scale)}
       competition={
         shown && {
           slug: shown.slug,
@@ -129,9 +134,10 @@ async function Visitor({ coming, today }: { coming: ShownCompetition[]; today: s
 export default async function Home() {
   const today = currentDay();
   const user = await getCurrentUser();
-  const [{ coming }, player] = await Promise.all([
+  const [{ coming }, player, scale] = await Promise.all([
     loadCompetitions(),
     user ? loadPlayerHome(user.userId) : Promise.resolve(null),
+    loadScale(),
   ]);
 
   if (!player) {
@@ -148,6 +154,7 @@ export default async function Home() {
     <main id="main" className="flex flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-6 md:max-w-3xl">
         <ClubNotices notices={player.clubNotices} />
+        {!player.hasPredicted && <HowItWorks {...stepPoints(scale)} />}
         <PlayerHome
           pseudo={player.pseudo}
           competitionName={player.competition.name}

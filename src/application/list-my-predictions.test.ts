@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { EventDetail, EventSummary } from "@/domain/event";
 
 import type { EventReader } from "./list-events";
-import { getMyPredictionHistory, listMyPredictions } from "./list-my-predictions";
+import { getMyPredictionHistory, hasPredicted, listMyPredictions } from "./list-my-predictions";
 import type { Prediction, PredictionRepository } from "./save-prediction";
 
 const prediction = (userId: string, eventId: string, useJoker = false): Prediction => ({
@@ -37,6 +37,33 @@ describe("listMyPredictions", () => {
     const result = await useCase.execute({ userId: "me", competitionSlug: "c" });
 
     expect(result.map((p) => p.userId)).toEqual(["me"]);
+  });
+});
+
+describe("hasPredicted", () => {
+  function perCompetition(byCompetition: Record<string, Prediction[]>): PredictionRepository {
+    return {
+      find: async () => null,
+      save: async () => "saved",
+      listForCompetition: async (userId, slug) =>
+        (byCompetition[slug] ?? []).filter((p) => p.userId === userId),
+    };
+  }
+
+  it("is false for a player without any prediction", async () => {
+    const useCase = hasPredicted({
+      predictions: perCompetition({ c1: [prediction("other", "e1")] }),
+    });
+
+    expect(await useCase.execute({ userId: "me", competitionSlugs: ["c1", "c2"] })).toBe(false);
+  });
+
+  it("is true once the player has predicted in any of the competitions", async () => {
+    const useCase = hasPredicted({
+      predictions: perCompetition({ c2: [prediction("me", "e9")] }),
+    });
+
+    expect(await useCase.execute({ userId: "me", competitionSlugs: ["c1", "c2"] })).toBe(true);
   });
 });
 

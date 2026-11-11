@@ -3,6 +3,8 @@ import Link from "next/link";
 import { messages } from "@/app/messages.fr";
 import type { CompetitionScope } from "@/domain/competition";
 
+import { HowItWorks } from "./how-it-works";
+
 const text = messages.visitorHome;
 const heading =
   "border-b border-border pb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground";
@@ -52,36 +54,7 @@ export function VisitorHome({
         <p className="text-center text-[13px] text-muted-foreground">{text.free}</p>
       </section>
 
-      <section aria-labelledby="how-it-works" className="flex flex-col gap-3">
-        <h2 id="how-it-works" className={heading}>
-          {text.howTitle}
-        </h2>
-        <ol className="flex flex-col gap-3">
-          {text.steps(exactPoints, perfectPoints).map((step, i) => (
-            <li
-              key={step.title}
-              className="flex items-start gap-3 rounded-card border border-border bg-card p-3.5"
-            >
-              <span
-                aria-hidden="true"
-                className="flex size-9 flex-none items-center justify-center rounded-full bg-brand font-display text-lg font-extrabold text-brand-foreground"
-              >
-                {i + 1}
-              </span>
-              <div className="flex flex-col gap-1">
-                <h3 className="text-base font-bold">{step.title}</h3>
-                <p className="text-sm leading-snug text-muted-foreground">{step.text}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-        <Link
-          href="/regles"
-          className="inline-flex min-h-11 items-center self-start text-sm font-bold underline underline-offset-4"
-        >
-          {text.allRules}
-        </Link>
-      </section>
+      <HowItWorks exactPoints={exactPoints} perfectPoints={perfectPoints} />
 
       <section aria-labelledby="next-competition" className="flex flex-col gap-3">
         <h2 id="next-competition" className={heading}>
