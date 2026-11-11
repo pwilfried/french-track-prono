@@ -14,9 +14,9 @@
 --     of them so the Manager flow has a visible state too.
 -- Idempotent: run it again and the state is reset (users dropped, league recreated).
 --
--- The authors give demo users a password ('demo') via auth.users.encrypted_password so you can
--- actually sign in as any of them from the sign-in page: demo-N@example.test / demo. Never ship
--- this file; never copy it into production.
+-- Demo users sign in by magic link: enter their email on /connexion and click the link in Mailpit
+-- (http://127.0.0.1:54324). The script sets email_confirmed_at so the first request works right
+-- away. Never ship this file; never copy it into production.
 begin;
 
 -- The enforce_prediction_lock trigger rejects predictions on events whose lock_at has passed;
@@ -61,17 +61,31 @@ delete from auth.users      where email like 'demo-%@example.test';
 -- The leagues the demo owns too, to clear old versions.
 delete from leagues         where name in ('Démo Prono', 'Démo Manager');
 delete from manager_leagues where name in ('Démo Prono', 'Démo Manager');
+-- Avatars must be in src/domain/profile.ts AVATARS; anything else makes the Supabase profile
+-- repository return null and the proxy sends the player to /bienvenue on every page.
 create temp table demo (n int primary key, pseudo text, avatar text) on commit drop;
 insert into demo values
-  (1, 'Démo Gazelle', '🦌'), (2, 'Démo Perche', '🦅'), (3, 'Démo Haie', '🐆'),
-  (4, 'Démo Relais', '🐎'), (5, 'Démo Marteau', '🦁'), (6, 'Démo Javelot', '🐺'),
-  (7, 'Démo Sprint', '🐇'), (8, 'Démo Fond', '🐢'), (9, 'Démo Disque', '🦊'),
-  (10, 'Démo Triple', '🐬'), (11, 'Démo Poids', '🐻'), (12, 'Démo Hauteur', '🦒');
+  (1, 'Démo Gazelle', '🏃'), (2, 'Démo Perche', '🦅'), (3, 'Démo Haie', '🐆'),
+  (4, 'Démo Relais', '⚡'),  (5, 'Démo Marteau', '🔥'), (6, 'Démo Javelot', '🚀'),
+  (7, 'Démo Sprint', '🎯'),  (8, 'Démo Fond', '🐢'),   (9, 'Démo Disque', '🦊'),
+  (10, 'Démo Triple', '🍀'), (11, 'Démo Poids', '🥇'), (12, 'Démo Hauteur', '🏅');
 
-insert into auth.users (id, email, aud, role, encrypted_password, email_confirmed_at)
-select ('00000000-0000-4000-9000-' || lpad(n::text, 12, '0'))::uuid,
-       'demo-' || n || '@example.test', 'authenticated', 'authenticated',
-       crypt('demo', gen_salt('bf')), now()
+-- GoTrue (Supabase Auth) scans rows with Go structs that reject NULL on several columns the
+-- schema still allows NULL on: instance_id, created_at, updated_at, and the token columns. Set
+-- them all so the user can request a magic link.
+insert into auth.users (
+  instance_id, id, email, aud, role, email_confirmed_at,
+  created_at, updated_at,
+  confirmation_token, recovery_token, email_change, email_change_token_new,
+  raw_app_meta_data, raw_user_meta_data
+)
+select '00000000-0000-0000-0000-000000000000'::uuid,
+       ('00000000-0000-4000-9000-' || lpad(n::text, 12, '0'))::uuid,
+       'demo-' || n || '@example.test', 'authenticated', 'authenticated', now(),
+       now(), now(),
+       '', '', '', '',
+       '{"provider":"email","providers":["email"]}'::jsonb,
+       '{}'::jsonb
 from demo;
 
 insert into profiles (id, pseudo, avatar_emoji, age_confirmed_at)

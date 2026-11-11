@@ -150,8 +150,9 @@ Un seul coup et tu obtiens :
 
 - le championnat Ultimate décalé pour straddle « maintenant » : **~12 épreuves terminées** (avec
   résultats et classement) et **~16 à venir** (prêtes à pronostiquer) ;
-- les **12 joueurs de démo** (`demo-1@example.test` à `demo-12@example.test`, mot de passe `demo`)
-  **avec mot de passe**, tu peux te connecter directement depuis la page de connexion ;
+- les **12 joueurs de démo** (`demo-1@example.test` à `demo-12@example.test`) avec e-mail confirmé,
+  prêts à se connecter par lien magique (tape l'e-mail sur `/connexion`, clique le lien dans
+  Mailpit à http://127.0.0.1:54324) ;
 - un prono par joueur et par épreuve (336 au total), avec joker sur la première ;
 - des **points réels** sur les épreuves terminées (`score_events` et `predictions.points_awarded`
   remplis) — le classement, les stats de profil et la grille de badges s'allument ;
