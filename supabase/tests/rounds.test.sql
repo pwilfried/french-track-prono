@@ -1,4 +1,4 @@
--- pgTAP: a final opens to predictions only once its semi-finals are finished; heats never open;
+-- pgTAP: a final opens to predictions only once its semi-finals have their result; heats never open;
 -- the first of a semi-final move to the final. Everything is rolled back at the end.
 begin;
 select plan(7);
@@ -29,11 +29,13 @@ from f, s;
 grant select on fixture to authenticated;
 
 insert into entries (event_id, athlete_id) select semi_id, unnest(athletes) from fixture;
-insert into results (event_id, athlete_id, rank, mark)
-select semi_id, athletes[i], i, '11.0' || i from fixture, generate_series(1, 3) i;
 
 select ok(not is_predictable((select final_id from fixture)), 'a final waits for its semi-final');
 select ok(not is_predictable((select semi_id from fixture)), 'a semi-final is never predicted');
+
+-- Its official result finishes the semi-final (#488).
+insert into results (event_id, athlete_id, rank, mark)
+select semi_id, athletes[i], i, '11.0' || i from fixture, generate_series(1, 3) i;
 
 -- #311: a player predicts from a league of the competition; each test player gets his own.
 insert into leagues (name, owner_id) select 'Test ' || pseudo, id from profiles where created_at = now();
@@ -64,8 +66,8 @@ select throws_ok($$select promote_to_next_round((select semi_id from fixture), 2
   'a player cannot promote athletes');
 
 reset role;
-update events set status = 'finished' where id = (select semi_id from fixture);
-select ok(is_predictable((select final_id from fixture)), 'the final opens once its semi-final is finished');
+select ok(is_predictable((select final_id from fixture)),
+  'the final opens once its semi-final has its official result');
 
 select * from finish();
 rollback;

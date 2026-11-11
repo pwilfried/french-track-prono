@@ -32,3 +32,19 @@ export function openEvents(events: EventSummary[], now: Date, count: number): Ev
     .sort((a, b) => Date.parse(a.lockAt) - Date.parse(b.lockAt) || a.slug.localeCompare(b.slug))
     .slice(0, count);
 }
+
+/**
+ * The events still to run (upcoming or live), in their order, and the finished ones from the latest
+ * to the earliest: the list shows what to predict first, then what already ran (#488).
+ */
+export function splitFinished(events: EventSummary[]): {
+  coming: EventSummary[];
+  done: EventSummary[];
+} {
+  return {
+    coming: events.filter((e) => e.status !== "finished"),
+    done: events
+      .filter((e) => e.status === "finished")
+      .sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt)),
+  };
+}

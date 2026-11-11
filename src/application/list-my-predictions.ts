@@ -13,6 +13,30 @@ export function listMyPredictions(ports: { predictions: PredictionRepository }) 
   };
 }
 
+/** My mark on one event of the list: predicted, with or without the joker, and the points won. */
+export type MyEventMark = { eventId: string; joker: boolean; points: number | null };
+
+/** My predictions in a competition with their points, null until computed (#488). */
+export function listMyEventMarks(ports: {
+  predictions: PredictionRepository;
+  points: Pick<PointsRepository, "listMine">;
+}) {
+  return {
+    async execute(input: { userId: string; competitionSlug: string }): Promise<MyEventMark[]> {
+      const [mine, scores] = await Promise.all([
+        ports.predictions.listForCompetition(input.userId, input.competitionSlug),
+        ports.points.listMine(input.userId, input.competitionSlug),
+      ]);
+      const pointsOf = new Map(scores.map((l) => [l.eventId, l.points]));
+      return mine.map((p) => ({
+        eventId: p.eventId,
+        joker: p.useJoker,
+        points: pointsOf.get(p.eventId) ?? null,
+      }));
+    },
+  };
+}
+
 /** Whether the player has predicted at least once in the competitions given (#476). */
 export function hasPredicted(ports: { predictions: PredictionRepository }) {
   return {
