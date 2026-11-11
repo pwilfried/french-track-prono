@@ -34,27 +34,30 @@ titres de PR en anglais. Dialogue avec le propriétaire en français.
 - Messages de commit courts, en anglais, au présent : `feat: add podium picker`.
   **Pas de trailer `Co-Authored-By`** dans les commits.
 - Une PR = une issue, petite, avec `Closes #<n>`. Description : ce qui change, comment le vérifier.
-- La PR est fusionnée par le propriétaire, jamais par un agent.
+- Une PR d'agent (branche `claude/…`) est fusionnée par `agents-merge` sur une CI verte (voir
+  « Agents on GitHub ») ; les autres PR sont fusionnées par le propriétaire ou à sa demande.
 
 ## From issue to release
 
 1. Une issue appartient à un milestone (une version) et porte des labels (type, zone, priorité).
-2. L'agent prend une issue `agent:ready`, ouvre une branche, applique le TDD (voir plus bas).
+2. Le propriétaire met `agent:ready` ; la chaîne la donne à Claude, qui ouvre une branche et
+   applique le TDD (voir plus bas).
 3. Avant de dire « terminé » : voir « Before saying it is done ».
-4. PR → CI verte → relecture du propriétaire → fusion.
+4. PR → CI verte → fusion (automatique pour les PR d'agents).
 5. Quand toutes les issues d'un milestone sont fermées : issues `refactor-check` et `docs-check`
    traitées, critère « It works when… » vérifié à la main, puis tag `vX.Y.Z` posé par le propriétaire.
    Le tag met la version en prod : migrations, puis déploiement Vercel (`docs/SETUP.md`).
 
 ## Screenshots in PRs
 
-Toute PR qui change l'interface contient une capture mobile (390 px) et, si pertinent, une
-capture en mode sombre. Pas de données personnelles dans les captures. Les captures vivent dans
-la description de la PR, pas dans le dépôt.
+Toute PR qui change l'interface contient une capture mobile (390 px) et une capture en mode
+sombre. Pas de données personnelles dans les captures. Les captures vivent sur la branche
+orpheline `boards` (`boards/<issue>/*.png`) et sont liées dans la description de la PR. Un agent
+sur GitHub n'en produit pas : l'issue « Check the UI of #n » ouverte après la fusion les remplace.
 
 ## Issues and milestones
 
-- Un milestone par version (v0.1 à v0.7). Sa description est le critère « It works when… ».
+- Un milestone par version (`vX.Y …`). Sa description est le critère « It works when… ».
 - Chaque milestone contient trois issues de pilotage : `milestone-plan` (découper la version),
   `refactor-check` (revue des doublons et du code mort), `docs-check` (docs à jour).
 - Labels : type (`feature`, `bug`, `chore`, `docs`, `spike`), zone (`zone:domain`,
@@ -108,9 +111,27 @@ ou supprimé dans la semaine, jamais relancé automatiquement.
 
 ## Agents on GitHub
 
-Reportés : l'exécution d'agents sur GitHub (déclenchement sur issue, garde-fous) est traitée
-après la v0.1, quand l'application existe. D'ici là, les agents travaillent en local à la
-demande du propriétaire, avec les mêmes règles.
+Claude Code tourne sur les issues et les PR depuis GitHub Actions (`agents.yml`,
+`agents-merge.yml`, scripts dans `ci/agents/`). Mise en place et pilotage depuis le téléphone :
+`ci/agents/README.md`. En bref :
+
+- Seuls les propriétaires (variable `AGENTS_OWNER`) déclenchent : label `agent:ready` (la chaîne
+  la prend), label `agent:claude` (tout de suite), ou commentaire `@claude …`.
+- Deux issues à la fois (`AGENTS_CLAUDE_SLOTS`), dans le milestone en cours : `milestone-plan`,
+  puis les features (`p1` d'abord), puis `refactor-check`, puis `docs-check`. Jamais une issue
+  `needs-human`, `agent:blocked`, `after-ui`, ou bloquée par une issue ouverte.
+- PR verte : fusionnée. Rouge ou en conflit : renvoyée à Claude, 3 fois, puis au propriétaire.
+- Pas de tag automatique : la mise en prod reste au propriétaire.
+
+Quand tu tournes là-bas :
+
+- Travaille sur la branche donnée, dans le périmètre de l'issue. Avant de pousser :
+  `npm run format`, `npm run lint`, `npm run typecheck`, `npm test`. Pas de Supabase local sur
+  le runner : pgTAP, adaptateurs et e2e tournent dans la CI de la PR ; écris-les quand même.
+- Si une décision du propriétaire manque, ne change rien et termine ton message final par une
+  ligne `NEEDS-ANSWER: <la question, en français>`.
+- Termine par un résumé court en français : ce qui change, quel test est venu d'abord, ce que
+  l'étape de refactor a rangé, ce qui est passé, ce qui n'est pas vérifié.
 
 ## Planning a milestone
 
