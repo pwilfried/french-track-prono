@@ -56,8 +56,9 @@ select set_config('request.jwt.claims',
   '{"sub":"aeaeae00-0000-0000-0000-000000000003","role":"authenticated"}', true);
 select throws_ok($$select * from manager_catalogue((select id from t_league))$$, '42501', null,
   'an outsider does not read the catalogue');
-select is((with changed as (update athletes set manager_price = 1 returning 1)
-           select count(*)::int from changed), 0, 'nobody writes a price by hand');
+update athletes set manager_price = 987654;
+select is((select count(*)::int from athletes where manager_price = 987654), 0,
+  'nobody writes a price by hand');
 
 select * from finish();
 rollback;
