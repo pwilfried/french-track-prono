@@ -82,7 +82,8 @@ export default async function ManagerPage() {
             </h2>
             {publics.length === 0 ? (
               <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
-                {text.publicEmpty}
+                {/* The player's own public leagues are not listed (#496). */}
+                {leagues.some((league) => league.isPublic) ? text.publicNoOther : text.publicEmpty}
               </p>
             ) : (
               <ul aria-labelledby="public-manager" className="flex flex-col gap-2">

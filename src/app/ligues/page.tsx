@@ -117,7 +117,10 @@ export default async function LeaguesPage() {
             </h2>
             {publics.length === 0 ? (
               <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
-                {messages.leagues.publicEmpty}
+                {/* The player's own public leagues are not listed (#496). */}
+                {rows.some((row) => row.league.isPublic)
+                  ? messages.leagues.publicNoOther
+                  : messages.leagues.publicEmpty}
               </p>
             ) : (
               <ul aria-labelledby="public-leagues" className="flex flex-col gap-2">
