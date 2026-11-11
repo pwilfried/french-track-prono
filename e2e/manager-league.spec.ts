@@ -34,7 +34,9 @@ test("a player creates a private French Track Manager league that keeps its rule
     await expect(participants).toContainText(creator.pseudo);
     await expect(participants).toContainText("admin");
     await expect(page.getByText("Code d'invitation")).toBeVisible();
-    await expect(page.getByRole("status")).toContainText("de 4 à 12 participants, en nombre pair");
+    await expect(page.getByRole("status").filter({ hasText: "en nombre pair" })).toContainText(
+      "de 4 à 12 participants, en nombre pair",
+    );
 
     // The rules were copied at creation: a later change does not touch the league.
     await expect(page.getByText("130 crédits de budget")).toBeVisible();
