@@ -72,7 +72,9 @@ select set_eq(
     -- The club picker of the sign-up form searches before the account exists.
     'search_clubs(text,integer)',
     -- Called by search_clubs, which is security invoker: it runs with the visitor's rights.
-    'club_search_key(text)'
+    'club_search_key(text)',
+    -- The word rule of search_clubs (#479), run with the visitor's rights too.
+    'club_key_matches(text,text)'
   ],
   'anon executes only the functions of the list');
 
