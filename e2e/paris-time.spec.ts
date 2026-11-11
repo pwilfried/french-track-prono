@@ -52,7 +52,8 @@ test("an event typed at 20:35 Paris time in the back-office reads 20:35 for play
   await page.goto(`/epreuves?competition=${slug}`);
   await expect(page.getByRole("link", { name: /^100 m, Femmes/ })).toContainText("20:35");
   await page.goto(`/epreuves/${slug}-f-100-m`);
-  await expect(page.locator("main")).toContainText("20:35");
+  // The loading skeleton (`aria-busy`) can still sit next to the streamed page for a moment.
+  await expect(page.locator("main:not([aria-busy='true'])")).toContainText("20:35");
 
   sql(`delete from competitions where slug = '${slug}'`);
 });
