@@ -100,8 +100,9 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
 
     // The round closes (#423): each athlete goes to the best bid; the result shows in the budget.
     const rivalSecond = rivalPage.getByRole("article", { name: second });
-    await rivalSecond.getByLabel(`Mon offre sur ${second}, en crédits`).fill("30");
     await rivalSecond.getByRole("button", { name: "Enchérir" }).click();
+    await rivalSecond.getByLabel(`Mon offre sur ${second}, en crédits`).fill("30");
+    await rivalSecond.getByRole("button", { name: "Valider" }).click();
     await expect(rivalSecond).toContainText("Mon offre : 30 cr.");
     sql(`update manager_leagues set mercato_opened_at = now() - interval '49 hours'
          where name = '${league}'`);
