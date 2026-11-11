@@ -8,6 +8,8 @@ export type ManagerLeagueWorld = {
   creatorId: string;
   other: ManagerLeagueRepository;
   setBudget: (budget: number) => Promise<void>;
+  /** What the mercato (v0.13) will do: nobody joins any more. */
+  openMercato: (leagueId: string) => Promise<void>;
   restore: () => Promise<void>;
 };
 
@@ -41,6 +43,43 @@ export function managerLeagueRepositoryContract(
       } finally {
         await w.restore();
       }
+    });
+
+    it("lets a player join a private league with its code, not in one tap", async () => {
+      const w = await world();
+      const created = await w.creator.create("Les Haies Basses", false);
+      if (created === "banned") throw new Error("the name is not banned");
+      const code = (await w.creator.find(created.id))!.inviteCode;
+
+      expect(await w.other.joinPublic(created.id)).toEqual({ outcome: "unknown" });
+      expect((await w.other.listPublic()).map((l) => l.id)).not.toContain(created.id);
+      expect(await w.other.join(code)).toEqual({ outcome: "joined", leagueId: created.id });
+      expect(await w.other.join(code)).toEqual({ outcome: "joined", leagueId: created.id });
+      expect((await w.creator.find(created.id))?.memberCount).toBe(2);
+      expect(await w.other.join("ZZZZZZ")).toEqual({ outcome: "unknown" });
+    });
+
+    it("lists a public league with places, joined in one tap until the mercato opens", async () => {
+      const w = await world();
+      const created = await w.creator.create("Les Relayeurs", true);
+      if (created === "banned") throw new Error("the name is not banned");
+
+      expect(await w.other.listPublic()).toContainEqual({
+        id: created.id,
+        name: "Les Relayeurs",
+        memberCount: 1,
+      });
+      expect(await w.other.joinPublic(created.id)).toEqual({
+        outcome: "joined",
+        leagueId: created.id,
+      });
+      expect((await w.other.listPublic()).map((l) => l.id)).not.toContain(created.id);
+
+      const late = await w.creator.create("Les Retardataires", true);
+      if (late === "banned") throw new Error("the name is not banned");
+      await w.openMercato(late.id);
+      expect((await w.other.listPublic()).map((l) => l.id)).not.toContain(late.id);
+      expect(await w.other.joinPublic(late.id)).toEqual({ outcome: "mercato_open" });
     });
 
     it("refuses a banned name", async () => {
