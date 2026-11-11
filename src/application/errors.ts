@@ -96,6 +96,8 @@ export type ErrorCode =
   | "MANAGER_BID_OVER_BUDGET"
   | "MERCATO_NOT_OPEN"
   | "ATHLETE_NOT_IN_CATALOGUE"
+  | "ATHLETE_TAKEN"
+  | "ROUND_CLOSING"
   | "MANAGER_BIDS_UNAVAILABLE";
 
 let reportUnavailable: ((code: ErrorCode) => void) | undefined;
