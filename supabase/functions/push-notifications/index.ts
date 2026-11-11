@@ -1,5 +1,5 @@
 // #502: sends the push notifications due. Called every minute by pg_cron
-// (supabase/migrations/20261111170000_push_cron.sql) with the secret it reads from Vault; anyone
+// (supabase/migrations/20261111180000_push_cron.sql) with the secret it reads from Vault; anyone
 // else gets a 401. Secrets of the function (set by the migrations workflow at each tag):
 // PUSH_CRON_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY. SUPABASE_DB_URL is given by Supabase.
 // Deno code: excluded from the app's typecheck (tsconfig.json).
