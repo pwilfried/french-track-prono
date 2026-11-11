@@ -3,15 +3,27 @@ import { expect, test } from "@playwright/test";
 import { sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
 
-test("a visitor chooses between the two kinds of competitions", async ({ page }) => {
+test("a visitor sees one main action above the fold, how to play and the next competition", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Choisis ta compétition");
-  const kinds = page.getByRole("navigation", { name: "Types de compétition" });
-  await expect(kinds.getByRole("link")).toHaveCount(2);
-  await kinds.getByRole("link", { name: /Compétitions internationales/ }).click();
-  await expect(page).toHaveURL(/\/competitions\?type=international$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Compétitions internationales");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Devine le podium. Bats tes amis.",
+  );
+  const play = page.getByRole("link", { name: "Faire mon premier prono" });
+  await expect(play).toBeInViewport();
+  const box = (await play.boundingBox())!;
+  expect(box.height).toBeGreaterThanOrEqual(44);
+  await expect(play).toHaveAttribute("href", /^\/connexion\?next=%2Fepreuves%2F.+$/);
+  await expect(page.getByRole("navigation", { name: "Types de compétition" })).toHaveCount(0);
+
+  await expect(page.getByRole("heading", { name: "Comment ça marche" })).toBeVisible();
+  await expect(page.locator("main ol > li")).toHaveCount(3);
+  await expect(page.getByRole("link", { name: "Créer une ligue" })).toBeVisible();
+  await page.getByRole("link", { name: "Voir les épreuves" }).click();
+  await expect(page).toHaveURL(/\/epreuves\?competition=ultimate-championship-2026$/);
 });
 
 test("a visitor sees a competition, its next events and reaches the full list", async ({
