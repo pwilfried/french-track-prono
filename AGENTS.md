@@ -150,7 +150,8 @@ Disponibles : `npm run dev`, `npm run build`, `npm run start`, `npm run lint`,
 `npm run storybook` (composants), `npm run test:storybook` (play functions, navigateur Chromium),
 `npm run build-storybook`, `npm run test:e2e` (Playwright, Supabase local + `npm run build`),
 `supabase start`, `supabase db reset`, `supabase test db` (pgTAP),
-`npm run db:open-events` et `npm run db:demo-players` (données de test locales, voir `docs/SETUP.md`).
+`npm run db:open-events`, `npm run db:demo-players`, `npm run db:test-points`,
+`npm run db:load-euro` et `npm run db:euro-results` (données de test locales, voir `docs/SETUP.md`).
 
 Prérequis : Node 24 (`.nvmrc`), Docker pour Supabase local. Variables : copier `.env.example`
 en `.env.local`.
