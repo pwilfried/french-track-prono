@@ -4,10 +4,12 @@ import type { CatalogueAthlete } from "@/domain/manager-catalogue";
 
 import { UseCaseError } from "./errors";
 import {
+  closeManagerMercato,
   getMyManagerBids,
   placeManagerBid,
   withdrawManagerBid,
   type BidOutcome,
+  type CloseOutcome,
   type ManagerBidRepository,
   type MyManagerBids,
 } from "./manager-bids";
@@ -48,6 +50,7 @@ function bids(mine: MyManagerBids | "not_member", answer: BidOutcome = "placed")
           ? answer
           : "mercato_closed";
     },
+    close: async () => "closed",
   };
   return { repository, placed, withdrawn };
 }
@@ -55,6 +58,8 @@ function bids(mine: MyManagerBids | "not_member", answer: BidOutcome = "placed")
 const open: MyManagerBids = {
   budget: 100,
   mercatoOpen: true,
+  mercatoClosed: false,
+  canClose: false,
   roundEndsAt: "2027-01-03T10:00:00.000Z",
   team: [],
   bids: [
@@ -172,5 +177,42 @@ describe("withdrawManagerBid", () => {
     await expect(
       withdrawManagerBid({ bids: repository }).execute({ leagueId: "l1", athleteId: "a1" }),
     ).rejects.toEqual(new UseCaseError("MERCATO_NOT_OPEN"));
+  });
+});
+
+describe("closeManagerMercato", () => {
+  function closing(answer: CloseOutcome) {
+    const asked: string[] = [];
+    const repository: ManagerBidRepository = {
+      ...bids(open).repository,
+      close: async (leagueId) => {
+        asked.push(leagueId);
+        return answer;
+      },
+    };
+    return { repository, asked };
+  }
+
+  it("lets the last participant who can still recruit close the mercato", async () => {
+    // Given the only participant of the league who still has credits for a free athlete
+    const { repository, asked } = closing("closed");
+
+    // When they close the mercato
+    await closeManagerMercato({ bids: repository }).execute({ leagueId: "l1" });
+
+    // Then the league is asked to close it
+    expect(asked).toEqual(["l1"]);
+  });
+
+  it.each([
+    ["not_last_bidder", "MERCATO_NOT_LAST_BIDDER"],
+    ["mercato_closed", "MERCATO_NOT_OPEN"],
+    ["not_member", "LEAGUE_NOT_FOUND"],
+  ] as const)("turns a refused close (%s) into %s", async (answer, code) => {
+    const { repository } = closing(answer);
+
+    await expect(
+      closeManagerMercato({ bids: repository }).execute({ leagueId: "l1" }),
+    ).rejects.toEqual(new UseCaseError(code));
   });
 });

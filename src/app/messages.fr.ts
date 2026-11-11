@@ -330,6 +330,11 @@ export const messages = {
     noBids: "Aucune offre pour l'instant.",
     mercatoClosed:
       "Le mercato de cette ligue n'est pas ouvert : les enchères commenceront à son ouverture.",
+    mercatoOver: "Le mercato de cette ligue est clos : les équipes sont faites.",
+    lastBidder:
+      "Plus personne d'autre ne peut recruter : tu peux clore le mercato. Tes offres en cours seront traitées, puis le mercato sera clos pour tout le monde.",
+    closeMercato: "Clore le mercato",
+    closing: "Clôture…",
     myBid: (n: number) => `Mon offre : ${n} cr.`,
     bidLabel: (name: string) => `Mon offre sur ${name}, en crédits`,
     credits: "crédits",
@@ -1676,7 +1681,9 @@ export const messages = {
     ATHLETE_NOT_IN_CATALOGUE: "Cet athlète n'est pas dans le catalogue du mercato.",
     ATHLETE_TAKEN: "Cet athlète a déjà été recruté dans cette ligue.",
     ROUND_CLOSING:
-      "Le tour d'enchères se termine : les offres rouvrent dans quelques minutes, avec le tour suivant.",
+      "Le tour d'enchères se termine : les offres rouvrent dans quelques minutes, avec le tour suivant (ou le mercato se clôt).",
+    MERCATO_NOT_LAST_BIDDER:
+      "Tu ne peux pas clore le mercato : un autre participant peut encore recruter.",
     MANAGER_BIDS_UNAVAILABLE: "Tes offres n'ont pas pu être chargées ou enregistrées. Réessaie.",
     retry: "Réessayer",
   },

@@ -8,11 +8,14 @@ export type WonAthlete = { athleteId: string; amount: number; round: number };
 
 /**
  * The player's own bids in a league, the athletes they won, the budget of the league, whether bids
- * are open and when the open round ends (null before the mercato opens).
+ * are open, when the open round ends (null before the mercato opens and once it is closed), whether
+ * the mercato is closed (#424) and whether the player may close it as the last bidder.
  */
 export type MyManagerBids = {
   budget: number;
   mercatoOpen: boolean;
+  mercatoClosed: boolean;
+  canClose: boolean;
   roundEndsAt: string | null;
   team: WonAthlete[];
   bids: ManagerBid[];
@@ -40,7 +43,11 @@ export interface ManagerBidRepository {
     leagueId: string,
     athleteId: string,
   ): Promise<"withdrawn" | "not_member" | "mercato_closed" | "round_closing">;
+  /** The last participant who can still recruit closes the mercato (#424). */
+  close(leagueId: string): Promise<CloseOutcome>;
 }
+
+export type CloseOutcome = "closed" | "not_member" | "mercato_closed" | "not_last_bidder";
 
 type Named = { name: string; price: number };
 export type MyBidLine = ManagerBid & Named;
@@ -53,6 +60,8 @@ export type MyBidsView = {
   reserved: number;
   available: number;
   mercatoOpen: boolean;
+  mercatoClosed: boolean;
+  canClose: boolean;
   roundEndsAt: string | null;
   /** By athlete name. */
   team: MyAthleteLine[];
@@ -60,7 +69,7 @@ export type MyBidsView = {
   bids: MyBidLine[];
 };
 
-const refused: Record<Exclude<BidOutcome, "placed">, ErrorCode> = {
+const refused: Record<Exclude<BidOutcome | CloseOutcome, "placed" | "closed">, ErrorCode> = {
   not_member: "LEAGUE_NOT_FOUND",
   mercato_closed: "MERCATO_NOT_OPEN",
   round_closing: "ROUND_CLOSING",
@@ -68,6 +77,7 @@ const refused: Record<Exclude<BidOutcome, "placed">, ErrorCode> = {
   taken: "ATHLETE_TAKEN",
   below_price: "MANAGER_BID_BELOW_PRICE",
   over_budget: "MANAGER_BID_OVER_BUDGET",
+  not_last_bidder: "MERCATO_NOT_LAST_BIDDER",
 };
 
 const byName = (a: { name: string }, b: { name: string }) =>
@@ -102,6 +112,8 @@ export function getMyManagerBids(ports: {
         reserved: reservedCredits(mine.bids),
         available: availableCredits(mine.budget - spent, mine.bids),
         mercatoOpen: mine.mercatoOpen,
+        mercatoClosed: mine.mercatoClosed,
+        canClose: mine.canClose,
         roundEndsAt: mine.roundEndsAt,
         team: mine.team.map((a) => ({ ...a, name: named(a.athleteId).name })).sort(byName),
         bids: mine.bids.map((b) => ({ ...b, ...named(b.athleteId) })).sort(byName),
@@ -130,6 +142,16 @@ export function withdrawManagerBid(ports: { bids: ManagerBidRepository }) {
     async execute(input: { leagueId: string; athleteId: string }): Promise<void> {
       const outcome = await ports.bids.withdraw(input.leagueId, input.athleteId);
       if (outcome !== "withdrawn") throw new UseCaseError(refused[outcome]);
+    },
+  };
+}
+
+/** The last participant who can still recruit ends the mercato of the league (#424). */
+export function closeManagerMercato(ports: { bids: ManagerBidRepository }) {
+  return {
+    async execute(input: { leagueId: string }): Promise<void> {
+      const outcome = await ports.bids.close(input.leagueId);
+      if (outcome !== "closed") throw new UseCaseError(refused[outcome]);
     },
   };
 }

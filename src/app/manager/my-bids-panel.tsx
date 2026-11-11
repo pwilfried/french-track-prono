@@ -1,6 +1,8 @@
 import type { MyBidsView } from "@/application/manager-bids";
 import { messages } from "@/app/messages.fr";
 
+import { CloseMercatoForm } from "./close-mercato-form";
+
 const text = messages.catalogue;
 
 const roundEnd = new Intl.DateTimeFormat("fr-FR", {
@@ -27,9 +29,11 @@ function Line({ name, amount, note }: { name: string; amount: number; note?: str
 
 /**
  * The budget, the credits spent on the athletes won, reserved by the bids and left; when the open
- * round ends; then the athletes won and the player's own bids (#422, #423).
+ * round ends; then the athletes won and the player's own bids (#422, #423). Once the mercato is
+ * closed, a notice; to the last participant who can still recruit, the button that closes it
+ * (#424).
  */
-export function MyBidsPanel({ bids }: { bids: MyBidsView }) {
+export function MyBidsPanel({ leagueId, bids }: { leagueId: string; bids: MyBidsView }) {
   const figures = [
     [text.budget, bids.budget],
     [text.spent, bids.spent],
@@ -57,12 +61,17 @@ export function MyBidsPanel({ bids }: { bids: MyBidsView }) {
           </div>
         ))}
       </dl>
+      {bids.mercatoClosed && (
+        <p role="status" className="rounded-xl bg-muted p-3 text-sm font-semibold">
+          {text.mercatoOver}
+        </p>
+      )}
       {bids.roundEndsAt && (
         <p className="text-sm font-semibold">
           {text.roundEnds(roundEnd.format(new Date(bids.roundEndsAt)))}
         </p>
       )}
-      <p className="text-sm text-muted-foreground">{text.secret}</p>
+      {bids.mercatoOpen && <p className="text-sm text-muted-foreground">{text.secret}</p>}
       <h3 id="my-team" className="text-sm font-bold">
         {text.myTeam}
       </h3>
@@ -87,6 +96,7 @@ export function MyBidsPanel({ bids }: { bids: MyBidsView }) {
           ))}
         </ul>
       )}
+      {bids.canClose && <CloseMercatoForm leagueId={leagueId} />}
     </section>
   );
 }

@@ -1,5 +1,6 @@
 // #423: closes the bidding rounds of the French Track Manager mercato whose time is over and
-// awards the athletes (rules in supabase/migrations/20261111170000_manager_awards.sql). Run every
+// awards the athletes (rules in supabase/migrations/20261111170000_manager_awards.sql), then closes
+// the mercatos due (#424, 20261111180000_manager_mercato_close.sql). Run every
 // 5 minutes by the « Manager rounds » workflow; running it again closes nothing twice. Talks to the
 // production database through the Supabase Management API (same secrets as the migrations).
 const { SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF } = process.env;
