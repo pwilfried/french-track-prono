@@ -61,6 +61,7 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
   // …unless they asked for a back-office page.
+  await page.getByRole("banner").getByRole("link", { name: "Back-office" }).click();
   await page.getByRole("button", { name: "Se déconnecter" }).click();
   await expect(page).toHaveURL(/\/$/);
   await page.goto(`/connexion?next=${encodeURIComponent("/admin/bareme")}`);
