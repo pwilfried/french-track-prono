@@ -3,6 +3,8 @@
 /** « 1er », « 2e »… */
 const ordinal = (rank: number) => (rank === 1 ? "1er" : `${rank}e`);
 const GENDER = { F: "Femmes", M: "Hommes", X: "Mixte" } as const;
+/** The contact address published on the site: written here only. */
+const CONTACT_EMAIL = "frenchtrackprono@gmail.com";
 
 export const messages = {
   /** Name and place of each competition the app can show (see src/app/competition.ts). */
@@ -1675,6 +1677,7 @@ export const messages = {
       notice: "Mentions légales",
       privacy: "Confidentialité",
       contact: "Contact",
+      contactHref: `mailto:${CONTACT_EMAIL}`,
       socialLabel: "FrenchTrack sur les réseaux",
       social: {
         instagram: "Instagram",
@@ -1713,7 +1716,7 @@ export const messages = {
         {
           id: "contact",
           heading: "Contact",
-          body: ["Une question, un bug, une demande sur tes données : frenchtrackprono@gmail.com."],
+          body: [`Une question, un bug, une demande sur tes données : ${CONTACT_EMAIL}.`],
         },
       ],
     },
@@ -1755,7 +1758,7 @@ export const messages = {
         {
           heading: "Tes droits",
           body: [
-            "Tu peux consulter, corriger ou effacer tes données, demander à les récupérer et t'opposer à leur traitement, en écrivant à frenchtrackprono@gmail.com.",
+            `Tu peux consulter, corriger ou effacer tes données, demander à les récupérer et t'opposer à leur traitement, en écrivant à ${CONTACT_EMAIL}.`,
             "Tu peux aussi saisir la CNIL (cnil.fr) si tu estimes que tes droits ne sont pas respectés.",
           ],
         },

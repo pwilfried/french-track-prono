@@ -12,6 +12,14 @@ test("the legal pages are one tap away from the footer, signed in or not", async
   await expect(page.getByRole("heading", { name: "Contact" })).toBeVisible();
 });
 
+test("the footer's Contact link writes an e-mail straight away", async ({ page }) => {
+  await page.goto("/connexion");
+
+  await expect(
+    page.getByRole("contentinfo").getByRole("link", { name: "Contact", exact: true }),
+  ).toHaveAttribute("href", "mailto:frenchtrackprono@gmail.com");
+});
+
 test("the footer links to FrenchTrack's accounts in a new tab", async ({ page }) => {
   await page.goto("/connexion");
 
@@ -25,5 +33,7 @@ test("the footer links to FrenchTrack's accounts in a new tab", async ({ page })
     const link = social.getByRole("link", { name: `${name} (nouvel onglet)` });
     await expect(link).toHaveAttribute("href", href);
     await expect(link).toHaveAttribute("target", "_blank");
+    await expect(link.locator("svg")).toHaveAttribute("aria-hidden", "true");
+    expect((await link.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   }
 });
