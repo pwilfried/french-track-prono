@@ -319,6 +319,25 @@ verrouillage, code FT001). `promote_to_next_round()` qualifie les N premiers d'u
 compris). Pas de colonne `is_predictable` stockée : la règle est calculée, elle ne peut pas
 diverger du statut des tours. Les joueurs ne voient que les finales dans la liste.
 
+Fonctions SQL (#457) : règle pour toute nouvelle fonction, vérifiée par
+`supabase/tests/function_rights.test.sql` (le test lit `pg_proc`, il vaut donc pour les fonctions
+à venir) :
+
+- `set search_path = public` (ou `public, extensions`) dans sa déclaration ;
+- une fonction de trigger : `revoke execute … from public, anon, authenticated` (le trigger
+  l'exécute quand même) ;
+- une fonction appelée par l'application : `revoke execute … from public, anon` puis
+  `grant execute … to authenticated`. Depuis #457, une nouvelle fonction n'est plus exécutable par
+  `anon` par défaut ; l'ouvrir à `anon` demande de l'ajouter, avec sa raison, à la liste du test
+  (aujourd'hui `search_clubs()` et `club_search_key()`, pour le choix du club avant l'inscription).
+  Une fonction appelée par une policy ouverte à `anon` doit y figurer, sinon les lectures publiques
+  cassent ;
+- une fonction `admin_*` commence par `if not is_admin() then raise … using errcode = '42501'` ;
+  une fonction `security definer` qui écrit refuse d'abord un appelant sans identité
+  (`auth.uid() is null`, 42501) puis vérifie ses droits (créateur, membre…) ;
+- une fonction réservée aux workflows (base de données en tant que propriétaire) vit dans le
+  schéma `private`, hors de l'API, avec `revoke execute … from public, anon, authenticated`.
+
 ## Versions
 
 Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
