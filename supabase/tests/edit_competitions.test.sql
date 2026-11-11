@@ -32,7 +32,7 @@ select set_config('request.jwt.claims',
   '{"sub":"cfcfcfcf-0000-0000-0000-000000000001","role":"authenticated"}', true);
 
 select lives_ok($$select admin_update_competition('edit-test', 'Edit test bis', 'france', 'Lyon', 'fra',
-  current_date + 5, current_date + 7, 'Europe/Paris')$$, 'an admin corrects a competition');
+  current_date + 5, current_date + 7)$$, 'an admin corrects a competition');
 reset role;
 select is((select name || ' ' || city || ' ' || country_code from competitions where slug = 'edit-test'),
   'Edit test bis Lyon FRA', 'the correction is kept');
@@ -53,7 +53,7 @@ select throws_ok($$select admin_delete_event('no-such-event')$$, 'FT004', null, 
 select set_config('request.jwt.claims',
   '{"sub":"cfcfcfcf-0000-0000-0000-000000000002","role":"authenticated"}', true);
 select throws_ok($$select admin_update_competition('edit-test', 'X', 'france', null, null,
-  current_date, current_date, 'Europe/Paris')$$, '42501', null, 'a player cannot edit a competition');
+  current_date, current_date)$$, '42501', null, 'a player cannot edit a competition');
 
 select * from finish();
 rollback;

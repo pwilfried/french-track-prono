@@ -13,6 +13,7 @@ import { ErrorNotice } from "@/components/error-notice";
 import { AddToMyLeagueForm } from "@/components/leagues/league-forms";
 import { PodiumMedals } from "@/components/podium/podium-medals";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
+import { TIME_ZONE } from "@/domain/competition";
 import { eventPhase } from "@/domain/countdown";
 import type { EventDetail } from "@/domain/event";
 import { formatMark, tidyMark } from "@/domain/discipline";
@@ -303,7 +304,7 @@ export default async function EventPage({
     month: "long",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: competition.timeZone,
+    timeZone: TIME_ZONE,
   }).format(new Date(event.startsAt));
   const winner = event.results.find((result) => result.rank === 1);
   const markOf = new Map(event.results.map((result) => [result.athleteId, result.mark]));

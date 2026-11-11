@@ -41,7 +41,6 @@ const fields = {
   countryCode: "fra",
   startsOn: "2027-06-10",
   endsOn: "2027-06-10",
-  timeZone: "Europe/Paris",
 };
 
 const codeOf = (promise: Promise<unknown>) =>
@@ -67,7 +66,6 @@ describe("editCompetition", () => {
           countryCode: "FRA",
           startsOn: "2027-06-10",
           endsOn: "2027-06-10",
-          timeZone: "Europe/Paris",
         },
       ],
     ]);
@@ -103,7 +101,6 @@ describe("editCompetitionEvent", () => {
 
     await editCompetitionEvent({ competitions }).execute({
       eventSlug: "meeting-f-100m",
-      timeZone: "Europe/Paris",
       round: "final",
       localStart: "2027-06-10T20:35",
       lockMinutes: 5,
@@ -128,7 +125,6 @@ describe("editCompetitionEvent", () => {
   ])("refuses %s", async (_, change, code) => {
     const input = {
       eventSlug: "e",
-      timeZone: "Europe/Paris",
       round: "final",
       localStart: "2027-06-10T20:35",
       lockMinutes: 5,
@@ -142,7 +138,6 @@ describe("editCompetitionEvent", () => {
       await codeOf(
         editCompetitionEvent(repository("has_predictions")).execute({
           eventSlug: "e",
-          timeZone: "Europe/Paris",
           round: "semi",
           localStart: "2027-06-10T20:35",
           lockMinutes: 5,

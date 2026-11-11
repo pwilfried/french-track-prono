@@ -23,6 +23,7 @@ import {
   StrongFamilies,
 } from "@/components/profile/season-blocks";
 import { buttonVariants } from "@/components/ui/button";
+import { TIME_ZONE } from "@/domain/competition";
 import {
   createPublicSupabaseClient,
   createSupabaseClubNoticeRepository,
@@ -58,7 +59,7 @@ async function loadSeason(userId: string) {
         ranking: createSupabaseRankingRepository(client),
         predictions: createSupabasePredictionRepository(client),
         events,
-      }).execute({ userId, competitionSlug: competition.slug, timeZone: competition.timeZone }),
+      }).execute({ userId, competitionSlug: competition.slug }),
       getClubRanking({ ranking: createSupabaseRankingRepository(client) }).execute({
         competitionSlugs: slugs,
       }),
@@ -115,7 +116,7 @@ export default async function ProfilePage({
     day: "2-digit",
     month: "short",
     year: "numeric",
-    timeZone: "Europe/Paris",
+    timeZone: TIME_ZONE,
   }).format(profile.ageConfirmedAt);
   const text = messages.profile;
   return (

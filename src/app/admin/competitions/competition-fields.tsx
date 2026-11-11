@@ -4,23 +4,9 @@ import { SCOPES } from "@/domain/competition";
 import { messages } from "../../messages.fr";
 
 const field = "min-h-12 w-full rounded-xl border-2 border-border bg-card px-3.5 text-base";
-const TIME_ZONES = [
-  "Europe/Paris",
-  "Europe/London",
-  "Europe/Budapest",
-  "Europe/Rome",
-  "America/New_York",
-  "America/Los_Angeles",
-  "Asia/Tokyo",
-  "Australia/Sydney",
-];
 
 /** The fields of a competition, empty for a new one or filled for a correction. */
 export function CompetitionFields({ initial }: { initial?: Fields }) {
-  const zones =
-    initial && !TIME_ZONES.includes(initial.timeZone)
-      ? [initial.timeZone, ...TIME_ZONES]
-      : TIME_ZONES;
   return (
     <>
       <fieldset className="flex flex-col gap-2">
@@ -84,23 +70,6 @@ export function CompetitionFields({ initial }: { initial?: Fields }) {
           />
         </label>
       </div>
-      <label className="flex flex-col gap-1.5 font-semibold">
-        {messages.adminCompetitions.timeZone}
-        <select
-          name="timeZone"
-          defaultValue={initial?.timeZone ?? "Europe/Paris"}
-          className={field}
-        >
-          {zones.map((tz) => (
-            <option key={tz} value={tz}>
-              {tz}
-            </option>
-          ))}
-        </select>
-        <span className="text-sm font-normal text-muted-foreground">
-          {messages.adminCompetitions.timeZoneHint}
-        </span>
-      </label>
     </>
   );
 }

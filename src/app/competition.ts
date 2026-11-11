@@ -55,7 +55,6 @@ const FALLBACK: ShownCompetition = {
   countryCode: null,
   startsOn: "2026-09-11",
   endsOn: "2026-09-13",
-  timeZone: "Europe/Paris",
   events: 0,
   finals: 0,
   entered: 0,

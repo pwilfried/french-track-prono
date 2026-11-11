@@ -1,6 +1,9 @@
 -- pgTAP: the admin creates a competition, its events and its entered athletes; a player cannot.
 begin;
-select plan(9);
+select plan(10);
+
+-- #501: one time zone for the whole app, Paris; a competition carries none.
+select hasnt_column('competitions', 'time_zone', 'a competition has no time zone of its own');
 
 insert into auth.users (id, email) values
   ('dededede-0000-0000-0000-000000000001', 'player@example.test'),
@@ -18,9 +21,9 @@ select set_config('request.jwt.claims',
   '{"sub":"dededede-0000-0000-0000-000000000002","role":"authenticated"}', true);
 
 select is(admin_create_competition('test-france-elite', 'Test Élite', 'france', 'Ville', 'fra',
-  current_date + 30, current_date + 32, 'Europe/Paris'), 'test-france-elite', 'an admin creates a competition');
+  current_date + 30, current_date + 32), 'test-france-elite', 'an admin creates a competition');
 select is(admin_create_competition('test-france-elite', 'Test Élite bis', 'france', '', '',
-  current_date + 40, current_date + 41, 'Europe/Paris'), 'test-france-elite-2', 'a taken slug gets a number');
+  current_date + 40, current_date + 41), 'test-france-elite-2', 'a taken slug gets a number');
 select is((select scope || ' ' || country_code from competitions where slug = 'test-france-elite'),
   'france FRA', 'the type and the country are stored');
 
@@ -37,7 +40,7 @@ select is((select count(*)::int from competition_athletes ca join competitions c
 
 select set_config('request.jwt.claims',
   '{"sub":"dededede-0000-0000-0000-000000000001","role":"authenticated"}', true);
-select throws_ok($$select admin_create_competition('x', 'X', 'france', '', '', current_date, current_date, 'Europe/Paris')$$,
+select throws_ok($$select admin_create_competition('x', 'X', 'france', '', '', current_date, current_date)$$,
   '42501', null, 'a player cannot create a competition');
 select throws_ok($$select admin_set_competition_athlete('test-france-elite',
   (select id from athletes limit 1), true)$$, '42501', null, 'a player cannot enter an athlete');

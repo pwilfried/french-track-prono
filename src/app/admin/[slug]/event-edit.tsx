@@ -1,4 +1,4 @@
-import { utcToZoned } from "@/domain/competition";
+import { utcToParis } from "@/domain/competition";
 import type { EventDetail } from "@/domain/event";
 import { ROUNDS } from "@/domain/rounds";
 
@@ -8,8 +8,8 @@ import { deleteEventAction, editEventAction } from "../competitions/actions";
 const field = "min-h-12 w-full rounded-xl border-2 border-border bg-card px-3 text-base";
 const LOCKS = [0, 5, 15, 30, 60];
 
-/** Correct an event (#293): round, local time, lock; delete it while nobody predicted it. */
-export function EventEdit({ event, timeZone }: { event: EventDetail; timeZone: string }) {
+/** Correct an event (#293): round, Paris time, lock; delete it while nobody predicted it. */
+export function EventEdit({ event }: { event: EventDetail }) {
   const t = messages.adminCompetitions;
   const lock = Math.round((Date.parse(event.startsAt) - Date.parse(event.lockAt)) / 60000);
   const locks = LOCKS.includes(lock) ? LOCKS : [...LOCKS, lock].sort((a, b) => a - b);
@@ -20,7 +20,6 @@ export function EventEdit({ event, timeZone }: { event: EventDetail; timeZone: s
       </summary>
       <form action={editEventAction} className="flex flex-col gap-3 pt-2">
         <input type="hidden" name="eventSlug" value={event.slug} />
-        <input type="hidden" name="timeZone" value={timeZone} />
         <p className="text-sm text-muted-foreground">{t.editEventHint}</p>
         <label className="flex flex-col gap-1.5 text-sm font-semibold">
           {t.round}
@@ -39,10 +38,11 @@ export function EventEdit({ event, timeZone }: { event: EventDetail; timeZone: s
               type="datetime-local"
               name="localStart"
               required
-              defaultValue={utcToZoned(event.startsAt, timeZone)}
+              defaultValue={utcToParis(event.startsAt)}
               className={field}
             />
           </label>
+          <p className="-mt-1.5 text-sm text-muted-foreground">{t.timeHint}</p>
           <label className="flex flex-col gap-1.5 text-sm font-semibold">
             {t.lock}
             <select name="lockMinutes" defaultValue={String(lock)} className={field}>

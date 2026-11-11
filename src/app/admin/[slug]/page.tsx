@@ -7,6 +7,7 @@ import { getEvent } from "@/application/get-event";
 import { ErrorNotice } from "@/components/error-notice";
 import { PodiumMedals } from "@/components/podium/podium-medals";
 import { buttonVariants } from "@/components/ui/button";
+import { TIME_ZONE } from "@/domain/competition";
 import { eventPhase } from "@/domain/countdown";
 import type { EventDetail } from "@/domain/event";
 import { missingPodiumRanks } from "@/domain/official-result";
@@ -112,7 +113,7 @@ export default async function AdminEventPage({
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: competition.timeZone,
+    timeZone: TIME_ZONE,
   }).format(new Date(event.startsAt));
 
   // The form starts from the current result: first athlete of each rank on the steps, the others as ties.
@@ -173,7 +174,7 @@ export default async function AdminEventPage({
           )}
           <div className="mt-3 flex flex-col gap-3">
             <ActionNotice saved={!!search.enregistre} error={notice} />
-            <EventEdit event={event} timeZone={competition.timeZone} />
+            <EventEdit event={event} />
           </div>
           {hasResult && !correcting && (
             <div className="mt-4 rounded-card border border-border bg-card p-4">

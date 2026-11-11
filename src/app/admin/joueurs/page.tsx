@@ -1,6 +1,7 @@
 import { UseCaseError } from "@/application/errors";
 import { listAdminPlayers, type AdminPlayer } from "@/application/player-moderation";
 import { ErrorNotice } from "@/components/error-notice";
+import { TIME_ZONE } from "@/domain/competition";
 import { createSupabasePlayerModerationRepository } from "@/infra";
 
 import { messages } from "../../messages.fr";
@@ -14,7 +15,7 @@ const day = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
   month: "short",
   year: "numeric",
-  timeZone: "Europe/Paris",
+  timeZone: TIME_ZONE,
 });
 
 function activityLabel(now: number, iso: string): string {

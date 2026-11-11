@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { messages } from "@/app/messages.fr";
 import type { MyPredictionLine } from "@/application/list-my-predictions";
+import { TIME_ZONE } from "@/domain/competition";
 import type { PickHit } from "@/domain/prediction-history";
 
 const text = messages.predictionHistory;
@@ -18,7 +19,7 @@ export function PredictionLineCard({ line }: { line: MyPredictionLine }) {
   const date = new Intl.DateTimeFormat("fr-FR", {
     day: "numeric",
     month: "short",
-    timeZone: "Europe/Paris",
+    timeZone: TIME_ZONE,
   }).format(new Date(line.startsAt));
   return (
     <Link
