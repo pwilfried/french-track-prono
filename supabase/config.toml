@@ -409,6 +409,10 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# #502: called by pg_cron with its own secret (header x-push-secret), not a user's JWT.
+[functions.push-notifications]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
