@@ -671,6 +671,7 @@ export const messages = {
       "Avant chaque finale, compose ton podium. Les points tombent quand le résultat officiel est saisi.",
     link: "Comment jouer ?",
     helpLabel: "Comment jouer : les règles",
+    help: "Règles",
     podiumTitle: "Le podium",
     podium: (exact: number, wrong: number, perfect: number) =>
       `Choisis le 1er, le 2e et le 3e. Chaque athlète à la bonne place rapporte ${exact} points, un athlète sur le podium mais à une autre place ${wrong} point${wrong > 1 ? "s" : ""}. Les trois dans l'ordre : ${perfect} points de bonus.`,
