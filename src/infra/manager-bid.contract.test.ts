@@ -74,10 +74,15 @@ if (url && key) {
       cheap,
       dear,
       closeRound: async () => {
-        // Round 1 lasts 48 hours (rules copied at creation): open the mercato 49 hours ago.
-        sql(`update manager_leagues set mercato_opened_at = now() - interval '49 hours'
-             where id = '${leagueId}'`);
+        // Round 1 lasts 48 hours (rules copied at creation): move the opening 48 hours back so
+        // the round is due, close it, then move the opening forward again, as if the clock had
+        // moved on instead (otherwise the next round would end earlier than the one closed).
+        const shift = (sign: "+" | "-") =>
+          sql(`update manager_leagues set mercato_opened_at = mercato_opened_at ${sign} interval '48 hours'
+               where id = '${leagueId}'`);
+        shift("-");
         sql(`select private.close_manager_rounds()`);
+        shift("+");
       },
       restore: async () => {
         sql(`delete from manager_leagues where id in ('${leagueId}', '${closedLeagueId}')`);
