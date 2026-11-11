@@ -198,9 +198,12 @@ with league as (
           '00000000-0000-4000-9000-000000000001', true)
   returning id
 )
-insert into league_members (league_id, user_id, role)
+-- joined_at backdated so the finished half of the schedule (locked yesterday) counts in the
+-- league ranking (#376 only counts events locked after a member joined).
+insert into league_members (league_id, user_id, role, joined_at)
 select l.id, ('00000000-0000-4000-9000-' || lpad(d.n::text, 12, '0'))::uuid,
-       case when d.n = 1 then 'owner'::league_role else 'member'::league_role end
+       case when d.n = 1 then 'owner'::league_role else 'member'::league_role end,
+       now() - interval '7 days'
 from league l, demo d;
 
 insert into league_competitions (league_id, competition_id)
@@ -219,9 +222,10 @@ select 'Démo Manager',
        now()
 on conflict do nothing;
 
-insert into manager_members (league_id, user_id)
+insert into manager_members (league_id, user_id, joined_at)
 select l.id,
-       ('00000000-0000-4000-9000-' || lpad(n::text, 12, '0'))::uuid
+       ('00000000-0000-4000-9000-' || lpad(n::text, 12, '0'))::uuid,
+       now() - interval '7 days'
 from manager_leagues l, unnest(array[1, 2, 3, 4]) as n
 where l.name = 'Démo Manager'
 on conflict do nothing;
