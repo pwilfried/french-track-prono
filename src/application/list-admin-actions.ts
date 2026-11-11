@@ -12,7 +12,8 @@ export type AdminActionKind =
   | "moderate_league"
   | "moderate_player"
   | "create_discipline"
-  | "moderate_club";
+  | "moderate_club"
+  | "set_manager_rules";
 
 /** One line of the admin log. */
 export type AdminAction = {
