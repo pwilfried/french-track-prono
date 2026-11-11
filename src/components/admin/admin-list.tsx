@@ -65,6 +65,7 @@ export type AdminListProps<T> = {
   searchLabel: string;
   searchPlaceholder?: string;
   filters?: ListFilter<T>[];
+  /** The chip active on opening; none (every row) when left out. */
   defaultFilter?: string;
   selects?: ListSelect<T>[];
   bulkActions?: BulkAction[];
@@ -94,9 +95,8 @@ export function AdminList<T>(props: AdminListProps<T>) {
     status = "ready",
   } = props;
   const [query, setQuery] = useState("");
-  const [filterKey, setFilterKey] = useState<string | null>(
-    props.defaultFilter ?? filters[0]?.key ?? null,
-  );
+  // Without a default filter the list opens on every row, never on the first chip (#508).
+  const [filterKey, setFilterKey] = useState<string | null>(props.defaultFilter ?? null);
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [descending, setDescending] = useState(false);

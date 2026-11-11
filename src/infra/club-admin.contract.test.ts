@@ -16,6 +16,21 @@ clubAdminContract("in-memory fake", async () => {
     async playerOn(clubId) {
       store.join(clubId);
     },
+    async importClubs(prefix, count) {
+      const admin = store.session({ isAdmin: true });
+      const ids = Array.from({ length: count }, (_, i) =>
+        store.add({
+          name: `${prefix} ${String(i + 1).padStart(4, "0")}`,
+          city: "",
+          department: "",
+          source: "import",
+          validated: true,
+        }),
+      );
+      return async () => {
+        await Promise.all(ids.map((id) => admin.remove(id)));
+      };
+    },
   };
 });
 
@@ -36,6 +51,14 @@ if (url && key) {
       },
       async playerOn(clubId) {
         sql(`update profiles set club_id = '${clubId}' where id = '${player.userId}'`);
+      },
+      async importClubs(prefix, count) {
+        sql(`insert into clubs (name, source, validated)
+          select '${prefix} ' || lpad(i::text, 4, '0'), 'import', true
+          from generate_series(1, ${count}) i`);
+        return async () => {
+          sql(`delete from clubs where name like '${prefix} %'`);
+        };
       },
     };
   });

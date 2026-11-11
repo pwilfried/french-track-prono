@@ -22,8 +22,15 @@ export type ClubFields = { name: string; city: string; department: string };
  * and logs each action), fake = in memory.
  */
 export interface ClubAdminRepository {
-  /** Clubs whose name or town contains the query, those to validate first; 50 unless `limit`. */
-  list(query: string, pendingOnly: boolean, limit?: number): Promise<AdminClub[] | "not_admin">;
+  /**
+   * Clubs whose name or town contains the query, those to validate first; 50 unless `limit`,
+   * every one of them with "all" (#508).
+   */
+  list(
+    query: string,
+    pendingOnly: boolean,
+    limit?: number | "all",
+  ): Promise<AdminClub[] | "not_admin">;
   /** Creates (id null) or edits a club; returns its id. */
   save(id: string | null, club: ClubFields): Promise<string | "not_admin" | "unknown" | "banned">;
   validate(id: string): Promise<"done" | "not_admin" | "unknown">;
@@ -53,7 +60,7 @@ export function listAdminClubs(ports: Ports) {
       const clubs = await ports.clubs.list(
         input.query.trim().slice(0, 80),
         input.pendingOnly,
-        input.all ? 5000 : undefined,
+        input.all ? "all" : undefined,
       );
       if (clubs === "not_admin") throw new UseCaseError("NOT_ADMIN");
       return clubs;

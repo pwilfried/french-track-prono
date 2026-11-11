@@ -132,6 +132,10 @@ Règles :
 - Les erreurs sont des types énumérés ; le cœur renvoie des codes (`PREDICTION_LOCKED`,
   `LEAGUE_CODE_UNKNOWN`), jamais des phrases. Les textes français vivent dans le fichier
   de messages de l'interface.
+- L'API de Supabase rend au plus 1 000 lignes par réponse (`max_rows`). Une lecture qui doit
+  tout ramener (listes du back-office : clubs, joueurs, ligues, athlètes, compétitions) passe par
+  `readAll` (`src/infra/supabase/read-all.ts`), qui lit par paquets jusqu'au bout ; la requête
+  a un ordre total (l'id départage) et pas de plafond à elle (#508).
 
 **Comptes et session (v0.2).**
 

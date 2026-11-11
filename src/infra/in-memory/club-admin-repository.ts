@@ -32,7 +32,7 @@ export function createInMemoryClubAdminStore(clubs: NewClub[] = []) {
               (a, b) =>
                 Number(a.validated) - Number(b.validated) || a.name.localeCompare(b.name, "fr"),
             )
-            .slice(0, Math.min(Math.max(limit, 1), 5000))
+            .slice(0, limit === "all" ? undefined : Math.min(Math.max(limit, 1), 5000))
             .map((c) => ({ ...c }));
         },
         async save(id, club) {

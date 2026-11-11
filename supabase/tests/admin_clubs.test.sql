@@ -1,6 +1,6 @@
 -- pgTAP: the admin manages clubs (#366).
 begin;
-select plan(14);
+select plan(16);
 
 insert into auth.users (id, email) values
   ('cdcdcdcd-0000-0000-0000-000000000001', 'admin-club@example.test'),
@@ -32,6 +32,14 @@ select is((select name from search_clubs('zqmod nulle foulees')), 'Foulées Zqmo
   'players find a club whatever the order of the words');
 select is((select name from admin_list_clubs('zqmod nulle foulees')), 'Foulées Zqmod',
   'the admin finds it with the same words');
+-- #508: no limit lists every club, past the old cap of 5,000.
+reset role;
+insert into clubs (name, source, validated)
+  select 'Zqmany ' || lpad(i::text, 4, '0'), 'import', true from generate_series(1, 5001) i;
+set local role authenticated;
+select is((select count(*)::int from admin_list_clubs('zqmany', false, null)), 5001,
+  'a null limit lists every club');
+select is((select count(*)::int from admin_list_clubs('zqmany')), 50, 'the default limit stays 50');
 select isnt(admin_save_club(null, 'Nouveau Club Zqmod', 'Là', '13'), null, 'the admin creates a club');
 select throws_ok($$select admin_save_club(null, 'Club Officiel FFA', '', '')$$, 'FT013', null,
   'banned words are refused');
