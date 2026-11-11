@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Starts the next issues of the current milestone (lowest open "vX.Y …" milestone with open issues)
+# Starts the next issues of the current milestone (lowest "vX.Y …" milestone with an issue that no
+# open PR closes yet)
 # while Claude has a free slot (AGENTS_CLAUDE_SLOTS, default 2: two issues at a time).
 # An issue is picked when an owner labelled it agent:ready, it is not given to Claude yet, no open
 # PR closes it, it has no needs-human, agent:blocked nor after-ui label, and every blocker is closed
@@ -13,7 +14,7 @@ here=$(dirname "$0")
 # shellcheck source=ci/agents/lib.sh
 . "$here/lib.sh"
 
-issues_state=$(as_bot gh issue list -R "$repo" --state open --limit 100 --json number,labels)
+issues_state=$(as_bot gh issue list -R "$repo" --state open --limit 200 --json number,labels,milestone)
 open_prs=$(as_bot gh pr list -R "$repo" --state open --limit 50 --json number,labels,body)
 if jq -e '[.[] | select([.labels[].name] | index("agent:waiting-quota"))] | length > 0' <<< "$issues_state" >/dev/null; then
   echo "An issue waits for Claude's quota: nothing started."; exit 0
@@ -31,9 +32,13 @@ echo "Claude: $busy of $slots slot(s) busy"
 free=$((slots - busy))
 [ "$free" -gt 0 ] || { echo "No slot free: nothing started."; exit 0; }
 
-current=$(as_bot gh api "repos/$repo/milestones?state=open&per_page=100" \
-  --jq '.[] | select(.open_issues > 0 and (.title | test("^v[0-9]"))) | .title' | sort -V | head -1)
-[ -n "$current" ] || { echo "No open milestone with open issues."; exit 0; }
+# The current milestone: the lowest "vX.Y …" one with an issue left to do. An issue an open PR
+# closes is done for the agents: they move on while that PR waits for its merge.
+current=$(jq -r --arg closing "$closing" '($closing | split("\n") | map(select(. != "") | tonumber)) as $done
+  | .[] | select(.milestone != null and (.milestone.title | test("^v[0-9]")))
+  | select(.number as $n | $done | index($n) | not) | .milestone.title' <<< "$issues_state" \
+  | sort -uV | head -1)
+[ -n "$current" ] || { echo "No open milestone with an issue left to do."; exit 0; }
 issues=$(as_bot gh issue list -R "$repo" --milestone "$current" --state open --limit 100 \
   --json number,title,labels,body,blockedBy)
 kind='([.labels[].name] | if index("milestone-plan") then "plan" elif index("refactor-check") then "refactor" elif index("docs-check") then "docs" else "feature" end)'
