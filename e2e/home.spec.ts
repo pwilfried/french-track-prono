@@ -61,7 +61,9 @@ test("the app can be installed: the manifest and its icons are served", async ({
   );
 });
 
-test("a signed-in player sees the next final on the home page and opens it", async ({ page }) => {
+test("a signed-in player sees the next final on the home page, opens it and predicts", async ({
+  page,
+}) => {
   // The first final still open of the competition (run `npm run db:open-events` first).
   const slug = sql(
     `select e.slug from events e join competitions c on c.id = e.competition_id
@@ -77,6 +79,10 @@ test("a signed-in player sees the next final on the home page and opens it", asy
   await page.goto("/");
   await expect(page.getByText(`Salut ${player.pseudo}`)).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Prochaine finale dans");
+  // Before a first prediction, the home shows how to play (#476).
+  const how = page.getByRole("heading", { name: "Comment ça marche" });
+  await expect(how).toBeVisible();
+  await expect(page.locator("#how-it-works + ol > li")).toHaveCount(3);
 
   // Without a league, the card still offers the podium first and suggests a league (#375).
   const next = page.getByRole("region", { name: /./ }).filter({ hasText: "Ton podium est vide" });
@@ -87,6 +93,15 @@ test("a signed-in player sees the next final on the home page and opens it", asy
   );
   await next.getByRole("link", { name: "Composer mon podium" }).click();
   await expect(page).toHaveURL(new RegExp(`/epreuves/${slug}$`));
+
+  // After a first prediction, the steps are gone.
+  const athletes = page.locator("li > button[aria-pressed]");
+  for (const index of [0, 1, 2]) await athletes.nth(index).click();
+  await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
+  await expect(page.getByRole("status")).toContainText("Podium enregistré");
+  await page.goto("/");
+  await expect(page.getByText(`Salut ${player.pseudo}`)).toBeVisible();
+  await expect(how).toHaveCount(0);
 });
 
 test("the header's sign-in link brings a player back to the home page", async ({ page }) => {

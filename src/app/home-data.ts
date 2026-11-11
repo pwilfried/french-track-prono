@@ -2,7 +2,7 @@ import { getClubNotices, type ClubNotice } from "@/application/club-notices";
 import { getMyPoints } from "@/application/get-my-points";
 import { getProfile } from "@/application/get-profile";
 import { listEvents } from "@/application/list-events";
-import { listMyPredictions } from "@/application/list-my-predictions";
+import { hasPredicted, listMyPredictions } from "@/application/list-my-predictions";
 import { getGeneralRanking, getLeagueRanking, type RankingRow } from "@/application/rankings";
 import { UseCaseError } from "@/application/errors";
 import type { EventSummary } from "@/domain/event";
@@ -40,6 +40,8 @@ export type PlayerHome = {
   league: { id: string; name: string; me: RankingRow | null } | null;
   lastResult: { event: EventSummary; points: number | null } | null;
   clubNotices: ClubNotice[];
+  /** Until a first prediction, the home shows « Comment ça marche » (#476). */
+  hasPredicted: boolean;
 };
 
 async function safely<T>(load: () => Promise<T>): Promise<T | null> {
@@ -65,40 +67,47 @@ export async function loadPlayerHome(userId: string): Promise<PlayerHome | null>
   ]);
   const competition = await currentCompetition(choices.preferred);
   const ranking = createSupabaseRankingRepository(client);
+  const predictions = createSupabasePredictionRepository(client);
+  const listed = [...lists.coming, ...lists.past].map((c) => c.slug);
 
-  const [events, mine, myPoints, general, leagueRows, clubNotices] = await Promise.all([
-    safely(() =>
-      listEvents({ events: createSupabaseEventReader(createPublicSupabaseClient()) }).execute({
-        competitionSlug: competition.slug,
-      }),
-    ),
-    safely(() =>
-      listMyPredictions({ predictions: createSupabasePredictionRepository(client) }).execute({
-        userId,
-        competitionSlug: competition.slug,
-      }),
-    ),
-    safely(() =>
-      getMyPoints({ points: createSupabasePointsRepository(client) }).execute({
-        userId,
-        competitionSlug: competition.slug,
-      }),
-    ),
-    safely(() =>
-      getGeneralRanking({ ranking }).execute({
-        competitionSlugs: [...lists.coming, ...lists.past].map((c) => c.slug),
-      }),
-    ),
-    leagues[0]
-      ? safely(() =>
-          getLeagueRanking({ ranking, leagues: createSupabaseLeagueRepository(client) }).execute({
-            leagueId: leagues[0]!.id,
-            competitionSlugs: leagues[0]!.competitionSlugs,
-          }),
-        )
-      : Promise.resolve(null),
-    safely(() => getClubNotices({ notices: createSupabaseClubNoticeRepository(client) }).execute()),
-  ]);
+  const [events, mine, myPoints, general, leagueRows, clubNotices, predictedOnce] =
+    await Promise.all([
+      safely(() =>
+        listEvents({ events: createSupabaseEventReader(createPublicSupabaseClient()) }).execute({
+          competitionSlug: competition.slug,
+        }),
+      ),
+      safely(() =>
+        listMyPredictions({ predictions }).execute({
+          userId,
+          competitionSlug: competition.slug,
+        }),
+      ),
+      safely(() =>
+        getMyPoints({ points: createSupabasePointsRepository(client) }).execute({
+          userId,
+          competitionSlug: competition.slug,
+        }),
+      ),
+      safely(() => getGeneralRanking({ ranking }).execute({ competitionSlugs: listed })),
+      leagues[0]
+        ? safely(() =>
+            getLeagueRanking({ ranking, leagues: createSupabaseLeagueRepository(client) }).execute({
+              leagueId: leagues[0]!.id,
+              competitionSlugs: leagues[0]!.competitionSlugs,
+            }),
+          )
+        : Promise.resolve(null),
+      safely(() =>
+        getClubNotices({ notices: createSupabaseClubNoticeRepository(client) }).execute(),
+      ),
+      safely(() =>
+        hasPredicted({ predictions }).execute({
+          userId,
+          competitionSlugs: [...new Set([competition.slug, ...listed])],
+        }),
+      ),
+    ]);
 
   const predicted = new Set((mine ?? []).map((p) => p.eventId));
   const finished = (events ?? [])
@@ -107,6 +116,8 @@ export async function loadPlayerHome(userId: string): Promise<PlayerHome | null>
 
   return {
     clubNotices: clubNotices ?? [],
+    // When it cannot be read, the steps stay hidden rather than shown to a seasoned player.
+    hasPredicted: predictedOnce ?? true,
     pseudo: profile.pseudo,
     competition,
     hasLeagueForCompetition: leagues.some((l) => l.competitionSlugs.includes(competition.slug)),
