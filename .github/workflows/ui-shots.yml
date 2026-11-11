@@ -1,0 +1,73 @@
+name: UI shots
+
+# Screenshots of the pages a PR touches (#454), since PRs have no preview: the app against a local
+# Supabase, 390 px, light and dark, published to the boards branch and shown in a PR comment.
+on:
+  pull_request:
+    paths:
+      - "src/app/**"
+      - "src/components/**"
+      - "ui-shots/**"
+      - ".github/workflows/ui-shots.yml"
+      - "ci/ui-shots-publish.sh"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ui-shots-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  shots:
+    name: Screenshots of the touched pages
+    # A fork's PR gets a read-only token: no boards push, no comment.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write # the boards branch
+      pull-requests: write # the comment
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the diff against the base branch
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.0.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Start local Supabase
+        run: supabase start -x realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Local Supabase environment
+        run: ci/supabase-env.sh
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Build the app
+        run: npm run build
+
+      - name: Screenshots
+        env:
+          COMPETITION_SLUG: ultimate-championship-2026
+          UI_SHOTS_BASE: origin/${{ github.base_ref }}
+          UI_SHOTS_DIR: ${{ runner.temp }}/shots
+        run: npx playwright test -c playwright.ui-shots.config.ts
+
+      - name: Publish to boards and comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          SHOTS: ${{ runner.temp }}/shots
+        run: ci/ui-shots-publish.sh
