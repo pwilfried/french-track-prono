@@ -40,6 +40,7 @@ managerLeagueRepositoryContract("in-memory fake", async () => {
     setBudget: async (budget) => {
       rules.current = { ...rules.current, rules: { ...rules.current.rules, budget } };
     },
+    openMercato: async (id) => store.openMercato(id),
     restore: async () => {},
   };
 });
@@ -62,6 +63,8 @@ if (url && key) {
       creatorId: creator.userId,
       other: createSupabaseManagerLeagueRepository(other.client),
       setBudget,
+      openMercato: async (id) =>
+        void sql(`update manager_leagues set mercato_opened_at = now() where id = '${id}'`),
       restore: () => setBudget(Number(budget)),
     };
   });

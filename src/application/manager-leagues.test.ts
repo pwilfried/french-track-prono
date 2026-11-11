@@ -4,12 +4,19 @@ import { UseCaseError } from "./errors";
 import {
   createManagerLeague,
   getManagerLeague,
+  joinManagerLeague,
+  joinPublicManagerLeague,
   listMyManagerLeagues,
+  type JoinOutcome,
   type ManagerLeague,
   type ManagerLeagueRepository,
 } from "./manager-leagues";
 
-function repository(leagues: ManagerLeague[] = []) {
+function repository(
+  leagues: ManagerLeague[] = [],
+  joinAnswer: JoinOutcome = { outcome: "unknown" },
+) {
+  const codes: string[] = [];
   const created: { name: string; isPublic: boolean }[] = [];
   const repo: ManagerLeagueRepository = {
     create: async (name, isPublic) => {
@@ -18,8 +25,14 @@ function repository(leagues: ManagerLeague[] = []) {
     },
     listMine: async () => leagues,
     find: async () => null,
+    join: async (code) => {
+      codes.push(code);
+      return joinAnswer;
+    },
+    joinPublic: async () => joinAnswer,
+    listPublic: async () => [],
   };
-  return { repo, created };
+  return { repo, created, codes };
 }
 
 describe("createManagerLeague", () => {
@@ -83,5 +96,56 @@ describe("getManagerLeague", () => {
     await expect(getManagerLeague({ managerLeagues: repo }).execute({ id: "x" })).rejects.toEqual(
       new UseCaseError("LEAGUE_NOT_FOUND"),
     );
+  });
+});
+
+describe("joinManagerLeague", () => {
+  it("joins with a code typed in lower case with a space", async () => {
+    const { repo, codes } = repository([], { outcome: "joined", leagueId: "league-1" });
+
+    const id = await joinManagerLeague({ managerLeagues: repo }).execute({ code: "k7m 2qx" });
+
+    expect(id).toBe("league-1");
+    expect(codes).toEqual(["K7M2QX"]);
+  });
+
+  it("answers LEAGUE_CODE_UNKNOWN without asking for a code that cannot exist", async () => {
+    const { repo, codes } = repository();
+
+    await expect(
+      joinManagerLeague({ managerLeagues: repo }).execute({ code: "OOOOOO" }),
+    ).rejects.toEqual(new UseCaseError("LEAGUE_CODE_UNKNOWN"));
+    expect(codes).toEqual([]);
+  });
+
+  it.each([
+    ["full", "LEAGUE_FULL"],
+    ["mercato_open", "MERCATO_OPEN"],
+    ["too_many", "LEAGUE_TOO_MANY_ATTEMPTS"],
+    ["unknown", "LEAGUE_CODE_UNKNOWN"],
+  ] as const)("turns %s into %s", async (outcome, code) => {
+    const { repo } = repository([], { outcome });
+
+    await expect(
+      joinManagerLeague({ managerLeagues: repo }).execute({ code: "K7M2QX" }),
+    ).rejects.toEqual(new UseCaseError(code));
+  });
+});
+
+describe("joinPublicManagerLeague", () => {
+  it("answers LEAGUE_NOT_FOUND for a league that is not public", async () => {
+    const { repo } = repository();
+
+    await expect(
+      joinPublicManagerLeague({ managerLeagues: repo }).execute({ id: "league-1" }),
+    ).rejects.toEqual(new UseCaseError("LEAGUE_NOT_FOUND"));
+  });
+
+  it("refuses a full league with LEAGUE_FULL", async () => {
+    const { repo } = repository([], { outcome: "full" });
+
+    await expect(
+      joinPublicManagerLeague({ managerLeagues: repo }).execute({ id: "league-1" }),
+    ).rejects.toEqual(new UseCaseError("LEAGUE_FULL"));
   });
 });
