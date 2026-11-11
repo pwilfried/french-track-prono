@@ -40,11 +40,12 @@ export function createSupabaseAthleteAdminRepository(client: SupabaseClient): At
       const { data, error } = await client
         .from("athletes")
         .select(
-          "id, slug, name, country_code, gender, athlete_disciplines(discipline, is_primary), athlete_records(discipline, kind, mark, record_date, meeting_name)",
+          "id, slug, name, country_code, gender, manager_price, athlete_disciplines(discipline, is_primary), athlete_records(discipline, kind, mark, record_date, meeting_name)",
         )
         .eq("slug", slug)
         .maybeSingle<
           AthleteRow & {
+            manager_price: number | null;
             athlete_disciplines: { discipline: string; is_primary: boolean }[];
             athlete_records: {
               discipline: string;
@@ -70,8 +71,12 @@ export function createSupabaseAthleteAdminRepository(client: SupabaseClient): At
           date: r.record_date,
           meeting: r.meeting_name,
         })),
+        managerPrice: data.manager_price,
       };
     },
+
+    setPrice: (athleteId, price) =>
+      call("admin_set_athlete_price", { p_athlete: athleteId, p_price: price }),
 
     async create(fields) {
       const created = await client.rpc("create_athlete", {

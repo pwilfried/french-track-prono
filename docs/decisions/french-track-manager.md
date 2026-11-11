@@ -115,7 +115,12 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - **Monnaie** : crédits virtuels uniquement, rien de payant. Le mercato secondaire payant est hors
   périmètre.
 
+## Réponse du propriétaire (#441, 11 novembre 2026)
+
+- **Prix de référence** : fixé à la main par l'admin, attribut de l'athlète (back-office ›
+  Athlètes › fiche, « Prix French Track Manager »). Un athlète sans prix n'est pas dans le
+  catalogue. Le prix servira aussi au futur onglet athlète (#443).
+
 ## Questions encore ouvertes
 
 - Compétitions éligibles face aux 2 × (n − 1) journées d'un aller-retour : #440 (bloque #432).
-- Prix de référence fixé à la main ou calculé : #441 (bloque #421).

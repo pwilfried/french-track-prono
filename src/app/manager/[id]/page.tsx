@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
@@ -5,6 +6,7 @@ import { getManagerLeague, type ManagerLeagueFile } from "@/application/manager-
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { ShareInvite } from "@/components/leagues/share-invite";
+import { buttonVariants } from "@/components/ui/button";
 import {
   canStartManagerSeason,
   MANAGER_LEAGUE_MAX,
@@ -65,6 +67,10 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
             shareText={text.shareText(league.name)}
           />
         )}
+
+        <Link href={`/manager/${league.id}/catalogue`} className={`${buttonVariants()} w-full`}>
+          {text.catalogueLink}
+        </Link>
 
         <section aria-labelledby="participants" className="flex flex-col gap-2">
           <h2

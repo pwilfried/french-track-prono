@@ -88,7 +88,9 @@ export type ErrorCode =
   | "ATHLETES_UNAVAILABLE"
   | "MANAGER_RULES_INVALID"
   | "MANAGER_RULES_UNAVAILABLE"
-  | "MERCATO_OPEN";
+  | "MERCATO_OPEN"
+  | "ATHLETE_PRICE_INVALID"
+  | "CATALOGUE_UNAVAILABLE";
 
 let reportUnavailable: ((code: ErrorCode) => void) | undefined;
 
