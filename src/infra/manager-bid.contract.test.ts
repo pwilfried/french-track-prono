@@ -20,6 +20,7 @@ managerBidContract("in-memory fake", async () => {
     outsider: store.session("u3"),
     cheap: "a1",
     dear: "a2",
+    closeRound: async () => store.closeRound("l1"),
     restore: async () => {},
   };
 });
@@ -72,6 +73,17 @@ if (url && key) {
       outsider: createSupabaseManagerBids(outsider.client),
       cheap,
       dear,
+      closeRound: async () => {
+        // Round 1 lasts 48 hours (rules copied at creation): move the opening 48 hours back so
+        // the round is due, close it, then move the opening forward again, as if the clock had
+        // moved on instead (otherwise the next round would end earlier than the one closed).
+        const shift = (sign: "+" | "-") =>
+          sql(`update manager_leagues set mercato_opened_at = mercato_opened_at ${sign} interval '48 hours'
+               where id = '${leagueId}'`);
+        shift("-");
+        sql(`select private.close_manager_rounds()`);
+        shift("+");
+      },
       restore: async () => {
         sql(`delete from manager_leagues where id in ('${leagueId}', '${closedLeagueId}')`);
         for (const pair of before.split(",")) {

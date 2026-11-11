@@ -2,20 +2,25 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { UseCaseError } from "@/application/errors";
 import type { BidOutcome, ManagerBidRepository } from "@/application/manager-bids";
+import { roundEndsAt, type RoundRules } from "@/domain/manager-round";
 
-/** The answers of place_manager_bid and withdraw_manager_bid (supabase/migrations, #422). */
+/** The answers of place_manager_bid and withdraw_manager_bid (supabase/migrations, #422, #423). */
 const refusals: Record<string, Exclude<BidOutcome, "placed">> = {
   "42501": "not_member",
   "22P02": "not_member",
   FT016: "mercato_closed",
+  FT020: "round_closing",
   P0002: "not_in_catalogue",
+  FT019: "taken",
   FT017: "below_price",
   FT018: "over_budget",
 };
 
+type LeagueRules = { budget: number; rounds?: RoundRules };
+
 /**
- * The player's session. Row level security shows a player their own bids only; the database
- * checks the price, the budget and the opening of the mercato.
+ * The player's session. Row level security shows a player their own bids and athletes only; the
+ * database checks the price, the budget, the opening of the mercato and the time of the round.
  */
 export function createSupabaseManagerBids(client: SupabaseClient): ManagerBidRepository {
   return {
@@ -28,16 +33,39 @@ export function createSupabaseManagerBids(client: SupabaseClient): ManagerBidRep
       if (league.error?.code === "22P02") return "not_member";
       if (league.error) throw new UseCaseError("MANAGER_BIDS_UNAVAILABLE");
       if (!league.data) return "not_member";
-      const bids = await client
-        .from("manager_bids")
-        .select("athlete_id, amount, bid_at")
-        .eq("league_id", leagueId)
-        .order("bid_at");
-      if (bids.error) throw new UseCaseError("MANAGER_BIDS_UNAVAILABLE");
+      const [bids, awards, rounds] = await Promise.all([
+        client
+          .from("manager_bids")
+          .select("athlete_id, amount, bid_at")
+          .eq("league_id", leagueId)
+          .order("bid_at"),
+        client
+          .from("manager_awards")
+          .select("athlete_id, amount, round")
+          .eq("league_id", leagueId)
+          .order("round"),
+        client.from("manager_rounds").select("round", { count: "exact", head: true }).eq(
+          "league_id",
+          leagueId,
+        ),
+      ]);
+      if (bids.error || awards.error || rounds.error) {
+        throw new UseCaseError("MANAGER_BIDS_UNAVAILABLE");
+      }
+      const rules = league.data.rules as LeagueRules;
       const opened = league.data.mercato_opened_at as string | null;
       return {
-        budget: Number((league.data.rules as { budget: number }).budget),
+        budget: Number(rules.budget),
         mercatoOpen: opened !== null && Date.parse(opened) <= Date.now(),
+        roundEndsAt:
+          opened !== null && rules.rounds
+            ? roundEndsAt(opened, rules.rounds, (rounds.count ?? 0) + 1)
+            : null,
+        team: awards.data.map((a) => ({
+          athleteId: a.athlete_id as string,
+          amount: a.amount as number,
+          round: a.round as number,
+        })),
         bids: bids.data.map((b) => ({
           athleteId: b.athlete_id as string,
           amount: b.amount as number,
@@ -63,7 +91,9 @@ export function createSupabaseManagerBids(client: SupabaseClient): ManagerBidRep
       });
       if (!error) return "withdrawn";
       const refusal = refusals[error.code];
-      if (refusal === "not_member" || refusal === "mercato_closed") return refusal;
+      if (refusal === "not_member" || refusal === "mercato_closed" || refusal === "round_closing") {
+        return refusal;
+      }
       throw new UseCaseError("MANAGER_BIDS_UNAVAILABLE");
     },
   };

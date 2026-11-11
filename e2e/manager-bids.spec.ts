@@ -97,6 +97,27 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await expect(theirs).toContainText("Réservé0 cr.");
     await expect(theirs).toContainText("Aucune offre pour l'instant.");
     await expect(rivalPage.getByRole("article", { name: first })).not.toContainText("Mon offre");
+
+    // The round closes (#423): each athlete goes to the best bid; the result shows in the budget.
+    const rivalSecond = rivalPage.getByRole("article", { name: second });
+    await rivalSecond.getByRole("button", { name: "Enchérir" }).click();
+    await rivalSecond.getByLabel(`Mon offre sur ${second}, en crédits`).fill("30");
+    await rivalSecond.getByRole("button", { name: "Valider" }).click();
+    await expect(rivalSecond).toContainText("Mon offre : 30 cr.");
+    sql(`update manager_leagues set mercato_opened_at = now() - interval '49 hours'
+         where name = '${league}'`);
+    sql(`select private.close_manager_rounds()`);
+
+    await ownerPage.goto(catalogue + search);
+    await expect(budget.getByRole("list", { name: "Mes athlètes" })).toContainText(first);
+    await expect(budget).toContainText("Dépensé35 cr.");
+    await expect(budget).toContainText("Disponible65 cr.");
+    await expect(budget).toContainText("Aucune offre pour l'instant.");
+    await expect(firstCard).toContainText("Recruté");
+    await expect(firstCard.getByRole("button", { name: "Enchérir" })).toHaveCount(0);
+    await rivalPage.goto(catalogue + search);
+    await expect(theirs.getByRole("list", { name: "Mes athlètes" })).toContainText(second);
+    await expect(theirs).toContainText("Disponible70 cr.");
   } finally {
     sql(`delete from manager_leagues where name = '${league}'`);
     sql(`delete from athletes where slug in ('enchere-une-${tag}', 'enchere-deux-${tag}')`);
