@@ -75,3 +75,5 @@ export { createInMemoryReadinessStore } from "./in-memory/readiness-reader";
 export { createSupabaseReadinessReader } from "./supabase/readiness-reader";
 export { createInMemoryManagerRuleStore } from "./in-memory/manager-rule-repository";
 export { createSupabaseManagerRuleRepository } from "./supabase/manager-rule-repository";
+export { createInMemoryManagerLeagueStore } from "./in-memory/manager-league-repository";
+export { createSupabaseManagerLeagueRepository } from "./supabase/manager-league-repository";
