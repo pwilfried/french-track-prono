@@ -6,6 +6,7 @@ import {
   createAthlete,
   editAthlete,
   editAthleteDiscipline,
+  setAthletePrice,
   type AthleteAdminRepository,
 } from "./edit-athlete";
 import { UseCaseError } from "./errors";
@@ -50,6 +51,7 @@ function repository(isAdmin = true) {
               { discipline: "100 m", isPrimary: true },
             ],
             records: [],
+            managerPrice: null,
           }
         : null,
     create: async (fields) => {
@@ -60,6 +62,7 @@ function repository(isAdmin = true) {
     setDiscipline: (...args) => write("setDiscipline", ...args),
     removeDiscipline: (...args) => write("removeDiscipline", ...args),
     setRecord: (...args) => write("setRecord", ...args),
+    setPrice: (...args) => write("setPrice", ...args),
   };
   return { athletes, calls };
 }
@@ -216,5 +219,28 @@ describe("athletes in the back-office", () => {
         discipline: "100 m",
       }),
     ).rejects.toEqual(new UseCaseError("NOT_ADMIN"));
+  });
+});
+
+describe("setAthletePrice", () => {
+  it("sets a price in whole credits and removes it when left empty", async () => {
+    const { athletes, calls } = repository();
+
+    await setAthletePrice({ athletes }).execute({ athleteId: "1", price: " 15 " });
+    await setAthletePrice({ athletes }).execute({ athleteId: "1", price: "" });
+
+    expect(calls).toEqual([
+      ["setPrice", "1", 15],
+      ["setPrice", "1", null],
+    ]);
+  });
+
+  it.each(["0", "-3", "2.5", "douze"])("refuses %s with ATHLETE_PRICE_INVALID", async (price) => {
+    const { athletes, calls } = repository();
+
+    await expect(setAthletePrice({ athletes }).execute({ athleteId: "1", price })).rejects.toEqual(
+      new UseCaseError("ATHLETE_PRICE_INVALID"),
+    );
+    expect(calls).toEqual([]);
   });
 });

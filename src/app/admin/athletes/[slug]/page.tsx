@@ -10,7 +10,12 @@ import { createSupabaseAthleteAdminRepository, createSupabaseDisciplineRepositor
 import { messages } from "../../../messages.fr";
 import { AdminBand } from "../../competitions/admin-shell";
 import { adminOnly } from "../../guard";
-import { editAthleteAction, editDisciplineAction, setRecordAction } from "../actions";
+import {
+  editAthleteAction,
+  editDisciplineAction,
+  setPriceAction,
+  setRecordAction,
+} from "../actions";
 
 const field = "min-h-11 w-full rounded-xl border-2 border-border bg-background px-2.5 text-base";
 const button = "min-h-11 rounded-full px-4 text-sm font-bold";
@@ -116,6 +121,32 @@ export default async function AdminAthletePage({
               <button type="submit" className={`${button} bg-primary text-primary-foreground`}>
                 {messages.disciplines.save}
               </button>
+            </form>
+
+            <form
+              action={setPriceAction}
+              className="flex flex-col gap-2 rounded-card border border-border bg-card p-3.5"
+            >
+              <input type="hidden" name="slug" value={slug} />
+              <input type="hidden" name="athleteId" value={loaded.file.athleteId} />
+              <h2 className="font-bold">{messages.adminAthletes.managerPrice}</h2>
+              <p className="text-sm text-muted-foreground">
+                {messages.adminAthletes.managerPriceHint}
+              </p>
+              <div className="flex items-end gap-2">
+                <label className="flex flex-1 flex-col gap-1 text-sm font-semibold">
+                  {messages.adminAthletes.managerPriceLabel}
+                  <input
+                    name="price"
+                    defaultValue={loaded.file.managerPrice ?? ""}
+                    inputMode="numeric"
+                    className={`${field} font-mono`}
+                  />
+                </label>
+                <button type="submit" className={`${button} bg-primary text-primary-foreground`}>
+                  {messages.disciplines.save}
+                </button>
+              </div>
             </form>
 
             <section aria-labelledby="disciplines-title" className="flex flex-col gap-3">
