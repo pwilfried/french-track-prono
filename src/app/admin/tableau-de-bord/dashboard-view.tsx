@@ -4,6 +4,7 @@ import type { AdminTodo } from "@/application/admin-todo";
 import type { CompetitionReadiness } from "@/application/competition-readiness";
 import type { AdminAction } from "@/application/list-admin-actions";
 import type { PlayerStats } from "@/domain/admin-dashboard";
+import { TIME_ZONE } from "@/domain/competition";
 import { cn } from "@/lib/utils";
 
 import { messages } from "../../messages.fr";
@@ -121,7 +122,7 @@ export function DashboardView({
   stats,
   recent,
 }: {
-  competition: { slug: string; name: string; city: string | null; timeZone: string };
+  competition: { slug: string; name: string; city: string | null };
   daysLeft: number;
   todo: AdminTodo | null;
   readiness: CompetitionReadiness | null;
@@ -133,7 +134,7 @@ export function DashboardView({
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: competition.timeZone,
+    timeZone: TIME_ZONE,
   });
   return (
     <>

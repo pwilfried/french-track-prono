@@ -26,7 +26,6 @@ export function competitionAdminRepositoryContract(
       countryCode: "FRA",
       startsOn: "2099-06-25",
       endsOn: "2099-06-27",
-      timeZone: "Europe/Paris",
     });
 
     it("lets an admin create a competition and an event, with free slugs, and finds them", async () => {
@@ -51,7 +50,6 @@ export function competitionAdminRepositoryContract(
         name: `Test ${slug}`,
         scope: "france",
         countryCode: "FRA",
-        timeZone: "Europe/Paris",
         events: 1,
         finals: 1,
       });

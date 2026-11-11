@@ -257,10 +257,17 @@ la table. Le domaine lit et écrit les marques (`parseMark`, `formatMark` dans
 `src/domain/discipline.ts`).
 
 Compétitions (v0.9, issue #266) : l'admin crée une compétition (`scope` internationale ou
-française, fuseau horaire), ses épreuves (slug unique sur toutes les compétitions) et ses engagés
+française), ses épreuves (slug unique sur toutes les compétitions) et ses engagés
 (`competition_athletes`, remplie aussi par chaque ligne de liste de départ). Les candidats d'une
 liste de départ sont les engagés de la compétition (tout le monde tant que personne n'est engagé).
 La compétition mise en avant est la prochaine par date (`nextCompetition`).
+
+Heure de Paris (décision du propriétaire du 11/11/2026, issue #501) : un seul fuseau pour toute
+l'appli, `Europe/Paris`, défini une seule fois (`TIME_ZONE` dans `src/domain/competition.ts`).
+L'admin saisit les horaires des épreuves en heure de Paris, quel que soit le pays de la
+compétition (`parisToUtc`, `utcToParis`) ; le joueur les lit en heure de Paris, et les épreuves se
+regroupent par jour de Paris (`groupEventsByDay`). La base garde des instants UTC ; une compétition
+n'a plus de fuseau (colonne `competitions.time_zone` retirée).
 
 Cotes (v0.9, issues #259 et #260) : sur une compétition créée dans le back-office
 (`competitions.odds_enabled`), l'admin propose des athlètes de la liste de départ (au moins un, autant qu'il veut ; décision du 08/11/2026) avec une cote positive

@@ -50,7 +50,6 @@ export async function createCompetitionAction(data: FormData) {
       countryCode: formText(data, "countryCode"),
       startsOn: formText(data, "startsOn"),
       endsOn: formText(data, "endsOn"),
-      timeZone: formText(data, "timeZone"),
     });
     return `/admin/competitions/${slug}?enregistre=1`;
   });
@@ -63,7 +62,6 @@ export async function addEventAction(data: FormData) {
       competitions: createSupabaseCompetitionAdminRepository(client),
     }).execute({
       competition,
-      timeZone: formText(data, "timeZone"),
       discipline: formText(data, "discipline"),
       gender: formText(data, "gender"),
       round: formText(data, "round"),
@@ -102,7 +100,6 @@ export async function editCompetitionAction(data: FormData) {
       countryCode: formText(data, "countryCode"),
       startsOn: formText(data, "startsOn"),
       endsOn: formText(data, "endsOn"),
-      timeZone: formText(data, "timeZone"),
     });
     return `/admin/competitions/${slug}?enregistre=1`;
   });
@@ -125,7 +122,6 @@ export async function editEventAction(data: FormData) {
       competitions: createSupabaseCompetitionEditRepository(client),
     }).execute({
       eventSlug,
-      timeZone: formText(data, "timeZone"),
       round: formText(data, "round"),
       localStart: formText(data, "localStart"),
       lockMinutes: Number(formText(data, "lockMinutes")),

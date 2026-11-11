@@ -75,7 +75,6 @@ export const Full: Story = {
           race("f-100m", "2026-09-12T18:00:00Z", 3, "10.76"),
           race("f-200m", "2026-09-11T18:00:00Z", 2, "22.10"),
         ]}
-        timeZone="Europe/Budapest"
         linkable={() => true}
       />
     </div>
@@ -94,7 +93,7 @@ export const Empty: Story = {
     <div className="flex flex-col gap-6">
       <AthleteHero {...args} />
       <RecordsRow rows={[]} />
-      <RecentRaces races={[]} timeZone="Europe/Budapest" linkable={() => true} />
+      <RecentRaces races={[]} linkable={() => true} />
     </div>
   ),
   play: async ({ canvasElement }) => {
@@ -117,7 +116,6 @@ export const LongText: Story = {
             meeting: "Meeting international de Paris Saint-Denis Diamond League",
           },
         ]}
-        timeZone="Europe/Paris"
         linkable={() => false}
       />
     </div>

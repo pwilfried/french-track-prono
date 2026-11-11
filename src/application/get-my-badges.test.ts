@@ -78,7 +78,7 @@ describe("getMyBadges", () => {
       ranking: ranking([line("e1", [{ kind: "exact", slot: 1 }])]),
       predictions: predictions([prediction("e1", "fra"), prediction("e2", "gbr")]),
       events: reader,
-    }).execute({ userId: "me", competitionSlug: "c", timeZone: "Europe/London" });
+    }).execute({ userId: "me", competitionSlug: "c" });
 
     expect(earned(badges)).toEqual(["bleus", "fidele"]);
   });
@@ -88,7 +88,7 @@ describe("getMyBadges", () => {
       ranking: ranking([line("e2", [{ kind: "exact", slot: 1 }])]),
       predictions: predictions([prediction("e2", "gbr")]),
       events: reader,
-    }).execute({ userId: "me", competitionSlug: "c", timeZone: "Europe/London" });
+    }).execute({ userId: "me", competitionSlug: "c" });
 
     expect(earned(badges)).toEqual([]);
     expect(badges.find((b) => b.badge === "chasseur")).toEqual({

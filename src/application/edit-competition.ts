@@ -1,4 +1,4 @@
-import { isValidCompetition, zonedToUtc, type CompetitionScope } from "@/domain/competition";
+import { isValidCompetition, parisToUtc, type CompetitionScope } from "@/domain/competition";
 import { ROUNDS, type Round } from "@/domain/rounds";
 
 import { UseCaseError } from "./errors";
@@ -12,7 +12,6 @@ export type CompetitionFields = {
   countryCode: string | null;
   startsOn: string;
   endsOn: string;
-  timeZone: string;
 };
 
 /**
@@ -35,7 +34,7 @@ function check(outcome: Outcome, notFound: "COMPETITION_NOT_FOUND" | "EVENT_NOT_
   if (outcome === "has_predictions") throw new UseCaseError("HAS_PREDICTIONS");
 }
 
-/** The admin corrects a competition: name, kind, place, dates, time zone. */
+/** The admin corrects a competition: name, kind, place, dates. */
 export function editCompetition(ports: { competitions: CompetitionEditRepository }) {
   return {
     async execute(input: {
@@ -46,7 +45,6 @@ export function editCompetition(ports: { competitions: CompetitionEditRepository
       countryCode: string;
       startsOn: string;
       endsOn: string;
-      timeZone: string;
     }): Promise<void> {
       const countryCode = input.countryCode.trim().toUpperCase();
       if (!isValidCompetition(input) || (countryCode && !/^[A-Z]{3}$/.test(countryCode))) {
@@ -60,7 +58,6 @@ export function editCompetition(ports: { competitions: CompetitionEditRepository
           countryCode: countryCode || null,
           startsOn: input.startsOn,
           endsOn: input.endsOn,
-          timeZone: input.timeZone,
         }),
         "COMPETITION_NOT_FOUND",
       );
@@ -78,14 +75,13 @@ export function deleteCompetition(ports: { competitions: CompetitionEditReposito
 }
 
 /**
- * The admin moves an event (time typed in the competition's local time, predictions locked
- * `lockMinutes` before) or changes its round, as long as nobody predicted it.
+ * The admin moves an event (time typed in Paris time, predictions locked `lockMinutes` before)
+ * or changes its round, as long as nobody predicted it.
  */
 export function editCompetitionEvent(ports: { competitions: CompetitionEditRepository }) {
   return {
     async execute(input: {
       eventSlug: string;
-      timeZone: string;
       round: string;
       localStart: string;
       lockMinutes: number;
@@ -98,7 +94,7 @@ export function editCompetitionEvent(ports: { competitions: CompetitionEditRepos
       ) {
         throw new UseCaseError("EVENT_INVALID");
       }
-      const startsAt = zonedToUtc(input.localStart, input.timeZone);
+      const startsAt = parisToUtc(input.localStart);
       check(
         await ports.competitions.updateEvent(input.eventSlug, {
           round: input.round as Round,

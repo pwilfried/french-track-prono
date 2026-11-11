@@ -1,6 +1,7 @@
 import { UseCaseError } from "@/application/errors";
 import { listAdminLeagues, type AdminLeague } from "@/application/league-moderation";
 import { ErrorNotice } from "@/components/error-notice";
+import { TIME_ZONE } from "@/domain/competition";
 import { createSupabaseLeagueModerationRepository } from "@/infra";
 
 import { messages } from "../../messages.fr";
@@ -13,7 +14,7 @@ const day = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
   month: "short",
   year: "numeric",
-  timeZone: "Europe/Paris",
+  timeZone: TIME_ZONE,
 });
 
 /** Back-office « Ligues » (#321, #383): every league, the reported ones first. */

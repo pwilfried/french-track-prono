@@ -28,7 +28,6 @@ export function createSupabaseCompetitionEditRepository(
         p_country: f.countryCode ?? "",
         p_starts_on: f.startsOn,
         p_ends_on: f.endsOn,
-        p_time_zone: f.timeZone,
       });
       const outcome = outcomeOf(error);
       return outcome === "has_predictions" ? "saved" : outcome;

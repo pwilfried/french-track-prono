@@ -23,7 +23,7 @@ const baseEvent: EventSummary = {
 const meta = {
   title: "Events/EventCard",
   component: EventCard,
-  args: { timeZone: "Europe/Budapest", now, tick: false },
+  args: { now, tick: false },
   decorators: [
     (Story) => (
       <ul className="max-w-sm bg-background p-6">

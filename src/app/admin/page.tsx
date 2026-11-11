@@ -3,6 +3,7 @@ import Link from "next/link";
 import { UseCaseError } from "@/application/errors";
 import { listEvents } from "@/application/list-events";
 import { ErrorNotice } from "@/components/error-notice";
+import { TIME_ZONE } from "@/domain/competition";
 import { eventPhase } from "@/domain/countdown";
 import type { EventSummary } from "@/domain/event";
 import { cn } from "@/lib/utils";
@@ -73,7 +74,7 @@ export default async function AdminPage({
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: competition.timeZone,
+    timeZone: TIME_ZONE,
   });
 
   return (

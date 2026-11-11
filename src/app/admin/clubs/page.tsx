@@ -2,6 +2,7 @@ import { listAdminClubs, type AdminClub } from "@/application/club-admin";
 import { UseCaseError } from "@/application/errors";
 import { ErrorNotice } from "@/components/error-notice";
 import { likelyDuplicate } from "@/domain/club";
+import { TIME_ZONE } from "@/domain/competition";
 import { createSupabaseClubAdminRepository } from "@/infra";
 
 import { messages } from "../../messages.fr";
@@ -15,7 +16,7 @@ const day = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
   month: "short",
   year: "numeric",
-  timeZone: "Europe/Paris",
+  timeZone: TIME_ZONE,
 });
 
 /** Back-office « Clubs » (#366, #381): the list, the duplicates to merge, a new club. */

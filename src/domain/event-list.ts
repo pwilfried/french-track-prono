@@ -1,15 +1,16 @@
+import { TIME_ZONE } from "./competition";
 import type { EventGender, EventSummary } from "./event";
 
 export type EventDay = {
-  /** Calendar day in the competition time zone, YYYY-MM-DD. */
+  /** Calendar day in Paris time, YYYY-MM-DD. */
   day: string;
   events: EventSummary[];
 };
 
-/** Groups events by calendar day in the given time zone. Keeps the order of the input. */
-export function groupEventsByDay(events: EventSummary[], timeZone: string): EventDay[] {
+/** Groups events by calendar day in Paris time. Keeps the order of the input. */
+export function groupEventsByDay(events: EventSummary[]): EventDay[] {
   // The en-CA locale formats a date as YYYY-MM-DD.
-  const dayFormat = new Intl.DateTimeFormat("en-CA", { timeZone });
+  const dayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE });
   const days: EventDay[] = [];
   for (const event of events) {
     const day = dayFormat.format(new Date(event.startsAt));

@@ -56,7 +56,7 @@ test("an admin creates a discipline, then uses it for an event", async ({ page }
   await page.goto(`/admin/competitions/${competition}`);
   await page.getByLabel("Discipline").selectOption(name);
   await page.getByLabel("Catégorie").selectOption("M");
-  await page.getByLabel("Horaire (local)").fill("2099-07-01T20:00");
+  await page.getByLabel("Horaire (heure de Paris)").fill("2099-07-01T20:00");
   await page.getByRole("button", { name: "Ajouter l'épreuve" }).click();
   await expect(page.getByRole("list", { name: "épreuves" })).toContainText(`${name} hommes`);
 

@@ -4,9 +4,9 @@ import { UseCaseError } from "@/application/errors";
 import { listAdminActions, type AdminLogFilter } from "@/application/list-admin-actions";
 import { ErrorNotice } from "@/components/error-notice";
 import { buttonVariants } from "@/components/ui/button";
+import { TIME_ZONE } from "@/domain/competition";
 import { createSupabaseAdminLogRepository } from "@/infra";
 
-import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
 import { AdminShell } from "../competitions/admin-shell";
 import { adminOnly } from "../guard";
@@ -28,7 +28,6 @@ const field = "min-h-11 w-full rounded-xl border-2 border-border bg-card px-3 te
 export default async function AdminLogPage({ searchParams }: { searchParams: Promise<Search> }) {
   // The admin check first: it reads the session, so the page is never built ahead.
   const { client } = await adminOnly();
-  const competition = await currentCompetition();
   const filter = filterOf(await searchParams);
   let page;
   try {
@@ -44,7 +43,7 @@ export default async function AdminLogPage({ searchParams }: { searchParams: Pro
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: competition.timeZone,
+    timeZone: TIME_ZONE,
   });
 
   return (

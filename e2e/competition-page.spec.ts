@@ -5,8 +5,8 @@ import { sql } from "../src/infra/contract/database";
 test("an event of a French competition opens from its competition page", async ({ page }) => {
   const tag = `e2e-${Date.now() % 1000000}`;
   sql(`with c as (
-      insert into competitions (slug, name, scope, starts_on, ends_on, time_zone)
-      values ('${tag}', 'Test France ${tag}', 'france', current_date + 3, current_date + 4, 'Europe/Paris')
+      insert into competitions (slug, name, scope, starts_on, ends_on)
+      values ('${tag}', 'Test France ${tag}', 'france', current_date + 3, current_date + 4)
       returning id
     ), e as (
       insert into events (competition_id, slug, discipline, gender, starts_at, lock_at)

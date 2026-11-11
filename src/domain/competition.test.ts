@@ -7,8 +7,9 @@ import {
   eventSlug,
   isValidCompetition,
   nextCompetition,
-  utcToZoned,
-  zonedToUtc,
+  parisToUtc,
+  TIME_ZONE,
+  utcToParis,
 } from "./competition";
 
 describe("competitionSlug and eventSlug", () => {
@@ -27,7 +28,6 @@ describe("isValidCompetition", () => {
     scope: "france",
     startsOn: "2027-06-25",
     endsOn: "2027-06-27",
-    timeZone: "Europe/Paris",
   };
 
   it("accepts a named competition whose end is not before its start", () => {
@@ -35,19 +35,36 @@ describe("isValidCompetition", () => {
     expect(isValidCompetition({ ...base, endsOn: "2027-06-25" })).toBe(true);
   });
 
-  it("refuses no name, an unknown type, reversed dates or an unknown time zone", () => {
+  it("refuses no name, an unknown type or reversed dates", () => {
     expect(isValidCompetition({ ...base, name: " " })).toBe(false);
     expect(isValidCompetition({ ...base, scope: "monde" })).toBe(false);
     expect(isValidCompetition({ ...base, endsOn: "2027-06-24" })).toBe(false);
-    expect(isValidCompetition({ ...base, timeZone: "Mars/Olympus" })).toBe(false);
   });
 });
 
-describe("zonedToUtc", () => {
-  it("reads a local time of the competition as UTC, summer and winter", () => {
-    expect(zonedToUtc("2027-06-25T20:35", "Europe/Paris")).toBe("2027-06-25T18:35:00.000Z");
-    expect(zonedToUtc("2027-02-20T18:00", "Europe/Paris")).toBe("2027-02-20T17:00:00.000Z");
-    expect(zonedToUtc("2027-08-01T21:00", "America/New_York")).toBe("2027-08-02T01:00:00.000Z");
+describe("TIME_ZONE", () => {
+  it("is Paris time, the one time zone of the app", () => {
+    expect(TIME_ZONE).toBe("Europe/Paris");
+  });
+});
+
+describe("parisToUtc", () => {
+  it("reads a time typed in Paris time as UTC, summer and winter", () => {
+    expect(parisToUtc("2027-06-25T20:35")).toBe("2027-06-25T18:35:00.000Z");
+    expect(parisToUtc("2027-02-20T18:00")).toBe("2027-02-20T17:00:00.000Z");
+  });
+
+  it("reads Paris time whatever the country of the competition", () => {
+    // Birmingham: 20:03 in Paris is 19:03 in London and in UTC in November.
+    expect(parisToUtc("2026-11-23T20:03")).toBe("2026-11-23T19:03:00.000Z");
+  });
+
+  it("follows the changes of daylight saving time", () => {
+    // Summer time starts on 28 March 2027 at 02:00 and ends on 31 October 2027 at 03:00.
+    expect(parisToUtc("2027-03-28T01:30")).toBe("2027-03-28T00:30:00.000Z");
+    expect(parisToUtc("2027-03-28T03:30")).toBe("2027-03-28T01:30:00.000Z");
+    expect(parisToUtc("2027-10-31T01:30")).toBe("2027-10-30T23:30:00.000Z");
+    expect(parisToUtc("2027-10-31T04:00")).toBe("2027-10-31T03:00:00.000Z");
   });
 });
 
@@ -85,13 +102,16 @@ describe("daysUntil", () => {
   });
 });
 
-describe("utcToZoned", () => {
-  it("gives back the local time typed for an event, in its competition's time zone", () => {
-    expect(utcToZoned("2027-06-25T18:35:00.000Z", "Europe/Paris")).toBe("2027-06-25T20:35");
-    expect(utcToZoned("2027-01-10T23:30:00.000Z", "Europe/Paris")).toBe("2027-01-11T00:30");
-    expect(utcToZoned(zonedToUtc("2027-03-28T03:15", "Europe/Paris"), "Europe/Paris")).toBe(
-      "2027-03-28T03:15",
-    );
+describe("utcToParis", () => {
+  it("gives back the Paris time typed for an event", () => {
+    expect(utcToParis("2027-06-25T18:35:00.000Z")).toBe("2027-06-25T20:35");
+    expect(utcToParis("2027-01-10T23:30:00.000Z")).toBe("2027-01-11T00:30");
+    expect(utcToParis(parisToUtc("2027-03-28T03:15"))).toBe("2027-03-28T03:15");
+  });
+
+  it("does not move an instant already stored, only the way it reads", () => {
+    // The women's shot put in Birmingham, stored as 19:03 London time, reads 20:03 in Paris.
+    expect(utcToParis("2026-11-23T19:03:00.000Z")).toBe("2026-11-23T20:03");
   });
 });
 

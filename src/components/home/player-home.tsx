@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { RankingRow } from "@/application/rankings";
 import { messages } from "@/app/messages.fr";
 import { buttonVariants } from "@/components/ui/button";
+import { TIME_ZONE } from "@/domain/competition";
 import { countdown, splitDuration } from "@/domain/countdown";
 import type { EventSummary } from "@/domain/event";
 import type { OpenFinal } from "@/domain/home";
@@ -23,7 +24,6 @@ export type PlayerHomeProps = {
   competitionSlug: string;
   /** False: under the podium button, the card suggests a private or public league (#375). */
   hasLeagueForCompetition: boolean;
-  timeZone: string;
   now: Date;
   finals: OpenFinal[];
   general: { me: RankingRow | null; total: number; podium: RankingRow[] } | null;
@@ -33,8 +33,7 @@ export type PlayerHomeProps = {
 
 /** The signed-in player's home (#346, board A+): what to do next, where they stand. */
 export function PlayerHome(props: PlayerHomeProps) {
-  const { pseudo, competitionName, competitionSlug, hasLeagueForCompetition, timeZone, now } =
-    props;
+  const { pseudo, competitionName, competitionSlug, hasLeagueForCompetition, now } = props;
   const { finals, general, league, lastResult } = props;
   const next = finals[0];
   const left = next ? countdown(now, next.lockAt) : null;
@@ -42,9 +41,13 @@ export function PlayerHome(props: PlayerHomeProps) {
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone,
+    timeZone: TIME_ZONE,
   });
-  const hour = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone });
+  const hour = new Intl.DateTimeFormat("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: TIME_ZONE,
+  });
 
   return (
     <>

@@ -28,7 +28,6 @@ export function competitionEditRepositoryContract(
         countryCode: null,
         startsOn: "2099-06-10",
         endsOn: "2099-06-11",
-        timeZone: "Europe/Paris",
       })) as string;
       const event = (round: "final" | "series", n: number) =>
         w.admin.addEvent(slug, {
@@ -54,7 +53,6 @@ export function competitionEditRepositoryContract(
           countryCode: "FRA",
           startsOn: "2099-06-10",
           endsOn: "2099-06-12",
-          timeZone: "Europe/Paris",
         }),
       ).toBe("saved");
       expect(
