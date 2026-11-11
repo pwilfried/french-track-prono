@@ -5,6 +5,8 @@ import { UseCaseError } from "@/application/errors";
 import type { RecordKind } from "@/domain/athlete";
 import type { EventGender } from "@/domain/event";
 
+import { readAll } from "./read-all";
+
 type AthleteRow = { id: string; slug: string; name: string; country_code: string; gender: EventGender };
 
 const summary = (row: AthleteRow): AthleteSummary => ({
@@ -25,10 +27,14 @@ export function createSupabaseAthleteAdminRepository(client: SupabaseClient): At
   };
   return {
     async list() {
-      const { data, error } = await client
-        .from("athletes")
-        .select("id, slug, name, country_code, gender, athlete_disciplines(discipline)")
-        .returns<(AthleteRow & { athlete_disciplines: { discipline: string }[] })[]>();
+      const { data, error } = await readAll((from, to) =>
+        client
+          .from("athletes")
+          .select("id, slug, name, country_code, gender, athlete_disciplines(discipline)")
+          .order("id")
+          .range(from, to)
+          .returns<(AthleteRow & { athlete_disciplines: { discipline: string }[] })[]>(),
+      );
       if (error) throw new UseCaseError("ATHLETES_UNAVAILABLE");
       return data.map((row) => ({
         ...summary(row),

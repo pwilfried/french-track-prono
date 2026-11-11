@@ -9,6 +9,8 @@ import type { CompetitionScope } from "@/domain/competition";
 import type { EventGender } from "@/domain/event";
 import type { Round } from "@/domain/rounds";
 
+import { readAll } from "./read-all";
+
 type CompetitionRow = {
   slug: string;
   name: string;
@@ -45,7 +47,14 @@ export function createSupabaseCompetitionAdminRepository(
 ): CompetitionAdminRepository {
   return {
     async list() {
-      const { data, error } = await client.from("competitions").select(COLUMNS).returns<CompetitionRow[]>();
+      const { data, error } = await readAll((from, to) =>
+        client
+          .from("competitions")
+          .select(COLUMNS)
+          .order("id")
+          .range(from, to)
+          .returns<CompetitionRow[]>(),
+      );
       if (error) throw new UseCaseError("COMPETITIONS_UNAVAILABLE");
       return data.map(summary);
     },

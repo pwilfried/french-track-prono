@@ -145,6 +145,25 @@ export const Undo: Story = {
   },
 };
 
+/** No default filter and nothing to validate: the list opens on every club, not « À valider ». */
+export const NoDefaultFilter: Story = {
+  args: {
+    items: clubs.map((c) => ({ ...c, validated: true })),
+    filters: [
+      { key: "pending", label: "À valider", test: (c) => !c.validated },
+      { key: "validated", label: "Validés", test: (c) => c.validated },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("button", { name: "À valider · 0" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    await expect(canvas.getByText("1–4 sur 4")).toBeInTheDocument();
+  },
+};
+
 /** Many rows are cut into pages. */
 export const Pages: Story = {
   args: {

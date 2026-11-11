@@ -3,6 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { UseCaseError } from "@/application/errors";
 import type { PlayerModerationRepository } from "@/application/player-moderation";
 
+import { readAll } from "./read-all";
+
 const fail = (): never => {
   throw new UseCaseError("PLAYERS_UNAVAILABLE");
 };
@@ -20,7 +22,10 @@ export function createSupabasePlayerModerationRepository(
 ): PlayerModerationRepository {
   return {
     async list() {
-      const { data, error } = await client.rpc("admin_list_players");
+      // Every player (#508), a page at a time.
+      const { data, error } = await readAll((from, to) =>
+        client.rpc("admin_list_players").range(from, to),
+      );
       if (error) return error.code === "42501" ? "not_admin" : fail();
       return (
         data as {
