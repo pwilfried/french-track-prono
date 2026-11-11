@@ -1,9 +1,9 @@
-// #203: sends the push notifications due (rules in
-// supabase/migrations/20261109100000_push_notifications.sql): a reminder before the lock of a final
-// not predicted yet, and the points once computed. Run every 5 minutes by the « Push
-// notifications » workflow. Talks to the production database through the Supabase Management API
-// (same secrets as the migrations). Without the VAPID keys nothing is sent.
+// #203: sends the push notifications due, by hand (the Edge Function `push-notifications`, run
+// every minute by pg_cron, does it in production: #502). Same sending as the function
+// (supabase/functions/_shared/push.mjs); talks to the production database through the Supabase
+// Management API (same secrets as the migrations). Without the VAPID keys nothing is sent.
 import webpush from "web-push";
+import { sendDue } from "../supabase/functions/_shared/push.mjs";
 
 const { SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY } =
   process.env;
@@ -26,28 +26,6 @@ async function query(sql) {
 }
 
 const literal = (value) => `'${JSON.stringify(value).replaceAll("'", "''")}'`;
-const GENDER = { F: "femmes", M: "hommes", X: "mixte" };
-
-/** The text of a notification, as on the site (« 100 m femmes »). */
-function notificationOf(due, now = Date.now()) {
-  const event = `${due.discipline} ${GENDER[due.gender]}`;
-  const url = `/epreuves/${due.event_slug}`;
-  if (due.kind === "reminder") {
-    const minutes = Math.max(1, Math.round((new Date(due.lock_at).getTime() - now) / 60_000));
-    return {
-      title: `⏱ ${event} se verrouille dans ${minutes} min`,
-      body: "Ton podium n'est pas encore fait.",
-      url,
-      tag: `reminder-${due.event_slug}`,
-    };
-  }
-  return {
-    title: due.points > 0 ? `🎯 +${due.points} pts au ${event}` : `0 point au ${event}`,
-    body: due.points > 0 ? "Tes points sont tombés." : "Le chrono ne ment pas.",
-    url,
-    tag: `result-${due.event_slug}`,
-  };
-}
 
 async function main() {
   if (!SUPABASE_ACCESS_TOKEN || !SUPABASE_PROJECT_REF || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
@@ -56,41 +34,22 @@ async function main() {
   }
   webpush.setVapidDetails("https://www.frenchtrackprono.com", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
-  const due = await query("select * from private.push_due()");
-  const forgotten = [];
-  let failed = 0;
-  for (const notification of due) {
-    const payload = JSON.stringify(notificationOf(notification));
-    for (const device of notification.devices) {
-      try {
-        await webpush.sendNotification(
-          { endpoint: device.endpoint, keys: { p256dh: device.p256dh, auth: device.auth } },
-          payload,
-          { TTL: notification.kind === "reminder" ? 15 * 60 : 24 * 3600, urgency: "high" },
-        );
-      } catch (error) {
-        // 404 and 410: the device unsubscribed. Anything else is logged and fails the run.
-        if (error.statusCode === 404 || error.statusCode === 410) forgotten.push(device.endpoint);
-        else {
-          failed += 1;
-          console.error(`push failed (${error.statusCode ?? "network"}): ${error.body ?? error}`);
-        }
-      }
-    }
-  }
-  if (due.length) {
-    const sent = due.map(({ user_id, event_slug, kind }) => ({ user_id, event_slug, kind }));
-    await query(`select private.push_mark_sent(${literal(sent)}::jsonb)`);
-  }
-  if (forgotten.length)
-    await query(
-      `select private.push_forget(array(select jsonb_array_elements_text(${literal(forgotten)}::jsonb)))`,
-    );
+  const report = await sendDue(
+    {
+      due: () => query("select * from private.push_due()"),
+      markSent: (sent) => query(`select private.push_mark_sent(${literal(sent)}::jsonb)`),
+      forget: (endpoints) =>
+        query(
+          `select private.push_forget(array(select jsonb_array_elements_text(${literal(endpoints)}::jsonb)))`,
+        ),
+    },
+    (device, payload, options) => webpush.sendNotification(device, payload, options),
+  );
   console.log(
-    `${due.length} notification(s) envoyée(s), ${forgotten.length} appareil(s) oublié(s).`,
+    `${report.sent} notification(s) envoyée(s), ${report.forgotten} appareil(s) oublié(s).`,
   );
   // A failed send makes the run fail: GitHub e-mails the owner (#195).
-  if (failed) process.exitCode = 1;
+  if (report.failed) process.exitCode = 1;
 }
 
 await main();
