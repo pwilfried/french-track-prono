@@ -190,6 +190,7 @@ export const messages = {
   },
   leaderboard: {
     streak: (n: number) => `, série de ${n} épreuves avec des points`,
+    streakLegend: "🔥 N : N épreuves de suite avec des points",
     change: (n: number) =>
       n > 0
         ? `${n} ${n === 1 ? "place gagnée" : "places gagnées"} depuis la dernière épreuve`

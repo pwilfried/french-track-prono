@@ -95,75 +95,81 @@ export function Leaderboard({
     rows[index - 1]?.rank === rows[index]!.rank || rows[index + 1]?.rank === rows[index]!.rank;
 
   return (
-    <ol
-      aria-label={messages.leaderboard.label}
-      className="flex flex-col gap-0.5 rounded-card border border-border bg-card p-2"
-    >
-      {rows.map((row, index) => {
-        const me = row.userId === meId;
-        const detail = detailOf(row, me);
-        return (
-          <RankingItem
-            key={row.userId}
-            current={me}
-            cardId={`player-card-${row.userId}`}
-            card={
-              <PlayerCard
-                id={`player-card-${row.userId}`}
-                pseudo={row.pseudo}
-                avatar={row.avatar ?? ""}
-                club={row.club ?? null}
-                rank={row.rank}
-                total={rows.length}
-              />
-            }
-            className={cn(
-              "flex flex-col rounded-xl px-2 py-1.5",
-              me && "bg-brand-soft text-brand-ink",
-            )}
-          >
-            <span className="w-8 shrink-0 text-center font-mono text-lg font-bold">
-              <span className="sr-only">{messages.leaderboard.position(row.rank)}</span>
-              <span aria-hidden>{row.rank}</span>
-              {tied(index) && (
-                <span className="block text-[10px] font-bold leading-none text-muted-foreground">
-                  {messages.leaderboard.tie}
-                </span>
+    <div className="flex flex-col gap-2">
+      <ol
+        aria-label={messages.leaderboard.label}
+        className="flex flex-col gap-0.5 rounded-card border border-border bg-card p-2"
+      >
+        {rows.map((row, index) => {
+          const me = row.userId === meId;
+          const detail = detailOf(row, me);
+          return (
+            <RankingItem
+              key={row.userId}
+              current={me}
+              cardId={`player-card-${row.userId}`}
+              card={
+                <PlayerCard
+                  id={`player-card-${row.userId}`}
+                  pseudo={row.pseudo}
+                  avatar={row.avatar ?? ""}
+                  club={row.club ?? null}
+                  rank={row.rank}
+                  total={rows.length}
+                />
+              }
+              className={cn(
+                "flex flex-col rounded-xl px-2 py-1.5",
+                me && "bg-brand-soft text-brand-ink",
               )}
-            </span>
-            <span
-              aria-hidden
-              className="grid size-9 shrink-0 place-items-center rounded-full bg-background text-lg"
             >
-              {row.avatar ?? "🏃"}
-            </span>
-            <span className="min-w-0 flex-1 font-bold [overflow-wrap:anywhere]">
-              <PlayerName pseudo={row.pseudo}>{row.pseudo}</PlayerName>
-              {row.streak !== undefined && row.streak >= 2 && (
-                <span className="ml-1.5 whitespace-nowrap text-sm text-accent-text">
-                  <span aria-hidden>🔥{row.streak}</span>
-                  <span className="sr-only">{messages.leaderboard.streak(row.streak)}</span>
-                </span>
-              )}
-              {detail && (
-                <span
-                  className={cn(
-                    "block text-xs font-semibold",
-                    me ? "text-brand-ink/80" : "text-muted-foreground",
-                  )}
-                >
-                  {detail}
-                </span>
-              )}
-            </span>
-            <span className="shrink-0 font-mono text-lg font-bold tabular-nums">
-              <span aria-hidden>{row.points}</span>
-              <span className="sr-only">{messages.leaderboard.points(row.points)}</span>
-              {row.change !== undefined && row.change !== null && <Change change={row.change} />}
-            </span>
-          </RankingItem>
-        );
-      })}
-    </ol>
+              <span className="w-8 shrink-0 text-center font-mono text-lg font-bold">
+                <span className="sr-only">{messages.leaderboard.position(row.rank)}</span>
+                <span aria-hidden>{row.rank}</span>
+                {tied(index) && (
+                  <span className="block text-[10px] font-bold leading-none text-muted-foreground">
+                    {messages.leaderboard.tie}
+                  </span>
+                )}
+              </span>
+              <span
+                aria-hidden
+                className="grid size-9 shrink-0 place-items-center rounded-full bg-background text-lg"
+              >
+                {row.avatar ?? "🏃"}
+              </span>
+              <span className="min-w-0 flex-1 font-bold [overflow-wrap:anywhere]">
+                <PlayerName pseudo={row.pseudo}>{row.pseudo}</PlayerName>
+                {row.streak !== undefined && row.streak >= 2 && (
+                  <span className="ml-1.5 whitespace-nowrap text-sm text-accent-text">
+                    <span aria-hidden>🔥{row.streak}</span>
+                    <span className="sr-only">{messages.leaderboard.streak(row.streak)}</span>
+                  </span>
+                )}
+                {detail && (
+                  <span
+                    className={cn(
+                      "block text-xs font-semibold",
+                      me ? "text-brand-ink/80" : "text-muted-foreground",
+                    )}
+                  >
+                    {detail}
+                  </span>
+                )}
+              </span>
+              <span className="shrink-0 font-mono text-lg font-bold tabular-nums">
+                <span aria-hidden>{row.points}</span>
+                <span className="sr-only">{messages.leaderboard.points(row.points)}</span>
+                {row.change !== undefined && row.change !== null && <Change change={row.change} />}
+              </span>
+            </RankingItem>
+          );
+        })}
+      </ol>
+      {/* What 🔥N means, for whoever sees it (#489). */}
+      {rows.some((row) => (row.streak ?? 0) >= 2) && (
+        <p className="px-2 text-xs text-muted-foreground">{messages.leaderboard.streakLegend}</p>
+      )}
+    </div>
   );
 }

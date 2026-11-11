@@ -48,6 +48,8 @@ export const Default: Story = {
     await expect(items[3]).toHaveTextContent("3e");
     await expect(canvas.getAllByText("ex æquo")).toHaveLength(2);
     await expect(items[5]).toHaveTextContent("Pas encore de points");
+    // No streak on the board, no legend.
+    await expect(canvas.queryByText(/épreuves de suite/)).toBeNull();
   },
 };
 
@@ -69,6 +71,8 @@ export const WithChanges: Story = {
     await expect(canvas.getAllByRole("listitem")[4]).not.toHaveTextContent("▲");
     await expect(canvas.getAllByRole("listitem")[0]).toHaveTextContent("🔥3");
     await expect(canvas.getAllByRole("listitem")[2]).not.toHaveTextContent("🔥");
+    // The badge is explained under the list (#489).
+    await expect(canvas.getByText("🔥 N : N épreuves de suite avec des points")).toBeVisible();
   },
 };
 
