@@ -1,6 +1,6 @@
 -- pgTAP: the admin manages clubs (#366).
 begin;
-select plan(12);
+select plan(14);
 
 insert into auth.users (id, email) values
   ('cdcdcdcd-0000-0000-0000-000000000001', 'admin-club@example.test'),
@@ -27,6 +27,11 @@ select is((select name from admin_list_clubs('zqmod', true)), 'Foulées Zqmod', 
 select is((select player_count::int from admin_list_clubs('foulees zqmod')), 1, 'with their players');
 select lives_ok($$select admin_validate_club('cdcdcdcd-1111-0000-0000-000000000001')$$, 'the admin validates');
 select is((select count(*)::int from search_clubs('zqmod')), 2, 'a validated club is found by players');
+-- #479: the words of the query in another order than the name (and the town in between).
+select is((select name from search_clubs('zqmod nulle foulees')), 'Foulées Zqmod',
+  'players find a club whatever the order of the words');
+select is((select name from admin_list_clubs('zqmod nulle foulees')), 'Foulées Zqmod',
+  'the admin finds it with the same words');
 select isnt(admin_save_club(null, 'Nouveau Club Zqmod', 'Là', '13'), null, 'the admin creates a club');
 select throws_ok($$select admin_save_club(null, 'Club Officiel FFA', '', '')$$, 'FT013', null,
   'banned words are refused');
