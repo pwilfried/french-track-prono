@@ -317,8 +317,13 @@ export const messages = {
     page: (page: number, of: number) => `Page ${page} sur ${of}`,
     budgetTitle: "Mon budget",
     budget: "Budget",
+    spent: "Dépensé",
     reserved: "Réservé",
     left: "Disponible",
+    roundEnds: (when: string) => `Fin du tour d'enchères : ${when}`,
+    myTeam: "Mes athlètes",
+    noTeam: "Aucun athlète remporté pour l'instant.",
+    wonIn: (round: number) => `tour ${round}`,
     secret:
       "Tes offres sont secrètes : les autres participants ne voient ni tes offres, ni leur nombre. La dernière offre compte.",
     myBids: "Mes offres",
@@ -1672,6 +1677,9 @@ export const messages = {
       "Tes offres dépasseraient ton budget : baisse une offre ou retire-en une d'abord.",
     MERCATO_NOT_OPEN: "Le mercato de cette ligue n'est pas ouvert : pas d'offre pour l'instant.",
     ATHLETE_NOT_IN_CATALOGUE: "Cet athlète n'est pas dans le catalogue du mercato.",
+    ATHLETE_TAKEN: "Cet athlète a déjà été recruté dans cette ligue.",
+    ROUND_CLOSING:
+      "Le tour d'enchères se termine : les offres rouvrent dans quelques minutes, avec le tour suivant.",
     MANAGER_BIDS_UNAVAILABLE: "Tes offres n'ont pas pu être chargées ou enregistrées. Réessaie.",
     retry: "Réessayer",
   },
