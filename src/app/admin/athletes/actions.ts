@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { listDisciplines } from "@/application/disciplines";
-import { createAthlete, editAthlete, editAthleteDiscipline } from "@/application/edit-athlete";
+import {
+  createAthlete,
+  editAthlete,
+  editAthleteDiscipline,
+  setAthletePrice,
+} from "@/application/edit-athlete";
 import { UseCaseError } from "@/application/errors";
 import { setAthleteRecord } from "@/application/set-athlete-record";
 import { createSupabaseAthleteAdminRepository, createSupabaseDisciplineRepository } from "@/infra";
@@ -48,6 +53,15 @@ export async function editDisciplineAction(data: FormData) {
       athleteId: formText(data, "athleteId"),
       discipline: formText(data, "discipline"),
       action: action === "main" || action === "remove" ? action : "add",
+    }),
+  );
+}
+
+export async function setPriceAction(data: FormData) {
+  await change(data, (client) =>
+    setAthletePrice({ athletes: createSupabaseAthleteAdminRepository(client) }).execute({
+      athleteId: formText(data, "athleteId"),
+      price: formText(data, "price"),
     }),
   );
 }

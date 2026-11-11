@@ -28,6 +28,7 @@ const GROUPS: { key: keyof typeof text.groups | null; items: [string, AdminSecti
       ["/admin/competitions", "competitions"],
       ["/admin", "results"],
       ["/admin/bareme", "scale"],
+      ["/admin/manager", "manager"],
     ],
   },
   {

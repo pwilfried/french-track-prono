@@ -47,10 +47,12 @@ export function createInMemoryAthleteAdminStore(athletes: AthleteFile[]) {
             gender: fields.gender,
             disciplines: [],
             records: [],
+            managerPrice: null,
           });
           return { athleteId, slug };
         },
         update: (id, fields) => guard(() => Object.assign(byId(id), fields)),
+        setPrice: (id, price) => guard(() => (byId(id).managerPrice = price)),
         setDiscipline: (id, discipline, isPrimary) =>
           guard(() => {
             const athlete = byId(id);
