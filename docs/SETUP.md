@@ -270,12 +270,24 @@ Le schéma de production suit le dépôt, jamais de modification à la main
 - **Tag `vX.Y.Z` poussé** : les migrations de `supabase/migrations` sont appliquées au projet
   Supabase de production (`supabase db push`), dans l'environnement GitHub `production`.
 - **À la main** (onglet Actions > « Database migrations » > **Run workflow**) : applique les
-  migrations de `main` sans nouveau tag, par exemple après avoir corrigé un secret.
+  migrations de `main` sans nouveau tag, puis déploie `main`, par exemple après avoir corrigé un
+  secret. Seuls `main` et les tags `v*` sont acceptés : une branche de travail est refusée.
 - **PR qui touche `supabase/migrations`** : un essai à blanc (`--dry-run`) liste ce qui serait
   appliqué, sans rien changer.
 - **Secrets** (GitHub > Settings > Secrets and variables > Actions) : `SUPABASE_ACCESS_TOKEN`,
-  `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`. Sans eux, le workflow le signale et s'arrête
-  sans échouer (cas d'aujourd'hui, tant que le projet de production n'existe pas).
+  `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`. Sans eux, la mise en prod échoue et rien
+  n'est déployé : le code ne part jamais sans son schéma.
+- **Une mise en prod à la fois**, dans l'ordre de lancement : deux tags poussés à la suite
+  s'attendent.
+
+**Migrations rétrocompatibles.** Les migrations sont appliquées une à deux minutes avant que le
+nouveau code soit en ligne, et le code en prod reste l'ancien si le déploiement échoue. Une
+migration doit donc marcher avec la version déjà en prod :
+
+- ajouter (table, colonne avec valeur par défaut ou nullable, fonction) : sans risque ;
+- renommer ou supprimer une colonne, une table, une fonction, ou changer sa signature : en deux
+  versions. D'abord ajouter le nouveau et faire passer le code dessus (tag), puis retirer l'ancien
+  dans une version suivante.
 
 **Retour arrière.** Une migration appliquée n'est jamais modifiée ni supprimée : on écrit une
 nouvelle migration qui défait la précédente, on la fait passer par une PR, puis on pose un tag de
@@ -299,8 +311,8 @@ migrations au projet Supabase de prod, puis construit et déploie ce commit sur 
 production (`vercel pull`, `vercel build --prod`, `vercel deploy --prebuilt --prod`), et enfin
 lance le test de fumée. Le code ne tourne donc jamais en prod avant son schéma.
 
-- Une fusion dans `main` ne déploie plus rien (`vercel.json`, `git.deploymentEnabled`), pas plus
-  que les branches de travail (`feat/`, `fix/`, `chore/`, `docs/`…) et la branche `boards`. Le plan
+- Aucun push ne déploie (`vercel.json`, `git.deploymentEnabled: false`) : ni `main`, ni les
+  branches de travail (`feat/`, `fix/`, `claude/`…), ni la branche `boards`. Le plan
   gratuit limite le nombre de déploiements par jour : le 9 novembre 2026, les prévisualisations de
   chaque PR l'ont épuisé et la mise en prod de #373 a été refusée (« Deployment rate limited »).
 - Redéployer `main` à la main : onglet Actions → « Database migrations » → Run workflow.
