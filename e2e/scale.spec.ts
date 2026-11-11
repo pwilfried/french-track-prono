@@ -52,14 +52,24 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   await expect(page).toHaveURL(/\/$/);
   await page.getByRole("banner").getByRole("link", { name: "Back-office" }).click();
 
-  // Signing in again leads an admin straight to the back-office.
+  // Signing in again leads an admin to the home page, like everyone (decision of 11 Nov 2026)…
   await page.getByRole("button", { name: "Se déconnecter" }).click();
   await expect(page).toHaveURL(/\/$/);
   await page.goto("/connexion");
   await signIn(page, player.email);
-  await expect(page).toHaveURL(/\/admin\/tableau-de-bord$/);
-  await page.getByRole("link", { name: "Voir le site" }).click();
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+
+  // …unless they asked for a back-office page.
+  await page.getByRole("banner").getByRole("link", { name: "Back-office" }).click();
+  await page.getByRole("button", { name: "Se déconnecter" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  // Supabase refuses a second code asked within `max_frequency` of the first: forget the first.
+  sql(`update auth.users set recovery_sent_at = null where email = '${player.email}'`);
+  await page.goto(`/connexion?next=${encodeURIComponent("/admin/bareme")}`);
+  await signIn(page, player.email);
+  await expect(page).toHaveURL(/\/admin\/bareme$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Barème");
 
   sql(`update scoring_rules set value = ${before} where key = 'mark_exact'`);
 });

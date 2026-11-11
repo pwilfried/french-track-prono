@@ -282,8 +282,10 @@ mots distinctifs communs) et l'admin le fusionne (`admin_merge_club()`) : ses jo
 le bon club et reçoivent une notice « merged ». `profiles.club_id` est public (fiche minimale ouverte depuis
 un classement) ; sexe et disciplines vivent dans `player_details`, lisible par son seul
 propriétaire. L'e-mail de connexion se change avec un code envoyé sur la nouvelle adresse
-(`EmailChangeService`). L'admin arrive sur le tableau de bord du back-office
-(`/admin/tableau-de-bord`, v0.11 #379 : choses à faire, joueurs, préparation de la prochaine
+(`EmailChangeService`). Après la connexion, tout le monde, admin compris, arrive sur l'accueil
+ou sur la page demandée (`next`, même une page `/admin`) : décision du 11 novembre 2026 (#477),
+qui remplace celle du 8 novembre (l'admin arrivait sur le back-office). Le back-office a un
+tableau de bord (`/admin/tableau-de-bord`, v0.11 #379, lien « Back-office » de l'en-tête : choses à faire, joueurs, préparation de la prochaine
 compétition via `ReadinessReader`, dernières actions). Il voit la liste de tous les joueurs (v0.11, #382 :
 `admin_list_players()`, points, pronos, ligues, dernière activité, signalements reçus, jamais
 l'e-mail ; `admin_player_leagues()` donne le rang dans chaque ligue), bloque (`profiles.blocked_at` : plus de prono ni de ligue,
