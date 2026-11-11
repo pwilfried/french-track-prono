@@ -64,6 +64,8 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   await page.getByRole("banner").getByRole("link", { name: "Back-office" }).click();
   await page.getByRole("button", { name: "Se déconnecter" }).click();
   await expect(page).toHaveURL(/\/$/);
+  // Supabase refuses a second code asked within `max_frequency` of the first: forget the first.
+  sql(`update auth.users set recovery_sent_at = null where email = '${player.email}'`);
   await page.goto(`/connexion?next=${encodeURIComponent("/admin/bareme")}`);
   await signIn(page, player.email);
   await expect(page).toHaveURL(/\/admin\/bareme$/);
