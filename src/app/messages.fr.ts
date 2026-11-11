@@ -1140,7 +1140,7 @@ export const messages = {
       predictions: "pronos",
       perfect: "podiums parfaits",
       winners: "vainqueurs",
-      success: "réussite",
+      success: "pronos qui rapportent",
       streak: "meilleure série",
       joker: "joker joué",
     },
