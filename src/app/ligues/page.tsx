@@ -103,6 +103,9 @@ export default async function LeaguesPage() {
         <Link href="/classement" className={`${buttonVariants({ variant: "outline" })} w-full`}>
           {messages.leagues.general}
         </Link>
+        <Link href="/manager" className={`${buttonVariants({ variant: "outline" })} w-full`}>
+          {messages.manager.entry}
+        </Link>
 
         {rows !== "error" && (
           <section aria-labelledby="public-leagues" className="flex flex-col gap-2 pt-4">
