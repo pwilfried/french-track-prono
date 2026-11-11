@@ -313,6 +313,23 @@ export const messages = {
     previous: "‹ Précédents",
     next: "Suivants ›",
     page: (page: number, of: number) => `Page ${page} sur ${of}`,
+    budgetTitle: "Mon budget",
+    budget: "Budget",
+    reserved: "Réservé",
+    left: "Disponible",
+    secret:
+      "Tes offres sont secrètes : les autres participants ne voient ni tes offres, ni leur nombre. La dernière offre compte.",
+    myBids: "Mes offres",
+    noBids: "Aucune offre pour l'instant.",
+    mercatoClosed:
+      "Le mercato de cette ligue n'est pas ouvert : les enchères commenceront à son ouverture.",
+    myBid: (n: number) => `Mon offre : ${n} cr.`,
+    bidLabel: (name: string) => `Mon offre sur ${name}, en crédits`,
+    credits: "crédits",
+    bid: "Enchérir",
+    change: "Modifier",
+    withdraw: "Retirer",
+    bidding: "…",
   },
   leagues: {
     title: "Mes ligues",
@@ -1644,6 +1661,13 @@ export const messages = {
       "Ces règles ne permettent pas de jouer : vérifie que les quotas remplissent l'équipe, que l'alignement y tient et qu'un mode de clôture est coché.",
     MANAGER_RULES_UNAVAILABLE: "Les règles Manager n'ont pas pu être chargées. Réessaie.",
     MERCATO_OPEN: "Le mercato de cette ligue a commencé : les inscriptions sont closes.",
+    MANAGER_BID_INVALID: "Une offre est un nombre entier de crédits, au moins 1.",
+    MANAGER_BID_BELOW_PRICE: "Une offre est au moins égale au prix de départ de l'athlète.",
+    MANAGER_BID_OVER_BUDGET:
+      "Tes offres dépasseraient ton budget : baisse une offre ou retire-en une d'abord.",
+    MERCATO_NOT_OPEN: "Le mercato de cette ligue n'est pas ouvert : pas d'offre pour l'instant.",
+    ATHLETE_NOT_IN_CATALOGUE: "Cet athlète n'est pas dans le catalogue du mercato.",
+    MANAGER_BIDS_UNAVAILABLE: "Tes offres n'ont pas pu être chargées ou enregistrées. Réessaie.",
     retry: "Réessayer",
   },
   legal: {

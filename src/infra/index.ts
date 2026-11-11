@@ -79,3 +79,5 @@ export { createInMemoryManagerLeagueStore } from "./in-memory/manager-league-rep
 export { createSupabaseManagerLeagueRepository } from "./supabase/manager-league-repository";
 export { createInMemoryManagerCatalogue } from "./in-memory/manager-catalogue-repository";
 export { createSupabaseManagerCatalogue } from "./supabase/manager-catalogue-repository";
+export { createInMemoryManagerBidStore } from "./in-memory/manager-bid-repository";
+export { createSupabaseManagerBids } from "./supabase/manager-bid-repository";
