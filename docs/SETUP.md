@@ -138,6 +138,32 @@ Elle crée les joueurs de démo, affiche les athlètes des deux épreuves sous l
 puis verrouille ces deux épreuves. Il ne reste qu'à te mettre admin (« Devenir admin en local »),
 à saisir a 1er, b 2e, c 3e dans `/admin` et à calculer les points.
 
+### Voir l'app vivante en une commande (`db:demo-full`)
+
+Pour explorer l'interface sans tout scripter à la main, après un `supabase db reset` :
+
+```
+npm run db:demo-full
+```
+
+Un seul coup et tu obtiens :
+
+- le championnat Ultimate décalé pour straddle « maintenant » : **~12 épreuves terminées** (avec
+  résultats et classement) et **~16 à venir** (prêtes à pronostiquer) ;
+- les **12 joueurs de démo** (`demo-1@example.test` à `demo-12@example.test`) avec e-mail confirmé,
+  prêts à se connecter par lien magique (tape l'e-mail sur `/connexion`, clique le lien dans
+  Mailpit à http://127.0.0.1:54324) ;
+- un prono par joueur et par épreuve (336 au total), avec joker sur la première ;
+- des **points réels** sur les épreuves terminées (`score_events` et `predictions.points_awarded`
+  remplis) — le classement, les stats de profil et la grille de badges s'allument ;
+- la ligue de démo **« Démo Prono »** (publique, 12 membres, Démo Gazelle propriétaire) qui couvre
+  le championnat ;
+- la ligue Manager **« Démo Manager »** (mercato ouvert, 4 participants) et 8 athlètes déjà prisés
+  dans le catalogue, pour tester le flux Manager de bout en bout.
+
+Le script (`supabase/dev/demo_state.sql`) est idempotent : relance-le pour repartir d'un état
+propre sur « maintenant ». Comme `db:open-events` et `db:demo-players`, il ne sert qu'en local.
+
 ## 4. Lancer l'application
 
 ```bash

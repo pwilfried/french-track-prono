@@ -20,7 +20,8 @@
     "db:demo-players": "docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/dev/demo_players.sql",
     "db:test-points": "npm run db:demo-players && docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/dev/lock_demo_events.sql",
     "db:load-euro": "docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/data/european-championships-2026.sql",
-    "db:euro-results": "docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/data/european-championships-2026-results.sql"
+    "db:euro-results": "docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/data/european-championships-2026-results.sql",
+    "db:demo-full": "docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/dev/demo_state.sql"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
