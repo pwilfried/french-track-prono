@@ -136,4 +136,7 @@ if [ "$EVENT" = schedule ]; then
   done
 fi
 
+# A finished milestone on a green main is tagged, which deploys it (release.sh).
+"$here/release.sh" || echo "::warning::The release check failed; the next sweep tries again."
+
 "$here/next.sh"

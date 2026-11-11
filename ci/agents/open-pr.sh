@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Opens the PR for the branch an agent pushed for issue $NUMBER, when it has commits and no PR yet,
-# with the issue's labels and milestone. Opened as the owner (AGENTS_PAT) so the CI runs on it.
+# with the issue's labels and milestone and a conventional title (pr_title). Opened as the owner
+# (AGENTS_PAT) so the CI runs on it.
 # Prints number=<pr> to $GITHUB_OUTPUT. Env: BOT_TOKEN, PAT_TOKEN, NUMBER, BRANCH, BASE, TITLE.
 # Arg: agent name.
 set -euo pipefail
@@ -22,7 +23,9 @@ if [ -z "$number" ]; then
   body=$(printf 'Closes #%s\n\nOpened by the `agents` workflow for %s ([run](%s)). Its summary is on the issue.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n' \
     "$NUMBER" "$agent" "$run_url")
   mapfile -t meta < <(pr_meta_args "$NUMBER")
-  url=$(as_owner gh pr create -R "$repo" --base "$BASE" --head "$BRANCH" --title "$TITLE" --body "$body" "${meta[@]}")
+  first=$(as_bot gh api "repos/$repo/compare/$BASE...$BRANCH" --jq '.commits[0].commit.message | split("\n")[0]' 2>/dev/null || true)
+  conventional=$(pr_title "$first" "$TITLE" "$(labels_of "$NUMBER")")
+  url=$(as_owner gh pr create -R "$repo" --base "$BASE" --head "$BRANCH" --title "$conventional" --body "$body" "${meta[@]}")
   number=${url##*/}
 fi
 echo "number=$number" >> "$GITHUB_OUTPUT"

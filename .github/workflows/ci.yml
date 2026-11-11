@@ -46,8 +46,10 @@ jobs:
         run: npm run build
 
       # Play functions of the stories run in a real browser (Chromium).
+      # No --with-deps: ubuntu-latest already has every system lib headless Chromium needs,
+      # and apt-get on the runner is flaky when the Ubuntu mirrors are down (see #461).
       - name: Install browser for Storybook tests
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       - name: Storybook tests
         run: npm run test:storybook
@@ -100,23 +102,8 @@ jobs:
         run: npm ci
 
       # The adapter tests and the end-to-end test read the local address and key from the environment.
-      # With some services excluded, `supabase status` prints no API key, so the key is built from
-      # the documented default JWT secret of the local stack (local use only, never a real secret).
       - name: Local Supabase environment
-        run: |
-          supabase status -o json > "$RUNNER_TEMP/supabase.json"
-          echo "NEXT_PUBLIC_SUPABASE_URL=$(jq -r .API_URL "$RUNNER_TEMP/supabase.json")" >> "$GITHUB_ENV"
-          KEY="$(jq -r '.PUBLISHABLE_KEY // .ANON_KEY // empty' "$RUNNER_TEMP/supabase.json")"
-          if [ -z "$KEY" ]; then
-            KEY="$(node -e '
-              const crypto = require("node:crypto");
-              const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
-              const body = b64({ alg: "HS256", typ: "JWT" }) + "." + b64({ iss: "supabase-demo", role: "anon", exp: 1983812996 });
-              const sig = crypto.createHmac("sha256", "super-secret-jwt-token-with-at-least-32-characters-long").update(body).digest("base64url");
-              console.log(body + "." + sig);
-            ')"
-          fi
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$KEY" >> "$GITHUB_ENV"
+        run: ci/supabase-env.sh
 
       # REQUIRE_SUPABASE_TESTS makes the run fail instead of silently skipping the tests.
       - name: Adapter tests against local Supabase
@@ -154,8 +141,10 @@ jobs:
 
       # End-to-end journey (Playwright) on the production build. The events are open after the
       # reopen script above. No retry: see playwright.config.ts.
+      # No --with-deps: ubuntu-latest already has every system lib headless Chromium needs,
+      # and apt-get on the runner is flaky when the Ubuntu mirrors are down (see #461).
       - name: Install Chromium for Playwright
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       # A test push key (its private half was thrown away): the notifications button shows up.
       - name: Build the app

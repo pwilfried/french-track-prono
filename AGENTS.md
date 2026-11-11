@@ -44,16 +44,20 @@ titres de PR en anglais. Dialogue avec le propriétaire en français.
    applique le TDD (voir plus bas).
 3. Avant de dire « terminé » : voir « Before saying it is done ».
 4. PR → CI verte → fusion (automatique pour les PR d'agents).
-5. Quand toutes les issues d'un milestone sont fermées : issues `refactor-check` et `docs-check`
-   traitées, critère « It works when… » vérifié à la main, puis tag `vX.Y.Z` posé par le propriétaire.
-   Le tag met la version en prod : migrations, puis déploiement Vercel (`docs/SETUP.md`).
+5. Quand toutes les issues d'un milestone sont fermées (`refactor-check` et `docs-check` comprises)
+   et que `main` est vert, `agents-merge` pose le tag `vX.Y.0` (décision du propriétaire du
+   11 nov. 2026). Le tag met la version en prod : migrations, puis déploiement Vercel
+   (`docs/SETUP.md`). Le propriétaire vérifie le critère « It works when… » en production ; un
+   correctif hors milestone (`vX.Y.Z`) reste tagué à la main.
 
 ## Screenshots in PRs
 
 Toute PR qui change l'interface contient une capture mobile (390 px) et une capture en mode
 sombre. Pas de données personnelles dans les captures. Les captures vivent sur la branche
-orpheline `boards` (`boards/<issue>/*.png`) et sont liées dans la description de la PR. Un agent
-sur GitHub n'en produit pas : l'issue « Check the UI of #n » ouverte après la fusion les remplace.
+orpheline `boards` (`boards/<issue>/*.png`) et sont liées dans la description de la PR. Le
+workflow `ui-shots` capture en plus les pages touchées par chaque PR (`boards/issue-<n>/shots/`)
+et les montre dans un commentaire tenu à jour ; un agent n'en produit pas d'autre, et l'issue
+« Check the UI of #n » ouverte après la fusion reste la vérification humaine.
 
 ## Issues and milestones
 
@@ -121,7 +125,8 @@ Claude Code tourne sur les issues et les PR depuis GitHub Actions (`agents.yml`,
   puis les features (`p1` d'abord), puis `refactor-check`, puis `docs-check`. Jamais une issue
   `needs-human`, `agent:blocked`, `after-ui`, ou bloquée par une issue ouverte.
 - PR verte : fusionnée. Rouge ou en conflit : renvoyée à Claude, 3 fois, puis au propriétaire.
-- Pas de tag automatique : la mise en prod reste au propriétaire.
+- Milestone fini et `main` vert : tag `vX.Y.0` posé avec `AGENTS_PAT` (sinon il ne déclencherait
+  pas le déploiement), release GitHub qui liste les PR, milestone fermé (`ci/agents/release.sh`).
 
 Quand tu tournes là-bas :
 
@@ -148,7 +153,9 @@ Disponibles : `npm run dev`, `npm run build`, `npm run start`, `npm run lint`,
 `npm run storybook` (composants), `npm run test:storybook` (play functions, navigateur Chromium),
 `npm run build-storybook`, `npm run test:e2e` (Playwright, Supabase local + `npm run build`),
 `supabase start`, `supabase db reset`, `supabase test db` (pgTAP),
-`npm run db:open-events` et `npm run db:demo-players` (données de test locales, voir `docs/SETUP.md`).
+`npm run db:open-events`, `npm run db:demo-players`, `npm run db:test-points`,
+`npm run db:load-euro`, `npm run db:euro-results` et `npm run db:demo-full` (données de test
+locales, voir `docs/SETUP.md`).
 
 Prérequis : Node 24 (`.nvmrc`), Docker pour Supabase local. Variables : copier `.env.example`
 en `.env.local`.

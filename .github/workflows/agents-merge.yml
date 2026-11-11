@@ -1,7 +1,8 @@
 name: agents-merge
 
 # Merges Claude's green PRs, sends red or conflicting ones back to Claude, retries the work waiting
-# for quota, and starts the next agent:ready issues of the milestone (two at a time by default).
+# for quota, tags a finished milestone once main is green (which deploys it, ci/agents/release.sh),
+# and starts the next agent:ready issues of the milestone (two at a time by default).
 # Runs after every CI or agents run, every hour, or by hand. See ci/agents/merge-sweep.sh.
 # Stop everything: disable this workflow (Actions, agents-merge, "…", Disable workflow).
 on:
@@ -26,7 +27,8 @@ jobs:
     if: >-
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.name == 'agents' ||
-      github.event.workflow_run.event == 'pull_request'
+      github.event.workflow_run.event == 'pull_request' ||
+      (github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
