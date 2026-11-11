@@ -28,7 +28,9 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - Le créateur d'une ligue ne choisit pas les compétitions.
 - Les règles sont **figées à la création** de la ligue : tous ses participants jouent avec les
   mêmes paramètres.
-- Écran : back-office › Manager (#418). Les valeurs posées par la migration (budget 100, équipe
+- Écrans : back-office › Manager pour les règles (#418) ; `/manager` pour les ligues, depuis
+  « Mes ligues » (#419). Les ligues Manager ont leurs propres tables, à part des ligues de pronos.
+- Les valeurs posées par la migration de #418 (budget 100, équipe
   de 12, alignement de 8, bonus…) sont un point de départ à ajuster par le propriétaire.
 
 ## 2. Mercato (v0.13)
