@@ -54,6 +54,18 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   montant est déduit, les réservations perdantes libérées. Un athlète n'appartient qu'à une
   équipe de la ligue.
 - **Tours** : 48 h pour les tours 1 et 2, 24 h ensuite.
+- Clôture des tours (#423) : les tours s'enchaînent depuis `mercato_opened_at`, durées prises dans
+  les règles de la ligue (`rounds`). Le workflow « Manager rounds » lance
+  `private.close_manager_rounds()` toutes les 5 minutes (comme les notifications push) : pour
+  chaque tour échu, l'offre la plus haute gagne, à égalité la plus ancienne à ce montant
+  (`awardBids`, `src/domain/manager-round.ts`, même règle en SQL) ; toutes les offres de la ligue
+  sont ensuite effacées (les gagnantes deviennent des `manager_awards`, les perdantes sont
+  libérées). Rejouer ne ferme rien deux fois (`manager_rounds`, clé primaire sur
+  `manager_awards`). Entre la fin d'un tour et le passage du job, les offres attendent (FT020).
+  Le budget disponible est le budget moins les athlètes gagnés ; un athlète gagné n'est plus
+  « Libre » dans le catalogue. Un joueur voit ses propres athlètes et ce qu'ils ont coûté, pas
+  ceux des autres ; le panneau « Mon budget » montre le dépensé, la fin du tour et « Mes
+  athlètes ».
 - **Clôture du mercato**, de trois façons : plus aucun participant n'a de budget (après
   résolution des offres en cours) ; le dernier participant qui a encore du budget décide d'y
   mettre fin ; date programmée par les règles.

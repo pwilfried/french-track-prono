@@ -14,6 +14,8 @@ export type ManagerBidWorld = {
   outsider: ManagerBidRepository;
   cheap: string;
   dear: string;
+  /** Lets the time of the open round pass and runs the close of the rounds (#423). */
+  closeRound: () => Promise<void>;
   restore: () => Promise<void>;
 };
 
@@ -68,13 +70,39 @@ export function managerBidContract(name: string, world: () => Promise<ManagerBid
       }
     });
 
+    it("awards each athlete to the best bid at the close of a round and frees the others", async () => {
+      const w = await world();
+      try {
+        expect(await w.first.place(w.leagueId, w.cheap, 30)).toBe("placed");
+        expect(await w.second.place(w.leagueId, w.cheap, 30)).toBe("placed");
+        expect(await w.second.place(w.leagueId, w.dear, 40)).toBe("placed");
+        const before = await w.first.mine(w.leagueId);
+        if (before === "not_member") throw new Error("a participant");
+        expect(before.team).toEqual([]);
+
+        await w.closeRound();
+
+        const first = await w.first.mine(w.leagueId);
+        const second = await w.second.mine(w.leagueId);
+        if (first === "not_member" || second === "not_member") throw new Error("participants");
+        expect(first.team).toEqual([{ athleteId: w.cheap, amount: 30, round: 1 }]);
+        expect(second.team).toEqual([{ athleteId: w.dear, amount: 40, round: 1 }]);
+        expect(first.bids).toEqual([]);
+        expect(second.bids).toEqual([]);
+        expect(Date.parse(first.roundEndsAt!)).toBeGreaterThan(Date.parse(before.roundEndsAt!));
+        expect(await w.second.place(w.leagueId, w.cheap, 50)).toBe("taken");
+      } finally {
+        await w.restore();
+      }
+    });
+
     it("takes no bid while the mercato of the league is not open", async () => {
       const w = await world();
       try {
         expect(await w.first.place(w.closedLeagueId, w.cheap, 10)).toBe("mercato_closed");
         expect(await w.first.withdraw(w.closedLeagueId, w.cheap)).toBe("mercato_closed");
         const mine = await w.first.mine(w.closedLeagueId);
-        expect(mine).toMatchObject({ mercatoOpen: false, bids: [] });
+        expect(mine).toMatchObject({ mercatoOpen: false, roundEndsAt: null, team: [], bids: [] });
       } finally {
         await w.restore();
       }
