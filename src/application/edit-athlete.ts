@@ -19,6 +19,8 @@ export type AthleteListItem = AthleteSummary & { disciplines: string[] };
 export type AthleteFile = AthleteSummary & {
   disciplines: { discipline: string; isPrimary: boolean }[];
   records: AthleteRecord[];
+  /** Price in the French Track Manager catalogue (#421); null keeps them out of it. */
+  managerPrice: number | null;
 };
 
 type Write = Promise<"saved" | "not_admin">;
@@ -43,6 +45,7 @@ export interface AthleteAdminRepository {
   /** Adds a discipline, or changes whether it is the main one (one main per athlete). */
   setDiscipline(athleteId: string, discipline: string, isPrimary: boolean): Write;
   removeDiscipline(athleteId: string, discipline: string): Write;
+  setPrice(athleteId: string, price: number | null): Write;
   /** Sets a PR or SB; a null mark removes it. */
   setRecord(
     athleteId: string,
@@ -119,6 +122,20 @@ export function editAthleteDiscipline(ports: { athletes: AthleteAdminRepository 
               input.action === "main",
             ),
       );
+    },
+  };
+}
+
+/** The admin sets the Manager price of an athlete (whole credits); an empty price removes it. */
+export function setAthletePrice(ports: { athletes: AthleteAdminRepository }) {
+  return {
+    async execute(input: { athleteId: string; price: string }) {
+      const typed = input.price.trim();
+      const price = typed === "" ? null : Number(typed);
+      if (price !== null && !(Number.isInteger(price) && price > 0)) {
+        throw new UseCaseError("ATHLETE_PRICE_INVALID");
+      }
+      await allowed(ports.athletes.setPrice(input.athleteId, price));
     },
   };
 }

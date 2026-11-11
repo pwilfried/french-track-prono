@@ -1,0 +1,39 @@
+import type { DisciplineFamily } from "./discipline";
+import { matchesWords } from "./list-view";
+import type { ManagerSex } from "./manager-rules";
+
+/**
+ * An athlete of the mercato catalogue of a league (v0.13, #421). Only athletes the admin gave a
+ * price to are in it; the price is the lowest bid (#441).
+ */
+export type CatalogueAthlete = {
+  athleteId: string;
+  slug: string;
+  name: string;
+  countryCode: string;
+  sex: ManagerSex;
+  /** The athlete's main discipline and its family. */
+  discipline: string;
+  family: DisciplineFamily;
+  pb: string | null;
+  sb: string | null;
+  price: number;
+  /** Not yet in a team of the league. */
+  available: boolean;
+};
+
+export type CatalogueFilter = {
+  sex: ManagerSex | null;
+  family: DisciplineFamily | null;
+  availableOnly: boolean;
+};
+
+/** Whether an athlete passes the filters of the catalogue. */
+export const inCatalogueFilter = (a: CatalogueAthlete, f: CatalogueFilter) =>
+  (!f.sex || a.sex === f.sex) &&
+  (!f.family || a.family === f.family) &&
+  (!f.availableOnly || a.available);
+
+/** The search looks at the name, the country and the discipline. */
+export const matchesCatalogueSearch = (a: CatalogueAthlete, normalizedQuery: string) =>
+  matchesWords(`${a.name} ${a.countryCode} ${a.discipline}`, normalizedQuery);
