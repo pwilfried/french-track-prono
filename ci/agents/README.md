@@ -8,7 +8,9 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
 
 1. Un propriétaire met le label `agent:ready` sur une issue d'un milestone `vX.Y …`.
 2. `agents-merge.yml` (après chaque CI, chaque run d'agent, et toutes les heures) prend les issues
-   `agent:ready` du milestone en cours, deux à la fois, et leur met `agent:claude`.
+   `agent:ready` du milestone en cours, deux à la fois, et leur met `agent:claude`. Le milestone
+   en cours est le plus petit `vX.Y` qui a encore une issue sans PR ouverte : une version dont
+   toutes les issues attendent leur fusion ne bloque pas la suivante.
 3. `agents.yml` lance Claude Code : il travaille sur une branche `claude/…`, la pousse, et le
    workflow ouvre la PR (`Closes #n`, labels et milestone de l'issue).
 4. CI verte : la PR est fusionnée (squash), après y avoir fusionné `main` si elle était en retard.
