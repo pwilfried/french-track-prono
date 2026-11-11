@@ -44,9 +44,11 @@ titres de PR en anglais. Dialogue avec le propriétaire en français.
    applique le TDD (voir plus bas).
 3. Avant de dire « terminé » : voir « Before saying it is done ».
 4. PR → CI verte → fusion (automatique pour les PR d'agents).
-5. Quand toutes les issues d'un milestone sont fermées : issues `refactor-check` et `docs-check`
-   traitées, critère « It works when… » vérifié à la main, puis tag `vX.Y.Z` posé par le propriétaire.
-   Le tag met la version en prod : migrations, puis déploiement Vercel (`docs/SETUP.md`).
+5. Quand toutes les issues d'un milestone sont fermées (`refactor-check` et `docs-check` comprises)
+   et que `main` est vert, `agents-merge` pose le tag `vX.Y.0` (décision du propriétaire du
+   11 nov. 2026). Le tag met la version en prod : migrations, puis déploiement Vercel
+   (`docs/SETUP.md`). Le propriétaire vérifie le critère « It works when… » en production ; un
+   correctif hors milestone (`vX.Y.Z`) reste tagué à la main.
 
 ## Screenshots in PRs
 
@@ -123,7 +125,8 @@ Claude Code tourne sur les issues et les PR depuis GitHub Actions (`agents.yml`,
   puis les features (`p1` d'abord), puis `refactor-check`, puis `docs-check`. Jamais une issue
   `needs-human`, `agent:blocked`, `after-ui`, ou bloquée par une issue ouverte.
 - PR verte : fusionnée. Rouge ou en conflit : renvoyée à Claude, 3 fois, puis au propriétaire.
-- Pas de tag automatique : la mise en prod reste au propriétaire.
+- Milestone fini et `main` vert : tag `vX.Y.0` posé avec `AGENTS_PAT` (sinon il ne déclencherait
+  pas le déploiement), release GitHub qui liste les PR, milestone fermé (`ci/agents/release.sh`).
 
 Quand tu tournes là-bas :
 
