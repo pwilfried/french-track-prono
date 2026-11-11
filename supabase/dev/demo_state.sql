@@ -128,33 +128,44 @@ with ranked as (
   from results
   order by event_id, rank, athlete_id
 ),
-per_pred as (
+-- Each slot is exact (e), or on the podium at another place (o), or neither.
+per_slot as (
   select pr.user_id, pr.event_id, pr.competition_id, pr.use_joker,
-         case when pr.p1 = r1.athlete_id then 1 else 0 end
-       + case when pr.p2 = r2.athlete_id then 1 else 0 end
-       + case when pr.p3 = r3.athlete_id then 1 else 0 end as exact,
-         case when pr.p1 in (r1.athlete_id, r2.athlete_id, r3.athlete_id) and pr.p1 <> r1.athlete_id then 1 else 0 end
-       + case when pr.p2 in (r1.athlete_id, r2.athlete_id, r3.athlete_id) and pr.p2 <> r2.athlete_id then 1 else 0 end
-       + case when pr.p3 in (r1.athlete_id, r2.athlete_id, r3.athlete_id) and pr.p3 <> r3.athlete_id then 1 else 0 end as wrong_place
+         coalesce(pr.p1 = r1.athlete_id, false) as e1,
+         coalesce(pr.p2 = r2.athlete_id, false) as e2,
+         coalesce(pr.p3 = r3.athlete_id, false) as e3,
+         coalesce(pr.p1 in (r1.athlete_id, r2.athlete_id, r3.athlete_id), false) as o1,
+         coalesce(pr.p2 in (r1.athlete_id, r2.athlete_id, r3.athlete_id), false) as o2,
+         coalesce(pr.p3 in (r1.athlete_id, r2.athlete_id, r3.athlete_id), false) as o3
   from predictions pr
   join events e on e.id = pr.event_id and e.status = 'finished'
   left join ranked r1 on r1.event_id = pr.event_id and r1.rank = 1
   left join ranked r2 on r2.event_id = pr.event_id and r2.rank = 2
   left join ranked r3 on r3.event_id = pr.event_id and r3.rank = 3
+  -- Only the demo players: other players (tests) may already have their points.
+  where pr.user_id::text like '00000000-0000-4000-9000-%'
+),
+per_pred as (
+  select *, e1::int + e2::int + e3::int as exact,
+         (o1 and not e1)::int + (o2 and not e2)::int + (o3 and not e3)::int as wrong_place
+  from per_slot
 ),
 scored as (
   select user_id, event_id, competition_id,
          (exact * 3 + wrong_place + case when exact = 3 then 4 else 0 end)
          * case when use_joker then 2 else 1 end as points,
-         exact, wrong_place
+         -- The reasons as the scoring domain writes them (ScoreReason), so the pages explain the
+         -- points like they do for real ones (#491).
+         (case when e1 then '[{"kind":"exact","slot":1}]' when o1 then '[{"kind":"on_podium","slot":1}]' else '[]' end)::jsonb
+      || (case when e2 then '[{"kind":"exact","slot":2}]' when o2 then '[{"kind":"on_podium","slot":2}]' else '[]' end)::jsonb
+      || (case when e3 then '[{"kind":"exact","slot":3}]' when o3 then '[{"kind":"on_podium","slot":3}]' else '[]' end)::jsonb
+      || (case when exact = 3 then '[{"kind":"perfect_podium"}]' else '[]' end)::jsonb
+      || (case when use_joker then '[{"kind":"joker"}]' else '[]' end)::jsonb as reasons
   from per_pred
 )
 insert into score_events (user_id, event_id, competition_id, source, points, reason, detail)
-select user_id, event_id, competition_id, 'prediction', points,
-       case when exact = 3 then 'perfect_podium'
-            when exact >= 1 then 'podium_hit'
-            else 'podium_miss' end,
-       jsonb_build_object('exact', exact, 'wrong_place', wrong_place)
+select user_id, event_id, competition_id, 'prediction', points, 'prediction',
+       jsonb_build_object('reasons', reasons)
 from scored
 where points > 0;
 
@@ -185,11 +196,13 @@ from (
   left join ranked r3 on r3.event_id = pr.event_id and r3.rank = 3
 ) s (user_id, event_id, points, use_joker)
 where pr.user_id = s.user_id and pr.event_id = s.event_id
-  and s.points > 0;
+  and s.points > 0
+  and pr.user_id::text like '00000000-0000-4000-9000-%';
 
 update predictions
 set points_awarded = points_awarded * 2
-where use_joker and points_awarded is not null;
+where use_joker and points_awarded is not null
+  and user_id::text like '00000000-0000-4000-9000-%';
 
 -- 5. One demo prono league, twelve members, Démo Gazelle owns it, covers the Ultimate Championship.
 with league as (
