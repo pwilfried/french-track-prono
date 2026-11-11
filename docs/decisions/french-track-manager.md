@@ -44,6 +44,11 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   autres, ni leur nombre, ni sa position, ni la meilleure offre. La dernière offre compte.
 - **Réservation** : une offre réserve son montant ; la somme des offres actives ne dépasse jamais
   le budget disponible ; une modification recalcule la réservation.
+- Écran des offres (#422) : dans le catalogue, panneau « Mon budget » (budget, réservé, disponible,
+  mes offres) et, sur chaque carte, enchérir, modifier ou retirer. On enchérit tant que le mercato
+  de la ligue est ouvert (`mercato_opened_at`) ; la clôture des tours vient avec l'attribution
+  (#423). Le secret est tenu par la base : table `manager_bids`, lecture limitée à ses propres
+  offres, écriture seulement par `place_manager_bid` et `withdraw_manager_bid`.
 - **Attribution** à la clôture d'un tour : l'offre la plus haute gagne ; à égalité, celle
   enregistrée en premier à ce montant (horodatage précis, mis à jour à chaque modification). Le
   montant est déduit, les réservations perdantes libérées. Un athlète n'appartient qu'à une

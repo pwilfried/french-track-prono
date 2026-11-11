@@ -54,6 +54,18 @@ export const Taken: Story = {
   },
 };
 
+/** While the mercato is open, the page puts the player's bid at the bottom of the card (#422). */
+export const WithMyBid: Story = {
+  args: {
+    children: (
+      <p className="border-t border-border pt-3 text-sm font-bold text-primary">{text.myBid(25)}</p>
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole("article")).toHaveTextContent(text.myBid(25));
+  },
+};
+
 /** No PB nor SB known yet, and a long name. */
 export const LongNameNoRecords: Story = {
   args: {

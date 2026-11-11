@@ -3,8 +3,17 @@ import type { CatalogueAthlete } from "@/domain/manager-catalogue";
 
 const text = messages.catalogue;
 
-/** One athlete of the mercato catalogue: who, which discipline, PB and SB, price, free or not. */
-export function CatalogueCard({ athlete }: { athlete: CatalogueAthlete }) {
+/**
+ * One athlete of the mercato catalogue: who, which discipline, PB and SB, price, free or not.
+ * `children` goes at the bottom: the player's bid while the mercato is open (#422).
+ */
+export function CatalogueCard({
+  athlete,
+  children,
+}: {
+  athlete: CatalogueAthlete;
+  children?: React.ReactNode;
+}) {
   return (
     <article
       aria-label={athlete.name}
@@ -45,6 +54,7 @@ export function CatalogueCard({ athlete }: { athlete: CatalogueAthlete }) {
           {athlete.available ? text.available : text.taken}
         </span>
       </div>
+      {children}
     </article>
   );
 }

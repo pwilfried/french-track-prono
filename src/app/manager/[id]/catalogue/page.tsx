@@ -2,24 +2,32 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
+import { getMyManagerBids } from "@/application/manager-bids";
 import { browseManagerCatalogue } from "@/application/manager-catalogue";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { CatalogueCard } from "@/components/manager/catalogue-card";
 import { buttonVariants } from "@/components/ui/button";
-import type { ListView } from "@/domain/list-view";
-import type { CatalogueAthlete } from "@/domain/manager-catalogue";
 import { MANAGER_FAMILIES, MANAGER_SEXES, type ManagerSex } from "@/domain/manager-rules";
-import { createSupabaseManagerCatalogue } from "@/infra";
+import { createSupabaseManagerBids, createSupabaseManagerCatalogue } from "@/infra";
 
 import { messages } from "../../../messages.fr";
 import { getSessionClient } from "../../../session";
+import { BidForm } from "../../bid-form";
 import { managerPorts } from "../../data";
+import { MyBidsPanel } from "../../my-bids-panel";
 
 const text = messages.catalogue;
 const field = "min-h-11 w-full rounded-xl border-2 border-border bg-card px-2.5 text-base";
 
 type Params = { q?: string; sexe?: string; famille?: string; libres?: string; page?: string };
+
+/** A league the player is not in is not found; any other refusal shows as an error. */
+function caught(error: unknown): "error" {
+  if (!(error instanceof UseCaseError)) throw error;
+  if (error.code === "LEAGUE_NOT_FOUND") notFound();
+  return "error";
+}
 
 /**
  * The mercato catalogue of a league (#421): search and filters in the address, so they work
@@ -42,21 +50,22 @@ export default async function CataloguePage({
   const availableOnly = search.libres === "1";
   const query = search.q ?? "";
 
-  let view: ListView<CatalogueAthlete> | "error";
-  try {
-    view = await browseManagerCatalogue({
-      catalogue: createSupabaseManagerCatalogue(await getSessionClient()),
-    }).execute({
-      leagueId: id,
-      query,
-      filter: { sex, family, availableOnly },
-      page: Number(search.page) || 1,
-    });
-  } catch (error) {
-    if (!(error instanceof UseCaseError)) throw error;
-    if (error.code === "LEAGUE_NOT_FOUND") notFound();
-    view = "error";
-  }
+  const client = await getSessionClient();
+  const catalogue = createSupabaseManagerCatalogue(client);
+  const [view, mine] = await Promise.all([
+    browseManagerCatalogue({ catalogue })
+      .execute({
+        leagueId: id,
+        query,
+        filter: { sex, family, availableOnly },
+        page: Number(search.page) || 1,
+      })
+      .catch(caught),
+    getMyManagerBids({ bids: createSupabaseManagerBids(client), catalogue })
+      .execute({ leagueId: id })
+      .catch(caught),
+  ]);
+  const bidOf = new Map(mine === "error" ? [] : mine.bids.map((b) => [b.athleteId, b.amount]));
 
   const pageHref = (page: number) =>
     `?${new URLSearchParams({
@@ -76,6 +85,16 @@ export default async function CataloguePage({
         back={{ href: `/manager/${id}`, label: messages.manager.back }}
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-6 md:max-w-3xl">
+        {mine === "error" ? (
+          <ErrorNotice
+            retryHref={`/manager/${id}/catalogue`}
+            message={messages.errors.MANAGER_BIDS_UNAVAILABLE}
+          />
+        ) : mine.mercatoOpen ? (
+          <MyBidsPanel bids={mine} />
+        ) : (
+          <p className="rounded-card bg-muted p-4 text-sm font-semibold">{text.mercatoClosed}</p>
+        )}
         <form className="flex flex-col gap-3 rounded-card border border-border bg-card p-3.5">
           <label className="flex flex-col gap-1 text-sm font-semibold">
             {text.search}
@@ -144,7 +163,17 @@ export default async function CataloguePage({
               <ul aria-label={text.title} className="grid gap-2 md:grid-cols-2">
                 {view.rows.map((athlete) => (
                   <li key={athlete.athleteId}>
-                    <CatalogueCard athlete={athlete} />
+                    <CatalogueCard athlete={athlete}>
+                      {mine !== "error" && mine.mercatoOpen && athlete.available && (
+                        <BidForm
+                          leagueId={id}
+                          athleteId={athlete.athleteId}
+                          name={athlete.name}
+                          price={athlete.price}
+                          current={bidOf.get(athlete.athleteId) ?? null}
+                        />
+                      )}
+                    </CatalogueCard>
                   </li>
                 ))}
               </ul>
