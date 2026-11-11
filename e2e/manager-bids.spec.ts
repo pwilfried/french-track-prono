@@ -55,24 +55,37 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await expect(budget).toContainText("Disponible100 cr.");
     const firstCard = ownerPage.getByRole("article", { name: first });
     const secondCard = ownerPage.getByRole("article", { name: second });
-    await firstCard.getByLabel(`Mon offre sur ${first}, en crédits`).fill("40");
+    // The bid form stays folded behind « Enchérir » (#503); + and − move the amount by a credit.
     await firstCard.getByRole("button", { name: "Enchérir" }).click();
+    const firstAmount = firstCard.getByLabel(`Mon offre sur ${first}, en crédits`);
+    await expect(firstAmount).toHaveValue("30");
+    await firstCard.getByRole("button", { name: "Monter mon offre d'un crédit" }).click();
+    await expect(firstAmount).toHaveValue("31");
+    await firstCard.getByRole("button", { name: "Baisser mon offre d'un crédit" }).click();
+    await firstCard.getByRole("button", { name: "Baisser mon offre d'un crédit" }).click();
+    await expect(firstAmount).toHaveValue("30");
+    await firstAmount.fill("40");
+    await firstCard.getByRole("button", { name: "Valider" }).click();
     await expect(firstCard).toContainText("Mon offre : 40 cr.");
+    await expect(firstAmount).toHaveCount(0);
     await expect(budget).toContainText("Réservé40 cr.");
 
-    await secondCard.getByLabel(`Mon offre sur ${second}, en crédits`).fill("61");
     await secondCard.getByRole("button", { name: "Enchérir" }).click();
+    await secondCard.getByLabel(`Mon offre sur ${second}, en crédits`).fill("61");
+    await secondCard.getByRole("button", { name: "Valider" }).click();
     await expect(secondCard.getByRole("alert")).toContainText("dépasseraient ton budget");
     await secondCard.getByLabel(`Mon offre sur ${second}, en crédits`).fill("60");
-    await secondCard.getByRole("button", { name: "Enchérir" }).click();
+    await secondCard.getByRole("button", { name: "Valider" }).click();
     await expect(secondCard).toContainText("Mon offre : 60 cr.");
     await expect(budget).toContainText("Disponible0 cr.");
 
     // A change recomputes the reservation; a withdrawn bid frees its credits.
-    await firstCard.getByLabel(`Mon offre sur ${first}, en crédits`).fill("35");
     await firstCard.getByRole("button", { name: "Modifier" }).click();
+    await firstCard.getByLabel(`Mon offre sur ${first}, en crédits`).fill("35");
+    await firstCard.getByRole("button", { name: "Valider" }).click();
     await expect(firstCard).toContainText("Mon offre : 35 cr.");
     await expect(budget).toContainText("Disponible5 cr.");
+    await secondCard.getByRole("button", { name: "Modifier" }).click();
     await secondCard.getByRole("button", { name: "Retirer" }).click();
     await expect(secondCard).not.toContainText("Mon offre");
     await expect(budget).toContainText("Disponible65 cr.");

@@ -1,11 +1,28 @@
 import { messages } from "@/app/messages.fr";
+import { ChipStatus } from "@/components/ui/chip-status";
+import type { DisciplineFamily } from "@/domain/discipline";
 import type { CatalogueAthlete } from "@/domain/manager-catalogue";
+import { cn } from "@/lib/utils";
 
 const text = messages.catalogue;
 
+/** A sign per family of events, to scan the catalogue by eye (#503). */
+const FAMILY_SIGN: Record<DisciplineFamily, string> = {
+  sprint: "⚡",
+  hurdles: "🚧",
+  middle: "🏃",
+  long: "🛣️",
+  relay: "🤝",
+  horizontal_jumps: "➡️",
+  vertical_jumps: "⬆️",
+  throws: "🥏",
+  combined: "🏅",
+};
+
 /**
- * One athlete of the mercato catalogue: who, which discipline, PB and SB, price, free or not.
- * `children` goes at the bottom: the player's bid while the mercato is open (#422).
+ * One athlete of the mercato catalogue, on one compact line (#503): who, which event, PB (the
+ * SB only when it differs), the price or « Recruté ». `children` goes at the bottom: the
+ * player's bid while the mercato is open (#422).
  */
 export function CatalogueCard({
   athlete,
@@ -14,47 +31,51 @@ export function CatalogueCard({
   athlete: CatalogueAthlete;
   children?: React.ReactNode;
 }) {
+  const { name, countryCode, discipline, sex, pb, sb, price, available } = athlete;
   return (
     <article
-      aria-label={athlete.name}
-      className={`flex flex-col gap-2 rounded-card border border-border bg-card p-3.5 ${athlete.available ? "" : "opacity-60"}`}
+      aria-label={name}
+      className={cn(
+        "flex flex-col gap-2 rounded-card border border-border bg-card p-3",
+        !available && "opacity-60",
+      )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="break-words font-extrabold leading-tight">{athlete.name}</h3>
+      <div className="flex items-center gap-3">
+        <span
+          aria-hidden
+          className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-lg"
+        >
+          {FAMILY_SIGN[athlete.family]}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="break-words font-extrabold leading-tight">{name}</h3>
           <p className="text-sm text-muted-foreground">
-            {athlete.countryCode} · {text.sexes[athlete.sex]} · {athlete.discipline}
+            {countryCode} · {discipline} {text.sexShort[sex]}
           </p>
         </div>
-        <p
-          aria-label={text.priceLabel(athlete.price)}
-          className="shrink-0 rounded-full bg-gold-soft px-2.5 py-1 font-mono text-sm font-bold"
-        >
-          {text.price(athlete.price)}
+        {available ? (
+          <ChipStatus tone="gold" className="shrink-0 font-mono text-sm">
+            <span aria-hidden>{text.price(price)}</span>
+            <span className="sr-only">{text.priceLabel(price)}</span>
+          </ChipStatus>
+        ) : (
+          <ChipStatus className="shrink-0">{text.taken}</ChipStatus>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-mono text-sm tabular-nums">
+          <span className="font-bold">
+            {text.pb} {pb ?? "—"}
+          </span>
+          {sb && sb !== pb && (
+            <span className="text-muted-foreground">
+              {" "}
+              · {text.sb} {sb}
+            </span>
+          )}
         </p>
+        {children}
       </div>
-      <div className="flex items-end justify-between gap-3">
-        <dl className="flex gap-5">
-          <div>
-            <dt className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              {text.pb}
-            </dt>
-            <dd className="font-mono font-bold tabular-nums">{athlete.pb ?? "—"}</dd>
-          </div>
-          <div>
-            <dt className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              {text.sb}
-            </dt>
-            <dd className="font-mono font-bold tabular-nums">{athlete.sb ?? "—"}</dd>
-          </div>
-        </dl>
-        <span
-          className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${athlete.available ? "bg-success/15 text-success-text" : "bg-muted text-muted-foreground"}`}
-        >
-          {athlete.available ? text.available : text.taken}
-        </span>
-      </div>
-      {children}
     </article>
   );
 }
