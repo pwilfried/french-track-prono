@@ -46,7 +46,7 @@ export function BidForm({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className={`${buttonVariants({ variant: "outline" })} px-4 text-sm`}
+          className={`${buttonVariants({ variant: current !== null ? "outline" : "default" })} px-5 text-sm`}
         >
           {current !== null ? text.change : text.bid}
         </button>

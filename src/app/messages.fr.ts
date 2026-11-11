@@ -320,7 +320,7 @@ export const messages = {
     spent: "Dépensé",
     reserved: "Réservé",
     left: "Disponible",
-    roundEnds: (when: string) => `Fin du tour d'enchères : ${when}`,
+    roundEndsIn: "Fin du tour dans",
     myTeam: "Mes athlètes",
     noTeam: "Aucun athlète remporté pour l'instant.",
     wonIn: (round: number) => `tour ${round}`,

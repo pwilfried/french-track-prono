@@ -37,26 +37,26 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** One compact line: who, discipline, PB (SB only when it differs), the price. */
+/** Who, discipline, the price, then both records. */
 export const Available: Story = {
   play: async ({ canvasElement }) => {
     const card = within(canvasElement).getByRole("article", { name: "Léa Fictive" });
     await expect(within(card).getByText(text.priceLabel(12))).toBeInTheDocument();
     await expect(card).toHaveTextContent("12 cr.");
     await expect(card).toHaveTextContent("100 m F");
-    await expect(card).toHaveTextContent("PB 11.02");
-    await expect(card).toHaveTextContent("SB 11.18");
+    await expect(card).toHaveTextContent("PB11.02");
+    await expect(card).toHaveTextContent("SB11.18");
     await expect(card).not.toHaveTextContent("Libre");
   },
 };
 
-/** The season best equals the PB: shown once. */
+/** The season best equals the PB: both records still show. */
 export const SeasonBestIsPb: Story = {
   args: { athlete: { ...meta.args.athlete, sb: "11.02" } },
   play: async ({ canvasElement }) => {
     const card = within(canvasElement).getByRole("article");
-    await expect(card).toHaveTextContent("PB 11.02");
-    await expect(card).not.toHaveTextContent("SB");
+    await expect(card).toHaveTextContent("PB11.02");
+    await expect(card).toHaveTextContent("SB11.02");
   },
 };
 
@@ -94,8 +94,8 @@ export const LongNameNoRecords: Story = {
   },
   play: async ({ canvasElement }) => {
     const card = within(canvasElement).getByRole("article");
-    await expect(card).toHaveTextContent("PB —");
-    await expect(card).not.toHaveTextContent("SB");
+    await expect(card).toHaveTextContent("PB—");
+    await expect(card).toHaveTextContent("SB—");
     await expect(card).toHaveTextContent("125 cr.");
   },
 };

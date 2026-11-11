@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 const text = messages.catalogue;
 
 /**
- * One athlete of the mercato catalogue, on one compact line (#503): flag, who, which event, PB (the
- * SB only when it differs), the price or « Recruté ». `children` goes at the bottom: the
+ * One athlete of the mercato catalogue, compact (#503): flag, who, which event, the price or
+ * « Recruté », then PB and SB. `children` goes at the bottom: the
  * player's bid while the mercato is open (#422).
  */
 export function CatalogueCard({
@@ -50,17 +50,19 @@ export function CatalogueCard({
         )}
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-mono text-sm tabular-nums">
-          <span className="font-bold">
-            {text.pb} {pb ?? "—"}
-          </span>
-          {sb && sb !== pb && (
-            <span className="text-muted-foreground">
-              {" "}
-              · {text.sb} {sb}
-            </span>
-          )}
-        </p>
+        <dl className="flex gap-4">
+          {[
+            [text.pb, pb],
+            [text.sb, sb],
+          ].map(([label, mark]) => (
+            <div key={label}>
+              <dt className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                {label}
+              </dt>
+              <dd className="font-mono text-sm font-bold tabular-nums">{mark ?? "—"}</dd>
+            </div>
+          ))}
+        </dl>
         {children}
       </div>
     </article>
