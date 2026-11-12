@@ -4,7 +4,8 @@
 begin;
 select plan(11);
 
--- No admin account yet: nothing happens.
+-- No admin account yet (the migration may have found one: its league is set aside): nothing happens.
+delete from leagues where is_official;
 update profiles set is_admin = false;
 select private.create_official_league();
 select is((select count(*) from leagues where is_official), 0::bigint,
@@ -14,8 +15,8 @@ insert into auth.users (id, email) values
   ('0ff10000-0000-0000-0000-000000000001', 'admin-official@example.test'),
   ('0ff10000-0000-0000-0000-000000000002', 'player-official@example.test');
 insert into profiles (id, pseudo, age_confirmed_at, is_admin) values
-  ('0ff10000-0000-0000-0000-000000000001', 'Admin officiel', now(), true),
-  ('0ff10000-0000-0000-0000-000000000002', 'Joueuse officielle', now(), false);
+  ('0ff10000-0000-0000-0000-000000000001', 'Patronne', now(), true),
+  ('0ff10000-0000-0000-0000-000000000002', 'Passante', now(), false);
 insert into competitions (slug, name, starts_on, ends_on)
 values ('european-championships-2026', 'Championnats d''Europe', '2026-11-23', '2026-11-29')
 on conflict (slug) do nothing;
@@ -54,9 +55,8 @@ set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub": "0ff10000-0000-0000-0000-000000000002", "role": "authenticated"}', true);
 
-select is((select bool_and(is_official) from list_public_leagues()
-           where league_id = (select id from leagues where name = 'Ligue FrenchTrack')),
-  true, 'the list of public leagues says which one is official');
+select results_eq($$select name from list_public_leagues() where is_official$$,
+  $$values ('Ligue FrenchTrack'::text)$$, 'the list of public leagues says which one is official');
 select lives_ok($$select join_public_league((select league_id from list_public_leagues() where is_official))$$,
   'a player joins the official league beyond 200 members');
 
