@@ -19,7 +19,7 @@ type Row = {
   events: { starts_at: string; lock_at: string };
 };
 
-/** Score lines are readable by every signed-in player (the general ranking is public to them). */
+/** Score lines are readable by every player and by visitors (#573): the general ranking is public. */
 export function createSupabaseRankingRepository(client: SupabaseClient): RankingRepository {
   return {
     async competitionLines(competitionSlug) {

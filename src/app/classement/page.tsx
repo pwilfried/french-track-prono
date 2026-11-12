@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
 import type { League } from "@/application/leagues";
@@ -38,6 +37,7 @@ function hrefOf(view: View, extra: { ligue?: string; competition?: string } = {}
  * The rankings tab (#551): « Ma ligue » first (the player's first league, a chooser when they have
  * several), « Ce soir » (points of tonight's finals, hidden before the first competition) and
  * « Général » (every player, or one competition with ?competition=), cut around the player.
+ * A visitor sees « Général » alone, with a link to sign in (#573).
  */
 export default async function RankingPage({
   searchParams,
@@ -52,21 +52,18 @@ export default async function RankingPage({
   const { coming, past } = await loadCompetitions();
   const all = [...coming, ...past].sort((a, b) => b.startsOn.localeCompare(a.startsOn));
   const start = rankingStart(all, currentDay());
-  const views = VIEWS.filter((v) => v !== "soir" || !start);
-  const view = views.find((v) => v === paramText(query.vue)) ?? "ligue";
+  const user = await getCurrentUser();
+  const views = user ? VIEWS.filter((v) => v !== "soir" || !start) : (["general"] as const);
+  const view = views.find((v) => v === paramText(query.vue)) ?? views[0]!;
   const chosen =
     view === "general" ? (all.find((c) => c.slug === paramText(query.competition)) ?? null) : null;
 
-  const user = await getCurrentUser();
   const leagues = user ? await loadMyLeagues() : [];
   const league: League | null =
     view === "ligue"
       ? (leagues.find((l) => l.id === paramText(query.ligue)) ?? leagues[0] ?? null)
       : null;
   const here = hrefOf(view, { ligue: league?.id, competition: chosen?.slug });
-  if (!user) {
-    redirect(`/connexion?next=${encodeURIComponent(paramText(query.vue) ? here : "/classement")}`);
-  }
 
   const today = currentCompetitionDay();
   const client = await getSessionClient();
@@ -93,7 +90,8 @@ export default async function RankingPage({
     if (!(error instanceof UseCaseError)) throw error;
     rows = "error";
   }
-  const me = Array.isArray(rows) ? rows.find((p) => p.userId === user.userId) : undefined;
+  const meId = user?.userId;
+  const me = Array.isArray(rows) ? rows.find((p) => p.userId === meId) : undefined;
   const text = messages.ranking;
   const subtitle =
     view === "ligue"
@@ -173,19 +171,24 @@ export default async function RankingPage({
           <ErrorNotice retryHref={here} message={messages.errors.RANKING_UNAVAILABLE} />
         ) : rows === null ? null : start ? (
           // Before the first competition: the members of the league at 0, under the banner.
-          rows.length > 0 && <Leaderboard rows={rows} meId={user.userId} retryHref={here} />
+          rows.length > 0 && <Leaderboard rows={rows} meId={meId} retryHref={here} />
         ) : view === "soir" && rows.length === 0 ? (
           <p className="rounded-card bg-muted p-4 text-muted-foreground">{text.tonightEmpty}</p>
         ) : (
           <>
-            <Podium rows={rows} meId={user.userId} />
-            <Leaderboard
-              rows={rows}
-              meId={user.userId}
-              retryHref={here}
-              aroundMe={view !== "ligue"}
-            />
-            {me ? (
+            <Podium rows={rows} meId={meId} />
+            <Leaderboard rows={rows} meId={meId} retryHref={here} aroundMe={view !== "ligue"} />
+            {!user ? (
+              <section className="flex flex-col gap-3 rounded-card bg-muted p-4">
+                <p>{text.visitor}</p>
+                <Link
+                  href={`/connexion?next=${encodeURIComponent(here)}`}
+                  className={`${buttonVariants()} w-full`}
+                >
+                  {messages.account.signIn}
+                </Link>
+              </section>
+            ) : me ? (
               <p className="sticky bottom-20 flex items-center justify-between gap-3 rounded-2xl bg-foreground py-1.5 pl-3.5 pr-1.5 font-extrabold text-background shadow-lg md:bottom-3">
                 <span>{text.you(me.rank, me.points)}</span>
                 <a
@@ -202,7 +205,7 @@ export default async function RankingPage({
                 </p>
               )
             )}
-            {!me && view === "general" && (
+            {user && !me && view === "general" && (
               <Link href="/epreuves" className={`${buttonVariants()} w-full`}>
                 {text.predict}
               </Link>

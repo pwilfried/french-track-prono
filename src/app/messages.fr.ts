@@ -505,6 +505,7 @@ export const messages = {
       "Pas encore de points ce soir : ils arrivent dès que les résultats des finales du jour sont saisis.",
     notRankedTonight: "Pas de points pour toi ce soir.",
     predict: "Faire mes pronos",
+    visitor: "Connecte-toi pour poser tes podiums et entrer au classement.",
     starts: (startsOn: string, days: number) => {
       const day = new Date(`${startsOn}T12:00:00Z`).toLocaleDateString("fr-FR", {
         weekday: "short",
