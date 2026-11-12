@@ -22,7 +22,7 @@ fi
 if quota_recent; then echo "Claude out of plan in the last 2 hours: nothing started."; exit 0; fi
 
 # Issues an open PR closes: Claude has handed its work over, they do not hold a slot.
-closing=$(jq -r '.[].body // ""' <<< "$open_prs" | grep -oiE '(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+' | grep -oE '[0-9]+' | sort -u || true)
+closing=$(jq -r '.[].body // ""' <<< "$open_prs" | closed_by)
 on_issue=$(jq --arg closing "$closing" '($closing | split("\n") | map(select(. != "") | tonumber)) as $done
   | [.[] | select(.number as $n | $done | index($n) | not)
   | select([.labels[].name] | any(. == "agent:claude" or . == "agent:working-claude"))] | length' <<< "$issues_state")
