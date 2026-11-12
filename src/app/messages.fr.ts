@@ -66,40 +66,57 @@ export const messages = {
     dismiss: "OK",
   },
   playerHome: {
-    hello: (pseudo: string) => `Salut ${pseudo}`,
-    nextFinalIn: (duration: string) => `Prochaine finale dans ${duration}`,
-    noFinalTitle: "Choisis ta compétition",
-    noFinal: "Aucune finale ouverte aux pronos pour le moment.",
-    podiumEmpty: "Ton podium est vide",
-    podiumDone: "✓ Ton podium est posé",
-    editPodium: "Modifier mon podium",
-    leagueFirst: "Joue aussi contre tes amis : crée ou rejoins une ligue de cette compétition.",
-    createPrivate: "Ligue privée",
-    createPublic: "Ligue publique",
-    joinPublic: "ou rejoins une ligue publique",
-    season: "Ma saison",
-    general: "Classement général",
-    myLeague: (name: string) => `Ma ligue · ${name}`,
-    noLeague: "Ma ligue",
-    leagueOpen: "Voir ma ligue",
-    leagueJoin: "Crée ou rejoins une ligue",
-    toPredict: "À pronostiquer",
-    allEvents: "Toutes les épreuves",
-    predicted: "pronostiqué ✓",
-    podium: "Le podium du général",
-    lastResult: "Dernier résultat",
-    yourPoints: (points: number) =>
-      points === 0
-        ? "0 point pour toi"
-        : `+${points} ${points === 1 ? "point" : "points"} pour toi`,
-    noPrediction: "Pas de prono de ta part",
-    seeResult: "Voir le résultat",
-    publicTitle: "Joue avec la communauté",
-    publicText: "Rejoins une ligue publique d'un appui, sans code.",
-    publicLink: "Voir les ligues publiques",
-    podcastTitle: "Le podcast FrenchTrack",
-    podcastText: "Les analyses et les invités avant chaque grand rendez-vous.",
-    podcastLink: "Écouter",
+    /** « Bienvenue » until a first prediction, then « Salut » (#526). */
+    hello: (pseudo: string, isNew: boolean) => (isNew ? `Bienvenue, ${pseudo}` : `Salut ${pseudo}`),
+    action: {
+      label: "Ta prochaine action",
+      yourTurn: "À toi de jouer",
+      firstPrediction: "Ton premier prono",
+      locksIn: (duration: string) => `Verrouille dans ${duration}`,
+      startsAt: (day: string, time: string) =>
+        `Départ ${day} à ${time} (heure de Paris). Choisis ton 1er, ton 2e et ton 3e avant le verrou.`,
+      play: "Faire mon podium",
+      sameDay: (count: number) =>
+        count === 1 ? "1 autre finale ce soir" : `${count} autres finales ce soir`,
+      nextCompetition: "Prochaine compétition",
+      finals: (count: number) => (count <= 1 ? `${count} finale` : `${count} finales`),
+      programme: "Voir le programme",
+    },
+    league: {
+      title: "Ma ligue",
+      emptyTitle: "C'est entre amis que ça se joue",
+      emptyText:
+        "Crée ta ligue, partage le code, et regarde le classement bouger après chaque finale.",
+      create: "Créer ma ligue",
+      joinPublic: "Ou rejoindre une ligue publique",
+      place: (rank: number, total: number) => `${ordinal(rank)} sur ${total}`,
+      gap: (points: number, pseudo: string) =>
+        `À ${points} ${points <= 1 ? "point" : "points"} de ${pseudo}`,
+      leading: "Tu es en tête",
+      ranking: "Classement",
+    },
+    lastResult: {
+      title: "Dernier résultat",
+      /** « 2 athlètes bien placées », in the gender of the event. */
+      detail: (exact: number, onPodium: number, gender: "F" | "M" | "X") => {
+        const e = gender === "F" ? "e" : "";
+        const athletes = (n: number) => `${n} athlète${n > 1 ? "s" : ""}`;
+        if (exact > 0) return `${athletes(exact)} bien placé${e}${exact > 1 ? "s" : ""}`;
+        if (onPodium > 0) return `${athletes(onPodium)} sur le podium`;
+        return gender === "F" ? "Aucune athlète sur le podium" : "Aucun athlète sur le podium";
+      },
+      points: (points: number) => `+${points} ${points <= 1 ? "pt" : "pts"}`,
+      see: "Voir le résultat",
+    },
+    manager: {
+      mercato: "Le mercato est ouvert : place tes offres avant la fin du tour.",
+      open: "Ouvrir le Manager",
+    },
+    frenchTrack: {
+      title: "Le podcast FrenchTrack",
+      text: "Les analyses et les invités avant chaque grand rendez-vous, et l'actu sur nos réseaux.",
+      listen: "Écouter le dernier épisode",
+    },
   },
   visitorHome: {
     eyebrow: "Pronostics d'athlétisme",
@@ -133,17 +150,12 @@ export const messages = {
       },
     ],
     allRules: "Toutes les règles",
+    dismiss: "Masquer « Comment ça marche »",
   },
   start: {
-    blocksLabel: "Types de compétition",
-    block: { international: "Compétitions internationales", france: "Compétitions françaises" },
-    coming: (count: number) => (count === 0 ? "Aucune à venir" : `${count} à venir`),
-    next: "Prochaines compétitions",
     none: "Aucune compétition à venir pour l'instant.",
     inDays: (days: number) => (days === 0 ? "En cours" : days === 1 ? "Demain" : `Dans ${days} j`),
     events: (count: number) => (count <= 1 ? `${count} épreuve` : `${count} épreuves`),
-    createLeague: "Créer une ligue",
-    open: "Épreuves",
   },
   choice: {
     back: "Accueil",
