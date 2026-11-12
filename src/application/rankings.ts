@@ -1,13 +1,7 @@
 import { DEFAULT_BIB, type Bib } from "@/domain/bib";
 import { rankClubs, type ClubRank } from "@/domain/club-ranking";
-import { utcToParis } from "@/domain/competition";
-import {
-  movesSinceYesterday,
-  rankPlayers,
-  streaks,
-  totalsOf,
-  type RankedPlayer,
-} from "@/domain/ranking";
+import { parisDay } from "@/domain/competition";
+import { movesSinceYesterday, rankPlayers, totalsOf, type RankedPlayer } from "@/domain/ranking";
 import type { ScoreReason } from "@/domain/scoring";
 
 import { UseCaseError } from "./errors";
@@ -41,13 +35,11 @@ export type RankingRow = RankedPlayer & {
   bib: Bib;
   club: string | null;
   change: number | null;
-  streak: number;
 };
 
 /** The ranking clock: today is a day in Paris time (#551). */
 type Clock = { now?: () => Date };
-const parisToday = ({ now = () => new Date() }: Clock) =>
-  utcToParis(now().toISOString()).slice(0, 10);
+const parisToday = ({ now = () => new Date() }: Clock) => parisDay(now().toISOString());
 
 const rank = (lines: RankingLine[], today: string): RankingRow[] => {
   const byUser = new Map(lines.map((l) => [l.userId, l]));
@@ -55,27 +47,30 @@ const rank = (lines: RankingLine[], today: string): RankingRow[] => {
   // League members without points have no event: they never move.
   const dated = lines.filter((l) => l.eventId !== "");
   const changes = movesSinceYesterday(dated, today, pseudoOf);
-  const streakOf = streaks(dated);
   return rankPlayers(totalsOf(lines, pseudoOf)).map((player) => ({
     ...player,
     bib: byUser.get(player.userId)?.bib ?? DEFAULT_BIB,
     club: lines.find((l) => l.userId === player.userId && l.club)?.club ?? null,
     change: changes.get(player.userId) ?? null,
-    streak: streakOf.get(player.userId) ?? 0,
   }));
 };
 
 /**
  * All the players who scored in the competitions given, their points added up: every competition
- * for the general ranking (decision of 8 Nov 2026), one for the page of a competition.
+ * for the general ranking (decision of 8 Nov 2026), one for the page of a competition. With a
+ * `day` (YYYY-MM-DD, Paris time), only the events of that day count: « Ce soir » (#551).
  */
 export function getGeneralRanking(ports: { ranking: RankingRepository } & Clock) {
   return {
-    async execute(input: { competitionSlugs: string[] }): Promise<RankingRow[]> {
+    async execute(input: { competitionSlugs: string[]; day?: string }): Promise<RankingRow[]> {
       const perCompetition = await Promise.all(
         input.competitionSlugs.map((slug) => ports.ranking.competitionLines(slug)),
       );
-      return rank(perCompetition.flat(), parisToday(ports));
+      const lines = perCompetition.flat();
+      const counted = input.day
+        ? lines.filter((l) => parisDay(l.eventStartsAt) === input.day)
+        : lines;
+      return rank(counted, parisToday(ports));
     },
   };
 }

@@ -1,7 +1,13 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { movesSinceYesterday, rankPlayers, streaks, totalsOf, type PlayerTotals } from "./ranking";
+import {
+  movesSinceYesterday,
+  rankingWindow,
+  rankPlayers,
+  totalsOf,
+  type PlayerTotals,
+} from "./ranking";
 
 const player = (
   pseudo: string,
@@ -212,36 +218,53 @@ describe("movesSinceYesterday", () => {
   });
 });
 
-describe("streaks", () => {
-  const line = (userId: string, eventId: string, day: number, points: number) => ({
-    userId,
-    eventId,
-    eventStartsAt: `2026-11-2${day}T19:00:00Z`,
-    points,
-    reasons: [],
+describe("rankingWindow", () => {
+  const rows = Array.from({ length: 30 }, (_, i) => ({ userId: `p${i + 1}` }));
+  const ids = (shown: ({ userId: string } | null)[]) => shown.map((r) => r?.userId ?? "···");
+  const top10 = rows.slice(0, 10).map((r) => r.userId);
+
+  it("shows the top 10, a gap, then me and two neighbours on each side", () => {
+    expect(ids(rankingWindow(rows, "p20"))).toEqual([
+      ...top10,
+      "···",
+      "p18",
+      "p19",
+      "p20",
+      "p21",
+      "p22",
+    ]);
   });
 
-  it("counts the last computed events in a row where the player scored at least 1 point", () => {
-    const lines = [
-      line("ana", "e1", 3, 4),
-      line("ana", "e2", 4, 1),
-      line("ana", "e3", 5, 3),
-      line("bob", "e1", 3, 5),
-      line("bob", "e2", 4, 0),
-      line("bob", "e3", 5, 2),
-      line("cid", "e1", 3, 6),
-      line("cid", "e2", 4, 6),
-    ];
-
-    const result = streaks(lines);
-
-    expect(result.get("ana")).toBe(3);
-    expect(result.get("bob")).toBe(1); // 0 on e2 broke it
-    expect(result.get("cid")).toBe(0); // no prediction on the last event
+  it("shows the top 10 only when I am in it", () => {
+    expect(ids(rankingWindow(rows, "p3"))).toEqual(top10);
   });
 
-  it("does not depend on the order of the lines", () => {
-    const lines = [line("a", "e1", 3, 1), line("a", "e2", 4, 2), line("b", "e2", 4, 1)];
-    expect(streaks([...lines].reverse()).get("a")).toBe(streaks(lines).get("a"));
+  it("goes on from the top without a gap when my neighbours reach it", () => {
+    expect(ids(rankingWindow(rows, "p10"))).toEqual([...top10, "p11", "p12"]);
+    expect(ids(rankingWindow(rows, "p13"))).toEqual([...top10, "p11", "p12", "p13", "p14", "p15"]);
+  });
+
+  it("stops at the end of the list when I am last", () => {
+    expect(ids(rankingWindow(rows, "p30"))).toEqual([...top10, "···", "p28", "p29", "p30"]);
+  });
+
+  it("keeps players tied with me in the order of the list", () => {
+    const tied = rows.map((r, i) => ({ ...r, rank: i < 20 ? i + 1 : 21 }));
+    expect(ids(rankingWindow(tied, "p25"))).toEqual([
+      ...top10,
+      "···",
+      "p23",
+      "p24",
+      "p25",
+      "p26",
+      "p27",
+    ]);
+  });
+
+  it("shows the top 10 only when I am not ranked, and a short list whole", () => {
+    expect(ids(rankingWindow(rows, null))).toEqual(top10);
+    expect(ids(rankingWindow(rows.slice(0, 8), "p8"))).toEqual(
+      rows.slice(0, 8).map((r) => r.userId),
+    );
   });
 });

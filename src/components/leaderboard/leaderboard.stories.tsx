@@ -59,22 +59,35 @@ export const Default: Story = {
   },
 };
 
-/** Places won and lost since yesterday (▲ green, ▼ red, — same place). */
+/** Places won and lost since yesterday (#551): ▲ green, ▼ red, « = » otherwise; no 🔥 badge. */
 export const WithChanges: Story = {
   args: {
-    rows: rows.map((r, i) => ({
-      ...r,
-      change: [2, -1, 0, 1, null, -3][i] ?? null,
-      streak: [3, 2, 1, 0, 0, 0][i] ?? 0,
-    })),
+    rows: rows.map((r, i) => ({ ...r, change: [2, -1, 0, 1, null, -3][i] ?? null })),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    const items = canvas.getAllByRole("listitem");
     await expect(canvas.getByText("2 places gagnées depuis hier")).toBeInTheDocument();
     await expect(canvas.getByText("1 place perdue depuis hier")).toBeInTheDocument();
-    await expect(canvas.getAllByRole("listitem")[4]).not.toHaveTextContent("▲");
-    await expect(canvas.getAllByRole("listitem")[0]).toHaveTextContent("🔥3");
-    await expect(canvas.getAllByRole("listitem")[2]).not.toHaveTextContent("🔥");
+    await expect(items[2]).toHaveTextContent("=même place qu'hier");
+    await expect(items[4]).toHaveTextContent("=pas classé hier");
+    await expect(canvasElement).not.toHaveTextContent("🔥");
+  },
+};
+
+/** A long ranking cut after the top (#551): « ··· », then me and my neighbours; my row is the anchor. */
+export const Window: Story = {
+  args: {
+    rows: [...rows.slice(0, 2), null, ...rows.slice(4)].map((r) =>
+      r ? { ...r, change: 0 } : null,
+    ),
+    meId: "5",
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getAllByRole("listitem")).toHaveLength(4);
+    await expect(canvasElement).toHaveTextContent("···");
+    await expect(canvasElement.querySelector("#moi")).toHaveTextContent("Démo Javelot");
   },
 };
 

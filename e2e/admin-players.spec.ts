@@ -37,9 +37,10 @@ test("the admin blocks a player, who leaves the general ranking, then unblocks t
   // Another player watches the general ranking (an admin still sees every line).
   const viewer = newPlayer("viewer");
   const viewerPage = await (await browser.newContext()).newPage();
-  await viewerPage.goto("/classement");
+  // The general ranking of the target's competition (#551: « Général » shows the top 10 only).
+  await viewerPage.goto(`/classement?onglet=general&competition=e2e-mod-${tag}`);
   await signUp(viewerPage, viewer);
-  await viewerPage.waitForURL(/\/classement$/);
+  await viewerPage.waitForURL(/\/classement\?/);
   const ranking = viewerPage.getByRole("list", { name: "Classement" });
   await expect(ranking.getByText(target)).toBeVisible();
 
@@ -59,7 +60,7 @@ test("the admin blocks a player, who leaves the general ranking, then unblocks t
   await expect(row.getByText("Bloqué", { exact: true })).toBeVisible();
 
   await viewerPage.reload();
-  await expect(ranking).toBeVisible();
+  await expect(viewerPage.getByText(/Pas encore de classement/)).toBeVisible();
   await expect(viewerPage.getByText(target)).toHaveCount(0);
 
   await sheet.getByRole("button", { name: "Débloquer" }).click();

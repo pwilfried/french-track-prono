@@ -1,4 +1,4 @@
-import { utcToParis } from "./competition";
+import { parisDay } from "./competition";
 import type { ScoreReason } from "./scoring";
 
 /** One player's totals over the events counted by a ranking. */
@@ -72,7 +72,7 @@ export function movesSinceYesterday(
   today: string,
   pseudoOf: (userId: string) => string,
 ): Map<string, number | null> {
-  const before = lines.filter((l) => utcToParis(l.eventStartsAt).slice(0, 10) < today);
+  const before = lines.filter((l) => parisDay(l.eventStartsAt) < today);
   const previous = new Map(rankPlayers(totalsOf(before, pseudoOf)).map((p) => [p.userId, p.rank]));
   return new Map(
     rankPlayers(totalsOf(lines, pseudoOf)).map((p) => {
@@ -83,21 +83,21 @@ export function movesSinceYesterday(
 }
 
 /**
- * Current streak of each player (owner's decision, v0.8): the last computed events in a row,
- * newest first, where the player scored at least 1 point. No prediction or 0 point breaks it.
+ * The rows a long ranking shows (#551): the top `top`, then, after a gap (null), me and `side`
+ * neighbours on each side. No gap when they follow the top; the top only when I am in it or not
+ * ranked.
  */
-export function streaks(lines: DatedLine[]): Map<string, number> {
-  const events = new Map<string, number>();
-  for (const l of lines) events.set(l.eventId, Date.parse(l.eventStartsAt));
-  const order = [...events]
-    .sort(([a, ta], [b, tb]) => tb - ta || (a < b ? 1 : a > b ? -1 : 0))
-    .map(([id]) => id);
-  const scored = new Set(lines.filter((l) => l.points > 0).map((l) => `${l.userId}|${l.eventId}`));
-  const result = new Map<string, number>();
-  for (const userId of new Set(lines.map((l) => l.userId))) {
-    let n = 0;
-    while (n < order.length && scored.has(`${userId}|${order[n]}`)) n += 1;
-    result.set(userId, n);
-  }
-  return result;
+export function rankingWindow<T extends { userId: string }>(
+  rows: T[],
+  meId: string | null,
+  top = 10,
+  side = 2,
+): (T | null)[] {
+  const shown: (T | null)[] = rows.slice(0, top);
+  const me = rows.findIndex((r) => r.userId === meId);
+  const from = Math.max(me - side, top);
+  const to = Math.min(me + side, rows.length - 1);
+  if (me < 0 || from > to) return shown;
+  if (from > top) shown.push(null);
+  return [...shown, ...rows.slice(from, to + 1)];
 }

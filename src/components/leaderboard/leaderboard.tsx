@@ -14,27 +14,26 @@ export type LeaderboardRow = RankedPlayer & {
   bib: BibValue;
   /** Shown on the player's card (#342). */
   club?: string | null;
-  /** Places won (+) or lost (−) since yesterday (#551); null or absent: not shown. */
+  /** Places won (+) or lost (−) since yesterday (#551); null: not ranked yesterday; absent: not shown. */
   change?: number | null;
-  /** Events in a row with points; shown from 2. */
-  streak?: number;
 };
 
-function Change({ change }: { change: number }) {
+/** ▲ green, ▼ red, « = » otherwise (#551). */
+function Change({ change }: { change: number | null }) {
   const text = messages.leaderboard;
   const [symbol, style] =
-    change > 0
+    change !== null && change > 0
       ? ["▲", "text-success-text"]
-      : change < 0
+      : change !== null && change < 0
         ? ["▼", "text-accent-text"]
-        : ["—", "text-muted-foreground"];
+        : ["=", "text-muted-foreground"];
   return (
-    <span className={`block text-right font-mono text-xs font-bold ${style}`}>
+    <span className={`w-9 shrink-0 text-center font-mono text-xs font-bold ${style}`}>
       <span aria-hidden>
         {symbol}
-        {change === 0 ? "" : Math.abs(change)}
+        {change ? Math.abs(change) : ""}
       </span>
-      <span className="sr-only">{text.change(change)}</span>
+      <span className="sr-only">{change === null ? text.newcomer : text.change(change)}</span>
     </span>
   );
 }
@@ -49,8 +48,9 @@ function detailOf(row: LeaderboardRow, me: boolean): string {
 }
 
 /**
- * A ranking (league or general): position, bib, pseudo, points. Tied players share the position
- * and are marked "ex æquo"; the signed-in player's row is highlighted.
+ * A ranking (league or general): position, bib, pseudo, move since yesterday, points. Tied players
+ * share the position and are marked "ex æquo"; the signed-in player's row is highlighted and is
+ * the « Autour de moi » anchor (#moi). A null row is the gap of a ranking window (#551).
  */
 export function Leaderboard({
   rows,
@@ -58,7 +58,7 @@ export function Leaderboard({
   status = "ready",
   retryHref = "",
 }: {
-  rows: LeaderboardRow[];
+  rows: (LeaderboardRow | null)[];
   meId?: string;
   status?: "ready" | "loading" | "error";
   retryHref?: string;
@@ -102,6 +102,13 @@ export function Leaderboard({
       className="flex flex-col gap-0.5 rounded-card border border-border bg-card p-2"
     >
       {rows.map((row, index) => {
+        if (!row) {
+          return (
+            <li key={`gap-${index}`} aria-hidden className="py-1 text-center text-muted-foreground">
+              ···
+            </li>
+          );
+        }
         const me = row.userId === meId;
         const detail = detailOf(row, me);
         return (
@@ -119,9 +126,10 @@ export function Leaderboard({
                 total={rows.length}
               />
             }
+            id={me ? "moi" : undefined}
             className={cn(
               "flex flex-col rounded-xl px-2 py-1.5",
-              me && "bg-brand-soft text-brand-ink",
+              me && "scroll-mt-24 scroll-mb-28 bg-brand-soft text-brand-ink",
             )}
           >
             <span className="w-8 shrink-0 text-center font-mono text-lg font-bold">
@@ -136,12 +144,6 @@ export function Leaderboard({
             <Bib bib={row.bib} />
             <span className="min-w-0 flex-1 font-bold [overflow-wrap:anywhere]">
               <PlayerName pseudo={row.pseudo}>{row.pseudo}</PlayerName>
-              {row.streak !== undefined && row.streak >= 2 && (
-                <span className="ml-1.5 whitespace-nowrap text-sm text-accent-text">
-                  <span aria-hidden>🔥{row.streak}</span>
-                  <span className="sr-only">{messages.leaderboard.streak(row.streak)}</span>
-                </span>
-              )}
               {detail && (
                 <span
                   className={cn(
@@ -153,10 +155,10 @@ export function Leaderboard({
                 </span>
               )}
             </span>
+            {row.change !== undefined && <Change change={row.change} />}
             <span className="shrink-0 font-mono text-lg font-bold tabular-nums">
               <span aria-hidden>{row.points}</span>
               <span className="sr-only">{messages.leaderboard.points(row.points)}</span>
-              {row.change !== undefined && row.change !== null && <Change change={row.change} />}
             </span>
           </RankingItem>
         );

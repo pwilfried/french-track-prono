@@ -111,7 +111,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ sl
         <aside className="flex flex-col gap-3">
           {player ? (
             <Link
-              href="/classement"
+              href={`/classement?onglet=general&competition=${encodeURIComponent(slug)}`}
               className="flex min-h-16 items-center gap-4 rounded-card border border-border bg-card p-4"
             >
               <span className="font-mono text-3xl font-bold text-brand dark:text-secondary">

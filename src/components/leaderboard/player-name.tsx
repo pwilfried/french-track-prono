@@ -8,12 +8,14 @@ const CardState = createContext<{ open: boolean; toggle: () => void; cardId: str
 
 /** A ranking row that can show the player's card under it, full width (#342). */
 export function RankingItem({
+  id,
   className,
   current,
   cardId,
   card,
   children,
 }: {
+  id?: string;
   className: string;
   current: boolean;
   cardId: string;
@@ -23,7 +25,7 @@ export function RankingItem({
   const [open, setOpen] = useState(false);
   return (
     <CardState.Provider value={{ open, toggle: () => setOpen((value) => !value), cardId }}>
-      <li aria-current={current ? "true" : undefined} className={className}>
+      <li id={id} aria-current={current ? "true" : undefined} className={className}>
         <div className="flex min-h-14 items-center gap-2.5">{children}</div>
         {open ? <div className="pb-1.5">{card}</div> : null}
       </li>

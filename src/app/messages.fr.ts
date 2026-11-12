@@ -220,7 +220,7 @@ export const messages = {
     loading: "Chargement des épreuves…",
   },
   leaderboard: {
-    streak: (n: number) => `, série de ${n} épreuves avec des points`,
+    newcomer: "pas classé hier",
     change: (n: number) =>
       n > 0
         ? `${n} ${n === 1 ? "place gagnée" : "places gagnées"} depuis hier`
@@ -460,12 +460,33 @@ export const messages = {
   },
   ranking: {
     title: "Classement",
-    subtitle: "Tous les joueurs · toutes les compétitions",
-    competitionSubtitle: (name: string) => `Tous les joueurs · ${name}`,
     scopeLabel: "Choisir le classement",
-    general: "Général",
-    mine: (rank: number, of: number, points: number) =>
-      `Ta place : ${ordinal(rank)} sur ${of} · ${points} ${points <= 1 ? "pt" : "pts"}`,
+    tabs: { ligue: "Ma ligue", soir: "Ce soir", general: "Général" },
+    subtitle: {
+      ligue: (name: string) => `Ma ligue · ${name}`,
+      soir: "Les points gagnés ce soir",
+      general: "Tous les joueurs · toutes les compétitions",
+      competition: (name: string) => `Tous les joueurs · ${name}`,
+    },
+    leaguesLabel: "Choisir la ligue",
+    noLeague: "Tu n'es dans aucune ligue : crée la tienne ou rejoins celle d'un ami.",
+    createLeague: "Créer une ligue",
+    joinLeague: "J'ai un code",
+    podium: "Podium",
+    points: (points: number) => `${points} ${points <= 1 ? "pt" : "pts"}`,
+    you: (rank: number, points: number) =>
+      `Tu es ${ordinal(rank)} · ${points} ${points <= 1 ? "pt" : "pts"}`,
+    aroundMe: "Autour de moi",
+    starts: (day: string) =>
+      `Le classement démarre · ${new Date(`${day}T12:00:00Z`).toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        timeZone: "UTC",
+      })}`,
+    inDays: (days: number) => (days === 1 ? "Dans 1 jour" : `Dans ${days} jours`),
+    startCta: "Poser mes premiers podiums",
+    tonightEmpty: "Pas encore de points ce soir : ils arrivent avec les premiers résultats.",
     notRanked: "Tu n'as pas encore de points : fais tes pronos pour entrer au classement.",
     predict: "Faire mes pronos",
   },

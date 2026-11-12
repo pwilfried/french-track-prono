@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  TIME_ZONE,
+  competitionDay,
   competitionsForPlayer,
-  daysUntil,
   competitionSlug,
+  daysUntil,
   eventSlug,
   isValidCompetition,
   nextCompetition,
+  parisDay,
   parisToUtc,
-  TIME_ZONE,
+  rankingStart,
   utcToParis,
 } from "./competition";
 
@@ -135,5 +138,58 @@ describe("competitionsForPlayer", () => {
     const { mine, others } = competitionsForPlayer(all, [], "2026-11-09");
     expect(mine).toEqual([]);
     expect(others.map((x) => x.slug)).toEqual(["live", "europe", "france", "monde"]);
+  });
+});
+
+describe("parisDay", () => {
+  it("gives the calendar day of an instant in Paris time", () => {
+    expect(parisDay("2026-11-23T19:00:00Z")).toBe("2026-11-23");
+    expect(parisDay("2026-11-23T23:30:00Z")).toBe("2026-11-24");
+  });
+});
+
+describe("competitionDay", () => {
+  const euro = { startsOn: "2026-11-23", endsOn: "2026-11-26" };
+
+  it("is today while a competition is under way, rest days included", () => {
+    expect(competitionDay([euro], "2026-11-23")).toBe("2026-11-23");
+    expect(competitionDay([euro], "2026-11-25")).toBe("2026-11-25");
+    expect(competitionDay([euro], "2026-11-26")).toBe("2026-11-26");
+  });
+
+  it("is null before the first day and after the last one", () => {
+    expect(competitionDay([euro], "2026-11-22")).toBeNull();
+    expect(competitionDay([euro], "2026-11-27")).toBeNull();
+    expect(competitionDay([], "2026-11-24")).toBeNull();
+  });
+});
+
+describe("rankingStart", () => {
+  it("gives the first day and the days left while no competition has started", () => {
+    expect(
+      rankingStart(
+        [
+          { startsOn: "2026-12-05", endsOn: "2026-12-07" },
+          { startsOn: "2026-11-30", endsOn: "2026-12-01" },
+        ],
+        "2026-11-24",
+      ),
+    ).toEqual({ startsOn: "2026-11-30", days: 6 });
+  });
+
+  it("is null once a competition has started, or without competition", () => {
+    expect(
+      rankingStart([{ startsOn: "2026-11-24", endsOn: "2026-11-25" }], "2026-11-24"),
+    ).toBeNull();
+    expect(
+      rankingStart(
+        [
+          { startsOn: "2026-11-01", endsOn: "2026-11-02" },
+          { startsOn: "2026-12-01", endsOn: "2026-12-02" },
+        ],
+        "2026-11-24",
+      ),
+    ).toBeNull();
+    expect(rankingStart([], "2026-11-24")).toBeNull();
   });
 });

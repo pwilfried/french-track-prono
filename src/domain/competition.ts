@@ -91,6 +91,29 @@ export function utcToParis(iso: string): string {
   return new Date(instant.getTime() + offsetMinutes(instant) * 60000).toISOString().slice(0, 16);
 }
 
+/** The calendar day of an instant in Paris time, YYYY-MM-DD. */
+export function parisDay(iso: string): string {
+  return utcToParis(iso).slice(0, 10);
+}
+
+/** « Ce soir » (#551): today while a competition is under way, rest days included; else null. */
+export function competitionDay(
+  competitions: { startsOn: string; endsOn: string }[],
+  today: string,
+): string | null {
+  return competitions.some((c) => c.startsOn <= today && today <= c.endsOn) ? today : null;
+}
+
+/** Before any competition has started (#551): the first day and the days left; else null. */
+export function rankingStart(
+  competitions: { startsOn: string; endsOn: string }[],
+  today: string,
+): { startsOn: string; days: number } | null {
+  if (competitions.length === 0 || competitions.some((c) => c.startsOn <= today)) return null;
+  const startsOn = competitions.map((c) => c.startsOn).sort()[0]!;
+  return { startsOn, days: daysUntil(startsOn, today) };
+}
+
 /**
  * The competition the app puts first: the one under way or the next to start; when all are over,
  * the latest one.

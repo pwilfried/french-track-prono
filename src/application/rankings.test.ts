@@ -86,6 +86,24 @@ describe("getGeneralRanking", () => {
   });
 });
 
+describe("getGeneralRanking for one evening", () => {
+  it("ranks the players on the points of the events of that day only, in Paris time", async () => {
+    const result = await getGeneralRanking({
+      ranking: ranking([
+        line("ana", 20),
+        line("bob", 3, false, "e2", "2026-11-24T19:00:00.000Z"),
+        line("cid", 5, false, "e3", "2026-11-24T22:30:00.000Z"), // 23:30 in Paris
+        line("dan", 9, false, "e4", "2026-11-24T23:30:00.000Z"), // 00:30 the next day
+      ]),
+    }).execute({ competitionSlugs: ["c"], day: "2026-11-24" });
+
+    expect(result.map((p) => [p.rank, p.pseudo, p.points])).toEqual([
+      [1, "CID", 5],
+      [2, "BOB", 3],
+    ]);
+  });
+});
+
 describe("getGeneralRanking over several competitions", () => {
   it("adds up the points of every competition given", async () => {
     const result = await getGeneralRanking({
