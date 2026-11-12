@@ -1,15 +1,21 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
 import { getMyManagerBids } from "@/application/manager-bids";
 import { browseManagerCatalogue } from "@/application/manager-catalogue";
+import { getManagerRevealRounds } from "@/application/manager-reveal";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { CatalogueCard } from "@/components/manager/catalogue-card";
 import { CompetitionChips } from "@/components/events/competition-chips";
+import { buttonVariants } from "@/components/ui/button";
 import { MANAGER_FAMILIES, MANAGER_SEXES, type ManagerSex } from "@/domain/manager-rules";
-import { createSupabaseManagerBids, createSupabaseManagerCatalogue } from "@/infra";
+import {
+  createSupabaseManagerBids,
+  createSupabaseManagerCatalogue,
+  createSupabaseManagerReveals,
+} from "@/infra";
 
 import { messages } from "../../../messages.fr";
 import { getSessionClient } from "../../../session";
@@ -53,7 +59,7 @@ export default async function CataloguePage({
 
   const client = await getSessionClient();
   const catalogue = createSupabaseManagerCatalogue(client);
-  const [view, mine] = await Promise.all([
+  const [view, mine, reveals] = await Promise.all([
     browseManagerCatalogue({ catalogue })
       .execute({
         leagueId: id,
@@ -65,7 +71,14 @@ export default async function CataloguePage({
     getMyManagerBids({ bids: createSupabaseManagerBids(client), catalogue })
       .execute({ leagueId: id })
       .catch(caught),
+    getManagerRevealRounds({ reveals: createSupabaseManagerReveals(client) })
+      .execute({ leagueId: id })
+      .catch(caught),
   ]);
+  // The first visit after the close of a round opens its reveal, once (#604).
+  if (reveals !== "error" && reveals.toReveal !== null) {
+    redirect(`/manager/${id}/tour/${reveals.toReveal}`);
+  }
   const bidOf = new Map(mine === "error" ? [] : mine.bids.map((b) => [b.athleteId, b.amount]));
 
   /** The address of the catalogue with some filters changed; a new filter starts at page 1. */
@@ -107,6 +120,29 @@ export default async function CataloguePage({
           <MyBidsPanel leagueId={id} bids={mine} />
         ) : (
           <p className="rounded-card bg-muted p-4 text-sm font-semibold">{text.mercatoClosed}</p>
+        )}
+        {reveals !== "error" && reveals.rounds.length > 0 && (
+          <nav aria-labelledby="round-results" className="flex flex-col gap-2">
+            <h2
+              id="round-results"
+              className="text-xs font-bold uppercase tracking-wide text-muted-foreground"
+            >
+              {messages.roundReveal.roundsTitle}
+            </h2>
+            <ul className="flex flex-wrap gap-2">
+              {reveals.rounds.map((round) => (
+                <li key={round}>
+                  <Link
+                    href={`/manager/${id}/tour/${round}?vue=toutes`}
+                    prefetch={false}
+                    className={buttonVariants({ variant: "muted" })}
+                  >
+                    {messages.roundReveal.roundLink(round)}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         )}
         {/* The search applies on Enter and keeps the other filters (#497). */}
         <form role="search">

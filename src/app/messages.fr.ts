@@ -325,7 +325,7 @@ export const messages = {
       `Il faut de ${min} à ${max} participants, en nombre pair, pour lancer la saison.`,
     rules: "Règles de la ligue",
     budget: (n: number) => `${n} crédits de budget`,
-    teamSize: (n: number) => `Équipes de ${n} athlètes`,
+    minTeamSize: (n: number) => `Équipes d'au moins ${n} athlètes, sans maximum`,
     lineup: (n: number) => `${n} athlètes alignés au plus par compétition`,
     competitions: (n: number) =>
       `${n} ${n <= 1 ? "compétition éligible" : "compétitions éligibles"}`,
@@ -375,7 +375,7 @@ export const messages = {
     noTeam: "Aucun athlète remporté pour l'instant.",
     wonIn: (round: number) => `tour ${round}`,
     secret:
-      "Tes offres sont secrètes : les autres participants ne voient ni tes offres, ni leur nombre. La dernière offre compte.",
+      "Tes offres restent secrètes jusqu'à la fin du tour : les autres participants ne voient ni tes offres, ni leur nombre. Puis toutes les offres du tour sont révélées. La dernière offre compte.",
     myBids: "Mes offres",
     noBids: "Aucune offre pour l'instant.",
     mercatoClosed:
@@ -396,13 +396,40 @@ export const messages = {
     withdraw: "Retirer",
     bidding: "…",
   },
+  roundReveal: {
+    title: "L'heure de vérité",
+    subtitle: (round: number) => `Fin du tour ${round} : tes offres`,
+    hiddenLabel: "Offre cachée",
+    yourBid: (n: number) => `Ton offre : ${n} cr`,
+    won: "GAGNÉ",
+    lost: "PERDU",
+    wonLine: (n: number) => `${n} crédits · à toi pour la saison`,
+    lostLine: (pseudo: string, n: number) => `${pseudo} l'a eu à ${n} cr`,
+    cardLabel: (name: string, won: boolean) => `${name} : ${won ? "gagné" : "perdu"}`,
+    revealNext: "Révéler la suivante",
+    revealAll: "Tout révéler",
+    noBid: "Tu n'as fait aucune offre pendant ce tour.",
+    tally: "Mon bilan du tour",
+    tallyWon: "Offres gagnées",
+    tallyAthletes: "Athlètes",
+    tallyLeft: "Crédits restants",
+    ratio: (n: number, of: number) => `${n}/${of}`,
+    seeAll: "Voir toutes les enchères du tour",
+    allTitle: (round: number) => `Toutes les enchères du tour ${round}`,
+    offers: (n: number) => (n <= 1 ? "seule offre" : `${n} offres`),
+    empty: "Personne n'a fait d'offre pendant ce tour.",
+    backToMercato: "Retour au mercato · tour suivant",
+    seeTeam: "Voir mon équipe",
+    roundsTitle: "Résultats des tours",
+    roundLink: (round: number) => `Tour ${round}`,
+  },
   team: {
     title: "Mon équipe",
     subtitle: "Tes athlètes pour toute la saison.",
     link: "Mon équipe",
     summary: "Résumé de mon équipe",
-    athletes: "Athlètes",
-    count: (n: number, size: number) => `${n}/${size}`,
+    athletes: "Effectif",
+    count: (n: number) => (n <= 1 ? `${n} athlète` : `${n} athlètes`),
     spent: "Crédits dépensés",
     left: "Crédits restants",
     fixed: "Équipe fixe pour la saison",
@@ -449,7 +476,7 @@ export const messages = {
         combined: "aucun décathlonien",
       },
     },
-    short: (count: number, size: number, nobody: string[]) => {
+    short: (count: number, minimum: number, nobody: string[]) => {
       const athletes = count <= 1 ? "athlète" : "athlètes";
       const missing =
         nobody.length === 0
@@ -458,7 +485,7 @@ export const messages = {
             ? nobody[0]
             : `${nobody.slice(0, -1).join(", ")} ni ${nobody[nobody.length - 1]}`;
       const why = missing ? ` : il ne restait plus ${missing} libre à la fin du mercato` : "";
-      return `Ton équipe compte ${count} ${athletes} au lieu de ${size}${why}. Tu joues quand même.`;
+      return `Ton équipe compte ${count} ${athletes} au lieu de ${minimum}${why}. Tu joues quand même.`;
     },
     cardLabel: (name: string, discipline: string, paid: number) =>
       `${name}, ${discipline}, payé ${paid} crédits`,
@@ -967,7 +994,7 @@ export const messages = {
       "Les règles générales de French Track Manager. Une ligue copie les règles en vigueur à sa création et les garde : un changement ne touche que les ligues créées ensuite.",
     team: "Budget et équipe",
     budget: "Budget de départ (crédits)",
-    teamSize: "Taille d'une équipe",
+    minTeamSize: "Taille minimum d'une équipe",
     quotas: "Quotas de l'équipe (minimum et maximum par sexe)",
     quotaHint: "Une famille à 0 au maximum ne se recrute pas.",
     family: "Famille",
@@ -1912,6 +1939,7 @@ export const messages = {
     LINEUP_INVALID:
       "Cet alignement ne respecte pas les règles de la ligue : remplis chaque place avec un athlète engagé de ton équipe.",
     LINEUPS_UNAVAILABLE: "Ton alignement n'a pas pu être chargé ou enregistré. Réessaie.",
+    ROUND_NOT_FOUND: "Ce tour n'est pas encore clos, ou personne n'y a fait d'offre.",
     retry: "Réessayer",
   },
   legal: {

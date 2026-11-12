@@ -56,7 +56,7 @@ where e.slug = 'align-e' || t.c and e.competition_id = pg_temp.competition(t.c);
 insert into manager_leagues (id, name, owner_id, rules, competition_ids, mercato_opened_at,
                              mercato_closed_at)
 values (pg_temp.league(), 'Alignement', 'a1e00000-0000-0000-0000-000000000001',
-        '{"budget": 100, "teamSize": 6, "quotas": [],
+        '{"budget": 100, "minTeamSize": 6, "quotas": [],
           "lineup": {"max": 3, "minPerFamily": {"hurdles": 1, "middle": 1}}}',
         array[pg_temp.competition(1), pg_temp.competition(2), pg_temp.competition(4)],
         now() - interval '3 days', now() - interval '1 day');

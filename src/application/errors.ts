@@ -105,7 +105,8 @@ export type ErrorCode =
   | "MERCATO_NOT_OVER"
   | "LINEUP_LOCKED"
   | "LINEUP_INVALID"
-  | "LINEUPS_UNAVAILABLE";
+  | "LINEUPS_UNAVAILABLE"
+  | "ROUND_NOT_FOUND";
 
 let reportUnavailable: ((code: ErrorCode) => void) | undefined;
 

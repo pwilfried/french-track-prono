@@ -38,7 +38,11 @@ export type TeamQuota = { sex: ManagerSex; family: DisciplineFamily; min: number
 export type ManagerRules = {
   /** Virtual credits, the same for every participant. */
   budget: number;
-  teamSize: number;
+  /**
+   * The fewest athletes a team holds; there is no maximum, the budget decides (#607). The
+   * complement at the close of the mercato fills a team up to it.
+   */
+  minTeamSize: number;
   /** Families without a quota cannot be recruited. */
   quotas: TeamQuota[];
   /** Before each competition: at most `max` athletes, at least so many of some families. */
@@ -57,8 +61,8 @@ const isDate = (s: string) =>
   /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(`${s}T00:00:00Z`));
 
 /**
- * Rules a season can be played with: a team can be completed within its quotas, a lineup fits in
- * a team, every duration and bonus makes sense, at least one way to close the mercato.
+ * Rules a season can be played with: a team can be completed up to its minimum within its quotas,
+ * the minimum team covers a lineup, every duration and bonus makes sense, at least one way to close the mercato.
  */
 export function isPlayableManagerRules(rules: ManagerRules): boolean {
   const { quotas, lineup, rounds, season } = rules;
@@ -68,13 +72,13 @@ export function isPlayableManagerRules(rules: ManagerRules): boolean {
   const quotaKeys = new Set(quotas.map((q) => `${q.sex}:${q.family}`));
   return (
     isPositiveCount(rules.budget) &&
-    isPositiveCount(rules.teamSize) &&
+    isPositiveCount(rules.minTeamSize) &&
     quotaKeys.size === quotas.length &&
     quotas.every((q) => isCount(q.min) && isPositiveCount(q.max) && q.min <= q.max) &&
-    minTeam <= rules.teamSize &&
-    rules.teamSize <= maxTeam &&
+    minTeam <= rules.minTeamSize &&
+    rules.minTeamSize <= maxTeam &&
     isPositiveCount(lineup.max) &&
-    lineup.max <= rules.teamSize &&
+    lineup.max <= rules.minTeamSize &&
     lineupMins.every(isCount) &&
     lineupMins.reduce((sum, n) => sum + n, 0) <= lineup.max &&
     isPositiveCount(rounds.firstHours) &&

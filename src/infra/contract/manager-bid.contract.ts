@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ManagerBidRepository } from "@/application/manager-bids";
+import type { ManagerRevealRepository } from "@/application/manager-reveal";
 
 /**
  * A league with a budget of 100 and its mercato open, two participants, an outsider, two athletes
@@ -13,6 +14,10 @@ export type ManagerBidWorld = {
   first: ManagerBidRepository;
   second: ManagerBidRepository;
   outsider: ManagerBidRepository;
+  firstId: string;
+  secondId: string;
+  /** The same three players' view of the closed rounds (#604). */
+  reveals: Record<"first" | "second" | "outsider", ManagerRevealRepository>;
   cheap: string;
   dear: string;
   /** Lets the time of the open round pass and runs the close of the rounds (#423). */
@@ -92,6 +97,40 @@ export function managerBidContract(name: string, world: () => Promise<ManagerBid
         expect(second.bids).toEqual([]);
         expect(Date.parse(first.roundEndsAt!)).toBeGreaterThan(Date.parse(before.roundEndsAt!));
         expect(await w.second.place(w.leagueId, w.cheap, 50)).toBe("taken");
+      } finally {
+        await w.restore();
+      }
+    });
+
+    it("reveals every bid of a closed round to every participant, and its reveal once (#604)", async () => {
+      const w = await world();
+      try {
+        expect(await w.first.place(w.leagueId, w.cheap, 30)).toBe("placed");
+        expect(await w.second.place(w.leagueId, w.cheap, 20)).toBe("placed");
+        expect(await w.second.place(w.leagueId, w.dear, 25)).toBe("placed");
+        expect(await w.reveals.second.bidRounds(w.leagueId)).toEqual([]);
+        expect(await w.reveals.second.roundBids(w.leagueId, 1)).toEqual([]);
+        expect(await w.reveals.second.markRevealed(w.leagueId, 1)).toBe("not_closed");
+
+        await w.closeRound();
+
+        const bids = await w.reveals.second.roundBids(w.leagueId, 1);
+        if (bids === "not_member") throw new Error("a participant reads the closed round");
+        expect(bids.sort((a, b) => b.amount - a.amount)).toEqual([
+          { userId: w.firstId, athleteId: w.cheap, amount: 30, won: true },
+          { userId: w.secondId, athleteId: w.dear, amount: 25, won: true },
+          { userId: w.secondId, athleteId: w.cheap, amount: 20, won: false },
+        ]);
+        expect(await w.reveals.first.roundBids(w.leagueId, 2)).toEqual([]);
+        expect(await w.reveals.outsider.bidRounds(w.leagueId)).toBe("not_member");
+        expect(await w.reveals.outsider.roundBids(w.leagueId, 1)).toBe("not_member");
+        expect(await w.reveals.outsider.markRevealed(w.leagueId, 1)).toBe("not_member");
+
+        expect(await w.reveals.second.bidRounds(w.leagueId)).toEqual([{ round: 1, seen: false }]);
+        expect(await w.reveals.second.markRevealed(w.leagueId, 2)).toBe("not_closed");
+        expect(await w.reveals.second.markRevealed(w.leagueId, 1)).toBe("marked");
+        expect(await w.reveals.second.bidRounds(w.leagueId)).toEqual([{ round: 1, seen: true }]);
+        expect(await w.reveals.first.bidRounds(w.leagueId)).toEqual([{ round: 1, seen: false }]);
       } finally {
         await w.restore();
       }

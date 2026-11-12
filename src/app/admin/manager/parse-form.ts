@@ -19,7 +19,7 @@ const num = (data: FormData, name: string) => {
 export function parseManagerRulesForm(data: FormData): ManagerRuleSet {
   const rules: ManagerRules = {
     budget: num(data, "budget"),
-    teamSize: num(data, "teamSize"),
+    minTeamSize: num(data, "minTeamSize"),
     quotas: MANAGER_SEXES.flatMap((sex) =>
       MANAGER_FAMILIES.map((family) => ({
         sex,

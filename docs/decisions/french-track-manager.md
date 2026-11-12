@@ -32,7 +32,7 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   « Mes ligues » (#419) ; inscription en un geste à une ligue publique, ou par code et lien
   `/manager/rejoindre?code=…` pour une privée, close à l'ouverture du mercato (#420). Les ligues Manager ont leurs propres tables, à part des ligues de pronos.
 - Les valeurs posées par la migration de #418 (budget 100, équipe
-  de 12, alignement de 8, bonus…) sont un point de départ à ajuster par le propriétaire.
+  d'au moins 12 depuis #607, alignement de 8, bonus…) sont un point de départ à ajuster par le propriétaire.
 
 ## 2. Mercato (v0.13)
 
@@ -40,8 +40,9 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   disponibilité.
 - **Budget** : le même pour tous, fixé par l'admin. Le prix de référence est l'enchère minimale.
 - **Enchères secrètes** : plusieurs athlètes à la fois, offres modifiables jusqu'à la clôture du
-  tour, dans la limite du budget disponible. On ne voit que ses propres offres : ni celles des
-  autres, ni leur nombre, ni sa position, ni la meilleure offre. La dernière offre compte.
+  tour, dans la limite du budget disponible. Pendant le tour, on ne voit que ses propres offres :
+  ni celles des autres, ni leur nombre, ni sa position, ni la meilleure offre (à la fin du tour,
+  tout est révélé : voir « Révélation de fin de tour »). La dernière offre compte.
 - **Réservation** : une offre réserve son montant ; la somme des offres actives ne dépasse jamais
   le budget disponible ; une modification recalcule la réservation.
 - Écran des offres (#422) : dans le catalogue, panneau « Mon budget » (budget, réservé, disponible,
@@ -53,6 +54,23 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   enregistrée en premier à ce montant (horodatage précis, mis à jour à chaque modification). Le
   montant est déduit, les réservations perdantes libérées. Un athlète n'appartient qu'à une
   équipe de la ligue.
+- **Révélation de fin de tour** (changement de règle du propriétaire, 12 nov. 2026, #604) :
+  pendant un tour, tout reste secret ; à la fin de chaque tour, tous les joueurs de la ligue voient
+  **toutes les offres du tour** : pour chaque athlète, qui a enchéri, combien, et qui l'a eu.
+  Avant, un joueur ne voyait que ses propres athlètes. En base : à la clôture d'un tour
+  (`private.award_manager_round`), chaque offre est recopiée dans `manager_round_bids` avec
+  `won` avant d'être effacée ; la lecture est ouverte à tout membre de la ligue (les lignes
+  n'existent qu'une fois le tour clos), les offres du tour ouvert restent dans `manager_bids`
+  (lecture de ses propres offres seulement). `manager_members.revealed_round` retient le dernier
+  tour dont le joueur a vu la révélation (`mark_manager_round_revealed`, ne recule jamais) ;
+  `manager_bid_rounds` liste les tours clos avec des offres et dit s'ils sont vus. Écran : la
+  première ouverture du catalogue après la fin d'un tour mène à `/manager/<id>/tour/<n>`
+  (« L'heure de vérité », une seule fois par tour et par joueur, marquée à l'affichage) : les
+  offres du joueur en cartes face cachée, retournées une à une ou toutes, puis le bilan (offres
+  gagnées, athlètes, crédits restants) ; ensuite « Toutes les enchères du tour » (une carte par
+  athlète, offres de la plus haute à la plus basse, la gagnante en doré). Un tour sans offre n'a
+  pas de révélation. Le résumé de chaque tour reste consultable depuis le catalogue
+  (« Résultats des tours », `?vue=toutes`). Règles pures : `src/domain/manager-reveal.ts`.
 - **Tours** : 48 h pour les tours 1 et 2, 24 h ensuite.
 - Clôture des tours (#423) : les tours s'enchaînent depuis `mercato_opened_at`, durées prises dans
   les règles de la ligue (`rounds`). Le workflow « Manager rounds » lance
@@ -63,14 +81,19 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   libérées). Rejouer ne ferme rien deux fois (`manager_rounds`, clé primaire sur
   `manager_awards`). Entre la fin d'un tour et le passage du job, les offres attendent (FT020).
   Le budget disponible est le budget moins les athlètes gagnés ; un athlète gagné n'est plus
-  « Libre » dans le catalogue. Un joueur voit ses propres athlètes et ce qu'ils ont coûté, pas
-  ceux des autres ; le panneau « Mon budget » montre le dépensé, la fin du tour et « Mes
+  « Libre » dans le catalogue. Dans `manager_awards`, un joueur lit ses propres athlètes ; ceux
+  des autres et leur prix se lisent depuis #604 dans la révélation de fin de tour ; le panneau « Mon budget » montre le dépensé, la fin du tour et « Mes
   athlètes ».
 - **Clôture du mercato**, de trois façons : plus aucun participant n'a de budget (après
   résolution des offres en cours) ; le dernier participant qui a encore du budget décide d'y
   mettre fin ; date programmée par les règles.
-- Clôture du mercato (#424), selon les `closeModes` des règles de la ligue. « Peut recruter » :
-  l'équipe a encore de la place (`teamSize`) et le budget restant (budget moins les athlètes
+- **Pas de taille maximum d'équipe** (décision du propriétaire, 12 nov. 2026, #607) : on recrute
+  autant d'athlètes que le budget le permet, dans les quotas. L'admin fixe seulement une **taille
+  minimum** (`minTeamSize`, figée par ligue comme les autres règles) ; elle doit couvrir
+  l'alignement (`lineup.max` ≤ `minTeamSize`). Les ligues créées avant gardent leurs règles : la
+  migration de #607 renomme leur `teamSize` en `minTeamSize`.
+- Clôture du mercato (#424, #607), selon les `closeModes` des règles de la ligue. « Peut
+  recruter » : le budget restant (budget moins les athlètes
   gagnés, les offres en cours ne comptent pas) paie l'athlète libre le moins cher du catalogue
   (`canRecruit`, `src/domain/manager-mercato.ts` ; même règle en SQL,
   `private.manager_recruiters`). Le job « Manager rounds » clôt, après les tours échus, le mercato
@@ -83,11 +106,11 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   La saisie de `mercato_closes_at` par l'admin de la ligue n'a pas encore d'écran.
 - **Complément automatique** à la clôture : une équipe incomplète reçoit au hasard des athlètes
   encore libres, dans le respect des quotas et du budget restant, au prix de référence, jusqu'à
-  être complète, à budget épuisé ou sans athlète éligible abordable. Une équipe qui respecte les
+  atteindre la taille minimum (pas au-delà), à budget épuisé ou sans athlète éligible abordable. Une équipe qui respecte les
   quotas minimums est validée, sinon signalée « non conforme ». La clôture est collective : la
   situation de tous est vérifiée avant de finaliser.
 - Complément (#425), dans `private.finish_manager_mercato`, après les offres en cours : un
-  athlète libre du catalogue convient à une équipe si elle a encore de la place (`teamSize`), si
+  athlète libre du catalogue convient à une équipe si elle est sous le minimum (`minTeamSize`), si
   son prix de référence tient dans le budget restant et si son sexe et sa famille ont un quota
   (`quotas`) pas encore au maximum (une famille sans quota ne se recrute pas). Les équipes
   reçoivent un athlète chacune à tour de rôle (ordre des identifiants), tiré au hasard parmi ceux
@@ -101,6 +124,10 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 
 - Après le mercato, l'équipe est **fixe pour la saison** : en version 1, ni achat, ni vente, ni
   échange, ni remplacement.
+- L'équipe n'a pas de taille maximum (#607). « Mon équipe » affiche « N athlètes » ; sous la
+  taille minimum, le message concret de #426 dit ce qui manquait (« Ton équipe compte 2 athlètes
+  au lieu de 3 : … Tu joues quand même. »). L'alignement garde son nombre de titulaires
+  (`lineup.max`), au plus la taille minimum.
 - **Avant chaque compétition éligible**, le participant aligne une sélection de son équipe,
   modifiable d'une compétition à l'autre, selon les règles de l'admin : minimum par famille de
   disciplines (sprint, demi-fond, fond, sauts, lancers…), maximum total, compatibilité athlète /

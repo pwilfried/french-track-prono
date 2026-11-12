@@ -65,7 +65,7 @@ export function ManagerRulesForm({
     <form action={action} className="flex flex-col gap-4">
       <Section title={text.team}>
         <NumberField label={text.budget} name="budget" value={rules.budget} />
-        <NumberField label={text.teamSize} name="teamSize" value={rules.teamSize} />
+        <NumberField label={text.minTeamSize} name="minTeamSize" value={rules.minTeamSize} />
         <table className="w-full text-sm">
           <caption className="pb-1 text-left font-semibold">
             {text.quotas}
