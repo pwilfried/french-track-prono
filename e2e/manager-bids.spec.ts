@@ -47,7 +47,11 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     const catalogue = `/manager/${sql(`select id from manager_leagues where name = '${league}'`)}/catalogue`;
     const search = `?q=${tag}`;
     await ownerPage.goto(catalogue + search);
-    await expect(ownerPage.getByText("le mercato de cette ligue n'est pas ouvert")).toBeVisible();
+    // Before the launch (#620): the band names the last one in, and no bid is possible.
+    const band = ownerPage.getByRole("region", { name: "Avant le mercato" });
+    await expect(band).toContainText("2 participants");
+    await expect(band).toContainText(`${rival.pseudo} vient de rejoindre la ligue`);
+    await expect(band).toContainText("les enchères s'ouvrent au lancement");
     await expect(ownerPage.getByRole("button", { name: "Enchérir" })).toHaveCount(0);
 
     sql(`update manager_leagues

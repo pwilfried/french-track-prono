@@ -13,19 +13,25 @@ import { MANAGER_LEAGUE_MAX } from "@/domain/manager-league";
  * read at each creation, like the table of the rules: change it to test that leagues keep theirs.
  */
 export function createInMemoryManagerLeagueStore(rules: { current: ManagerRuleSet }) {
-  const leagues: (Omit<ManagerLeagueFile, "memberCount" | "participants"> & {
+  const leagues: (Omit<ManagerLeagueFile, "memberCount" | "participants" | "mercatoOpensAt"> & {
     members: ManagerParticipant[];
   })[] = [];
-  const mercatoOpen = new Set<string>();
+  /** League → when its mercato opened. */
+  const mercatoOpen = new Map<string, string>();
   let next = 0;
   const view = (league: (typeof leagues)[number]): ManagerLeagueFile => {
     const { members, ...rest } = structuredClone(league);
-    return { ...rest, memberCount: members.length, participants: members };
+    return {
+      ...rest,
+      memberCount: members.length,
+      participants: members,
+      mercatoOpensAt: mercatoOpen.get(league.id) ?? null,
+    };
   };
   return {
     /** What the mercato (v0.13) will do: nobody joins any more. */
     openMercato(id: string) {
-      mercatoOpen.add(id);
+      mercatoOpen.set(id, new Date().toISOString());
     },
     session(player: ManagerParticipant): ManagerLeagueRepository {
       const enter = (league: (typeof leagues)[number]): JoinOutcome => {

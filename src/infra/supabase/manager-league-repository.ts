@@ -78,13 +78,14 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
       const { data, error } = await client
         .from("manager_leagues")
         .select(
-          "id, name, is_public, invite_code, owner_id, rules, competition_ids, manager_members(user_id, joined_at, profiles!inner(pseudo, bib_number, bib_color))",
+          "id, name, is_public, invite_code, owner_id, rules, competition_ids, mercato_opened_at, manager_members(user_id, joined_at, profiles!inner(pseudo, bib_number, bib_color))",
         )
         .eq("id", id)
         .returns<
           (LeagueRow & {
             rules: ManagerRules;
             competition_ids: string[];
+            mercato_opened_at: string | null;
             manager_members: {
               user_id: string;
               joined_at: string;
@@ -107,6 +108,7 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
           pseudo: m.profiles.pseudo,
           bib: bibOf(m.profiles.bib_number, m.profiles.bib_color),
         })),
+        mercatoOpensAt: row.mercato_opened_at,
       };
     },
   };

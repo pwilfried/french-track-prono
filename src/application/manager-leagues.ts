@@ -22,6 +22,8 @@ export type ManagerLeagueFile = ManagerLeague & {
   rules: ManagerRules;
   competitionCount: number;
   participants: ManagerParticipant[];
+  /** When the mercato opens (ISO), null while no date is set (#620). */
+  mercatoOpensAt: string | null;
 };
 
 /** A public league the player can still join. */
