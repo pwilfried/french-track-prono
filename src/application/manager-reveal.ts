@@ -54,7 +54,7 @@ export type ManagerRoundReveal = {
   round: number;
   /** The player's bids of the round, the highest first. */
   cards: RevealCardData[];
-  tally: { placed: number; won: number; athletes: number; teamSize: number; left: number };
+  tally: { placed: number; won: number; athletes: number; left: number };
   /** Every athlete bid on in the round, by their best bid. */
   athletes: RevealAthlete[];
 };
@@ -147,7 +147,6 @@ export function getManagerRoundReveal(ports: {
         tally: {
           ...myRoundTally(bids, input.userId),
           athletes: mine.team.length,
-          teamSize: league.rules.teamSize,
           left: mine.budget - spent,
         },
         athletes: groups,

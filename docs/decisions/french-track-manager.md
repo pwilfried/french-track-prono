@@ -32,7 +32,7 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   « Mes ligues » (#419) ; inscription en un geste à une ligue publique, ou par code et lien
   `/manager/rejoindre?code=…` pour une privée, close à l'ouverture du mercato (#420). Les ligues Manager ont leurs propres tables, à part des ligues de pronos.
 - Les valeurs posées par la migration de #418 (budget 100, équipe
-  de 12, alignement de 8, bonus…) sont un point de départ à ajuster par le propriétaire.
+  d'au moins 12 depuis #607, alignement de 8, bonus…) sont un point de départ à ajuster par le propriétaire.
 
 ## 2. Mercato (v0.13)
 
@@ -87,8 +87,13 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - **Clôture du mercato**, de trois façons : plus aucun participant n'a de budget (après
   résolution des offres en cours) ; le dernier participant qui a encore du budget décide d'y
   mettre fin ; date programmée par les règles.
-- Clôture du mercato (#424), selon les `closeModes` des règles de la ligue. « Peut recruter » :
-  l'équipe a encore de la place (`teamSize`) et le budget restant (budget moins les athlètes
+- **Pas de taille maximum d'équipe** (décision du propriétaire, 12 nov. 2026, #607) : on recrute
+  autant d'athlètes que le budget le permet, dans les quotas. L'admin fixe seulement une **taille
+  minimum** (`minTeamSize`, figée par ligue comme les autres règles) ; elle doit couvrir
+  l'alignement (`lineup.max` ≤ `minTeamSize`). Les ligues créées avant gardent leurs règles : la
+  migration de #607 renomme leur `teamSize` en `minTeamSize`.
+- Clôture du mercato (#424, #607), selon les `closeModes` des règles de la ligue. « Peut
+  recruter » : le budget restant (budget moins les athlètes
   gagnés, les offres en cours ne comptent pas) paie l'athlète libre le moins cher du catalogue
   (`canRecruit`, `src/domain/manager-mercato.ts` ; même règle en SQL,
   `private.manager_recruiters`). Le job « Manager rounds » clôt, après les tours échus, le mercato
@@ -101,11 +106,11 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   La saisie de `mercato_closes_at` par l'admin de la ligue n'a pas encore d'écran.
 - **Complément automatique** à la clôture : une équipe incomplète reçoit au hasard des athlètes
   encore libres, dans le respect des quotas et du budget restant, au prix de référence, jusqu'à
-  être complète, à budget épuisé ou sans athlète éligible abordable. Une équipe qui respecte les
+  atteindre la taille minimum (pas au-delà), à budget épuisé ou sans athlète éligible abordable. Une équipe qui respecte les
   quotas minimums est validée, sinon signalée « non conforme ». La clôture est collective : la
   situation de tous est vérifiée avant de finaliser.
 - Complément (#425), dans `private.finish_manager_mercato`, après les offres en cours : un
-  athlète libre du catalogue convient à une équipe si elle a encore de la place (`teamSize`), si
+  athlète libre du catalogue convient à une équipe si elle est sous le minimum (`minTeamSize`), si
   son prix de référence tient dans le budget restant et si son sexe et sa famille ont un quota
   (`quotas`) pas encore au maximum (une famille sans quota ne se recrute pas). Les équipes
   reçoivent un athlète chacune à tour de rôle (ordre des identifiants), tiré au hasard parmi ceux
@@ -119,6 +124,10 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 
 - Après le mercato, l'équipe est **fixe pour la saison** : en version 1, ni achat, ni vente, ni
   échange, ni remplacement.
+- L'équipe n'a pas de taille maximum (#607). « Mon équipe » affiche « N athlètes » ; sous la
+  taille minimum, le message concret de #426 dit ce qui manquait (« Ton équipe compte 2 athlètes
+  au lieu de 3 : … Tu joues quand même. »). L'alignement garde son nombre de titulaires
+  (`lineup.max`), au plus la taille minimum.
 - **Avant chaque compétition éligible**, le participant aligne une sélection de son équipe,
   modifiable d'une compétition à l'autre, selon les règles de l'admin : minimum par famille de
   disciplines (sprint, demi-fond, fond, sauts, lancers…), maximum total, compatibilité athlète /

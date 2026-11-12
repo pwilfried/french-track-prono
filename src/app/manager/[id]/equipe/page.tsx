@@ -69,10 +69,7 @@ export default async function MyTeamPage({ params }: { params: Promise<{ id: str
                 {text.summary}
               </h2>
               <dl className="grid grid-cols-3 gap-3">
-                <Figure
-                  label={text.athletes}
-                  value={text.count(team.athletes.length, team.teamSize)}
-                />
+                <Figure label={text.athletes} value={text.count(team.athletes.length)} />
                 <Figure label={text.spent} value={messages.catalogue.price(team.spent)} />
                 <Figure label={text.left} value={messages.catalogue.price(team.left)} />
               </dl>
@@ -81,11 +78,11 @@ export default async function MyTeamPage({ params }: { params: Promise<{ id: str
               </p>
             </section>
 
-            {team.mercatoClosed && team.athletes.length < team.teamSize && (
+            {team.mercatoClosed && team.athletes.length < team.minTeamSize && (
               <p role="status" className="rounded-card bg-muted p-4 text-sm font-semibold">
                 {text.short(
                   team.athletes.length,
-                  team.teamSize,
+                  team.minTeamSize,
                   team.unmet.map((q) => text.nobody[q.sex][q.family]),
                 )}
               </p>

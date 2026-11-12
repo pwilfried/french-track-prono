@@ -19,10 +19,8 @@ export function createInMemoryManagerBidStore(input: {
   budget: number;
   prices: Record<string, number>;
   members: Record<string, string[]>;
-  teamSize?: number;
   closeModes?: MercatoCloseMode[];
 }) {
-  const teamSize = input.teamSize ?? 12;
   const modes = input.closeModes ?? ["budgets_spent", "last_bidder", "scheduled"];
   const bids = new Map<string, ManagerBid[]>();
   /** League → athlete → its owner and what it cost. */
@@ -57,7 +55,6 @@ export function createInMemoryManagerBidStore(input: {
     });
     return {
       modes,
-      teamSize,
       cheapestFree: free.length > 0 ? Math.min(...free) : null,
       players,
     };

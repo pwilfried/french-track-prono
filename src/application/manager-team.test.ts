@@ -38,7 +38,7 @@ const catalogue: ManagerCatalogueRepository = {
 
 const rules = {
   budget: 100,
-  teamSize: 3,
+  minTeamSize: 3,
   quotas: [
     { sex: "F", family: "sprint", min: 1, max: 2 },
     { sex: "M", family: "throws", min: 1, max: 1 },
@@ -86,7 +86,7 @@ describe("getMyManagerTeam", () => {
     // Then they see every athlete, what they paid, and a team that misses nothing
     expect(team).toMatchObject({
       mercatoClosed: true,
-      teamSize: 3,
+      minTeamSize: 3,
       budget: 100,
       spent: 62,
       left: 38,

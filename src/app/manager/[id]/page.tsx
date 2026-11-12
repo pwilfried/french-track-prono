@@ -119,7 +119,7 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
           </h2>
           <ul className="flex flex-col gap-1 rounded-card bg-muted p-4 text-sm">
             <li>{text.budget(rules.budget)}</li>
-            <li>{text.teamSize(rules.teamSize)}</li>
+            <li>{text.minTeamSize(rules.minTeamSize)}</li>
             <li>{text.lineup(rules.lineup.max)}</li>
             <li>{text.competitions(league.competitionCount)}</li>
           </ul>
