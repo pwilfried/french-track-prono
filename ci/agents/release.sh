@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Tags a finished version, which puts it in production (migrations.yml runs on vX.Y.Z tags).
-# The version is the open milestone `vX.Y …` right after the latest tag. It is tagged vX.Y.0 when:
+# The version is the open milestone right after the latest tag: `vX.Y …` is tagged vX.Y.0, a patch
+# milestone `vX.Y.Z …` is tagged vX.Y.Z (owner's decision, 12 Nov 2026). It is tagged when:
 #   - the milestone has closed issues and no open one;
 #   - every push run on main's last commit (CI, …) is completed and green.
 # The tag is made with AGENTS_PAT: a tag made with github.token would start no workflow.
@@ -24,12 +25,13 @@ if [ -z "$latest" ]; then
   exit 0
 fi
 
-# Open milestones newer than the latest tag, oldest first: "<vX.Y> <number> <open> <closed>".
+# Open milestones newer than the latest tag, oldest first: "<vX.Y.Z> <number> <open> <closed>".
 next=$(as_bot gh api --paginate "repos/$repo/milestones?state=open&per_page=100" \
-  --jq '.[] | select(.title | test("^v[0-9]+\\.[0-9]+( |$)")) |
+  --jq '.[] | select(.title | test("^v[0-9]+\\.[0-9]+(\\.[0-9]+)?( |$)")) |
         "\(.title | split(" ")[0]) \(.number) \(.open_issues) \(.closed_issues)"' |
   while read -r v number open closed; do
-    if [ "$(printf '%s\n%s\n' "$latest" "$v.0" | sort -V | tail -1)" != "$latest" ]; then
+    [[ $v =~ ^v[0-9]+\.[0-9]+$ ]] && v="$v.0"
+    if [ "$(printf '%s\n%s\n' "$latest" "$v" | sort -V | tail -1)" != "$latest" ]; then
       echo "$v $number $open $closed"
     fi
   done | sort -V | head -1)
@@ -37,8 +39,8 @@ if [ -z "$next" ]; then
   echo "No milestone after $latest."
   exit 0
 fi
-read -r version number open closed <<< "$next"
-tag="$version.0"
+read -r tag number open closed <<< "$next"
+version=$tag
 if [ "$open" != 0 ] || [ "$closed" = 0 ]; then
   echo "$version: $open open issue(s), $closed closed: not finished."
   exit 0
