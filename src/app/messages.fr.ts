@@ -35,7 +35,7 @@ export const messages = {
     ranking: "Classement",
     league: "Ma ligue",
     leagues: "Ligues",
-    profile: "Profil",
+    manager: "Manager",
   },
   home: {
     current: "Compétition en cours",
@@ -282,7 +282,6 @@ export const messages = {
     title: "French Track Manager",
     slogan: "Recrute tes athlètes. Construis ton équipe. Domine la saison.",
     back: "French Track Manager",
-    entry: "French Track Manager",
     mine: "Mes ligues Manager",
     empty: "Tu n'es dans aucune ligue Manager pour l'instant.",
     create: "Créer une ligue Manager",
@@ -1141,7 +1140,7 @@ export const messages = {
   },
   account: {
     signIn: "Se connecter",
-    myProfile: (pseudo: string) => `Mon profil : ${pseudo}`,
+    myProfile: "Mon profil",
     backOffice: "Back-office",
   },
   badges: {

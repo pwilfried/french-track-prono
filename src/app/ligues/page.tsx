@@ -143,14 +143,6 @@ export default async function LeaguesPage() {
             )}
           </section>
         )}
-
-        {/* Its place is decided in #471; until then, a discreet link here. */}
-        <Link
-          href="/manager"
-          className="mx-auto inline-flex min-h-11 items-center text-sm font-semibold text-muted-foreground underline underline-offset-4"
-        >
-          {messages.manager.entry}
-        </Link>
       </div>
     </main>
   );

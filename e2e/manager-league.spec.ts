@@ -13,8 +13,18 @@ test("a player creates a private French Track Manager league that keeps its rule
   await page.waitForURL(/\/ligues$/);
 
   try {
-    await page.getByRole("link", { name: "French Track Manager" }).click();
+    // The Manager has its own tab in the bottom bar, no longer a link of the leagues page (#471).
+    await expect(
+      page.locator("main").getByRole("link", { name: "French Track Manager" }),
+    ).toHaveCount(0);
+    const bar = page.getByRole("navigation", { name: "Navigation principale" });
+    await bar.getByRole("link", { name: "Manager", exact: true }).click();
+    await page.waitForURL(/\/manager$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("French Track Manager");
+    await expect(bar.getByRole("link", { name: "Manager", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     await expect(page.getByText("Tu n'es dans aucune ligue Manager")).toBeVisible();
     await page.getByRole("link", { name: "Créer une ligue Manager" }).click();
 
