@@ -1,11 +1,10 @@
 import { redirect } from "next/navigation";
 
-import { listDisciplines } from "@/application/disciplines";
 import { getProfile } from "@/application/get-profile";
 import { AccountHero } from "@/components/account/account-hero";
 import { randomBib } from "@/domain/bib";
 import { safeRedirectPath } from "@/domain/redirect";
-import { createSupabaseDisciplineRepository, createSupabaseProfileRepository } from "@/infra";
+import { createSupabaseProfileRepository } from "@/infra";
 
 import { messages } from "../messages.fr";
 import { getCurrentUser, getSessionClient } from "../session";
@@ -25,9 +24,6 @@ export default async function WelcomePage({
     profiles: createSupabaseProfileRepository(client),
   }).execute({ userId: user.userId });
   if (profile) redirect(next);
-  const disciplines = await listDisciplines({
-    disciplines: createSupabaseDisciplineRepository(client),
-  }).execute();
 
   return (
     <main id="main" className="flex flex-1 flex-col">
@@ -37,7 +33,6 @@ export default async function WelcomePage({
           next={next}
           // A bib drawn for the newcomer, which they may change here or later (#537).
           bib={randomBib()}
-          disciplines={disciplines.map(({ name, family }) => ({ name, family }))}
         />
       </div>
     </main>

@@ -11,6 +11,7 @@ import {
   LeaveLeagueForm,
   ReportLeagueForm,
 } from "@/components/leagues/league-forms";
+import { LeagueCompetitions } from "@/components/leagues/league-competitions";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { ShareInvite } from "@/components/leagues/share-invite";
 import { Bib } from "@/components/profile/bib";
@@ -123,33 +124,13 @@ export default async function LeaguePage({
                 {messages.leagues.added}
               </p>
             )}
-            <section aria-labelledby="league-competitions" className="flex flex-col gap-2">
-              <h2
-                id="league-competitions"
-                className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
-              >
-                {messages.leagues.competitionsTitle}
-              </h2>
-              {counted.length === 0 ? (
-                <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
-                  {isOwner ? messages.leagues.noCompetition : messages.leagues.noCompetitionMember}
-                </p>
-              ) : (
-                <ul className="flex flex-wrap gap-2">
-                  {counted.map((c) => (
-                    <li key={c.slug}>
-                      <Link
-                        href={`/competitions/${c.slug}`}
-                        className="inline-flex min-h-11 items-center rounded-full border border-border bg-card px-3.5 text-sm font-semibold"
-                      >
-                        {c.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {isOwner && <AddLeagueCompetitionForm leagueId={id} choices={addable} />}
-            </section>
+            <LeagueCompetitions
+              competitions={counted}
+              addableCount={addable.length}
+              isOwner={isOwner}
+            >
+              <AddLeagueCompetitionForm leagueId={id} choices={addable} />
+            </LeagueCompetitions>
             <Leaderboard rows={ranking} meId={ports.userId} retryHref={`/ligues/${id}`} />
             <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
               {messages.leagues.tieRule}
