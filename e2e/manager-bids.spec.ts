@@ -133,8 +133,9 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
          where l.name = '${league}' and a.slug = '${slugs[3]}'`);
     await ownerPage.goto(catalogue + search);
     const thirdCard = ownerPage.getByRole("article", { name: third });
-    await thirdCard.getByLabel(`Mon offre sur ${third}, en crédits`).fill("10");
     await thirdCard.getByRole("button", { name: "Enchérir" }).click();
+    await thirdCard.getByLabel(`Mon offre sur ${third}, en crédits`).fill("10");
+    await thirdCard.getByRole("button", { name: "Valider" }).click();
     await expect(thirdCard).toContainText("Mon offre : 10 cr.");
     await budget.getByRole("button", { name: "Clore le mercato" }).click();
     await expect(budget.getByRole("status")).toContainText("Le mercato de cette ligue est clos");
