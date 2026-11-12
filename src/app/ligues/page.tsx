@@ -15,7 +15,7 @@ import { LeagueHero } from "@/components/leagues/league-hero";
 import { buttonVariants } from "@/components/ui/button";
 import { PUBLIC_LEAGUE_MAX_MEMBERS } from "@/domain/league";
 
-import { loadCompetitions } from "../competition";
+import { currentCompetitionDay, loadCompetitions } from "../competition";
 import { messages } from "../messages.fr";
 import { leaguePorts } from "./data";
 
@@ -34,6 +34,7 @@ export default async function LeaguesPage() {
         const ranking = await getLeagueRanking(ports).execute({
           leagueId: league.id,
           competitionSlugs: league.competitionSlugs,
+          today: currentCompetitionDay(),
         });
         return { league, standing: standingIn(ranking, ports.userId) };
       }),

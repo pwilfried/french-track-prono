@@ -39,7 +39,7 @@ export const Rank: Story = {
   },
 };
 
-/** Two places won since the last event; a lost place shows ▼. */
+/** Two places won since yesterday; a lost place shows ▼. */
 export const Movement: Story = {
   args: { standing: { rank: 1, change: 2 } },
   play: async ({ canvasElement }) => {

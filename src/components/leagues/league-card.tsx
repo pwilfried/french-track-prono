@@ -1,13 +1,13 @@
 import Link from "next/link";
 
 import { messages } from "@/app/messages.fr";
-import { Change } from "@/components/leaderboard/leaderboard";
+import { Change } from "@/components/leaderboard/ranking-row";
 
 const text = messages.leagues;
 
 /**
  * One of the player's leagues in « Mes ligues » (#552): name, players and competitions, and on the
- * right the player's place with its movement since the last event (nothing while without points).
+ * right the player's place with its movement since yesterday (#551) (nothing while without points).
  */
 export function LeagueCard({
   href,
@@ -50,7 +50,9 @@ export function LeagueCard({
             <span aria-hidden>{text.rank(standing.rank)}</span>
             <span className="sr-only">{text.rankLabel(standing.rank)}</span>
           </span>
-          {standing.change !== null && <Change change={standing.change} />}
+          {standing.change !== null && (
+            <Change change={standing.change} className="block w-auto text-right" />
+          )}
         </span>
       ) : (
         <span className="w-20 shrink-0 text-right text-xs text-muted-foreground">

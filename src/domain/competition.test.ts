@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  competitionDay,
   competitionsForPlayer,
+  rankingStart,
   daysUntil,
   competitionSlug,
   eventSlug,
@@ -99,6 +101,45 @@ describe("daysUntil", () => {
 
   it("is not fooled by a change of daylight saving time", () => {
     expect(daysUntil("2026-03-30", "2026-03-28")).toBe(2);
+  });
+});
+
+describe("competitionDay", () => {
+  it("is the Paris date of an evening session", () => {
+    expect(competitionDay("2026-11-24T19:00:00.000Z")).toBe("2026-11-24");
+    expect(competitionDay("2027-06-25T20:35:00.000Z")).toBe("2027-06-25"); // 22:35 in Paris
+  });
+
+  it("keeps a final run after midnight in Paris on the evening it belongs to", () => {
+    // 01:30 in Paris (UTC+2): a session overseas, still the evening of the 25th.
+    expect(competitionDay("2027-06-25T23:30:00.000Z")).toBe("2027-06-25");
+    // 05:59 still belongs to the night, 06:00 opens the next day.
+    expect(competitionDay(parisToUtc("2027-06-26T05:59"))).toBe("2027-06-25");
+    expect(competitionDay(parisToUtc("2027-06-26T06:00"))).toBe("2027-06-26");
+  });
+
+  it("uses Paris time, not UTC, in winter too", () => {
+    // 23:30 UTC on 10 Jan is 00:30 in Paris on the 11th: still the evening of the 10th.
+    expect(competitionDay("2027-01-10T23:30:00.000Z")).toBe("2027-01-10");
+    // 05:30 UTC is 06:30 in Paris: the new day has begun.
+    expect(competitionDay("2027-01-11T05:30:00.000Z")).toBe("2027-01-11");
+  });
+});
+
+describe("rankingStart", () => {
+  const c = (startsOn: string, endsOn = startsOn) => ({ startsOn, endsOn });
+
+  it("gives the first start and the days left while no competition has started", () => {
+    expect(rankingStart([c("2026-12-10"), c("2026-11-20", "2026-11-22")], "2026-11-12")).toEqual({
+      startsOn: "2026-11-20",
+      days: 8,
+    });
+  });
+
+  it("is null once a competition has started, or when there is none", () => {
+    expect(rankingStart([c("2026-11-12", "2026-11-14"), c("2026-12-10")], "2026-11-12")).toBeNull();
+    expect(rankingStart([c("2026-09-11", "2026-09-13")], "2026-11-12")).toBeNull();
+    expect(rankingStart([], "2026-11-12")).toBeNull();
   });
 });
 
