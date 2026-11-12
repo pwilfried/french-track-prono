@@ -1195,7 +1195,7 @@ export const messages = {
   },
   editProfile: {
     title: "Modifier mon profil",
-    subtitle: "Ton pseudo, ton avatar, ton club. Sexe et disciplines restent privés.",
+    subtitle: "Ton pseudo, ton dossard, ton club. Sexe et disciplines restent privés.",
     link: "Modifier mon profil",
     save: "Enregistrer",
     saving: "Enregistrement…",
@@ -1231,13 +1231,30 @@ export const messages = {
     done: "Ton compte est supprimé. Merci d'avoir joué !",
     home: "Retour à l'accueil",
   },
+  bib: {
+    /** Printed at the top of the big bib, like the organiser's name on a real one. */
+    brand: "FRENCH TRACK",
+    label: (number: number) => `Dossard ${number}`,
+    legend: "Ton dossard",
+    numberLabel: "Numéro",
+    numberHint: "De 0 à 999. Plusieurs joueurs peuvent avoir le même.",
+    colorLabel: "Couleur",
+    preview: "Aperçu",
+    colors: {
+      blue: "Bleu",
+      red: "Rouge",
+      gold: "Or",
+      green: "Vert",
+      white: "Blanc",
+      night: "Nuit",
+    },
+  },
   welcome: {
     title: "Bienvenue !",
     subtitle: "Dernière étape : ton profil de joueur.",
     pseudoLabel: "Ton pseudo",
     pseudoHint:
       "2 à 24 caractères : lettres, chiffres, espace, _ - . Visible par les autres joueurs.",
-    avatarLabel: "Ton avatar",
     ageLabel: "J'ai 15 ans ou plus",
     ageHint: "Obligatoire pour jouer.",
     sexLabel: "Tu es (facultatif)",
@@ -1584,7 +1601,8 @@ export const messages = {
     PSEUDO_TAKEN: "Ce pseudo est déjà pris, essaie-en un autre.",
     PSEUDO_BANNED:
       "Ce pseudo n'est pas possible (insulte, nom officiel ou lien). Choisis-en un autre.",
-    AVATAR_INVALID: "Choisis un avatar dans la liste.",
+    BIB_NUMBER_INVALID: "Ton numéro de dossard : de 0 à 999, sans zéro devant.",
+    BIB_COLOR_INVALID: "Choisis une des six couleurs de dossard.",
     PROFILE_EXISTS: "Tu as déjà un profil.",
     PROFILE_UNAVAILABLE: "Le profil n'est pas disponible pour le moment. Réessaie dans un instant.",
     NOT_ADMIN: "Seul un administrateur peut faire ça.",
@@ -1757,7 +1775,7 @@ export const messages = {
           heading: "Ce qu'on garde",
           body: [
             "Ton adresse e-mail, uniquement pour t'envoyer ton code de connexion. Elle n'est jamais affichée aux autres joueurs.",
-            "Ton pseudo et ton avatar emoji, visibles des autres joueurs.",
+            "Ton pseudo et ton dossard (numéro et couleur), visibles des autres joueurs.",
             "Tes pronos (podiums et perfs), tes points, tes ligues et tes réactions. Tes pronos sont visibles des autres une fois l'épreuve verrouillée.",
             "La date à laquelle tu as confirmé avoir 15 ans ou plus.",
             "Si tu actives les notifications : l'adresse d'envoi que ton navigateur nous donne pour cet appareil, supprimée dès que tu les désactives. Les notifications passent par le service de ton navigateur (Google, Apple ou Mozilla), qui les transmet chiffrées sans pouvoir les lire.",

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+import { sql } from "../src/infra/contract/database";
 import { clearMailbox, latestCodeFromMailbox } from "../src/infra/contract/mailbox";
 import { newPlayer, signIn, signUp } from "./players";
 
@@ -24,6 +25,24 @@ test("a player changes pseudo and club, then signs in with a new address", async
   await expect(
     page.getByRole("region", { name: "Compte" }).getByText("Stade Imaginaire Athlétisme"),
   ).toBeVisible();
+
+  // Bib: a number on the keypad and a colour, previewed, then shown on the profile
+  await page.getByRole("link", { name: "Modifier mon profil" }).click();
+  await expect(page.getByLabel("Numéro", { exact: true })).toHaveAttribute("inputmode", "numeric");
+  await page.getByLabel("Numéro", { exact: true }).fill("1000");
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(page.locator("main").getByRole("alert")).toContainText("de 0 à 999");
+  await page.getByLabel("Numéro", { exact: true }).fill("7");
+  await page
+    .locator("label", { has: page.getByRole("radio", { name: "Or", exact: true }) })
+    .click();
+  await expect(page.getByRole("img", { name: `Dossard 7, ${pseudo}` })).toBeVisible();
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+  await page.waitForURL(/\/profil\?enregistre=1$/);
+  await expect(page.getByRole("img", { name: `Dossard 7, ${pseudo}` })).toBeVisible();
+  expect(
+    sql(`select bib_number || ' ' || bib_color from profiles where pseudo = '${pseudo}'`),
+  ).toBe("7 gold");
 
   // A banned pseudo is refused
   await page.getByRole("link", { name: "Modifier mon profil" }).click();

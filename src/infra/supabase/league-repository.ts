@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { UseCaseError } from "@/application/errors";
 import type { League, LeagueMember, LeagueRepository } from "@/application/leagues";
+import { bibOf } from "@/domain/bib";
 
 type LeagueRow = {
   id: string;
@@ -83,13 +84,20 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
     async members(leagueId) {
       const { data, error } = await client
         .from("league_members")
-        .select("user_id, joined_at, profiles!inner(pseudo, avatar_emoji, club:clubs(name))")
+        .select(
+          "user_id, joined_at, profiles!inner(pseudo, bib_number, bib_color, club:clubs(name))",
+        )
         .eq("league_id", leagueId)
         .returns<
           {
             user_id: string;
             joined_at: string;
-            profiles: { pseudo: string; avatar_emoji: string; club: { name: string } | null };
+            profiles: {
+              pseudo: string;
+              bib_number: number;
+              bib_color: string;
+              club: { name: string } | null;
+            };
           }[]
         >();
       if (error) fail();
@@ -99,7 +107,7 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
         (row): LeagueMember => ({
           userId: row.user_id,
           pseudo: row.profiles.pseudo,
-          avatar: row.profiles.avatar_emoji,
+          bib: bibOf(row.profiles.bib_number, row.profiles.bib_color),
           club: row.profiles.club?.name ?? null,
           joinedAt: new Date(row.joined_at).toISOString(),
         }),

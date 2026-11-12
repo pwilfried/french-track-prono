@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { listDisciplines } from "@/application/disciplines";
 import { getProfile } from "@/application/get-profile";
 import { AccountHero } from "@/components/account/account-hero";
+import { randomBib } from "@/domain/bib";
 import { safeRedirectPath } from "@/domain/redirect";
 import { createSupabaseDisciplineRepository, createSupabaseProfileRepository } from "@/infra";
 
@@ -34,6 +35,8 @@ export default async function WelcomePage({
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
         <WelcomeForm
           next={next}
+          // A bib drawn for the newcomer, which they may change here or later (#537).
+          bib={randomBib()}
           disciplines={disciplines.map(({ name, family }) => ({ name, family }))}
         />
       </div>

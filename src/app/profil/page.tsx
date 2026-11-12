@@ -11,6 +11,7 @@ import { ShareSeasonCard } from "@/components/profile/share-season-card";
 import { getMyPredictionHistory } from "@/application/list-my-predictions";
 import { getClubRanking } from "@/application/rankings";
 import { BadgeGrid } from "@/components/profile/badge-grid";
+import { Bib } from "@/components/profile/bib";
 import { InstallEntry } from "@/components/shell/install-prompt";
 import { NotificationOptIn } from "@/components/account/notification-opt-in";
 import { ClubNotices } from "@/components/account/club-notices";
@@ -76,7 +77,7 @@ async function loadSeason(userId: string) {
   }
 }
 
-/** Board 06: avatar and pseudo, the season in three figures, the account. */
+/** Board 06: bib and pseudo, the season in three figures, the account. */
 export default async function ProfilePage({
   searchParams,
 }: {
@@ -132,13 +133,9 @@ export default async function ProfilePage({
         aria-labelledby="me"
         className="flex flex-col items-center gap-1 rounded-card bg-brand-ink px-4 py-6 text-center text-brand-foreground dark:bg-card dark:text-foreground"
       >
-        <span
-          aria-hidden="true"
-          className="grid size-20 place-items-center rounded-full border-2 border-secondary bg-card text-4xl"
-        >
-          {profile.avatar}
-        </span>
-        <p id="me" className="break-words font-display text-2xl font-extrabold">
+        <Bib bib={profile.bib} size="large" pseudo={profile.pseudo} className="max-w-52" />
+        {/* The bib prints the pseudo; this one names the section for screen readers. */}
+        <p id="me" className="sr-only">
           {profile.pseudo}
         </p>
         <p className="text-sm opacity-80">

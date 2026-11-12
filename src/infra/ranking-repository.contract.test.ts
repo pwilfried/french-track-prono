@@ -19,7 +19,7 @@ const lines = (
   {
     userId: ana,
     pseudo: anaPseudo,
-    avatar: "🏃",
+    bib: { number: 7, color: "blue" },
     points: 24,
     reasons: [{ kind: "perfect_podium" }, { kind: "joker" }],
     eventId,
@@ -29,7 +29,7 @@ const lines = (
   {
     userId: bob,
     pseudo: bobPseudo,
-    avatar: "🏃",
+    bib: { number: 7, color: "blue" },
     points: 3,
     reasons: [{ kind: "exact", slot: 1 }],
     eventId,

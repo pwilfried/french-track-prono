@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { UseCaseError } from "@/application/errors";
 import type { JoinOutcome, ManagerLeagueRepository } from "@/application/manager-leagues";
+import { bibOf } from "@/domain/bib";
 import type { ManagerRules } from "@/domain/manager-rules";
 
 type LeagueRow = {
@@ -77,7 +78,7 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
       const { data, error } = await client
         .from("manager_leagues")
         .select(
-          "id, name, is_public, invite_code, owner_id, rules, competition_ids, manager_members(user_id, joined_at, profiles!inner(pseudo, avatar_emoji))",
+          "id, name, is_public, invite_code, owner_id, rules, competition_ids, manager_members(user_id, joined_at, profiles!inner(pseudo, bib_number, bib_color))",
         )
         .eq("id", id)
         .returns<
@@ -87,7 +88,7 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
             manager_members: {
               user_id: string;
               joined_at: string;
-              profiles: { pseudo: string; avatar_emoji: string };
+              profiles: { pseudo: string; bib_number: number; bib_color: string };
             }[];
           })[]
         >();
@@ -104,7 +105,7 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
         participants: members.map((m) => ({
           userId: m.user_id,
           pseudo: m.profiles.pseudo,
-          avatar: m.profiles.avatar_emoji,
+          bib: bibOf(m.profiles.bib_number, m.profiles.bib_color),
         })),
       };
     },

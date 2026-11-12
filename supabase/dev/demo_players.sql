@@ -26,20 +26,22 @@ end $$;
 -- Start over: removing the users removes their profiles and predictions.
 delete from auth.users where email like 'demo-%@example.test';
 
-create temp table demo (n int primary key, pseudo text, avatar text) on commit drop;
+create temp table demo (n int primary key, pseudo text, bib_number smallint, bib_color text)
+  on commit drop;
 insert into demo values
-  (1, 'Démo Gazelle', '🦌'), (2, 'Démo Perche', '🦅'), (3, 'Démo Haie', '🐆'),
-  (4, 'Démo Relais', '🐎'), (5, 'Démo Marteau', '🦁'), (6, 'Démo Javelot', '🐺'),
-  (7, 'Démo Sprint', '🐇'), (8, 'Démo Fond', '🐢'), (9, 'Démo Disque', '🦊'),
-  (10, 'Démo Triple', '🐬'), (11, 'Démo Poids', '🐻'), (12, 'Démo Hauteur', '🦒');
+  (1, 'Démo Gazelle', 7, 'blue'),   (2, 'Démo Perche', 42, 'red'),    (3, 'Démo Haie', 110, 'gold'),
+  (4, 'Démo Relais', 4, 'green'),   (5, 'Démo Marteau', 85, 'white'), (6, 'Démo Javelot', 98, 'night'),
+  (7, 'Démo Sprint', 100, 'blue'),  (8, 'Démo Fond', 999, 'red'),    (9, 'Démo Disque', 0, 'gold'),
+  (10, 'Démo Triple', 18, 'green'), (11, 'Démo Poids', 23, 'white'), (12, 'Démo Hauteur', 245, 'night');
 
 insert into auth.users (id, email, aud, role)
 select ('00000000-0000-4000-9000-' || lpad(n::text, 12, '0'))::uuid,
        'demo-' || n || '@example.test', 'authenticated', 'authenticated'
 from demo;
 
-insert into profiles (id, pseudo, avatar_emoji, age_confirmed_at)
-select ('00000000-0000-4000-9000-' || lpad(n::text, 12, '0'))::uuid, pseudo, avatar, now()
+insert into profiles (id, pseudo, bib_number, bib_color, age_confirmed_at)
+select ('00000000-0000-4000-9000-' || lpad(n::text, 12, '0'))::uuid, pseudo, bib_number, bib_color,
+       now()
 from demo;
 
 -- (player, event 1 or 2, order of a/b/c on the podium, joker)

@@ -4,6 +4,7 @@ import { UseCaseError } from "@/application/errors";
 import { getMySeason } from "@/application/get-my-season";
 import { getProfile } from "@/application/get-profile";
 import { getPlayerDetails } from "@/application/player-details";
+import { BIB_PALETTE } from "@/components/profile/bib";
 import { seasonCardOf } from "@/domain/season-card";
 import {
   createPublicSupabaseClient,
@@ -61,6 +62,13 @@ export async function GET() {
   }
 
   const event = card.best ? messages.events.name(card.best.discipline, card.best.gender) : null;
+  const bib = BIB_PALETTE[card.bib.color];
+  const pins = [
+    { top: 18, left: 18 },
+    { top: 18, right: 18 },
+    { bottom: 18, left: 18 },
+    { bottom: 18, right: 18 },
+  ];
   return new ImageResponse(
     <div
       style={{
@@ -82,20 +90,41 @@ export async function GET() {
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+        {/* The bib (#537), drawn like the Bib component: the image cannot use its classes. */}
         <div
           style={{
             display: "flex",
-            width: 260,
-            height: 260,
+            position: "relative",
+            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            borderRadius: 999,
-            border: `8px solid ${gold}`,
-            background: "#ffffff",
-            fontSize: 150,
+            gap: 4,
+            width: 400,
+            height: 300,
+            borderRadius: 36,
+            border: `6px solid ${bib.border}`,
+            background: bib.background,
+            color: bib.text,
           }}
         >
-          {card.avatar}
+          {pins.map((pin, i) => (
+            <div
+              key={i}
+              style={{
+                position: "absolute",
+                ...pin,
+                width: 22,
+                height: 22,
+                borderRadius: 999,
+                background: "#d5dae1",
+                border: "2px solid rgba(0, 0, 0, 0.3)",
+              }}
+            />
+          ))}
+          <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: 8 }}>
+            {messages.bib.brand}
+          </div>
+          <div style={{ fontSize: 170, fontWeight: 700, lineHeight: 1 }}>{card.bib.number}</div>
         </div>
         <div style={{ fontSize: 76, fontWeight: 700, textAlign: "center" }}>{card.pseudo}</div>
         {card.club && <div style={{ opacity: 0.8, textAlign: "center" }}>{card.club}</div>}
