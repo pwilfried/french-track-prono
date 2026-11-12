@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import type { CatalogueAthlete } from "@/domain/manager-catalogue";
 import type { RoundBid } from "@/domain/manager-reveal";
-import type { ManagerRules } from "@/domain/manager-rules";
 
 import { UseCaseError } from "./errors";
 import type { ManagerBidRepository, MyManagerBids } from "./manager-bids";
@@ -47,7 +46,6 @@ const managerLeagues = {
     id === "l1"
       ? ({
           id,
-          rules: { teamSize: 12 } as ManagerRules,
           participants: [participant("u1", "Flèche"), participant("u2", "Comète")],
         } as unknown as ManagerLeagueFile)
       : null,
@@ -115,7 +113,7 @@ describe("getManagerRoundReveal", () => {
       }),
       expect.objectContaining({ name: "Léa Fictive", amount: 30, won: true, winner: null }),
     ]);
-    expect(shown.tally).toEqual({ placed: 2, won: 1, athletes: 1, teamSize: 12, left: 70 });
+    expect(shown.tally).toEqual({ placed: 2, won: 1, athletes: 1, left: 70 });
     // And every athlete bid on lists its bids from the highest, the winning and own ones marked
     expect(
       shown.athletes.map((a) => [a.name, a.offers.map((o) => [o.pseudo, o.amount, o.won, o.mine])]),

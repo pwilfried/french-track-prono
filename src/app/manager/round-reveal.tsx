@@ -91,10 +91,7 @@ export function RoundReveal({
               </h2>
               <dl className="grid grid-cols-3 gap-3">
                 <Figure label={text.tallyWon} value={text.ratio(tally.won, tally.placed)} />
-                <Figure
-                  label={text.tallyAthletes}
-                  value={text.ratio(tally.athletes, tally.teamSize)}
-                />
+                <Figure label={text.tallyAthletes} value={String(tally.athletes)} />
                 <Figure label={text.tallyLeft} value={messages.catalogue.price(tally.left)} />
               </dl>
             </section>
