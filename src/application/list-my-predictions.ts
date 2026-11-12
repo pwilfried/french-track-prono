@@ -13,8 +13,19 @@ export function listMyPredictions(ports: { predictions: PredictionRepository }) 
   };
 }
 
-/** My mark on one event of the list: predicted, with or without the joker, and the points won. */
-export type MyEventMark = { eventId: string; joker: boolean; points: number | null };
+/** What a scored podium got right: athletes in their place, on the podium, all three. */
+export type PodiumHits = { exact: number; onPodium: number; perfect: boolean };
+
+/**
+ * My mark on one event of the list: predicted, with or without the joker, and the points won with
+ * what the podium got right, null until computed.
+ */
+export type MyEventMark = {
+  eventId: string;
+  joker: boolean;
+  points: number | null;
+  hits: PodiumHits | null;
+};
 
 /** My predictions in a competition with their points, null until computed (#488). */
 export function listMyEventMarks(ports: {
@@ -27,12 +38,23 @@ export function listMyEventMarks(ports: {
         ports.predictions.listForCompetition(input.userId, input.competitionSlug),
         ports.points.listMine(input.userId, input.competitionSlug),
       ]);
-      const pointsOf = new Map(scores.map((l) => [l.eventId, l.points]));
-      return mine.map((p) => ({
-        eventId: p.eventId,
-        joker: p.useJoker,
-        points: pointsOf.get(p.eventId) ?? null,
-      }));
+      const lineOf = new Map(scores.map((l) => [l.eventId, l]));
+      return mine.map((p) => {
+        const line = lineOf.get(p.eventId);
+        const count = (kind: string) => line?.reasons.filter((r) => r.kind === kind).length ?? 0;
+        return {
+          eventId: p.eventId,
+          joker: p.useJoker,
+          points: line?.points ?? null,
+          hits: line
+            ? {
+                exact: count("exact"),
+                onPodium: count("on_podium"),
+                perfect: count("perfect_podium") > 0,
+              }
+            : null,
+        };
+      });
     },
   };
 }
