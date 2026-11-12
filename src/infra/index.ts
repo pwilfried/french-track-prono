@@ -83,5 +83,6 @@ export { createInMemoryManagerCatalogue } from "./in-memory/manager-catalogue-re
 export { createSupabaseManagerCatalogue } from "./supabase/manager-catalogue-repository";
 export { createInMemoryManagerBidStore } from "./in-memory/manager-bid-repository";
 export { createSupabaseManagerBids } from "./supabase/manager-bid-repository";
+export { createSupabaseManagerReveals } from "./supabase/manager-reveal-repository";
 export { createInMemoryManagerLineupStore } from "./in-memory/manager-lineup-repository";
 export { createSupabaseManagerLineups } from "./supabase/manager-lineup-repository";

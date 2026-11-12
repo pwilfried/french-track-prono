@@ -136,6 +136,16 @@
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-bricolage), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  /* A card of the round reveal turns over (#604). */
+  --animate-card-flip: card-flip 0.45s ease-out;
+  @keyframes card-flip {
+    from {
+      transform: perspective(600px) rotateY(90deg);
+    }
+    to {
+      transform: perspective(600px) rotateY(0);
+    }
+  }
 }
 
 body {

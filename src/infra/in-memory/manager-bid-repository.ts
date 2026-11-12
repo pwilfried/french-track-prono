@@ -1,6 +1,8 @@
 import type { ManagerBidRepository, WonAthlete } from "@/application/manager-bids";
+import type { ManagerRevealRepository } from "@/application/manager-reveal";
 import { bidProblem, type ManagerBid } from "@/domain/manager-bid";
 import { mayCloseMercato, mercatoCloseReason, type Recruiter } from "@/domain/manager-mercato";
+import type { RoundBid } from "@/domain/manager-reveal";
 import { awardBids, roundEndsAt, type RoundRules } from "@/domain/manager-round";
 import type { MercatoCloseMode } from "@/domain/manager-rules";
 
@@ -11,6 +13,7 @@ const ROUNDS: RoundRules = { firstHours: 48, longRounds: 2, nextHours: 24 };
  * their own bids only. `prices` is the catalogue (athlete → reference price); `members` the
  * participants by league. `closeRound` does what the scheduled job does in the database (#423),
  * then closes the mercato when no participant can recruit any more, if the rules allow it (#424).
+ * `reveals` is a player's view of the bids of the closed rounds (#604): everyone's, once closed.
  */
 export function createInMemoryManagerBidStore(input: {
   budget: number;
@@ -26,6 +29,10 @@ export function createInMemoryManagerBidStore(input: {
   const awards = new Map<string, Map<string, WonAthlete & { userId: string }>>();
   /** League → when its mercato opened, how many rounds are closed, whether it is closed. */
   const mercato = new Map<string, { openedAt: string; closed: number; over: boolean }>();
+  /** League → the bids of each closed round, kept at its close (#604). */
+  const history = new Map<string, (RoundBid & { round: number })[]>();
+  /** League/player → the last round whose reveal they saw. */
+  const revealed = new Map<string, number>();
   // A clock that always moves on, like clock_timestamp() in the database.
   let tick = Date.parse("2027-01-01T00:00:00.000Z");
   const key = (leagueId: string, userId: string) => `${leagueId}/${userId}`;
@@ -67,7 +74,19 @@ export function createInMemoryManagerBidStore(input: {
     const all = members(leagueId).flatMap((userId) =>
       (bids.get(key(leagueId, userId)) ?? []).map((b) => ({ ...b, userId })),
     );
-    for (const a of awardBids(all)) won.set(a.athleteId, { ...a, round: state.closed });
+    const winners = awardBids(all);
+    for (const a of winners) won.set(a.athleteId, { ...a, round: state.closed });
+    const wonBids = new Set(winners.map((a) => `${a.athleteId}/${a.userId}`));
+    history.set(leagueId, [
+      ...(history.get(leagueId) ?? []),
+      ...all.map(({ userId, athleteId, amount }) => ({
+        userId,
+        athleteId,
+        amount,
+        won: wonBids.has(`${athleteId}/${userId}`),
+        round: state.closed,
+      })),
+    ]);
     for (const userId of members(leagueId)) bids.delete(key(leagueId, userId));
   };
   /** The bids under way are resolved as a last round, then the mercato is closed. */
@@ -81,6 +100,30 @@ export function createInMemoryManagerBidStore(input: {
     openMercato(leagueId: string) {
       mercato.set(leagueId, { openedAt: new Date(tick).toISOString(), closed: 0, over: false });
       awards.set(leagueId, new Map());
+    },
+    reveals(userId: string): ManagerRevealRepository {
+      const member = (leagueId: string) => members(leagueId).includes(userId);
+      return {
+        async bidRounds(leagueId) {
+          if (!member(leagueId)) return "not_member";
+          const seen = revealed.get(key(leagueId, userId)) ?? 0;
+          const rounds = [...new Set((history.get(leagueId) ?? []).map((b) => b.round))];
+          return rounds.sort((a, b) => a - b).map((round) => ({ round, seen: round <= seen }));
+        },
+        async roundBids(leagueId, round) {
+          if (!member(leagueId)) return "not_member";
+          return (history.get(leagueId) ?? [])
+            .filter((b) => b.round === round)
+            .map(({ userId, athleteId, amount, won }) => ({ userId, athleteId, amount, won }));
+        },
+        async markRevealed(leagueId, round) {
+          if (!member(leagueId)) return "not_member";
+          if (round < 1 || round > (mercato.get(leagueId)?.closed ?? 0)) return "not_closed";
+          const k = key(leagueId, userId);
+          revealed.set(k, Math.max(revealed.get(k) ?? 0, round));
+          return "marked";
+        },
+      };
     },
     /** Closes the open round of a league, then its mercato if nobody can recruit any more. */
     closeRound(leagueId: string) {
