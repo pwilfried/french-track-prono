@@ -399,6 +399,75 @@ export const messages = {
     withdraw: "Retirer",
     bidding: "…",
   },
+  team: {
+    title: "Mon équipe",
+    subtitle: "Tes athlètes pour toute la saison.",
+    link: "Mon équipe",
+    summary: "Résumé de mon équipe",
+    athletes: "Athlètes",
+    count: (n: number, size: number) => `${n}/${size}`,
+    spent: "Crédits dépensés",
+    left: "Crédits restants",
+    fixed: "Équipe fixe pour la saison",
+    notFixed: "Le mercato n'est pas fini : ton équipe peut encore changer.",
+    empty: "Aucun athlète dans ton équipe pour l'instant.",
+    groups: {
+      sprint: "Sprint et haies",
+      middle: "Demi-fond",
+      long: "Fond",
+      jumps: "Sauts",
+      throws: "Lancers",
+      combined: "Épreuves combinées",
+    },
+    codes: {
+      sprint: "SPR",
+      middle: "DEM",
+      long: "FON",
+      jumps: "SAU",
+      throws: "LAN",
+      combined: "COM",
+    },
+    /** « aucune lanceuse », « aucun sprinteur »: what was missing at the end of the mercato. */
+    nobody: {
+      F: {
+        sprint: "aucune sprinteuse",
+        hurdles: "aucune hurdleuse",
+        middle: "aucune demi-fondeuse",
+        long: "aucune fondeuse",
+        relay: "aucune relayeuse",
+        horizontal_jumps: "aucune sauteuse en longueur ou au triple saut",
+        vertical_jumps: "aucune sauteuse en hauteur ou à la perche",
+        throws: "aucune lanceuse",
+        combined: "aucune heptathlonienne",
+      },
+      M: {
+        sprint: "aucun sprinteur",
+        hurdles: "aucun hurdleur",
+        middle: "aucun demi-fondeur",
+        long: "aucun fondeur",
+        relay: "aucun relayeur",
+        horizontal_jumps: "aucun sauteur en longueur ou au triple saut",
+        vertical_jumps: "aucun sauteur en hauteur ou à la perche",
+        throws: "aucun lanceur",
+        combined: "aucun décathlonien",
+      },
+    },
+    short: (count: number, size: number, nobody: string[]) => {
+      const athletes = count <= 1 ? "athlète" : "athlètes";
+      const missing =
+        nobody.length === 0
+          ? ""
+          : nobody.length === 1
+            ? nobody[0]
+            : `${nobody.slice(0, -1).join(", ")} ni ${nobody[nobody.length - 1]}`;
+      const why = missing ? ` : il ne restait plus ${missing} libre à la fin du mercato` : "";
+      return `Ton équipe compte ${count} ${athletes} au lieu de ${size}${why}. Tu joues quand même.`;
+    },
+    cardLabel: (name: string, discipline: string, paid: number) =>
+      `${name}, ${discipline}, payé ${paid} crédits`,
+    selected: "Sélectionné",
+    absent: "Absent",
+  },
   leagues: {
     title: "Mes ligues",
     back: "Mes ligues",

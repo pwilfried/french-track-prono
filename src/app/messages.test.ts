@@ -20,3 +20,25 @@ describe("countdown duration text", () => {
     expect(format(seconds)).toBe(text);
   });
 });
+
+describe("incomplete Manager team text", () => {
+  const { short, nobody } = messages.team;
+
+  it("says how many athletes the team has and which one was missing", () => {
+    expect(short(11, 12, [nobody.F.throws])).toBe(
+      "Ton équipe compte 11 athlètes au lieu de 12 : il ne restait plus aucune lanceuse libre à la fin du mercato. Tu joues quand même.",
+    );
+  });
+
+  it("joins several missing families with « ni »", () => {
+    expect(short(1, 3, [nobody.F.sprint, nobody.M.long, nobody.M.throws])).toBe(
+      "Ton équipe compte 1 athlète au lieu de 3 : il ne restait plus aucune sprinteuse, aucun fondeur ni aucun lanceur libre à la fin du mercato. Tu joues quand même.",
+    );
+  });
+
+  it("gives no reason when every quota is reached", () => {
+    expect(short(10, 12, [])).toBe(
+      "Ton équipe compte 10 athlètes au lieu de 12. Tu joues quand même.",
+    );
+  });
+});
