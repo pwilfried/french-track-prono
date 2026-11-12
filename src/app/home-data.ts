@@ -30,6 +30,7 @@ import {
   loadMyLeagues,
   playerCompetitions,
 } from "./competition";
+import { canSeeManager } from "./manager-access";
 import { getSessionClient } from "./session";
 
 /** Everything the signed-in player's home shows (#526); each part empty when it cannot be read. */
@@ -58,10 +59,11 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
   );
   if (!profile) return null;
 
-  const [choices, leagues, lists] = await Promise.all([
+  const [choices, leagues, lists, showManager] = await Promise.all([
     playerCompetitions(),
     loadMyLeagues(),
     loadCompetitions(),
+    canSeeManager(userId),
   ]);
   const competition = await currentCompetition(choices.preferred);
   const ranking = createSupabaseRankingRepository(client);
@@ -106,12 +108,14 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
           competitionSlugs: [...new Set([competition.slug, ...listed])],
         }),
       ),
-      safely(() =>
-        isMercatoOpenForMe({
-          managerLeagues: createSupabaseManagerLeagueRepository(client),
-          bids: createSupabaseManagerBids(client),
-        }).execute(),
-      ),
+      showManager
+        ? safely(() =>
+            isMercatoOpenForMe({
+              managerLeagues: createSupabaseManagerLeagueRepository(client),
+              bids: createSupabaseManagerBids(client),
+            }).execute(),
+          )
+        : null,
       safely(() =>
         askToCompleteProfile({
           details: createSupabasePlayerDetailsRepository(client),
@@ -157,6 +161,6 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
             onPodium: lastPoints.reasons.filter((r) => r.kind === "on_podium").length,
           }
         : null,
-    mercatoOpen: mercatoOpen ?? false,
+    manager: showManager ? { mercatoOpen: mercatoOpen ?? false } : null,
   };
 }

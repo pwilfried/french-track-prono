@@ -10,6 +10,8 @@ from generate_series(1, 13) n;
 insert into profiles (id, pseudo, age_confirmed_at)
 select ('adadad00-0000-0000-0000-0000000000' || lpad(n::text, 2, '0'))::uuid, 'Joueur ' || n, now()
 from generate_series(1, 13) n;
+-- The Manager is open to the admins only (#615): its players here are admins.
+update profiles set is_admin = true where id::text like 'adadad00-%';
 
 set local role authenticated;
 select set_config('request.jwt.claims',

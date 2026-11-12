@@ -7,7 +7,7 @@ import { saveMyLineup } from "@/application/manager-lineup";
 import { createSupabaseManagerLineups } from "@/infra";
 
 import { getSessionClient } from "../session";
-import { managerPorts } from "./data";
+import { managerAccess } from "./data";
 
 /** Validates the player's lineup for an eligible competition, or changes it until the lock (#427). */
 export async function saveLineupAction(input: {
@@ -17,7 +17,9 @@ export async function saveLineupAction(input: {
   athleteIds: string[];
 }): Promise<{ error?: ErrorCode }> {
   const { leagueId, competitionId, slug, athleteIds } = input;
-  await managerPorts(`/manager/${leagueId}/alignement/${slug}`);
+  if (!(await managerAccess(`/manager/${leagueId}/alignement/${slug}`))) {
+    return { error: "MANAGER_CLOSED" };
+  }
   const ports = { lineups: createSupabaseManagerLineups(await getSessionClient()) };
   try {
     await saveMyLineup(ports).execute({ leagueId, competitionId, athleteIds });

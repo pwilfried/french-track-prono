@@ -10,7 +10,7 @@ import {
 } from "@/application/manager-leagues";
 
 import { formText } from "../form-data";
-import { managerPorts } from "./data";
+import { managerAccess } from "./data";
 
 export type ManagerLeagueFormState = { value: string; isPublic: boolean; error?: ErrorCode };
 
@@ -20,7 +20,8 @@ export async function createManagerLeagueAction(
 ): Promise<ManagerLeagueFormState> {
   const value = formText(data, "name");
   const isPublic = formText(data, "public") === "1";
-  const ports = await managerPorts("/manager/creer");
+  const ports = await managerAccess("/manager/creer");
+  if (!ports) return { value, isPublic, error: "MANAGER_CLOSED" };
   let id: string;
   try {
     id = (await createManagerLeague(ports).execute({ name: value, isPublic })).id;
@@ -39,7 +40,8 @@ export async function joinManagerLeagueAction(
   data: FormData,
 ): Promise<JoinManagerLeagueState> {
   const value = formText(data, "code");
-  const ports = await managerPorts(`/manager/rejoindre?code=${encodeURIComponent(value)}`);
+  const ports = await managerAccess(`/manager/rejoindre?code=${encodeURIComponent(value)}`);
+  if (!ports) return { value, error: "MANAGER_CLOSED" };
   let id: string;
   try {
     id = await joinManagerLeague(ports).execute({ code: value });
@@ -56,7 +58,8 @@ export async function joinPublicManagerLeagueAction(
   data: FormData,
 ): Promise<JoinManagerLeagueState> {
   const leagueId = formText(data, "league");
-  const ports = await managerPorts("/manager");
+  const ports = await managerAccess("/manager");
+  if (!ports) return { value: leagueId, error: "MANAGER_CLOSED" };
   let id: string;
   try {
     id = await joinPublicManagerLeague(ports).execute({ id: leagueId });

@@ -1,16 +1,18 @@
 import { AccountMenu } from "@/components/account/account-menu";
 import { BrandLink } from "@/components/brand/brand-link";
+import { viewerSeesManager } from "@/app/manager-access";
 
 import { DesktopNav } from "./desktop-nav";
 
 /** Top bar of every page: logo, menu (from md), and the player's bib or the sign-in link. */
-export function SiteHeader() {
+export async function SiteHeader() {
+  const showManager = await viewerSeesManager();
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4">
         <div className="flex items-center gap-6">
           <BrandLink />
-          <DesktopNav />
+          <DesktopNav showManager={showManager} />
         </div>
         <AccountMenu returnTo="/" />
       </div>

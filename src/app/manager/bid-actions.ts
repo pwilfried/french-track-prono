@@ -13,7 +13,7 @@ import { createSupabaseManagerBids } from "@/infra";
 
 import { formText } from "../form-data";
 import { getSessionClient } from "../session";
-import { managerPorts } from "./data";
+import { managerAccess } from "./data";
 
 export type BidFormState = { error?: ErrorCode };
 
@@ -21,7 +21,7 @@ export type BidFormState = { error?: ErrorCode };
 export async function managerBidAction(_: BidFormState, data: FormData): Promise<BidFormState> {
   const leagueId = formText(data, "league");
   const athleteId = formText(data, "athlete");
-  await managerPorts(`/manager/${leagueId}/catalogue`);
+  if (!(await managerAccess(`/manager/${leagueId}/catalogue`))) return { error: "MANAGER_CLOSED" };
   const ports = { bids: createSupabaseManagerBids(await getSessionClient()) };
   try {
     if (formText(data, "intent") === "withdraw") {
@@ -44,7 +44,7 @@ export async function managerBidAction(_: BidFormState, data: FormData): Promise
 /** The last participant who can still recruit closes the mercato of the league (#424). */
 export async function closeMercatoAction(_: BidFormState, data: FormData): Promise<BidFormState> {
   const leagueId = formText(data, "league");
-  await managerPorts(`/manager/${leagueId}/catalogue`);
+  if (!(await managerAccess(`/manager/${leagueId}/catalogue`))) return { error: "MANAGER_CLOSED" };
   const ports = { bids: createSupabaseManagerBids(await getSessionClient()) };
   try {
     await closeManagerMercato(ports).execute({ leagueId });

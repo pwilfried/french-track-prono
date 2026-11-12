@@ -15,6 +15,20 @@ pronostics classiques, et affronte les autres dans un championnat aller-retour.
 
 Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'achat, pas de lot.
 
+## Accès : les admins seulement (v0.14.1)
+
+Décision du propriétaire du 12 novembre 2026 (#615) : tant qu'il ne l'ouvre pas à tous (décision à
+part, dans sa propre issue), **seuls les admins** voient et jouent French Track Manager.
+
+- Un joueur non admin n'en voit aucune trace : 4 onglets (Accueil, Épreuves, Classement, Ligues),
+  pas de bloc Manager sur l'accueil, et les pages `/manager…` renvoient la page 404. Un admin a
+  5 onglets, avec Manager.
+- La règle vit dans `src/domain/manager-access.ts` (`seesManager`). Les actions serveur Manager
+  refusent un non-admin avec le code `MANAGER_CLOSED`.
+- En base, `private.require_manager_player()` est appelée par les fonctions qu'un joueur appelle
+  pour créer ou rejoindre une ligue, enchérir, clore le mercato, aligner ou marquer une révélation
+  vue : un non-admin reçoit FT025, même s'il est déjà dans une ligue.
+
 ## 1. Ligue et règles (v0.12)
 
 - Un joueur crée une ligue, en devient l'administrateur, choisit son nom et sa visibilité :

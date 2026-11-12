@@ -2,7 +2,7 @@ import { describe, it } from "vitest";
 
 import { sql } from "./contract/database";
 import { managerBidContract } from "./contract/manager-bid.contract";
-import { signedInPlayer } from "./contract/test-player";
+import { signedInManagerPlayer } from "./contract/test-player";
 import {
   createInMemoryManagerBidStore,
   createSupabaseManagerBids,
@@ -44,9 +44,9 @@ const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 if (url && key) {
   managerBidContract("Supabase (local)", async () => {
     const [first, second, outsider] = await Promise.all([
-      signedInPlayer(url, key),
-      signedInPlayer(url, key),
-      signedInPlayer(url, key),
+      signedInManagerPlayer(url, key),
+      signedInManagerPlayer(url, key),
+      signedInManagerPlayer(url, key),
     ]);
     const league = async (name: string) => {
       const { data, error } = await first.client.rpc("create_manager_league", {

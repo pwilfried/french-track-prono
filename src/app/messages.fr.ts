@@ -1943,6 +1943,7 @@ export const messages = {
       "Cet alignement ne respecte pas les règles de la ligue : remplis chaque place avec un athlète engagé de ton équipe.",
     LINEUPS_UNAVAILABLE: "Ton alignement n'a pas pu être chargé ou enregistré. Réessaie.",
     ROUND_NOT_FOUND: "Ce tour n'est pas encore clos, ou personne n'y a fait d'offre.",
+    MANAGER_CLOSED: "Ce jeu n'est pas encore ouvert.",
     retry: "Réessayer",
   },
   legal: {

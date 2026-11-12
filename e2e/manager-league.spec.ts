@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { newPlayer, signUp } from "./players";
+import { newPlayer, openManagerTo, signUp } from "./players";
 
 test("a player creates a private French Track Manager league that keeps its rules", async ({
   page,
@@ -11,6 +11,8 @@ test("a player creates a private French Track Manager league that keeps its rule
   await page.goto("/ligues");
   await signUp(page, creator);
   await page.waitForURL(/\/ligues$/);
+  openManagerTo(creator);
+  await page.reload();
 
   try {
     // The Manager has its own tab in the bottom bar, no longer a link of the leagues page (#471).

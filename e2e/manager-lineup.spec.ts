@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { newPlayer, signUp } from "./players";
+import { newPlayer, openManagerTo, signUp } from "./players";
 
 test("a participant lines up their team before a competition and can no longer change it once it has started", async ({
   page,
@@ -38,6 +38,8 @@ test("a participant lines up their team before a competition and can no longer c
   await page.goto("/manager/creer");
   await signUp(page, owner);
   await page.waitForURL(/\/manager\/creer$/);
+  openManagerTo(owner);
+  await page.reload();
   await page.getByLabel("Nom de la ligue").fill(league);
   await page.getByRole("button", { name: "Créer la ligue" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(league);

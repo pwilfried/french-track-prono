@@ -17,6 +17,8 @@ insert into profiles (id, pseudo, age_confirmed_at) values
   ('a1e00000-0000-0000-0000-000000000001', 'Align Une', now()),
   ('a1e00000-0000-0000-0000-000000000002', 'Align Deux', now()),
   ('a1e00000-0000-0000-0000-000000000003', 'Align Trois', now());
+-- The Manager is open to the admins only (#615): its players here are admins.
+update profiles set is_admin = true where id::text like 'a1e00000-%';
 
 create function pg_temp.athlete(p_n int) returns uuid language sql immutable as $$
   select ('a1e00000-0000-0000-0000-0000000000a' || p_n)::uuid

@@ -2,7 +2,7 @@ import { describe, it } from "vitest";
 
 import { sql } from "./contract/database";
 import { managerCatalogueContract } from "./contract/manager-catalogue.contract";
-import { signedInPlayer } from "./contract/test-player";
+import { signedInManagerPlayer } from "./contract/test-player";
 import { createInMemoryManagerCatalogue, createSupabaseManagerCatalogue } from "./index";
 
 managerCatalogueContract("in-memory fake", async () => {
@@ -40,8 +40,8 @@ const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 if (url && key) {
   managerCatalogueContract("Supabase (local)", async () => {
     const [participant, outsider] = await Promise.all([
-      signedInPlayer(url, key),
-      signedInPlayer(url, key),
+      signedInManagerPlayer(url, key),
+      signedInManagerPlayer(url, key),
     ]);
     const { data: leagueId, error } = await participant.client.rpc("create_manager_league", {
       p_name: "Catalogue",

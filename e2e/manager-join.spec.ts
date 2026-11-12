@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { newPlayer, signUp } from "./players";
+import { newPlayer, openManagerTo, signUp } from "./players";
 
 test("a player joins a public Manager league in one tap and a private one by its link", async ({
   browser,
@@ -18,6 +18,8 @@ test("a player joins a public Manager league in one tap and a private one by its
   await creatorPage.goto("/manager/creer");
   await signUp(creatorPage, creator);
   await creatorPage.waitForURL(/\/manager\/creer$/);
+  openManagerTo(creator);
+  await creatorPage.reload();
   await creatorPage.getByLabel("Nom de la ligue").fill(open);
   await creatorPage.getByText("Ligue publique").click();
   await creatorPage.getByRole("button", { name: "Créer la ligue" }).click();
@@ -34,6 +36,8 @@ test("a player joins a public Manager league in one tap and a private one by its
   await joinerPage.goto("/manager");
   await signUp(joinerPage, joiner);
   await joinerPage.waitForURL(/\/manager$/);
+  openManagerTo(joiner);
+  await joinerPage.reload();
   const publics = joinerPage.getByRole("list", { name: "Ligues publiques" });
   await expect(publics.getByRole("listitem").filter({ hasText: open })).toContainText(
     "1 / 12 participants",

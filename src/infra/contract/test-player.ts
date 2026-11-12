@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+import { sql } from "./database";
 import { latestCodeFromMailbox } from "./mailbox";
 
 /**
@@ -25,4 +26,11 @@ export async function signedInPlayer(
   });
   if (profile.error) throw new Error(`could not create the test profile: ${profile.error.message}`);
   return { userId: data.user.id, client };
+}
+
+/** A real player of French Track Manager: an admin, while the Manager is open to them only (#615). */
+export async function signedInManagerPlayer(url: string, key: string) {
+  const player = await signedInPlayer(url, key);
+  sql(`update profiles set is_admin = true where id = '${player.userId}'`);
+  return player;
 }

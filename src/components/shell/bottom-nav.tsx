@@ -6,18 +6,22 @@ import { usePathname } from "next/navigation";
 import { messages } from "@/app/messages.fr";
 
 import { NavIcon } from "./nav-icon";
-import { isActive, MOBILE_NAV } from "./nav-items";
+import { isActive, mobileNav } from "./nav-items";
 
-/** Bottom bar on phones (hidden from md): the five sections, the current one in red. */
-export function BottomNav() {
+/**
+ * Bottom bar on phones (hidden from md): the sections, the current one in red. Five tabs with the
+ * Manager, four for a player who does not see it (#615).
+ */
+export function BottomNav({ showManager }: { showManager: boolean }) {
   const pathname = usePathname();
+  const items = mobileNav(showManager);
   return (
     <nav
       aria-label={messages.nav.label}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
-      <ul className="mx-auto grid max-w-md grid-cols-5">
-        {MOBILE_NAV.map((item) => {
+      <ul className={`mx-auto grid max-w-md ${showManager ? "grid-cols-5" : "grid-cols-4"}`}>
+        {items.map((item) => {
           const active = isActive(item.href, pathname);
           return (
             <li key={item.href}>

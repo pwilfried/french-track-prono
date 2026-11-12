@@ -13,6 +13,8 @@ insert into profiles (id, pseudo, age_confirmed_at) values
   ('a6040000-0000-0000-0000-000000000001', 'Revele Une', now()),
   ('a6040000-0000-0000-0000-000000000002', 'Revele Deux', now()),
   ('a6040000-0000-0000-0000-000000000003', 'Revele Trois', now());
+-- The Manager is open to the admins only (#615): its players here are admins.
+update profiles set is_admin = true where id::text like 'a6040000-%';
 insert into athletes (id, slug, name, country_code, gender, manager_price) values
   ('a6040000-0000-0000-0000-0000000000a1', 'revele-une', 'Revele Athlete Une', 'FRA', 'F', 10),
   ('a6040000-0000-0000-0000-0000000000a2', 'revele-deux', 'Revele Athlete Deux', 'FRA', 'M', 10);

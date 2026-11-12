@@ -34,8 +34,7 @@ select lives_ok($$select admin_set_athlete_price('aeaeae00-0000-0000-0000-000000
 select throws_ok($$select admin_set_athlete_price('aeaeae00-0000-0000-0000-0000000000a2', 0)$$,
   '22023', null, 'a price is above 0');
 
-select set_config('request.jwt.claims',
-  '{"sub":"aeaeae00-0000-0000-0000-000000000002","role":"authenticated"}', true);
+-- The Manager is open to the admins only (#615): the admin creates the league.
 select create_manager_league('Catalogue', false);
 reset role;
 create temp table t_league as select id from manager_leagues;

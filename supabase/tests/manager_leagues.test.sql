@@ -9,6 +9,8 @@ insert into auth.users (id, email) values
 insert into profiles (id, pseudo, age_confirmed_at) values
   ('acacac00-0000-0000-0000-000000000001', 'Createur', now()),
   ('acacac00-0000-0000-0000-000000000002', 'Autre', now());
+-- The Manager is open to the admins only (#615): its players here are admins.
+update profiles set is_admin = true where id::text like 'acacac00-%';
 update manager_rules set rules = jsonb_set(rules, '{budget}', '120');
 
 set local role authenticated;

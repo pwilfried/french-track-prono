@@ -4,7 +4,7 @@ import type { ManagerRuleSet } from "@/application/manager-rules";
 
 import { sql } from "./contract/database";
 import { managerLeagueRepositoryContract } from "./contract/manager-league-repository.contract";
-import { signedInPlayer } from "./contract/test-player";
+import { signedInManagerPlayer } from "./contract/test-player";
 import { createInMemoryManagerLeagueStore, createSupabaseManagerLeagueRepository } from "./index";
 
 managerLeagueRepositoryContract("in-memory fake", async () => {
@@ -56,8 +56,8 @@ const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 if (url && key) {
   managerLeagueRepositoryContract("Supabase (local)", async () => {
     const [creator, other] = await Promise.all([
-      signedInPlayer(url, key),
-      signedInPlayer(url, key),
+      signedInManagerPlayer(url, key),
+      signedInManagerPlayer(url, key),
     ]);
     const budget = sql("select rules ->> 'budget' from manager_rules");
     const setBudget = async (value: number) =>

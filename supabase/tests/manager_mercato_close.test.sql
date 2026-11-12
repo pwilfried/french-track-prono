@@ -18,6 +18,8 @@ insert into profiles (id, pseudo, age_confirmed_at) values
   ('a4c00000-0000-0000-0000-000000000001', 'Clos Une', now()),
   ('a4c00000-0000-0000-0000-000000000002', 'Clos Deux', now()),
   ('a4c00000-0000-0000-0000-000000000003', 'Clos Trois', now());
+-- The Manager is open to the admins only (#615): its players here are admins.
+update profiles set is_admin = true where id::text like 'a4c00000-%';
 insert into athletes (id, slug, name, country_code, gender, manager_price) values
   ('a4c00000-0000-0000-0000-0000000000a1', 'clos-une', 'Clos Athlete Une', 'FRA', 'F', 10),
   ('a4c00000-0000-0000-0000-0000000000a2', 'clos-deux', 'Clos Athlete Deux', 'FRA', 'M', 20),

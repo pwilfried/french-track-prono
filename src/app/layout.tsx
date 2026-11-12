@@ -8,6 +8,7 @@ import { ServiceWorker } from "@/components/shell/service-worker";
 import { PlayerOnly } from "@/components/shell/player-only";
 import { SiteHeader } from "@/components/shell/site-header";
 
+import { viewerSeesManager } from "./manager-access";
 import { messages } from "./messages.fr";
 import "./globals.css";
 
@@ -64,7 +65,9 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // The Manager tab only for who sees the Manager (#615).
+  const showManager = await viewerSeesManager();
   return (
     <html
       lang="fr"
@@ -84,7 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <PlayerOnly>
           <SiteFooter />
-          <BottomNav />
+          <BottomNav showManager={showManager} />
         </PlayerOnly>
         <ServiceWorker />
       </body>

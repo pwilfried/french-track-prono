@@ -6,30 +6,44 @@ export type NavItem = {
   icon: "home" | "events" | "ranking" | "league" | "manager";
 };
 
-/** The Manager is its own game, with its own entry next to the leagues (#471). */
+/**
+ * The Manager is its own game, with its own entry next to the leagues (#471), for the players who
+ * see it only (#615).
+ */
 const MANAGER: NavItem = { href: "/manager", label: messages.nav.manager, icon: "manager" };
 
-/** Desktop menu: Accueil, Épreuves, Classement, Ma ligue, Manager. */
-export const DESKTOP_NAV: NavItem[] = [
-  { href: "/", label: messages.nav.home, icon: "home" },
-  { href: "/epreuves", label: messages.nav.events, icon: "events" },
-  { href: "/classement", label: messages.nav.ranking, icon: "ranking" },
-  { href: "/ligues", label: messages.nav.league, icon: "league" },
-  MANAGER,
-];
+const withManager = (items: NavItem[], showManager: boolean) =>
+  showManager ? [...items, MANAGER] : items;
+
+/** Desktop menu: Accueil, Épreuves, Classement, Ma ligue, then Manager for who sees it. */
+export function desktopNav(showManager: boolean): NavItem[] {
+  return withManager(
+    [
+      { href: "/", label: messages.nav.home, icon: "home" },
+      { href: "/epreuves", label: messages.nav.events, icon: "events" },
+      { href: "/classement", label: messages.nav.ranking, icon: "ranking" },
+      { href: "/ligues", label: messages.nav.league, icon: "league" },
+    ],
+    showManager,
+  );
+}
 
 /**
- * Mobile bottom bar: Accueil, Épreuves, Classement, Ligues, Manager. The leagues got their tab once
- * they became the way to predict (#351); the Manager took the profile's place, which opens from
- * the pseudo and bib of the header (#471).
+ * Mobile bottom bar: Accueil, Épreuves, Classement, Ligues, then Manager for who sees it. The
+ * leagues got their tab once they became the way to predict (#351); the Manager took the profile's
+ * place, which opens from the pseudo and bib of the header (#471).
  */
-export const MOBILE_NAV: NavItem[] = [
-  { href: "/", label: messages.nav.home, icon: "home" },
-  { href: "/epreuves", label: messages.nav.events, icon: "events" },
-  { href: "/classement", label: messages.nav.ranking, icon: "ranking" },
-  { href: "/ligues", label: messages.nav.leagues, icon: "league" },
-  MANAGER,
-];
+export function mobileNav(showManager: boolean): NavItem[] {
+  return withManager(
+    [
+      { href: "/", label: messages.nav.home, icon: "home" },
+      { href: "/epreuves", label: messages.nav.events, icon: "events" },
+      { href: "/classement", label: messages.nav.ranking, icon: "ranking" },
+      { href: "/ligues", label: messages.nav.leagues, icon: "league" },
+    ],
+    showManager,
+  );
+}
 
 /** A section is active on its own page and on the pages below it ("/" only on itself). */
 export function isActive(href: string, pathname: string): boolean {

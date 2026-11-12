@@ -27,6 +27,14 @@ export async function signUp(page: Page, player: { email: string; pseudo: string
   await page.waitForURL((url) => !url.pathname.startsWith("/bienvenue"));
 }
 
+/**
+ * Lets a player into French Track Manager (SQL): an admin, while the Manager is open to the admins
+ * only (#615). The page shown before needs a reload to show it.
+ */
+export function openManagerTo(player: { pseudo: string }) {
+  sql(`update profiles set is_admin = true where pseudo = '${player.pseudo}'`);
+}
+
 /** Signs an existing player in again from the sign-in page (already open), with a fresh code. */
 export async function signIn(page: Page, email: string) {
   await clearMailbox(email);

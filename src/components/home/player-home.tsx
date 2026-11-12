@@ -39,7 +39,8 @@ export type PlayerHomeProps = {
   league: { id: string; name: string; standing: LeagueStanding<RankingRow> | null } | null;
   /** The last event the player scored, with what earned the points. */
   lastResult: { event: EventSummary; points: number; exact: number; onPodium: number } | null;
-  mercatoOpen: boolean;
+  /** Null for a player who does not see the Manager (#615): the block is left out. */
+  manager: { mercatoOpen: boolean } | null;
   /** « Complète ton profil » (#540), under the next action; left out when the profile is complete. */
   completeProfile?: React.ReactNode;
 };
@@ -71,7 +72,7 @@ export function PlayerHome(props: PlayerHomeProps) {
       ) : null}
       {league ? <MyLeague userId={props.userId} {...league} /> : <NoLeague />}
       {lastResult ? <LastResult {...lastResult} /> : null}
-      <Manager mercatoOpen={props.mercatoOpen} />
+      {props.manager ? <Manager mercatoOpen={props.manager.mercatoOpen} /> : null}
       <FrenchTrack />
     </>
   );

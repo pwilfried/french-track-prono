@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { newPlayer, signUp } from "./players";
+import { newPlayer, openManagerTo, signUp } from "./players";
 
 test("a participant bids secretly within the budget, changes and withdraws a bid", async ({
   browser,
@@ -33,6 +33,8 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await ownerPage.goto("/manager/creer");
     await signUp(ownerPage, owner);
     await ownerPage.waitForURL(/\/manager\/creer$/);
+    openManagerTo(owner);
+    await ownerPage.reload();
     await ownerPage.getByLabel("Nom de la ligue").fill(league);
     await ownerPage.getByRole("button", { name: "Créer la ligue" }).click();
     await expect(ownerPage.getByRole("heading", { level: 1 })).toHaveText(league);
@@ -40,6 +42,7 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await rivalPage.goto("/manager");
     await signUp(rivalPage, rival);
     await rivalPage.waitForURL(/\/manager$/);
+    openManagerTo(rival);
     await rivalPage.goto(`/manager/rejoindre?code=${code}`);
     await rivalPage.getByRole("button", { name: "Rejoindre la ligue" }).click();
     await expect(rivalPage.getByRole("heading", { level: 1 })).toHaveText(league);
