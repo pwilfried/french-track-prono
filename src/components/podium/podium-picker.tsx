@@ -119,9 +119,10 @@ export function PodiumPicker({
           <a
             href={helpHref}
             aria-label={messages.rules.helpLabel}
-            className="grid size-11 place-items-center rounded-full bg-brand-soft font-extrabold text-brand-ink"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-brand-soft px-4 text-sm font-extrabold text-brand-ink"
           >
-            ?
+            <span aria-hidden="true">?</span>
+            {messages.rules.help}
           </a>
         )}
       </div>

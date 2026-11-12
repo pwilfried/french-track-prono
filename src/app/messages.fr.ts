@@ -415,6 +415,10 @@ export const messages = {
     publicJoinLabel: (name: string) => `Rejoindre la ligue publique ${name}`,
     publicJoining: "…",
     publicPlaces: (n: number, max: number) => `${n} / ${max} joueurs`,
+    officialBadge: "Officielle",
+    officialOpen: "Ouverte à tous",
+    officialPitch: "Mesure-toi à toute la communauté FrenchTrack",
+    officialJoin: (name: string) => `Rejoindre la ${name}`,
     report: "Signaler",
     reportLabel: (name: string) => `Signaler la ligue ${name} à l'admin`,
     reporting: "…",
@@ -732,6 +736,7 @@ export const messages = {
       "Avant chaque finale, compose ton podium. Les points tombent quand le résultat officiel est saisi.",
     link: "Comment jouer ?",
     helpLabel: "Comment jouer : les règles",
+    help: "Règles",
     podiumTitle: "Le podium",
     podium: (exact: number, wrong: number, perfect: number) =>
       `Choisis le 1er, le 2e et le 3e. Chaque athlète à la bonne place rapporte ${exact} points, un athlète sur le podium mais à une autre place ${wrong} point${wrong > 1 ? "s" : ""}. Les trois dans l'ordre : ${perfect} points de bonus.`,
@@ -1080,7 +1085,6 @@ export const messages = {
   },
   event: {
     back: "Épreuves",
-    final: "Finale",
     title: (discipline: string) => `${discipline} — Finale`,
     combined: (n: number) => `Épreuve combinée · ${n} disciplines`,
     combinedNote: "Tu pronostiques le podium final, au total des points.",
@@ -1212,7 +1216,7 @@ export const messages = {
       predictions: "pronos",
       perfect: "podiums parfaits",
       winners: "vainqueurs",
-      success: "réussite",
+      success: "pronos qui rapportent",
       streak: "meilleure série",
       joker: "joker joué",
     },
@@ -1294,7 +1298,6 @@ export const messages = {
     numberLabel: "Numéro",
     numberHint: "De 0 à 999. Plusieurs joueurs peuvent avoir le même.",
     colorLabel: "Couleur",
-    preview: "Aperçu",
     colors: {
       blue: "Bleu",
       red: "Rouge",
@@ -1372,7 +1375,6 @@ export const messages = {
     tolerance: (value: number, unit: "time" | "distance" | "points") =>
       `±${unit === "points" ? Math.round(value) : value.toFixed(2).replace(".", ",")} ${{ time: "s", distance: "m", points: "pts" }[unit]}`,
     oddsHint: "La cote multiplie tes points : plus elle est haute, plus le pari rapporte.",
-    step: (rank: 1 | 2 | 3) => ["1er", "2e", "3e"][rank - 1]!,
     stepLabel: (rank: 1 | 2 | 3, name: string | null) =>
       `${["1re", "2e", "3e"][rank - 1]} place : ${name ?? "vide"}`,
     athleteLabel: (name: string, rank: 1 | 2 | 3 | null) =>

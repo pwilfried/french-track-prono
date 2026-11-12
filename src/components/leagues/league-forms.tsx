@@ -271,24 +271,39 @@ export function AddToMyLeagueForm({
 }
 
 /** One tap to join a public league, from the list. */
-export function JoinPublicLeagueForm({ leagueId, name }: { leagueId: string; name: string }) {
+/** « Rejoindre » beside a public league; `label`: a full-width button with that text (#553). */
+export function JoinPublicLeagueForm({
+  leagueId,
+  name,
+  label,
+}: {
+  leagueId: string;
+  name: string;
+  label?: string;
+}) {
   const [state, action, pending] = useActionState<LeagueFormState, FormData>(
     joinPublicLeagueAction,
     { value: leagueId },
   );
   return (
-    <form action={action} className="flex shrink-0 flex-col items-end gap-1">
+    <form
+      action={action}
+      className={label ? "flex flex-col gap-1" : "flex shrink-0 flex-col items-end gap-1"}
+    >
       <input type="hidden" name="leagueId" value={leagueId} />
       <button
         type="submit"
         disabled={pending}
-        aria-label={messages.leagues.publicJoinLabel(name)}
-        className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60"
+        aria-label={label ? undefined : messages.leagues.publicJoinLabel(name)}
+        className={`inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60 ${label ? "w-full" : ""}`}
       >
-        {pending ? messages.leagues.publicJoining : messages.leagues.publicJoin}
+        {pending ? messages.leagues.publicJoining : (label ?? messages.leagues.publicJoin)}
       </button>
       {state.error && (
-        <p role="alert" className="text-xs font-semibold text-accent-text">
+        <p
+          role="alert"
+          className={`text-xs font-semibold text-accent-text ${label ? "rounded bg-background px-2 py-1" : ""}`}
+        >
           {messages.errors[state.error]}
         </p>
       )}
