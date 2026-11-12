@@ -153,6 +153,9 @@ Règles :
   profil et le choix, pastille avec le numéro ailleurs.
 - Pages : `/connexion`, `/bienvenue`, `/profil` ; l'en-tête affiche « Se connecter » ou le
   dossard et le pseudo.
+- Profil express (#539) : `/bienvenue` ne demande que le pseudo, le dossard (tiré au hasard,
+  modifiable) et la case des 15 ans, puis renvoie le joueur où il allait ; le club et les
+  disciplines se complètent depuis l'accueil (« Complète ton profil », #540) ou le profil.
 
 **Décision B : le calcul des points vit dans le domaine TypeScript** (`src/domain/scoring.ts`,
 fonction pure, testée avec Vitest et fast-check).
@@ -388,6 +391,7 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 | v0.11 Back-office et profil | Tableau de bord admin, listes filtrables (clubs, joueurs, ligues), **F11**, **F12** (carte « Ma saison »), classement des clubs, historique des pronos | …un admin traite tout ce qui est à faire depuis un tableau de bord, trouve en deux gestes un club, un joueur ou une ligue grâce aux filtres, et un joueur ouvre un profil vivant (stats, courbe, badges, club) |
 | v0.12 Manager : ligues et règles | **F19** : règles fixées par l'admin, ligue publique ou privée de 4 à 12 participants | …un joueur crée une ligue Manager, ses amis la rejoignent, et les règles de la saison sont figées |
 | v0.13 Manager : mercato | Enchères secrètes par tours, réservation du budget, attribution, clôture et complément des équipes | …chaque participant d'une ligue finit le mercato avec une équipe validée, sans avoir vu les offres des autres |
+| v0.13.1 Refonte des écrans | Accueil qui explique le jeu, profil express, onglets Épreuves (progression, filtres) et Classement (ma ligue, ce soir, général, visiteurs), invitations depuis une ligue, Ligue FrenchTrack officielle | …un nouveau joueur comprend le jeu dès l'accueil, s'inscrit avec un profil express, voit ce qu'il lui reste à faire dans Épreuves, se situe face à ses amis dans Classement, invite ses amis depuis une ligue et peut rejoindre la Ligue FrenchTrack |
 | v0.14 Manager : équipe et alignement | Équipe fixe, alignement verrouillé au départ de chaque compétition | …un participant aligne sa sélection et ne peut plus la changer une fois la compétition commencée |
 | v0.15 Manager : points | Barème hongrois, bonus sportifs, pronos obligatoires | …le score d'un participant sur une compétition correspond au barème, aux bonus et à ses pronos |
 | v0.16 Manager : championnat | Calendrier aller-retour, confrontations, classement, palmarès | …une saison complète désigne un champion et garde son palmarès |

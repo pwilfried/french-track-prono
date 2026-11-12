@@ -54,8 +54,8 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Épreuves (onglet, #546) | Sélecteur de compétition ; carte de progression (joueur connecté) ; filtres « À faire » (par défaut), « Posés », « Terminées », « Toutes » ; sections « Ce soir », « Demain », puis les dates, puis « Déjà courues ». Un visiteur n'a ni la carte ni les filtres « À faire » et « Posés » |
 | Épreuve | Liste de départ, **podium à composer** (glisser-déposer ou taps), joker, verrou |
 | Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
-| Ligue | Classement, derniers pronos révélés, réactions emoji |
-| Mes ligues | Mes ligues (rang, membres), puis les ligues publiques ; au-dessus d'elles, tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553 : « Officielle », « Ouverte à tous », « Rejoindre la Ligue FrenchTrack ») ; une fois membre, elle rejoint ses ligues avec le badge « Officielle » |
+| Ligue | Classement, derniers pronos révélés, réactions emoji ; tant que le joueur y est seul, **InviteBanner** à la place du classement |
+| Mes ligues | Mes ligues (**LeagueCard**), puis les ligues publiques ; au-dessus d'elles, tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553 : « Officielle », « Ouverte à tous », « Rejoindre la Ligue FrenchTrack ») ; une fois membre, elle rejoint ses ligues avec le badge « Officielle » |
 | Classement général | Top de la communauté, ma progression |
 | Profil | Dossard (grand format, avec le pseudo), club ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager |
 | Back-office (toi) | Tableau de bord (choses à faire, préparation), compétitions et épreuves, résultats et calcul, listes des clubs, joueurs et ligues |
@@ -99,11 +99,20 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   bandeau bleu « Le classement démarre » remplace le classement vide. Le jour de compétition va de
   6 h à 6 h, heure de Paris : une finale courue à 2 h du matin compte pour « Ce soir ».
   Un visiteur voit « Général » seul, sans barre fixe, avec « Se connecter » (#573).
+- **LeagueCard** (#552) : une de mes ligues dans « Mes ligues » ; nom (badge « Publique » ou
+  « Officielle »), joueurs et compétitions dessous ; à droite ma place en gros et ▲/▼ depuis la
+  veille, « Pas encore de points » sans points.
+- **InviteBanner** (#552) : dans une ligue où le joueur est seul, fond bleu doux, « Tu es seul
+  pour l'instant », un grand bouton « Inviter mes amis » (partage natif, sinon lien copié) et le
+  code lisible dessous pour le dire à voix haute.
 - **Carte « Ma saison »** (`/profil/carte`) : image verticale 1080×1920 prête pour les stories,
   partagée par le partage natif ou téléchargée ; « Mon podium du 100 m » viendra plus tard.
 - **Liste du back-office** (clubs, joueurs, ligues) : recherche, puces de filtre avec leur
   nombre, tableau triable, actions groupées sur la sélection, panneau de détail ; même gabarit
   pour les trois listes.
+- **Navigation** (#471) : sur mobile, barre du bas « Accueil, Épreuves, Classement, Ligues,
+  Manager » ; sur desktop, menu du haut « Accueil, Épreuves, Classement, Ma ligue, Manager ». Le
+  profil s'ouvre depuis le pseudo et le dossard de l'en-tête.
 - **Menu admin** : entrées groupées par rubrique, le tableau de bord en tête.
 - **BadgeGrid** : badges gagnés en couleur, les autres grisés avec leur règle ; dessous, le
   prochain badge et ce qu'il reste à faire pour l'obtenir.
