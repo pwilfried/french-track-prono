@@ -29,7 +29,8 @@ test("a player changes pseudo and club, then signs in with a new address", async
   // Bib: a number on the keypad and a colour, previewed, then shown on the profile
   await page.getByRole("link", { name: "Modifier mon profil" }).click();
   await expect(page.getByLabel("Numéro", { exact: true })).toHaveAttribute("inputmode", "numeric");
-  await page.getByLabel("Numéro", { exact: true }).fill("1000");
+  // The field takes 3 digits at most (1000 cannot be typed): a leading zero is the wrong case.
+  await page.getByLabel("Numéro", { exact: true }).fill("007");
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await expect(page.locator("main").getByRole("alert")).toContainText("de 0 à 999");
   await page.getByLabel("Numéro", { exact: true }).fill("7");

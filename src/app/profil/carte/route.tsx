@@ -124,7 +124,10 @@ export async function GET() {
           <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: 8 }}>
             {messages.bib.brand}
           </div>
-          <div style={{ fontSize: 170, fontWeight: 700, lineHeight: 1 }}>{card.bib.number}</div>
+          {/* A string: satori refuses a number as the only child of a <div>. */}
+          <div style={{ fontSize: 170, fontWeight: 700, lineHeight: 1 }}>
+            {String(card.bib.number)}
+          </div>
         </div>
         <div style={{ fontSize: 76, fontWeight: 700, textAlign: "center" }}>{card.pseudo}</div>
         {card.club && <div style={{ opacity: 0.8, textAlign: "center" }}>{card.club}</div>}
