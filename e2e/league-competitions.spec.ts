@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { newPlayer, signUp } from "./players";
+import { addFriendTo, newPlayer, signUp } from "./players";
 
 test("a player picks two French competitions on the home page and his league adds up both", async ({
   page,
@@ -44,11 +44,15 @@ test("a player picks two French competitions on the home page and his league add
       where u.email = '${player.email}' and e.slug = '${tag}-${i}-100m'`);
   }
 
+  // The ranking shows once a friend is in the league (alone, the player is asked to invite).
+  const friend = addFriendTo(leagueUrl, tag);
   await page.goto(leagueUrl);
   const rows = page.getByRole("list", { name: "Classement" }).getByRole("listitem");
-  await expect(rows).toHaveCount(1);
+  await expect(rows).toHaveCount(2);
+  await expect(rows.first()).toContainText(player.pseudo);
   await expect(rows.first()).toContainText("15");
 
+  sql(`delete from auth.users where email = '${friend}'`);
   sql(`delete from competitions where slug like '${tag}-%'`);
 });
 
@@ -93,10 +97,13 @@ test("a player creates a league without competition, then adds a coming one to i
            jsonb_build_object('reasons', '[{"kind":"exact","slot":1}]'::jsonb)
     from auth.users u, events e
     where u.email = '${player.email}' and e.slug = '${tag}-100m'`);
+  const friend = addFriendTo(leagueUrl, tag);
   await page.reload();
   const rows = page.getByRole("list", { name: "Classement" }).getByRole("listitem");
-  await expect(rows).toHaveCount(1);
+  await expect(rows).toHaveCount(2);
+  await expect(rows.first()).toContainText(player.pseudo);
   await expect(rows.first()).toContainText("7");
 
+  sql(`delete from auth.users where email = '${friend}'`);
   sql(`delete from competitions where slug = '${tag}'`);
 });
