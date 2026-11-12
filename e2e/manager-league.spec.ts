@@ -45,9 +45,11 @@ test("a player creates a private French Track Manager league that keeps its rule
     await expect(page.getByText("130 crédits de budget")).toBeVisible();
 
     await page.getByRole("link", { name: "French Track Manager" }).click();
-    await expect(page.getByRole("list", { name: "Mes ligues Manager" })).toContainText(
-      "Les Lanceurs du dimanche",
-    );
+    // The card is a link named after the league, its participants as description (#495).
+    const card = page
+      .getByRole("list", { name: "Mes ligues Manager" })
+      .getByRole("link", { name: "Les Lanceurs du dimanche", exact: true });
+    await expect(card).toHaveAccessibleDescription(/participants/);
   } finally {
     sql(`update manager_rules set rules = jsonb_set(rules, '{budget}', '${budget}')`);
   }
