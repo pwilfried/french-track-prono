@@ -196,7 +196,6 @@ export const messages = {
     addPrediction: "+ Prono",
     cardLabel: (discipline: string, gender: string, hour: string) =>
       `${discipline}, ${gender}, ${hour}`,
-    provisionalTimes: "Les horaires affichés sont provisoires (jeu de test).",
     empty: "Aucune épreuve pour ce filtre.",
     loading: "Chargement des épreuves…",
   },
