@@ -10,6 +10,7 @@ type LeagueRow = {
   invite_code: string;
   owner_id: string;
   is_public: boolean;
+  is_official: boolean;
   league_members: { count: number }[];
   league_competitions: { competitions: { slug: string } | null }[];
 };
@@ -24,7 +25,7 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
     // Row level security only shows the leagues the player is a member of.
     const { data, error } = await client
       .from("leagues")
-      .select("id, name, invite_code, owner_id, is_public, league_members(count), league_competitions(competitions(slug))")
+      .select("id, name, invite_code, owner_id, is_public, is_official, league_members(count), league_competitions(competitions(slug))")
       .returns<LeagueRow[]>();
     if (error) fail();
     return data!.map((row) => ({
@@ -37,6 +38,8 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
         .flatMap((lc) => (lc.competitions ? [lc.competitions.slug] : []))
         .sort(),
       isPublic: row.is_public,
+      // Only when it is: the other leagues stay as the contract describes them.
+      ...(row.is_official ? { isOfficial: true } : {}),
     }));
   };
 
@@ -145,12 +148,19 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       const { data, error } = await client.rpc("list_public_leagues");
       if (error) return fail();
       return (
-        data as { league_id: string; name: string; member_count: number; competition_slugs: string[] }[]
+        data as {
+          league_id: string;
+          name: string;
+          member_count: number;
+          competition_slugs: string[];
+          is_official: boolean;
+        }[]
       ).map((row) => ({
         id: row.league_id,
         name: row.name,
         memberCount: Number(row.member_count),
         competitionSlugs: row.competition_slugs,
+        ...(row.is_official ? { isOfficial: true } : {}),
       }));
     },
 

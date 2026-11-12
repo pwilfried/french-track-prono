@@ -12,6 +12,7 @@ import { ErrorNotice } from "@/components/error-notice";
 import { JoinPublicLeagueForm, ReportLeagueForm } from "@/components/leagues/league-forms";
 import { LeagueCard } from "@/components/leagues/league-card";
 import { LeagueHero } from "@/components/leagues/league-hero";
+import { OfficialLeague } from "@/components/leagues/official-league";
 import { buttonVariants } from "@/components/ui/button";
 import { PUBLIC_LEAGUE_MAX_MEMBERS } from "@/domain/league";
 
@@ -44,6 +45,9 @@ export default async function LeaguesPage() {
     rows = "error";
   }
 
+  // The official league has its own block above the public ones while the player is not in it.
+  const official = publics.find((l) => l.isOfficial);
+  const others = publics.filter((l) => !l.isOfficial);
   const { coming, past } = await loadCompetitions();
   const nameOf = new Map([...coming, ...past].map((c) => [c.slug, c.name]));
   const namesOf = (slugs: string[]) => slugs.map((slug) => nameOf.get(slug) ?? slug);
@@ -81,6 +85,7 @@ export default async function LeaguesPage() {
                   memberCount={league.memberCount}
                   competitionNames={namesOf(league.competitionSlugs)}
                   isPublic={league.isPublic}
+                  isOfficial={league.isOfficial}
                   standing={standing}
                 />
               </li>
@@ -88,6 +93,15 @@ export default async function LeaguesPage() {
           </ul>
         )}
 
+        {rows !== "error" && official && (
+          <OfficialLeague name={official.name} memberCount={official.memberCount}>
+            <JoinPublicLeagueForm
+              leagueId={official.id}
+              name={official.name}
+              label={messages.leagues.officialJoin(official.name)}
+            />
+          </OfficialLeague>
+        )}
         {rows !== "error" && (
           <section aria-labelledby="public-leagues" className="flex flex-col gap-2 pt-4">
             <h2
@@ -96,13 +110,13 @@ export default async function LeaguesPage() {
             >
               {messages.leagues.publicTitle}
             </h2>
-            {publics.length === 0 ? (
+            {others.length === 0 ? (
               <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
                 {messages.leagues.publicEmpty}
               </p>
             ) : (
               <ul aria-labelledby="public-leagues" className="flex flex-col gap-2">
-                {publics.map((league) => (
+                {others.map((league) => (
                   <li
                     key={league.id}
                     className="flex min-h-16 items-center gap-3 rounded-card border border-border bg-card p-3.5"

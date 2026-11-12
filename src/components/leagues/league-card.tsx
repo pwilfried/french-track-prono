@@ -15,6 +15,7 @@ export function LeagueCard({
   memberCount,
   competitionNames,
   isPublic = false,
+  isOfficial = false,
   standing,
 }: {
   href: string;
@@ -22,6 +23,7 @@ export function LeagueCard({
   memberCount: number;
   competitionNames: string[];
   isPublic?: boolean;
+  isOfficial?: boolean;
   standing: { rank: number; change: number | null } | null;
 }) {
   const details = [
@@ -38,7 +40,7 @@ export function LeagueCard({
           {name}
           {isPublic && (
             <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 align-middle text-xs font-bold text-secondary-foreground">
-              {text.publicBadge}
+              {isOfficial ? text.officialBadge : text.publicBadge}
             </span>
           )}
         </span>
