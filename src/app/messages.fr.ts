@@ -1006,7 +1006,6 @@ export const messages = {
     newCompetition: "+ Nouvelle compétition",
   },
   adminList: {
-    search: "Chercher",
     filters: "Filtres",
     selectAll: "Tout sélectionner sur la page",
     select: (label: string) => `Sélectionner ${label}`,
@@ -1241,7 +1240,6 @@ export const messages = {
     allBadges: "Tous les badges sont à toi !",
     emailPrivate: "Ton e-mail reste privé : il n'apparaît jamais dans l'application.",
     signOut: "Se déconnecter",
-    signingOut: "Déconnexion…",
     deleteLink: "Supprimer mon compte",
     joined: (club: string | null, date: string) =>
       `${club ? `${club} · ` : ""}joueur depuis le ${date}`,
@@ -1551,9 +1549,6 @@ export const messages = {
     subtitle:
       "Les clubs importés chaque mois et ceux saisis par les joueurs. Valide, corrige, ajoute ou supprime ; chaque action est notée dans l'historique.",
     searchLabel: "Nom ou ville",
-    search: "Chercher",
-    pendingOnly: "À valider seulement",
-    empty: "Aucun club pour cette recherche.",
     pending: "À valider",
     source: { import: "Importé", player: "Saisi par un joueur", admin: "Ajouté par l'admin" },
     players: (n: number) => `${n} ${n <= 1 ? "joueur" : "joueurs"}`,
@@ -1563,11 +1558,8 @@ export const messages = {
     newClub: "+ Nouveau club",
     create: "Créer le club",
     save: "Enregistrer",
-    edit: "Modifier",
     validate: "Valider",
     pendingAction: "…",
-    remove: "Supprimer le club",
-    removing: "Suppression…",
     done: "✓ C'est fait.",
     summary: (total: number, pending: number) =>
       `${total} ${total <= 1 ? "club" : "clubs"} · ${pending} à valider`,
