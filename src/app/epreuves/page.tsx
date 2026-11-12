@@ -6,6 +6,7 @@ import { CompetitionPicker } from "@/components/events/competition-picker";
 import { EventCard, type MyEventState } from "@/components/events/event-card";
 import { GenderFilter } from "@/components/events/gender-filter";
 import { InstallPrompt } from "@/components/shell/install-prompt";
+import { TIME_ZONE } from "@/domain/competition";
 import type { EventGender, EventSummary } from "@/domain/event";
 import { filterByGender, groupEventsByDay } from "@/domain/event-list";
 import {
@@ -80,12 +81,12 @@ export default async function EventsPage({
     M: filterByGender(events, "M").length,
     X: filterByGender(events, "X").length,
   };
-  const days = groupEventsByDay(filterByGender(events, gender), competition.timeZone);
+  const days = groupEventsByDay(filterByGender(events, gender));
   const dayLabel = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
     day: "numeric",
     month: "long",
-    timeZone: competition.timeZone,
+    timeZone: TIME_ZONE,
   });
 
   return (
@@ -134,7 +135,6 @@ export default async function EventsPage({
                     <EventCard
                       key={event.id}
                       event={event}
-                      timeZone={competition.timeZone}
                       mine={
                         mine
                           ? (mine.get(event.id) ?? { predicted: false, joker: false })

@@ -82,7 +82,6 @@ export default async function AthletePage({ params }: { params: Promise<{ slug: 
               </h2>
               <RecentRaces
                 races={athlete.races}
-                timeZone={competition.timeZone}
                 linkable={(race) => race.competitionSlug === competition.slug}
               />
             </section>

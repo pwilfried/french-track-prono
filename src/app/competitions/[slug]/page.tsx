@@ -156,7 +156,6 @@ export default async function CompetitionPage({ params }: { params: Promise<{ sl
               <EventCard
                 key={event.id}
                 event={event}
-                timeZone={competition.timeZone}
                 now={now}
                 mine={
                   player

@@ -30,10 +30,10 @@ test("an admin creates a French competition, an event and its entered athletes, 
   await expect(page).toHaveURL(new RegExp(`/admin/competitions/${slug}\\?enregistre=1$`));
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
 
-  // An event at 20:35 local time.
+  // An event at 20:35 Paris time.
   await page.getByLabel("Discipline").selectOption("100 m");
   await page.getByLabel("Catégorie").selectOption("F");
-  await page.getByLabel("Horaire (local)").fill("2099-06-25T20:35");
+  await page.getByLabel("Horaire (heure de Paris)").fill("2099-06-25T20:35");
   await page.getByRole("button", { name: "Ajouter l'épreuve" }).click();
   await expect(page.getByRole("list", { name: "épreuves" })).toContainText("100 m femmes · Finale");
 
@@ -42,7 +42,7 @@ test("an admin creates a French competition, an event and its entered athletes, 
   await page.getByLabel("Discipline").selectOption("200 m");
   await page.getByLabel("Catégorie").selectOption("F");
   await page.getByLabel("Tour").selectOption("series");
-  await page.getByLabel("Horaire (local)").fill("2099-06-27T18:00");
+  await page.getByLabel("Horaire (heure de Paris)").fill("2099-06-27T18:00");
   await page.getByRole("button", { name: "Ajouter l'épreuve" }).click();
   await expect(
     page.getByRole("list", { name: "épreuves" }).getByRole("link", { name: /200 m femmes/ }),
@@ -55,13 +55,13 @@ test("an admin creates a French competition, an event and its entered athletes, 
     .click();
   await page.getByText("Modifier l'épreuve").click();
   await page.getByLabel("Tour").selectOption("final");
-  await page.getByLabel("Horaire (local)").fill("2099-06-27T19:10");
+  await page.getByLabel("Horaire (heure de Paris)").fill("2099-06-27T19:10");
   await page.getByRole("button", { name: "Enregistrer l'épreuve" }).click();
   await expect(page.locator('main:not([aria-busy="true"])').getByRole("status")).toContainText(
     "Enregistré",
   );
   await expect(page.getByLabel("Tour")).toHaveValue("final");
-  await expect(page.getByLabel("Horaire (local)")).toHaveValue("2099-06-27T19:10");
+  await expect(page.getByLabel("Horaire (heure de Paris)")).toHaveValue("2099-06-27T19:10");
   await page.getByText("Modifier l'épreuve").click();
   await page.getByRole("button", { name: "Supprimer l'épreuve" }).click();
   await expect(page).toHaveURL(new RegExp(`/admin/competitions/${slug}\\?enregistre=1$`));

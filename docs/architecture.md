@@ -132,6 +132,10 @@ Règles :
 - Les erreurs sont des types énumérés ; le cœur renvoie des codes (`PREDICTION_LOCKED`,
   `LEAGUE_CODE_UNKNOWN`), jamais des phrases. Les textes français vivent dans le fichier
   de messages de l'interface.
+- L'API de Supabase rend au plus 1 000 lignes par réponse (`max_rows`). Une lecture qui doit
+  tout ramener (listes du back-office : clubs, joueurs, ligues, athlètes, compétitions) passe par
+  `readAll` (`src/infra/supabase/read-all.ts`), qui lit par paquets jusqu'au bout ; la requête
+  a un ordre total (l'id départage) et pas de plafond à elle (#508).
 
 **Comptes et session (v0.2).**
 
@@ -226,7 +230,10 @@ de la compétition pour pronostiquer (FT011) ; la règle est retirée le 9 novem
 pronostique sans ligue, et les pages suggèrent seulement d'en créer ou d'en rejoindre une ; le classement général compte tous les points, toutes
 compétitions confondues (#319), et l'onglet Classement donne aussi celui de chaque compétition
 (#376). Dans une ligue, un membre ne compte que les épreuves verrouillées après son arrivée
-(`countsInLeague`, #376) : un prono fait avant d'y entrer reste au général et à la compétition. L'accueil liste les compétitions par type (internationales, françaises) et
+(`countsInLeague`, #376) : un prono fait avant d'y entrer reste au général et à la compétition. L'accueil du joueur connecté
+part de sa prochaine action (#526) : `nextAction` et `leagueStanding` (`src/domain/home.ts`)
+choisissent la finale ouverte la plus proche du verrouillage, sinon la prochaine compétition, et la
+ligue où il est le mieux classé ; les compétitions par type restent sur `/competitions`, et
 les pages suivent la prochaine compétition par date (`src/app/competition.ts`). Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
 calculé en TypeScript à partir des lignes de points (pas de vue SQL).
 
@@ -257,10 +264,17 @@ la table. Le domaine lit et écrit les marques (`parseMark`, `formatMark` dans
 `src/domain/discipline.ts`).
 
 Compétitions (v0.9, issue #266) : l'admin crée une compétition (`scope` internationale ou
-française, fuseau horaire), ses épreuves (slug unique sur toutes les compétitions) et ses engagés
+française), ses épreuves (slug unique sur toutes les compétitions) et ses engagés
 (`competition_athletes`, remplie aussi par chaque ligne de liste de départ). Les candidats d'une
 liste de départ sont les engagés de la compétition (tout le monde tant que personne n'est engagé).
 La compétition mise en avant est la prochaine par date (`nextCompetition`).
+
+Heure de Paris (décision du propriétaire du 11/11/2026, issue #501) : un seul fuseau pour toute
+l'appli, `Europe/Paris`, défini une seule fois (`TIME_ZONE` dans `src/domain/competition.ts`).
+L'admin saisit les horaires des épreuves en heure de Paris, quel que soit le pays de la
+compétition (`parisToUtc`, `utcToParis`) ; le joueur les lit en heure de Paris, et les épreuves se
+regroupent par jour de Paris (`groupEventsByDay`). La base garde des instants UTC ; une compétition
+n'a plus de fuseau (colonne `competitions.time_zone` retirée).
 
 Cotes (v0.9, issues #259 et #260) : sur une compétition créée dans le back-office
 (`competitions.odds_enabled`), l'admin propose des athlètes de la liste de départ (au moins un, autant qu'il veut ; décision du 08/11/2026) avec une cote positive

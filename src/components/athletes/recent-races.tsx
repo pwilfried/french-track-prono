@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { messages } from "@/app/messages.fr";
 import type { AthleteRace } from "@/domain/athlete";
+import { TIME_ZONE } from "@/domain/competition";
 
 /**
  * The latest official results of an athlete. A race of the competition the app plays links to its
@@ -9,17 +10,19 @@ import type { AthleteRace } from "@/domain/athlete";
  */
 export function RecentRaces({
   races,
-  timeZone,
   linkable,
 }: {
   races: AthleteRace[];
-  timeZone: string;
   linkable: (race: AthleteRace) => boolean;
 }) {
   if (races.length === 0) {
     return <p className="rounded-card bg-muted p-4 text-sm">{messages.athlete.noRace}</p>;
   }
-  const day = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone });
+  const day = new Intl.DateTimeFormat("fr-FR", {
+    day: "numeric",
+    month: "short",
+    timeZone: TIME_ZONE,
+  });
   return (
     <ol className="flex flex-col">
       {races.map((race) => {

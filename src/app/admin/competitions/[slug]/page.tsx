@@ -6,6 +6,7 @@ import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { getCompetitionFile } from "@/application/list-competitions";
 import { listAthletes } from "@/application/list-athletes";
 import { ErrorNotice } from "@/components/error-notice";
+import { TIME_ZONE } from "@/domain/competition";
 import { flagOf } from "@/domain/flag";
 import { ROUNDS } from "@/domain/rounds";
 import { searchAthletes } from "@/domain/start-list";
@@ -70,7 +71,7 @@ export default async function AdminCompetitionPage({
           day: "numeric",
           hour: "2-digit",
           minute: "2-digit",
-          timeZone: loaded.file.timeZone,
+          timeZone: TIME_ZONE,
         });
 
   if (loaded === "error") {
@@ -101,7 +102,7 @@ export default async function AdminCompetitionPage({
     >
       <p className="-mt-2 text-sm text-muted-foreground">
         {messages.adminCompetitions.scope[file.scope]} ·{" "}
-        {[file.city, messages.competition.dates(file.startsOn, file.endsOn), file.timeZone]
+        {[file.city, messages.competition.dates(file.startsOn, file.endsOn)]
           .filter(Boolean)
           .join(" · ")}{" "}
         ·{" "}
@@ -180,7 +181,6 @@ export default async function AdminCompetitionPage({
             </summary>
             <form action={addEventAction} className="mt-2 flex flex-col gap-3">
               <input type="hidden" name="competition" value={slug} />
-              <input type="hidden" name="timeZone" value={file.timeZone} />
               <label className="flex flex-col gap-1.5 text-sm font-semibold">
                 {messages.adminCompetitions.discipline}
                 <select name="discipline" required defaultValue="" className={field}>
@@ -232,6 +232,9 @@ export default async function AdminCompetitionPage({
                   </select>
                 </label>
               </div>
+              <p className="-mt-1.5 text-sm text-muted-foreground">
+                {messages.adminCompetitions.timeHint}
+              </p>
               <button
                 type="submit"
                 className="min-h-12 rounded-full bg-brand font-bold text-brand-foreground"

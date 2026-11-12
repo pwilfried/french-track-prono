@@ -3,6 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AdminClub, ClubAdminRepository } from "@/application/club-admin";
 import { UseCaseError } from "@/application/errors";
 
+import { readAll } from "./read-all";
+
 const fail = (): never => {
   throw new UseCaseError("CLUBS_UNAVAILABLE");
 };
@@ -18,16 +20,20 @@ const outcomeOf = (error: { code?: string } | null) => {
 export function createSupabaseClubAdminRepository(client: SupabaseClient): ClubAdminRepository {
   return {
     async list(query, pendingOnly, limit = 50) {
-      const { data, error } = await client.rpc("admin_list_clubs", {
-        p_query: query,
-        p_pending_only: pendingOnly,
-        p_limit: limit,
-      });
-      if (error) return error.code === "42501" ? "not_admin" : fail();
       type Row = Omit<AdminClub, "playerCount" | "createdAt"> & {
         player_count: number;
         created_at: string;
       };
+      const call = () =>
+        client.rpc("admin_list_clubs", {
+          p_query: query,
+          p_pending_only: pendingOnly,
+          // null: every club (#508), read a page at a time.
+          p_limit: limit === "all" ? null : limit,
+        });
+      const { data, error } =
+        limit === "all" ? await readAll<Row>((from, to) => call().range(from, to)) : await call();
+      if (error) return error.code === "42501" ? "not_admin" : fail();
       return (data as Row[]).map(({ player_count, created_at, ...club }) => ({
         ...club,
         playerCount: Number(player_count),

@@ -1,5 +1,5 @@
 import type { CompetitionScope } from "@/domain/competition";
-import { competitionSlug, eventSlug, isValidCompetition, zonedToUtc } from "@/domain/competition";
+import { competitionSlug, eventSlug, isValidCompetition, parisToUtc } from "@/domain/competition";
 import type { EventGender } from "@/domain/event";
 import { ROUNDS, type Round } from "@/domain/rounds";
 
@@ -13,7 +13,6 @@ export type CompetitionSummary = {
   countryCode: string | null;
   startsOn: string;
   endsOn: string;
-  timeZone: string;
   events: number;
   /** The finals among them: the events players predict. */
   finals: number;
@@ -85,7 +84,6 @@ export function createCompetition(ports: { competitions: CompetitionAdminReposit
       countryCode: string;
       startsOn: string;
       endsOn: string;
-      timeZone: string;
     }): Promise<string> {
       const countryCode = input.countryCode.trim().toUpperCase();
       if (!isValidCompetition(input) || (countryCode && !/^[A-Z]{3}$/.test(countryCode))) {
@@ -99,7 +97,6 @@ export function createCompetition(ports: { competitions: CompetitionAdminReposit
         countryCode: countryCode || null,
         startsOn: input.startsOn,
         endsOn: input.endsOn,
-        timeZone: input.timeZone,
       });
       denied(slug);
       return slug;
@@ -108,14 +105,13 @@ export function createCompetition(ports: { competitions: CompetitionAdminReposit
 }
 
 /**
- * The admin adds an event, its time typed in the competition's local time; predictions lock
+ * The admin adds an event, its time typed in Paris time whatever the country; predictions lock
  * `lockMinutes` before the start.
  */
 export function addCompetitionEvent(ports: { competitions: CompetitionAdminRepository }) {
   return {
     async execute(input: {
       competition: string;
-      timeZone: string;
       discipline: string;
       gender: string;
       round: string;
@@ -132,7 +128,7 @@ export function addCompetitionEvent(ports: { competitions: CompetitionAdminRepos
       ) {
         throw new UseCaseError("EVENT_INVALID");
       }
-      const startsAt = zonedToUtc(input.localStart, input.timeZone);
+      const startsAt = parisToUtc(input.localStart);
       const slug = await ports.competitions.addEvent(input.competition, {
         slug: eventSlug(input.competition, input.gender, input.discipline, input.round),
         discipline: input.discipline,

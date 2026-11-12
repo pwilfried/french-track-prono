@@ -21,7 +21,6 @@ function repository(isAdmin = true) {
         countryCode: null,
         startsOn: "2027-07-01",
         endsOn: "2027-07-02",
-        timeZone: "Europe/Paris",
         events: 0,
         finals: 0,
         entered: 0,
@@ -34,7 +33,6 @@ function repository(isAdmin = true) {
         countryCode: null,
         startsOn: "2026-09-12",
         endsOn: "2026-09-13",
-        timeZone: "Europe/Budapest",
         events: 28,
         finals: 28,
         entered: 90,
@@ -47,7 +45,6 @@ function repository(isAdmin = true) {
         countryCode: null,
         startsOn: "2027-06-25",
         endsOn: "2027-06-27",
-        timeZone: "Europe/Paris",
         events: 2,
         finals: 2,
         entered: 8,
@@ -63,7 +60,6 @@ function repository(isAdmin = true) {
             countryCode: null,
             startsOn: "2027-06-25",
             endsOn: "2027-06-27",
-            timeZone: "Europe/Paris",
             events: 2,
             finals: 2,
             entered: 2,
@@ -136,7 +132,6 @@ describe("competitions in the back-office", () => {
       countryCode: "fra",
       startsOn: "2027-06-25",
       endsOn: "2027-06-27",
-      timeZone: "Europe/Paris",
     });
 
     expect(slug).toBe("championnats-de-france-elite-2027");
@@ -150,7 +145,6 @@ describe("competitions in the back-office", () => {
         countryCode: "FRA",
         startsOn: "2027-06-25",
         endsOn: "2027-06-27",
-        timeZone: "Europe/Paris",
       },
     ]);
   });
@@ -163,7 +157,6 @@ describe("competitions in the back-office", () => {
       countryCode: "",
       startsOn: "2027-06-25",
       endsOn: "2027-06-27",
-      timeZone: "Europe/Paris",
     };
 
     await expect(
@@ -179,7 +172,6 @@ describe("competitions in the back-office", () => {
 
     await addCompetitionEvent({ competitions }).execute({
       competition: "soon",
-      timeZone: "Europe/Paris",
       discipline: "100 m",
       gender: "F",
       round: "final",
@@ -204,7 +196,6 @@ describe("competitions in the back-office", () => {
   it("refuses an event without a time, and an unknown competition", async () => {
     const event = {
       competition: "soon",
-      timeZone: "Europe/Paris",
       discipline: "100 m",
       gender: "F",
       round: "final",

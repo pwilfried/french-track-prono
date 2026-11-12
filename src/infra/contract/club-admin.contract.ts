@@ -9,6 +9,8 @@ export type ClubAdminWorld = {
   playerClub(name: string): Promise<string>;
   /** A player chooses this club. */
   playerOn(clubId: string): Promise<void>;
+  /** `count` imported clubs named `<prefix> 0001`…; returns a clean-up that deletes them. */
+  importClubs(prefix: string, count: number): Promise<() => Promise<void>>;
 };
 
 // Letters only, 16 per character: a digit becomes g to p (the old "x" for every digit made
@@ -86,6 +88,22 @@ export function clubAdminContract(name: string, world: () => Promise<ClubAdminWo
       expect(left !== "not_admin" && left.map((c) => [c.id, c.playerCount])).toEqual([[right, 1]]);
       expect(left !== "not_admin" && Date.parse(left[0]!.createdAt) > 0).toBe(true);
       expect(await w.notAdmin.merge(right, typed)).toBe("not_admin");
+    });
+
+    it("lists every club past the 1,000 rows of one API answer", async () => {
+      const w = await world();
+      const t = tag();
+      const cleanUp = await w.importClubs(t, 1001);
+      try {
+        const all = await w.admin.list(t, false, "all");
+        if (all === "not_admin") throw new Error("not admin");
+        expect(all).toHaveLength(1001);
+        expect(new Set(all.map((c) => c.id)).size).toBe(1001);
+        expect(all.at(-1)?.name).toBe(`${t} 1001`);
+        expect(await w.notAdmin.list(t, false, "all")).toBe("not_admin");
+      } finally {
+        await cleanUp();
+      }
     });
 
     it("refuses banned words and a player who is not admin", async () => {

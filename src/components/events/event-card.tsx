@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { CountdownBadge } from "@/components/countdown/countdown-badge";
+import { TIME_ZONE } from "@/domain/competition";
 import { countdown, eventPhase } from "@/domain/countdown";
 import type { EventSummary } from "@/domain/event";
 import { messages } from "@/app/messages.fr";
@@ -18,13 +19,11 @@ export type MyEventState = { predicted: boolean; joker: boolean };
  */
 export function EventCard({
   event,
-  timeZone,
   mine,
   now = new Date(),
   tick = true,
 }: {
   event: EventSummary;
-  timeZone: string;
   mine?: MyEventState;
   now?: Date;
   /** False in stories and screenshots, so the countdown stays on `now`. */
@@ -33,7 +32,7 @@ export function EventCard({
   const hour = new Intl.DateTimeFormat("fr-FR", {
     hour: "2-digit",
     minute: "2-digit",
-    timeZone,
+    timeZone: TIME_ZONE,
   }).format(new Date(event.startsAt));
   const open = eventPhase(now, event.lockAt) === "open";
   const left = countdown(now, event.lockAt);

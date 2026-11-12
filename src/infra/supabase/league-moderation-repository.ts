@@ -3,6 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { UseCaseError } from "@/application/errors";
 import type { LeagueModerationRepository } from "@/application/league-moderation";
 
+import { readAll } from "./read-all";
+
 const fail = (): never => {
   throw new UseCaseError("LEAGUES_UNAVAILABLE");
 };
@@ -13,7 +15,10 @@ export function createSupabaseLeagueModerationRepository(
 ): LeagueModerationRepository {
   return {
     async list() {
-      const { data, error } = await client.rpc("admin_list_leagues");
+      // Every league (#508), a page at a time.
+      const { data, error } = await readAll((from, to) =>
+        client.rpc("admin_list_leagues").range(from, to),
+      );
       if (error) return error.code === "42501" ? "not_admin" : fail();
       return (
         data as {

@@ -27,22 +27,12 @@ export function eventSlug(
     .join("-");
 }
 
-function isTimeZone(timeZone: string): boolean {
-  try {
-    new Intl.DateTimeFormat("en", { timeZone });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** A name, a known type, dates in order (YYYY-MM-DD) and a real time zone. */
+/** A name, a known type and dates in order (YYYY-MM-DD). */
 export function isValidCompetition(c: {
   name: string;
   scope: string;
   startsOn: string;
   endsOn: string;
-  timeZone: string;
 }): boolean {
   const date = /^\d{4}-\d{2}-\d{2}$/;
   return (
@@ -50,16 +40,21 @@ export function isValidCompetition(c: {
     SCOPES.includes(c.scope as CompetitionScope) &&
     date.test(c.startsOn) &&
     date.test(c.endsOn) &&
-    c.endsOn >= c.startsOn &&
-    isTimeZone(c.timeZone)
+    c.endsOn >= c.startsOn
   );
 }
 
-/** The UTC offset of a time zone at an instant, in minutes. */
-function offsetMinutes(instant: Date, timeZone: string): number {
+/**
+ * The one time zone of the app (owner's decision, 11 Nov 2026, #501): every event time is typed
+ * in the back-office and shown to players in Paris time, whatever the country of the competition.
+ */
+export const TIME_ZONE = "Europe/Paris";
+
+/** The UTC offset of Paris time at an instant, in minutes. */
+function offsetMinutes(instant: Date): number {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat("en-US", {
-      timeZone,
+      timeZone: TIME_ZONE,
       hourCycle: "h23",
       year: "numeric",
       month: "2-digit",
@@ -82,20 +77,18 @@ function offsetMinutes(instant: Date, timeZone: string): number {
   return (asUtc - instant.getTime()) / 60000;
 }
 
-/** A local time typed in the competition's time zone ("2027-06-25T20:35"), as an ISO UTC instant. */
-export function zonedToUtc(local: string, timeZone: string): string {
+/** A time typed in Paris time ("2027-06-25T20:35"), as an ISO UTC instant. */
+export function parisToUtc(local: string): string {
   const guess = new Date(`${local}:00Z`);
-  const first = new Date(guess.getTime() - offsetMinutes(guess, timeZone) * 60000);
-  // Second pass for local times near a change of offset (summer time).
-  return new Date(guess.getTime() - offsetMinutes(first, timeZone) * 60000).toISOString();
+  const first = new Date(guess.getTime() - offsetMinutes(guess) * 60000);
+  // Second pass for times near a change of offset (summer time).
+  return new Date(guess.getTime() - offsetMinutes(first) * 60000).toISOString();
 }
 
-/** The local time ("YYYY-MM-DDTHH:mm") of an instant in a time zone: the inverse of zonedToUtc. */
-export function utcToZoned(iso: string, timeZone: string): string {
+/** The Paris time ("YYYY-MM-DDTHH:mm") of an instant: the inverse of parisToUtc. */
+export function utcToParis(iso: string): string {
   const instant = new Date(iso);
-  return new Date(instant.getTime() + offsetMinutes(instant, timeZone) * 60000)
-    .toISOString()
-    .slice(0, 16);
+  return new Date(instant.getTime() + offsetMinutes(instant) * 60000).toISOString().slice(0, 16);
 }
 
 /**

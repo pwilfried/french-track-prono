@@ -17,10 +17,10 @@ const event = (slug: string, startsAt: string, gender: EventGender = "M"): Event
 
 describe("groupEventsByDay", () => {
   it("groups events that start on the same day", () => {
-    const days = groupEventsByDay(
-      [event("a", "2026-09-11T17:00:00Z"), event("b", "2026-09-11T18:00:00Z")],
-      "Europe/Budapest",
-    );
+    const days = groupEventsByDay([
+      event("a", "2026-09-11T17:00:00Z"),
+      event("b", "2026-09-11T18:00:00Z"),
+    ]);
 
     expect(days.map((d) => [d.day, d.events.map((e) => e.slug)])).toEqual([
       ["2026-09-11", ["a", "b"]],
@@ -28,23 +28,23 @@ describe("groupEventsByDay", () => {
   });
 
   it("keeps the order of the events and of the days", () => {
-    const days = groupEventsByDay(
-      [event("a", "2026-09-11T17:00:00Z"), event("b", "2026-09-12T17:00:00Z")],
-      "Europe/Budapest",
-    );
+    const days = groupEventsByDay([
+      event("a", "2026-09-11T17:00:00Z"),
+      event("b", "2026-09-12T17:00:00Z"),
+    ]);
 
     expect(days.map((d) => d.day)).toEqual(["2026-09-11", "2026-09-12"]);
   });
 
-  it("uses the day of the competition time zone, not of UTC", () => {
-    // 22:30 UTC is already the next day, 00:30, in Budapest (UTC+2 in September).
-    const days = groupEventsByDay([event("late", "2026-09-11T22:30:00Z")], "Europe/Budapest");
+  it("uses the day in Paris time, not in UTC", () => {
+    // 22:30 UTC is already the next day, 00:30, in Paris (UTC+2 in September).
+    const days = groupEventsByDay([event("late", "2026-09-11T22:30:00Z")]);
 
     expect(days.map((d) => d.day)).toEqual(["2026-09-12"]);
   });
 
   it("returns no day for an empty list", () => {
-    expect(groupEventsByDay([], "Europe/Budapest")).toEqual([]);
+    expect(groupEventsByDay([])).toEqual([]);
   });
 });
 

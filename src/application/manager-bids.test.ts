@@ -6,6 +6,7 @@ import { UseCaseError } from "./errors";
 import {
   closeManagerMercato,
   getMyManagerBids,
+  isMercatoOpenForMe,
   placeManagerBid,
   withdrawManagerBid,
   type BidOutcome,
@@ -214,5 +215,42 @@ describe("closeManagerMercato", () => {
     await expect(
       closeManagerMercato({ bids: repository }).execute({ leagueId: "l1" }),
     ).rejects.toEqual(new UseCaseError(code));
+  });
+});
+
+describe("isMercatoOpenForMe", () => {
+  const leagues = (ids: string[]) => ({
+    listMine: async () =>
+      ids.map((id) => ({
+        id,
+        name: id,
+        isPublic: false,
+        inviteCode: "CODE",
+        ownerId: "u1",
+        memberCount: 2,
+      })),
+  });
+  const byLeague = (states: Record<string, MyManagerBids | "not_member">) =>
+    ({
+      ...bids(open).repository,
+      mine: async (leagueId: string) => states[leagueId] ?? "not_member",
+    }) satisfies ManagerBidRepository;
+
+  it("says the mercato is open when one of the player's Manager leagues takes bids", async () => {
+    const answer = await isMercatoOpenForMe({
+      managerLeagues: leagues(["closed", "open"]),
+      bids: byLeague({ closed: { ...open, mercatoOpen: false }, open }),
+    }).execute();
+    expect(answer).toBe(true);
+  });
+
+  it("says it is closed without a Manager league, or when no league takes bids", async () => {
+    const closed = byLeague({ l1: { ...open, mercatoOpen: false }, l2: "not_member" });
+    expect(await isMercatoOpenForMe({ managerLeagues: leagues([]), bids: closed }).execute()).toBe(
+      false,
+    );
+    expect(
+      await isMercatoOpenForMe({ managerLeagues: leagues(["l1", "l2"]), bids: closed }).execute(),
+    ).toBe(false);
   });
 });

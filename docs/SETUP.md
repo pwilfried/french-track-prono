@@ -228,8 +228,9 @@ L'accueil liste les compétitions de la base (internationales et françaises). L
 par date** (celle en cours, sinon la prochaine à commencer ; toutes finies : la plus récente).
 Une compétition se choisit aussi par son lien (`/competitions/<slug>`, `/epreuves?competition=<slug>`).
 La variable `COMPETITION_SLUG` (côté serveur, `.env.local`) force une compétition : la CI s'en sert
-pour épingler les tests de bout en bout sur l'Ultimate Championship. Le nom, la ville, les dates
-et le fuseau horaire viennent de la table `competitions` (back-office « Compétitions »).
+pour épingler les tests de bout en bout sur l'Ultimate Championship. Le nom, la ville et les dates
+viennent de la table `competitions` (back-office « Compétitions ») ; les horaires s'affichent
+toujours en heure de Paris.
 
 ## 4 bis. Connexion : lien du message et téléphone
 
@@ -414,6 +415,11 @@ Mise en route, une seule fois :
    de la fonction et ce même secret (`private.push_set_secrets`). Sans les clés VAPID, rien n'est
    déployé et `pg_cron` n'appelle rien. Sans `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, le bouton
    n'apparaît pas.
+5. Facultatif (#527) : GitHub, environnement « production », secret `SENTRY_DSN` = le DSN du
+   projet Sentry (le même que `NEXT_PUBLIC_SENTRY_DSN`, `docs/sentry.md`). Le workflow le donne à
+   l'Edge Function avec ses autres secrets ; un passage en échec (exception, ou envois refusés
+   autrement que par 404/410) arrive alors dans Sentry. Sans lui, la fonction marche pareil et ne
+   signale rien.
 
 Vérifier : Supabase > Integrations > Cron, tâche `push-notifications` (un passage par minute) ;
 Edge Functions > `push-notifications` > Logs (« n notification(s) envoyée(s) »). Une réponse 401

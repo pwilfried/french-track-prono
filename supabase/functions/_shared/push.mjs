@@ -44,6 +44,9 @@ export async function sendDue(database, push) {
   const due = await database.due();
   /** @type {string[]} */
   const forgotten = [];
+  /** Failed sends by kind and HTTP status (#527), in the order first met. */
+  /** @type {Map<string, { kind: string, status: number | "network", count: number }>} */
+  const failures = new Map();
   let failed = 0;
   for (const notification of due) {
     const payload = JSON.stringify(notificationOf(notification));
@@ -60,6 +63,11 @@ export async function sendDue(database, push) {
         if (statusCode === 404 || statusCode === 410) forgotten.push(device.endpoint);
         else {
           failed += 1;
+          const status = statusCode ?? "network";
+          const key = `${notification.kind}:${status}`;
+          const failure = failures.get(key) ?? { kind: notification.kind, status, count: 0 };
+          failure.count += 1;
+          failures.set(key, failure);
           console.error(`push failed (${statusCode ?? "network"}): ${body ?? error}`);
         }
       }
@@ -68,5 +76,5 @@ export async function sendDue(database, push) {
   if (due.length)
     await database.markSent(due.map(({ user_id, event_slug, kind }) => ({ user_id, event_slug, kind })));
   if (forgotten.length) await database.forget(forgotten);
-  return { sent: due.length, forgotten: forgotten.length, failed };
+  return { sent: due.length, forgotten: forgotten.length, failed, failures: [...failures.values()] };
 }

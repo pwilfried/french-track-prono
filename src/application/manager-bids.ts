@@ -2,6 +2,7 @@ import { availableCredits, reservedCredits, type ManagerBid } from "@/domain/man
 
 import { UseCaseError, type ErrorCode } from "./errors";
 import type { ManagerCatalogueRepository } from "./manager-catalogue";
+import type { ManagerLeagueRepository } from "./manager-leagues";
 
 /** An athlete the player won at the close of a round (#423), for the amount of their bid. */
 export type WonAthlete = { athleteId: string; amount: number; round: number };
@@ -123,6 +124,20 @@ export function getMyManagerBids(ports: {
 }
 
 /** Places or changes a secret bid; the amount comes from the form, in whole credits. */
+/** Whether one of the player's Manager leagues takes bids now: the home says so (#526). */
+export function isMercatoOpenForMe(ports: {
+  managerLeagues: Pick<ManagerLeagueRepository, "listMine">;
+  bids: ManagerBidRepository;
+}) {
+  return {
+    async execute(): Promise<boolean> {
+      const leagues = await ports.managerLeagues.listMine();
+      const states = await Promise.all(leagues.map((league) => ports.bids.mine(league.id)));
+      return states.some((state) => state !== "not_member" && state.mercatoOpen);
+    },
+  };
+}
+
 export function placeManagerBid(ports: { bids: ManagerBidRepository }) {
   return {
     async execute(input: { leagueId: string; athleteId: string; amount: string }): Promise<void> {

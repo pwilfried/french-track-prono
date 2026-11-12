@@ -12,11 +12,7 @@ export function getMyBadges(ports: {
   events: EventReader;
 }) {
   return {
-    async execute(input: {
-      userId: string;
-      competitionSlug: string;
-      timeZone: string;
-    }): Promise<BadgeProgress[]> {
+    async execute(input: { userId: string; competitionSlug: string }): Promise<BadgeProgress[]> {
       const [lines, predictions, events] = await Promise.all([
         ports.ranking.competitionLines(input.competitionSlug),
         ports.predictions.listForCompetition(input.userId, input.competitionSlug),
@@ -45,7 +41,7 @@ export function getMyBadges(ports: {
         myLines,
         computedEvents: [...computed].map(([eventId, startsAt]) => ({ eventId, startsAt })),
         frenchWinnerEvents: new Set(french.filter((id): id is string => id !== null)),
-        days: groupEventsByDay(sorted, input.timeZone).map((d) => d.events.map((e) => e.id)),
+        days: groupEventsByDay(sorted).map((d) => d.events.map((e) => e.id)),
         predictedEventIds: new Set(predictions.map((p) => p.eventId)),
       });
     },
