@@ -97,18 +97,15 @@ test("a new player without a league is asked for a first podium, then for a leag
   const steps = page.getByRole("region", { name: "Comment ça marche" });
   await expect(steps.locator("ol > li")).toHaveCount(3);
 
-  // Without a league, the friends' game; the Manager; FrenchTrack.
+  // Without a league, the friends' game; FrenchTrack. No Manager for a player who is not an
+  // admin (#615).
   const league = page.getByRole("region", { name: "C'est entre amis que ça se joue" });
   await expect(league.getByRole("link", { name: "Créer ma ligue" })).toHaveAttribute(
     "href",
     "/ligues/creer",
   );
   await expect(league.getByRole("link", { name: "Ou rejoindre une ligue publique" })).toBeVisible();
-  const manager = page.getByRole("region", { name: "French Track Manager" });
-  await expect(manager.getByRole("link", { name: "Ouvrir le Manager" })).toHaveAttribute(
-    "href",
-    "/manager",
-  );
+  await expect(page.getByRole("region", { name: "French Track Manager" })).toHaveCount(0);
   const frenchTrack = page.getByRole("region", { name: "Le podcast FrenchTrack" });
   await expect(
     frenchTrack.getByRole("link", { name: "Écouter le dernier épisode (nouvel onglet)" }),

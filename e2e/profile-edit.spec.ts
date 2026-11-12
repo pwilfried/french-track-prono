@@ -12,7 +12,8 @@ test("a player changes pseudo and club, then signs in with a new address", async
 
   // The profile opens from the pseudo and bib of the header, on every page (#471).
   const bar = page.getByRole("navigation", { name: "Navigation principale" });
-  await expect(bar.getByRole("link")).toHaveCount(5);
+  // Four tabs: the Manager tab is for the admins only (#615).
+  await expect(bar.getByRole("link")).toHaveCount(4);
   await expect(bar.getByRole("link", { name: "Profil" })).toHaveCount(0);
   await page.goto("/epreuves");
   await page.getByRole("banner").getByRole("link", { name: "Mon profil", exact: true }).click();
