@@ -8,6 +8,7 @@ import { getManagerRevealRounds } from "@/application/manager-reveal";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { CatalogueCard } from "@/components/manager/catalogue-card";
+import { CompetitionChips } from "@/components/events/competition-chips";
 import { buttonVariants } from "@/components/ui/button";
 import { MANAGER_FAMILIES, MANAGER_SEXES, type ManagerSex } from "@/domain/manager-rules";
 import {
@@ -36,7 +37,8 @@ function caught(error: unknown): "error" {
 
 /**
  * The mercato catalogue of a league (#421): search and filters in the address, so they work
- * without script and survive a reload; a page of 30 athletes at a time.
+ * without script and survive a reload; a page of 30 athletes at a time. The filters are one row
+ * of chips that apply at once, so the first athlete shows without scrolling on a phone (#497).
  */
 export default async function CataloguePage({
   params,
@@ -79,14 +81,26 @@ export default async function CataloguePage({
   }
   const bidOf = new Map(mine === "error" ? [] : mine.bids.map((b) => [b.athleteId, b.amount]));
 
-  const pageHref = (page: number) =>
-    `?${new URLSearchParams({
+  /** The address of the catalogue with some filters changed; a new filter starts at page 1. */
+  const href = (
+    change: Partial<{
+      sex: ManagerSex | null;
+      family: (typeof MANAGER_FAMILIES)[number] | null;
+      availableOnly: boolean;
+      page: number;
+    }>,
+  ) => {
+    const next = { sex, family, availableOnly, page: 1, ...change };
+    const params = new URLSearchParams({
       ...(query && { q: query }),
-      ...(sex && { sexe: sex }),
-      ...(family && { famille: family }),
-      ...(availableOnly && { libres: "1" }),
-      page: String(page),
-    })}`;
+      ...(next.sex && { sexe: next.sex }),
+      ...(next.family && { famille: next.family }),
+      ...(next.availableOnly && { libres: "1" }),
+      ...(next.page > 1 && { page: String(next.page) }),
+    }).toString();
+    return `/manager/${id}/catalogue${params && `?${params}`}`;
+  };
+  const pageHref = (page: number) => href({ page });
   const filtered = Boolean(query || sex || family || availableOnly);
 
   return (
@@ -130,55 +144,44 @@ export default async function CataloguePage({
             </ul>
           </nav>
         )}
-        <form className="flex flex-col gap-3 rounded-card border border-border bg-card p-3.5">
-          <label className="flex flex-col gap-1 text-sm font-semibold">
-            {text.search}
-            <input
-              type="search"
-              name="q"
-              defaultValue={query}
-              placeholder={text.searchPlaceholder}
-              className={field}
-            />
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1 text-sm font-semibold">
-              {text.sex}
-              <select name="sexe" defaultValue={sex ?? ""} className={field}>
-                <option value="">{text.allSexes}</option>
-                {MANAGER_SEXES.map((s) => (
-                  <option key={s} value={s}>
-                    {text.sexes[s]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-semibold">
-              {text.family}
-              <select name="famille" defaultValue={family ?? ""} className={field}>
-                <option value="">{text.all}</option>
-                {MANAGER_FAMILIES.map((f) => (
-                  <option key={f} value={f}>
-                    {messages.disciplines.family[f]}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-semibold">
-            <input
-              type="checkbox"
-              name="libres"
-              value="1"
-              defaultChecked={availableOnly}
-              className="size-6 shrink-0 accent-primary"
-            />
-            {text.availableOnly}
-          </label>
-          <button type="submit" className={`${buttonVariants({ variant: "muted" })} w-full`}>
-            {text.apply}
-          </button>
+        {/* The search applies on Enter and keeps the other filters (#497). */}
+        <form role="search">
+          <input
+            type="search"
+            name="q"
+            aria-label={text.search}
+            defaultValue={query}
+            placeholder={text.searchPlaceholder}
+            className={field}
+          />
+          {sex && <input type="hidden" name="sexe" value={sex} />}
+          {family && <input type="hidden" name="famille" value={family} />}
+          {availableOnly && <input type="hidden" name="libres" value="1" />}
         </form>
+        <CompetitionChips
+          label={text.filters}
+          chips={[
+            { key: "all", name: text.all, active: !family, href: href({ family: null }) },
+            ...MANAGER_FAMILIES.map((f) => ({
+              key: f,
+              name: messages.disciplines.family[f],
+              active: family === f,
+              href: href({ family: family === f ? null : f }),
+            })),
+            ...MANAGER_SEXES.map((s) => ({
+              key: s,
+              name: text.sexes[s],
+              active: sex === s,
+              href: href({ sex: sex === s ? null : s }),
+            })),
+            {
+              key: "available",
+              name: text.availableOnly,
+              active: availableOnly,
+              href: href({ availableOnly: !availableOnly }),
+            },
+          ]}
+        />
 
         {view === "error" ? (
           <ErrorNotice

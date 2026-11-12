@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 
-import { createTestEvent, sql } from "./contract/database";
+import { createTestEvent, seedAthletes, sql } from "./contract/database";
 import { startListRepositoryContract } from "./contract/start-list-repository.contract";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryStartListStore, createSupabaseStartListRepository } from "./index";
@@ -70,7 +70,8 @@ if (url && key) {
       gender: "F",
       discipline: "100 m",
       // A woman of the seed who runs the event's discipline (a start list line gives it to her).
-      candidateId: sql(`with a as (select id from athletes where gender = 'F' order by id limit 1),
+      candidateId: sql(`with a as (select id from athletes where gender = 'F'
+          and id in (${seedAthletes}) order by id limit 1),
         en as (insert into entries (event_id, athlete_id) select '${eventId}', id from a
                on conflict do nothing)
         select id from a`),
