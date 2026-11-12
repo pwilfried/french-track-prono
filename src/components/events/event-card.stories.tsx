@@ -66,6 +66,10 @@ export const AlreadyPredicted: Story = {
   args: { event: baseEvent, mine: { predicted: true, joker: false } },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText(/Posé/)).toBeInTheDocument();
+    // A screen reader hears the status too, not only « 100 m, femmes, hour » (#517).
+    await expect(within(canvasElement).getByRole("link")).toHaveAccessibleName(
+      /^100 m, Femmes, \d\d:\d\d ✓ Posé$/,
+    );
   },
 };
 
@@ -105,6 +109,9 @@ export const FinishedWithPoints: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("+12 pts")).toBeInTheDocument();
     await expect(canvas.queryByText(/Posé/)).toBeNull();
+    await expect(canvas.getByRole("link")).toHaveAccessibleName(
+      /^100 m, Femmes, \d\d:\d\d \+12 pts$/,
+    );
   },
 };
 
