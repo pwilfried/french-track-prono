@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 
 import { UseCaseError, type ErrorCode } from "@/application/errors";
-import { placeManagerBid, withdrawManagerBid } from "@/application/manager-bids";
+import {
+  closeManagerMercato,
+  placeManagerBid,
+  withdrawManagerBid,
+} from "@/application/manager-bids";
 import { createSupabaseManagerBids } from "@/infra";
 
 import { formText } from "../form-data";
@@ -28,6 +32,21 @@ export async function managerBidAction(_: BidFormState, data: FormData): Promise
         amount: formText(data, "amount"),
       });
     }
+  } catch (error) {
+    if (error instanceof UseCaseError) return { error: error.code };
+    throw error;
+  }
+  revalidatePath(`/manager/${leagueId}/catalogue`);
+  return {};
+}
+
+/** The last participant who can still recruit closes the mercato of the league (#424). */
+export async function closeMercatoAction(_: BidFormState, data: FormData): Promise<BidFormState> {
+  const leagueId = formText(data, "league");
+  await managerPorts(`/manager/${leagueId}/catalogue`);
+  const ports = { bids: createSupabaseManagerBids(await getSessionClient()) };
+  try {
+    await closeManagerMercato(ports).execute({ leagueId });
   } catch (error) {
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;

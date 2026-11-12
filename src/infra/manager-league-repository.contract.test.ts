@@ -34,9 +34,13 @@ managerLeagueRepositoryContract("in-memory fake", async () => {
   };
   const store = createInMemoryManagerLeagueStore(rules);
   return {
-    creator: store.session({ userId: "u1", pseudo: "Créatrice", avatar: "🏃" }),
+    creator: store.session({
+      userId: "u1",
+      pseudo: "Créatrice",
+      bib: { number: 7, color: "blue" },
+    }),
     creatorId: "u1",
-    other: store.session({ userId: "u2", pseudo: "Autre", avatar: "🏃" }),
+    other: store.session({ userId: "u2", pseudo: "Autre", bib: { number: 7, color: "blue" } }),
     setBudget: async (budget) => {
       rules.current = { ...rules.current, rules: { ...rules.current.rules, budget } };
     },

@@ -59,7 +59,7 @@ const predictions = (list: Prediction[]): PredictionRepository => ({
 const line = (eventId: string, reasons: RankingLine["reasons"]): RankingLine => ({
   userId: "me",
   pseudo: "Me",
-  avatar: "🦅",
+  bib: { number: 7, color: "blue" },
   points: 3,
   reasons,
   eventId,

@@ -20,7 +20,7 @@ const event = (id: string, discipline: string, day: number): EventSummary => ({
 const line = (userId: string, eventId: string, day: number, points: number): RankingLine => ({
   userId,
   pseudo: userId,
-  avatar: "🦌",
+  bib: { number: 7, color: "blue" },
   points,
   reasons: points >= 12 ? [{ kind: "perfect_podium" }] : [],
   eventId,

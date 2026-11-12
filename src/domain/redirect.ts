@@ -21,3 +21,9 @@ export function safeRedirectPath(
   }
   return input;
 }
+
+/** The slug of the event page a path points to (`/epreuves/<slug>`), null for any other page. */
+export function eventSlugOfPath(path: string): string | null {
+  const match = /^\/epreuves\/([^/?#]+)\/?(?:[?#].*)?$/.exec(path);
+  return match ? match[1] : null;
+}
