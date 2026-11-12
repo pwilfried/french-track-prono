@@ -17,10 +17,13 @@ export function AthleteCard({
   athlete,
   paid,
   state = "normal",
+  compact = false,
 }: {
   athlete: { name: string; discipline: string; family: DisciplineFamily; sex: ManagerSex };
   paid: number;
   state?: AthleteCardState;
+  /** On a place of the lineup stadium (#427): smaller initials and text, no event line. */
+  compact?: boolean;
 }) {
   const { name, discipline, family, sex } = athlete;
   return (
@@ -34,27 +37,43 @@ export function AthleteCard({
       {/* Only the card fades when absent: its tag stays readable. */}
       <div
         className={cn(
-          "flex aspect-[3/4] flex-col justify-between rounded-card bg-gradient-to-b from-(--medal-gold-from) to-(--medal-gold-to) p-2.5 text-(--medal-gold-ink) shadow-sm",
+          "flex aspect-[3/4] flex-col justify-between bg-gradient-to-b from-(--medal-gold-from) to-(--medal-gold-to) text-(--medal-gold-ink) shadow-sm",
+          compact ? "rounded-xl p-1.5" : "rounded-card p-2.5",
           state === "absent" && "opacity-50 grayscale",
         )}
       >
-        <div className="flex items-start justify-between gap-1 text-xs font-extrabold">
+        <div
+          className={cn(
+            "flex items-start justify-between gap-1 font-extrabold",
+            compact ? "text-[10px]" : "text-xs",
+          )}
+        >
           <span className="font-mono tracking-wider">{text.codes[cardGroupOf(family)]}</span>
           <span className="font-mono tabular-nums">{messages.catalogue.price(paid)}</span>
         </div>
         <span
           aria-hidden
-          className="mx-auto grid size-14 place-items-center rounded-full border-2 border-(--medal-gold-ink)/30 bg-white/40 font-display text-xl font-extrabold"
+          className={cn(
+            "mx-auto grid place-items-center rounded-full border-2 border-(--medal-gold-ink)/30 bg-white/40 font-display font-extrabold",
+            compact ? "size-8 text-sm" : "size-14 text-xl",
+          )}
         >
           {athleteInitials(name)}
         </span>
         <div className="min-w-0 text-center">
-          <p className="break-words text-sm font-extrabold leading-tight">
+          <p
+            className={cn(
+              "break-words font-extrabold leading-tight",
+              compact ? "text-[11px]" : "text-sm",
+            )}
+          >
             {shortAthleteName(name)}
           </p>
-          <p className="truncate text-xs font-semibold">
-            {discipline} {messages.catalogue.sexShort[sex]}
-          </p>
+          {!compact && (
+            <p className="truncate text-xs font-semibold">
+              {discipline} {messages.catalogue.sexShort[sex]}
+            </p>
+          )}
         </div>
       </div>
       {state !== "normal" && (
