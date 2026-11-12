@@ -13,16 +13,19 @@ export function listMyPredictions(ports: { predictions: PredictionRepository }) 
   };
 }
 
-/** Whether the player has predicted at least once in the competitions given (#476). */
-export function hasPredicted(ports: { predictions: PredictionRepository }) {
+/**
+ * How many podiums the player has predicted in the competitions given: none makes a new player
+ * (#476), exactly one shows « Ton premier podium est posé ! » (#540).
+ */
+export function countPredictions(ports: { predictions: PredictionRepository }) {
   return {
-    async execute(input: { userId: string; competitionSlugs: string[] }): Promise<boolean> {
+    async execute(input: { userId: string; competitionSlugs: string[] }): Promise<number> {
       const lists = await Promise.all(
         input.competitionSlugs.map((slug) =>
           ports.predictions.listForCompetition(input.userId, slug),
         ),
       );
-      return lists.some((list) => list.length > 0);
+      return lists.reduce((total, list) => total + list.length, 0);
     },
   };
 }
