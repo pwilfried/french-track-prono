@@ -82,6 +82,9 @@ if (url && key) {
       lockAt,
     );
     for (const l of expected) {
+      // A new profile draws a random bib: pin it to the expected one.
+      sql(`update profiles set bib_number = ${l.bib.number}, bib_color = '${l.bib.color}'
+        where id = '${l.userId}'`);
       sql(`insert into score_events (user_id, competition_id, event_id, source, points, reason, detail)
         select '${l.userId}', competition_id, id, 'prediction', ${l.points}, 'prediction',
                '${JSON.stringify({ reasons: l.reasons })}'::jsonb
