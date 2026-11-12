@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { badgeProgress, badgesOf, nextBadge, type BadgeInput } from "./badges";
+import { badgeProgress, isEarned, nextBadge, type BadgeInput } from "./badges";
 
 const at = (day: number) => `2026-11-2${day}T19:00:00Z`;
 const base: BadgeInput = {
@@ -11,7 +11,13 @@ const base: BadgeInput = {
   predictedEventIds: new Set(),
 };
 
-describe("badgesOf", () => {
+// The badges earned, in display order.
+const badgesOf = (input: BadgeInput) =>
+  badgeProgress(input)
+    .filter(isEarned)
+    .map((p) => p.badge);
+
+describe("badges earned", () => {
   it("gives nothing to a new player", () => {
     expect(badgesOf(base)).toEqual([]);
   });
@@ -117,12 +123,6 @@ describe("badgeProgress", () => {
       predictedEventIds: new Set(["a", "d"]),
     };
     expect(of(input).fidele).toEqual([1, 2]);
-  });
-
-  it("always agrees with badgesOf", () => {
-    const input = { ...base, myLines: [winner("a", at(3))], frenchWinnerEvents: new Set(["a"]) };
-    const earned = badgeProgress(input).filter((p) => p.current >= p.target);
-    expect(earned.map((p) => p.badge)).toEqual(badgesOf(input));
   });
 });
 

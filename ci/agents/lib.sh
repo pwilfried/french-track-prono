@@ -31,6 +31,9 @@ remove_label() { as_bot gh api -X DELETE "repos/$repo/issues/$1/labels/$2" >/dev
 comment() { local who=$1 n=$2 body=$3; "$who" gh api "repos/$repo/issues/$n/comments" -f "body=$body" >/dev/null; }
 comments_of() { as_bot gh api --paginate "repos/$repo/issues/$1/comments" --jq '.[].body'; }
 
+# The issues that PR bodies (on stdin) close with "Closes/Fixes/Resolves #n", one number per line.
+closed_by() { grep -oiE '(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+' | grep -oE '[0-9]+' | sort -u || true; }
+
 # True when Claude ran out of its plan in the last 2 hours (marker left by after-agent.sh),
 # so it is not given new work in the meantime.
 quota_recent() {

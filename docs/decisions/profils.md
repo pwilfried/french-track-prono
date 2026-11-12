@@ -4,10 +4,11 @@ Décisions du propriétaire du 8 novembre 2026 (atelier #278, inscription #328, 
 
 ## Ce que le joueur renseigne et modifie
 
-- **À l'inscription** (`/bienvenue`) : pseudo, dossard (tiré au hasard, modifiable ; il remplace l'avatar emoji depuis #537), 15 ans
-  ou plus (comme avant), puis
-  **sexe**, **disciplines pratiquées** et **club**. Sexe, disciplines et club sont facultatifs :
-  un joueur peut jouer sans les donner, et les compléter plus tard.
+- **À l'inscription** (`/bienvenue`, « profil express », #539, décision du 12 nov. 2026) :
+  pseudo, dossard (tiré au hasard, modifiable ; il remplace l'avatar emoji depuis #537) et
+  15 ans ou plus, rien d'autre. Le bouton « C'est parti : mon premier prono » mène à l'épreuve
+  d'où vient le joueur (`next`), sinon à l'accueil. **Sexe**, **disciplines pratiquées** et
+  **club** sont facultatifs et se renseignent plus tard, depuis « Modifier mon profil ».
 - **Disciplines** : cases à cocher regroupées par famille (Sprint : 100 m, 200 m, 400 m ; Haies ;
   Demi-fond ; Fond ; Sauts ; Lancers ; Épreuves combinées ; Marche ; Route). Plusieurs choix,
   dans une ou plusieurs familles. Les familles et les disciplines sont celles de la table

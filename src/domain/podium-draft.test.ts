@@ -10,7 +10,6 @@ import {
   placeAthlete,
   removeStep,
   stepOf,
-  swapSteps,
   toPodium,
   type PodiumDraft,
   type Step,
@@ -57,12 +56,6 @@ describe("removeStep", () => {
   });
 });
 
-describe("swapSteps", () => {
-  it("swaps two steps, empty or not", () => {
-    expect(swapSteps(draft("a", "b", null), 1, 3)).toEqual(draft(null, "b", "a"));
-  });
-});
-
 describe("isComplete and toPodium", () => {
   it("is not complete with a step missing, and gives no podium", () => {
     const partial = draft("a", null, "c");
@@ -86,7 +79,6 @@ describe("any sequence of actions", () => {
       athlete: fc.constantFrom("a", "b", "c", "d"),
     }),
     fc.record({ kind: fc.constant("remove" as const), step }),
-    fc.record({ kind: fc.constant("swap" as const), a: step, b: step }),
   );
 
   it("never puts the same athlete on two steps, and a complete draft is always a valid podium", () => {
@@ -97,9 +89,7 @@ describe("any sequence of actions", () => {
           current =
             a.kind === "place"
               ? placeAthlete(current, a.step, a.athlete)
-              : a.kind === "remove"
-                ? removeStep(current, a.step)
-                : swapSteps(current, a.a, a.b);
+              : removeStep(current, a.step);
           const placed = [current.first, current.second, current.third].filter((x) => x !== null);
           expect(new Set(placed).size).toBe(placed.length);
         }

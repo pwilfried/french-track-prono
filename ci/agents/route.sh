@@ -18,6 +18,10 @@ is_owner "$SENDER" || { echo "$SENDER is not an owner: nothing to start."; exit 
 if [ "$EVENT" = issues ] && [ "$ACTION" = labeled ]; then
   [ "$LABEL" = agent:claude ] || { echo "Label $LABEL: nothing to start."; exit 0; }
   out auto true # from the chain or the owner wanting it done: finishing without a PR is news
+  # The hourly quota retry labels it again: an issue someone already handed over keeps its one PR.
+  if as_bot gh pr list -R "$repo" --state open --limit 100 --json body --jq '.[].body // ""' | closed_by | grep -qx "$NUMBER"; then
+    echo "An open PR already closes #$NUMBER: nothing to start."; exit 0
+  fi
 else
   grep -qiE '(^|[^[:alnum:]_])@claude([^[:alnum:]_-]|$)' <<< "$BODY" || { echo "No @claude: nothing to start."; exit 0; }
 fi

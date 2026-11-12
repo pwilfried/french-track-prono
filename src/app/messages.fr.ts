@@ -112,6 +112,26 @@ export const messages = {
       mercato: "Le mercato est ouvert : place tes offres avant la fin du tour.",
       open: "Ouvrir le Manager",
     },
+    /** The card asking an incomplete profile to be completed (#540). */
+    completeProfile: {
+      firstPodium: "Ton premier podium est posé !",
+      title: "Complète ton profil",
+      text: "Ton club apparaît à côté de ton pseudo. Tes disciplines restent visibles par toi seul.",
+      later: "Plus tard",
+      laterLabel: "Plus tard : masquer pendant 30 jours",
+      familiesLabel: "Tes disciplines",
+      family: {
+        sprint: "Sprint",
+        hurdles: "Haies",
+        middle_distance: "Demi-fond",
+        jumps: "Sauts",
+        throws: "Lancers",
+        combined: "Épreuves combinées",
+      },
+      precise: "Préciser les épreuves",
+      save: "Enregistrer",
+      saving: "Enregistrement…",
+    },
     frenchTrack: {
       title: "Le podcast FrenchTrack",
       text: "Les analyses et les invités avant chaque grand rendez-vous, et l'actu sur nos réseaux.",
@@ -202,14 +222,16 @@ export const messages = {
     loading: "Chargement des épreuves…",
   },
   leaderboard: {
-    streak: (n: number) => `, série de ${n} épreuves avec des points`,
     change: (n: number) =>
       n > 0
-        ? `${n} ${n === 1 ? "place gagnée" : "places gagnées"} depuis la dernière épreuve`
+        ? `${n} ${n === 1 ? "place gagnée" : "places gagnées"} depuis la veille`
         : n < 0
-          ? `${-n} ${n === -1 ? "place perdue" : "places perdues"} depuis la dernière épreuve`
-          : "même place qu'avant la dernière épreuve",
+          ? `${-n} ${n === -1 ? "place perdue" : "places perdues"} depuis la veille`
+          : "même place que la veille",
     label: "Classement",
+    podium: "Podium",
+    podiumPlace: (rank: number, pseudo: string, points: number) =>
+      `${ordinal(rank)} : ${pseudo}, ${points} ${points <= 1 ? "point" : "points"}`,
     me: "Toi",
     tie: "ex æquo",
     position: (rank: number) => ordinal(rank),
@@ -378,6 +400,8 @@ export const messages = {
     competitionsTitle: "Compétitions de la ligue",
     noCompetition: "Pas encore de compétition : le classement démarre dès que tu en ajoutes une.",
     noCompetitionMember: "Pas encore de compétition : le créateur de la ligue en ajoutera.",
+    noComingCompetition:
+      "Aucune compétition à venir pour l'instant : tu pourras l'ajouter dès qu'elle sera annoncée.",
     addLabel: "Ajouter une compétition à venir",
     addSubmit: "Ajouter",
     adding: "Ajout…",
@@ -393,6 +417,10 @@ export const messages = {
     publicJoinLabel: (name: string) => `Rejoindre la ligue publique ${name}`,
     publicJoining: "…",
     publicPlaces: (n: number, max: number) => `${n} / ${max} joueurs`,
+    officialBadge: "Officielle",
+    officialOpen: "Ouverte à tous",
+    officialPitch: "Mesure-toi à toute la communauté FrenchTrack",
+    officialJoin: (name: string) => `Rejoindre la ${name}`,
     report: "Signaler",
     reportLabel: (name: string) => `Signaler la ligue ${name} à l'admin`,
     reporting: "…",
@@ -444,12 +472,32 @@ export const messages = {
     title: "Classement",
     subtitle: "Tous les joueurs · toutes les compétitions",
     competitionSubtitle: (name: string) => `Tous les joueurs · ${name}`,
+    tonightSubtitle: "Points gagnés sur les finales de ce soir · tous les joueurs",
+    leagueSubtitle: (name: string) => `Ta ligue · ${name}`,
+    noLeagueSubtitle: "Joue contre tes amis",
     scopeLabel: "Choisir le classement",
+    viewLabel: "Vue du classement",
+    view: { ligue: "Ma ligue", soir: "Ce soir", general: "Général" },
+    leagueLabel: "Choisir la ligue",
     general: "Général",
-    mine: (rank: number, of: number, points: number) =>
-      `Ta place : ${ordinal(rank)} sur ${of} · ${points} ${points <= 1 ? "pt" : "pts"}`,
+    you: (rank: number, points: number) =>
+      `Tu es ${ordinal(rank)} · ${points} ${points <= 1 ? "pt" : "pts"}`,
+    aroundMe: "Autour de moi",
     notRanked: "Tu n'as pas encore de points : fais tes pronos pour entrer au classement.",
+    tonightEmpty:
+      "Pas encore de points ce soir : ils arrivent dès que les résultats des finales du jour sont saisis.",
+    notRankedTonight: "Pas de points pour toi ce soir.",
     predict: "Faire mes pronos",
+    starts: (startsOn: string, days: number) => {
+      const day = new Date(`${startsOn}T12:00:00Z`).toLocaleDateString("fr-FR", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        timeZone: "UTC",
+      });
+      return `Le classement démarre · ${day} · ${days === 1 ? "Demain" : `Dans ${days} jours`}`;
+    },
+    firstPodiums: "Poser mes premiers podiums",
   },
   admin: {
     band: "Back-office",
@@ -689,6 +737,7 @@ export const messages = {
       "Avant chaque finale, compose ton podium. Les points tombent quand le résultat officiel est saisi.",
     link: "Comment jouer ?",
     helpLabel: "Comment jouer : les règles",
+    help: "Règles",
     podiumTitle: "Le podium",
     podium: (exact: number, wrong: number, perfect: number) =>
       `Choisis le 1er, le 2e et le 3e. Chaque athlète à la bonne place rapporte ${exact} points, un athlète sur le podium mais à une autre place ${wrong} point${wrong > 1 ? "s" : ""}. Les trois dans l'ordre : ${perfect} points de bonus.`,
@@ -1037,7 +1086,6 @@ export const messages = {
   },
   event: {
     back: "Épreuves",
-    final: "Finale",
     title: (discipline: string) => `${discipline} — Finale`,
     combined: (n: number) => `Épreuve combinée · ${n} disciplines`,
     combinedNote: "Tu pronostiques le podium final, au total des points.",
@@ -1169,7 +1217,7 @@ export const messages = {
       predictions: "pronos",
       perfect: "podiums parfaits",
       winners: "vainqueurs",
-      success: "réussite",
+      success: "pronos qui rapportent",
       streak: "meilleure série",
       joker: "joker joué",
     },
@@ -1251,7 +1299,6 @@ export const messages = {
     numberLabel: "Numéro",
     numberHint: "De 0 à 999. Plusieurs joueurs peuvent avoir le même.",
     colorLabel: "Couleur",
-    preview: "Aperçu",
     colors: {
       blue: "Bleu",
       red: "Rouge",
@@ -1263,7 +1310,7 @@ export const messages = {
   },
   welcome: {
     title: "Bienvenue !",
-    subtitle: "Dernière étape : ton profil de joueur.",
+    subtitle: "Choisis comment les autres joueurs te verront. C'est tout.",
     pseudoLabel: "Ton pseudo",
     pseudoHint:
       "2 à 24 caractères : lettres, chiffres, espace, _ - . Visible par les autres joueurs.",
@@ -1275,8 +1322,9 @@ export const messages = {
     sexNone: "Je préfère ne pas le dire",
     disciplinesLabel: "Tes disciplines (facultatif)",
     disciplinesHint: "Coche celles que tu pratiques, autant que tu veux. Visible par toi seul.",
-    submit: "Créer mon profil",
+    submit: "C'est parti : mon premier prono",
     submitting: "Création…",
+    later: "Ton club et tes disciplines : plus tard, depuis ton profil.",
   },
   clubPicker: {
     legend: "Ton club (facultatif)",
@@ -1328,7 +1376,6 @@ export const messages = {
     tolerance: (value: number, unit: "time" | "distance" | "points") =>
       `±${unit === "points" ? Math.round(value) : value.toFixed(2).replace(".", ",")} ${{ time: "s", distance: "m", points: "pts" }[unit]}`,
     oddsHint: "La cote multiplie tes points : plus elle est haute, plus le pari rapporte.",
-    step: (rank: 1 | 2 | 3) => ["1er", "2e", "3e"][rank - 1]!,
     stepLabel: (rank: 1 | 2 | 3, name: string | null) =>
       `${["1re", "2e", "3e"][rank - 1]} place : ${name ?? "vide"}`,
     athleteLabel: (name: string, rank: 1 | 2 | 3 | null) =>
@@ -1648,6 +1695,7 @@ export const messages = {
     CLUB_NAME_INVALID: "Le nom du club doit faire entre 2 et 120 caractères.",
     CLUB_NAME_BANNED: "Ce nom de club n'est pas possible (insulte, nom officiel ou lien).",
     CLUB_UNKNOWN: "Ce club n'existe plus dans la liste. Cherche-le à nouveau.",
+    PROFILE_DETAILS_EMPTY: "Choisis ton club ou au moins une discipline.",
     CLUB_MERGE_SAME: "Choisis un autre club que celui à fusionner.",
     LEAGUE_OWNER_STAYS:
       "Le créateur ne se retire pas : il passe la main, ou supprime la ligue entière.",

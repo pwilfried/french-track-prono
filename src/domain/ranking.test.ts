@@ -1,7 +1,14 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { rankChanges, rankPlayers, streaks, totalsOf, type PlayerTotals } from "./ranking";
+import {
+  aroundMe,
+  linesOfDay,
+  movesSinceYesterday,
+  rankPlayers,
+  totalsOf,
+  type PlayerTotals,
+} from "./ranking";
 
 const player = (
   pseudo: string,
@@ -113,7 +120,7 @@ describe("totalsOf", () => {
   });
 });
 
-describe("rankChanges", () => {
+describe("movesSinceYesterday", () => {
   const line = (userId: string, eventId: string, startsAt: string, points: number) => ({
     userId,
     eventId,
@@ -121,10 +128,11 @@ describe("rankChanges", () => {
     points,
     reasons: [],
   });
+  // 23 and 24 Nov, evening in Paris (UTC+1).
   const day1 = "2026-11-23T19:00:00Z";
   const day2 = "2026-11-24T19:00:00Z";
 
-  it("compares each player's place with the ranking before the last computed event", () => {
+  it("compares each player's place with the ranking at the end of the day before", () => {
     const lines = [
       line("ana", "e1", day1, 10),
       line("bob", "e1", day1, 5),
@@ -133,62 +141,186 @@ describe("rankChanges", () => {
       line("cid", "e2", day2, 1),
     ];
 
-    const changes = rankChanges(lines, (id) => id);
+    const moves = movesSinceYesterday(lines, (id) => id, "2026-11-24");
 
-    expect(changes.get("bob")).toBe(1); // 2nd → 1st
-    expect(changes.get("ana")).toBe(-1); // 1st → 2nd
-    expect(changes.get("cid")).toBe(0);
+    expect(moves.get("bob")).toBe(1); // 2nd → 1st
+    expect(moves.get("ana")).toBe(-1); // 1st → 2nd
+    expect(moves.get("cid")).toBe(0);
   });
 
-  it("gives null to a player who only scored in the last event, and to everyone after one event", () => {
-    expect(rankChanges([line("ana", "e1", day1, 3)], (id) => id).get("ana")).toBeNull();
-    const changes = rankChanges(
+  it("counts every event of the day as one move, however many were computed", () => {
+    const lines = [
+      line("ana", "e1", day1, 10),
+      line("bob", "e1", day1, 5),
+      line("bob", "e2", "2026-11-24T17:00:00Z", 3),
+      line("bob", "e3", day2, 3),
+    ];
+
+    expect(movesSinceYesterday(lines, (id) => id, "2026-11-24").get("bob")).toBe(1);
+  });
+
+  it("gives 0 to everyone once a day has passed without event: nobody moved since yesterday", () => {
+    const lines = [line("ana", "e1", day1, 10), line("bob", "e2", day2, 12)];
+
+    const moves = movesSinceYesterday(lines, (id) => id, "2026-11-26");
+
+    expect([...moves.values()]).toEqual([0, 0]);
+  });
+
+  it("gives null to a player who was not ranked yesterday, and to everyone on the first day", () => {
+    expect(
+      movesSinceYesterday([line("ana", "e1", day1, 3)], (id) => id, "2026-11-23").get("ana"),
+    ).toBeNull();
+    const moves = movesSinceYesterday(
       [line("ana", "e1", day1, 3), line("dan", "e2", day2, 9)],
       (id) => id,
+      "2026-11-24",
     );
-    expect(changes.get("dan")).toBeNull();
-    expect(changes.get("ana")).toBe(-1);
+    expect(moves.get("dan")).toBeNull();
+    expect(moves.get("ana")).toBe(-1);
+  });
+
+  it("ranks a player without any event (a league member at 0) on both days", () => {
+    const lines = [line("zoe", "", "", 0), line("ana", "e0", day1, 1), line("bob", "e1", day2, 3)];
+
+    const moves = movesSinceYesterday(lines, (id) => id, "2026-11-24");
+
+    expect(moves.get("zoe")).toBe(-1); // 2nd yesterday, 3rd today
+    expect(moves.get("ana")).toBe(-1);
+    expect(moves.get("bob")).toBeNull();
+  });
+
+  it("gives tied players the same move", () => {
+    const lines = [
+      line("ana", "e1", day1, 10),
+      line("bob", "e1", day1, 4),
+      line("cid", "e1", day1, 4),
+      line("bob", "e2", day2, 8),
+      line("cid", "e2", day2, 8),
+    ];
+
+    const moves = movesSinceYesterday(lines, (id) => id, "2026-11-24");
+
+    expect([moves.get("bob"), moves.get("cid"), moves.get("ana")]).toEqual([1, 1, -2]);
   });
 
   it("does not depend on the order of the lines", () => {
-    const lines = [line("a", "e1", day1, 2), line("b", "e2", day2, 5), line("b", "e1", day1, 1)];
+    const lines = [
+      line("a", "e1", day1, 2),
+      line("b", "e2", day2, 5),
+      line("b", "e1", day1, 1),
+      line("c", "e2", day2, 4),
+    ];
     const sorted = (m: Map<string, number | null>) => [...m].sort(([x], [y]) => x.localeCompare(y));
-    expect(sorted(rankChanges([...lines].reverse(), (id) => id))).toEqual(
-      sorted(rankChanges(lines, (id) => id)),
+    const expected = sorted(movesSinceYesterday(lines, (id) => id, "2026-11-24"));
+    fc.assert(
+      fc.property(fc.shuffledSubarray(lines, { minLength: lines.length }), (shuffled) => {
+        expect(sorted(movesSinceYesterday(shuffled, (id) => id, "2026-11-24"))).toEqual(expected);
+      }),
     );
   });
 });
 
-describe("streaks", () => {
-  const line = (userId: string, eventId: string, day: number, points: number) => ({
-    userId,
-    eventId,
-    eventStartsAt: `2026-11-2${day}T19:00:00Z`,
-    points,
-    reasons: [],
-  });
-
-  it("counts the last computed events in a row where the player scored at least 1 point", () => {
+describe("linesOfDay", () => {
+  it("keeps the lines of the events of one competition day, Paris time", () => {
     const lines = [
-      line("ana", "e1", 3, 4),
-      line("ana", "e2", 4, 1),
-      line("ana", "e3", 5, 3),
-      line("bob", "e1", 3, 5),
-      line("bob", "e2", 4, 0),
-      line("bob", "e3", 5, 2),
-      line("cid", "e1", 3, 6),
-      line("cid", "e2", 4, 6),
+      { eventStartsAt: "2026-11-23T19:00:00Z" },
+      { eventStartsAt: "2026-11-24T19:00:00Z" },
+      { eventStartsAt: "2026-11-25T00:30:00Z" }, // 01:30 in Paris: still the 24th's evening
+      { eventStartsAt: "" },
     ];
 
-    const result = streaks(lines);
+    expect(linesOfDay(lines, "2026-11-24")).toEqual([lines[1], lines[2]]);
+  });
+});
 
-    expect(result.get("ana")).toBe(3);
-    expect(result.get("bob")).toBe(1); // 0 on e2 broke it
-    expect(result.get("cid")).toBe(0); // no prediction on the last event
+describe("aroundMe", () => {
+  const ranked = (n: number) =>
+    rankPlayers(
+      Array.from({ length: n }, (_, i) => player(`P${String(i + 1).padStart(2, "0")}`, 100 - i)),
+    );
+  const shape = (items: ("gap" | { rank: number })[]) =>
+    items.map((item) => (item === "gap" ? "···" : item.rank));
+
+  it("shows the first ten, a gap, then the player and two neighbours on each side", () => {
+    expect(shape(aroundMe(ranked(30), "p20"))).toEqual([
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      "···",
+      18,
+      19,
+      20,
+      21,
+      22,
+    ]);
   });
 
-  it("does not depend on the order of the lines", () => {
-    const lines = [line("a", "e1", 3, 1), line("a", "e2", 4, 2), line("b", "e2", 4, 1)];
-    expect(streaks([...lines].reverse()).get("a")).toBe(streaks(lines).get("a"));
+  it("shows only the first ten when the player is among them, far from the eleventh", () => {
+    expect(shape(aroundMe(ranked(30), "p04"))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
+
+  it("joins the neighbours to the first ten without a gap when they touch", () => {
+    expect(shape(aroundMe(ranked(30), "p10"))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(shape(aroundMe(ranked(30), "p13"))).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    ]);
+  });
+
+  it("shows the two players above the last one, and nobody below", () => {
+    expect(shape(aroundMe(ranked(30), "p30"))).toEqual([
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      "···",
+      28,
+      29,
+      30,
+    ]);
+  });
+
+  it("takes tied players around the player in the order of the list", () => {
+    const rows = rankPlayers([
+      ...Array.from({ length: 12 }, (_, i) => player(`T${String(i + 1).padStart(2, "0")}`, 99 - i)),
+      player("Ana", 5),
+      player("Bob", 5),
+      player("Cid", 5),
+      player("Dan", 1),
+    ]);
+
+    const items = aroundMe(rows, "bob");
+
+    expect(items.slice(10).map((i) => (i === "gap" ? "···" : `${i.userId}:${i.rank}`))).toEqual([
+      "···",
+      "t12:12",
+      "ana:13",
+      "bob:13",
+      "cid:13",
+      "dan:16",
+    ]);
+  });
+
+  it("shows the first ten only when the player is not ranked", () => {
+    expect(shape(aroundMe(ranked(30), "nobody"))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(shape(aroundMe(ranked(30), undefined))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
+
+  it("shows everyone in a short ranking", () => {
+    expect(shape(aroundMe(ranked(5), "p05"))).toEqual([1, 2, 3, 4, 5]);
+    expect(aroundMe([], "p01")).toEqual([]);
   });
 });

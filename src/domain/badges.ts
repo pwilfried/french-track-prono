@@ -70,18 +70,16 @@ export function badgeProgress(input: BadgeInput): BadgeProgress[] {
   });
 }
 
-/** The badges earned, in display order. */
-export function badgesOf(input: BadgeInput): Badge[] {
-  return badgeProgress(input)
-    .filter((p) => p.current >= p.target)
-    .map((p) => p.badge);
+/** A badge is earned once its progress reaches its target. */
+export function isEarned(progress: BadgeProgress): boolean {
+  return progress.current >= progress.target;
 }
 
 /** The locked badge with the fewest steps left (display order breaks ties); null when all earned. */
 export function nextBadge(progress: BadgeProgress[]): (BadgeProgress & { left: number }) | null {
   return (
     progress
-      .filter((p) => p.current < p.target)
+      .filter((p) => !isEarned(p))
       .map((p) => ({ ...p, left: p.target - p.current }))
       .sort((a, b) => a.left - b.left)[0] ?? null
   );
