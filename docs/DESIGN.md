@@ -53,8 +53,8 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Accueil (joueur connecté, #526) | Salutation ; carte « Ta prochaine action » (finale à pronostiquer la plus proche du verrouillage, sinon prochaine compétition) ; dessous, « Complète ton profil » tant que le profil n'a ni club ni discipline (#540 : recherche de club, six familles en boutons à bascule, « Préciser les épreuves », × « Plus tard » pour 30 jours ; bandeau vert « Ton premier podium est posé ! » au-dessus après le premier prono) ; « Comment ça marche » avant le premier prono (refermable) ; ma ligue (place, écart, trois lignes) ou l'invitation à en créer une ; dernier résultat noté ; French Track Manager ; bloc FrenchTrack (podcast, réseaux). Un bloc vide ne s'affiche pas |
 | Épreuve | Liste de départ, **podium à composer** (glisser-déposer ou taps), joker, verrou |
 | Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
-| Ligue | Classement, derniers pronos révélés, réactions emoji |
-| Mes ligues | Mes ligues (rang, membres), puis les ligues publiques ; au-dessus d'elles, tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553 : « Officielle », « Ouverte à tous », « Rejoindre la Ligue FrenchTrack ») ; une fois membre, elle rejoint ses ligues avec le badge « Officielle » |
+| Ligue | Classement, derniers pronos révélés, réactions emoji ; tant que le joueur y est seul, **InviteBanner** à la place du classement |
+| Mes ligues | Mes ligues (**LeagueCard**), puis les ligues publiques ; au-dessus d'elles, tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553 : « Officielle », « Ouverte à tous », « Rejoindre la Ligue FrenchTrack ») ; une fois membre, elle rejoint ses ligues avec le badge « Officielle » |
 | Classement général | Top de la communauté, ma progression |
 | Profil | Dossard (grand format, avec le pseudo), club ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager |
 | Back-office (toi) | Tableau de bord (choses à faire, préparation), compétitions et épreuves, résultats et calcul, listes des clubs, joueurs et ligues |
@@ -87,6 +87,12 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   bandeau bleu « Le classement démarre » remplace le classement vide. Le jour de compétition va de
   6 h à 6 h, heure de Paris : une finale courue à 2 h du matin compte pour « Ce soir ».
   Un visiteur voit « Général » seul, sans barre fixe, avec « Se connecter » (#573).
+- **LeagueCard** (#552) : une de mes ligues dans « Mes ligues » ; nom (badge « Publique » ou
+  « Officielle »), joueurs et compétitions dessous ; à droite ma place en gros et ▲/▼ depuis la
+  veille, « Pas encore de points » sans points.
+- **InviteBanner** (#552) : dans une ligue où le joueur est seul, fond bleu doux, « Tu es seul
+  pour l'instant », un grand bouton « Inviter mes amis » (partage natif, sinon lien copié) et le
+  code lisible dessous pour le dire à voix haute.
 - **Carte « Ma saison »** (`/profil/carte`) : image verticale 1080×1920 prête pour les stories,
   partagée par le partage natif ou téléchargée ; « Mon podium du 100 m » viendra plus tard.
 - **Liste du back-office** (clubs, joueurs, ligues) : recherche, puces de filtre avec leur
