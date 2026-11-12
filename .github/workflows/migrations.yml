@@ -7,7 +7,8 @@ name: Database migrations
 # Secrets (GitHub > Settings > Secrets and variables > Actions, environment "production"):
 #   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, SUPABASE_PROJECT_REF,
 #   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (docs/SETUP.md, « Déploiements Vercel »),
-#   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY (push notifications, docs/SETUP.md, « Notifications push »).
+#   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY (push notifications, docs/SETUP.md, « Notifications push »),
+#   SENTRY_DSN (optional: failed push sends reported to Sentry, docs/sentry.md).
 # A missing Supabase secret fails the production run: deploying the code without its schema would
 # put them out of step. The dry run of a PR only says so (a fork's PR has no secrets).
 # Migrations apply a minute or two before the new code is live (longer if the deploy fails): they
@@ -113,6 +114,8 @@ jobs:
         env:
           VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          # Optional (#527): failed runs are reported to Sentry (docs/sentry.md).
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
           if [ -z "$VAPID_PUBLIC_KEY" ] || [ -z "$VAPID_PRIVATE_KEY" ]; then
             echo "::notice::No VAPID keys: the push notifications are not deployed."
@@ -124,6 +127,9 @@ jobs:
           supabase functions deploy push-notifications --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt --yes
           supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" --yes \
             PUSH_CRON_SECRET="$secret" VAPID_PUBLIC_KEY="$VAPID_PUBLIC_KEY" VAPID_PRIVATE_KEY="$VAPID_PRIVATE_KEY"
+          if [ -n "$SENTRY_DSN" ]; then
+            supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" --yes SENTRY_DSN="$SENTRY_DSN"
+          fi
           url="https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/push-notifications"
           # Both values are hex or a project ref: no quote to escape in the SQL literals.
           sql="select private.push_set_secrets('$url', '$secret')"
