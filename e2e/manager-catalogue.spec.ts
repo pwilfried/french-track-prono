@@ -74,6 +74,12 @@ test("the admin prices an athlete, who then shows in the catalogue of a Manager 
     await expect(card).not.toContainText("Recruté");
     await expect(card).not.toContainText("Libre");
     await expect(page.getByRole("status")).toHaveText("1 athlète");
+    // Before the launch, a member sees the catalogue and who plays, without any bid (#620).
+    const band = page.getByRole("region", { name: "Avant le mercato" });
+    await expect(band).toContainText("1 participant");
+    await expect(band).toContainText("Date d'ouverture à venir");
+    await expect(card).toContainText("PB—");
+    await expect(page.getByRole("button", { name: "Enchérir" })).toHaveCount(0);
 
     await filters.getByRole("link", { name: "Hommes" }).click();
     await expect(page.getByText("Aucun athlète ne correspond.")).toBeVisible();

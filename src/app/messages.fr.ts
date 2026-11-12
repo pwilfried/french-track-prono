@@ -411,8 +411,12 @@ export const messages = {
       "Tes offres restent secrètes jusqu'à la fin du tour : les autres participants ne voient ni tes offres, ni leur nombre. Puis toutes les offres du tour sont révélées. La dernière offre compte.",
     myBids: "Mes offres",
     noBids: "Aucune offre pour l'instant.",
-    mercatoClosed:
-      "Le mercato de cette ligue n'est pas ouvert : les enchères commenceront à son ouverture.",
+    beforeMercato: "Avant le mercato",
+    opensIn: "Ouverture dans",
+    opensLater: "Date d'ouverture à venir",
+    participants: (n: number) => (n <= 1 ? `${n} participant` : `${n} participants`),
+    justJoined: (pseudo: string) => `${pseudo} vient de rejoindre la ligue`,
+    prepare: "Prépare tes choix : les enchères s'ouvrent au lancement.",
     mercatoOver: "Le mercato de cette ligue est clos : les équipes sont faites.",
     lastBidder:
       "Plus personne d'autre ne peut recruter : tu peux clore le mercato. Tes offres en cours seront traitées, puis le mercato sera clos pour tout le monde.",

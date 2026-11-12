@@ -7,3 +7,10 @@ export const canStartManagerSeason = (participants: number) =>
   participants >= MANAGER_LEAGUE_MIN &&
   participants <= MANAGER_LEAGUE_MAX &&
   participants % 2 === 0;
+
+/**
+ * The participant who joined last, first joined first in the list: the catalogue before the
+ * mercato says « X vient de rejoindre la ligue » (#620). Nobody while the creator is alone.
+ */
+export const newestArrival = <P>(participants: readonly P[]): P | null =>
+  participants.length > 1 ? participants[participants.length - 1]! : null;
