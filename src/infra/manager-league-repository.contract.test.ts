@@ -4,6 +4,7 @@ import type { ManagerRuleSet } from "@/application/manager-rules";
 
 import { sql } from "./contract/database";
 import { managerLeagueRepositoryContract } from "./contract/manager-league-repository.contract";
+import { lockManagerRules } from "./contract/manager-rules-lock";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryManagerLeagueStore, createSupabaseManagerLeagueRepository } from "./index";
 
@@ -59,9 +60,16 @@ if (url && key) {
       signedInPlayer(url, key),
       signedInPlayer(url, key),
     ]);
-    const budget = sql("select rules ->> 'budget' from manager_rules");
-    const setBudget = async (value: number) =>
-      void sql(`update manager_rules set rules = jsonb_set(rules, '{budget}', '${value}')`);
+    // The rule contract changes the same rules in parallel: the first budget change waits for
+    // it, and keeps the rules until restore puts the budget back.
+    let held: { unlock: () => void; budget: string } | undefined;
+    const setBudget = async (value: number) => {
+      if (!held) {
+        const unlock = await lockManagerRules();
+        held = { unlock, budget: sql("select rules ->> 'budget' from manager_rules") };
+      }
+      sql(`update manager_rules set rules = jsonb_set(rules, '{budget}', '${value}')`);
+    };
     return {
       creator: createSupabaseManagerLeagueRepository(creator.client),
       creatorId: creator.userId,
@@ -69,7 +77,15 @@ if (url && key) {
       setBudget,
       openMercato: async (id) =>
         void sql(`update manager_leagues set mercato_opened_at = now() where id = '${id}'`),
-      restore: () => setBudget(Number(budget)),
+      restore: async () => {
+        if (!held) return;
+        try {
+          await setBudget(Number(held.budget));
+        } finally {
+          held.unlock();
+          held = undefined;
+        }
+      },
     };
   });
 } else {
