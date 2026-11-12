@@ -10,6 +10,7 @@ import {
   type ListColumn,
   type ListFeedback,
 } from "@/components/admin/admin-list";
+import { Bib } from "@/components/profile/bib";
 import { leagueCapacity } from "@/domain/league";
 
 import {
@@ -244,7 +245,7 @@ function LeagueSheet({ league, context }: { league: LeagueRow; context: DetailCo
             {members.map((member) => (
               <li key={member.userId} className="flex min-h-11 items-center gap-2 text-sm">
                 <span className="w-9 font-mono font-bold">{text.rank(member.rank)}</span>
-                <span aria-hidden="true">{member.avatar}</span>
+                <Bib bib={member.bib} />
                 <span className="min-w-0 flex-1 break-words font-semibold">
                   {member.pseudo}
                   {member.isOwner && (

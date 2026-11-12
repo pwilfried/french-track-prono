@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import type { AdminPlayer, PlayerLeague } from "@/application/player-moderation";
 import { messages } from "@/app/messages.fr";
+import { Bib } from "@/components/profile/bib";
 import {
   AdminList,
   type DetailContext,
@@ -46,7 +47,7 @@ const columns: ListColumn<PlayerRow>[] = [
     sort: (a, b) => a.pseudo.localeCompare(b.pseudo, "fr"),
     cell: (p) => (
       <span className="inline-flex items-center gap-2">
-        <span aria-hidden="true">{p.avatar}</span>
+        <Bib bib={p.bib} />
         <span className="break-words">{p.pseudo}</span>
         {p.blocked && (
           <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-bold text-accent-text">
@@ -191,9 +192,7 @@ function PlayerSheet({ player, context }: { player: PlayerRow; context: DetailCo
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted-foreground">
-        <span aria-hidden="true" className="mr-1">
-          {player.avatar}
-        </span>
+        <Bib bib={player.bib} className="mr-1.5 align-middle" />
         {text.since(player.joinedLabel)} · {player.club ?? text.noClub}
       </p>
       <dl className="grid grid-cols-3 gap-2">

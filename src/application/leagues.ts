@@ -1,4 +1,5 @@
 import { isBannedName } from "@/domain/banned-names";
+import type { Bib } from "@/domain/bib";
 import { normalizeInviteCode, validateLeagueName } from "@/domain/league";
 
 import { UseCaseError } from "./errors";
@@ -26,7 +27,7 @@ export type PublicLeague = {
 export type LeagueMember = {
   userId: string;
   pseudo: string;
-  avatar: string;
+  bib: Bib;
   club?: string | null;
   /** When they joined, ISO 8601: only the events locked after count in the league (#376). */
   joinedAt?: string;

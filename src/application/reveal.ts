@@ -1,3 +1,4 @@
+import type { Bib } from "@/domain/bib";
 import type { Podium } from "@/domain/podium-draft";
 import { pickDistribution, type PickShare, type Reaction } from "@/domain/reveal";
 
@@ -9,7 +10,7 @@ export type RevealedPrediction = {
   predictionId: string;
   userId: string;
   pseudo: string;
-  avatar: string;
+  bib: Bib;
   podium: Podium;
   useJoker: boolean;
   reactions: { userId: string; reaction: Reaction }[];

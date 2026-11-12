@@ -21,7 +21,7 @@ const line = (
 ): RankingLine => ({
   userId,
   pseudo: userId.toUpperCase(),
-  avatar: "🦅",
+  bib: { number: 7, color: "blue" },
   points,
   reasons: perfect ? [{ kind: "perfect_podium" }] : [],
   eventId,
@@ -48,7 +48,7 @@ const leagues = (members: LeagueMember[] | null): LeagueRepository => ({
 const member = (userId: string): LeagueMember => ({
   userId,
   pseudo: userId.toUpperCase(),
-  avatar: "🦅",
+  bib: { number: 7, color: "blue" },
 });
 
 describe("getGeneralRanking", () => {

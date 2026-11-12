@@ -61,14 +61,14 @@ delete from auth.users      where email like 'demo-%@example.test';
 -- The leagues the demo owns too, to clear old versions.
 delete from leagues         where name in ('Démo Prono', 'Démo Manager');
 delete from manager_leagues where name in ('Démo Prono', 'Démo Manager');
--- Avatars must be in src/domain/profile.ts AVATARS; anything else makes the Supabase profile
--- repository return null and the proxy sends the player to /bienvenue on every page.
-create temp table demo (n int primary key, pseudo text, avatar text) on commit drop;
+-- Bibs (#537): number 0 to 999 and a colour of src/domain/bib.ts BIB_COLORS (the database checks).
+create temp table demo (n int primary key, pseudo text, bib_number smallint, bib_color text)
+  on commit drop;
 insert into demo values
-  (1, 'Démo Gazelle', '🏃'), (2, 'Démo Perche', '🦅'), (3, 'Démo Haie', '🐆'),
-  (4, 'Démo Relais', '⚡'),  (5, 'Démo Marteau', '🔥'), (6, 'Démo Javelot', '🚀'),
-  (7, 'Démo Sprint', '🎯'),  (8, 'Démo Fond', '🐢'),   (9, 'Démo Disque', '🦊'),
-  (10, 'Démo Triple', '🍀'), (11, 'Démo Poids', '🥇'), (12, 'Démo Hauteur', '🏅');
+  (1, 'Démo Gazelle', 7, 'blue'),   (2, 'Démo Perche', 42, 'red'),    (3, 'Démo Haie', 110, 'gold'),
+  (4, 'Démo Relais', 4, 'green'),   (5, 'Démo Marteau', 85, 'white'), (6, 'Démo Javelot', 98, 'night'),
+  (7, 'Démo Sprint', 100, 'blue'),  (8, 'Démo Fond', 999, 'red'),    (9, 'Démo Disque', 0, 'gold'),
+  (10, 'Démo Triple', 18, 'green'), (11, 'Démo Poids', 23, 'white'), (12, 'Démo Hauteur', 245, 'night');
 
 -- GoTrue (Supabase Auth) scans rows with Go structs that reject NULL on several columns the
 -- schema still allows NULL on: instance_id, created_at, updated_at, and the token columns. Set
@@ -88,8 +88,9 @@ select '00000000-0000-0000-0000-000000000000'::uuid,
        '{}'::jsonb
 from demo;
 
-insert into profiles (id, pseudo, avatar_emoji, age_confirmed_at)
-select ('00000000-0000-4000-9000-' || lpad(n::text, 12, '0'))::uuid, pseudo, avatar, now()
+insert into profiles (id, pseudo, bib_number, bib_color, age_confirmed_at)
+select ('00000000-0000-4000-9000-' || lpad(n::text, 12, '0'))::uuid, pseudo, bib_number, bib_color,
+       now()
 from demo;
 
 -- 3. Predictions on every event of the championship: each player picks one of twelve podium

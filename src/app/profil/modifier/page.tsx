@@ -15,7 +15,7 @@ import { messages } from "../../messages.fr";
 import { getCurrentUser, getSessionClient } from "../../session";
 import { EditProfileForm } from "./edit-profile-form";
 
-/** The player changes their pseudo, avatar, sex, disciplines and club (#341). */
+/** The player changes their pseudo, bib, sex, disciplines and club (#341, #537). */
 export default async function EditProfilePage() {
   const user = await getCurrentUser();
   if (!user) redirect(`/connexion?next=${encodeURIComponent("/profil/modifier")}`);
@@ -39,7 +39,8 @@ export default async function EditProfilePage() {
           disciplines={disciplines.map(({ name, family }) => ({ name, family }))}
           initial={{
             pseudo: profile.pseudo,
-            avatar: profile.avatar,
+            bibNumber: String(profile.bib.number),
+            bibColor: profile.bib.color,
             sex: details.sex ?? "",
             disciplines: details.disciplines,
             club: details.club,

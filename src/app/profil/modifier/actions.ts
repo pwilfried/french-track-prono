@@ -18,7 +18,8 @@ import { getCurrentUser, getSessionClient } from "../../session";
 
 export type EditProfileState = PlayerDetailsFields & {
   pseudo: string;
-  avatar: string;
+  bibNumber: string;
+  bibColor: string;
   error?: ErrorCode;
 };
 
@@ -29,7 +30,8 @@ export async function editProfileAction(
   const { fields, input: details } = readPlayerDetails(data);
   const state: EditProfileState = {
     pseudo: formText(data, "pseudo"),
-    avatar: formText(data, "avatar"),
+    bibNumber: formText(data, "bibNumber"),
+    bibColor: formText(data, "bibColor"),
     ...fields,
   };
 
@@ -44,7 +46,8 @@ export async function editProfileAction(
     await updateProfile({ profiles: createSupabaseProfileRepository(client) }).execute({
       userId: user.userId,
       pseudo: state.pseudo,
-      avatar: state.avatar,
+      bibNumber: state.bibNumber,
+      bibColor: state.bibColor,
     });
     await savePlayerDetails({
       details: createSupabasePlayerDetailsRepository(client),
