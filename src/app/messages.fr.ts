@@ -1052,22 +1052,31 @@ export const messages = {
     label: "Vérification anti-robot",
   },
   signIn: {
-    title: "Connexion",
-    subtitle: "Sans mot de passe : un code arrive par e-mail.",
+    title: "Connexion ou inscription",
+    subtitle:
+      "Pas de mot de passe : on t'envoie un code par e-mail. Première fois ? Ton compte se crée tout seul.",
+    /** Reminder of the event the visitor came from (« 100 m femmes »). */
+    eventWaiting: (event: string) =>
+      `Ton podium du ${event} t'attend. Encore une minute et tu le poses.`,
     emailLabel: "Ton e-mail",
     emailHint: "Jamais affiché aux autres joueurs.",
     send: "Recevoir mon code",
     sending: "Envoi…",
-    firstTime: "Pas de compte à créer : si c'est ta première fois, il se crée tout seul.",
-    waysTitle: "Deux façons de te connecter",
-    waysBody: "Tape le code reçu ci-dessous, ou ouvre le lien du message (sur ce téléphone).",
+    perks: [
+      "Gratuit, sans argent en jeu",
+      "Ton profil en 30 secondes",
+      "Un jeu du podcast FrenchTrack",
+    ],
+    codeTitle: "Regarde tes e-mails",
+    sentTo: "Code envoyé à",
     codeLabel: "Code reçu par e-mail",
     verify: "Me connecter",
     verifying: "Vérification…",
-    resend: "Renvoyer",
+    linkTip: "Ou plus simple : ouvre le lien du message sur ce téléphone.",
+    resend: "Renvoyer un code",
     resent: "Un nouveau code vient d'être envoyé.",
     changeEmail: "Autre e-mail",
-    codeNote: "Le code expire au bout d'une heure. Pense à regarder tes spams.",
+    codeNote: "Pas reçu ? Regarde dans tes spams. Le code expire au bout d'une heure.",
     linkInvalid: "Ce lien ne fonctionne plus. Demande un nouveau code.",
   },
   account: {
