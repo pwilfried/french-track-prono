@@ -112,6 +112,26 @@ export const messages = {
       mercato: "Le mercato est ouvert : place tes offres avant la fin du tour.",
       open: "Ouvrir le Manager",
     },
+    /** The card asking an incomplete profile to be completed (#540). */
+    completeProfile: {
+      firstPodium: "Ton premier podium est posé !",
+      title: "Complète ton profil",
+      text: "Ton club apparaît à côté de ton pseudo. Tes disciplines restent visibles par toi seul.",
+      later: "Plus tard",
+      laterLabel: "Plus tard : masquer pendant 30 jours",
+      familiesLabel: "Tes disciplines",
+      family: {
+        sprint: "Sprint",
+        hurdles: "Haies",
+        middle_distance: "Demi-fond",
+        jumps: "Sauts",
+        throws: "Lancers",
+        combined: "Épreuves combinées",
+      },
+      precise: "Préciser les épreuves",
+      save: "Enregistrer",
+      saving: "Enregistrement…",
+    },
     frenchTrack: {
       title: "Le podcast FrenchTrack",
       text: "Les analyses et les invités avant chaque grand rendez-vous, et l'actu sur nos réseaux.",
@@ -1646,6 +1666,7 @@ export const messages = {
     CLUB_NAME_INVALID: "Le nom du club doit faire entre 2 et 120 caractères.",
     CLUB_NAME_BANNED: "Ce nom de club n'est pas possible (insulte, nom officiel ou lien).",
     CLUB_UNKNOWN: "Ce club n'existe plus dans la liste. Cherche-le à nouveau.",
+    PROFILE_DETAILS_EMPTY: "Choisis ton club ou au moins une discipline.",
     CLUB_MERGE_SAME: "Choisis un autre club que celui à fusionner.",
     LEAGUE_OWNER_STAYS:
       "Le créateur ne se retire pas : il passe la main, ou supprime la ligue entière.",

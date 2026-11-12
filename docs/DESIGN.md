@@ -50,7 +50,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 
 | Écran | Contenu clé |
 |---|---|
-| Accueil (joueur connecté, #526) | Salutation ; carte « Ta prochaine action » (finale à pronostiquer la plus proche du verrouillage, sinon prochaine compétition) ; « Comment ça marche » avant le premier prono (refermable) ; ma ligue (place, écart, trois lignes) ou l'invitation à en créer une ; dernier résultat noté ; French Track Manager ; bloc FrenchTrack (podcast, réseaux). Un bloc vide ne s'affiche pas |
+| Accueil (joueur connecté, #526) | Salutation ; carte « Ta prochaine action » (finale à pronostiquer la plus proche du verrouillage, sinon prochaine compétition) ; dessous, « Complète ton profil » tant que le profil n'a ni club ni discipline (#540 : recherche de club, six familles en boutons à bascule, « Préciser les épreuves », × « Plus tard » pour 30 jours ; bandeau vert « Ton premier podium est posé ! » au-dessus après le premier prono) ; « Comment ça marche » avant le premier prono (refermable) ; ma ligue (place, écart, trois lignes) ou l'invitation à en créer une ; dernier résultat noté ; French Track Manager ; bloc FrenchTrack (podcast, réseaux). Un bloc vide ne s'affiche pas |
 | Épreuve | Liste de départ, **podium à composer** (glisser-déposer ou taps), joker, verrou |
 | Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
 | Ligue | Classement, derniers pronos révélés, réactions emoji |

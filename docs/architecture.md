@@ -237,7 +237,9 @@ compétitions confondues (#319), et l'onglet Classement donne aussi celui de cha
 (`countsInLeague`, #376) : un prono fait avant d'y entrer reste au général et à la compétition. L'accueil du joueur connecté
 part de sa prochaine action (#526) : `nextAction` et `leagueStanding` (`src/domain/home.ts`)
 choisissent la finale ouverte la plus proche du verrouillage, sinon la prochaine compétition, et la
-ligue où il est le mieux classé ; les compétitions par type restent sur `/competitions`, et
+ligue où il est le mieux classé. Un profil incomplet (ni club ni discipline) y voit la carte
+« Complète ton profil » (#540) : la règle, les six familles et les 30 jours de « Plus tard » vivent
+dans `src/domain/profile-reminder.ts`, la date dans `player_details.reminder_hidden_until` ; les compétitions par type restent sur `/competitions`, et
 les pages suivent la prochaine compétition par date (`src/app/competition.ts`). Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
 calculé en TypeScript à partir des lignes de points (pas de vue SQL).
 
