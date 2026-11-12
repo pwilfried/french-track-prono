@@ -96,3 +96,27 @@ test("a club missing from the list is typed and waits for validation", async ({ 
          where p.pseudo = '${player.pseudo}'`),
   ).toBe("f");
 });
+
+test("a visitor pastes the code copied from the e-mail and is signed in", async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  const player = newPlayer("paste");
+  await clearMailbox(player.email);
+  await page.goto("/connexion");
+  await page.getByLabel("Ton e-mail").fill(player.email);
+  await page.getByRole("button", { name: "Recevoir mon code" }).click();
+  const paste = page.getByRole("button", { name: "Coller le code" });
+
+  // Nothing to paste yet: a short message, the field stays usable.
+  await page.evaluate(() => navigator.clipboard.writeText("rien à coller"));
+  await paste.click();
+  await expect(page.getByRole("status")).toHaveText("Pas de code dans le presse-papiers");
+  await expect(page.getByLabel(/code/i)).toBeEditable();
+
+  const code = await latestCodeFromMailbox(player.email);
+  await page.evaluate((text) => navigator.clipboard.writeText(text), `Ton code : ${code}`);
+  await paste.click();
+  await page.waitForURL(/\/bienvenue/);
+});

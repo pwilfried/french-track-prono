@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 
 import { AccountHero } from "@/components/account/account-hero";
 import { Captcha } from "@/components/account/captcha";
 import { Field } from "@/components/account/field";
+import { PasteCodeButton } from "@/components/account/paste-code-button";
 import { SubmitButton } from "@/components/account/submit-button";
 
 import { messages } from "../messages.fr";
@@ -27,6 +28,16 @@ export function SignInForm({
     step: "email",
     email: "",
   });
+  const codeForm = useRef<HTMLFormElement>(null);
+
+  // A pasted code fills the field and signs in, as if « Me connecter » were pressed.
+  function signInWith(code: string) {
+    const form = codeForm.current;
+    const field = form?.elements.namedItem("code");
+    if (!form || !(field instanceof HTMLInputElement)) return;
+    field.value = code;
+    form.requestSubmit(form.querySelector<HTMLButtonElement>('button[value="verify"]'));
+  }
 
   if (current.step === "email") {
     return (
@@ -82,7 +93,7 @@ export function SignInForm({
   // « Autre e-mail » shows at the top right but comes last in the form, so that pressing Enter
   // in the code field signs in rather than going back.
   return (
-    <form action={action} noValidate className="relative">
+    <form ref={codeForm} action={action} noValidate className="relative">
       <input type="hidden" name="email" value={current.email} />
       <input type="hidden" name="next" value={next} />
       <header className="px-4 pb-2 pt-6">
@@ -110,6 +121,7 @@ export function SignInForm({
           required
           className="min-h-16 text-center text-3xl font-extrabold tracking-[0.4em]"
         />
+        <PasteCodeButton onCode={signInWith} />
         {current.resent ? (
           <p role="status" className="text-sm font-semibold text-success-text">
             {messages.signIn.resent}

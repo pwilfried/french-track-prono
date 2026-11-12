@@ -1070,6 +1070,8 @@ export const messages = {
     codeTitle: "Regarde tes e-mails",
     sentTo: "Code envoyé à",
     codeLabel: "Code reçu par e-mail",
+    pasteCode: "Coller le code",
+    noCodeToPaste: "Pas de code dans le presse-papiers",
     verify: "Me connecter",
     verifying: "Vérification…",
     linkTip: "Ou plus simple : ouvre le lien du message sur ce téléphone.",
