@@ -1,9 +1,9 @@
-import { isAvatar, validatePseudo } from "@/domain/profile";
-import type { Avatar } from "@/domain/profile";
+import { validateBib, type Bib } from "@/domain/bib";
+import { validatePseudo } from "@/domain/profile";
 
 import { UseCaseError } from "./errors";
 
-export type Profile = { userId: string; pseudo: string; avatar: Avatar; ageConfirmedAt: Date };
+export type Profile = { userId: string; pseudo: string; bib: Bib; ageConfirmedAt: Date };
 
 /** Port: where profiles are stored. Real adapter = Supabase, fake = in memory. */
 export interface ProfileRepository {
@@ -12,11 +12,8 @@ export interface ProfileRepository {
   isAdmin(userId: string): Promise<boolean>;
   /** Saves a new profile. Returns why it could not, instead of throwing, for the two expected cases. */
   create(profile: Profile): Promise<"created" | "pseudo_taken" | "profile_exists">;
-  /** Changes the signed-in player's pseudo and avatar (#341). */
-  update(
-    userId: string,
-    change: { pseudo: string; avatar: Avatar },
-  ): Promise<"updated" | "pseudo_taken">;
+  /** Changes the signed-in player's pseudo and bib (#341, #537). */
+  update(userId: string, change: { pseudo: string; bib: Bib }): Promise<"updated" | "pseudo_taken">;
   /** Deletes the signed-in player's account and everything attached to it (F13). */
   deleteMine(userId: string): Promise<void>;
 }
@@ -24,7 +21,9 @@ export interface ProfileRepository {
 export type CreateProfileInput = {
   userId: string;
   pseudo: string;
-  avatar: string;
+  /** As typed in the form: 0 to 999, no leading zero. */
+  bibNumber: string;
+  bibColor: string;
   ageConfirmed: boolean;
 };
 
@@ -35,12 +34,13 @@ export function createProfile(ports: { profiles: ProfileRepository; now?: () => 
       if (!input.ageConfirmed) throw new UseCaseError("AGE_NOT_CONFIRMED");
       const pseudo = validatePseudo(input.pseudo);
       if (!pseudo.ok) throw new UseCaseError(pseudo.code);
-      if (!isAvatar(input.avatar)) throw new UseCaseError("AVATAR_INVALID");
+      const bib = validateBib(input.bibNumber, input.bibColor);
+      if (!bib.ok) throw new UseCaseError(bib.code);
 
       const profile: Profile = {
         userId: input.userId,
         pseudo: pseudo.pseudo,
-        avatar: input.avatar,
+        bib: bib.bib,
         ageConfirmedAt: now(),
       };
       const outcome = await ports.profiles.create(profile);

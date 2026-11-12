@@ -20,7 +20,7 @@ export async function signUp(page: Page, player: { email: string; pseudo: string
   await page.getByRole("button", { name: "Me connecter" }).click();
   await page.waitForURL(/\/bienvenue/);
   await page.getByLabel("Ton pseudo").fill(player.pseudo);
-  await page.locator("label", { hasText: "🦅" }).click();
+  // The bib drawn at random by the welcome page is kept as is.
   await page.getByRole("checkbox", { name: /15 ans/ }).check();
   await page.getByRole("button", { name: "Créer mon profil" }).click();
   // The profile exists once the welcome page is left: tests may then change it in SQL.

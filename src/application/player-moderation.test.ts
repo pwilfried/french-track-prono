@@ -15,7 +15,7 @@ function fakePlayers(isAdmin = true): PlayerModerationRepository & { all: Modera
   const player = (id: string, pseudo: string, points: number): ModeratedPlayer => ({
     id,
     pseudo,
-    avatar: "🦌",
+    bib: { number: 7, color: "blue" },
     blocked: false,
     isAdmin: false,
     joinedAt: "2026-11-01T00:00:00.000Z",

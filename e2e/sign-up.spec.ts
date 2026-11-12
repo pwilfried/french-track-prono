@@ -41,7 +41,11 @@ test("a visitor taps « Faire mon premier prono », signs up and lands on the fi
   await page.waitForURL(/\/bienvenue/);
 
   await page.getByLabel("Ton pseudo").fill(player.pseudo);
-  await page.locator("label", { hasText: "🦅" }).click();
+  await page.getByLabel("Numéro", { exact: true }).fill("42");
+  await page
+    .locator("label", { has: page.getByRole("radio", { name: "Rouge", exact: true }) })
+    .click();
+  await expect(page.getByRole("img", { name: "Dossard 42" })).toBeVisible();
   await page.locator("label", { hasText: "Femme" }).click();
   await page.locator("label", { hasText: /^100 m$/ }).click();
   await page.locator("label", { hasText: /^200 m$/ }).click();
@@ -53,6 +57,9 @@ test("a visitor taps « Faire mon premier prono », signs up and lands on the fi
   await page.waitForURL(new RegExp(`/epreuves/${slug}$`));
 
   const profile = `(select id from profiles where pseudo = '${player.pseudo}')`;
+  expect(sql(`select bib_number || ' ' || bib_color from profiles where id = ${profile}`)).toBe(
+    "42 red",
+  );
   expect(sql(`select sex from player_details where profile_id = ${profile}`)).toBe("F");
   expect(
     sql(`select array_to_string(array(select unnest(disciplines) order by 1), ',')
@@ -78,7 +85,6 @@ test("a club missing from the list is typed and waits for validation", async ({ 
   await page.waitForURL(/\/bienvenue/);
 
   await page.getByLabel("Ton pseudo").fill(player.pseudo);
-  await page.locator("label", { hasText: "🦅" }).click();
   await page.getByRole("button", { name: "Mon club n'est pas dans la liste" }).click();
   await page.getByLabel("Nom de ton club").fill("Club Officiel FFA");
   await page.getByRole("checkbox", { name: /15 ans/ }).check();

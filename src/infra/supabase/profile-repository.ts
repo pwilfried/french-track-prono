@@ -2,9 +2,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { UseCaseError } from "@/application/errors";
 import type { Profile, ProfileRepository } from "@/application/create-profile";
-import { isAvatar } from "@/domain/profile";
+import { bibOf } from "@/domain/bib";
 
-type Row = { id: string; pseudo: string; avatar_emoji: string; age_confirmed_at: string };
+type Row = {
+  id: string;
+  pseudo: string;
+  bib_number: number;
+  bib_color: string;
+  age_confirmed_at: string;
+};
 
 /** The client must carry the player's session: row level security only lets one create their own profile. */
 export function createSupabaseProfileRepository(client: SupabaseClient): ProfileRepository {
@@ -12,15 +18,15 @@ export function createSupabaseProfileRepository(client: SupabaseClient): Profile
     async find(userId) {
       const { data, error } = await client
         .from("profiles")
-        .select("id, pseudo, avatar_emoji, age_confirmed_at")
+        .select("id, pseudo, bib_number, bib_color, age_confirmed_at")
         .eq("id", userId)
         .maybeSingle<Row>();
       if (error) throw new UseCaseError("PROFILE_UNAVAILABLE");
-      if (!data || !isAvatar(data.avatar_emoji)) return null;
+      if (!data) return null;
       return {
         userId: data.id,
         pseudo: data.pseudo,
-        avatar: data.avatar_emoji,
+        bib: bibOf(data.bib_number, data.bib_color),
         ageConfirmedAt: new Date(data.age_confirmed_at),
       } satisfies Profile;
     },
@@ -39,7 +45,8 @@ export function createSupabaseProfileRepository(client: SupabaseClient): Profile
       const { error } = await client.from("profiles").insert({
         id: profile.userId,
         pseudo: profile.pseudo,
-        avatar_emoji: profile.avatar,
+        bib_number: profile.bib.number,
+        bib_color: profile.bib.color,
         age_confirmed_at: profile.ageConfirmedAt.toISOString(),
       });
       if (!error) return "created";
@@ -55,7 +62,11 @@ export function createSupabaseProfileRepository(client: SupabaseClient): Profile
     async update(userId, change) {
       const { error } = await client
         .from("profiles")
-        .update({ pseudo: change.pseudo, avatar_emoji: change.avatar })
+        .update({
+          pseudo: change.pseudo,
+          bib_number: change.bib.number,
+          bib_color: change.bib.color,
+        })
         .eq("id", userId);
       if (!error) return "updated";
       if (error.code === "FT013") throw new UseCaseError("PSEUDO_BANNED");

@@ -55,7 +55,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
 | Ligue | Classement, derniers pronos révélés, réactions emoji |
 | Classement général | Top de la communauté, ma progression |
-| Profil | Pseudo, avatar emoji, club ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager |
+| Profil | Dossard (grand format, avec le pseudo), club ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager |
 | Back-office (toi) | Tableau de bord (choses à faire, préparation), compétitions et épreuves, résultats et calcul, listes des clubs, joueurs et ligues |
 
 ## Composants clés
@@ -68,7 +68,14 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   rien ne clignote.
 - **AthleteChip** : drapeau, nom, record de saison.
 - **PointsToast** : « +9 pts, vainqueur du 100 m trouvé ! » avec petite animation.
-- **Leaderboard** : place, avatar, pseudo, points ; ex æquo signalés, ma ligne surlignée,
+- **Bib** (dossard, #537) : l'avatar du joueur, un numéro (0 à 999) et une couleur parmi six,
+  fixes dans les deux thèmes : bleu `#084595` (texte blanc), rouge `#E03020` (texte blanc), or
+  `#FFC857` (texte nuit), vert `#2BB673` (texte nuit), blanc (texte nuit, bordure), nuit
+  `#052B5C` (texte or, bordure or). Grand format (profil, choix) : coins arrondis, quatre
+  épingles, « FRENCH TRACK », le numéro en gros, le pseudo dessous. Petit format (classements,
+  en-tête, ligues, réactions) : pastille avec le numéro seul. Couleurs dans `BIB_PALETTE`
+  (`src/components/profile/bib.tsx`), reprises par la carte de saison.
+- **Leaderboard** : place, dossard, pseudo, points ; ex æquo signalés, ma ligne surlignée,
   raison du départage sous le pseudo (flèche de progression et séries : plus tard).
 - **Carte « Ma saison »** (`/profil/carte`) : image verticale 1080×1920 prête pour les stories,
   partagée par le partage natif ou téléchargée ; « Mon podium du 100 m » viendra plus tard.
