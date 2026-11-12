@@ -80,16 +80,21 @@ describe("push notifications", () => {
       sent: 1,
       forgotten: 1,
       failed: 1,
-      failures: [{ kind: "reminder", status: 500 }],
+      failures: [{ kind: "reminder", status: 500, count: 1 }],
     });
   });
 
-  it("counts a send that never reached the push service as a network failure", async () => {
-    const database = fakeDatabase([result]);
-    const report = await sendDue(database, async () => {
-      throw new Error("fetch failed");
+  it("groups the failures by kind and HTTP status, a network error having none", async () => {
+    const database = fakeDatabase([reminder, result]);
+    const report = await sendDue(database, async (device: { endpoint: string }) => {
+      if (device.endpoint.endsWith("/3")) throw new Error("offline");
+      throw Object.assign(new Error("boom"), { statusCode: 500 });
     });
-    expect(report.failures).toEqual([{ kind: "result", status: "network" }]);
+    expect(report.failed).toBe(3);
+    expect(report.failures).toEqual([
+      { kind: "reminder", status: 500, count: 2 },
+      { kind: "result", status: "network", count: 1 },
+    ]);
   });
 
   it("does not touch the database when nothing is due", async () => {

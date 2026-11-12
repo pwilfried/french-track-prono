@@ -35,8 +35,7 @@ export function notificationOf(due, now = Date.now()) {
 /**
  * Sends what is due to every device of each player, then records it.
  * `push(device, payload, options)` sends one notification (web-push's sendNotification); it throws
- * an error with `statusCode` 404 or 410 when the device unsubscribed. Every other failure is
- * listed by notification kind and HTTP code (`network` without one), never by device or player.
+ * an error with `statusCode` 404 or 410 when the device unsubscribed.
  * @param {{ due: () => Promise<any[]>, markSent: (sent: any[]) => Promise<void>,
  *           forget: (endpoints: string[]) => Promise<void> }} database
  * @param {(device: any, payload: string, options: any) => Promise<unknown>} push
@@ -45,8 +44,10 @@ export async function sendDue(database, push) {
   const due = await database.due();
   /** @type {string[]} */
   const forgotten = [];
-  /** @type {{ kind: string, status: number | "network" }[]} */
-  const failures = [];
+  /** Failed sends by kind and HTTP status (#527), in the order first met. */
+  /** @type {Map<string, { kind: string, status: number | "network", count: number }>} */
+  const failures = new Map();
+  let failed = 0;
   for (const notification of due) {
     const payload = JSON.stringify(notificationOf(notification));
     for (const device of notification.devices) {
@@ -61,7 +62,12 @@ export async function sendDue(database, push) {
         const { statusCode, body } = /** @type {{ statusCode?: number, body?: string }} */ (error);
         if (statusCode === 404 || statusCode === 410) forgotten.push(device.endpoint);
         else {
-          failures.push({ kind: notification.kind, status: statusCode ?? "network" });
+          failed += 1;
+          const status = statusCode ?? "network";
+          const key = `${notification.kind}:${status}`;
+          const failure = failures.get(key) ?? { kind: notification.kind, status, count: 0 };
+          failure.count += 1;
+          failures.set(key, failure);
           console.error(`push failed (${statusCode ?? "network"}): ${body ?? error}`);
         }
       }
@@ -70,5 +76,5 @@ export async function sendDue(database, push) {
   if (due.length)
     await database.markSent(due.map(({ user_id, event_slug, kind }) => ({ user_id, event_slug, kind })));
   if (forgotten.length) await database.forget(forgotten);
-  return { sent: due.length, forgotten: forgotten.length, failed: failures.length, failures };
+  return { sent: due.length, forgotten: forgotten.length, failed, failures: [...failures.values()] };
 }

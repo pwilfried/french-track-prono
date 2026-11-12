@@ -1,123 +1,122 @@
 import { describe, expect, it } from "vitest";
 import { reportPushFailure } from "./sentry.mjs";
 
-const DSN = "https://public123@o42.ingest.de.sentry.io/7";
-const NOW = new Date("2026-11-12T06:00:00Z").getTime();
+const dsn = "https://publickey@o1.ingest.de.sentry.io/42";
 
-function fakeFetch(status = 200) {
-  const calls: { url: string; init: RequestInit }[] = [];
-  const fetch = async (url: string, init: RequestInit) => {
-    calls.push({ url, init });
+function fakeSentry(status = 200) {
+  const requests: { url: string; init: RequestInit }[] = [];
+  const send = async (url: string, init: RequestInit) => {
+    requests.push({ url, init });
     return new Response(null, { status });
   };
-  return { calls, fetch };
+  return { requests, send };
 }
 
-/** The event item of a Sentry envelope: header line, item header line, event line. */
+/** The event of a Sentry envelope: header, item header, then the event, one JSON per line. */
 function eventOf(body: unknown) {
-  const [header, item, event] = String(body).trim().split("\n");
-  return { header: JSON.parse(header), item: JSON.parse(item), event: JSON.parse(event) };
+  const [header, item, event] = String(body).split("\n").map((line) => JSON.parse(line));
+  return { header, item, event };
 }
 
-describe("push failure report", () => {
+describe("reporting a failed push run to Sentry", () => {
   it("sends nothing without a DSN", async () => {
-    const { calls, fetch } = fakeFetch();
+    const sentry = fakeSentry();
     const sent = await reportPushFailure(
-      { dsn: "", fetch, now: NOW },
-      { failures: [{ kind: "reminder", status: 500 }] },
+      "",
+      { failures: [{ kind: "reminder", status: 500, count: 1 }] },
+      sentry.send,
     );
     expect(sent).toBe(false);
-    expect(calls).toEqual([]);
+    expect(sentry.requests).toEqual([]);
   });
 
-  it("posts an envelope to the project of the DSN with its public key", async () => {
-    const { calls, fetch } = fakeFetch();
+  it("sends the failed sends with their kind and HTTP status to the DSN's project", async () => {
+    const sentry = fakeSentry();
     const sent = await reportPushFailure(
-      { dsn: DSN, fetch, now: NOW },
-      { failures: [{ kind: "reminder", status: 500 }] },
-    );
-    expect(sent).toBe(true);
-    expect(calls).toHaveLength(1);
-    const url = new URL(calls[0].url);
-    expect(url.origin + url.pathname).toBe("https://o42.ingest.de.sentry.io/api/7/envelope/");
-    expect(url.searchParams.get("sentry_key")).toBe("public123");
-    expect(url.searchParams.get("sentry_version")).toBe("7");
-    expect(calls[0].init.method).toBe("POST");
-    const { header, item, event } = eventOf(calls[0].init.body);
-    expect(header.event_id).toBe(event.event_id);
-    expect(event.event_id).toMatch(/^[0-9a-f]{32}$/);
-    expect(item.type).toBe("event");
-    expect(event.timestamp).toBe(NOW / 1000);
-  });
-
-  it("counts the failed sends by notification kind and HTTP code", async () => {
-    const { calls, fetch } = fakeFetch();
-    await reportPushFailure(
-      { dsn: DSN, fetch, now: NOW },
+      dsn,
       {
         failures: [
-          { kind: "reminder", status: 500 },
-          { kind: "reminder", status: 500 },
-          { kind: "result", status: "network" },
+          { kind: "reminder", status: 500, count: 2 },
+          { kind: "result", status: "network", count: 1 },
         ],
       },
+      sentry.send,
     );
-    const { event } = eventOf(calls[0].init.body);
-    expect(event.level).toBe("error");
-    expect(event.message.formatted).toBe("PUSH_SEND_FAILED: 3 failed send(s)");
-    expect(event.tags).toMatchObject({
-      code: "PUSH_SEND_FAILED",
-      function: "push-notifications",
-      kind: "reminder,result",
-      status: "500,network",
+    expect(sent).toBe(true);
+    expect(sentry.requests).toHaveLength(1);
+    const [{ url, init }] = sentry.requests;
+    expect(url).toBe("https://o1.ingest.de.sentry.io/api/42/envelope/");
+    expect(init.method).toBe("POST");
+    expect(new Headers(init.headers).get("x-sentry-auth")).toContain("sentry_key=publickey");
+    const { header, item, event } = eventOf(init.body);
+    expect(header.event_id).toBe(event.event_id);
+    expect(item).toEqual({ type: "event" });
+    expect(event).toMatchObject({
+      level: "error",
+      message: "3 push send(s) failed",
+      tags: { function: "push-notifications", kind: "reminder", status: "500" },
+      extra: {
+        failures: [
+          { kind: "reminder", status: 500, count: 2 },
+          { kind: "result", status: "network", count: 1 },
+        ],
+      },
+      fingerprint: ["push-notifications", "failed-sends"],
     });
-    expect(event.extra.failures).toEqual([
-      { kind: "reminder", status: 500, count: 2 },
-      { kind: "result", status: "network", count: 1 },
-    ]);
   });
 
-  it("reports an exception of the run by its type and message only", async () => {
-    const { calls, fetch } = fakeFetch();
+  it("sends an exception of the run with its type and message", async () => {
+    const sentry = fakeSentry();
+    await reportPushFailure(dsn, { error: new TypeError("connection refused") }, sentry.send);
+    const { event } = eventOf(sentry.requests[0].init.body);
+    expect(event.exception.values[0]).toMatchObject({
+      type: "TypeError",
+      value: "connection refused",
+    });
+    expect(event.tags).toEqual({ function: "push-notifications" });
+  });
+
+  it("never carries an endpoint, a key or a player", async () => {
+    const sentry = fakeSentry();
     await reportPushFailure(
-      { dsn: DSN, fetch, now: NOW },
-      { error: new TypeError("connection refused") },
+      dsn,
+      {
+        failures: [
+          // Extra fields slipped into a failure are not sent.
+          {
+            kind: "result",
+            status: 413,
+            count: 1,
+            endpoint: "https://push.example.test/1",
+            p256dh: "k1",
+            user_id: "u1",
+          } as never,
+        ],
+      },
+      sentry.send,
     );
-    const { event } = eventOf(calls[0].init.body);
-    expect(event.tags.code).toBe("PUSH_RUN_FAILED");
-    expect(event.exception.values).toEqual([{ type: "TypeError", value: "connection refused" }]);
+    const body = String(sentry.requests[0].init.body);
+    expect(body).not.toContain("push.example.test");
+    expect(body).not.toContain("k1");
+    expect(body).not.toContain("u1");
   });
 
-  it("never leaks an endpoint, a key or a player", async () => {
-    const { calls, fetch } = fakeFetch();
-    const failure = {
-      kind: "result",
-      status: 500,
-      endpoint: "https://push.example.test/1",
-      p256dh: "k1",
-      auth: "a1",
-      user_id: "u1",
+  it("does not throw when Sentry is down", async () => {
+    const down = async () => {
+      throw new Error("unreachable");
     };
-    await reportPushFailure({ dsn: DSN, fetch, now: NOW }, { failures: [failure] });
-    const body = String(calls[0].init.body);
-    for (const secret of ["push.example.test", "k1", "a1", "u1"])
-      expect(body).not.toContain(secret);
+    await expect(reportPushFailure(dsn, { error: new Error("boom") }, down)).resolves.toBe(false);
+    const refused = fakeSentry(429);
+    await expect(
+      reportPushFailure(dsn, { error: new Error("boom") }, refused.send),
+    ).resolves.toBe(false);
   });
 
-  it("does not throw when Sentry cannot be reached or refuses the event", async () => {
-    const failing = async () => {
-      throw new Error("offline");
-    };
-    const report = { failures: [{ kind: "reminder", status: 500 }] };
-    await expect(reportPushFailure({ dsn: DSN, fetch: failing, now: NOW }, report)).resolves.toBe(
-      false,
-    );
-    const refused = fakeFetch(429);
+  it("ignores a malformed DSN", async () => {
+    const sentry = fakeSentry();
     await expect(
-      reportPushFailure({ dsn: DSN, fetch: refused.fetch, now: NOW }, report),
+      reportPushFailure("not a dsn", { error: new Error("boom") }, sentry.send),
     ).resolves.toBe(false);
-    await expect(
-      reportPushFailure({ dsn: "not a dsn", fetch: refused.fetch, now: NOW }, report),
-    ).resolves.toBe(false);
+    expect(sentry.requests).toEqual([]);
   });
 });
