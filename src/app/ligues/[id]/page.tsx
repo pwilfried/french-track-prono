@@ -15,6 +15,7 @@ import { LeagueHero } from "@/components/leagues/league-hero";
 import { ShareInvite } from "@/components/leagues/share-invite";
 import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
+import { addCompetitionNotice } from "@/domain/league";
 import { cn } from "@/lib/utils";
 
 import { currentDay, loadCompetitions } from "../../competition";
@@ -77,6 +78,7 @@ export default async function LeaguePage({
   const addable = competitions.coming.filter(
     (c) => !league.competitionSlugs.includes(c.slug) && c.startsOn > currentDay(),
   );
+  const notice = addCompetitionNotice(counted.length, addable.length);
   const subtitle = [
     messages.leagues.members(league.memberCount),
     messages.leagues.codeShort(league.inviteCode),
@@ -131,7 +133,11 @@ export default async function LeaguePage({
               </h2>
               {counted.length === 0 ? (
                 <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
-                  {isOwner ? messages.leagues.noCompetition : messages.leagues.noCompetitionMember}
+                  {!isOwner
+                    ? messages.leagues.noCompetitionMember
+                    : notice === "none_coming"
+                      ? messages.leagues.noneComing
+                      : messages.leagues.noCompetition}
                 </p>
               ) : (
                 <ul className="flex flex-wrap gap-2">
@@ -147,7 +153,12 @@ export default async function LeaguePage({
                   ))}
                 </ul>
               )}
-              {isOwner && <AddLeagueCompetitionForm leagueId={id} choices={addable} />}
+              {isOwner && notice === "choose" && (
+                <AddLeagueCompetitionForm leagueId={id} choices={addable} />
+              )}
+              {isOwner && notice === "all_added" && (
+                <p className="text-sm text-muted-foreground">{messages.leagues.nothingToAdd}</p>
+              )}
             </section>
             <Leaderboard rows={ranking} meId={ports.userId} retryHref={`/ligues/${id}`} />
             <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">

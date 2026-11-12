@@ -401,6 +401,8 @@ export const messages = {
     adding: "Ajout…",
     added: "✓ Compétition ajoutée au classement de la ligue.",
     nothingToAdd: "Toutes les compétitions à venir sont déjà dans la ligue.",
+    noneComing:
+      "Aucune compétition à venir pour l'instant : tu pourras l'ajouter dès qu'elle sera annoncée.",
     publicLabel: "Ligue publique",
     publicHint:
       "Tout le monde peut la trouver et la rejoindre sans code, jusqu'à 200 joueurs. Son nom doit rester correct.",

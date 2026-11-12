@@ -6,6 +6,7 @@ import {
   INVITE_LENGTH,
   LEAGUE_MAX_MEMBERS,
   PUBLIC_LEAGUE_MAX_MEMBERS,
+  addCompetitionNotice,
   formatInviteCode,
   leagueCapacity,
   normalizeInviteCode,
@@ -85,6 +86,22 @@ describe("validateLeagueName", () => {
 
   it("accepts a name of exactly 40 characters", () => {
     expect(validateLeagueName("x".repeat(40)).ok).toBe(true);
+  });
+});
+
+describe("addCompetitionNotice", () => {
+  // What the league page tells its creator under the league's competitions (#550).
+  it("says no competition is coming yet when the league has none and none can be added", () => {
+    expect(addCompetitionNotice(0, 0)).toBe("none_coming");
+  });
+
+  it("offers the coming competitions when some can be added", () => {
+    expect(addCompetitionNotice(0, 2)).toBe("choose");
+    expect(addCompetitionNotice(1, 1)).toBe("choose");
+  });
+
+  it("says every coming competition is already in the league when nothing is left to add", () => {
+    expect(addCompetitionNotice(2, 0)).toBe("all_added");
   });
 });
 

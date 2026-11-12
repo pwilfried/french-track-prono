@@ -100,3 +100,33 @@ test("a player creates a league without competition, then adds a coming one to i
 
   sql(`delete from competitions where slug = '${tag}'`);
 });
+
+test("a league without competition says once that none is coming when none can be added", async ({
+  page,
+}) => {
+  const tag = `e2e-none-${Date.now() % 1000000}`;
+  const player = newPlayer("none");
+  await page.goto("/ligues");
+  await signUp(page, player);
+  await page.waitForURL(/\/ligues$/);
+  await page.getByRole("link", { name: "Créer une ligue" }).click();
+  await page.getByLabel("Nom de la ligue").fill(`Rien ${tag}`);
+  await page.getByRole("button", { name: "Créer la ligue" }).click();
+  await expect(page.getByText("Ta ligue est prête")).toBeVisible();
+  const leagueUrl = page.url().split("?")[0]!;
+
+  // No competition left to add (#550): every coming one starts today, then comes back.
+  const coming = sql(`select coalesce(json_agg(json_build_object('id', id, 'day', starts_on)), '[]')
+    from competitions where starts_on > current_date`);
+  try {
+    sql(`update competitions set starts_on = current_date where starts_on > current_date`);
+    await page.goto(leagueUrl);
+    const competitions = page.getByRole("region", { name: "Compétitions de la ligue" });
+    await expect(competitions).toContainText("Aucune compétition à venir pour l'instant");
+    await expect(competitions).not.toContainText("Pas encore de compétition");
+    await expect(competitions).not.toContainText("déjà dans la ligue");
+  } finally {
+    sql(`update competitions c set starts_on = (x->>'day')::date
+      from json_array_elements('${coming}'::json) x where c.id = (x->>'id')::uuid`);
+  }
+});

@@ -27,6 +27,18 @@ export function formatInviteCode(code: string): string {
   return `${code.slice(0, 3)} ${code.slice(3)}`;
 }
 
+/**
+ * What the league page tells its creator about adding a competition (#550), from how many the
+ * league counts and how many coming ones it could still add.
+ */
+export function addCompetitionNotice(
+  counted: number,
+  addable: number,
+): "none_coming" | "choose" | "all_added" {
+  if (addable > 0) return "choose";
+  return counted === 0 ? "none_coming" : "all_added";
+}
+
 export type LeagueNameResult =
   { ok: true; name: string } | { ok: false; code: "LEAGUE_NAME_INVALID" };
 

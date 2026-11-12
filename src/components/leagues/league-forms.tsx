@@ -199,9 +199,6 @@ export function AddLeagueCompetitionForm({
   const [state, action] = useActionState<LeagueFormState, FormData>(addLeagueCompetitionAction, {
     value: choices[0]?.slug ?? "",
   });
-  if (choices.length === 0) {
-    return <p className="text-sm text-muted-foreground">{messages.leagues.nothingToAdd}</p>;
-  }
   return (
     <form action={action} className="flex flex-col gap-2">
       <input type="hidden" name="leagueId" value={leagueId} />
