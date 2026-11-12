@@ -1,11 +1,13 @@
 // #502: sends the push notifications due. Called every minute by pg_cron
 // (supabase/migrations/20261111180000_push_cron.sql) with the secret it reads from Vault; anyone
 // else gets a 401. Secrets of the function (set by the migrations workflow at each tag):
-// PUSH_CRON_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY. SUPABASE_DB_URL is given by Supabase.
+// PUSH_CRON_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, and SENTRY_DSN if set (#527: a failed
+// run is reported to Sentry; without it, nothing is). SUPABASE_DB_URL is given by Supabase.
 // Deno code: excluded from the app's typecheck (tsconfig.json).
 import webpush from "npm:web-push@3.6.7";
 import postgres from "npm:postgres@3.4.5";
 import { sendDue } from "../_shared/push.mjs";
+import { reportPushFailure } from "../_shared/sentry.mjs";
 
 const env = (name: string) => Deno.env.get(name) ?? "";
 
@@ -54,7 +56,12 @@ Deno.serve(async (request) => {
     console.log(
       `${report.sent} notification(s) envoyée(s), ${report.forgotten} appareil(s) oublié(s).`,
     );
+    // 404 and 410 are expired subscriptions, already forgotten: only the other failures count.
+    if (report.failed) await reportPushFailure(env("SENTRY_DSN"), { failures: report.failures });
     return Response.json(report, { status: report.failed ? 500 : 200 });
+  } catch (error) {
+    await reportPushFailure(env("SENTRY_DSN"), { error });
+    throw error;
   } finally {
     await sql.end();
   }
