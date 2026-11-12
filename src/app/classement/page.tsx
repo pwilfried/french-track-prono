@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
 import { getGeneralRanking, getLeagueRanking, type RankingRow } from "@/application/rankings";
@@ -25,6 +24,7 @@ const text = messages.ranking;
  * The rankings (#551): « Ma ligue » first (the player's first league, a picker when there are
  * several), « Ce soir » while a competition is under way, then « Général » (top 10 and the player
  * among their neighbours), which `?competition=` narrows to one competition (#376).
+ * A visitor sees « Général » alone, with a link to sign in (#573).
  */
 export default async function RankingPage({
   searchParams,
@@ -44,14 +44,17 @@ export default async function RankingPage({
   );
   const here = `/classement${asked.size ? `?${asked}` : ""}`;
   const user = await getCurrentUser();
-  if (!user) redirect(`/connexion?next=${encodeURIComponent(here)}`);
 
   const [{ coming, past }, leagues] = await Promise.all([loadCompetitions(), loadMyLeagues()]);
   const all = [...coming, ...past];
   const today = parisDay(new Date().toISOString());
   const tonight = competitionDay(all, today);
-  const tabs: Tab[] = tonight ? ["ligue", "soir", "general"] : ["ligue", "general"];
-  const tab = tabs.find((t) => t === paramText(query.onglet)) ?? "ligue";
+  const tabs: Tab[] = !user
+    ? ["general"]
+    : tonight
+      ? ["ligue", "soir", "general"]
+      : ["ligue", "general"];
+  const tab = tabs.find((t) => t === paramText(query.onglet)) ?? tabs[0]!;
   const league = leagues.find((l) => l.id === paramText(query.ligue)) ?? leagues[0] ?? null;
   const chosen =
     tab === "general" ? (all.find((c) => c.slug === paramText(query.competition)) ?? null) : null;
@@ -82,9 +85,10 @@ export default async function RankingPage({
     if (!(error instanceof UseCaseError)) throw error;
     rows = "error";
   }
-  const me = rows === "error" ? undefined : rows.find((r) => r.userId === user.userId);
+  const meId = user?.userId;
+  const me = rows === "error" ? undefined : rows.find((r) => r.userId === meId);
   // A league is short: shown whole. The other rankings show the top and the player's neighbours.
-  const shown = rows === "error" ? [] : tab === "ligue" ? rows : rankingWindow(rows, user.userId);
+  const shown = rows === "error" ? [] : tab === "ligue" ? rows : rankingWindow(rows, meId ?? null);
 
   return (
     <main id="main" className="flex flex-1 flex-col">
@@ -150,14 +154,25 @@ export default async function RankingPage({
                 </Link>
               </section>
             ) : (
-              <RankingPodium rows={rows} meId={user.userId} />
+              <RankingPodium rows={rows} meId={meId} />
             )}
             {tab === "soir" && rows.length === 0 ? (
               <p className="rounded-card bg-muted p-4 text-muted-foreground">{text.tonightEmpty}</p>
             ) : (
-              <Leaderboard rows={shown} meId={user.userId} retryHref={here} />
+              <Leaderboard rows={shown} meId={meId} retryHref={here} />
             )}
-            {!start &&
+            {!user ? (
+              <section className="flex flex-col gap-3 rounded-card bg-muted p-4">
+                <p>{text.visitor}</p>
+                <Link
+                  href={`/connexion?next=${encodeURIComponent(here)}`}
+                  className={`${buttonVariants()} w-full`}
+                >
+                  {messages.account.signIn}
+                </Link>
+              </section>
+            ) : (
+              !start &&
               rows.length > 0 &&
               (me ? (
                 <p className="sticky bottom-20 flex items-center justify-between gap-3 rounded-2xl bg-foreground px-3.5 py-2 font-extrabold text-background shadow-lg md:bottom-3">
@@ -173,8 +188,9 @@ export default async function RankingPage({
                 <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
                   {text.notRanked}
                 </p>
-              ))}
-            {!start && !me && tab !== "ligue" && (
+              ))
+            )}
+            {user && !start && !me && tab !== "ligue" && (
               <Link href="/epreuves" className={`${buttonVariants()} w-full`}>
                 {text.predict}
               </Link>

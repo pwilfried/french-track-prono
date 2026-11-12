@@ -170,6 +170,9 @@ Conséquences :
   session de l'admin (`profiles.is_admin`, posé en SQL seulement) : pas de clé `service_role` dans
   l'application.
 - Les joueurs ne peuvent pas écrire dans `score_events` (policy `admin_write` réservée à l'admin).
+- Un visiteur (`anon`, #573) lit le classement général : les lignes de `score_events` et, des
+  profils, seulement `id`, `pseudo`, `bib_number`, `bib_color` et `club_id` (droits colonne par
+  colonne), jamais d'un joueur bloqué ; il n'écrit rien.
 - Alternative écartée : calcul en SQL (`score_event()`), plus atomique mais plus dur à tester
   et à lire pour des agents.
 
@@ -354,7 +357,7 @@ Fonctions SQL (#457) : règle pour toute nouvelle fonction, vérifiée par
   `grant execute … to authenticated`. Depuis #457, une nouvelle fonction n'est plus exécutable par
   `anon` par défaut ; l'ouvrir à `anon` demande de l'ajouter, avec sa raison, à la liste du test
   (aujourd'hui `search_clubs()`, `club_search_key()` et `club_key_matches()`, pour le choix du
-  club avant l'inscription).
+  club avant l'inscription, et `is_blocked()`, pour le classement général des visiteurs).
   Une fonction appelée par une policy ouverte à `anon` doit y figurer, sinon les lectures publiques
   cassent ;
 - une fonction `admin_*` commence par `if not is_admin() then raise … using errcode = '42501'` ;

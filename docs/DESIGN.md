@@ -54,7 +54,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Épreuve | Liste de départ, **podium à composer** (glisser-déposer ou taps), joker, verrou |
 | Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
 | Ligue | Classement, derniers pronos révélés, réactions emoji |
-| Classement (onglet, #551) | « Ma ligue » d'abord (choix de la ligue s'il y en a plusieurs), « Ce soir » pendant une compétition, « Général » (top 10, « ··· », moi et mes deux voisins) ; podium des trois premiers, barre fixe « Tu es 3e · 52 pts » avec « Autour de moi » ; avant la compétition, un bandeau « Le classement démarre » |
+| Classement (onglet, #551) | « Ma ligue » d'abord (choix de la ligue s'il y en a plusieurs), « Ce soir » pendant une compétition, « Général » (top 10, « ··· », moi et mes deux voisins) ; podium des trois premiers, barre fixe « Tu es 3e · 52 pts » avec « Autour de moi » ; avant la compétition, un bandeau « Le classement démarre » ; un visiteur voit « Général » seul, sans barre fixe, avec « Se connecter » (#573) |
 | Profil | Dossard (grand format, avec le pseudo), club ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager |
 | Back-office (toi) | Tableau de bord (choses à faire, préparation), compétitions et épreuves, résultats et calcul, listes des clubs, joueurs et ligues |
 

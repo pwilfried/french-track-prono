@@ -489,6 +489,7 @@ export const messages = {
     tonightEmpty: "Pas encore de points ce soir : ils arrivent avec les premiers résultats.",
     notRanked: "Tu n'as pas encore de points : fais tes pronos pour entrer au classement.",
     predict: "Faire mes pronos",
+    visitor: "Connecte-toi pour poser tes podiums et entrer au classement.",
   },
   admin: {
     band: "Back-office",
