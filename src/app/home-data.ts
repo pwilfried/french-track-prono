@@ -1,17 +1,20 @@
 import { getClubNotices, type ClubNotice } from "@/application/club-notices";
+import { UseCaseError } from "@/application/errors";
 import { getMyPoints } from "@/application/get-my-points";
 import { getProfile } from "@/application/get-profile";
 import { listEvents } from "@/application/list-events";
 import { hasPredicted, listMyPredictions } from "@/application/list-my-predictions";
-import { getGeneralRanking, getLeagueRanking, type RankingRow } from "@/application/rankings";
-import { UseCaseError } from "@/application/errors";
-import type { EventSummary } from "@/domain/event";
-import { openFinals, type OpenFinal } from "@/domain/home";
+import { isMercatoOpenForMe } from "@/application/manager-bids";
+import { getLeagueRanking } from "@/application/rankings";
+import type { PlayerHomeProps } from "@/components/home/player-home";
+import { leagueStanding, nextAction } from "@/domain/home";
 import {
   createPublicSupabaseClient,
   createSupabaseClubNoticeRepository,
   createSupabaseEventReader,
   createSupabaseLeagueRepository,
+  createSupabaseManagerBids,
+  createSupabaseManagerLeagueRepository,
   createSupabasePointsRepository,
   createSupabasePredictionRepository,
   createSupabaseProfileRepository,
@@ -23,26 +26,14 @@ import {
   loadCompetitions,
   loadMyLeagues,
   playerCompetitions,
-  type ShownCompetition,
 } from "./competition";
 import { getSessionClient } from "./session";
 
-/** Everything the signed-in player's home shows (#346); each part null when it cannot be read. */
-export type PlayerHome = {
-  pseudo: string;
-  competition: ShownCompetition;
-  /** Without a league counting the competition, the home suggests one (#375); predicting never
-   * needs one. */
-  hasLeagueForCompetition: boolean;
-  /** The finals still open, the next first. */
-  finals: OpenFinal[];
-  general: { me: RankingRow | null; total: number; podium: RankingRow[] } | null;
-  league: { id: string; name: string; me: RankingRow | null } | null;
-  lastResult: { event: EventSummary; points: number | null } | null;
-  clubNotices: ClubNotice[];
-  /** Until a first prediction, the home shows « Comment ça marche » (#476). */
-  hasPredicted: boolean;
-};
+/** Everything the signed-in player's home shows (#526); each part empty when it cannot be read. */
+export type PlayerHome = Omit<
+  PlayerHomeProps,
+  "userId" | "now" | "exactPoints" | "perfectPoints"
+> & { clubNotices: ClubNotice[] };
 
 async function safely<T>(load: () => Promise<T>): Promise<T | null> {
   try {
@@ -53,7 +44,7 @@ async function safely<T>(load: () => Promise<T>): Promise<T | null> {
   }
 }
 
-export async function loadPlayerHome(userId: string): Promise<PlayerHome | null> {
+export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerHome | null> {
   const client = await getSessionClient();
   const profile = await safely(() =>
     getProfile({ profiles: createSupabaseProfileRepository(client) }).execute({ userId }),
@@ -68,9 +59,10 @@ export async function loadPlayerHome(userId: string): Promise<PlayerHome | null>
   const competition = await currentCompetition(choices.preferred);
   const ranking = createSupabaseRankingRepository(client);
   const predictions = createSupabasePredictionRepository(client);
+  const leagueRepository = createSupabaseLeagueRepository(client);
   const listed = [...lists.coming, ...lists.past].map((c) => c.slug);
 
-  const [events, mine, myPoints, general, leagueRows, clubNotices, predictedOnce] =
+  const [events, mine, myPoints, rankings, clubNotices, predictedOnce, mercatoOpen] =
     await Promise.all([
       safely(() =>
         listEvents({ events: createSupabaseEventReader(createPublicSupabaseClient()) }).execute({
@@ -78,10 +70,7 @@ export async function loadPlayerHome(userId: string): Promise<PlayerHome | null>
         }),
       ),
       safely(() =>
-        listMyPredictions({ predictions }).execute({
-          userId,
-          competitionSlug: competition.slug,
-        }),
+        listMyPredictions({ predictions }).execute({ userId, competitionSlug: competition.slug }),
       ),
       safely(() =>
         getMyPoints({ points: createSupabasePointsRepository(client) }).execute({
@@ -89,15 +78,18 @@ export async function loadPlayerHome(userId: string): Promise<PlayerHome | null>
           competitionSlug: competition.slug,
         }),
       ),
-      safely(() => getGeneralRanking({ ranking }).execute({ competitionSlugs: listed })),
-      leagues[0]
-        ? safely(() =>
-            getLeagueRanking({ ranking, leagues: createSupabaseLeagueRepository(client) }).execute({
-              leagueId: leagues[0]!.id,
-              competitionSlugs: leagues[0]!.competitionSlugs,
-            }),
-          )
-        : Promise.resolve(null),
+      Promise.all(
+        leagues.map(async (league) => ({
+          id: league.id,
+          rows:
+            (await safely(() =>
+              getLeagueRanking({ ranking, leagues: leagueRepository }).execute({
+                leagueId: league.id,
+                competitionSlugs: league.competitionSlugs,
+              }),
+            )) ?? [],
+        })),
+      ),
       safely(() =>
         getClubNotices({ notices: createSupabaseClubNoticeRepository(client) }).execute(),
       ),
@@ -107,41 +99,50 @@ export async function loadPlayerHome(userId: string): Promise<PlayerHome | null>
           competitionSlugs: [...new Set([competition.slug, ...listed])],
         }),
       ),
+      safely(() =>
+        isMercatoOpenForMe({
+          managerLeagues: createSupabaseManagerLeagueRepository(client),
+          bids: createSupabaseManagerBids(client),
+        }).execute(),
+      ),
     ]);
 
-  const predicted = new Set((mine ?? []).map((p) => p.eventId));
-  const finished = (events ?? [])
-    .filter((event) => event.status === "finished")
+  const standing = leagueStanding(rankings, userId);
+  const shownLeague = leagues.find((l) => l.id === standing?.leagueId) ?? leagues[0];
+  const scored = new Map((myPoints?.events ?? []).map((e) => [e.eventId, e]));
+  const last = (events ?? [])
+    .filter((event) => event.status === "finished" && scored.has(event.id))
     .sort((a, b) => b.startsAt.localeCompare(a.startsAt))[0];
+  const lastPoints = last ? scored.get(last.id)! : null;
 
   return {
     clubNotices: clubNotices ?? [],
-    // When it cannot be read, the steps stay hidden rather than shown to a seasoned player.
-    hasPredicted: predictedOnce ?? true,
     pseudo: profile.pseudo,
-    competition,
-    hasLeagueForCompetition: leagues.some((l) => l.competitionSlugs.includes(competition.slug)),
-    finals: events ? openFinals(events, predicted, new Date()) : [],
-    general: general
+    // When it cannot be read, the steps stay hidden rather than shown to a seasoned player.
+    isNew: !(predictedOnce ?? true),
+    action: nextAction({
+      events: events ?? [],
+      predicted: new Set((mine ?? []).map((p) => p.eventId)),
+      competitions: lists.coming,
+      now,
+    }),
+    competitionSlug: competition.slug,
+    league: shownLeague
       ? {
-          me: general.find((row) => row.userId === userId) ?? null,
-          total: general.length,
-          podium: general.slice(0, 3),
+          id: shownLeague.id,
+          name: shownLeague.name,
+          standing: standing?.leagueId === shownLeague.id ? standing : null,
         }
       : null,
-    league:
-      leagues[0] && leagueRows
+    lastResult:
+      last && lastPoints
         ? {
-            id: leagues[0].id,
-            name: leagues[0].name,
-            me: leagueRows.find((row) => row.userId === userId) ?? null,
+            event: last,
+            points: lastPoints.points,
+            exact: lastPoints.reasons.filter((r) => r.kind === "exact").length,
+            onPodium: lastPoints.reasons.filter((r) => r.kind === "on_podium").length,
           }
         : null,
-    lastResult: finished
-      ? {
-          event: finished,
-          points: myPoints?.events.find((e) => e.eventId === finished.id)?.points ?? null,
-        }
-      : null,
+    mercatoOpen: mercatoOpen ?? false,
   };
 }

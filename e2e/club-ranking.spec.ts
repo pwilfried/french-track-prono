@@ -27,8 +27,9 @@ test("the profile shows my club's rank in the club ranking and the podium of the
         values (gen_random_uuid(), '${tag}-${n}@example.test', 'authenticated', 'authenticated')
         returning id
       )
-      insert into profiles (id, pseudo, avatar_emoji, age_confirmed_at, club_id)
-      select u.id, 'Zeta ${n} ${tag}'::text, '🦊', now(), c.id from u, clubs c where c.name = '${club}'`);
+      insert into profiles (id, pseudo, bib_number, bib_color, age_confirmed_at, club_id)
+      select u.id, 'Zeta ${n} ${tag}'::text, ${n}, 'green', now(), c.id
+      from u, clubs c where c.name = '${club}'`);
   }
 
   const player = newPlayer("clubs");

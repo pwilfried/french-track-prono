@@ -4,7 +4,7 @@ import type {
   PlayerModerationRepository,
 } from "@/application/player-moderation";
 
-type NewPlayer = Pick<ModeratedPlayer, "id" | "pseudo" | "avatar" | "isAdmin" | "joinedAt"> &
+type NewPlayer = Pick<ModeratedPlayer, "id" | "pseudo" | "bib" | "isAdmin" | "joinedAt"> &
   Partial<ModeratedPlayer>;
 
 /** Test double of the PlayerModerationRepository port: one store, a session per admin or not. */
