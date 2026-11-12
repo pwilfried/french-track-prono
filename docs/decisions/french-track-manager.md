@@ -20,7 +20,16 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - Un joueur crée une ligue, en devient l'administrateur, choisit son nom et sa visibilité :
   **publique** (inscription libre dans la limite des places) ou **privée** (sur invitation du
   créateur). Il voit la liste des participants.
-- **4 à 12 participants, en nombre pair.**
+- **Nombre de joueurs pair, de 4 à 10** (décision du propriétaire du 12 nov. 2026, #619) :
+  chaque journée, chacun a un adversaire. Le créateur choisit ce nombre (la cible, 4 par défaut) ;
+  la ligue est complète à la cible. Il peut la changer tant que le mercato n'est pas ouvert,
+  toujours paire, jamais sous le nombre d'inscrits.
+- **Réglages du mercato (créateur seulement, #619)** : durée des tours « automatique » (celle des
+  règles French Track, fixée dans le back-office) ou « personnalisée » (1er tour et tours suivants :
+  12, 24, 48 ou 72 h) ; date et heure de début (heure de Paris). Le mercato s'ouvre à cette date
+  **si et seulement si** la cible est atteinte, sinon il attend (la tâche des tours l'ouvre dès
+  que la cible est atteinte). Le créateur peut aussi le lancer tout de suite, seulement quand la
+  cible est atteinte. Les inscriptions ferment au lancement. Écran : la page de la ligue.
 - L'**admin de French Track Prono** fixe les règles générales : budget initial, quotas de
   composition des équipes (ex. sprinteurs hommes et femmes, demi-fond, fond, lancers), règles de
   recrutement, notation, bonus sportifs, compétitions éligibles, calendrier, durée des enchères,

@@ -10,7 +10,6 @@ import {
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { buttonVariants } from "@/components/ui/button";
-import { MANAGER_LEAGUE_MAX } from "@/domain/manager-league";
 
 import { messages } from "../messages.fr";
 import { managerPorts } from "./data";
@@ -56,7 +55,7 @@ export default async function ManagerPage() {
                 >
                   <span className="break-words font-extrabold">{league.name}</span>
                   <span id={`league-${league.id}-meta`} className="text-sm text-muted-foreground">
-                    {text.participantsCount(league.memberCount, MANAGER_LEAGUE_MAX)} ·{" "}
+                    {text.participantsCount(league.memberCount, league.target)} ·{" "}
                     {league.isPublic ? text.publicBadge : text.privateBadge}
                   </span>
                 </Link>
@@ -97,7 +96,7 @@ export default async function ManagerPage() {
                     <span className="min-w-0 flex-1">
                       <span className="block break-words font-extrabold">{league.name}</span>
                       <span className="block text-sm text-muted-foreground">
-                        {text.participantsCount(league.memberCount, MANAGER_LEAGUE_MAX)}
+                        {text.participantsCount(league.memberCount, league.target)}
                       </span>
                     </span>
                     <JoinPublicManagerLeagueForm id={league.id} name={league.name} />
