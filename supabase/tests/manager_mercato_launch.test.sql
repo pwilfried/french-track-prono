@@ -89,8 +89,10 @@ select lives_ok($$select launch_manager_mercato(pg_temp.league('Ligue Lancee'))$
   'the creator launches the mercato once the 6 players are in');
 select isnt((select mercato_opened_at from manager_leagues where id = pg_temp.league('Ligue Lancee')),
   null, 'the mercato is open');
+reset role;
 select is((select round from private.manager_open_round(pg_temp.league('Ligue Lancee'))), 1,
   'round 1 is open');
+set local role authenticated;
 select throws_ok($$select set_manager_mercato(pg_temp.league('Ligue Lancee'), 6, null, 'auto')$$,
   'FT015', null, 'the mercato is not set again once open');
 
