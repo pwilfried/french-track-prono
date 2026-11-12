@@ -34,6 +34,15 @@ export const inCatalogueFilter = (a: CatalogueAthlete, f: CatalogueFilter) =>
   (!f.family || a.family === f.family) &&
   (!f.availableOnly || a.available);
 
+/**
+ * A priced athlete the catalogue still leaves out: it lists athletes by their main discipline, so
+ * one without it never shows (#594). The admin sees the gap; without a price, it is on purpose.
+ */
+export const missesCatalogueForMainDiscipline = (a: {
+  managerPrice: number | null;
+  mainDiscipline: string | null;
+}) => a.managerPrice !== null && a.mainDiscipline === null;
+
 /** The search looks at the name, the country and the discipline. */
 export const matchesCatalogueSearch = (a: CatalogueAthlete, normalizedQuery: string) =>
   matchesWords(`${a.name} ${a.countryCode} ${a.discipline}`, normalizedQuery);

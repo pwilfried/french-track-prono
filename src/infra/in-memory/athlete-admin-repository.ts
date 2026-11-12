@@ -21,14 +21,18 @@ export function createInMemoryAthleteAdminStore(athletes: AthleteFile[]) {
       };
       return {
         async list() {
-          return stored.map(({ athleteId, slug, name, countryCode, gender, disciplines }) => ({
-            athleteId,
-            slug,
-            name,
-            countryCode,
-            gender,
-            disciplines: disciplines.map((d) => d.discipline),
-          }));
+          return stored.map(
+            ({ athleteId, slug, name, countryCode, gender, disciplines, managerPrice }) => ({
+              athleteId,
+              slug,
+              name,
+              countryCode,
+              gender,
+              disciplines: disciplines.map((d) => d.discipline),
+              mainDiscipline: disciplines.find((d) => d.isPrimary)?.discipline ?? null,
+              managerPrice,
+            }),
+          );
         },
         async find(slug) {
           const found = stored.find((a) => a.slug === slug);

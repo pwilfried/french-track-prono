@@ -30,9 +30,9 @@ export function athleteAdminRepositoryContract(
         await w.admin.update(w.athleteId, { name: "Nouveau Nom", countryCode: "FRA", gender: "F" }),
       ).toBe("saved");
       expect(await w.admin.setDiscipline(w.athleteId, "200 m", true)).toBe("saved");
-      expect(
-        (await w.admin.list()).find((a) => a.athleteId === w.athleteId)?.disciplines,
-      ).toContain("200 m");
+      const listed = (await w.admin.list()).find((a) => a.athleteId === w.athleteId);
+      expect(listed?.disciplines).toContain("200 m");
+      expect(listed?.mainDiscipline).toBe("200 m");
       expect(
         await w.admin.setRecord(w.athleteId, {
           discipline: "200 m",
@@ -80,6 +80,9 @@ export function athleteAdminRepositoryContract(
       expect(await w.player.setPrice(w.athleteId, 12)).toBe("not_admin");
       expect(await w.admin.setPrice(w.athleteId, 12)).toBe("saved");
       expect((await w.admin.find(w.slug))?.managerPrice).toBe(12);
+      expect((await w.admin.list()).find((a) => a.athleteId === w.athleteId)?.managerPrice).toBe(
+        12,
+      );
       expect(await w.admin.setPrice(w.athleteId, null)).toBe("saved");
       expect((await w.admin.find(w.slug))?.managerPrice).toBeNull();
     });

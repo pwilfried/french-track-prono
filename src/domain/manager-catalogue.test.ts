@@ -4,6 +4,7 @@ import { viewList } from "./list-view";
 import {
   inCatalogueFilter,
   matchesCatalogueSearch,
+  missesCatalogueForMainDiscipline,
   type CatalogueAthlete,
   type CatalogueFilter,
 } from "./manager-catalogue";
@@ -55,5 +56,23 @@ describe("the mercato catalogue", () => {
     expect(names("", { ...none, sex: "M" })).toEqual(["Marc Haies"]);
     expect(names("", { ...none, family: "throws" })).toEqual(["Zoé Lancer"]);
     expect(names("", { ...none, availableOnly: true })).toEqual(["Zoé Lancer", "Élodie Sprint"]);
+  });
+});
+
+describe("missesCatalogueForMainDiscipline", () => {
+  it("flags an athlete with a price but no main discipline", () => {
+    expect(missesCatalogueForMainDiscipline({ managerPrice: 12, mainDiscipline: null })).toBe(true);
+  });
+
+  it("does not flag an athlete with a price and a main discipline", () => {
+    expect(missesCatalogueForMainDiscipline({ managerPrice: 12, mainDiscipline: "100 m" })).toBe(
+      false,
+    );
+  });
+
+  it("does not flag an athlete without a price, kept out of the catalogue on purpose", () => {
+    expect(missesCatalogueForMainDiscipline({ managerPrice: null, mainDiscipline: null })).toBe(
+      false,
+    );
   });
 });
