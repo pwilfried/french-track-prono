@@ -58,7 +58,8 @@ sombre. Pas de données personnelles dans les captures. Les captures vivent sur 
 orpheline `boards` (`boards/<issue>/*.png`) et sont liées dans la description de la PR. Le
 workflow `ui-shots` capture en plus les pages touchées par chaque PR (`boards/issue-<n>/shots/`)
 et les montre dans un commentaire tenu à jour ; un agent n'en produit pas d'autre, et l'issue
-« Check the UI of #n » ouverte après la fusion reste la vérification humaine.
+« Vérifier vX.Y.Z en prod », ouverte par `release.sh` après le tag (une case par PR qui touche
+l'interface), reste la vérification humaine.
 
 ## Issues and milestones
 
