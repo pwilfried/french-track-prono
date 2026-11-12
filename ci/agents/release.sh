@@ -73,5 +73,27 @@ object=$(as_owner gh api -X POST "repos/$repo/git/tags" -f "tag=$tag" -f "messag
 as_owner gh api -X POST "repos/$repo/git/refs" -f "ref=refs/tags/$tag" -f "sha=${object:-$sha}" >/dev/null
 as_owner gh api -X POST "repos/$repo/releases" -f "tag_name=$tag" -f "name=$tag" \
   -F generate_release_notes=true >/dev/null
+# One check list for the owners (decision of 12 Nov 2026): the version's criterion, then one box
+# per PR of the version that touches the interface.
+criterion=$(as_bot gh api "repos/$repo/milestones/$number" --jq '.description // ""')
+boxes=""
+for pr in $(as_bot gh api "repos/$repo/compare/$latest...$sha" --jq '.commits[].commit.message | split("\n")[0]' |
+  grep -oE '\(#[0-9]+\)$' | tr -dc '0-9\n' | sort -un); do
+  if as_bot gh api "repos/$repo/pulls/$pr/files?per_page=100" \
+    --jq '[.[].filename] | any(test("^src/(app|components)/"))' 2>/dev/null | grep -q true; then
+    boxes="$boxes
+- [ ] #$pr $(as_bot gh api "repos/$repo/pulls/$pr" --jq .title)"
+  fi
+done
+as_bot gh issue create -R "$repo" --label needs-human --title "Vérifier $tag en prod" \
+  --body "$tag est en production. Regarde-la sur ton téléphone, en clair et en sombre.
+
+**Critère de la version**
+$criterion
+
+**Écrans changés**${boxes:-
+- aucun}
+
+Une case qui ne va pas : ouvre une issue de correction liée ici. Tout est bon : ferme cette issue." >/dev/null
 as_bot gh api -X PATCH "repos/$repo/milestones/$number" -f state=closed >/dev/null
 echo "$tag tagged: the deployment runs in migrations.yml."

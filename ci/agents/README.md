@@ -15,7 +15,7 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
    workflow ouvre la PR (`Closes #n`, labels et milestone de l'issue).
 4. CI verte : la PR est fusionnée (squash), après y avoir fusionné `main` si elle était en retard.
    CI rouge ou conflit : la PR repart à Claude avec les logs (3 essais, puis le propriétaire).
-5. Une PR fusionnée qui touche l'interface laisse une issue `needs-human` « Check the UI of #n ».
+5. Une PR fusionnée n'ouvre plus d'issue de vérification : c'est la version qui en ouvre une (étape 6).
 6. Quand le milestone qui suit le dernier tag n'a plus d'issue ouverte et que tous les
    runs du dernier commit de `main` sont verts, `release.sh` pose le tag annoté : `vX.Y.0` pour un
    milestone `vX.Y …`, `vX.Y.Z` pour un milestone correctif `vX.Y.Z …`. Il le pose avec
@@ -79,7 +79,7 @@ sont créés avec cette PR.
 ## Ce qui n'est pas automatique
 
 - Les captures d'écran 390 px (clair et sombre) : Claude ne les produit pas sur le runner ; l'issue
-  « Check the UI of #n » sert à regarder l'écran après la fusion.
+  « Vérifier vX.Y.Z en prod » sert à regarder les écrans une fois la version en production.
 - La base Supabase locale (pgTAP, adaptateurs, e2e) : Claude ne la lance pas, la CI de la PR le fait.
 - Un tag de correctif sans milestone : à la main, comme avant. Avec un milestone `vX.Y.Z …`, il est
   posé automatiquement.
