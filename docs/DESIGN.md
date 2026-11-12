@@ -51,6 +51,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Écran | Contenu clé |
 |---|---|
 | Accueil (joueur connecté, #526) | Salutation ; carte « Ta prochaine action » (finale à pronostiquer la plus proche du verrouillage, sinon prochaine compétition) ; « Comment ça marche » avant le premier prono (refermable) ; ma ligue (place, écart, trois lignes) ou l'invitation à en créer une ; dernier résultat noté ; French Track Manager ; bloc FrenchTrack (podcast, réseaux). Un bloc vide ne s'affiche pas |
+| Épreuves (onglet, #546) | Sélecteur de compétition ; carte de progression (joueur connecté) ; filtres « À faire » (par défaut), « Posés », « Terminées », « Toutes » ; sections « Ce soir », « Demain », puis les dates, puis « Déjà courues ». Un visiteur n'a ni la carte ni les filtres « À faire » et « Posés » |
 | Épreuve | Liste de départ, **podium à composer** (glisser-déposer ou taps), joker, verrou |
 | Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
 | Ligue | Classement, derniers pronos révélés, réactions emoji |
@@ -66,6 +67,17 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **CountdownBadge** : « Verrouillage dans 12 min », neutre, puis orange dès 1 h et rouge dès
   10 min (jetons `--countdown-*` dans `globals.css`, contrastes AA), « 🔒 Verrouillé » ensuite ;
   rien ne clignote.
+- **EventCard** (#546) : l'heure de Paris, le nom avec le genre (« 100 m femmes »), une ligne
+  dessous, un statut à droite. À venir : « Verrouille dans … » (`LockLine`, rouge dès 1 h ; au-delà
+  de 24 h, « Verrouille le <jour> à <heure> »), « + Prono » ou « ✓ Posé » avec « modifiable ».
+  Terminée : fond atténué, mon résultat (« 2 athlètes bien placées », « Podium parfait ! »,
+  « Pas de prono ») et mes points en pastille verte, « — » sans prono. Le lien est nommé par
+  l'épreuve puis par son statut (#517).
+- **ProgressCard** (#546) : fond bleu FrenchTrack ; « N / total podiums posés », une barre, mes
+  points (avant la compétition : « Premières finales dans N j ») et ce qu'il reste ce soir, avec
+  le prochain verrouillage.
+- **Filtres en pastilles** (`EventFilters`) : une pastille par filtre avec son nombre, la
+  pastille active pleine ; elles défilent à l'horizontale sur mobile.
 - **AthleteChip** : drapeau, nom, record de saison.
 - **PointsToast** : « +9 pts, vainqueur du 100 m trouvé ! » avec petite animation.
 - **Bib** (dossard, #537) : l'avatar du joueur, un numéro (0 à 999) et une couleur parmi six,
