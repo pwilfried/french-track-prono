@@ -69,6 +69,18 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - **Clôture du mercato**, de trois façons : plus aucun participant n'a de budget (après
   résolution des offres en cours) ; le dernier participant qui a encore du budget décide d'y
   mettre fin ; date programmée par les règles.
+- Clôture du mercato (#424), selon les `closeModes` des règles de la ligue. « Peut recruter » :
+  l'équipe a encore de la place (`teamSize`) et le budget restant (budget moins les athlètes
+  gagnés, les offres en cours ne comptent pas) paie l'athlète libre le moins cher du catalogue
+  (`canRecruit`, `src/domain/manager-mercato.ts` ; même règle en SQL,
+  `private.manager_recruiters`). Le job « Manager rounds » clôt, après les tours échus, le mercato
+  d'une ligue dont la date `mercato_closes_at` est passée (`scheduled`) ou dont plus personne ne
+  peut recruter (`budgets_spent`). Le dernier participant qui peut recruter voit « Clore le
+  mercato » dans « Mon budget » (`close_manager_mercato`, `last_bidder`). Clôture collective :
+  toutes les lignes des participants sont verrouillées et relues ; les offres en cours sont
+  attribuées comme un dernier tour, puis la ligue garde `mercato_closed_at` et ne prend plus
+  d'offre (FT016). Entre la date programmée et le passage du job, les offres attendent (FT020).
+  La saisie de `mercato_closes_at` par l'admin de la ligue n'a pas encore d'écran.
 - **Complément automatique** à la clôture : une équipe incomplète reçoit au hasard des athlètes
   encore libres, dans le respect des quotas et du budget restant, au prix de référence, jusqu'à
   être complète, à budget épuisé ou sans athlète éligible abordable. Une équipe qui respecte les
