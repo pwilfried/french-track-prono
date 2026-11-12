@@ -34,7 +34,15 @@ Le DSN n'est pas un secret (il finit dans le navigateur) ; le jeton, si.
   garder active). Les erreurs avalées par un `catch` pour garder la page debout (tableau de bord,
   menu admin, listes admin, partage, notifications, service worker) passent par `reportError`
   (`src/lib/report-error.ts`) ; une erreur de rendu, par `src/app/global-error.tsx`.
-- Les jobs planifiés (notifications push, comptes inactifs, import des clubs) échouent en cas de
+- Les notifications push (#527) : l'Edge Function `push-notifications`, appelée chaque minute
+  par `pg_cron`, envoie un événement à Sentry quand un passage échoue (exception, ou envois
+  refusés autrement que par 404/410, qui ne sont que des abonnements expirés). L'événement donne
+  le nombre d'échecs, le type de notification et le code HTTP ; jamais d'endpoint, de clé ni de
+  joueur (`supabase/functions/_shared/sentry.mjs`, un simple appel HTTP, sans SDK). Le DSN est le
+  secret `SENTRY_DSN` de la fonction : à poser dans GitHub, environnement « production », secret
+  `SENTRY_DSN` ; le workflow « Database migrations » le donne à la fonction à chaque tag. Sans
+  lui, rien n'est signalé.
+- Les jobs planifiés de GitHub (comptes inactifs, import des clubs) échouent en cas de
   problème : GitHub prévient le propriétaire par e-mail.
 
 ## Vérifier
