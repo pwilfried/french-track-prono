@@ -19,10 +19,25 @@ test("a visitor taps « Faire mon premier prono », signs up and lands on the fi
   await page.goto("/");
   await page.getByRole("link", { name: "Faire mon premier prono" }).click();
   await page.waitForURL(/\/connexion/);
+  // The page says it signs up too, and keeps the event in view, named from the database.
+  const [discipline, gender] = sql(
+    `select discipline || '|' || gender from events where slug = '${slug}'`,
+  ).split("|");
+  const genderName = { F: "femmes", M: "hommes", X: "mixte" }[gender];
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Connexion ou inscription");
+  await expect(page.getByRole("note")).toHaveText(
+    `Ton podium du ${discipline} ${genderName} t'attend. Encore une minute et tu le poses.`,
+  );
   await page.getByLabel("Ton e-mail").fill(player.email);
   await page.getByRole("button", { name: "Recevoir mon code" }).click();
-  await page.getByLabel(/code/i).fill(await latestCodeFromMailbox(player.email));
-  await page.getByRole("button", { name: "Me connecter" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Regarde tes e-mails");
+  await expect(page.getByText(player.email)).toBeVisible();
+  const code = page.getByLabel(/code/i);
+  await expect(code).toHaveAttribute("inputmode", "numeric");
+  await expect(code).toHaveAttribute("autocomplete", "one-time-code");
+  await code.fill(await latestCodeFromMailbox(player.email));
+  // Enter signs in: « Autre e-mail », shown first, must not take the default submission.
+  await code.press("Enter");
   await page.waitForURL(/\/bienvenue/);
 
   await page.getByLabel("Ton pseudo").fill(player.pseudo);
@@ -60,6 +75,9 @@ test("a club missing from the list is typed and waits for validation", async ({ 
   await clearMailbox(player.email);
   await page.goto("/profil");
   await page.waitForURL(/\/connexion/);
+  // No event behind this sign-in: no reminder.
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Connexion ou inscription");
+  await expect(page.getByRole("note")).toHaveCount(0);
   await page.getByLabel("Ton e-mail").fill(player.email);
   await page.getByRole("button", { name: "Recevoir mon code" }).click();
   await page.getByLabel(/code/i).fill(await latestCodeFromMailbox(player.email));
@@ -83,4 +101,28 @@ test("a club missing from the list is typed and waits for validation", async ({ 
     sql(`select c.validated from profiles p join clubs c on c.id = p.club_id
          where p.pseudo = '${player.pseudo}'`),
   ).toBe("f");
+});
+
+test("a visitor pastes the code copied from the e-mail and is signed in", async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  const player = newPlayer("paste");
+  await clearMailbox(player.email);
+  await page.goto("/connexion");
+  await page.getByLabel("Ton e-mail").fill(player.email);
+  await page.getByRole("button", { name: "Recevoir mon code" }).click();
+  const paste = page.getByRole("button", { name: "Coller le code" });
+
+  // Nothing to paste yet: a short message, the field stays usable.
+  await page.evaluate(() => navigator.clipboard.writeText("rien à coller"));
+  await paste.click();
+  await expect(page.getByRole("status")).toHaveText("Pas de code dans le presse-papiers");
+  await expect(page.getByLabel(/code/i)).toBeEditable();
+
+  const code = await latestCodeFromMailbox(player.email);
+  await page.evaluate((text) => navigator.clipboard.writeText(text), `Ton code : ${code}`);
+  await paste.click();
+  await page.waitForURL(/\/bienvenue/);
 });
