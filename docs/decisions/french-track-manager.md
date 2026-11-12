@@ -159,6 +159,8 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 
 - **Barème hongrois** : chaque athlète aligné rapporte des points selon sa performance réelle ;
   la place n'entre pas dans ce calcul. Tables World Athletics (#428) ; DNS, DNF, DQ = 0 point.
+  Calcul : `src/domain/world-athletics-points.ts`, à partir de la discipline, du sexe et de la
+  performance (secondes, mètres, ou total officiel pour les épreuves combinées).
 - **Bonus sportifs**, tous cumulables, valeurs fixées par l'admin : 1re, 2e, 3e place, record
   personnel, meilleure performance de la saison, record national, continental et du monde.
 - **Saisie** : l'admin entre places, performances et indicateurs de records ; le calcul est
@@ -202,6 +204,20 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - **Prix de référence** : fixé à la main par l'admin, attribut de l'athlète (back-office ›
   Athlètes › fiche, « Prix French Track Manager »). Un athlète sans prix n'est pas dans le
   catalogue. Le prix servira aussi au futur onglet athlète (#443).
+
+## Réponses du propriétaire (#428, 12 novembre 2026)
+
+- **Tables de cotation World Athletics** : elles peuvent être récupérées et embarquées dans l'app.
+  Édition **2025**, coefficients repris de la bibliothèque GlaivePro/IaafPoints (licence MIT,
+  commit épinglé), formule `points = floor(a × (perf + b)² + c)`. Le script
+  `scripts/world-athletics-tables.mjs` les importe dans `src/domain/world-athletics-tables.ts`,
+  fichier généré et versionné ; une nouvelle édition = changer l'édition et le commit dans le
+  script, le relancer, vérifier les valeurs de référence des tests.
+- **Épreuves combinées** : pas de tables du décathlon ou de l'heptathlon par épreuve. La
+  performance saisie est le total officiel, converti par les tables comme toute autre épreuve.
+- Chronométrage électronique et piste de 400 m seulement (pas de correction manuelle, pas de
+  tables « piste courte »). Une discipline absente des tables (relais mixte 4 × 100 m, ou créée
+  par l'admin sous un autre nom) n'a pas de barème : le calcul renvoie « pas de table ».
 
 ## Questions encore ouvertes
 
