@@ -109,7 +109,10 @@ jobs:
       # #502: the Edge Function that sends the push notifications, called every minute by pg_cron.
       # A new secret at each release: in the function's secrets first, then in Vault (read by
       # pg_cron). Without the VAPID keys nothing is deployed, and pg_cron calls nothing.
+      # A failure here must not keep the site out of step with its schema: the notifications wait,
+      # the deploy goes on, and the warning stays on the run.
       - name: Deploy the push notifications
+        continue-on-error: true
         env:
           VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
