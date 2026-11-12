@@ -40,8 +40,9 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   disponibilité.
 - **Budget** : le même pour tous, fixé par l'admin. Le prix de référence est l'enchère minimale.
 - **Enchères secrètes** : plusieurs athlètes à la fois, offres modifiables jusqu'à la clôture du
-  tour, dans la limite du budget disponible. On ne voit que ses propres offres : ni celles des
-  autres, ni leur nombre, ni sa position, ni la meilleure offre. La dernière offre compte.
+  tour, dans la limite du budget disponible. Pendant le tour, on ne voit que ses propres offres :
+  ni celles des autres, ni leur nombre, ni sa position, ni la meilleure offre (à la fin du tour,
+  tout est révélé : voir « Révélation de fin de tour »). La dernière offre compte.
 - **Réservation** : une offre réserve son montant ; la somme des offres actives ne dépasse jamais
   le budget disponible ; une modification recalcule la réservation.
 - Écran des offres (#422) : dans le catalogue, panneau « Mon budget » (budget, réservé, disponible,
@@ -53,6 +54,23 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   enregistrée en premier à ce montant (horodatage précis, mis à jour à chaque modification). Le
   montant est déduit, les réservations perdantes libérées. Un athlète n'appartient qu'à une
   équipe de la ligue.
+- **Révélation de fin de tour** (changement de règle du propriétaire, 12 nov. 2026, #604) :
+  pendant un tour, tout reste secret ; à la fin de chaque tour, tous les joueurs de la ligue voient
+  **toutes les offres du tour** : pour chaque athlète, qui a enchéri, combien, et qui l'a eu.
+  Avant, un joueur ne voyait que ses propres athlètes. En base : à la clôture d'un tour
+  (`private.award_manager_round`), chaque offre est recopiée dans `manager_round_bids` avec
+  `won` avant d'être effacée ; la lecture est ouverte à tout membre de la ligue (les lignes
+  n'existent qu'une fois le tour clos), les offres du tour ouvert restent dans `manager_bids`
+  (lecture de ses propres offres seulement). `manager_members.revealed_round` retient le dernier
+  tour dont le joueur a vu la révélation (`mark_manager_round_revealed`, ne recule jamais) ;
+  `manager_bid_rounds` liste les tours clos avec des offres et dit s'ils sont vus. Écran : la
+  première ouverture du catalogue après la fin d'un tour mène à `/manager/<id>/tour/<n>`
+  (« L'heure de vérité », une seule fois par tour et par joueur, marquée à l'affichage) : les
+  offres du joueur en cartes face cachée, retournées une à une ou toutes, puis le bilan (offres
+  gagnées, athlètes, crédits restants) ; ensuite « Toutes les enchères du tour » (une carte par
+  athlète, offres de la plus haute à la plus basse, la gagnante en doré). Un tour sans offre n'a
+  pas de révélation. Le résumé de chaque tour reste consultable depuis le catalogue
+  (« Résultats des tours », `?vue=toutes`). Règles pures : `src/domain/manager-reveal.ts`.
 - **Tours** : 48 h pour les tours 1 et 2, 24 h ensuite.
 - Clôture des tours (#423) : les tours s'enchaînent depuis `mercato_opened_at`, durées prises dans
   les règles de la ligue (`rounds`). Le workflow « Manager rounds » lance
@@ -63,8 +81,8 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   libérées). Rejouer ne ferme rien deux fois (`manager_rounds`, clé primaire sur
   `manager_awards`). Entre la fin d'un tour et le passage du job, les offres attendent (FT020).
   Le budget disponible est le budget moins les athlètes gagnés ; un athlète gagné n'est plus
-  « Libre » dans le catalogue. Un joueur voit ses propres athlètes et ce qu'ils ont coûté, pas
-  ceux des autres ; le panneau « Mon budget » montre le dépensé, la fin du tour et « Mes
+  « Libre » dans le catalogue. Dans `manager_awards`, un joueur lit ses propres athlètes ; ceux
+  des autres et leur prix se lisent depuis #604 dans la révélation de fin de tour ; le panneau « Mon budget » montre le dépensé, la fin du tour et « Mes
   athlètes ».
 - **Clôture du mercato**, de trois façons : plus aucun participant n'a de budget (après
   résolution des offres en cours) ; le dernier participant qui a encore du budget décide d'y
