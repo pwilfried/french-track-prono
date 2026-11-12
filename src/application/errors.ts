@@ -101,7 +101,11 @@ export type ErrorCode =
   | "ATHLETE_TAKEN"
   | "ROUND_CLOSING"
   | "MERCATO_NOT_LAST_BIDDER"
-  | "MANAGER_BIDS_UNAVAILABLE";
+  | "MANAGER_BIDS_UNAVAILABLE"
+  | "MERCATO_NOT_OVER"
+  | "LINEUP_LOCKED"
+  | "LINEUP_INVALID"
+  | "LINEUPS_UNAVAILABLE";
 
 let reportUnavailable: ((code: ErrorCode) => void) | undefined;
 

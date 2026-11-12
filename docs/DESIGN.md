@@ -117,6 +117,16 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **BadgeGrid** : badges gagnés en couleur, les autres grisés avec leur règle ; dessous, le
   prochain badge et ce qu'il reste à faire pour l'obtenir.
 - **CompetitionChips** : puces d'une compétition à l'autre (classement, historique des pronos).
+- **AthleteCard** (Manager, #426) : carte or d'un athlète de l'équipe ; code de famille, prix
+  payé, initiales (jamais de photo), prénom et initiale du nom ; états « Sélectionné » et
+  « Absent·e » ; format compact sur une place du stade.
+- **LineupBoard** (Manager, #427) : un stade (piste `--track` autour d'une pelouse `--field`)
+  porte les places des titulaires, une par carte, chacune d'une famille ou « Libre » (règles de la
+  ligue) ; dessous, les remplaçants. Glisser-déposer à la souris ; au toucher, une carte puis une
+  place (les places compatibles s'allument) ; toucher une carte du stade la renvoie sur le banc ;
+  tout est bouton, donc au clavier aussi. Compteur « N/M places », barre du bas « À remplir : … »
+  et « Valider mon alignement ». Une place que l'équipe ne peut pas remplir reste grise
+  (« Personne ») et n'empêche pas de valider. Bandeaux « Alignement validé » et « Verrouillé ».
 
 ## Ton éditorial
 

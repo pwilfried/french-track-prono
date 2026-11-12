@@ -466,7 +466,42 @@ export const messages = {
     cardLabel: (name: string, discipline: string, paid: number) =>
       `${name}, ${discipline}, payé ${paid} crédits`,
     selected: "Sélectionné",
-    absent: "Absent",
+    absent: "Absent·e",
+  },
+  lineup: {
+    title: "Mon alignement",
+    subtitle: "Aligne tes athlètes avant chaque compétition.",
+    link: "Mon alignement",
+    competitions: "Compétitions éligibles",
+    noCompetition: "Aucune compétition éligible dans cette ligue pour l'instant.",
+    status: { todo: "À aligner", validated: "Validé", locked: "Verrouillé" },
+    places: (filled: number, total: number) => `${filled}/${total} places`,
+    stadium: "Le stade",
+    place: {
+      sprint: "Sprint",
+      middle: "Demi-fond",
+      long: "Fond",
+      jumps: "Sauts",
+      throws: "Lancers",
+      combined: "Combinées",
+      free: "Libre",
+    },
+    emptyPlace: (place: string) => `Place ${place}, vide`,
+    takenPlace: (place: string, name: string) => `Place ${place} : ${name}, renvoyer sur le banc`,
+    lockedPlace: (place: string, name: string) => `Place ${place} : ${name}`,
+    unfillablePlace: (place: string) => `Place ${place} : aucun athlète de ton équipe disponible`,
+    nobody: "Personne",
+    bench: "Remplaçants",
+    benchEmpty: "Tous tes athlètes engagés sont alignés.",
+    hint: "Touche un athlète du banc puis une place qui s'allume, ou fais-le glisser. Touche un athlète du stade pour le renvoyer sur le banc.",
+    toFill: (places: { label: string; count: number }[]) =>
+      `À remplir : ${places.map((p) => (p.count > 1 ? `${p.label} ×${p.count}` : p.label)).join(", ")}`,
+    full: "Toutes les places sont remplies.",
+    validate: "Valider mon alignement",
+    validated: "Alignement validé, modifiable jusqu'au verrouillage.",
+    locked: "Verrouillé : la compétition a commencé.",
+    notOver: "Le mercato n'est pas fini : tu aligneras ton équipe une fois qu'il sera clos.",
+    noTeam: "Ton équipe n'a aucun athlète : rien à aligner.",
   },
   leagues: {
     title: "Mes ligues",
@@ -1874,6 +1909,12 @@ export const messages = {
     MERCATO_NOT_LAST_BIDDER:
       "Tu ne peux pas clore le mercato : un autre participant peut encore recruter.",
     MANAGER_BIDS_UNAVAILABLE: "Tes offres n'ont pas pu être chargées ou enregistrées. Réessaie.",
+    MERCATO_NOT_OVER:
+      "Le mercato n'est pas fini : tu aligneras ton équipe une fois qu'il sera clos.",
+    LINEUP_LOCKED: "La compétition a commencé : ton alignement est verrouillé.",
+    LINEUP_INVALID:
+      "Cet alignement ne respecte pas les règles de la ligue : remplis chaque place avec un athlète engagé de ton équipe.",
+    LINEUPS_UNAVAILABLE: "Ton alignement n'a pas pu être chargé ou enregistré. Réessaie.",
     retry: "Réessayer",
   },
   legal: {

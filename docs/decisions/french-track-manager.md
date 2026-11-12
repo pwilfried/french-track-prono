@@ -109,6 +109,22 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   fois, quotas et maximum respectés), puis **verrouillée** au début. Sans sélection validée :
   **0 point** pour la compétition.
 - Pas de mercato secondaire payant : le budget reste en crédits virtuels (#416).
+- Alignement (#427), écran `/manager/<id>/alignement` puis une page par compétition éligible de
+  la ligue. Le stade compte `lineup.max` places : pour chaque famille de `lineup.minPerFamily`,
+  autant de places (haies avec le sprint, les deux sauts ensemble, comme sur les cartes), le reste
+  en places « Libre » (toutes familles). Un alignement valide : des athlètes de son équipe, chacun
+  une fois, **engagés** dans la compétition (`competition_athletes`, back-office ou liste de
+  départ), et toutes les places que l'équipe peut remplir sont remplies ; une place que personne
+  ne peut remplir (équipe incomplète, athlètes absents) reste vide sans bloquer
+  (`lineupProblem`, `src/domain/manager-lineup.ts` ; même règle en SQL dans
+  `save_manager_lineup`). Le **verrou** est le premier verrou des pronos de la compétition (à
+  défaut d'épreuve, minuit heure de Paris le premier jour) ; un déclencheur refuse toute écriture
+  dans `manager_lineups` après (FT023). Une ligne de `manager_lineups` est un alignement validé :
+  sans ligne au verrou, 0 point pour la compétition (calcul en v0.15). Chacun ne lit que ses
+  alignements. Codes : FT022 mercato pas fini, FT023 verrouillé, FT024 alignement invalide.
+- Décisions du coordinateur (à revoir aux tests du propriétaire) : les remplaçants sont un **banc
+  simple** en v1, sans remplacement automatique d'un titulaire qui ne court pas ; le chiffre de la
+  carte reste le **prix payé** (les points de la saison viendront avec la v0.15).
 
 ## 4. Points (v0.15)
 

@@ -57,6 +57,10 @@
   --medal-bronze-from: #d99464;
   --medal-bronze-to: #8b4513;
   --medal-bronze-ink: #ffffff;
+  /* The Manager stadium (#427): a red running track around a green field. */
+  --track: #c8553d;
+  --field: #3d8b4f;
+  --field-foreground: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -85,6 +89,8 @@
     --success-ink: #8ce4ac;
     --gold-soft: #3a2a0b;
     --gold-ink: #f7d37b;
+    --track: #8e3626;
+    --field: #1f5a32;
   }
 }
 
@@ -123,6 +129,9 @@
   --color-success-ink: var(--success-ink);
   --color-gold-soft: var(--gold-soft);
   --color-gold-ink: var(--gold-ink);
+  --color-track: var(--track);
+  --color-field: var(--field);
+  --color-field-foreground: var(--field-foreground);
   --radius-card: var(--radius);
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-bricolage), system-ui, sans-serif;

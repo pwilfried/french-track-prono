@@ -78,6 +78,12 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
         >
           {messages.team.link}
         </Link>
+        <Link
+          href={`/manager/${league.id}/alignement`}
+          className={`${buttonVariants({ variant: "muted" })} w-full`}
+        >
+          {messages.lineup.link}
+        </Link>
 
         <section aria-labelledby="participants" className="flex flex-col gap-2">
           <h2
