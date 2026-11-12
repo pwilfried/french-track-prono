@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { EventGender, EventSummary } from "./event";
-import { filterByGender, groupEventsByDay, openEvents } from "./event-list";
+import { filterByGender, groupEventsByDay, openEvents, splitFinished } from "./event-list";
 
 const event = (slug: string, startsAt: string, gender: EventGender = "M"): EventSummary => ({
   id: slug,
@@ -81,5 +81,34 @@ describe("openEvents", () => {
 
   it("is empty once every event is locked", () => {
     expect(openEvents([at("2026-11-23T17:00:00Z", "locked")], now, 3)).toEqual([]);
+  });
+});
+
+describe("splitFinished", () => {
+  const upcoming = (slug: string, startsAt: string): EventSummary => ({
+    ...event(slug, startsAt),
+    status: "upcoming",
+  });
+
+  it("puts the events still to run first, in their order, and the finished ones apart", () => {
+    const { coming, done } = splitFinished([
+      event("done-early", "2026-09-11T17:00:00Z"),
+      upcoming("next", "2026-09-12T17:00:00Z"),
+      { ...upcoming("live", "2026-09-12T15:00:00Z"), status: "live" },
+      event("done-late", "2026-09-11T19:00:00Z"),
+    ]);
+
+    expect(coming.map((e) => e.slug)).toEqual(["next", "live"]);
+    expect(done.map((e) => e.slug)).toEqual(["done-late", "done-early"]);
+  });
+
+  it("orders the finished events from the latest to the earliest", () => {
+    const { done } = splitFinished([
+      event("a", "2026-09-10T17:00:00Z"),
+      event("b", "2026-09-12T17:00:00Z"),
+      event("c", "2026-09-11T17:00:00Z"),
+    ]);
+
+    expect(done.map((e) => e.slug)).toEqual(["b", "c", "a"]);
   });
 });

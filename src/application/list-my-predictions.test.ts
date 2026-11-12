@@ -3,7 +3,12 @@ import { describe, expect, it } from "vitest";
 import type { EventDetail, EventSummary } from "@/domain/event";
 
 import type { EventReader } from "./list-events";
-import { countPredictions, getMyPredictionHistory, listMyPredictions } from "./list-my-predictions";
+import {
+  countPredictions,
+  getMyPredictionHistory,
+  listMyEventMarks,
+  listMyPredictions,
+} from "./list-my-predictions";
 import type { Prediction, PredictionRepository } from "./save-prediction";
 
 const prediction = (userId: string, eventId: string, useJoker = false): Prediction => ({
@@ -37,6 +42,27 @@ describe("listMyPredictions", () => {
     const result = await useCase.execute({ userId: "me", competitionSlug: "c" });
 
     expect(result.map((p) => p.userId)).toEqual(["me"]);
+  });
+});
+
+describe("listMyEventMarks", () => {
+  it("gives each of my predicted events its joker and its points once they are computed", async () => {
+    // Given two predictions of mine, the points computed for the first event only
+    const useCase = listMyEventMarks({
+      predictions: repositoryWith([prediction("me", "e1", true), prediction("me", "e2")]),
+      points: {
+        listMine: async () => [{ userId: "me", eventId: "e1", points: 12, reasons: [] }],
+      },
+    });
+
+    // When the events list asks for my marks
+    const marks = await useCase.execute({ userId: "me", competitionSlug: "c" });
+
+    // Then the first event shows its points, the second none yet
+    expect(marks).toEqual([
+      { eventId: "e1", joker: true, points: 12 },
+      { eventId: "e2", joker: false, points: null },
+    ]);
   });
 });
 

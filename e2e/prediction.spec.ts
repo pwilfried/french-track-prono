@@ -76,6 +76,11 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   await expect(page.locator('main:not([aria-busy="true"])')).toContainText("+12 pts");
   await expect(page.locator('main:not([aria-busy="true"])')).toContainText("Podium parfait");
 
+  // The events list moves it to « Déjà courues », the points on its card (#488).
+  await page.goto("/epreuves?competition=ultimate-championship-2026");
+  const done = page.getByRole("region", { name: "Déjà courues" });
+  await expect(done.locator(`a[href="/epreuves/${slug}"]`)).toContainText("+12 pts");
+
   // The event page now shows the result and my podium against the official one.
   await page.goto(`/epreuves/${slug}`);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("s'impose");

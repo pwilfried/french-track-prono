@@ -82,16 +82,39 @@ export const NotFeatured: Story = {
   args: { event: { ...baseEvent, discipline: "400 m haies", gender: "M", isFeatured: false } },
 };
 
+const finishedEvent: EventSummary = {
+  ...baseEvent,
+  status: "finished",
+  round: "final",
+  startsAt: inSeconds(-3600),
+  lockAt: inSeconds(-3900),
+};
+
 /** Finished event: countdown is gone, chip reads "Terminé". */
 export const Finished: Story = {
-  args: {
-    event: {
-      ...baseEvent,
-      status: "finished",
-      round: "final",
-      startsAt: inSeconds(-3600),
-      lockAt: inSeconds(-3900),
-    },
+  args: { event: finishedEvent },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText("Terminé")).toBeInTheDocument();
+  },
+};
+
+/** Finished and scored: the points won replace « ✓ Posé » (#488). */
+export const FinishedWithPoints: Story = {
+  args: { event: finishedEvent, mine: { predicted: true, joker: false, points: 12 } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("+12 pts")).toBeInTheDocument();
+    await expect(canvas.queryByText(/Posé/)).toBeNull();
+  },
+};
+
+/** Finished, predicted, points not computed yet: « Terminé », not « ✓ Posé » (#488). */
+export const FinishedPointsPending: Story = {
+  args: { event: finishedEvent, mine: { predicted: true, joker: false, points: null } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Terminé")).toBeInTheDocument();
+    await expect(canvas.queryByText(/Posé/)).toBeNull();
   },
 };
 

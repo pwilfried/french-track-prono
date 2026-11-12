@@ -30,7 +30,7 @@ test("the admin blocks a player, who leaves the general ranking, then unblocks t
     from p, events e where e.slug = 'e2e-mod-${tag}-100m'`);
 
   const admin = newPlayer("mod");
-  await page.goto("/classement");
+  await page.goto("/connexion?next=/classement");
   await signUp(page, admin);
   await page.waitForURL(/\/classement$/);
   sql(`update profiles set is_admin = true where pseudo = '${admin.pseudo}'`);
@@ -38,7 +38,9 @@ test("the admin blocks a player, who leaves the general ranking, then unblocks t
   const viewer = newPlayer("viewer");
   const viewerPage = await (await browser.newContext()).newPage();
   // « Général » of the target's competition: its only player is the target (#551 cuts long ones).
-  await viewerPage.goto(`/classement?vue=general&competition=e2e-mod-${tag}`);
+  await viewerPage.goto(
+    `/connexion?next=${encodeURIComponent(`/classement?vue=general&competition=e2e-mod-${tag}`)}`,
+  );
   await signUp(viewerPage, viewer);
   await viewerPage.waitForURL(/\/classement\?vue=general/);
   const ranking = viewerPage.getByRole("list", { name: "Classement" });

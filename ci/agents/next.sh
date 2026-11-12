@@ -3,7 +3,7 @@
 # open PR closes yet)
 # while Claude has a free slot (AGENTS_CLAUDE_SLOTS, default 2: two issues at a time).
 # An issue is picked when an owner labelled it agent:ready, it is not given to Claude yet, no open
-# PR closes it, it has no needs-human, agent:blocked nor after-ui label, and every blocker is closed
+# PR closes it, nobody is assigned to it (a person works on it), it has no needs-human, agent:blocked nor after-ui label, and every blocker is closed
 # (GitHub's "blocked by" links, or "Blocked by #n" lines in its body).
 # Order: milestone-plan, then features (p1, p2, p3, then the oldest), then refactor-check once no
 # feature is left, then docs-check last.
@@ -40,7 +40,7 @@ current=$(jq -r --arg closing "$closing" '($closing | split("\n") | map(select(.
   | sort -uV | head -1)
 [ -n "$current" ] || { echo "No open milestone with an issue left to do."; exit 0; }
 issues=$(as_bot gh issue list -R "$repo" --milestone "$current" --state open --limit 100 \
-  --json number,title,labels,body,blockedBy)
+  --json number,title,labels,body,blockedBy,assignees)
 kind='([.labels[].name] | if index("milestone-plan") then "plan" elif index("refactor-check") then "refactor" elif index("docs-check") then "docs" else "feature" end)'
 count() { jq --arg k "$1" "[.[] | select($kind == \$k)] | length" <<< "$issues"; }
 features=$(count feature) plans=$(count plan) refactors=$(count refactor)
@@ -52,6 +52,7 @@ while read -r i; do
   jq -e '[.labels[].name] | index("agent:ready")' <<< "$i" >/dev/null || continue
   jq -e '[.labels[].name] | any((startswith("agent:") and . != "agent:ready") or . == "needs-human" or . == "after-ui")' <<< "$i" >/dev/null && continue
   grep -qx "$n" <<< "$closing" && continue
+  jq -e '(.assignees // []) | length > 0' <<< "$i" >/dev/null && { echo "#$n: assigned to a person"; continue; }
   case $k in
     refactor) { [ "$features" -gt 0 ] || [ "$plans" -gt 0 ]; } && { echo "#$n: refactor-check waits for the features"; continue; } ;;
     docs) { [ "$features" -gt 0 ] || [ "$plans" -gt 0 ] || [ "$refactors" -gt 0 ]; } && { echo "#$n: docs-check waits for the rest"; continue; } ;;

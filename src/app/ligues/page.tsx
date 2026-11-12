@@ -14,7 +14,7 @@ import { LeagueCard } from "@/components/leagues/league-card";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { OfficialLeague } from "@/components/leagues/official-league";
 import { buttonVariants } from "@/components/ui/button";
-import { PUBLIC_LEAGUE_MAX_MEMBERS } from "@/domain/league";
+import { PUBLIC_LEAGUE_MAX_MEMBERS, publicLeaguesNotice } from "@/domain/league";
 
 import { currentCompetitionDay, loadCompetitions } from "../competition";
 import { messages } from "../messages.fr";
@@ -112,7 +112,17 @@ export default async function LeaguesPage() {
             </h2>
             {others.length === 0 ? (
               <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
-                {messages.leagues.publicEmpty}
+                {
+                  // The official league, shown above while I am not in it, is a public one too.
+                  messages.leagues.publicNotice[
+                    official
+                      ? "no_other"
+                      : publicLeaguesNotice(
+                          rows.filter((row) => row.league.isPublic).map((row) => row.league),
+                          ports.userId,
+                        )
+                  ]
+                }
               </p>
             ) : (
               <ul aria-labelledby="public-leagues" className="flex flex-col gap-2">

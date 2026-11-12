@@ -20,7 +20,7 @@ test("the ranking opens on my league, and the general one adds up every competit
       from c`);
   }
   const player = newPlayer("general");
-  await page.goto("/classement");
+  await page.goto("/connexion?next=/classement");
   await signUp(page, player);
   await page.waitForURL(/\/classement$/);
 
@@ -91,4 +91,48 @@ test("the ranking opens on my league, and the general one adds up every competit
   await expect(card).not.toContainText("@");
 
   sql(`delete from competitions where slug like '${tag}-%'`);
+});
+
+test("a visitor sees the general ranking alone, and signs in to play", async ({ page }) => {
+  const tag = `e2e-visitor-${Date.now() % 1000000}`;
+  sql(`with c as (
+      insert into competitions (slug, name, starts_on, ends_on)
+      values ('${tag}', 'Test visiteur ${tag}', current_date - 1, current_date + 1)
+      returning id
+    )
+    insert into events (competition_id, slug, discipline, gender, starts_at, lock_at)
+    select id, '${tag}-100m', '100 m', 'F', now() - interval '1 hour', now() - interval '2 hours'
+    from c`);
+  // Two players with points; the second is blocked and stays out of the visitor's ranking too.
+  const [shown, blocked] = [newPlayer("seen"), newPlayer("hidden")];
+  for (const [player, points] of [
+    [shown, 21],
+    [blocked, 30],
+  ] as const) {
+    sql(`with u as (
+        insert into auth.users (id, email) values (gen_random_uuid(), '${player.email}') returning id
+      ), p as (
+        insert into profiles (id, pseudo, age_confirmed_at) select id, '${player.pseudo}', now()
+        from u returning id
+      )
+      insert into score_events (user_id, competition_id, event_id, source, points, reason)
+      select p.id, e.competition_id, e.id, 'prediction', ${points}, 'prediction'
+      from p, events e where e.slug = '${tag}-100m'`);
+  }
+  sql(`update profiles set blocked_at = now() where pseudo = '${blocked.pseudo}'`);
+
+  await page.goto(`/classement?vue=general&competition=${tag}`);
+  await expect(page).toHaveURL(/\/classement\?/);
+  const views = page.getByRole("navigation", { name: "Vue du classement" });
+  await expect(views.getByRole("link")).toHaveText(["Général"]);
+  const ranking = page.getByRole("list", { name: "Classement" });
+  await expect(ranking.getByText(shown.pseudo)).toBeVisible();
+  await expect(page.getByText(blocked.pseudo)).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Autour de moi" })).toHaveCount(0);
+
+  await page.locator("main").getByRole("link", { name: "Se connecter" }).click();
+  await expect(page).toHaveURL(/\/connexion\?next=/);
+
+  sql(`delete from competitions where slug = '${tag}'`);
+  sql(`delete from auth.users where email in ('${shown.email}', '${blocked.email}')`);
 });
