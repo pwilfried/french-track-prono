@@ -21,7 +21,10 @@ export function EventFilters({
   competition?: string;
 }) {
   return (
-    <nav aria-label={messages.events.filtersLabel} className="-mx-4 overflow-x-auto px-4">
+    <nav
+      aria-label={messages.events.filtersLabel}
+      className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none]"
+    >
       <ul className="flex gap-2">
         {filters.map((filter) => {
           const active = filter === selected;
