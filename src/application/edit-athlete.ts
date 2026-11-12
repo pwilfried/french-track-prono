@@ -13,7 +13,11 @@ export type AthleteSummary = {
 };
 
 /** An athlete of the back-office list, with the names of their disciplines (for the filters). */
-export type AthleteListItem = AthleteSummary & { disciplines: string[] };
+export type AthleteListItem = AthleteSummary & {
+  disciplines: string[];
+  mainDiscipline: string | null;
+  managerPrice: number | null;
+};
 
 /** What the back-office shows of an athlete. */
 export type AthleteFile = AthleteSummary & {

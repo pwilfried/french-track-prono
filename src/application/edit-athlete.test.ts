@@ -28,6 +28,8 @@ function repository(isAdmin = true) {
         countryCode: "USA",
         gender: "F",
         disciplines: ["100 m"],
+        mainDiscipline: "100 m",
+        managerPrice: null,
       },
       {
         athleteId: "1",
@@ -36,6 +38,8 @@ function repository(isAdmin = true) {
         countryCode: "LCA",
         gender: "F",
         disciplines: ["100 m"],
+        mainDiscipline: "100 m",
+        managerPrice: null,
       },
     ],
     find: async (slug) =>

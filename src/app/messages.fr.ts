@@ -967,6 +967,7 @@ export const messages = {
     create: "Nouvel athlète",
     createSubmit: "Créer l'athlète",
     mainDiscipline: "Discipline principale",
+    offCatalogueNoMainDiscipline: "Absent du catalogue : discipline principale manquante",
   },
   adminDashboard: {
     title: (pseudo: string) => `Bonjour ${pseudo}`,
