@@ -14,6 +14,8 @@ export type League = {
   competitionSlugs: string[];
   /** Joined in one tap without a code, up to 200 players (#277). */
   isPublic: boolean;
+  /** The one official league, « Ligue FrenchTrack », without a member limit (#553). */
+  isOfficial?: boolean;
 };
 
 /** A public league as listed for players who may join it. */
@@ -22,6 +24,7 @@ export type PublicLeague = {
   name: string;
   memberCount: number;
   competitionSlugs: string[];
+  isOfficial?: boolean;
 };
 
 export type LeagueMember = {
