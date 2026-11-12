@@ -1283,7 +1283,7 @@ export const messages = {
   },
   welcome: {
     title: "Bienvenue !",
-    subtitle: "Dernière étape : ton profil de joueur.",
+    subtitle: "Choisis comment les autres joueurs te verront. C'est tout.",
     pseudoLabel: "Ton pseudo",
     pseudoHint:
       "2 à 24 caractères : lettres, chiffres, espace, _ - . Visible par les autres joueurs.",
@@ -1295,8 +1295,9 @@ export const messages = {
     sexNone: "Je préfère ne pas le dire",
     disciplinesLabel: "Tes disciplines (facultatif)",
     disciplinesHint: "Coche celles que tu pratiques, autant que tu veux. Visible par toi seul.",
-    submit: "Créer mon profil",
+    submit: "C'est parti : mon premier prono",
     submitting: "Création…",
+    later: "Ton club et tes disciplines : plus tard, depuis ton profil.",
   },
   clubPicker: {
     legend: "Ton club (facultatif)",
