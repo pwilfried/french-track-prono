@@ -16,11 +16,18 @@ if [ ${#pngs[@]} -gt 0 ]; then
   board=$(mktemp -d)
   git fetch -q origin boards
   git worktree add -q "$board" FETCH_HEAD
-  rm -rf "${board:?}/$dir" && mkdir -p "$board/$dir" && cp "${pngs[@]}" "$board/$dir/"
-  git -C "$board" add "$dir"
-  git -C "$board" -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-    commit -qm "chore: ui-shots of #$PR" || true
-  git -C "$board" push -q origin HEAD:boards
+  # Other PRs push to boards too: when refused, start again from its new tip (#556).
+  for attempt in 1 2 3 4 5; do
+    rm -rf "${board:?}/$dir" && mkdir -p "$board/$dir" && cp "${pngs[@]}" "$board/$dir/"
+    git -C "$board" add "$dir"
+    git -C "$board" -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+      commit -qm "chore: ui-shots of #$PR" || true
+    git -C "$board" push -q origin HEAD:boards && break
+    [ "$attempt" -lt 5 ] || exit 1
+    sleep "$attempt"
+    git -C "$board" fetch -q origin boards
+    git -C "$board" reset -q --hard FETCH_HEAD
+  done
   sha=$(git -C "$board" rev-parse HEAD)
 fi
 
