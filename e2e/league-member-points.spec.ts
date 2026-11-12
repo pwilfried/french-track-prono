@@ -48,7 +48,7 @@ test("a league counts only the points scored once the player joined", async ({ p
     .filter({ hasText: friend });
   await expect(row).toContainText("Pas encore de points");
   // Still counted in the general ranking.
-  await page.goto(`/classement?onglet=general&competition=${competition}`);
+  await page.goto(`/classement?vue=general&competition=${competition}`);
   await expect(
     page
       .getByRole("list", { name: "Classement" })

@@ -59,7 +59,7 @@ export const Default: Story = {
   },
 };
 
-/** Places won and lost since yesterday (#551): ▲ green, ▼ red, « = » otherwise; no 🔥 badge. */
+/** Places won and lost since yesterday (▲ green, ▼ red, = same place); no streak badge (#489). */
 export const WithChanges: Story = {
   args: {
     rows: rows.map((r, i) => ({ ...r, change: [2, -1, 0, 1, null, -3][i] ?? null })),
@@ -67,27 +67,37 @@ export const WithChanges: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const items = canvas.getAllByRole("listitem");
-    await expect(canvas.getByText("2 places gagnées depuis hier")).toBeInTheDocument();
-    await expect(canvas.getByText("1 place perdue depuis hier")).toBeInTheDocument();
-    await expect(items[2]).toHaveTextContent("=même place qu'hier");
-    await expect(items[4]).toHaveTextContent("=pas classé hier");
+    await expect(canvas.getByText("2 places gagnées depuis la veille")).toBeInTheDocument();
+    await expect(canvas.getByText("1 place perdue depuis la veille")).toBeInTheDocument();
+    await expect(items[0]).toHaveTextContent("▲2");
+    await expect(items[2]).toHaveTextContent("=");
+    await expect(items[4]).not.toHaveTextContent(/[▲▼=]/);
     await expect(canvasElement).not.toHaveTextContent("🔥");
   },
 };
 
-/** A long ranking cut after the top (#551): « ··· », then me and my neighbours; my row is the anchor. */
-export const Window: Story = {
-  args: {
-    rows: [...rows.slice(0, 2), null, ...rows.slice(4)].map((r) =>
-      r ? { ...r, change: 0 } : null,
-    ),
-    meId: "5",
-  },
+// 30 invented players, for the « autour de moi » cut (#551).
+const many: LeaderboardRow[] = rankPlayers(
+  Array.from({ length: 30 }, (_, i) => ({
+    userId: `p${i + 1}`,
+    pseudo: `Démo ${i + 1}`,
+    points: 120 - i * 3,
+    perfectPodiums: 0,
+    winnersFound: 0,
+  })),
+).map((p, i) => ({ ...p, bib: bibs[i % bibs.length]! }));
+
+/** A long ranking: the first ten, « ··· », then me and two neighbours on each side. */
+export const AroundMe: Story = {
+  args: { rows: many, meId: "p20", aroundMe: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getAllByRole("listitem")).toHaveLength(4);
-    await expect(canvasElement).toHaveTextContent("···");
-    await expect(canvasElement.querySelector("#moi")).toHaveTextContent("Démo Javelot");
+    const items = canvas.getAllByRole("listitem");
+    await expect(items).toHaveLength(15);
+    await expect(items[12]).toHaveAttribute("aria-current", "true");
+    await expect(items[12]).toHaveAttribute("id", "moi");
+    await expect(canvas.getByText("···")).toBeInTheDocument();
+    await expect(canvas.queryByText("Démo 15")).toBeNull();
   },
 };
 

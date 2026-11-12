@@ -1,4 +1,4 @@
-import { parisDay } from "./competition";
+import { competitionDay } from "./competition";
 import type { ScoreReason } from "./scoring";
 
 /** One player's totals over the events counted by a ranking. */
@@ -54,50 +54,69 @@ export function rankPlayers(players: PlayerTotals[]): RankedPlayer[] {
   });
 }
 
+/** A score line with its event; an empty `eventStartsAt` is a player without any event yet. */
 type DatedLine = {
   userId: string;
-  eventId: string;
   eventStartsAt: string;
   points: number;
   reasons: ScoreReason[];
 };
 
 /**
- * Places won (+) or lost (−) by each player since the ranking at the end of the day before
- * `today` (YYYY-MM-DD, Paris time), #551: every event of the day counts. Null for a player who
- * was not ranked then, and for everyone until a day is over. The order of the lines never matters.
+ * Places won (+) or lost (−) by each player since the ranking at the end of the competition day
+ * before `today` (#551): every event of the day counts as one move. Null for a player who was not
+ * ranked yesterday. A player without any event (a league member at 0) is ranked on both days.
+ * The order of the lines never matters.
  */
 export function movesSinceYesterday(
   lines: DatedLine[],
-  today: string,
   pseudoOf: (userId: string) => string,
+  today: string,
 ): Map<string, number | null> {
-  const before = lines.filter((l) => parisDay(l.eventStartsAt) < today);
-  const previous = new Map(rankPlayers(totalsOf(before, pseudoOf)).map((p) => [p.userId, p.rank]));
+  const now = rankPlayers(totalsOf(lines, pseudoOf));
+  const before = new Map(
+    rankPlayers(
+      totalsOf(
+        lines.filter((l) => !l.eventStartsAt || competitionDay(l.eventStartsAt) < today),
+        pseudoOf,
+      ),
+    ).map((p) => [p.userId, p.rank]),
+  );
   return new Map(
-    rankPlayers(totalsOf(lines, pseudoOf)).map((p) => {
-      const rank = previous.get(p.userId);
-      return [p.userId, rank === undefined ? null : rank - p.rank];
+    now.map((player) => {
+      const previous = before.get(player.userId);
+      return [player.userId, previous === undefined ? null : previous - player.rank];
     }),
   );
 }
 
+/** The score lines of one competition day (« Ce soir », #551). */
+export function linesOfDay<T extends { eventStartsAt: string }>(lines: T[], day: string): T[] {
+  return lines.filter((l) => l.eventStartsAt !== "" && competitionDay(l.eventStartsAt) === day);
+}
+
+/** Players shown at the top of a long ranking, and on each side of the player (#551). */
+const TOP = 10;
+const NEIGHBOURS = 2;
+
 /**
- * The rows a long ranking shows (#551): the top `top`, then, after a gap (null), me and `side`
- * neighbours on each side. No gap when they follow the top; the top only when I am in it or not
- * ranked.
+ * A long ranking cut around the player (#551): the first ten, then « gap » where rows are left
+ * out, then the player with two neighbours on each side. Neighbours are taken in the order of the
+ * list, tied players included. Only the first ten when the player is not ranked.
  */
-export function rankingWindow<T extends { userId: string }>(
+export function aroundMe<T extends { userId: string }>(
   rows: T[],
-  meId: string | null,
-  top = 10,
-  side = 2,
-): (T | null)[] {
-  const shown: (T | null)[] = rows.slice(0, top);
+  meId: string | undefined,
+): (T | "gap")[] {
   const me = rows.findIndex((r) => r.userId === meId);
-  const from = Math.max(me - side, top);
-  const to = Math.min(me + side, rows.length - 1);
-  if (me < 0 || from > to) return shown;
-  if (from > top) shown.push(null);
-  return [...shown, ...rows.slice(from, to + 1)];
+  const shown = rows.map(
+    (_, i) => i < TOP || (me >= 0 && i >= me - NEIGHBOURS && i <= me + NEIGHBOURS),
+  );
+  const items: (T | "gap")[] = [];
+  rows.forEach((row, i) => {
+    if (!shown[i]) return;
+    if (i > 0 && !shown[i - 1]) items.push("gap");
+    items.push(row);
+  });
+  return items;
 }

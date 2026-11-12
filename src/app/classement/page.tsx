@@ -1,84 +1,89 @@
 import Link from "next/link";
 
 import { UseCaseError } from "@/application/errors";
-import { getGeneralRanking, getLeagueRanking, type RankingRow } from "@/application/rankings";
+import type { League } from "@/application/leagues";
+import {
+  getGeneralRanking,
+  getLeagueRanking,
+  getTonightRanking,
+  type RankingRow,
+} from "@/application/rankings";
 import { ErrorNotice } from "@/components/error-notice";
 import { CompetitionChips } from "@/components/events/competition-chips";
 import { Leaderboard } from "@/components/leaderboard/leaderboard";
-import { RankingPodium } from "@/components/leaderboard/ranking-podium";
+import { Podium } from "@/components/leaderboard/podium";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { buttonVariants } from "@/components/ui/button";
-import { competitionDay, parisDay, rankingStart } from "@/domain/competition";
-import { rankingWindow } from "@/domain/ranking";
+import { rankingStart } from "@/domain/competition";
 import { createSupabaseLeagueRepository, createSupabaseRankingRepository } from "@/infra";
 
-import { loadCompetitions, loadMyLeagues } from "../competition";
+import { currentCompetitionDay, currentDay, loadCompetitions, loadMyLeagues } from "../competition";
 import { messages } from "../messages.fr";
 import { paramText } from "../search-params";
 import { getCurrentUser, getSessionClient } from "../session";
 
-type Tab = "ligue" | "soir" | "general";
-const text = messages.ranking;
+const VIEWS = ["ligue", "soir", "general"] as const;
+type View = (typeof VIEWS)[number];
+
+/** The address of a view of the ranking, with its league or competition when there is one. */
+function hrefOf(view: View, extra: { ligue?: string; competition?: string } = {}) {
+  const query = new URLSearchParams({ vue: view });
+  if (extra.ligue) query.set("ligue", extra.ligue);
+  if (extra.competition) query.set("competition", extra.competition);
+  return `/classement?${query}`;
+}
 
 /**
- * The rankings (#551): « Ma ligue » first (the player's first league, a picker when there are
- * several), « Ce soir » while a competition is under way, then « Général » (top 10 and the player
- * among their neighbours), which `?competition=` narrows to one competition (#376).
+ * The rankings tab (#551): « Ma ligue » first (the player's first league, a chooser when they have
+ * several), « Ce soir » (points of tonight's finals, hidden before the first competition) and
+ * « Général » (every player, or one competition with ?competition=), cut around the player.
  * A visitor sees « Général » alone, with a link to sign in (#573).
  */
 export default async function RankingPage({
   searchParams,
 }: {
   searchParams: Promise<{
-    onglet?: string | string[];
+    vue?: string | string[];
     ligue?: string | string[];
     competition?: string | string[];
   }>;
 }) {
   const query = await searchParams;
-  const asked = new URLSearchParams(
-    (["onglet", "ligue", "competition"] as const).flatMap((k) => {
-      const value = paramText(query[k]);
-      return value ? [[k, value]] : [];
-    }),
-  );
-  const here = `/classement${asked.size ? `?${asked}` : ""}`;
+  const { coming, past } = await loadCompetitions();
+  const all = [...coming, ...past].sort((a, b) => b.startsOn.localeCompare(a.startsOn));
+  const start = rankingStart(all, currentDay());
   const user = await getCurrentUser();
-
-  const [{ coming, past }, leagues] = await Promise.all([loadCompetitions(), loadMyLeagues()]);
-  const all = [...coming, ...past];
-  const today = parisDay(new Date().toISOString());
-  const tonight = competitionDay(all, today);
-  const tabs: Tab[] = !user
-    ? ["general"]
-    : tonight
-      ? ["ligue", "soir", "general"]
-      : ["ligue", "general"];
-  const tab = tabs.find((t) => t === paramText(query.onglet)) ?? tabs[0]!;
-  const league = leagues.find((l) => l.id === paramText(query.ligue)) ?? leagues[0] ?? null;
+  const views = user ? VIEWS.filter((v) => v !== "soir" || !start) : (["general"] as const);
+  const view = views.find((v) => v === paramText(query.vue)) ?? views[0]!;
   const chosen =
-    tab === "general" ? (all.find((c) => c.slug === paramText(query.competition)) ?? null) : null;
+    view === "general" ? (all.find((c) => c.slug === paramText(query.competition)) ?? null) : null;
 
+  const leagues = user ? await loadMyLeagues() : [];
+  const league: League | null =
+    view === "ligue"
+      ? (leagues.find((l) => l.id === paramText(query.ligue)) ?? leagues[0] ?? null)
+      : null;
+  const here = hrefOf(view, { ligue: league?.id, competition: chosen?.slug });
+
+  const today = currentCompetitionDay();
   const client = await getSessionClient();
   const ranking = createSupabaseRankingRepository(client);
-  const scope =
-    tab === "ligue"
-      ? all.filter((c) => league?.competitionSlugs.includes(c.slug))
-      : chosen
-        ? [chosen]
-        : all;
-  const start = tab === "soir" ? null : rankingStart(scope, today);
-  let rows: RankingRow[] | "error" = [];
+  let rows: RankingRow[] | "error" | null = null;
   try {
-    if (tab === "ligue" && league) {
+    if (view === "ligue" && league) {
       rows = await getLeagueRanking({
         ranking,
         leagues: createSupabaseLeagueRepository(client),
-      }).execute({ leagueId: league.id, competitionSlugs: league.competitionSlugs });
-    } else if (tab !== "ligue") {
+      }).execute({ leagueId: league.id, competitionSlugs: league.competitionSlugs, today });
+    } else if (view === "soir") {
+      rows = await getTonightRanking({ ranking }).execute({
+        competitionSlugs: all.map((c) => c.slug),
+        today,
+      });
+    } else if (view === "general") {
       rows = await getGeneralRanking({ ranking }).execute({
-        competitionSlugs: scope.map((c) => c.slug),
-        day: tab === "soir" ? (tonight ?? undefined) : undefined,
+        competitionSlugs: chosen ? [chosen.slug] : all.map((c) => c.slug),
+        today,
       });
     }
   } catch (error) {
@@ -86,81 +91,93 @@ export default async function RankingPage({
     rows = "error";
   }
   const meId = user?.userId;
-  const me = rows === "error" ? undefined : rows.find((r) => r.userId === meId);
-  // A league is short: shown whole. The other rankings show the top and the player's neighbours.
-  const shown = rows === "error" ? [] : tab === "ligue" ? rows : rankingWindow(rows, meId ?? null);
+  const me = Array.isArray(rows) ? rows.find((p) => p.userId === meId) : undefined;
+  const text = messages.ranking;
+  const subtitle =
+    view === "ligue"
+      ? league
+        ? text.leagueSubtitle(league.name)
+        : text.noLeagueSubtitle
+      : view === "soir"
+        ? text.tonightSubtitle
+        : chosen
+          ? text.competitionSubtitle(chosen.name)
+          : text.subtitle;
 
   return (
     <main id="main" className="flex flex-1 flex-col">
-      <LeagueHero
-        title={text.title}
-        subtitle={
-          tab === "ligue"
-            ? league
-              ? text.subtitle.ligue(league.name)
-              : text.tabs.ligue
-            : chosen
-              ? text.subtitle.competition(chosen.name)
-              : text.subtitle[tab]
-        }
-      />
+      <LeagueHero title={text.title} subtitle={subtitle} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
         <CompetitionChips
-          label={text.scopeLabel}
-          chips={tabs.map((t) => ({
-            key: t,
-            href: `/classement?onglet=${t}`,
-            name: text.tabs[t],
-            active: t === tab,
+          label={text.viewLabel}
+          chips={views.map((v) => ({
+            key: v,
+            href: hrefOf(v),
+            name: text.view[v],
+            active: v === view,
           }))}
         />
-        {tab === "ligue" && leagues.length > 1 && (
+        {view === "ligue" && leagues.length > 1 && (
           <CompetitionChips
-            label={text.leaguesLabel}
+            label={text.leagueLabel}
             chips={leagues.map((l) => ({
               key: l.id,
-              href: `/classement?onglet=ligue&ligue=${l.id}`,
+              href: hrefOf("ligue", { ligue: l.id }),
               name: l.name,
               active: l.id === league?.id,
             }))}
           />
         )}
+        {view === "general" && (
+          <CompetitionChips
+            label={text.scopeLabel}
+            chips={[{ slug: null, name: text.general }, ...all].map((c) => ({
+              key: c.slug ?? "general",
+              href: hrefOf("general", { competition: c.slug ?? undefined }),
+              name: c.name,
+              active: (c.slug ?? null) === (chosen?.slug ?? null),
+            }))}
+          />
+        )}
 
-        {rows === "error" ? (
-          <ErrorNotice retryHref={here} message={messages.errors.RANKING_UNAVAILABLE} />
-        ) : tab === "ligue" && !league ? (
-          <section className="flex flex-col gap-3 rounded-card bg-muted p-4">
-            <p>{text.noLeague}</p>
-            <div className="flex gap-2">
-              <Link href="/ligues/creer" className={`${buttonVariants()} flex-1`}>
-                {text.createLeague}
-              </Link>
-              <Link
-                href="/ligues/rejoindre"
-                className={`${buttonVariants({ variant: "outline" })} flex-1`}
-              >
-                {text.joinLeague}
-              </Link>
-            </div>
+        {start && (
+          <section className="flex flex-col gap-3 rounded-card bg-brand p-4 text-brand-foreground">
+            <p className="font-display text-lg font-extrabold">
+              {text.starts(start.startsOn, start.days)}
+            </p>
+            <Link href="/epreuves" className={`${buttonVariants()} w-full`}>
+              {text.firstPodiums}
+            </Link>
           </section>
+        )}
+
+        {view === "ligue" && !league ? (
+          <div className="flex flex-col gap-3 rounded-card bg-muted p-4 text-sm text-muted-foreground">
+            <p>
+              <strong className="block text-foreground">{messages.leagues.emptyTitle}</strong>
+              {messages.leagues.emptyText}
+            </p>
+            <Link href="/ligues/creer" className={`${buttonVariants()} w-full`}>
+              {messages.leagues.create}
+            </Link>
+            <Link
+              href="/ligues/rejoindre"
+              className={`${buttonVariants({ variant: "outline" })} w-full`}
+            >
+              {messages.leagues.join}
+            </Link>
+          </div>
+        ) : rows === "error" ? (
+          <ErrorNotice retryHref={here} message={messages.errors.RANKING_UNAVAILABLE} />
+        ) : rows === null ? null : start ? (
+          // Before the first competition: the members of the league at 0, under the banner.
+          rows.length > 0 && <Leaderboard rows={rows} meId={meId} retryHref={here} />
+        ) : view === "soir" && rows.length === 0 ? (
+          <p className="rounded-card bg-muted p-4 text-muted-foreground">{text.tonightEmpty}</p>
         ) : (
           <>
-            {start ? (
-              <section className="flex flex-col gap-3 rounded-card bg-brand p-4 text-brand-foreground">
-                <p className="font-display text-lg font-extrabold">{text.starts(start.startsOn)}</p>
-                <p className="font-semibold">{text.inDays(start.days)}</p>
-                <Link href="/epreuves" className={`${buttonVariants()} w-full`}>
-                  {text.startCta}
-                </Link>
-              </section>
-            ) : (
-              <RankingPodium rows={rows} meId={meId} />
-            )}
-            {tab === "soir" && rows.length === 0 ? (
-              <p className="rounded-card bg-muted p-4 text-muted-foreground">{text.tonightEmpty}</p>
-            ) : (
-              <Leaderboard rows={shown} meId={meId} retryHref={here} />
-            )}
+            <Podium rows={rows} meId={meId} />
+            <Leaderboard rows={rows} meId={meId} retryHref={here} aroundMe={view !== "ligue"} />
             {!user ? (
               <section className="flex flex-col gap-3 rounded-card bg-muted p-4">
                 <p>{text.visitor}</p>
@@ -171,26 +188,24 @@ export default async function RankingPage({
                   {messages.account.signIn}
                 </Link>
               </section>
+            ) : me ? (
+              <p className="sticky bottom-20 flex items-center justify-between gap-3 rounded-2xl bg-foreground py-1.5 pl-3.5 pr-1.5 font-extrabold text-background shadow-lg md:bottom-3">
+                <span>{text.you(me.rank, me.points)}</span>
+                <a
+                  href="#moi"
+                  className="inline-flex min-h-11 items-center rounded-xl px-3 underline underline-offset-4"
+                >
+                  {text.aroundMe}
+                </a>
+              </p>
             ) : (
-              !start &&
-              rows.length > 0 &&
-              (me ? (
-                <p className="sticky bottom-20 flex items-center justify-between gap-3 rounded-2xl bg-foreground px-3.5 py-2 font-extrabold text-background shadow-lg md:bottom-3">
-                  <span>{text.you(me.rank, me.points)}</span>
-                  <a
-                    href="#moi"
-                    className="inline-flex min-h-11 items-center rounded-full px-3 underline underline-offset-4"
-                  >
-                    {text.aroundMe}
-                  </a>
-                </p>
-              ) : (
+              rows.length > 0 && (
                 <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
-                  {text.notRanked}
+                  {view === "soir" ? text.notRankedTonight : text.notRanked}
                 </p>
-              ))
+              )
             )}
-            {user && !start && !me && tab !== "ligue" && (
+            {user && !me && view === "general" && (
               <Link href="/epreuves" className={`${buttonVariants()} w-full`}>
                 {text.predict}
               </Link>

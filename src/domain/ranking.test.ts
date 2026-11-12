@@ -2,8 +2,9 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import {
+  aroundMe,
+  linesOfDay,
   movesSinceYesterday,
-  rankingWindow,
   rankPlayers,
   totalsOf,
   type PlayerTotals,
@@ -127,144 +128,199 @@ describe("movesSinceYesterday", () => {
     points,
     reasons: [],
   });
-  // 20:00 in Paris on the 23rd, then on the 24th.
-  const yesterday = "2026-11-23T19:00:00Z";
-  const tonight = "2026-11-24T19:00:00Z";
-  const today = "2026-11-24";
-  const moves = (lines: ReturnType<typeof line>[], day = today) =>
-    movesSinceYesterday(lines, day, (id) => id);
+  // 23 and 24 Nov, evening in Paris (UTC+1).
+  const day1 = "2026-11-23T19:00:00Z";
+  const day2 = "2026-11-24T19:00:00Z";
 
   it("compares each player's place with the ranking at the end of the day before", () => {
-    const changes = moves([
-      line("ana", "e1", yesterday, 10),
-      line("bob", "e1", yesterday, 5),
-      line("cid", "e1", yesterday, 3),
-      line("bob", "e2", tonight, 12),
-      line("cid", "e2", tonight, 1),
-    ]);
+    const lines = [
+      line("ana", "e1", day1, 10),
+      line("bob", "e1", day1, 5),
+      line("cid", "e1", day1, 3),
+      line("bob", "e2", day2, 12),
+      line("cid", "e2", day2, 1),
+    ];
 
-    expect(changes.get("bob")).toBe(1); // 2nd → 1st
-    expect(changes.get("ana")).toBe(-1); // 1st → 2nd
-    expect(changes.get("cid")).toBe(0);
+    const moves = movesSinceYesterday(lines, (id) => id, "2026-11-24");
+
+    expect(moves.get("bob")).toBe(1); // 2nd → 1st
+    expect(moves.get("ana")).toBe(-1); // 1st → 2nd
+    expect(moves.get("cid")).toBe(0);
   });
 
-  it("counts every event of the day, not only the last one computed", () => {
-    const changes = moves([
-      line("ana", "e1", yesterday, 10),
-      line("bob", "e1", yesterday, 9),
-      line("bob", "e2", tonight, 2),
-      line("ana", "e3", "2026-11-24T20:00:00Z", 3),
-    ]);
+  it("counts every event of the day as one move, however many were computed", () => {
+    const lines = [
+      line("ana", "e1", day1, 10),
+      line("bob", "e1", day1, 5),
+      line("bob", "e2", "2026-11-24T17:00:00Z", 3),
+      line("bob", "e3", day2, 3),
+    ];
 
-    // Bob led after e2, Ana took the lead back with e3: since yesterday, nobody moved.
-    expect(changes.get("ana")).toBe(0);
-    expect(changes.get("bob")).toBe(0);
+    expect(movesSinceYesterday(lines, (id) => id, "2026-11-24").get("bob")).toBe(1);
   });
 
-  it("reads the day in Paris time: an event at 00:30 in Paris belongs to that day", () => {
-    const changes = moves([
-      line("ana", "e1", yesterday, 5),
-      line("bob", "e2", "2026-11-23T23:30:00Z", 8),
-    ]);
+  it("gives 0 to everyone once a day has passed without event: nobody moved since yesterday", () => {
+    const lines = [line("ana", "e1", day1, 10), line("bob", "e2", day2, 12)];
 
-    expect(changes.get("ana")).toBe(-1);
-    expect(changes.get("bob")).toBeNull();
+    const moves = movesSinceYesterday(lines, (id) => id, "2026-11-26");
+
+    expect([...moves.values()]).toEqual([0, 0]);
   });
 
-  it("moves a player up to the place they now share with another", () => {
-    const changes = moves([
-      line("ana", "e1", yesterday, 10),
-      line("bob", "e1", yesterday, 5),
-      line("bob", "e2", tonight, 5),
-    ]);
-
-    expect(changes.get("bob")).toBe(1); // 2nd → tied 1st
-    expect(changes.get("ana")).toBe(0);
-  });
-
-  it("gives null to a player not ranked yesterday, and to everyone before any day is over", () => {
-    expect(moves([line("ana", "e1", tonight, 3)]).get("ana")).toBeNull();
-    const changes = moves([line("ana", "e1", yesterday, 3), line("dan", "e2", tonight, 9)]);
-    expect(changes.get("dan")).toBeNull();
-    expect(changes.get("ana")).toBe(-1);
-  });
-
-  it("leaves everyone in place on a day without event", () => {
-    const changes = moves(
-      [line("ana", "e1", yesterday, 3), line("bob", "e2", tonight, 9)],
-      "2026-11-25",
+  it("gives null to a player who was not ranked yesterday, and to everyone on the first day", () => {
+    expect(
+      movesSinceYesterday([line("ana", "e1", day1, 3)], (id) => id, "2026-11-23").get("ana"),
+    ).toBeNull();
+    const moves = movesSinceYesterday(
+      [line("ana", "e1", day1, 3), line("dan", "e2", day2, 9)],
+      (id) => id,
+      "2026-11-24",
     );
+    expect(moves.get("dan")).toBeNull();
+    expect(moves.get("ana")).toBe(-1);
+  });
 
-    expect([...changes.values()]).toEqual([0, 0]);
+  it("ranks a player without any event (a league member at 0) on both days", () => {
+    const lines = [line("zoe", "", "", 0), line("ana", "e0", day1, 1), line("bob", "e1", day2, 3)];
+
+    const moves = movesSinceYesterday(lines, (id) => id, "2026-11-24");
+
+    expect(moves.get("zoe")).toBe(-1); // 2nd yesterday, 3rd today
+    expect(moves.get("ana")).toBe(-1);
+    expect(moves.get("bob")).toBeNull();
+  });
+
+  it("gives tied players the same move", () => {
+    const lines = [
+      line("ana", "e1", day1, 10),
+      line("bob", "e1", day1, 4),
+      line("cid", "e1", day1, 4),
+      line("bob", "e2", day2, 8),
+      line("cid", "e2", day2, 8),
+    ];
+
+    const moves = movesSinceYesterday(lines, (id) => id, "2026-11-24");
+
+    expect([moves.get("bob"), moves.get("cid"), moves.get("ana")]).toEqual([1, 1, -2]);
   });
 
   it("does not depend on the order of the lines", () => {
-    const lines = fc.sample(
-      fc.array(
-        fc.record({
-          userId: fc.constantFrom("a", "b", "c"),
-          eventId: fc.constantFrom("e1", "e2", "e3"),
-          eventStartsAt: fc.constantFrom(yesterday, tonight),
-          points: fc.integer({ min: 0, max: 28 }),
-          reasons: fc.constant<never[]>([]),
-        }),
-      ),
-      50,
-    );
+    const lines = [
+      line("a", "e1", day1, 2),
+      line("b", "e2", day2, 5),
+      line("b", "e1", day1, 1),
+      line("c", "e2", day2, 4),
+    ];
     const sorted = (m: Map<string, number | null>) => [...m].sort(([x], [y]) => x.localeCompare(y));
-    for (const sample of lines) {
-      expect(sorted(moves([...sample].reverse()))).toEqual(sorted(moves(sample)));
-    }
+    const expected = sorted(movesSinceYesterday(lines, (id) => id, "2026-11-24"));
+    fc.assert(
+      fc.property(fc.shuffledSubarray(lines, { minLength: lines.length }), (shuffled) => {
+        expect(sorted(movesSinceYesterday(shuffled, (id) => id, "2026-11-24"))).toEqual(expected);
+      }),
+    );
   });
 });
 
-describe("rankingWindow", () => {
-  const rows = Array.from({ length: 30 }, (_, i) => ({ userId: `p${i + 1}` }));
-  const ids = (shown: ({ userId: string } | null)[]) => shown.map((r) => r?.userId ?? "···");
-  const top10 = rows.slice(0, 10).map((r) => r.userId);
+describe("linesOfDay", () => {
+  it("keeps the lines of the events of one competition day, Paris time", () => {
+    const lines = [
+      { eventStartsAt: "2026-11-23T19:00:00Z" },
+      { eventStartsAt: "2026-11-24T19:00:00Z" },
+      { eventStartsAt: "2026-11-25T00:30:00Z" }, // 01:30 in Paris: still the 24th's evening
+      { eventStartsAt: "" },
+    ];
 
-  it("shows the top 10, a gap, then me and two neighbours on each side", () => {
-    expect(ids(rankingWindow(rows, "p20"))).toEqual([
-      ...top10,
-      "···",
-      "p18",
-      "p19",
-      "p20",
-      "p21",
-      "p22",
-    ]);
+    expect(linesOfDay(lines, "2026-11-24")).toEqual([lines[1], lines[2]]);
   });
+});
 
-  it("shows the top 10 only when I am in it", () => {
-    expect(ids(rankingWindow(rows, "p3"))).toEqual(top10);
-  });
-
-  it("goes on from the top without a gap when my neighbours reach it", () => {
-    expect(ids(rankingWindow(rows, "p10"))).toEqual([...top10, "p11", "p12"]);
-    expect(ids(rankingWindow(rows, "p13"))).toEqual([...top10, "p11", "p12", "p13", "p14", "p15"]);
-  });
-
-  it("stops at the end of the list when I am last", () => {
-    expect(ids(rankingWindow(rows, "p30"))).toEqual([...top10, "···", "p28", "p29", "p30"]);
-  });
-
-  it("keeps players tied with me in the order of the list", () => {
-    const tied = rows.map((r, i) => ({ ...r, rank: i < 20 ? i + 1 : 21 }));
-    expect(ids(rankingWindow(tied, "p25"))).toEqual([
-      ...top10,
-      "···",
-      "p23",
-      "p24",
-      "p25",
-      "p26",
-      "p27",
-    ]);
-  });
-
-  it("shows the top 10 only when I am not ranked, and a short list whole", () => {
-    expect(ids(rankingWindow(rows, null))).toEqual(top10);
-    expect(ids(rankingWindow(rows.slice(0, 8), "p8"))).toEqual(
-      rows.slice(0, 8).map((r) => r.userId),
+describe("aroundMe", () => {
+  const ranked = (n: number) =>
+    rankPlayers(
+      Array.from({ length: n }, (_, i) => player(`P${String(i + 1).padStart(2, "0")}`, 100 - i)),
     );
+  const shape = (items: ("gap" | { rank: number })[]) =>
+    items.map((item) => (item === "gap" ? "···" : item.rank));
+
+  it("shows the first ten, a gap, then the player and two neighbours on each side", () => {
+    expect(shape(aroundMe(ranked(30), "p20"))).toEqual([
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      "···",
+      18,
+      19,
+      20,
+      21,
+      22,
+    ]);
+  });
+
+  it("shows only the first ten when the player is among them, far from the eleventh", () => {
+    expect(shape(aroundMe(ranked(30), "p04"))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
+
+  it("joins the neighbours to the first ten without a gap when they touch", () => {
+    expect(shape(aroundMe(ranked(30), "p10"))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(shape(aroundMe(ranked(30), "p13"))).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    ]);
+  });
+
+  it("shows the two players above the last one, and nobody below", () => {
+    expect(shape(aroundMe(ranked(30), "p30"))).toEqual([
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      "···",
+      28,
+      29,
+      30,
+    ]);
+  });
+
+  it("takes tied players around the player in the order of the list", () => {
+    const rows = rankPlayers([
+      ...Array.from({ length: 12 }, (_, i) => player(`T${String(i + 1).padStart(2, "0")}`, 99 - i)),
+      player("Ana", 5),
+      player("Bob", 5),
+      player("Cid", 5),
+      player("Dan", 1),
+    ]);
+
+    const items = aroundMe(rows, "bob");
+
+    expect(items.slice(10).map((i) => (i === "gap" ? "···" : `${i.userId}:${i.rank}`))).toEqual([
+      "···",
+      "t12:12",
+      "ana:13",
+      "bob:13",
+      "cid:13",
+      "dan:16",
+    ]);
+  });
+
+  it("shows the first ten only when the player is not ranked", () => {
+    expect(shape(aroundMe(ranked(30), "nobody"))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(shape(aroundMe(ranked(30), undefined))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
+
+  it("shows everyone in a short ranking", () => {
+    expect(shape(aroundMe(ranked(5), "p05"))).toEqual([1, 2, 3, 4, 5]);
+    expect(aroundMe([], "p01")).toEqual([]);
   });
 });

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { newPlayer, signUp } from "./players";
+import { joinLeagueFor, newPlayer, signUp } from "./players";
 
 test("the ranking opens on my league, and the general one adds up every competition", async ({
   page,
@@ -24,15 +24,17 @@ test("the ranking opens on my league, and the general one adds up every competit
   await signUp(page, player);
   await page.waitForURL(/\/classement$/);
 
-  // « Ma ligue » first (#551): without a league, the player creates or joins one.
-  const tabs = page.getByRole("navigation", { name: "Choisir le classement" });
-  await expect(tabs.getByRole("link", { name: "Ma ligue" })).toHaveAttribute(
+  // The tab opens on « Ma ligue » (#551): without a league, create or join one.
+  const views = page.getByRole("navigation", { name: "Vue du classement" });
+  await expect(views.getByRole("link", { name: "Ma ligue" })).toHaveAttribute(
     "aria-current",
     "page",
   );
-  await expect(page.locator("main").getByRole("link", { name: "Créer une ligue" })).toBeVisible();
-  await expect(page.locator("main").getByRole("link", { name: "J'ai un code" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Créer une ligue" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Rejoindre avec un code" })).toBeVisible();
 
+  // In a league counting the first competition.
+  joinLeagueFor(player.email, `${tag}-0`);
   // Points in each competition, as the admin would compute them: 40 then 33.
   for (const [i, points] of [40, 33].entries()) {
     sql(`insert into score_events (user_id, competition_id, event_id, source, points, reason, detail)
@@ -41,22 +43,36 @@ test("the ranking opens on my league, and the general one adds up every competit
       from auth.users u, events e
       where u.email = '${player.email}' and e.slug = '${tag}-${i}-100m'`);
   }
-  await tabs.getByRole("link", { name: "Général" }).click();
-  await page.waitForURL(/onglet=general$/);
+  await page.reload();
 
+  // « Ma ligue »: the league's competition only, the player's line highlighted, the bar below.
+  await expect(page.getByText("Ta ligue · Ligue E2E")).toBeVisible();
+  const inLeague = page
+    .getByRole("list", { name: "Classement" })
+    .getByRole("listitem")
+    .filter({ hasText: player.pseudo });
+  await expect(inLeague).toHaveAttribute("aria-current", "true");
+  await expect(inLeague).toContainText("40");
+  await expect(page.getByText("Tu es 1er · 40 pts")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Autour de moi" })).toHaveAttribute("href", "#moi");
+
+  // « Général » shows the player's line, whatever their place.
+  await views.getByRole("link", { name: "Général" }).click();
+  await expect(page).toHaveURL(/vue=general/);
   await expect(page.getByText("Tous les joueurs · toutes les compétitions")).toBeVisible();
-  // My row is shown, in the top 10 or among my neighbours, and the bar leads to it.
   const mine = page
     .getByRole("list", { name: "Classement" })
     .getByRole("listitem")
     .filter({ hasText: player.pseudo });
   await expect(mine).toContainText("73");
-  await expect(page.getByText(/^Tu es \d+(er|e) · 73 pts$/)).toBeVisible();
-  await expect(page.getByRole("link", { name: "Autour de moi" })).toHaveAttribute("href", "#moi");
+  await expect(mine).toHaveAttribute("id", "moi");
 
   // The ranking of one competition counts its points only (#376).
-  await page.goto(`/classement?onglet=general&competition=${tag}-0`);
-  await expect(page.getByText(`Tous les joueurs · Test général ${tag} 0`)).toBeVisible();
+  await page
+    .getByRole("navigation", { name: "Choisir le classement" })
+    .getByRole("link", { name: `Test général ${tag} 0` })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`competition=${tag}-0$`));
   await expect(
     page
       .getByRole("list", { name: "Classement" })
@@ -105,10 +121,10 @@ test("a visitor sees the general ranking alone, and signs in to play", async ({ 
   }
   sql(`update profiles set blocked_at = now() where pseudo = '${blocked.pseudo}'`);
 
-  await page.goto(`/classement?onglet=general&competition=${tag}`);
+  await page.goto(`/classement?vue=general&competition=${tag}`);
   await expect(page).toHaveURL(/\/classement\?/);
-  const tabs = page.getByRole("navigation", { name: "Choisir le classement" });
-  await expect(tabs.getByRole("link")).toHaveText(["Général"]);
+  const views = page.getByRole("navigation", { name: "Vue du classement" });
+  await expect(views.getByRole("link")).toHaveText(["Général"]);
   const ranking = page.getByRole("list", { name: "Classement" });
   await expect(ranking.getByText(shown.pseudo)).toBeVisible();
   await expect(page.getByText(blocked.pseudo)).toHaveCount(0);

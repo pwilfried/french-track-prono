@@ -188,9 +188,7 @@ le coup de flair est calculé sur tous les pronos de l'épreuve. Le joueur voit 
 
 **Ligues et classements (v0.5).** Voir « Modèle de données » pour les règles des ligues. Le
 classement (`src/domain/ranking.ts`, R9) départage aux points, puis aux podiums parfaits, puis
-aux vainqueurs trouvés ; des joueurs toujours égaux partagent la place. La flèche ▲/▼ de chaque
-ligne compare la place à celle de la fin de la veille, heure de Paris : toutes les épreuves du
-jour comptent (#551, `movesSinceYesterday`). Pages : `/ligues`,
+aux vainqueurs trouvés ; des joueurs toujours égaux partagent la place. Pages : `/ligues`,
 `/ligues/[id]`, `/rejoindre/[code]` (lien d'invitation), `/classement`.
 
 **Suspense (v0.6).** Après le verrouillage, la page d'une épreuve montre le podium de tous les

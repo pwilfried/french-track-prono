@@ -54,7 +54,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Épreuve | Liste de départ, **podium à composer** (glisser-déposer ou taps), joker, verrou |
 | Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
 | Ligue | Classement, derniers pronos révélés, réactions emoji |
-| Classement (onglet, #551) | « Ma ligue » d'abord (choix de la ligue s'il y en a plusieurs), « Ce soir » pendant une compétition, « Général » (top 10, « ··· », moi et mes deux voisins) ; podium des trois premiers, barre fixe « Tu es 3e · 52 pts » avec « Autour de moi » ; avant la compétition, un bandeau « Le classement démarre » ; un visiteur voit « Général » seul, sans barre fixe, avec « Se connecter » (#573) |
+| Classement général | Top de la communauté, ma progression |
 | Profil | Dossard (grand format, avec le pseudo), club ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager |
 | Back-office (toi) | Tableau de bord (choses à faire, préparation), compétitions et épreuves, résultats et calcul, listes des clubs, joueurs et ligues |
 
@@ -75,11 +75,17 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   épingles, « FRENCH TRACK », le numéro en gros, le pseudo dessous. Petit format (classements,
   en-tête, ligues, réactions) : pastille avec le numéro seul. Couleurs dans `BIB_PALETTE`
   (`src/components/profile/bib.tsx`), reprises par la carte de saison.
-- **Leaderboard** : place, dossard, pseudo, ▲/▼ depuis la veille (« = » sinon), points ; ex
-  æquo signalés, ma ligne surlignée (ancre `#moi`), raison du départage sous le pseudo ; pas de
-  badge de série sur les lignes (#551). Une ligne « ··· » coupe un long classement.
-- **RankingPodium** : les trois premiers d'un classement sur les marches 2-1-3, avec leur
-  dossard, lus dans l'ordre 1-2-3 ; rien tant que personne n'a de points.
+- **Leaderboard** et **RankingRow** (#551) : place, dossard, pseudo, ▲/▼ depuis la veille
+  (« = » sinon), points ; ex æquo signalés, ma ligne surlignée (cible `#moi` du lien « Autour de
+  moi »), raison du départage sous le pseudo, pas de badge de série. Un classement long montre les
+  10 premiers, « ··· », puis le joueur et deux voisins de chaque côté.
+- **Podium** (#551) : les trois premiers sur des marches 2-1-3 (dégradés or, argent, bronze),
+  dossard, pseudo et points ; lu dans l'ordre 1-2-3 ; absent tant que personne n'a de points.
+- **Onglet Classement** (#551) : « Ma ligue » (ouvert par défaut), « Ce soir », « Général » ;
+  une barre fixe en bas « Tu es 3e · 52 pts · Autour de moi » ; avant la première compétition, un
+  bandeau bleu « Le classement démarre » remplace le classement vide. Le jour de compétition va de
+  6 h à 6 h, heure de Paris : une finale courue à 2 h du matin compte pour « Ce soir ».
+  Un visiteur voit « Général » seul, sans barre fixe, avec « Se connecter » (#573).
 - **Carte « Ma saison »** (`/profil/carte`) : image verticale 1080×1920 prête pour les stories,
   partagée par le partage natif ou téléchargée ; « Mon podium du 100 m » viendra plus tard.
 - **Liste du back-office** (clubs, joueurs, ligues) : recherche, puces de filtre avec leur
@@ -88,8 +94,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **Menu admin** : entrées groupées par rubrique, le tableau de bord en tête.
 - **BadgeGrid** : badges gagnés en couleur, les autres grisés avec leur règle ; dessous, le
   prochain badge et ce qu'il reste à faire pour l'obtenir.
-- **CompetitionChips** : puces de navigation (onglets du classement, choix de la ligue,
-  historique des pronos).
+- **CompetitionChips** : puces d'une compétition à l'autre (classement, historique des pronos).
 
 ## Ton éditorial
 

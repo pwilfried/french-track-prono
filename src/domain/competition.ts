@@ -91,29 +91,6 @@ export function utcToParis(iso: string): string {
   return new Date(instant.getTime() + offsetMinutes(instant) * 60000).toISOString().slice(0, 16);
 }
 
-/** The calendar day of an instant in Paris time, YYYY-MM-DD. */
-export function parisDay(iso: string): string {
-  return utcToParis(iso).slice(0, 10);
-}
-
-/** « Ce soir » (#551): today while a competition is under way, rest days included; else null. */
-export function competitionDay(
-  competitions: { startsOn: string; endsOn: string }[],
-  today: string,
-): string | null {
-  return competitions.some((c) => c.startsOn <= today && today <= c.endsOn) ? today : null;
-}
-
-/** Before any competition has started (#551): the first day and the days left; else null. */
-export function rankingStart(
-  competitions: { startsOn: string; endsOn: string }[],
-  today: string,
-): { startsOn: string; days: number } | null {
-  if (competitions.length === 0 || competitions.some((c) => c.startsOn <= today)) return null;
-  const startsOn = competitions.map((c) => c.startsOn).sort()[0]!;
-  return { startsOn, days: daysUntil(startsOn, today) };
-}
-
 /**
  * The competition the app puts first: the one under way or the next to start; when all are over,
  * the latest one.
@@ -146,6 +123,32 @@ export function competitionsForPlayer<T extends { slug: string; startsOn: string
     mine: coming.filter((c) => mineSet.has(c.slug)),
     others: coming.filter((c) => !mineSet.has(c.slug)),
   };
+}
+
+/** Hour (Paris time) a competition day starts: a session overseas ending at 2 am stays « ce soir ». */
+const DAY_STARTS_AT_HOUR = 6;
+
+/**
+ * The competition day (YYYY-MM-DD) an instant belongs to, in Paris time (#551): the Paris date,
+ * except that the night until 6 am still belongs to the evening before.
+ */
+export function competitionDay(instant: string): string {
+  // The Paris wall clock, read as if it were UTC, moved back to the start of the day.
+  const wallClock = Date.parse(`${utcToParis(instant)}:00Z`);
+  return new Date(wallClock - DAY_STARTS_AT_HOUR * 3_600_000).toISOString().slice(0, 10);
+}
+
+/**
+ * While no competition has started yet: the day the first one starts and the days left (#551),
+ * shown instead of an empty ranking. Null once one has started, or when there is none.
+ */
+export function rankingStart(
+  competitions: { startsOn: string }[],
+  today: string,
+): { startsOn: string; days: number } | null {
+  if (competitions.length === 0 || competitions.some((c) => c.startsOn <= today)) return null;
+  const startsOn = competitions.map((c) => c.startsOn).sort()[0]!;
+  return { startsOn, days: daysUntil(startsOn, today) };
 }
 
 /** Whole days before a competition starts (dates as YYYY-MM-DD); 0 once it is under way. */

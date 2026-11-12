@@ -220,14 +220,16 @@ export const messages = {
     loading: "Chargement des épreuves…",
   },
   leaderboard: {
-    newcomer: "pas classé hier",
     change: (n: number) =>
       n > 0
-        ? `${n} ${n === 1 ? "place gagnée" : "places gagnées"} depuis hier`
+        ? `${n} ${n === 1 ? "place gagnée" : "places gagnées"} depuis la veille`
         : n < 0
-          ? `${-n} ${n === -1 ? "place perdue" : "places perdues"} depuis hier`
-          : "même place qu'hier",
+          ? `${-n} ${n === -1 ? "place perdue" : "places perdues"} depuis la veille`
+          : "même place que la veille",
     label: "Classement",
+    podium: "Podium",
+    podiumPlace: (rank: number, pseudo: string, points: number) =>
+      `${ordinal(rank)} : ${pseudo}, ${points} ${points <= 1 ? "point" : "points"}`,
     me: "Toi",
     tie: "ex æquo",
     position: (rank: number) => ordinal(rank),
@@ -396,6 +398,8 @@ export const messages = {
     competitionsTitle: "Compétitions de la ligue",
     noCompetition: "Pas encore de compétition : le classement démarre dès que tu en ajoutes une.",
     noCompetitionMember: "Pas encore de compétition : le créateur de la ligue en ajoutera.",
+    noComingCompetition:
+      "Aucune compétition à venir pour l'instant : tu pourras l'ajouter dès qu'elle sera annoncée.",
     addLabel: "Ajouter une compétition à venir",
     addSubmit: "Ajouter",
     adding: "Ajout…",
@@ -460,36 +464,35 @@ export const messages = {
   },
   ranking: {
     title: "Classement",
+    subtitle: "Tous les joueurs · toutes les compétitions",
+    competitionSubtitle: (name: string) => `Tous les joueurs · ${name}`,
+    tonightSubtitle: "Points gagnés sur les finales de ce soir · tous les joueurs",
+    leagueSubtitle: (name: string) => `Ta ligue · ${name}`,
+    noLeagueSubtitle: "Joue contre tes amis",
     scopeLabel: "Choisir le classement",
-    tabs: { ligue: "Ma ligue", soir: "Ce soir", general: "Général" },
-    subtitle: {
-      ligue: (name: string) => `Ma ligue · ${name}`,
-      soir: "Les points gagnés ce soir",
-      general: "Tous les joueurs · toutes les compétitions",
-      competition: (name: string) => `Tous les joueurs · ${name}`,
-    },
-    leaguesLabel: "Choisir la ligue",
-    noLeague: "Tu n'es dans aucune ligue : crée la tienne ou rejoins celle d'un ami.",
-    createLeague: "Créer une ligue",
-    joinLeague: "J'ai un code",
-    podium: "Podium",
-    points: (points: number) => `${points} ${points <= 1 ? "pt" : "pts"}`,
+    viewLabel: "Vue du classement",
+    view: { ligue: "Ma ligue", soir: "Ce soir", general: "Général" },
+    leagueLabel: "Choisir la ligue",
+    general: "Général",
     you: (rank: number, points: number) =>
       `Tu es ${ordinal(rank)} · ${points} ${points <= 1 ? "pt" : "pts"}`,
     aroundMe: "Autour de moi",
-    starts: (day: string) =>
-      `Le classement démarre · ${new Date(`${day}T12:00:00Z`).toLocaleDateString("fr-FR", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        timeZone: "UTC",
-      })}`,
-    inDays: (days: number) => (days === 1 ? "Dans 1 jour" : `Dans ${days} jours`),
-    startCta: "Poser mes premiers podiums",
-    tonightEmpty: "Pas encore de points ce soir : ils arrivent avec les premiers résultats.",
     notRanked: "Tu n'as pas encore de points : fais tes pronos pour entrer au classement.",
+    tonightEmpty:
+      "Pas encore de points ce soir : ils arrivent dès que les résultats des finales du jour sont saisis.",
+    notRankedTonight: "Pas de points pour toi ce soir.",
     predict: "Faire mes pronos",
     visitor: "Connecte-toi pour poser tes podiums et entrer au classement.",
+    starts: (startsOn: string, days: number) => {
+      const day = new Date(`${startsOn}T12:00:00Z`).toLocaleDateString("fr-FR", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        timeZone: "UTC",
+      });
+      return `Le classement démarre · ${day} · ${days === 1 ? "Demain" : `Dans ${days} jours`}`;
+    },
+    firstPodiums: "Poser mes premiers podiums",
   },
   admin: {
     band: "Back-office",
@@ -1303,7 +1306,7 @@ export const messages = {
   },
   welcome: {
     title: "Bienvenue !",
-    subtitle: "Dernière étape : ton profil de joueur.",
+    subtitle: "Choisis comment les autres joueurs te verront. C'est tout.",
     pseudoLabel: "Ton pseudo",
     pseudoHint:
       "2 à 24 caractères : lettres, chiffres, espace, _ - . Visible par les autres joueurs.",
@@ -1315,8 +1318,9 @@ export const messages = {
     sexNone: "Je préfère ne pas le dire",
     disciplinesLabel: "Tes disciplines (facultatif)",
     disciplinesHint: "Coche celles que tu pratiques, autant que tu veux. Visible par toi seul.",
-    submit: "Créer mon profil",
+    submit: "C'est parti : mon premier prono",
     submitting: "Création…",
+    later: "Ton club et tes disciplines : plus tard, depuis ton profil.",
   },
   clubPicker: {
     legend: "Ton club (facultatif)",
