@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 
-import { sql } from "./contract/database";
+import { lockSharedRow, sql } from "./contract/database";
 import { managerRuleRepositoryContract } from "./contract/manager-rule-repository.contract";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryManagerRuleStore, createSupabaseManagerRuleRepository } from "./index";
@@ -50,6 +50,8 @@ if (url && key) {
     const slug = `manager-${crypto.randomUUID().slice(0, 8)}`;
     sql(`insert into competitions (slug, name, starts_on, ends_on)
          values ('${slug}', 'Meeting Manager', '2027-06-01', '2027-06-01')`);
+    // The rules are one row, also changed by the Manager league tests: hold it until restore().
+    const unlock = await lockSharedRow("manager_rules");
     const rules = sql("select rules::text from manager_rules");
     const eligible = sql(
       "select coalesce(string_agg(competition_id::text, ','), '') from manager_competitions",
@@ -59,11 +61,15 @@ if (url && key) {
       player: createSupabaseManagerRuleRepository(player.client),
       competitionSlug: slug,
       restore: async () => {
-        sql(`update manager_rules set rules = '${rules.replaceAll("'", "''")}'`);
-        sql(`delete from manager_competitions;
-             insert into manager_competitions (competition_id)
-             select unnest(string_to_array('${eligible}', ','))::uuid;
-             delete from competitions where slug = '${slug}'`);
+        try {
+          sql(`update manager_rules set rules = '${rules.replaceAll("'", "''")}'`);
+          sql(`delete from manager_competitions;
+               insert into manager_competitions (competition_id)
+               select unnest(string_to_array('${eligible}', ','))::uuid;
+               delete from competitions where slug = '${slug}'`);
+        } finally {
+          unlock();
+        }
       },
     };
   });

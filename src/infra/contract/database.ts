@@ -1,4 +1,7 @@
 import { execFileSync } from "node:child_process";
+import { mkdirSync, rmSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 // Direct access to the local Supabase database, for test set-up only (making an admin, creating
 // an isolated event). The app never connects this way. Uses `psql` when it is installed, else the
@@ -25,6 +28,29 @@ export function sql(statement: string): string {
         encoding: "utf8",
       });
   return output.trim().split("\n")[0] ?? "";
+}
+
+/**
+ * Takes a lock shared by every test file (Vitest runs them in parallel workers), for a row that
+ * only exists once, like `manager_rules`. Returns the function that frees it. A lock older than
+ * a minute is taken as left behind by a crashed worker.
+ */
+export async function lockSharedRow(name: string): Promise<() => void> {
+  const dir = join(tmpdir(), `ftp-test-lock-${name}`);
+  for (;;) {
+    try {
+      mkdirSync(dir);
+      return () => rmSync(dir, { recursive: true, force: true });
+    } catch {
+      try {
+        if (Date.now() - statSync(dir).mtimeMs > 60_000)
+          rmSync(dir, { recursive: true, force: true });
+      } catch {
+        // Freed in between: try again.
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+  }
 }
 
 /**

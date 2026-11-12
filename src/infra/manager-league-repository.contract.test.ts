@@ -2,7 +2,7 @@ import { describe, it } from "vitest";
 
 import type { ManagerRuleSet } from "@/application/manager-rules";
 
-import { sql } from "./contract/database";
+import { lockSharedRow, sql } from "./contract/database";
 import { managerLeagueRepositoryContract } from "./contract/manager-league-repository.contract";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryManagerLeagueStore, createSupabaseManagerLeagueRepository } from "./index";
@@ -59,17 +59,33 @@ if (url && key) {
       signedInPlayer(url, key),
       signedInPlayer(url, key),
     ]);
-    const budget = sql("select rules ->> 'budget' from manager_rules");
-    const setBudget = async (value: number) =>
+    // The rules are one row, also changed by the Manager rule tests: the first change takes it
+    // (and notes the budget to put back), restore() frees it.
+    let held: { budget: string; unlock: () => void } | null = null;
+    const write = (value: number | string) =>
       void sql(`update manager_rules set rules = jsonb_set(rules, '{budget}', '${value}')`);
     return {
       creator: createSupabaseManagerLeagueRepository(creator.client),
       creatorId: creator.userId,
       other: createSupabaseManagerLeagueRepository(other.client),
-      setBudget,
+      setBudget: async (value) => {
+        if (!held) {
+          const unlock = await lockSharedRow("manager_rules");
+          held = { budget: sql("select rules ->> 'budget' from manager_rules"), unlock };
+        }
+        write(value);
+      },
       openMercato: async (id) =>
         void sql(`update manager_leagues set mercato_opened_at = now() where id = '${id}'`),
-      restore: () => setBudget(Number(budget)),
+      restore: async () => {
+        if (!held) return;
+        try {
+          write(held.budget);
+        } finally {
+          held.unlock();
+          held = null;
+        }
+      },
     };
   });
 } else {
