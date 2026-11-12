@@ -44,7 +44,7 @@ export async function AccountMenu({ returnTo }: { returnTo: string }) {
       )}
       <Link
         href="/profil"
-        aria-label={messages.account.myProfile(profile.pseudo)}
+        aria-label={messages.account.myProfile}
         className="inline-flex min-h-11 min-w-0 items-center gap-2 rounded-full border border-border bg-card py-1 pl-4 pr-2 text-sm font-bold text-card-foreground"
       >
         <span className="truncate">{profile.pseudo}</span>
