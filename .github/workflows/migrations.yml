@@ -6,7 +6,8 @@ name: Database migrations
 #   * a pull request touching `supabase/migrations` shows what would be applied (dry run).
 # Secrets (GitHub > Settings > Secrets and variables > Actions, environment "production"):
 #   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, SUPABASE_PROJECT_REF,
-#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (docs/SETUP.md, « Déploiements Vercel »).
+#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (docs/SETUP.md, « Déploiements Vercel »),
+#   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY (push notifications, docs/SETUP.md, « Notifications push »).
 # A missing Supabase secret fails the production run: deploying the code without its schema would
 # put them out of step. The dry run of a PR only says so (a fork's PR has no secrets).
 # Migrations apply a minute or two before the new code is live (longer if the deploy fails): they
@@ -104,6 +105,36 @@ jobs:
 
       - name: Apply the migrations
         run: supabase db push --remote --yes --password "$SUPABASE_DB_PASSWORD"
+
+      # #502: the Edge Function that sends the push notifications, called every minute by pg_cron.
+      # A new secret at each release: in the function's secrets first, then in Vault (read by
+      # pg_cron). Without the VAPID keys nothing is deployed, and pg_cron calls nothing.
+      # A failure here must not keep the site out of step with its schema: the notifications wait,
+      # the deploy goes on, and the warning stays on the run.
+      - name: Deploy the push notifications
+        continue-on-error: true
+        env:
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: |
+          if [ -z "$VAPID_PUBLIC_KEY" ] || [ -z "$VAPID_PRIVATE_KEY" ]; then
+            echo "::notice::No VAPID keys: the push notifications are not deployed."
+            exit 0
+          fi
+          secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$secret"
+          # CLI v3 asks before changing a hosted project unless --yes is given: the job has no terminal.
+          supabase functions deploy push-notifications --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt --yes
+          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" --yes \
+            PUSH_CRON_SECRET="$secret" VAPID_PUBLIC_KEY="$VAPID_PUBLIC_KEY" VAPID_PRIVATE_KEY="$VAPID_PRIVATE_KEY"
+          url="https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/push-notifications"
+          # Both values are hex or a project ref: no quote to escape in the SQL literals.
+          sql="select private.push_set_secrets('$url', '$secret')"
+          jq -n --arg sql "$sql" '{query: $sql}' |
+            curl --fail-with-body -sS -X POST \
+              "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/database/query" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
+              --data-binary @- > /dev/null
 
   # Merges into main no longer deploy (vercel.json): production follows the tags, after the schema.
   deploy:

@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 
-import { AvatarPicker } from "@/components/account/avatar-picker";
+import { BibPicker } from "@/components/account/bib-picker";
 import { ClubPicker } from "@/components/account/club-picker";
 import { DisciplinePicker } from "@/components/account/discipline-picker";
 import { Field } from "@/components/account/field";
@@ -28,14 +28,17 @@ export function EditProfileForm({
     error === "PSEUDO_INVALID" || error === "PSEUDO_TAKEN" || error === "PSEUDO_BANNED"
       ? text
       : undefined;
-  const avatarError = error === "AVATAR_INVALID" ? text : undefined;
+  const bibNumberError = error === "BIB_NUMBER_INVALID" ? text : undefined;
+  const bibColorError = error === "BIB_COLOR_INVALID" ? text : undefined;
   const sexError = error === "SEX_INVALID" ? text : undefined;
   const clubError =
     error === "CLUB_NAME_INVALID" || error === "CLUB_NAME_BANNED" || error === "CLUB_UNKNOWN"
       ? text
       : undefined;
   const generalError =
-    text && !pseudoError && !avatarError && !sexError && !clubError ? text : undefined;
+    text && !pseudoError && !bibNumberError && !bibColorError && !sexError && !clubError
+      ? text
+      : undefined;
 
   return (
     <form action={action} noValidate className="flex flex-col gap-5">
@@ -49,7 +52,12 @@ export function EditProfileForm({
         autoComplete="nickname"
         maxLength={40}
       />
-      <AvatarPicker chosen={state.avatar} error={avatarError} />
+      <BibPicker
+        chosen={{ number: state.bibNumber, color: state.bibColor }}
+        pseudo={state.pseudo}
+        numberError={bibNumberError}
+        colorError={bibColorError}
+      />
       <SexPicker chosen={state.sex} error={sexError} />
       <DisciplinePicker disciplines={disciplines} chosen={state.disciplines} />
       <ClubPicker

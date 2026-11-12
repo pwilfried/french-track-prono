@@ -4,7 +4,8 @@ import type { ManagerBidRepository } from "@/application/manager-bids";
 
 /**
  * A league with a budget of 100 and its mercato open, two participants, an outsider, two athletes
- * of the catalogue priced 10 and 20, and a closed league the first participant is also in.
+ * of the catalogue priced 10 and 20, and a closed league the first participant is also in. The
+ * rules of the league let the last bidder close the mercato, and only them.
  */
 export type ManagerBidWorld = {
   leagueId: string;
@@ -96,13 +97,60 @@ export function managerBidContract(name: string, world: () => Promise<ManagerBid
       }
     });
 
+    it("lets the last participant who can still recruit close the mercato (#424)", async () => {
+      const w = await world();
+      try {
+        expect(await w.first.place(w.leagueId, w.dear, 100)).toBe("placed");
+        const before = await w.second.mine(w.leagueId);
+        if (before === "not_member") throw new Error("a participant");
+        expect(before.canClose).toBe(false);
+        expect(await w.second.close(w.leagueId)).toBe("not_last_bidder");
+
+        await w.closeRound();
+
+        const spent = await w.first.mine(w.leagueId);
+        const last = await w.second.mine(w.leagueId);
+        if (spent === "not_member" || last === "not_member") throw new Error("participants");
+        expect(spent.canClose).toBe(false);
+        expect(last.canClose).toBe(true);
+        expect(await w.first.close(w.leagueId)).toBe("not_last_bidder");
+        expect(await w.outsider.close(w.leagueId)).toBe("not_member");
+
+        expect(await w.second.place(w.leagueId, w.cheap, 10)).toBe("placed");
+        expect(await w.second.close(w.leagueId)).toBe("closed");
+
+        const closed = await w.second.mine(w.leagueId);
+        if (closed === "not_member") throw new Error("a participant");
+        expect(closed).toMatchObject({
+          mercatoOpen: false,
+          mercatoClosed: true,
+          canClose: false,
+          roundEndsAt: null,
+          bids: [],
+        });
+        expect(closed.team).toEqual([{ athleteId: w.cheap, amount: 10, round: 2 }]);
+        expect(await w.second.place(w.leagueId, w.cheap, 10)).toBe("mercato_closed");
+        expect(await w.second.close(w.leagueId)).toBe("mercato_closed");
+      } finally {
+        await w.restore();
+      }
+    });
+
     it("takes no bid while the mercato of the league is not open", async () => {
       const w = await world();
       try {
         expect(await w.first.place(w.closedLeagueId, w.cheap, 10)).toBe("mercato_closed");
         expect(await w.first.withdraw(w.closedLeagueId, w.cheap)).toBe("mercato_closed");
         const mine = await w.first.mine(w.closedLeagueId);
-        expect(mine).toMatchObject({ mercatoOpen: false, roundEndsAt: null, team: [], bids: [] });
+        expect(mine).toMatchObject({
+          mercatoOpen: false,
+          mercatoClosed: false,
+          canClose: false,
+          roundEndsAt: null,
+          team: [],
+          bids: [],
+        });
+        expect(await w.first.close(w.closedLeagueId)).toBe("mercato_closed");
       } finally {
         await w.restore();
       }

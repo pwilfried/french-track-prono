@@ -1,12 +1,11 @@
 name: Push notifications
 
-# #203: sends the push notifications due (reminder before a lock, points once computed). Every
-# 5 minutes (GitHub may run it a few minutes late: a reminder is sent up to 20 minutes before the
-# lock), or by hand from the Actions tab. Secrets (environment "production"): SUPABASE_ACCESS_TOKEN,
-# SUPABASE_PROJECT_REF (as for the migrations), VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY.
+# #203: sends the push notifications due (reminder before a lock, points once computed), by hand
+# from the Actions tab. In production, pg_cron calls the Edge Function `push-notifications` every
+# minute (#502): a GitHub schedule runs late or not at all when GitHub is busy.
+# Secrets (environment "production"): SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF (as for the
+# migrations), VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY.
 on:
-  schedule:
-    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions:

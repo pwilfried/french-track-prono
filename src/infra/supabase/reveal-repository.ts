@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { UseCaseError } from "@/application/errors";
 import type { RevealedPrediction, RevealRepository } from "@/application/reveal";
+import { bibOf } from "@/domain/bib";
 import { isReaction } from "@/domain/reveal";
 
 import { slotFromRow } from "./podium-slot";
@@ -13,7 +14,7 @@ type Row = {
   p2: string | null;
   p3: string | null;
   use_joker: boolean;
-  profiles: { pseudo: string; avatar_emoji: string };
+  profiles: { pseudo: string; bib_number: number; bib_color: string };
   reactions: { user_id: string; emoji: string }[];
 };
 
@@ -27,7 +28,7 @@ export function createSupabaseRevealRepository(client: SupabaseClient): RevealRe
 
       const { data, error } = await client
         .from("predictions")
-        .select("id, user_id, p1, p2, p3, use_joker, profiles!predictions_user_id_fkey!inner(pseudo, avatar_emoji), reactions(user_id, emoji)")
+        .select("id, user_id, p1, p2, p3, use_joker, profiles!predictions_user_id_fkey!inner(pseudo, bib_number, bib_color), reactions(user_id, emoji)")
         .eq("event_id", eventId)
         .returns<Row[]>();
       if (error) throw new UseCaseError("REVEAL_UNAVAILABLE");
@@ -51,7 +52,7 @@ export function createSupabaseRevealRepository(client: SupabaseClient): RevealRe
             predictionId: row.id,
             userId: row.user_id,
             pseudo: row.profiles.pseudo,
-            avatar: row.profiles.avatar_emoji,
+            bib: bibOf(row.profiles.bib_number, row.profiles.bib_color),
             podium: { first: slotFromRow(row.p1), second: slotFromRow(row.p2), third: slotFromRow(row.p3) },
             useJoker: row.use_joker,
             flair: flair.has(row.user_id),

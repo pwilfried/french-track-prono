@@ -1,7 +1,25 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { safeRedirectPath } from "./redirect";
+import { eventSlugOfPath, safeRedirectPath } from "./redirect";
+
+describe("eventSlugOfPath", () => {
+  it.each([
+    ["/epreuves/100m-femmes", "100m-femmes"],
+    ["/epreuves/100m-femmes?tab=resultat", "100m-femmes"],
+    ["/epreuves/100m-femmes#podium", "100m-femmes"],
+    ["/epreuves/100m-femmes/", "100m-femmes"],
+  ])("finds the event of %j", (path, slug) => {
+    expect(eventSlugOfPath(path)).toBe(slug);
+  });
+
+  it.each(["/", "/epreuves", "/epreuves/", "/profil", "/epreuves/a/b", "/ligues/epreuves/a"])(
+    "finds no event in %j",
+    (path) => {
+      expect(eventSlugOfPath(path)).toBeNull();
+    },
+  );
+});
 
 describe("safeRedirectPath", () => {
   it("keeps a path inside the app", () => {

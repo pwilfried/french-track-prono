@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { UseCaseError } from "@/application/errors";
 import type { RankingLine, RankingRepository } from "@/application/rankings";
+import { bibOf } from "@/domain/bib";
 import type { ScoreReason } from "@/domain/scoring";
 
 type Row = {
@@ -9,7 +10,12 @@ type Row = {
   event_id: string;
   points: number;
   detail: { reasons?: ScoreReason[] };
-  profiles: { pseudo: string; avatar_emoji: string; club: { id: string; name: string } | null };
+  profiles: {
+    pseudo: string;
+    bib_number: number;
+    bib_color: string;
+    club: { id: string; name: string } | null;
+  };
   events: { starts_at: string; lock_at: string };
 };
 
@@ -19,7 +25,7 @@ export function createSupabaseRankingRepository(client: SupabaseClient): Ranking
     async competitionLines(competitionSlug) {
       const { data, error } = await client
         .from("score_events")
-        .select("user_id, event_id, points, detail, profiles!inner(pseudo, avatar_emoji, club:clubs(id, name)), events!inner(starts_at, lock_at, competitions!inner(slug))")
+        .select("user_id, event_id, points, detail, profiles!inner(pseudo, bib_number, bib_color, club:clubs(id, name)), events!inner(starts_at, lock_at, competitions!inner(slug))")
         .eq("events.competitions.slug", competitionSlug)
         .returns<Row[]>();
       if (error) throw new UseCaseError("RANKING_UNAVAILABLE");
@@ -27,7 +33,7 @@ export function createSupabaseRankingRepository(client: SupabaseClient): Ranking
         (row): RankingLine => ({
           userId: row.user_id,
           pseudo: row.profiles.pseudo,
-          avatar: row.profiles.avatar_emoji,
+          bib: bibOf(row.profiles.bib_number, row.profiles.bib_color),
           // Only when there is one: the line stays as the contract describes it otherwise.
           ...(row.profiles.club ? { club: row.profiles.club.name, clubId: row.profiles.club.id } : {}),
           points: row.points,
