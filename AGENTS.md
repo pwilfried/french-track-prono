@@ -123,7 +123,9 @@ Claude Code tourne sur les issues et les PR depuis GitHub Actions (`agents.yml`,
   la prend), label `agent:claude` (tout de suite), ou commentaire `@claude …`.
 - Deux issues à la fois (`AGENTS_CLAUDE_SLOTS`), dans le milestone en cours : `milestone-plan`,
   puis les features (`p1` d'abord), puis `refactor-check`, puis `docs-check`. Jamais une issue
-  `needs-human`, `agent:blocked`, `after-ui`, ou bloquée par une issue ouverte.
+  `needs-human`, `agent:blocked`, `after-ui`, `agent:local`, ou bloquée par une issue ouverte.
+- Une session Claude Code locale qui prend une issue y pose `agent:local` avant d'écrire la moindre
+  ligne (et le retire si elle abandonne) : la chaîne ne la prend pas en double (#583).
 - PR verte : fusionnée. Rouge ou en conflit : renvoyée à Claude, 3 fois, puis au propriétaire.
 - Milestone fini et `main` vert : tag `vX.Y.0` posé avec `AGENTS_PAT` (sinon il ne déclencherait
   pas le déploiement), release GitHub qui liste les PR, milestone fermé (`ci/agents/release.sh`).

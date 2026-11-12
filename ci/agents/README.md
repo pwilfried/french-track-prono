@@ -22,8 +22,11 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
    (sa notification prévient les propriétaires) et le milestone est fermé. `main` rouge : pas de
    tag, un avertissement dans le run, nouvel essai à la vérification suivante.
 
-Une issue n'est jamais prise si elle a `needs-human`, `agent:blocked` ou `after-ui`, ou si une
-issue qui la bloque est encore ouverte (lien GitHub « blocked by » ou ligne `Blocked by #n`).
+Une issue n'est jamais prise si elle a `needs-human`, `agent:blocked`, `after-ui` ou `agent:local`,
+ou si une issue qui la bloque est encore ouverte (lien GitHub « blocked by » ou ligne `Blocked by #n`).
+`agent:local` (#583) : une session Claude Code locale a pris l'issue. Elle le pose avant d'écrire
+la moindre ligne et le retire si elle abandonne ; sa PR `Closes #n` ferme l'issue comme d'habitude.
+Ce label ne prend pas de place à la chaîne.
 Le label `agent:claude` ne lance rien sur une issue qu'une PR ouverte ferme déjà (`Closes #n`),
 même quand la relance horaire d'une issue `agent:waiting-quota` le remet ; un commentaire
 `@claude …` lance toujours Claude.
