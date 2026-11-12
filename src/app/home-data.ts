@@ -3,8 +3,9 @@ import { UseCaseError } from "@/application/errors";
 import { getMyPoints } from "@/application/get-my-points";
 import { getProfile } from "@/application/get-profile";
 import { listEvents } from "@/application/list-events";
-import { hasPredicted, listMyPredictions } from "@/application/list-my-predictions";
+import { countPredictions, listMyPredictions } from "@/application/list-my-predictions";
 import { isMercatoOpenForMe } from "@/application/manager-bids";
+import { askToCompleteProfile } from "@/application/profile-reminder";
 import { getLeagueRanking } from "@/application/rankings";
 import type { PlayerHomeProps } from "@/components/home/player-home";
 import { leagueStanding, nextAction } from "@/domain/home";
@@ -15,8 +16,10 @@ import {
   createSupabaseLeagueRepository,
   createSupabaseManagerBids,
   createSupabaseManagerLeagueRepository,
+  createSupabasePlayerDetailsRepository,
   createSupabasePointsRepository,
   createSupabasePredictionRepository,
+  createSupabaseProfileReminderRepository,
   createSupabaseProfileRepository,
   createSupabaseRankingRepository,
 } from "@/infra";
@@ -32,8 +35,12 @@ import { getSessionClient } from "./session";
 /** Everything the signed-in player's home shows (#526); each part empty when it cannot be read. */
 export type PlayerHome = Omit<
   PlayerHomeProps,
-  "userId" | "now" | "exactPoints" | "perfectPoints"
-> & { clubNotices: ClubNotice[] };
+  "userId" | "now" | "exactPoints" | "perfectPoints" | "completeProfile"
+> & {
+  clubNotices: ClubNotice[];
+  /** Null unless the profile is incomplete and « Plus tard » does not hide the card (#540). */
+  completeProfile: { firstPodium: boolean } | null;
+};
 
 async function safely<T>(load: () => Promise<T>): Promise<T | null> {
   try {
@@ -62,7 +69,7 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
   const leagueRepository = createSupabaseLeagueRepository(client);
   const listed = [...lists.coming, ...lists.past].map((c) => c.slug);
 
-  const [events, mine, myPoints, rankings, clubNotices, predictedOnce, mercatoOpen] =
+  const [events, mine, myPoints, rankings, clubNotices, predictionCount, mercatoOpen, askProfile] =
     await Promise.all([
       safely(() =>
         listEvents({ events: createSupabaseEventReader(createPublicSupabaseClient()) }).execute({
@@ -94,7 +101,7 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
         getClubNotices({ notices: createSupabaseClubNoticeRepository(client) }).execute(),
       ),
       safely(() =>
-        hasPredicted({ predictions }).execute({
+        countPredictions({ predictions }).execute({
           userId,
           competitionSlugs: [...new Set([competition.slug, ...listed])],
         }),
@@ -104,6 +111,12 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
           managerLeagues: createSupabaseManagerLeagueRepository(client),
           bids: createSupabaseManagerBids(client),
         }).execute(),
+      ),
+      safely(() =>
+        askToCompleteProfile({
+          details: createSupabasePlayerDetailsRepository(client),
+          reminders: createSupabaseProfileReminderRepository(client),
+        }).execute({ userId, now }),
       ),
     ]);
 
@@ -119,7 +132,8 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
     clubNotices: clubNotices ?? [],
     pseudo: profile.pseudo,
     // When it cannot be read, the steps stay hidden rather than shown to a seasoned player.
-    isNew: !(predictedOnce ?? true),
+    isNew: predictionCount === 0,
+    completeProfile: askProfile ? { firstPodium: predictionCount === 1 } : null,
     action: nextAction({
       events: events ?? [],
       predicted: new Set((mine ?? []).map((p) => p.eventId)),

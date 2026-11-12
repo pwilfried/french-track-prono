@@ -59,24 +59,45 @@ export const Default: Story = {
   },
 };
 
-/** Places won and lost since the last computed event (▲ green, ▼ red, — same place). */
+/** Places won and lost since yesterday (▲ green, ▼ red, = same place); no streak badge (#489). */
 export const WithChanges: Story = {
   args: {
-    rows: rows.map((r, i) => ({
-      ...r,
-      change: [2, -1, 0, 1, null, -3][i] ?? null,
-      streak: [3, 2, 1, 0, 0, 0][i] ?? 0,
-    })),
+    rows: rows.map((r, i) => ({ ...r, change: [2, -1, 0, 1, null, -3][i] ?? null })),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      canvas.getByText("2 places gagnées depuis la dernière épreuve"),
-    ).toBeInTheDocument();
-    await expect(canvas.getByText("1 place perdue depuis la dernière épreuve")).toBeInTheDocument();
-    await expect(canvas.getAllByRole("listitem")[4]).not.toHaveTextContent("▲");
-    await expect(canvas.getAllByRole("listitem")[0]).toHaveTextContent("🔥3");
-    await expect(canvas.getAllByRole("listitem")[2]).not.toHaveTextContent("🔥");
+    const items = canvas.getAllByRole("listitem");
+    await expect(canvas.getByText("2 places gagnées depuis la veille")).toBeInTheDocument();
+    await expect(canvas.getByText("1 place perdue depuis la veille")).toBeInTheDocument();
+    await expect(items[0]).toHaveTextContent("▲2");
+    await expect(items[2]).toHaveTextContent("=");
+    await expect(items[4]).not.toHaveTextContent(/[▲▼=]/);
+    await expect(canvasElement).not.toHaveTextContent("🔥");
+  },
+};
+
+// 30 invented players, for the « autour de moi » cut (#551).
+const many: LeaderboardRow[] = rankPlayers(
+  Array.from({ length: 30 }, (_, i) => ({
+    userId: `p${i + 1}`,
+    pseudo: `Démo ${i + 1}`,
+    points: 120 - i * 3,
+    perfectPodiums: 0,
+    winnersFound: 0,
+  })),
+).map((p, i) => ({ ...p, bib: bibs[i % bibs.length]! }));
+
+/** A long ranking: the first ten, « ··· », then me and two neighbours on each side. */
+export const AroundMe: Story = {
+  args: { rows: many, meId: "p20", aroundMe: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const items = canvas.getAllByRole("listitem");
+    await expect(items).toHaveLength(15);
+    await expect(items[12]).toHaveAttribute("aria-current", "true");
+    await expect(items[12]).toHaveAttribute("id", "moi");
+    await expect(canvas.getByText("···")).toBeInTheDocument();
+    await expect(canvas.queryByText("Démo 15")).toBeNull();
   },
 };
 

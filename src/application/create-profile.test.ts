@@ -80,6 +80,21 @@ describe("CreateProfile", () => {
     });
   });
 
+  it("lets a newcomer play with a pseudo, a bib and the age box alone", async () => {
+    // given a newcomer on the express profile, with nothing else filled in (#539)
+    const { create, get } = setup();
+    // when they give only their pseudo, keep the drawn bib and tick the age box
+    await create.execute({
+      userId: "u1",
+      pseudo: "Gazelle",
+      bibNumber: "7",
+      bibColor: "gold",
+      ageConfirmed: true,
+    });
+    // then they have a profile: sex, disciplines and club wait for « Modifier mon profil »
+    expect(await get.execute({ userId: "u1" })).toMatchObject({ pseudo: "Gazelle" });
+  });
+
   it("cleans the pseudo before saving it", async () => {
     const { create } = setup();
 

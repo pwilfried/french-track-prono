@@ -52,7 +52,8 @@ export function PredictionForm({
       <input type="hidden" name="eventId" value={eventId} />
       <input type="hidden" name="slug" value={slug} />
       {markUnit && <input type="hidden" name="markUnit" value={markUnit} />}
-      <FirstPredictionTips />
+      {/* Once a podium is saved the tips only push it down (#493). */}
+      {!isComplete(initial.draft) && <FirstPredictionTips />}
       {state.saved && (
         <p
           role="status"
