@@ -188,7 +188,10 @@ export function HandOverForm({
   );
 }
 
-/** The creator picks a coming competition that the league does not count yet. */
+/**
+ * The creator picks a coming competition that the league does not count yet. Shown only when
+ * there is one (`LeagueCompetitions` says so otherwise).
+ */
 export function AddLeagueCompetitionForm({
   leagueId,
   choices,
@@ -199,9 +202,6 @@ export function AddLeagueCompetitionForm({
   const [state, action] = useActionState<LeagueFormState, FormData>(addLeagueCompetitionAction, {
     value: choices[0]?.slug ?? "",
   });
-  if (choices.length === 0) {
-    return <p className="text-sm text-muted-foreground">{messages.leagues.nothingToAdd}</p>;
-  }
   return (
     <form action={action} className="flex flex-col gap-2">
       <input type="hidden" name="leagueId" value={leagueId} />

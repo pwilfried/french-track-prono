@@ -396,6 +396,8 @@ export const messages = {
     competitionsTitle: "Compétitions de la ligue",
     noCompetition: "Pas encore de compétition : le classement démarre dès que tu en ajoutes une.",
     noCompetitionMember: "Pas encore de compétition : le créateur de la ligue en ajoutera.",
+    noComingCompetition:
+      "Aucune compétition à venir pour l'instant : tu pourras l'ajouter dès qu'elle sera annoncée.",
     addLabel: "Ajouter une compétition à venir",
     addSubmit: "Ajouter",
     adding: "Ajout…",
