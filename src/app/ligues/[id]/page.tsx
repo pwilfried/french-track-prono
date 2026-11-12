@@ -12,6 +12,7 @@ import {
   ReportLeagueForm,
 } from "@/components/leagues/league-forms";
 import { LeagueCompetitions } from "@/components/leagues/league-competitions";
+import { InviteBanner } from "@/components/leagues/invite-banner";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { ShareInvite } from "@/components/leagues/share-invite";
 import { Bib } from "@/components/profile/bib";
@@ -24,11 +25,11 @@ import { leaguePorts } from "../data";
 
 const TABS = ["classement", "membres", "inviter"] as const;
 type Tab = (typeof TABS)[number];
-const TAB_LABEL: Record<Tab, string> = {
-  classement: messages.leagues.tabs.ranking,
-  membres: messages.leagues.tabs.members,
-  inviter: messages.leagues.tabs.invite,
-};
+/** The tabs in the bar; « inviter » opens from the « Inviter » button of the header (#552). */
+const BAR: { tab: Tab; label: string }[] = [
+  { tab: "classement", label: messages.leagues.tabs.ranking },
+  { tab: "membres", label: messages.leagues.tabs.members },
+];
 
 async function load(id: string, ports: Awaited<ReturnType<typeof leaguePorts>>) {
   try {
@@ -79,13 +80,18 @@ export default async function LeaguePage({
   const addable = competitions.coming.filter(
     (c) => !league.competitionSlugs.includes(c.slug) && c.startsOn > currentDay(),
   );
+  const owner = members.find((m) => m.userId === league.ownerId);
   const subtitle = [
-    messages.leagues.members(league.memberCount),
-    messages.leagues.codeShort(league.inviteCode),
-    isOwner ? messages.leagues.createdByMe : null,
+    messages.leagues.players(league.memberCount),
+    isOwner
+      ? messages.leagues.createdByMe
+      : owner
+        ? messages.leagues.createdBy(owner.pseudo)
+        : null,
   ]
     .filter(Boolean)
     .join(" · ");
+  const alone = league.memberCount <= 1;
 
   return (
     <main id="main" className="flex flex-1 flex-col">
@@ -94,10 +100,19 @@ export default async function LeaguePage({
         subtitle={subtitle}
         back={{ href: "/ligues", label: messages.leagues.back }}
         icon="🏆"
+        action={
+          <Link
+            href={`/ligues/${id}?onglet=inviter`}
+            aria-current={tab === "inviter" ? "page" : undefined}
+            className={`${buttonVariants({ variant: "outline" })} px-4 text-sm`}
+          >
+            {messages.leagues.invite}
+          </Link>
+        }
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
         <nav className="-mx-4 flex gap-2 overflow-x-auto px-4" aria-label={league.name}>
-          {TABS.map((t) => (
+          {BAR.map(({ tab: t, label }) => (
             <Link
               key={t}
               href={`/ligues/${id}?onglet=${t}`}
@@ -109,7 +124,7 @@ export default async function LeaguePage({
                   : "border border-border bg-background text-foreground",
               )}
             >
-              {t === "membres" ? `${TAB_LABEL[t]} (${league.memberCount})` : TAB_LABEL[t]}
+              {t === "membres" ? `${label} (${league.memberCount})` : label}
             </Link>
           ))}
         </nav>
@@ -124,6 +139,7 @@ export default async function LeaguePage({
                 {messages.leagues.added}
               </p>
             )}
+            {alone && <InviteBanner code={league.inviteCode} leagueName={league.name} />}
             <LeagueCompetitions
               competitions={counted}
               addableCount={addable.length}
@@ -131,10 +147,20 @@ export default async function LeaguePage({
             >
               <AddLeagueCompetitionForm leagueId={id} choices={addable} />
             </LeagueCompetitions>
-            <Leaderboard rows={ranking} meId={ports.userId} retryHref={`/ligues/${id}`} />
-            <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
-              {messages.leagues.tieRule}
-            </p>
+            {!alone && (
+              <>
+                <Leaderboard rows={ranking} meId={ports.userId} retryHref={`/ligues/${id}`} />
+                <details className="group self-end text-right">
+                  <summary className="ml-auto grid size-11 cursor-pointer list-none place-items-center rounded-full border border-border font-extrabold [&::-webkit-details-marker]:hidden">
+                    <span aria-hidden>?</span>
+                    <span className="sr-only">{messages.leagues.tieHelp}</span>
+                  </summary>
+                  <p className="mt-2 rounded-card bg-muted p-4 text-left text-sm text-muted-foreground">
+                    {messages.leagues.tieRule}
+                  </p>
+                </details>
+              </>
+            )}
           </>
         )}
 
