@@ -98,6 +98,9 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **Liste du back-office** (clubs, joueurs, ligues) : recherche, puces de filtre avec leur
   nombre, tableau triable, actions groupées sur la sélection, panneau de détail ; même gabarit
   pour les trois listes.
+- **Navigation** (#471) : sur mobile, barre du bas « Accueil, Épreuves, Classement, Ligues,
+  Manager » ; sur desktop, menu du haut « Accueil, Épreuves, Classement, Ma ligue, Manager ». Le
+  profil s'ouvre depuis le pseudo et le dossard de l'en-tête.
 - **Menu admin** : entrées groupées par rubrique, le tableau de bord en tête.
 - **BadgeGrid** : badges gagnés en couleur, les autres grisés avec leur règle ; dessous, le
   prochain badge et ce qu'il reste à faire pour l'obtenir.
