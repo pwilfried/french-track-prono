@@ -96,6 +96,10 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   );
   await expect(page.getByRole("region", { name: "Mon meilleur coup" })).toContainText("+12 pts");
   await expect(page.getByRole("region", { name: "Mes stats" })).toContainText("podiums parfaits");
+  // The share of computed predictions that gave points says what it counts (#490).
+  await expect(page.getByRole("region", { name: "Mes stats" })).toContainText(
+    "pronos qui rapportent",
+  );
   await expect(page.getByRole("img", { name: /Points cumulés : de 0 à \d+/ })).toBeVisible();
 
   // My latest predictions (#387): the event with its points, then every prediction of the competition.
