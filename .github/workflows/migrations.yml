@@ -120,8 +120,9 @@ jobs:
           fi
           secret="$(openssl rand -hex 32)"
           echo "::add-mask::$secret"
-          supabase functions deploy push-notifications --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
-          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
+          # CLI v3 asks before changing a hosted project unless --yes is given: the job has no terminal.
+          supabase functions deploy push-notifications --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt --yes
+          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" --yes \
             PUSH_CRON_SECRET="$secret" VAPID_PUBLIC_KEY="$VAPID_PUBLIC_KEY" VAPID_PRIVATE_KEY="$VAPID_PRIVATE_KEY"
           url="https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/push-notifications"
           # Both values are hex or a project ref: no quote to escape in the SQL literals.
