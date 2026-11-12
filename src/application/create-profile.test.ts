@@ -48,7 +48,13 @@ const setup = () => {
     get: getProfile({ profiles }),
   };
 };
-const valid = { userId: "u1", pseudo: "Foulée_Bleue", avatar: "🦅", ageConfirmed: true };
+const valid = {
+  userId: "u1",
+  pseudo: "Foulée_Bleue",
+  bibNumber: "42",
+  bibColor: "red",
+  ageConfirmed: true,
+};
 
 async function codeOf(promise: Promise<unknown>) {
   try {
@@ -69,7 +75,7 @@ describe("CreateProfile", () => {
     expect(await get.execute({ userId: "u1" })).toEqual({
       userId: "u1",
       pseudo: "Foulée_Bleue",
-      avatar: "🦅",
+      bib: { number: 42, color: "red" },
       ageConfirmedAt: now,
     });
   });
@@ -98,10 +104,13 @@ describe("CreateProfile", () => {
     expect(await codeOf(create.execute({ ...valid, pseudo: "<b>" }))).toBe("PSEUDO_INVALID");
   });
 
-  it("refuses an avatar outside the fixed list", async () => {
+  it("refuses a bib number outside 0 to 999 or a colour outside the six", async () => {
     const { create } = setup();
 
-    expect(await codeOf(create.execute({ ...valid, avatar: "💩" }))).toBe("AVATAR_INVALID");
+    expect(await codeOf(create.execute({ ...valid, bibNumber: "1000" }))).toBe(
+      "BIB_NUMBER_INVALID",
+    );
+    expect(await codeOf(create.execute({ ...valid, bibColor: "pink" }))).toBe("BIB_COLOR_INVALID");
   });
 
   it("refuses a pseudo already taken, whatever the case", async () => {
@@ -129,35 +138,56 @@ describe("GetProfile", () => {
   });
 });
 
-describe("a player changes their pseudo and avatar", () => {
+describe("a player changes their pseudo and bib", () => {
   async function withTwoPlayers() {
     const profiles = fakeProfiles();
     const create = createProfile({ profiles });
-    await create.execute({ userId: "u1", pseudo: "Gazelle", avatar: "🦅", ageConfirmed: true });
-    await create.execute({ userId: "u2", pseudo: "Guépard", avatar: "🐆", ageConfirmed: true });
+    await create.execute({ ...valid, userId: "u1", pseudo: "Gazelle" });
+    await create.execute({ ...valid, userId: "u2", pseudo: "Guépard" });
     return profiles;
   }
 
-  it("saves a new pseudo and avatar", async () => {
-    // given a player with a profile, when they pick a new pseudo and the fox
+  it("saves a new pseudo and bib", async () => {
+    // given a player with a profile, when they pick a new pseudo and the gold bib 7
     const profiles = await withTwoPlayers();
-    await updateProfile({ profiles }).execute({ userId: "u1", pseudo: " Antilope ", avatar: "🦊" });
+    await updateProfile({ profiles }).execute({
+      userId: "u1",
+      pseudo: " Antilope ",
+      bibNumber: "7",
+      bibColor: "gold",
+    });
     // then their profile shows them
-    expect(await profiles.find("u1")).toMatchObject({ pseudo: "Antilope", avatar: "🦊" });
+    expect(await profiles.find("u1")).toMatchObject({
+      pseudo: "Antilope",
+      bib: { number: 7, color: "gold" },
+    });
+  });
+
+  it("lets two players wear the same bib", async () => {
+    const profiles = await withTwoPlayers();
+    await updateProfile({ profiles }).execute({
+      userId: "u2",
+      pseudo: "Guépard",
+      bibNumber: "42",
+      bibColor: "red",
+    });
+    expect((await profiles.find("u2"))?.bib).toEqual((await profiles.find("u1"))?.bib);
   });
 
   it.each([
     [{ pseudo: "guépard" }, "PSEUDO_TAKEN"],
     [{ pseudo: "SuperConnard" }, "PSEUDO_BANNED"],
     [{ pseudo: "x" }, "PSEUDO_INVALID"],
-    [{ avatar: "🍕" }, "AVATAR_INVALID"],
+    [{ bibNumber: "007" }, "BIB_NUMBER_INVALID"],
+    [{ bibColor: "🍕" }, "BIB_COLOR_INVALID"],
   ])("refuses %j with %s", async (change, code) => {
     const profiles = await withTwoPlayers();
     await expect(
       updateProfile({ profiles }).execute({
         userId: "u1",
         pseudo: "Gazelle",
-        avatar: "🦅",
+        bibNumber: "12",
+        bibColor: "blue",
         ...change,
       }),
     ).rejects.toEqual(new UseCaseError(code as never));

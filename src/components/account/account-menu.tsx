@@ -4,10 +4,11 @@ import { messages } from "@/app/messages.fr";
 import { isAdmin } from "@/app/landing";
 import { getCurrentUser, getSessionClient } from "@/app/session";
 import { lookUpProfile } from "@/application/get-profile";
+import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
 import { createSupabaseProfileRepository } from "@/infra";
 
-/** Right side of the top bar: sign-in link for a visitor, pseudo and avatar for a player, plus a way
+/** Right side of the top bar: sign-in link for a visitor, pseudo and bib for a player, plus a way
  * back to the back-office for an admin. */
 export async function AccountMenu({ returnTo }: { returnTo: string }) {
   const user = await getCurrentUser();
@@ -44,15 +45,10 @@ export async function AccountMenu({ returnTo }: { returnTo: string }) {
       <Link
         href="/profil"
         aria-label={messages.account.myProfile(profile.pseudo)}
-        className="inline-flex min-h-11 min-w-0 items-center gap-2 rounded-full border border-border bg-card py-1 pl-4 pr-1.5 text-sm font-bold text-card-foreground"
+        className="inline-flex min-h-11 min-w-0 items-center gap-2 rounded-full border border-border bg-card py-1 pl-4 pr-2 text-sm font-bold text-card-foreground"
       >
         <span className="truncate">{profile.pseudo}</span>
-        <span
-          aria-hidden="true"
-          className="grid size-9 shrink-0 place-items-center rounded-full bg-background text-lg"
-        >
-          {profile.avatar}
-        </span>
+        <Bib bib={profile.bib} />
       </Link>
     </div>
   );

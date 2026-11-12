@@ -61,7 +61,7 @@ describe("league moderation", () => {
       {
         userId: "u1",
         pseudo: "Gazelle",
-        avatar: "🦌",
+        bib: { number: 7, color: "blue" as const },
         isOwner: true,
         joinedAt: "2026-11-08T10:00:00.000Z",
         points: 12,

@@ -3,6 +3,8 @@ import { messages } from "@/app/messages.fr";
 import { CountdownBadge } from "@/components/countdown/countdown-badge";
 import { ChipStatus } from "@/components/ui/chip-status";
 
+import { CloseMercatoForm } from "./close-mercato-form";
+
 const text = messages.catalogue;
 
 /** One line of a list: an athlete's name and an amount of credits, with an optional note. */
@@ -66,9 +68,11 @@ const share = (part: number, whole: number) => `${whole > 0 ? (100 * part) / who
 
 /**
  * What the player can still bid, big, with a bar of the budget split into spent, reserved and
- * left; the time left in the round; then the athletes won and the bids (#422, #423, #503).
+ * left; the time left in the round; then the athletes won and the bids (#422, #423, #503). Once
+ * the mercato is closed, a notice; to the last participant who can still recruit, the button that
+ * closes it (#424).
  */
-export function MyBidsPanel({ bids }: { bids: MyBidsView }) {
+export function MyBidsPanel({ leagueId, bids }: { leagueId: string; bids: MyBidsView }) {
   return (
     <section
       aria-labelledby="my-budget"
@@ -105,10 +109,17 @@ export function MyBidsPanel({ bids }: { bids: MyBidsView }) {
           <Figure label={text.budget} value={bids.budget} />
         </dl>
       </div>
-      <p className="flex gap-2 text-xs text-muted-foreground">
-        <span aria-hidden>🔒</span>
-        {text.secret}
-      </p>
+      {bids.mercatoClosed && (
+        <p role="status" className="rounded-xl bg-muted p-3 text-sm font-semibold">
+          {text.mercatoOver}
+        </p>
+      )}
+      {bids.mercatoOpen && (
+        <p className="flex gap-2 text-xs text-muted-foreground">
+          <span aria-hidden>🔒</span>
+          {text.secret}
+        </p>
+      )}
       <Group
         id="my-team"
         title={text.myTeam}
@@ -116,6 +127,7 @@ export function MyBidsPanel({ bids }: { bids: MyBidsView }) {
         lines={bids.team.map((a) => ({ ...a, note: text.wonIn(a.round) }))}
       />
       <Group id="my-bids" title={text.myBids} empty={text.noBids} lines={bids.bids} />
+      {bids.canClose && <CloseMercatoForm leagueId={leagueId} />}
     </section>
   );
 }

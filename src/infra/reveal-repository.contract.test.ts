@@ -18,7 +18,7 @@ revealRepositoryContract("in-memory fake", async () => {
     predictionId: `${userId}-p`,
     userId,
     pseudo: userId.toUpperCase(),
-    avatar: "🦅",
+    bib: { number: 7, color: "blue" },
     podium: { first, second, third: "c" },
     useJoker: joker,
     reactions: [],

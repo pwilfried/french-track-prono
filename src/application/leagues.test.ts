@@ -164,7 +164,7 @@ describe("getLeague", () => {
   it("gives a member the league and its members", async () => {
     const leagues = repository({
       listMine: async () => [league("l1", "Club")],
-      members: async () => [{ userId: "me", pseudo: "Moi", avatar: "🦅" }],
+      members: async () => [{ userId: "me", pseudo: "Moi", bib: { number: 7, color: "blue" } }],
     });
 
     const found = await getLeague({ leagues }).execute({ leagueId: "l1" });

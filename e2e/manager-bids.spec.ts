@@ -10,9 +10,13 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
   const league = `Enchères ${tag}`;
   const first = `Enchère Une ${tag}`;
   const second = `Enchère Deux ${tag}`;
+  const third = `Enchère Trois ${tag}`;
+  const slugs = ["une", "deux", "trois", "quatre"].map((n) => `enchere-${n}-${tag}`);
   for (const [slug, name, price] of [
-    [`enchere-une-${tag}`, first, 30],
-    [`enchere-deux-${tag}`, second, 20],
+    [slugs[0], first, 30],
+    [slugs[1], second, 20],
+    [slugs[2], third, 10],
+    [slugs[3], `Enchère Quatre ${tag}`, 10],
   ] as const) {
     sql(`insert into athletes (slug, name, country_code, gender, manager_price)
          values ('${slug}', '${name}', 'FRA', 'F', ${price})`);
@@ -46,7 +50,8 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await expect(ownerPage.getByText("le mercato de cette ligue n'est pas ouvert")).toBeVisible();
     await expect(ownerPage.getByRole("button", { name: "Enchérir" })).toHaveCount(0);
 
-    sql(`update manager_leagues set rules = jsonb_set(rules, '{budget}', '100'),
+    sql(`update manager_leagues
+         set rules = rules || '{"budget": 100, "closeModes": ["last_bidder"]}',
          mercato_opened_at = now() - interval '1 minute' where name = '${league}'`);
 
     // Bids on two athletes; below the price or over the budget is refused.
@@ -118,8 +123,28 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await rivalPage.goto(catalogue + search);
     await expect(theirs.getByRole("list", { name: "Mes athlètes" })).toContainText(second);
     await expect(theirs).toContainText("Disponible70 cr.");
+    await expect(theirs.getByRole("button", { name: "Clore le mercato" })).toHaveCount(0);
+
+    // The mercato closes (#424): once the rival has spent everything, the owner is the last
+    // participant who can recruit; their bid under way is resolved, then nobody bids any more.
+    const rivalId = sql(`select id from auth.users where email = '${rival.email}'`);
+    sql(`insert into manager_awards (league_id, athlete_id, user_id, amount, round)
+         select l.id, a.id, '${rivalId}', 70, 1 from manager_leagues l, athletes a
+         where l.name = '${league}' and a.slug = '${slugs[3]}'`);
+    await ownerPage.goto(catalogue + search);
+    const thirdCard = ownerPage.getByRole("article", { name: third });
+    await thirdCard.getByRole("button", { name: "Enchérir" }).click();
+    await thirdCard.getByLabel(`Mon offre sur ${third}, en crédits`).fill("10");
+    await thirdCard.getByRole("button", { name: "Valider" }).click();
+    await expect(thirdCard).toContainText("Mon offre : 10 cr.");
+    await budget.getByRole("button", { name: "Clore le mercato" }).click();
+    await expect(budget.getByRole("status")).toContainText("Le mercato de cette ligue est clos");
+    await expect(budget.getByRole("list", { name: "Mes athlètes" })).toContainText(third);
+    await expect(ownerPage.getByRole("button", { name: "Enchérir" })).toHaveCount(0);
+    await rivalPage.goto(catalogue + search);
+    await expect(theirs.getByRole("status")).toContainText("Le mercato de cette ligue est clos");
   } finally {
     sql(`delete from manager_leagues where name = '${league}'`);
-    sql(`delete from athletes where slug in ('enchere-une-${tag}', 'enchere-deux-${tag}')`);
+    sql(`delete from athletes where slug in ('${slugs.join("', '")}')`);
   }
 });
