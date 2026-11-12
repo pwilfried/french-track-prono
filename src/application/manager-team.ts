@@ -17,7 +17,8 @@ export type TeamAthlete = Omit<CatalogueAthlete, "price" | "available" | "pb" | 
  */
 export type MyManagerTeam = {
   mercatoClosed: boolean;
-  teamSize: number;
+  /** No maximum: under this minimum, the team page says what was missing (#607). */
+  minTeamSize: number;
   budget: number;
   spent: number;
   left: number;
@@ -57,7 +58,7 @@ export function getMyManagerTeam(ports: {
       const spent = mine.team.reduce((sum, a) => sum + a.amount, 0);
       return {
         mercatoClosed: mine.mercatoClosed,
-        teamSize: league.rules.teamSize,
+        minTeamSize: league.rules.minTeamSize,
         budget: mine.budget,
         spent,
         left: mine.budget - spent,

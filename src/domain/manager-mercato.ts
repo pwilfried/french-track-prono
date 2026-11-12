@@ -11,12 +11,15 @@ import type { MercatoCloseMode } from "./manager-rules";
 /** A participant as the close sees them: the credits left and how many athletes they won. */
 export type Recruiter = { userId: string; left: number; athletes: number };
 
-/** What recruiting takes in a league: room in the team and the price of the cheapest free athlete. */
-export type RecruitRules = { teamSize: number; cheapestFree: number | null };
+/** What recruiting takes in a league: the price of the cheapest free athlete. */
+export type RecruitRules = { cheapestFree: number | null };
 
-/** A participant can recruit while their team has room and their credits pay a free athlete. */
+/**
+ * A participant can recruit while their credits pay a free athlete; a team has no maximum size
+ * (#607).
+ */
 export const canRecruit = (p: Recruiter, rules: RecruitRules) =>
-  p.athletes < rules.teamSize && rules.cheapestFree !== null && p.left >= rules.cheapestFree;
+  rules.cheapestFree !== null && p.left >= rules.cheapestFree;
 
 type League = RecruitRules & { modes: MercatoCloseMode[]; players: Recruiter[] };
 

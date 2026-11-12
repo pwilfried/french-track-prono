@@ -325,7 +325,7 @@ export const messages = {
       `Il faut de ${min} à ${max} participants, en nombre pair, pour lancer la saison.`,
     rules: "Règles de la ligue",
     budget: (n: number) => `${n} crédits de budget`,
-    teamSize: (n: number) => `Équipes de ${n} athlètes`,
+    minTeamSize: (n: number) => `Équipes d'au moins ${n} athlètes, sans maximum`,
     lineup: (n: number) => `${n} athlètes alignés au plus par compétition`,
     competitions: (n: number) =>
       `${n} ${n <= 1 ? "compétition éligible" : "compétitions éligibles"}`,
@@ -404,8 +404,8 @@ export const messages = {
     subtitle: "Tes athlètes pour toute la saison.",
     link: "Mon équipe",
     summary: "Résumé de mon équipe",
-    athletes: "Athlètes",
-    count: (n: number, size: number) => `${n}/${size}`,
+    athletes: "Effectif",
+    count: (n: number) => (n <= 1 ? `${n} athlète` : `${n} athlètes`),
     spent: "Crédits dépensés",
     left: "Crédits restants",
     fixed: "Équipe fixe pour la saison",
@@ -452,7 +452,7 @@ export const messages = {
         combined: "aucun décathlonien",
       },
     },
-    short: (count: number, size: number, nobody: string[]) => {
+    short: (count: number, minimum: number, nobody: string[]) => {
       const athletes = count <= 1 ? "athlète" : "athlètes";
       const missing =
         nobody.length === 0
@@ -461,7 +461,7 @@ export const messages = {
             ? nobody[0]
             : `${nobody.slice(0, -1).join(", ")} ni ${nobody[nobody.length - 1]}`;
       const why = missing ? ` : il ne restait plus ${missing} libre à la fin du mercato` : "";
-      return `Ton équipe compte ${count} ${athletes} au lieu de ${size}${why}. Tu joues quand même.`;
+      return `Ton équipe compte ${count} ${athletes} au lieu de ${minimum}${why}. Tu joues quand même.`;
     },
     cardLabel: (name: string, discipline: string, paid: number) =>
       `${name}, ${discipline}, payé ${paid} crédits`,
@@ -970,7 +970,7 @@ export const messages = {
       "Les règles générales de French Track Manager. Une ligue copie les règles en vigueur à sa création et les garde : un changement ne touche que les ligues créées ensuite.",
     team: "Budget et équipe",
     budget: "Budget de départ (crédits)",
-    teamSize: "Taille d'une équipe",
+    minTeamSize: "Taille minimum d'une équipe",
     quotas: "Quotas de l'équipe (minimum et maximum par sexe)",
     quotaHint: "Une famille à 0 au maximum ne se recrute pas.",
     family: "Famille",

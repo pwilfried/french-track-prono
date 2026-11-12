@@ -12,7 +12,7 @@ managerLeagueRepositoryContract("in-memory fake", async () => {
     current: {
       rules: {
         budget: 100,
-        teamSize: 1,
+        minTeamSize: 1,
         quotas: [{ sex: "F", family: "sprint", min: 1, max: 1 }],
         lineup: { max: 1, minPerFamily: {} },
         rounds: { firstHours: 48, longRounds: 2, nextHours: 24 },

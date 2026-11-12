@@ -35,13 +35,13 @@ $$;
 grant execute on function pg_temp.league(int) to authenticated;
 insert into manager_leagues (id, name, owner_id, rules, mercato_opened_at) values
   (pg_temp.league(1), 'Budgets', 'a4c00000-0000-0000-0000-000000000001',
-   '{"budget": 40, "teamSize": 12, "rounds": {"firstHours": 48, "longRounds": 2, "nextHours": 24},
+   '{"budget": 40, "minTeamSize": 12, "rounds": {"firstHours": 48, "longRounds": 2, "nextHours": 24},
      "closeModes": ["budgets_spent"]}', now() - interval '1 hour'),
   (pg_temp.league(2), 'Dernier', 'a4c00000-0000-0000-0000-000000000001',
-   '{"budget": 40, "teamSize": 12, "rounds": {"firstHours": 48, "longRounds": 2, "nextHours": 24},
+   '{"budget": 40, "minTeamSize": 12, "rounds": {"firstHours": 48, "longRounds": 2, "nextHours": 24},
      "closeModes": ["last_bidder"]}', now() - interval '1 hour'),
   (pg_temp.league(3), 'Date', 'a4c00000-0000-0000-0000-000000000001',
-   '{"budget": 40, "teamSize": 12, "rounds": {"firstHours": 48, "longRounds": 2, "nextHours": 24},
+   '{"budget": 40, "minTeamSize": 12, "rounds": {"firstHours": 48, "longRounds": 2, "nextHours": 24},
      "closeModes": ["scheduled"]}', now() - interval '1 hour');
 update manager_leagues set mercato_closes_at = now() + interval '1 hour' where id = pg_temp.league(3);
 insert into manager_members (league_id, user_id) values

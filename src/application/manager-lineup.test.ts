@@ -44,7 +44,7 @@ const catalogue: ManagerCatalogueRepository = {
 
 // One sprint place, one free place.
 const rules = {
-  teamSize: 3,
+  minTeamSize: 3,
   quotas: [],
   lineup: { max: 2, minPerFamily: { sprint: 1 } },
 } as unknown as ManagerRules;

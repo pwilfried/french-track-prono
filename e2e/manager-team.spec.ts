@@ -30,7 +30,7 @@ test("a participant sees their team fixed for the season after the mercato, and 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(league);
   const id = sql(`select id from manager_leagues where name = '${league}'`);
   sql(`update manager_leagues
-       set rules = rules || '{"budget": 100, "teamSize": 3, "quotas": [
+       set rules = rules || '{"budget": 100, "minTeamSize": 3, "quotas": [
              {"sex": "F", "family": "sprint", "min": 1, "max": 1},
              {"sex": "F", "family": "hurdles", "min": 0, "max": 1},
              {"sex": "F", "family": "throws", "min": 1, "max": 1}]}',
@@ -50,7 +50,7 @@ test("a participant sees their team fixed for the season after the mercato, and 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Mon équipe");
 
   const summary = page.getByRole("region", { name: "Résumé de mon équipe" });
-  await expect(summary).toContainText("Athlètes2/3");
+  await expect(summary).toContainText("Effectif2 athlètes");
   await expect(summary).toContainText("Crédits dépensés40 cr.");
   await expect(summary).toContainText("Crédits restants60 cr.");
   await expect(summary).toContainText("Équipe fixe pour la saison");

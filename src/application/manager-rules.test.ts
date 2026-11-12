@@ -7,7 +7,7 @@ import { setManagerRules, type ManagerRuleRepository, type ManagerRuleSet } from
 
 const rules: ManagerRules = {
   budget: 100,
-  teamSize: 2,
+  minTeamSize: 2,
   quotas: [
     { sex: "F", family: "sprint", min: 1, max: 1 },
     { sex: "M", family: "sprint", min: 1, max: 1 },
@@ -59,7 +59,7 @@ describe("setManagerRules", () => {
 
     await expect(
       setManagerRules({ rules: repo }).execute({
-        rules: { ...rules, teamSize: 5 },
+        rules: { ...rules, minTeamSize: 5 },
         competitionSlugs: [],
       }),
     ).rejects.toEqual(new UseCaseError("MANAGER_RULES_INVALID"));

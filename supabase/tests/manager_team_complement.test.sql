@@ -1,13 +1,13 @@
 -- pgTAP: completing the teams at the close of the mercato (#425). An incomplete team receives free
--- athletes at random, within its quotas and its credits left, at the reference price, until it is
--- complete, its credits are spent or no free athlete fits. Then each team is checked against the
--- minimum quotas. The draw follows setseed().
---   f1 the team becomes complete;     f2 the credits run out;
---   f3 no athlete fits, non-compliant; f4 a complete team gets nothing;
+-- athletes at random, within its quotas and its credits left, at the reference price, until it
+-- reaches the minimum size (#607), its credits are spent or no free athlete fits. Then each team is
+-- checked against the minimum quotas. The draw follows setseed().
+--   f1 the team reaches the minimum;  f2 the credits run out;
+--   f3 no athlete fits, non-compliant; f4 a team at the minimum gets nothing;
 --   f5 and f6 the same league twice, with the same seed.
 -- Rolled back at the end.
 begin;
-select plan(17);
+select plan(18);
 
 -- Only the athletes of this test are in the catalogue.
 update athletes set manager_price = null where manager_price is not null;
@@ -43,7 +43,7 @@ from (values (1, '100 m'), (2, '200 m'), (3, '400 m'), (4, '100 m'), (5, '800 m'
 -- Women sprinters: 1 to 2; men sprinters: up to 1; women middle distance: up to 2; men throwers:
 -- up to 1. No quota for long distance: athlete 8 is never given.
 create function pg_temp.rules(p_budget int, p_size int) returns jsonb language sql immutable as $$
-  select jsonb_build_object('budget', p_budget, 'teamSize', p_size,
+  select jsonb_build_object('budget', p_budget, 'minTeamSize', p_size,
     'rounds', '{"firstHours": 48, "longRounds": 2, "nextHours": 24}'::jsonb,
     'closeModes', '["last_bidder"]'::jsonb,
     'quotas', '[{"sex": "F", "family": "sprint", "min": 1, "max": 2},
@@ -82,11 +82,18 @@ $$;
 
 select is(pg_temp.compliant(1, 1), null, 'a team is neither valid nor non-compliant before the close');
 
--- 1. The team becomes complete.
+-- 1. The team reaches the minimum, and the complement stops there (#607): athletes that fit and
+-- credits are left.
 select setseed(0.1);
 select private.finish_manager_mercato(pg_temp.league(1));
 select is((select count(*)::int from pg_temp.team(1, 1)), 4,
-  'an incomplete team is completed up to the size of a team');
+  'an incomplete team is completed up to the minimum size of a team');
+update manager_leagues set rules = rules || '{"minTeamSize": 12, "budget": 1000}'
+where id = pg_temp.league(1);
+select ok(exists (select 1 from private.manager_complement_candidates(pg_temp.league(1),
+                                                                      pg_temp.player(1))),
+  'and no further, though free athletes still fit the quotas');
+update manager_leagues set rules = pg_temp.rules(100, 4) where id = pg_temp.league(1);
 select ok(not exists (
     select 1
     from jsonb_array_elements(pg_temp.rules(100, 4) -> 'quotas') q
@@ -118,10 +125,10 @@ select set_eq($$select pg_temp.team(3, 1)$$,
   'every free athlete that fits a quota is given');
 select is(pg_temp.compliant(3, 1), false, 'a team under a minimum quota is non-compliant');
 
--- 4. A complete team gets nothing, and no round is added.
+-- 4. A team at the minimum gets nothing, and no round is added.
 select private.finish_manager_mercato(pg_temp.league(4));
 select set_eq($$select pg_temp.team(4, 1)$$, array[pg_temp.athlete(1)],
-  'a complete team gets no athlete');
+  'a team at the minimum size gets no athlete');
 select is((select count(*)::int from manager_rounds where league_id = pg_temp.league(4)), 1,
   'and the close adds no round when nobody is given an athlete');
 select ok((select mercato_closed_at is not null from manager_leagues
