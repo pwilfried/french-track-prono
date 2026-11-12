@@ -216,7 +216,6 @@ export const messages = {
     addPrediction: "+ Prono",
     cardLabel: (discipline: string, gender: string, hour: string) =>
       `${discipline}, ${gender}, ${hour}`,
-    provisionalTimes: "Les horaires affichés sont provisoires (jeu de test).",
     empty: "Aucune épreuve pour ce filtre.",
     loading: "Chargement des épreuves…",
   },
@@ -1072,22 +1071,33 @@ export const messages = {
     label: "Vérification anti-robot",
   },
   signIn: {
-    title: "Connexion",
-    subtitle: "Sans mot de passe : un code arrive par e-mail.",
+    title: "Connexion ou inscription",
+    subtitle:
+      "Pas de mot de passe : on t'envoie un code par e-mail. Première fois ? Ton compte se crée tout seul.",
+    /** Reminder of the event the visitor came from (« 100 m femmes »). */
+    eventWaiting: (event: string) =>
+      `Ton podium du ${event} t'attend. Encore une minute et tu le poses.`,
     emailLabel: "Ton e-mail",
     emailHint: "Jamais affiché aux autres joueurs.",
     send: "Recevoir mon code",
     sending: "Envoi…",
-    firstTime: "Pas de compte à créer : si c'est ta première fois, il se crée tout seul.",
-    waysTitle: "Deux façons de te connecter",
-    waysBody: "Tape le code reçu ci-dessous, ou ouvre le lien du message (sur ce téléphone).",
+    perks: [
+      "Gratuit, sans argent en jeu",
+      "Ton profil en 30 secondes",
+      "Un jeu du podcast FrenchTrack",
+    ],
+    codeTitle: "Regarde tes e-mails",
+    sentTo: "Code envoyé à",
     codeLabel: "Code reçu par e-mail",
+    pasteCode: "Coller le code",
+    noCodeToPaste: "Pas de code dans le presse-papiers",
     verify: "Me connecter",
     verifying: "Vérification…",
-    resend: "Renvoyer",
+    linkTip: "Ou plus simple : ouvre le lien du message sur ce téléphone.",
+    resend: "Renvoyer un code",
     resent: "Un nouveau code vient d'être envoyé.",
     changeEmail: "Autre e-mail",
-    codeNote: "Le code expire au bout d'une heure. Pense à regarder tes spams.",
+    codeNote: "Pas reçu ? Regarde dans tes spams. Le code expire au bout d'une heure.",
     linkInvalid: "Ce lien ne fonctionne plus. Demande un nouveau code.",
   },
   account: {
@@ -1215,7 +1225,7 @@ export const messages = {
   },
   editProfile: {
     title: "Modifier mon profil",
-    subtitle: "Ton pseudo, ton avatar, ton club. Sexe et disciplines restent privés.",
+    subtitle: "Ton pseudo, ton dossard, ton club. Sexe et disciplines restent privés.",
     link: "Modifier mon profil",
     save: "Enregistrer",
     saving: "Enregistrement…",
@@ -1251,13 +1261,30 @@ export const messages = {
     done: "Ton compte est supprimé. Merci d'avoir joué !",
     home: "Retour à l'accueil",
   },
+  bib: {
+    /** Printed at the top of the big bib, like the organiser's name on a real one. */
+    brand: "FRENCH TRACK",
+    label: (number: number) => `Dossard ${number}`,
+    legend: "Ton dossard",
+    numberLabel: "Numéro",
+    numberHint: "De 0 à 999. Plusieurs joueurs peuvent avoir le même.",
+    colorLabel: "Couleur",
+    preview: "Aperçu",
+    colors: {
+      blue: "Bleu",
+      red: "Rouge",
+      gold: "Or",
+      green: "Vert",
+      white: "Blanc",
+      night: "Nuit",
+    },
+  },
   welcome: {
     title: "Bienvenue !",
     subtitle: "Dernière étape : ton profil de joueur.",
     pseudoLabel: "Ton pseudo",
     pseudoHint:
       "2 à 24 caractères : lettres, chiffres, espace, _ - . Visible par les autres joueurs.",
-    avatarLabel: "Ton avatar",
     ageLabel: "J'ai 15 ans ou plus",
     ageHint: "Obligatoire pour jouer.",
     sexLabel: "Tu es (facultatif)",
@@ -1604,7 +1631,8 @@ export const messages = {
     PSEUDO_TAKEN: "Ce pseudo est déjà pris, essaie-en un autre.",
     PSEUDO_BANNED:
       "Ce pseudo n'est pas possible (insulte, nom officiel ou lien). Choisis-en un autre.",
-    AVATAR_INVALID: "Choisis un avatar dans la liste.",
+    BIB_NUMBER_INVALID: "Ton numéro de dossard : de 0 à 999, sans zéro devant.",
+    BIB_COLOR_INVALID: "Choisis une des six couleurs de dossard.",
     PROFILE_EXISTS: "Tu as déjà un profil.",
     PROFILE_UNAVAILABLE: "Le profil n'est pas disponible pour le moment. Réessaie dans un instant.",
     NOT_ADMIN: "Seul un administrateur peut faire ça.",
@@ -1778,7 +1806,7 @@ export const messages = {
           heading: "Ce qu'on garde",
           body: [
             "Ton adresse e-mail, uniquement pour t'envoyer ton code de connexion. Elle n'est jamais affichée aux autres joueurs.",
-            "Ton pseudo et ton avatar emoji, visibles des autres joueurs.",
+            "Ton pseudo et ton dossard (numéro et couleur), visibles des autres joueurs.",
             "Tes pronos (podiums et perfs), tes points, tes ligues et tes réactions. Tes pronos sont visibles des autres une fois l'épreuve verrouillée.",
             "La date à laquelle tu as confirmé avoir 15 ans ou plus.",
             "Si tu actives les notifications : l'adresse d'envoi que ton navigateur nous donne pour cet appareil, supprimée dès que tu les désactives. Les notifications passent par le service de ton navigateur (Google, Apple ou Mozilla), qui les transmet chiffrées sans pouvoir les lire.",

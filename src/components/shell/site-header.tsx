@@ -3,7 +3,7 @@ import { BrandLink } from "@/components/brand/brand-link";
 
 import { DesktopNav } from "./desktop-nav";
 
-/** Top bar of every page: logo, menu (from md), and the player's avatar or the sign-in link. */
+/** Top bar of every page: logo, menu (from md), and the player's bib or the sign-in link. */
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">

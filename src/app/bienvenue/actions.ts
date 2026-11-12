@@ -19,7 +19,8 @@ import { getCurrentUser, getSessionClient } from "../session";
 
 export type WelcomeState = PlayerDetailsFields & {
   pseudo: string;
-  avatar: string;
+  bibNumber: string;
+  bibColor: string;
   ageConfirmed: boolean;
   error?: ErrorCode;
 };
@@ -28,7 +29,8 @@ export async function createProfileAction(_: WelcomeState, data: FormData): Prom
   const { fields, input: details } = readPlayerDetails(data);
   const state: WelcomeState = {
     pseudo: formText(data, "pseudo"),
-    avatar: formText(data, "avatar"),
+    bibNumber: formText(data, "bibNumber"),
+    bibColor: formText(data, "bibColor"),
     ageConfirmed: data.get("age") === "on",
     ...fields,
   };

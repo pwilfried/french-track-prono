@@ -19,28 +19,3 @@ export function validatePseudo(input: string): PseudoResult {
   if (isBannedName(pseudo)) return { ok: false, code: "PSEUDO_BANNED" };
   return { ok: true, pseudo };
 }
-
-/** Avatars a player can choose from: a fixed list, so they render the same everywhere. */
-export const AVATARS = [
-  "🏃",
-  "⚡",
-  "🔥",
-  "🚀",
-  "🐆",
-  "🦅",
-  "🐢",
-  "🦊",
-  "🏅",
-  "🥇",
-  "🎯",
-  "🍀",
-] as const;
-
-export type Avatar = (typeof AVATARS)[number];
-
-/** Same as the default of `profiles.avatar_emoji` in the database. */
-export const DEFAULT_AVATAR: Avatar = "🏃";
-
-export function isAvatar(value: string): value is Avatar {
-  return (AVATARS as readonly string[]).includes(value);
-}

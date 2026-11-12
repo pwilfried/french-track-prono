@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { RankingRow } from "@/application/rankings";
 import { messages } from "@/app/messages.fr";
 import { FRENCHTRACK_ACCOUNTS, SocialIcon } from "@/components/legal/social-icons";
+import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
 import { ChipStatus } from "@/components/ui/chip-status";
 import type { EventSummary } from "@/domain/event";
@@ -137,7 +138,7 @@ function MyLeague({
                 <span className="w-8 font-mono tabular-nums">
                   {messages.leaderboard.position(row.rank)}
                 </span>
-                <span aria-hidden="true">{row.avatar}</span>
+                <Bib bib={row.bib} />
                 <span className="min-w-0 flex-1 truncate">{row.pseudo}</span>
                 <span className="font-mono text-sm tabular-nums">
                   {messages.leaderboard.points(row.points)}

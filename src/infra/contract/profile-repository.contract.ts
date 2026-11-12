@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Profile, ProfileRepository } from "@/application/create-profile";
+import type { Bib } from "@/domain/bib";
 
 export type Player = { userId: string; profiles: ProfileRepository };
 
@@ -14,7 +15,7 @@ export function profileRepositoryContract(name: string, newPlayer: () => Promise
   const profileOf = (player: Player, name = pseudo()): Profile => ({
     userId: player.userId,
     pseudo: name,
-    avatar: "🦅",
+    bib: { number: 42, color: "red" },
     ageConfirmedAt: new Date("2026-11-06T12:00:00.000Z"),
   });
 
@@ -60,7 +61,7 @@ export function profileRepositoryContract(name: string, newPlayer: () => Promise
       expect(await player.profiles.create(profileOf(player))).toBe("profile_exists");
     });
 
-    it("changes my pseudo and avatar, but not to a pseudo already taken", async () => {
+    it("changes my pseudo and bib, but not to a pseudo already taken", async () => {
       const player = await newPlayer();
       const other = await newPlayer();
       const taken = pseudo();
@@ -68,19 +69,28 @@ export function profileRepositoryContract(name: string, newPlayer: () => Promise
       await other.profiles.create(profileOf(other, taken));
 
       const fresh = pseudo();
-      expect(await player.profiles.update(player.userId, { pseudo: fresh, avatar: "🦊" })).toBe(
+      const gold: Bib = { number: 999, color: "gold" };
+      expect(await player.profiles.update(player.userId, { pseudo: fresh, bib: gold })).toBe(
         "updated",
       );
-      expect(await player.profiles.find(player.userId)).toMatchObject({
-        pseudo: fresh,
-        avatar: "🦊",
-      });
+      expect(await player.profiles.find(player.userId)).toMatchObject({ pseudo: fresh, bib: gold });
       expect(
-        await player.profiles.update(player.userId, { pseudo: taken.toUpperCase(), avatar: "🦊" }),
+        await player.profiles.update(player.userId, { pseudo: taken.toUpperCase(), bib: gold }),
       ).toBe("pseudo_taken");
-      expect(await player.profiles.update(player.userId, { pseudo: fresh, avatar: "🐢" })).toBe(
-        "updated",
-      );
+      expect(
+        await player.profiles.update(player.userId, {
+          pseudo: fresh,
+          bib: { number: 0, color: "night" },
+        }),
+      ).toBe("updated");
+    });
+
+    it("lets two players wear the same bib", async () => {
+      const first = await newPlayer();
+      const second = await newPlayer();
+
+      expect(await first.profiles.create(profileOf(first))).toBe("created");
+      expect(await second.profiles.create(profileOf(second))).toBe("created");
     });
 
     it("deletes my account: my profile is gone and my pseudo is free again", async () => {

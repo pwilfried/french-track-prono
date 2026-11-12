@@ -38,7 +38,7 @@ septembre 2026 (déjà terminée, rejouée dans une base de test).
 
 ## Utilisateurs et contraintes
 
-- Comptes : lien magique par e-mail, pseudo public, avatar emoji. L'e-mail n'est jamais affiché.
+- Comptes : lien magique par e-mail, pseudo public, dossard (numéro et couleur). L'e-mail n'est jamais affiché.
 - Âge minimum 15 ans (âge du consentement numérique en France), via une case à cocher à
   l'inscription.
 - Données personnelles réduites au minimum (e-mail, pseudo). Page de confidentialité,
@@ -57,7 +57,7 @@ Numérotées pour la planification. F11 et F12, d'abord repoussées, arrivent av
 
 | # | Fonctionnalité | Valeur |
 |---|---|---|
-| F1 | Inscription par lien magique, pseudo, avatar emoji, case « j'ai 15 ans ou plus » | S'inscrire en 10 secondes |
+| F1 | Inscription par lien magique, pseudo, dossard (avatar, #537), case « j'ai 15 ans ou plus » | S'inscrire en 10 secondes |
 | F2 | Consulter compétitions, épreuves, listes de départ et podiums officiels | Savoir sur quoi on pronostique |
 | F3 | Composer son podium (1er, 2e, 3e), compte à rebours, verrouillage automatique | Le cœur du jeu |
 | F4 | Ligues privées avec code d'invitation | Jouer entre amis |
@@ -74,7 +74,7 @@ Numérotées pour la planification. F11 et F12, d'abord repoussées, arrivent av
 | F15 | Cotes fixées par l'admin, « Autre athlète », perf pronostiquée par athlète, barème ajustable (v0.9) | Des choix plus fins, plus de suspense |
 | F16 | Page « Comment jouer » et premier prono guidé (v0.9) | Comprendre des règles plus riches |
 | F17 | Ligues publiques jusqu'à 200 joueurs, sans code, noms modérés, signalement (v0.7) | Jouer avec la communauté FrenchTrack |
-| F18 | Gestion des profils : pseudo, avatar, e-mail, club, disciplines ; fiche minimale ; admin chercher, bloquer, supprimer (v0.10, `docs/decisions/profils.md`) | Un compte que le joueur maîtrise |
+| F18 | Gestion des profils : pseudo, dossard, e-mail, club, disciplines ; fiche minimale ; admin chercher, bloquer, supprimer (v0.10, `docs/decisions/profils.md`) | Un compte que le joueur maîtrise |
 | F19 | French Track Manager : équipe recrutée aux enchères secrètes, alignement avant chaque compétition, barème hongrois, bonus et pronos, championnat aller-retour (v0.12 à v0.16, `docs/decisions/french-track-manager.md`) | Jouer toute la saison en manager |
 
 Barème (modifiable en base) : 3 points par athlète à la bonne place, 1 point pour un athlète sur
@@ -146,9 +146,13 @@ Règles :
 - Les paramètres de redirection n'acceptent que des chemins de l'application
   (`src/domain/redirect.ts`).
 - L'adresse e-mail n'est jamais affichée ni copiée dans `profiles`. Pseudo : 2 à 24 caractères,
-  unique sans tenir compte de la casse ; avatar : un des 12 de la liste fixe.
-- Pages : `/connexion`, `/bienvenue`, `/profil` ; l'en-tête affiche « Se connecter » ou l'avatar et
-  le pseudo.
+  unique sans tenir compte de la casse ; avatar : un **dossard** (#537, `src/domain/bib.ts`),
+  numéro de 0 à 999 sans zéro devant et une couleur parmi six (bleu, rouge, or, vert, blanc,
+  nuit), pas unique. Un dossard est tiré au hasard à l'inscription (numéro 1 à 99), le joueur le
+  change dans « Modifier mon profil ». Un seul composant l'affiche (`Bib`) : grand format sur le
+  profil et le choix, pastille avec le numéro ailleurs.
+- Pages : `/connexion`, `/bienvenue`, `/profil` ; l'en-tête affiche « Se connecter » ou le
+  dossard et le pseudo.
 
 **Décision B : le calcul des points vit dans le domaine TypeScript** (`src/domain/scoring.ts`,
 fonction pure, testée avec Vitest et fast-check).
@@ -317,7 +321,7 @@ n'est stocké en plus. Badges et progression vers chacun (`badgeProgress`, `src/
 des joueurs du club, 3 joueurs au moins) ; derniers pronos et historique complet sur
 `/profil/pronos` (`pickHits`, `src/domain/prediction-history.ts`, #387) ; carte « Ma saison »
 (`/profil/carte`, image 1080×1920 via `next/og`, #388) qui ne reprend que des données publiques
-(`seasonCardOf`, `src/domain/season-card.ts` : pseudo, avatar, chiffres de la saison, club validé)
+(`seasonCardOf`, `src/domain/season-card.ts` : pseudo, dossard, chiffres de la saison, club validé)
 et se partage par le partage natif du téléphone, ou se télécharge à défaut.
 
 Notifications push (#203) : le joueur les active par appareil depuis son profil (opt-in
