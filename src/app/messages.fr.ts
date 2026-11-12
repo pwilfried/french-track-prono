@@ -1080,7 +1080,6 @@ export const messages = {
   },
   event: {
     back: "Épreuves",
-    final: "Finale",
     title: (discipline: string) => `${discipline} — Finale`,
     combined: (n: number) => `Épreuve combinée · ${n} disciplines`,
     combinedNote: "Tu pronostiques le podium final, au total des points.",
@@ -1294,7 +1293,6 @@ export const messages = {
     numberLabel: "Numéro",
     numberHint: "De 0 à 999. Plusieurs joueurs peuvent avoir le même.",
     colorLabel: "Couleur",
-    preview: "Aperçu",
     colors: {
       blue: "Bleu",
       red: "Rouge",
@@ -1372,7 +1370,6 @@ export const messages = {
     tolerance: (value: number, unit: "time" | "distance" | "points") =>
       `±${unit === "points" ? Math.round(value) : value.toFixed(2).replace(".", ",")} ${{ time: "s", distance: "m", points: "pts" }[unit]}`,
     oddsHint: "La cote multiplie tes points : plus elle est haute, plus le pari rapporte.",
-    step: (rank: 1 | 2 | 3) => ["1er", "2e", "3e"][rank - 1]!,
     stepLabel: (rank: 1 | 2 | 3, name: string | null) =>
       `${["1re", "2e", "3e"][rank - 1]} place : ${name ?? "vide"}`,
     athleteLabel: (name: string, rank: 1 | 2 | 3 | null) =>
