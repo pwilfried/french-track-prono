@@ -29,7 +29,7 @@ export const Default: Story = {
     const block = within(canvasElement).getByRole("region", { name: "Ligue FrenchTrack" });
     await expect(block).toHaveTextContent("Officielle");
     await expect(block).toHaveTextContent("Ouverte à tous");
-    await expect(block).toHaveTextContent("1234 membres");
+    await expect(block).toHaveTextContent("1234 joueurs");
     await expect(
       within(block).getByRole("button", { name: "Rejoindre la Ligue FrenchTrack" }),
     ).toBeInTheDocument();
