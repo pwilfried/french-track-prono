@@ -75,8 +75,16 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   épingles, « FRENCH TRACK », le numéro en gros, le pseudo dessous. Petit format (classements,
   en-tête, ligues, réactions) : pastille avec le numéro seul. Couleurs dans `BIB_PALETTE`
   (`src/components/profile/bib.tsx`), reprises par la carte de saison.
-- **Leaderboard** : place, dossard, pseudo, points ; ex æquo signalés, ma ligne surlignée,
-  raison du départage sous le pseudo (flèche de progression et séries : plus tard).
+- **Leaderboard** et **RankingRow** (#551) : place, dossard, pseudo, ▲/▼ depuis la veille
+  (« = » sinon), points ; ex æquo signalés, ma ligne surlignée (cible `#moi` du lien « Autour de
+  moi »), raison du départage sous le pseudo, pas de badge de série. Un classement long montre les
+  10 premiers, « ··· », puis le joueur et deux voisins de chaque côté.
+- **Podium** (#551) : les trois premiers sur des marches 2-1-3 (dégradés or, argent, bronze),
+  dossard, pseudo et points ; lu dans l'ordre 1-2-3 ; absent tant que personne n'a de points.
+- **Onglet Classement** (#551) : « Ma ligue » (ouvert par défaut), « Ce soir », « Général » ;
+  une barre fixe en bas « Tu es 3e · 52 pts · Autour de moi » ; avant la première compétition, un
+  bandeau bleu « Le classement démarre » remplace le classement vide. Le jour de compétition va de
+  6 h à 6 h, heure de Paris : une finale courue à 2 h du matin compte pour « Ce soir ».
 - **Carte « Ma saison »** (`/profil/carte`) : image verticale 1080×1920 prête pour les stories,
   partagée par le partage natif ou téléchargée ; « Mon podium du 100 m » viendra plus tard.
 - **Liste du back-office** (clubs, joueurs, ligues) : recherche, puces de filtre avec leur

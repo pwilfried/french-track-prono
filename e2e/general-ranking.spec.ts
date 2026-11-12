@@ -1,9 +1,11 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { newPlayer, signUp } from "./players";
+import { joinLeagueFor, newPlayer, signUp } from "./players";
 
-test("the general ranking adds up the points of every competition", async ({ page }) => {
+test("the ranking opens on my league, and the general one adds up every competition", async ({
+  page,
+}) => {
   // Two competitions of their own, one event each.
   const tag = `e2e-general-${Date.now() % 1000000}`;
   for (const i of [0, 1]) {
@@ -22,6 +24,17 @@ test("the general ranking adds up the points of every competition", async ({ pag
   await signUp(page, player);
   await page.waitForURL(/\/classement$/);
 
+  // The tab opens on « Ma ligue » (#551): without a league, create or join one.
+  const views = page.getByRole("navigation", { name: "Vue du classement" });
+  await expect(views.getByRole("link", { name: "Ma ligue" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await expect(page.getByRole("link", { name: "Créer une ligue" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Rejoindre avec un code" })).toBeVisible();
+
+  // In a league counting the first competition.
+  joinLeagueFor(player.email, `${tag}-0`);
   // Points in each competition, as the admin would compute them: 40 then 33.
   for (const [i, points] of [40, 33].entries()) {
     sql(`insert into score_events (user_id, competition_id, event_id, source, points, reason, detail)
@@ -32,12 +45,27 @@ test("the general ranking adds up the points of every competition", async ({ pag
   }
   await page.reload();
 
+  // « Ma ligue »: the league's competition only, the player's line highlighted, the bar below.
+  await expect(page.getByText("Ta ligue · Ligue E2E")).toBeVisible();
+  const inLeague = page
+    .getByRole("list", { name: "Classement" })
+    .getByRole("listitem")
+    .filter({ hasText: player.pseudo });
+  await expect(inLeague).toHaveAttribute("aria-current", "true");
+  await expect(inLeague).toContainText("40");
+  await expect(page.getByText("Tu es 1er · 40 pts")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Autour de moi" })).toHaveAttribute("href", "#moi");
+
+  // « Général » shows the player's line, whatever their place.
+  await views.getByRole("link", { name: "Général" }).click();
+  await expect(page).toHaveURL(/vue=general/);
   await expect(page.getByText("Tous les joueurs · toutes les compétitions")).toBeVisible();
   const mine = page
     .getByRole("list", { name: "Classement" })
     .getByRole("listitem")
     .filter({ hasText: player.pseudo });
   await expect(mine).toContainText("73");
+  await expect(mine).toHaveAttribute("id", "moi");
 
   // The ranking of one competition counts its points only (#376).
   await page

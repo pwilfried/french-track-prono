@@ -18,7 +18,7 @@ import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-import { currentDay, loadCompetitions } from "../../competition";
+import { currentCompetitionDay, currentDay, loadCompetitions } from "../../competition";
 import { messages } from "../../messages.fr";
 import { leaguePorts } from "../data";
 
@@ -36,6 +36,7 @@ async function load(id: string, ports: Awaited<ReturnType<typeof leaguePorts>>) 
     const ranking = await getLeagueRanking(ports).execute({
       leagueId: id,
       competitionSlugs: found.league.competitionSlugs,
+      today: currentCompetitionDay(),
     });
     return { ...found, ranking };
   } catch (error) {

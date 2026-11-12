@@ -220,14 +220,16 @@ export const messages = {
     loading: "Chargement des épreuves…",
   },
   leaderboard: {
-    streak: (n: number) => `, série de ${n} épreuves avec des points`,
     change: (n: number) =>
       n > 0
-        ? `${n} ${n === 1 ? "place gagnée" : "places gagnées"} depuis la dernière épreuve`
+        ? `${n} ${n === 1 ? "place gagnée" : "places gagnées"} depuis la veille`
         : n < 0
-          ? `${-n} ${n === -1 ? "place perdue" : "places perdues"} depuis la dernière épreuve`
-          : "même place qu'avant la dernière épreuve",
+          ? `${-n} ${n === -1 ? "place perdue" : "places perdues"} depuis la veille`
+          : "même place que la veille",
     label: "Classement",
+    podium: "Podium",
+    podiumPlace: (rank: number, pseudo: string, points: number) =>
+      `${ordinal(rank)} : ${pseudo}, ${points} ${points <= 1 ? "point" : "points"}`,
     me: "Toi",
     tie: "ex æquo",
     position: (rank: number) => ordinal(rank),
@@ -464,12 +466,32 @@ export const messages = {
     title: "Classement",
     subtitle: "Tous les joueurs · toutes les compétitions",
     competitionSubtitle: (name: string) => `Tous les joueurs · ${name}`,
+    tonightSubtitle: "Points gagnés sur les finales de ce soir · tous les joueurs",
+    leagueSubtitle: (name: string) => `Ta ligue · ${name}`,
+    noLeagueSubtitle: "Joue contre tes amis",
     scopeLabel: "Choisir le classement",
+    viewLabel: "Vue du classement",
+    view: { ligue: "Ma ligue", soir: "Ce soir", general: "Général" },
+    leagueLabel: "Choisir la ligue",
     general: "Général",
-    mine: (rank: number, of: number, points: number) =>
-      `Ta place : ${ordinal(rank)} sur ${of} · ${points} ${points <= 1 ? "pt" : "pts"}`,
+    you: (rank: number, points: number) =>
+      `Tu es ${ordinal(rank)} · ${points} ${points <= 1 ? "pt" : "pts"}`,
+    aroundMe: "Autour de moi",
     notRanked: "Tu n'as pas encore de points : fais tes pronos pour entrer au classement.",
+    tonightEmpty:
+      "Pas encore de points ce soir : ils arrivent dès que les résultats des finales du jour sont saisis.",
+    notRankedTonight: "Pas de points pour toi ce soir.",
     predict: "Faire mes pronos",
+    starts: (startsOn: string, days: number) => {
+      const day = new Date(`${startsOn}T12:00:00Z`).toLocaleDateString("fr-FR", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        timeZone: "UTC",
+      });
+      return `Le classement démarre · ${day} · ${days === 1 ? "Demain" : `Dans ${days} jours`}`;
+    },
+    firstPodiums: "Poser mes premiers podiums",
   },
   admin: {
     band: "Back-office",

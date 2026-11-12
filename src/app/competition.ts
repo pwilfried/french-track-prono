@@ -4,7 +4,7 @@ import type { CompetitionSummary } from "@/application/create-competition";
 import { UseCaseError } from "@/application/errors";
 import { listMyLeagues, type League } from "@/application/leagues";
 import { listCompetitions } from "@/application/list-competitions";
-import { competitionsForPlayer, nextCompetition } from "@/domain/competition";
+import { competitionDay, competitionsForPlayer, nextCompetition } from "@/domain/competition";
 import {
   createPublicSupabaseClient,
   createSupabaseCompetitionAdminRepository,
@@ -30,6 +30,9 @@ export const SCOPE_CHIP = {
 
 /** Today as YYYY-MM-DD (UTC), the format of competition dates. */
 export const currentDay = () => new Date().toISOString().slice(0, 10);
+
+/** Today's competition day, Paris time (#551): rankings move from one to the next. */
+export const currentCompetitionDay = () => competitionDay(new Date().toISOString());
 
 /** Every competition (public read), the coming ones first; empty lists when they cannot be read. */
 export const loadCompetitions = cache(
