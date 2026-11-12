@@ -23,3 +23,14 @@ export function validateCode(input: string): CodeResult {
   if (!/^\d{6,10}$/.test(code)) return { ok: false, code: "CODE_INVALID" };
   return { ok: true, code };
 }
+
+const PASTED_CODE_LENGTH = 6;
+
+/**
+ * The code in whatever was copied (the code alone, or a line of the e-mail): the first six
+ * digits found, or `null` when there are fewer.
+ */
+export function codeFromClipboard(text: string): string | null {
+  const digits = text.replace(/\D/g, "");
+  return digits.length < PASTED_CODE_LENGTH ? null : digits.slice(0, PASTED_CODE_LENGTH);
+}
