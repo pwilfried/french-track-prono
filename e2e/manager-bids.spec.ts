@@ -10,9 +10,13 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
   const league = `Enchères ${tag}`;
   const first = `Enchère Une ${tag}`;
   const second = `Enchère Deux ${tag}`;
+  const third = `Enchère Trois ${tag}`;
+  const slugs = ["une", "deux", "trois", "quatre"].map((n) => `enchere-${n}-${tag}`);
   for (const [slug, name, price] of [
-    [`enchere-une-${tag}`, first, 30],
-    [`enchere-deux-${tag}`, second, 20],
+    [slugs[0], first, 30],
+    [slugs[1], second, 20],
+    [slugs[2], third, 10],
+    [slugs[3], `Enchère Quatre ${tag}`, 10],
   ] as const) {
     sql(`insert into athletes (slug, name, country_code, gender, manager_price)
          values ('${slug}', '${name}', 'FRA', 'F', ${price})`);
@@ -46,7 +50,8 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await expect(ownerPage.getByText("le mercato de cette ligue n'est pas ouvert")).toBeVisible();
     await expect(ownerPage.getByRole("button", { name: "Enchérir" })).toHaveCount(0);
 
-    sql(`update manager_leagues set rules = jsonb_set(rules, '{budget}', '100'),
+    sql(`update manager_leagues
+         set rules = rules || '{"budget": 100, "closeModes": ["last_bidder"]}',
          mercato_opened_at = now() - interval '1 minute' where name = '${league}'`);
 
     // Bids on two athletes; below the price or over the budget is refused.
@@ -55,24 +60,37 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await expect(budget).toContainText("Disponible100 cr.");
     const firstCard = ownerPage.getByRole("article", { name: first });
     const secondCard = ownerPage.getByRole("article", { name: second });
-    await firstCard.getByLabel(`Mon offre sur ${first}, en crédits`).fill("40");
+    // The bid form stays folded behind « Enchérir » (#503); + and − move the amount by a credit.
     await firstCard.getByRole("button", { name: "Enchérir" }).click();
+    const firstAmount = firstCard.getByLabel(`Mon offre sur ${first}, en crédits`);
+    await expect(firstAmount).toHaveValue("30");
+    await firstCard.getByRole("button", { name: "Monter mon offre d'un crédit" }).click();
+    await expect(firstAmount).toHaveValue("31");
+    await firstCard.getByRole("button", { name: "Baisser mon offre d'un crédit" }).click();
+    await firstCard.getByRole("button", { name: "Baisser mon offre d'un crédit" }).click();
+    await expect(firstAmount).toHaveValue("30");
+    await firstAmount.fill("40");
+    await firstCard.getByRole("button", { name: "Valider" }).click();
     await expect(firstCard).toContainText("Mon offre : 40 cr.");
+    await expect(firstAmount).toHaveCount(0);
     await expect(budget).toContainText("Réservé40 cr.");
 
-    await secondCard.getByLabel(`Mon offre sur ${second}, en crédits`).fill("61");
     await secondCard.getByRole("button", { name: "Enchérir" }).click();
+    await secondCard.getByLabel(`Mon offre sur ${second}, en crédits`).fill("61");
+    await secondCard.getByRole("button", { name: "Valider" }).click();
     await expect(secondCard.getByRole("alert")).toContainText("dépasseraient ton budget");
     await secondCard.getByLabel(`Mon offre sur ${second}, en crédits`).fill("60");
-    await secondCard.getByRole("button", { name: "Enchérir" }).click();
+    await secondCard.getByRole("button", { name: "Valider" }).click();
     await expect(secondCard).toContainText("Mon offre : 60 cr.");
     await expect(budget).toContainText("Disponible0 cr.");
 
     // A change recomputes the reservation; a withdrawn bid frees its credits.
-    await firstCard.getByLabel(`Mon offre sur ${first}, en crédits`).fill("35");
     await firstCard.getByRole("button", { name: "Modifier" }).click();
+    await firstCard.getByLabel(`Mon offre sur ${first}, en crédits`).fill("35");
+    await firstCard.getByRole("button", { name: "Valider" }).click();
     await expect(firstCard).toContainText("Mon offre : 35 cr.");
     await expect(budget).toContainText("Disponible5 cr.");
+    await secondCard.getByRole("button", { name: "Modifier" }).click();
     await secondCard.getByRole("button", { name: "Retirer" }).click();
     await expect(secondCard).not.toContainText("Mon offre");
     await expect(budget).toContainText("Disponible65 cr.");
@@ -87,8 +105,9 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
 
     // The round closes (#423): each athlete goes to the best bid; the result shows in the budget.
     const rivalSecond = rivalPage.getByRole("article", { name: second });
-    await rivalSecond.getByLabel(`Mon offre sur ${second}, en crédits`).fill("30");
     await rivalSecond.getByRole("button", { name: "Enchérir" }).click();
+    await rivalSecond.getByLabel(`Mon offre sur ${second}, en crédits`).fill("30");
+    await rivalSecond.getByRole("button", { name: "Valider" }).click();
     await expect(rivalSecond).toContainText("Mon offre : 30 cr.");
     sql(`update manager_leagues set mercato_opened_at = now() - interval '49 hours'
          where name = '${league}'`);
@@ -104,8 +123,28 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await rivalPage.goto(catalogue + search);
     await expect(theirs.getByRole("list", { name: "Mes athlètes" })).toContainText(second);
     await expect(theirs).toContainText("Disponible70 cr.");
+    await expect(theirs.getByRole("button", { name: "Clore le mercato" })).toHaveCount(0);
+
+    // The mercato closes (#424): once the rival has spent everything, the owner is the last
+    // participant who can recruit; their bid under way is resolved, then nobody bids any more.
+    const rivalId = sql(`select id from auth.users where email = '${rival.email}'`);
+    sql(`insert into manager_awards (league_id, athlete_id, user_id, amount, round)
+         select l.id, a.id, '${rivalId}', 70, 1 from manager_leagues l, athletes a
+         where l.name = '${league}' and a.slug = '${slugs[3]}'`);
+    await ownerPage.goto(catalogue + search);
+    const thirdCard = ownerPage.getByRole("article", { name: third });
+    await thirdCard.getByRole("button", { name: "Enchérir" }).click();
+    await thirdCard.getByLabel(`Mon offre sur ${third}, en crédits`).fill("10");
+    await thirdCard.getByRole("button", { name: "Valider" }).click();
+    await expect(thirdCard).toContainText("Mon offre : 10 cr.");
+    await budget.getByRole("button", { name: "Clore le mercato" }).click();
+    await expect(budget.getByRole("status")).toContainText("Le mercato de cette ligue est clos");
+    await expect(budget.getByRole("list", { name: "Mes athlètes" })).toContainText(third);
+    await expect(ownerPage.getByRole("button", { name: "Enchérir" })).toHaveCount(0);
+    await rivalPage.goto(catalogue + search);
+    await expect(theirs.getByRole("status")).toContainText("Le mercato de cette ligue est clos");
   } finally {
     sql(`delete from manager_leagues where name = '${league}'`);
-    sql(`delete from athletes where slug in ('enchere-une-${tag}', 'enchere-deux-${tag}')`);
+    sql(`delete from athletes where slug in ('${slugs.join("', '")}')`);
   }
 });

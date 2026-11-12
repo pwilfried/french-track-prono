@@ -1,4 +1,5 @@
 import { isBannedName } from "@/domain/banned-names";
+import type { Bib } from "@/domain/bib";
 import { normalizeInviteCode, validateLeagueName } from "@/domain/league";
 import type { ManagerRules } from "@/domain/manager-rules";
 
@@ -14,7 +15,7 @@ export type ManagerLeague = {
   memberCount: number;
 };
 
-export type ManagerParticipant = { userId: string; pseudo: string; avatar: string };
+export type ManagerParticipant = { userId: string; pseudo: string; bib: Bib };
 
 /** A league with the rules it copied at its creation and its participants, first joined first. */
 export type ManagerLeagueFile = ManagerLeague & {

@@ -166,10 +166,6 @@ export default async function EventsPage({
               </section>
             ))
           )}
-
-          <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
-            {messages.events.provisionalTimes}
-          </p>
         </div>
       </div>
       <InstallPrompt signedIn={mine !== null} hasPredicted={(mine?.size ?? 0) > 0} />

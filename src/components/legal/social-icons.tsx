@@ -4,7 +4,19 @@
  * (simpleicons.org, CC0 1.0); Instagram is the same camera mark drawn with basic shapes; the
  * podcast is a generic microphone. Decorative only: the link carries the name.
  */
+import { messages } from "@/app/messages.fr";
+
 export type SocialIconName = "instagram" | "youtube" | "tiktok" | "podcast";
+
+const social = messages.legal.footer.social;
+
+/** FrenchTrack's accounts (issue #313), without tracking parameters: the footer and the home. */
+export const FRENCHTRACK_ACCOUNTS: { href: string; label: string; icon: SocialIconName }[] = [
+  { href: "https://www.instagram.com/frenchtrack", label: social.instagram, icon: "instagram" },
+  { href: "https://www.youtube.com/@French_Track", label: social.youtube, icon: "youtube" },
+  { href: "https://www.tiktok.com/@french.track", label: social.tiktok, icon: "tiktok" },
+  { href: "https://podcastics.com/podcast/french-track", label: social.podcast, icon: "podcast" },
+];
 
 const FILLED: Partial<Record<SocialIconName, string>> = {
   youtube:

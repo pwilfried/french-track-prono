@@ -139,7 +139,7 @@ export async function RevealSection({
               <RevealedPredictionCard
                 key={prediction.predictionId}
                 pseudo={prediction.pseudo}
-                avatar={prediction.avatar}
+                bib={prediction.bib}
                 podium={prediction.podium}
                 useJoker={prediction.useJoker}
                 mine={mine}

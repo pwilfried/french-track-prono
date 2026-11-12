@@ -5,6 +5,8 @@ import { useActionState } from "react";
 import { messages } from "@/app/messages.fr";
 import { Field } from "@/components/account/field";
 import { SubmitButton } from "@/components/account/submit-button";
+import { Bib } from "@/components/profile/bib";
+import type { Bib as BibValue } from "@/domain/bib";
 
 import {
   addLeagueCompetitionAction,
@@ -146,7 +148,7 @@ export function HandOverForm({
   members,
 }: {
   leagueId: string;
-  members: { userId: string; pseudo: string; avatar: string }[];
+  members: { userId: string; pseudo: string; bib: BibValue }[];
 }) {
   const [state, action] = useActionState<LeagueFormState, FormData>(handOverLeagueAction, {
     value: "",
@@ -169,7 +171,7 @@ export function HandOverForm({
               required
               className="size-5 accent-primary"
             />
-            <span aria-hidden>{m.avatar}</span>
+            <Bib bib={m.bib} />
             <span className="min-w-0 flex-1 break-words font-bold">{m.pseudo}</span>
           </label>
         ))}

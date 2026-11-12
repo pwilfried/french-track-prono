@@ -3,6 +3,7 @@ import type { League, LeagueMember, LeagueRepository } from "@/application/leagu
 import { INVITE_ALPHABET, INVITE_LENGTH, leagueCapacity } from "@/domain/league";
 import { UseCaseError } from "@/application/errors";
 import { isBannedName } from "@/domain/banned-names";
+import { DEFAULT_BIB } from "@/domain/bib";
 
 type Stored = {
   id: string;
@@ -74,7 +75,7 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
           return league.members.map((id) => ({
             userId: id,
             pseudo: profiles.get(id)?.pseudo ?? id,
-            avatar: profiles.get(id)?.avatar ?? "🏃",
+            bib: profiles.get(id)?.bib ?? DEFAULT_BIB,
             isOwner: id === league.ownerId,
             joinedAt: joinedAt.get(`${leagueId}:${id}`) ?? new Date().toISOString(),
             points: 0,

@@ -90,8 +90,8 @@ export default async function CataloguePage({
             retryHref={`/manager/${id}/catalogue`}
             message={messages.errors.MANAGER_BIDS_UNAVAILABLE}
           />
-        ) : mine.mercatoOpen ? (
-          <MyBidsPanel bids={mine} />
+        ) : mine.mercatoOpen || mine.mercatoClosed ? (
+          <MyBidsPanel leagueId={id} bids={mine} />
         ) : (
           <p className="rounded-card bg-muted p-4 text-sm font-semibold">{text.mercatoClosed}</p>
         )}
@@ -160,9 +160,10 @@ export default async function CataloguePage({
                 {filtered ? text.empty : text.emptyCatalogue}
               </p>
             ) : (
-              <ul aria-label={text.title} className="grid gap-2 md:grid-cols-2">
+              <ul aria-label={text.title} className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {view.rows.map((athlete) => (
-                  <li key={athlete.athleteId}>
+                  // The tile takes the whole row while its bid form is open (#503).
+                  <li key={athlete.athleteId} className="has-[form]:col-span-2">
                     <CatalogueCard athlete={athlete}>
                       {mine !== "error" && mine.mercatoOpen && athlete.available && (
                         <BidForm

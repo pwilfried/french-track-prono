@@ -1,10 +1,12 @@
+import type { Bib } from "@/domain/bib";
+
 import { UseCaseError } from "./errors";
 
 /** A player as the admin sees them in the back-office « Joueurs » (#343). */
 export type ModeratedPlayer = {
   id: string;
   pseudo: string;
-  avatar: string;
+  bib: Bib;
   blocked: boolean;
   isAdmin: boolean;
   /** ISO 8601. */

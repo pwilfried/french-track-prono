@@ -6,6 +6,7 @@ import { getManagerLeague, type ManagerLeagueFile } from "@/application/manager-
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { ShareInvite } from "@/components/leagues/share-invite";
+import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
 import {
   canStartManagerSeason,
@@ -85,9 +86,7 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
                 key={p.userId}
                 className="flex min-h-12 items-center gap-3 rounded-2xl border border-border bg-card px-3.5"
               >
-                <span aria-hidden className="text-xl">
-                  {p.avatar}
-                </span>
+                <Bib bib={p.bib} />
                 <span className="min-w-0 flex-1 break-words font-semibold">{p.pseudo}</span>
                 {p.userId === league.ownerId && (
                   <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">

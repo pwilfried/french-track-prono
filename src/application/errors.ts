@@ -15,7 +15,8 @@ export type ErrorCode =
   | "PSEUDO_INVALID"
   | "PSEUDO_TAKEN"
   | "PSEUDO_BANNED"
-  | "AVATAR_INVALID"
+  | "BIB_NUMBER_INVALID"
+  | "BIB_COLOR_INVALID"
   | "PROFILE_EXISTS"
   | "PROFILE_UNAVAILABLE"
   | "NOT_ADMIN"
@@ -98,6 +99,7 @@ export type ErrorCode =
   | "ATHLETE_NOT_IN_CATALOGUE"
   | "ATHLETE_TAKEN"
   | "ROUND_CLOSING"
+  | "MERCATO_NOT_LAST_BIDDER"
   | "MANAGER_BIDS_UNAVAILABLE";
 
 let reportUnavailable: ((code: ErrorCode) => void) | undefined;

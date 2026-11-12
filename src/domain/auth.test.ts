@@ -1,6 +1,25 @@
 import { describe, expect, it } from "vitest";
 
-import { validateCode, validateEmail } from "./auth";
+import { codeFromClipboard, validateCode, validateEmail } from "./auth";
+
+describe("codeFromClipboard", () => {
+  it("keeps a plain six-digit code", () => {
+    expect(codeFromClipboard("123456")).toBe("123456");
+  });
+
+  it("finds the digits in a copied sentence, across spaces and hyphens", () => {
+    expect(codeFromClipboard("Ton code : 123 456. Il expire dans une heure.")).toBe("123456");
+    expect(codeFromClipboard("123-456")).toBe("123456");
+  });
+
+  it("keeps only the first six digits found", () => {
+    expect(codeFromClipboard("12345678")).toBe("123456");
+  });
+
+  it.each(["", "pas de code", "12345", "anna@example.test"])("finds no code in %j", (text) => {
+    expect(codeFromClipboard(text)).toBeNull();
+  });
+});
 
 describe("validateEmail", () => {
   it("accepts an address and lowercases it", () => {

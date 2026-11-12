@@ -2,13 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
-import { getGeneralRanking } from "@/application/rankings";
+import { getGeneralRanking, type RankingRow } from "@/application/rankings";
 import { ErrorNotice } from "@/components/error-notice";
 import { CompetitionChips } from "@/components/events/competition-chips";
 import { Leaderboard } from "@/components/leaderboard/leaderboard";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { buttonVariants } from "@/components/ui/button";
-import type { RankedPlayer } from "@/domain/ranking";
 import { createSupabaseRankingRepository } from "@/infra";
 
 import { loadCompetitions } from "../competition";
@@ -35,7 +34,7 @@ export default async function GeneralRankingPage({
   const user = await getCurrentUser();
   if (!user) redirect(`/connexion?next=${encodeURIComponent(here)}`);
 
-  let ranking: RankedPlayer[] | "error";
+  let ranking: RankingRow[] | "error";
   try {
     ranking = await getGeneralRanking({
       ranking: createSupabaseRankingRepository(await getSessionClient()),

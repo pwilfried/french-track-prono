@@ -1,4 +1,6 @@
 import { messages } from "@/app/messages.fr";
+import { Bib } from "@/components/profile/bib";
+import type { Bib as BibValue } from "@/domain/bib";
 import type { Podium } from "@/domain/podium-draft";
 
 const MEDALS = [
@@ -10,7 +12,7 @@ const MEDALS = [
 /** One player's podium, revealed after the lock. Mine is highlighted. */
 export function RevealedPredictionCard({
   pseudo,
-  avatar,
+  bib,
   podium,
   useJoker,
   mine,
@@ -19,7 +21,7 @@ export function RevealedPredictionCard({
   children,
 }: {
   pseudo: string;
-  avatar: string;
+  bib: BibValue;
   podium: Podium;
   useJoker: boolean;
   mine: boolean;
@@ -34,9 +36,7 @@ export function RevealedPredictionCard({
       }`}
     >
       <div className="flex min-w-0 items-center gap-2.5 font-bold">
-        <span aria-hidden="true" className="text-2xl">
-          {avatar}
-        </span>
+        <Bib bib={bib} />
         <span className="min-w-0 flex-1 truncate">{mine ? messages.reveal.me : pseudo}</span>
         {flair && (
           <span className="shrink-0 rounded-full bg-success px-2 py-0.5 text-xs font-extrabold text-nuit">

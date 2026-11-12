@@ -27,7 +27,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className="max-w-md bg-background p-4">
+      <div className="w-48 bg-background p-4">
         <Story />
       </div>
     ),
@@ -37,29 +37,43 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/** Who, discipline, the price, then both records. */
 export const Available: Story = {
   play: async ({ canvasElement }) => {
     const card = within(canvasElement).getByRole("article", { name: "Léa Fictive" });
-    await expect(within(card).getByLabelText(text.priceLabel(12))).toHaveTextContent("12 cr.");
-    await expect(card).toHaveTextContent("11.02");
-    await expect(card).toHaveTextContent(text.available);
+    await expect(within(card).getByText(text.priceLabel(12))).toBeInTheDocument();
+    await expect(card).toHaveTextContent("12 cr.");
+    await expect(card).toHaveTextContent("100 m F");
+    await expect(card).toHaveTextContent("PB11.02");
+    await expect(card).toHaveTextContent("SB11.18");
+    await expect(card).not.toHaveTextContent("Libre");
   },
 };
 
-/** Already in a team of the league (after the awards of #423). */
+/** The season best equals the PB: both records still show. */
+export const SeasonBestIsPb: Story = {
+  args: { athlete: { ...meta.args.athlete, sb: "11.02" } },
+  play: async ({ canvasElement }) => {
+    const card = within(canvasElement).getByRole("article");
+    await expect(card).toHaveTextContent("PB11.02");
+    await expect(card).toHaveTextContent("SB11.02");
+  },
+};
+
+/** Already in a team of the league (after the awards of #423): no price, dimmed. */
 export const Taken: Story = {
   args: { athlete: { ...meta.args.athlete, available: false } },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole("article")).toHaveTextContent(text.taken);
+    const card = within(canvasElement).getByRole("article");
+    await expect(card).toHaveTextContent(text.taken);
+    await expect(card).not.toHaveTextContent("12 cr.");
   },
 };
 
 /** While the mercato is open, the page puts the player's bid at the bottom of the card (#422). */
 export const WithMyBid: Story = {
   args: {
-    children: (
-      <p className="border-t border-border pt-3 text-sm font-bold text-primary">{text.myBid(25)}</p>
-    ),
+    children: <p className="text-sm font-bold text-primary">{text.myBid(25)}</p>,
   },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByRole("article")).toHaveTextContent(text.myBid(25));
@@ -80,7 +94,8 @@ export const LongNameNoRecords: Story = {
   },
   play: async ({ canvasElement }) => {
     const card = within(canvasElement).getByRole("article");
-    await expect(card).toHaveTextContent("—");
+    await expect(card).toHaveTextContent("PB—");
+    await expect(card).toHaveTextContent("SB—");
     await expect(card).toHaveTextContent("125 cr.");
   },
 };

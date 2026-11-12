@@ -2,12 +2,13 @@
 
 import { useActionState } from "react";
 
-import { AvatarPicker } from "@/components/account/avatar-picker";
+import { BibPicker } from "@/components/account/bib-picker";
 import { ClubPicker } from "@/components/account/club-picker";
 import { DisciplinePicker } from "@/components/account/discipline-picker";
 import { Field } from "@/components/account/field";
 import { SexPicker } from "@/components/account/sex-picker";
 import { SubmitButton } from "@/components/account/submit-button";
+import type { Bib } from "@/domain/bib";
 import type { Discipline } from "@/domain/discipline";
 
 import { findClubsAction } from "../club-actions";
@@ -16,14 +17,18 @@ import { createProfileAction, type WelcomeState } from "./actions";
 
 export function WelcomeForm({
   next,
+  bib,
   disciplines,
 }: {
   next: string;
+  /** Drawn at random by the page, so that the newcomer may keep it as is. */
+  bib: Bib;
   disciplines: Pick<Discipline, "name" | "family">[];
 }) {
   const [state, action] = useActionState<WelcomeState, FormData>(createProfileAction, {
     pseudo: "",
-    avatar: "",
+    bibNumber: String(bib.number),
+    bibColor: bib.color,
     ageConfirmed: false,
     sex: "",
     disciplines: [],
@@ -34,15 +39,17 @@ export function WelcomeForm({
   const error = state.error;
   const text = error ? messages.errors[error] : undefined;
   const pseudoError = error === "PSEUDO_INVALID" || error === "PSEUDO_TAKEN" ? text : undefined;
-  const avatarError = error === "AVATAR_INVALID" ? text : undefined;
+  const bibNumberError = error === "BIB_NUMBER_INVALID" ? text : undefined;
+  const bibColorError = error === "BIB_COLOR_INVALID" ? text : undefined;
   const ageError = error === "AGE_NOT_CONFIRMED" ? text : undefined;
   const sexError = error === "SEX_INVALID" ? text : undefined;
   const clubError =
     error === "CLUB_NAME_INVALID" || error === "CLUB_NAME_BANNED" || error === "CLUB_UNKNOWN"
       ? text
       : undefined;
-  const generalError =
-    text && !pseudoError && !avatarError && !ageError && !sexError && !clubError ? text : undefined;
+  const fieldError =
+    pseudoError || bibNumberError || bibColorError || ageError || sexError || clubError;
+  const generalError = text && !fieldError ? text : undefined;
 
   return (
     <form action={action} noValidate className="flex flex-col gap-5">
@@ -58,7 +65,11 @@ export function WelcomeForm({
         maxLength={40}
       />
 
-      <AvatarPicker chosen={state.avatar} error={avatarError} />
+      <BibPicker
+        chosen={{ number: state.bibNumber, color: state.bibColor }}
+        numberError={bibNumberError}
+        colorError={bibColorError}
+      />
 
       <SexPicker chosen={state.sex} error={sexError} />
 

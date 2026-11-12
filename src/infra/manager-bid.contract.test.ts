@@ -10,6 +10,7 @@ managerBidContract("in-memory fake", async () => {
     budget: 100,
     prices: { a1: 10, a2: 20 },
     members: { l1: ["u1", "u2"], l2: ["u1"] },
+    closeModes: ["last_bidder"],
   });
   store.openMercato("l1");
   return {
@@ -49,7 +50,8 @@ if (url && key) {
     const code = sql(`select invite_code from manager_leagues where id = '${leagueId}'`);
     const joined = await second.client.rpc("join_manager_league", { p_code: code });
     if (joined.error) throw new Error(joined.error.message);
-    sql(`update manager_leagues set rules = jsonb_set(rules, '{budget}', '100')
+    sql(`update manager_leagues
+         set rules = rules || '{"budget": 100, "closeModes": ["last_bidder"]}'
          where id in ('${leagueId}', '${closedLeagueId}')`);
     sql(`update manager_leagues set mercato_opened_at = now() - interval '1 minute'
          where id = '${leagueId}'`);
