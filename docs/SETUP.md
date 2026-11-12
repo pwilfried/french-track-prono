@@ -415,6 +415,10 @@ Mise en route, une seule fois :
    de la fonction et ce même secret (`private.push_set_secrets`). Sans les clés VAPID, rien n'est
    déployé et `pg_cron` n'appelle rien. Sans `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, le bouton
    n'apparaît pas.
+5. Facultatif (#527) : GitHub, environnement « production », secret `SENTRY_DSN` (le DSN du
+   projet Sentry, `docs/sentry.md`). Le workflow le passe aux secrets de la fonction ; un passage
+   en échec (exception, ou envois en échec autres que 404 et 410) arrive alors dans Sentry. Sans
+   lui, rien n'est signalé.
 
 Vérifier : Supabase > Integrations > Cron, tâche `push-notifications` (un passage par minute) ;
 Edge Functions > `push-notifications` > Logs (« n notification(s) envoyée(s) »). Une réponse 401

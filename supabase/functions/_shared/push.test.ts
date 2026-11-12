@@ -66,7 +66,7 @@ describe("push notifications", () => {
       { user_id: "u1", event_slug: "100m-f", kind: "reminder" },
       { user_id: "u2", event_slug: "400m-h", kind: "result" },
     ]);
-    expect(report).toEqual({ sent: 2, forgotten: 0, failed: 0 });
+    expect(report).toEqual({ sent: 2, forgotten: 0, failed: 0, failures: [] });
   });
 
   it("forgets a device the push service no longer knows and counts other failures", async () => {
@@ -76,13 +76,26 @@ describe("push notifications", () => {
       throw Object.assign(new Error("boom"), { statusCode: 500 });
     });
     expect(database.calls.forgotten).toEqual(["https://push.example.test/1"]);
-    expect(report).toEqual({ sent: 1, forgotten: 1, failed: 1 });
+    expect(report).toEqual({
+      sent: 1,
+      forgotten: 1,
+      failed: 1,
+      failures: [{ kind: "reminder", status: 500 }],
+    });
+  });
+
+  it("counts a send that never reached the push service as a network failure", async () => {
+    const database = fakeDatabase([result]);
+    const report = await sendDue(database, async () => {
+      throw new Error("fetch failed");
+    });
+    expect(report.failures).toEqual([{ kind: "result", status: "network" }]);
   });
 
   it("does not touch the database when nothing is due", async () => {
     const database = fakeDatabase([]);
     const report = await sendDue(database, async () => {});
     expect(database.calls.marked).toEqual([]);
-    expect(report).toEqual({ sent: 0, forgotten: 0, failed: 0 });
+    expect(report).toEqual({ sent: 0, forgotten: 0, failed: 0, failures: [] });
   });
 });

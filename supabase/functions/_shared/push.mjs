@@ -35,7 +35,8 @@ export function notificationOf(due, now = Date.now()) {
 /**
  * Sends what is due to every device of each player, then records it.
  * `push(device, payload, options)` sends one notification (web-push's sendNotification); it throws
- * an error with `statusCode` 404 or 410 when the device unsubscribed.
+ * an error with `statusCode` 404 or 410 when the device unsubscribed. Every other failure is
+ * listed by notification kind and HTTP code (`network` without one), never by device or player.
  * @param {{ due: () => Promise<any[]>, markSent: (sent: any[]) => Promise<void>,
  *           forget: (endpoints: string[]) => Promise<void> }} database
  * @param {(device: any, payload: string, options: any) => Promise<unknown>} push
@@ -44,7 +45,8 @@ export async function sendDue(database, push) {
   const due = await database.due();
   /** @type {string[]} */
   const forgotten = [];
-  let failed = 0;
+  /** @type {{ kind: string, status: number | "network" }[]} */
+  const failures = [];
   for (const notification of due) {
     const payload = JSON.stringify(notificationOf(notification));
     for (const device of notification.devices) {
@@ -59,7 +61,7 @@ export async function sendDue(database, push) {
         const { statusCode, body } = /** @type {{ statusCode?: number, body?: string }} */ (error);
         if (statusCode === 404 || statusCode === 410) forgotten.push(device.endpoint);
         else {
-          failed += 1;
+          failures.push({ kind: notification.kind, status: statusCode ?? "network" });
           console.error(`push failed (${statusCode ?? "network"}): ${body ?? error}`);
         }
       }
@@ -68,5 +70,5 @@ export async function sendDue(database, push) {
   if (due.length)
     await database.markSent(due.map(({ user_id, event_slug, kind }) => ({ user_id, event_slug, kind })));
   if (forgotten.length) await database.forget(forgotten);
-  return { sent: due.length, forgotten: forgotten.length, failed };
+  return { sent: due.length, forgotten: forgotten.length, failed: failures.length, failures };
 }

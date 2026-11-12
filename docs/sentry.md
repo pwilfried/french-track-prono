@@ -23,7 +23,9 @@ Sans DSN, rien n'est envoyé ; en local et en mode fake (`FTP_FAKE_DB=1`) non pl
 4. Sentry → Settings → Auth Tokens : un jeton d'organisation (portée « project:releases »).
 5. GitHub, environnement « production » : secrets `SENTRY_AUTH_TOKEN` (le jeton), `SENTRY_ORG` et
    `SENTRY_PROJECT` (les identifiants courts de l'organisation et du projet).
-6. Poser un tag : le déploiement envoie les source maps (piles d'appels lisibles), jamais depuis
+6. GitHub, environnement « production » : secret `SENTRY_DSN` = le DSN, pour les échecs des
+   notifications push (voir « Être prévenu »).
+7. Poser un tag : le déploiement envoie les source maps (piles d'appels lisibles), jamais depuis
    un poste local.
 
 Le DSN n'est pas un secret (il finit dans le navigateur) ; le jeton, si.
@@ -34,8 +36,18 @@ Le DSN n'est pas un secret (il finit dans le navigateur) ; le jeton, si.
   garder active). Les erreurs avalées par un `catch` pour garder la page debout (tableau de bord,
   menu admin, listes admin, partage, notifications, service worker) passent par `reportError`
   (`src/lib/report-error.ts`) ; une erreur de rendu, par `src/app/global-error.tsx`.
-- Les jobs planifiés (notifications push, comptes inactifs, import des clubs) échouent en cas de
-  problème : GitHub prévient le propriétaire par e-mail.
+- Les notifications push (#527) : l'Edge Function `push-notifications`, appelée chaque minute
+  par `pg_cron`, envoie un événement à Sentry quand un passage échoue (exception, code
+  `PUSH_RUN_FAILED`) ou quand des envois échouent (code `PUSH_SEND_FAILED`, sauf 404 et 410, qui
+  ne sont que des abonnements expirés). L'événement donne le nombre d'échecs, le type de
+  notification et le code HTTP ; jamais l'adresse d'un appareil, une clé ni un joueur
+  (`supabase/functions/_shared/sentry.mjs`, un simple envoi HTTP, sans SDK). Le DSN est le
+  secret `SENTRY_DSN` de la fonction : GitHub, environnement « production », secret
+  `SENTRY_DSN` (le même DSN que `NEXT_PUBLIC_SENTRY_DSN`), passé à la fonction par le workflow
+  « Database migrations » à chaque tag. Sans lui, la fonction marche comme avant et ne signale
+  rien.
+- Les autres jobs planifiés (comptes inactifs, import des clubs) échouent en cas de problème :
+  GitHub prévient le propriétaire par e-mail.
 
 ## Vérifier
 
