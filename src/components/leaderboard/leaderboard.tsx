@@ -20,7 +20,8 @@ export type LeaderboardRow = RankedPlayer & {
   streak?: number;
 };
 
-function Change({ change }: { change: number }) {
+/** Places won (▲), lost (▼) or kept (—) since the last computed event; read out in full. */
+export function Change({ change }: { change: number }) {
   const text = messages.leaderboard;
   const [symbol, style] =
     change > 0

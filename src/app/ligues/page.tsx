@@ -7,9 +7,10 @@ import {
   type League,
   type PublicLeague,
 } from "@/application/leagues";
-import { getLeagueRanking } from "@/application/rankings";
+import { getLeagueRanking, standingIn } from "@/application/rankings";
 import { ErrorNotice } from "@/components/error-notice";
 import { JoinPublicLeagueForm, ReportLeagueForm } from "@/components/leagues/league-forms";
+import { LeagueCard } from "@/components/leagues/league-card";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { buttonVariants } from "@/components/ui/button";
 import { PUBLIC_LEAGUE_MAX_MEMBERS } from "@/domain/league";
@@ -18,7 +19,7 @@ import { loadCompetitions } from "../competition";
 import { messages } from "../messages.fr";
 import { leaguePorts } from "./data";
 
-type Row = { league: League; rank: number | null };
+type Row = { league: League; standing: ReturnType<typeof standingIn> };
 
 export default async function LeaguesPage() {
   const ports = await leaguePorts("/ligues");
@@ -34,7 +35,7 @@ export default async function LeaguesPage() {
           leagueId: league.id,
           competitionSlugs: league.competitionSlugs,
         });
-        return { league, rank: ranking.find((p) => p.userId === ports.userId)?.rank ?? null };
+        return { league, standing: standingIn(ranking, ports.userId) };
       }),
     );
   } catch (error) {
@@ -44,11 +45,24 @@ export default async function LeaguesPage() {
 
   const { coming, past } = await loadCompetitions();
   const nameOf = new Map([...coming, ...past].map((c) => [c.slug, c.name]));
+  const namesOf = (slugs: string[]) => slugs.map((slug) => nameOf.get(slug) ?? slug);
 
   return (
     <main id="main" className="flex flex-1 flex-col">
       <LeagueHero title={messages.leagues.title} subtitle={messages.leagues.listSubtitle} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-3 px-4 py-6">
+        <div className="grid grid-cols-2 gap-2">
+          <Link href="/ligues/creer" className={`${buttonVariants()} px-3`}>
+            {messages.leagues.create}
+          </Link>
+          <Link
+            href="/ligues/rejoindre"
+            className={`${buttonVariants({ variant: "outline" })} px-3`}
+          >
+            {messages.leagues.haveCode}
+          </Link>
+        </div>
+
         {rows === "error" ? (
           <ErrorNotice retryHref="/ligues" message={messages.errors.LEAGUES_UNAVAILABLE} />
         ) : rows.length === 0 ? (
@@ -57,55 +71,21 @@ export default async function LeaguesPage() {
             {messages.leagues.emptyText}
           </p>
         ) : (
-          <ul className="flex flex-col gap-2">
-            {rows.map(({ league, rank }) => (
+          <ul aria-label={messages.leagues.myLeagues} className="flex flex-col gap-2">
+            {rows.map(({ league, standing }) => (
               <li key={league.id}>
-                <Link
+                <LeagueCard
                   href={`/ligues/${league.id}`}
-                  className="flex min-h-16 items-center gap-3 rounded-card border border-border bg-card p-3.5"
-                >
-                  <span
-                    aria-hidden
-                    className="grid size-11 shrink-0 place-items-center rounded-2xl bg-muted text-2xl"
-                  >
-                    🏆
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block break-words font-extrabold">
-                      {league.name}
-                      {league.isPublic && (
-                        <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 align-middle text-xs font-bold text-secondary-foreground">
-                          {messages.leagues.publicBadge}
-                        </span>
-                      )}
-                    </span>
-                    <span className="block text-sm text-muted-foreground">
-                      {messages.leagues.members(league.memberCount)}
-                      {league.ownerId === ports.userId ? ` · ${messages.leagues.createdByMe}` : ""}
-                    </span>
-                  </span>
-                  {rank !== null && (
-                    <span className="shrink-0 text-right text-sm font-bold">
-                      {messages.leagues.rankOf(rank, league.memberCount)}
-                    </span>
-                  )}
-                </Link>
+                  name={league.name}
+                  memberCount={league.memberCount}
+                  competitionNames={namesOf(league.competitionSlugs)}
+                  isPublic={league.isPublic}
+                  standing={standing}
+                />
               </li>
             ))}
           </ul>
         )}
-        <Link href="/ligues/creer" className={`${buttonVariants()} w-full`}>
-          {messages.leagues.create}
-        </Link>
-        <Link href="/ligues/rejoindre" className={`${buttonVariants({ variant: "muted" })} w-full`}>
-          {messages.leagues.join}
-        </Link>
-        <Link href="/classement" className={`${buttonVariants({ variant: "outline" })} w-full`}>
-          {messages.leagues.general}
-        </Link>
-        <Link href="/manager" className={`${buttonVariants({ variant: "outline" })} w-full`}>
-          {messages.manager.entry}
-        </Link>
 
         {rows !== "error" && (
           <section aria-labelledby="public-leagues" className="flex flex-col gap-2 pt-4">
@@ -134,7 +114,7 @@ export default async function LeaguesPage() {
                             league.memberCount,
                             PUBLIC_LEAGUE_MAX_MEMBERS,
                           ),
-                          ...league.competitionSlugs.map((slug) => nameOf.get(slug) ?? slug),
+                          ...namesOf(league.competitionSlugs),
                         ].join(" · ")}
                       </span>
                     </span>
@@ -148,6 +128,14 @@ export default async function LeaguesPage() {
             )}
           </section>
         )}
+
+        {/* Its place is decided in #471; until then, a discreet link here. */}
+        <Link
+          href="/manager"
+          className="mx-auto inline-flex min-h-11 items-center text-sm font-semibold text-muted-foreground underline underline-offset-4"
+        >
+          {messages.manager.entry}
+        </Link>
       </div>
     </main>
   );

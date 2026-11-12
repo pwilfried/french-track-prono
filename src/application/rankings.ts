@@ -134,3 +134,12 @@ export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: L
     },
   };
 }
+
+/** Where a player stands in a ranking (#552): null while they have no points or are not in it. */
+export function standingIn(
+  rows: RankingRow[],
+  userId: string,
+): { rank: number; change: number | null } | null {
+  const row = rows.find((r) => r.userId === userId);
+  return row && row.points > 0 ? { rank: row.rank, change: row.change } : null;
+}

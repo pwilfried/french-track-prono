@@ -8,6 +8,7 @@ import {
   getClubRanking,
   countsInLeague,
   getLeagueRanking,
+  standingIn,
   type RankingLine,
   type RankingRepository,
 } from "./rankings";
@@ -224,5 +225,30 @@ describe("getClubRanking", () => {
 
     // Club x: (15 + 4 + 1) / 3; club y has a single player and is not ranked.
     expect(result).toEqual([{ clubId: "x", name: "Club x", players: 3, average: 6.7, rank: 1 }]);
+  });
+});
+
+describe("standingIn (#552)", () => {
+  it("gives the player's place and movement in a league ranking", async () => {
+    const rows = await getLeagueRanking({
+      ranking: ranking([
+        line("ana", 10),
+        line("bob", 5),
+        line("bob", 9, false, "e2", "2026-11-24T19:00:00.000Z"),
+      ]),
+      leagues: leagues([member("ana"), member("bob")]),
+    }).execute({ leagueId: "l1", competitionSlugs: ["c1"] });
+    // Bob was 2nd after the first event, 1st after the second one.
+    expect(standingIn(rows, "bob")).toEqual({ rank: 1, change: 1 });
+    expect(standingIn(rows, "ana")).toEqual({ rank: 2, change: -1 });
+  });
+
+  it("gives no place to a player without points yet, nor to a stranger", async () => {
+    const rows = await getLeagueRanking({
+      ranking: ranking([line("ana", 10)]),
+      leagues: leagues([member("ana"), member("bob")]),
+    }).execute({ leagueId: "l1", competitionSlugs: ["c1"] });
+    expect(standingIn(rows, "bob")).toBeNull();
+    expect(standingIn(rows, "zoe")).toBeNull();
   });
 });
