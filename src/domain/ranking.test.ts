@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { rankChanges, rankPlayers, streaks, totalsOf, type PlayerTotals } from "./ranking";
+import { movesSinceYesterday, rankPlayers, streaks, totalsOf, type PlayerTotals } from "./ranking";
 
 const player = (
   pseudo: string,
@@ -113,7 +113,7 @@ describe("totalsOf", () => {
   });
 });
 
-describe("rankChanges", () => {
+describe("movesSinceYesterday", () => {
   const line = (userId: string, eventId: string, startsAt: string, points: number) => ({
     userId,
     eventId,
@@ -121,41 +121,94 @@ describe("rankChanges", () => {
     points,
     reasons: [],
   });
-  const day1 = "2026-11-23T19:00:00Z";
-  const day2 = "2026-11-24T19:00:00Z";
+  // 20:00 in Paris on the 23rd, then on the 24th.
+  const yesterday = "2026-11-23T19:00:00Z";
+  const tonight = "2026-11-24T19:00:00Z";
+  const today = "2026-11-24";
+  const moves = (lines: ReturnType<typeof line>[], day = today) =>
+    movesSinceYesterday(lines, day, (id) => id);
 
-  it("compares each player's place with the ranking before the last computed event", () => {
-    const lines = [
-      line("ana", "e1", day1, 10),
-      line("bob", "e1", day1, 5),
-      line("cid", "e1", day1, 3),
-      line("bob", "e2", day2, 12),
-      line("cid", "e2", day2, 1),
-    ];
-
-    const changes = rankChanges(lines, (id) => id);
+  it("compares each player's place with the ranking at the end of the day before", () => {
+    const changes = moves([
+      line("ana", "e1", yesterday, 10),
+      line("bob", "e1", yesterday, 5),
+      line("cid", "e1", yesterday, 3),
+      line("bob", "e2", tonight, 12),
+      line("cid", "e2", tonight, 1),
+    ]);
 
     expect(changes.get("bob")).toBe(1); // 2nd → 1st
     expect(changes.get("ana")).toBe(-1); // 1st → 2nd
     expect(changes.get("cid")).toBe(0);
   });
 
-  it("gives null to a player who only scored in the last event, and to everyone after one event", () => {
-    expect(rankChanges([line("ana", "e1", day1, 3)], (id) => id).get("ana")).toBeNull();
-    const changes = rankChanges(
-      [line("ana", "e1", day1, 3), line("dan", "e2", day2, 9)],
-      (id) => id,
-    );
+  it("counts every event of the day, not only the last one computed", () => {
+    const changes = moves([
+      line("ana", "e1", yesterday, 10),
+      line("bob", "e1", yesterday, 9),
+      line("bob", "e2", tonight, 2),
+      line("ana", "e3", "2026-11-24T20:00:00Z", 3),
+    ]);
+
+    // Bob led after e2, Ana took the lead back with e3: since yesterday, nobody moved.
+    expect(changes.get("ana")).toBe(0);
+    expect(changes.get("bob")).toBe(0);
+  });
+
+  it("reads the day in Paris time: an event at 00:30 in Paris belongs to that day", () => {
+    const changes = moves([
+      line("ana", "e1", yesterday, 5),
+      line("bob", "e2", "2026-11-23T23:30:00Z", 8),
+    ]);
+
+    expect(changes.get("ana")).toBe(-1);
+    expect(changes.get("bob")).toBeNull();
+  });
+
+  it("moves a player up to the place they now share with another", () => {
+    const changes = moves([
+      line("ana", "e1", yesterday, 10),
+      line("bob", "e1", yesterday, 5),
+      line("bob", "e2", tonight, 5),
+    ]);
+
+    expect(changes.get("bob")).toBe(1); // 2nd → tied 1st
+    expect(changes.get("ana")).toBe(0);
+  });
+
+  it("gives null to a player not ranked yesterday, and to everyone before any day is over", () => {
+    expect(moves([line("ana", "e1", tonight, 3)]).get("ana")).toBeNull();
+    const changes = moves([line("ana", "e1", yesterday, 3), line("dan", "e2", tonight, 9)]);
     expect(changes.get("dan")).toBeNull();
     expect(changes.get("ana")).toBe(-1);
   });
 
-  it("does not depend on the order of the lines", () => {
-    const lines = [line("a", "e1", day1, 2), line("b", "e2", day2, 5), line("b", "e1", day1, 1)];
-    const sorted = (m: Map<string, number | null>) => [...m].sort(([x], [y]) => x.localeCompare(y));
-    expect(sorted(rankChanges([...lines].reverse(), (id) => id))).toEqual(
-      sorted(rankChanges(lines, (id) => id)),
+  it("leaves everyone in place on a day without event", () => {
+    const changes = moves(
+      [line("ana", "e1", yesterday, 3), line("bob", "e2", tonight, 9)],
+      "2026-11-25",
     );
+
+    expect([...changes.values()]).toEqual([0, 0]);
+  });
+
+  it("does not depend on the order of the lines", () => {
+    const lines = fc.sample(
+      fc.array(
+        fc.record({
+          userId: fc.constantFrom("a", "b", "c"),
+          eventId: fc.constantFrom("e1", "e2", "e3"),
+          eventStartsAt: fc.constantFrom(yesterday, tonight),
+          points: fc.integer({ min: 0, max: 28 }),
+          reasons: fc.constant<never[]>([]),
+        }),
+      ),
+      50,
+    );
+    const sorted = (m: Map<string, number | null>) => [...m].sort(([x], [y]) => x.localeCompare(y));
+    for (const sample of lines) {
+      expect(sorted(moves([...sample].reverse()))).toEqual(sorted(moves(sample)));
+    }
   });
 });
 

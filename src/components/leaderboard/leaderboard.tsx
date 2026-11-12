@@ -14,7 +14,7 @@ export type LeaderboardRow = RankedPlayer & {
   bib: BibValue;
   /** Shown on the player's card (#342). */
   club?: string | null;
-  /** Places won (+) or lost (−) since the last computed event; null or absent: not shown. */
+  /** Places won (+) or lost (−) since yesterday (#551); null or absent: not shown. */
   change?: number | null;
   /** Events in a row with points; shown from 2. */
   streak?: number;

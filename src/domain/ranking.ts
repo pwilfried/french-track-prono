@@ -1,3 +1,4 @@
+import { utcToParis } from "./competition";
 import type { ScoreReason } from "./scoring";
 
 /** One player's totals over the events counted by a ranking. */
@@ -62,34 +63,23 @@ type DatedLine = {
 };
 
 /**
- * Places won (+) or lost (−) by each player since the ranking before the last computed event
- * (owner's decision, v0.8). Null for a player who was not ranked before it, and for everyone
- * while only one event is computed. The order of the lines never matters.
+ * Places won (+) or lost (−) by each player since the ranking at the end of the day before
+ * `today` (YYYY-MM-DD, Paris time), #551: every event of the day counts. Null for a player who
+ * was not ranked then, and for everyone until a day is over. The order of the lines never matters.
  */
-export function rankChanges(
+export function movesSinceYesterday(
   lines: DatedLine[],
+  today: string,
   pseudoOf: (userId: string) => string,
 ): Map<string, number | null> {
-  const events = new Map<string, number>();
-  for (const l of lines) events.set(l.eventId, Date.parse(l.eventStartsAt));
-  const last = [...events].sort(([a, ta], [b, tb]) => tb - ta || (a < b ? 1 : a > b ? -1 : 0))[0];
-  const now = rankPlayers(totalsOf(lines, pseudoOf));
-  const changes = new Map<string, number | null>(now.map((p) => [p.userId, null]));
-  if (!last || events.size < 2) return changes;
-
-  const before = new Map(
-    rankPlayers(
-      totalsOf(
-        lines.filter((l) => l.eventId !== last[0]),
-        pseudoOf,
-      ),
-    ).map((p) => [p.userId, p.rank]),
+  const before = lines.filter((l) => utcToParis(l.eventStartsAt).slice(0, 10) < today);
+  const previous = new Map(rankPlayers(totalsOf(before, pseudoOf)).map((p) => [p.userId, p.rank]));
+  return new Map(
+    rankPlayers(totalsOf(lines, pseudoOf)).map((p) => {
+      const rank = previous.get(p.userId);
+      return [p.userId, rank === undefined ? null : rank - p.rank];
+    }),
   );
-  for (const player of now) {
-    const previous = before.get(player.userId);
-    changes.set(player.userId, previous === undefined ? null : previous - player.rank);
-  }
-  return changes;
 }
 
 /**

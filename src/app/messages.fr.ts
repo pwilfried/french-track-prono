@@ -223,10 +223,10 @@ export const messages = {
     streak: (n: number) => `, série de ${n} épreuves avec des points`,
     change: (n: number) =>
       n > 0
-        ? `${n} ${n === 1 ? "place gagnée" : "places gagnées"} depuis la dernière épreuve`
+        ? `${n} ${n === 1 ? "place gagnée" : "places gagnées"} depuis hier`
         : n < 0
-          ? `${-n} ${n === -1 ? "place perdue" : "places perdues"} depuis la dernière épreuve`
-          : "même place qu'avant la dernière épreuve",
+          ? `${-n} ${n === -1 ? "place perdue" : "places perdues"} depuis hier`
+          : "même place qu'hier",
     label: "Classement",
     me: "Toi",
     tie: "ex æquo",

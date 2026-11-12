@@ -1,6 +1,13 @@
 import { DEFAULT_BIB, type Bib } from "@/domain/bib";
 import { rankClubs, type ClubRank } from "@/domain/club-ranking";
-import { rankChanges, rankPlayers, streaks, totalsOf, type RankedPlayer } from "@/domain/ranking";
+import { utcToParis } from "@/domain/competition";
+import {
+  movesSinceYesterday,
+  rankPlayers,
+  streaks,
+  totalsOf,
+  type RankedPlayer,
+} from "@/domain/ranking";
 import type { ScoreReason } from "@/domain/scoring";
 
 import { UseCaseError } from "./errors";
@@ -29,7 +36,7 @@ export interface RankingRepository {
   competitionLines(competitionSlug: string): Promise<RankingLine[]>;
 }
 
-/** A ranked player with the bib shown next to the pseudo and the places won since the last event. */
+/** A ranked player with the bib shown next to the pseudo and the places won since yesterday. */
 export type RankingRow = RankedPlayer & {
   bib: Bib;
   club: string | null;
@@ -37,12 +44,17 @@ export type RankingRow = RankedPlayer & {
   streak: number;
 };
 
-const rank = (lines: RankingLine[]): RankingRow[] => {
+/** The ranking clock: today is a day in Paris time (#551). */
+type Clock = { now?: () => Date };
+const parisToday = ({ now = () => new Date() }: Clock) =>
+  utcToParis(now().toISOString()).slice(0, 10);
+
+const rank = (lines: RankingLine[], today: string): RankingRow[] => {
   const byUser = new Map(lines.map((l) => [l.userId, l]));
   const pseudoOf = (id: string) => byUser.get(id)?.pseudo ?? "";
   // League members without points have no event: they never move.
   const dated = lines.filter((l) => l.eventId !== "");
-  const changes = rankChanges(dated, pseudoOf);
+  const changes = movesSinceYesterday(dated, today, pseudoOf);
   const streakOf = streaks(dated);
   return rankPlayers(totalsOf(lines, pseudoOf)).map((player) => ({
     ...player,
@@ -57,13 +69,13 @@ const rank = (lines: RankingLine[]): RankingRow[] => {
  * All the players who scored in the competitions given, their points added up: every competition
  * for the general ranking (decision of 8 Nov 2026), one for the page of a competition.
  */
-export function getGeneralRanking(ports: { ranking: RankingRepository }) {
+export function getGeneralRanking(ports: { ranking: RankingRepository } & Clock) {
   return {
     async execute(input: { competitionSlugs: string[] }): Promise<RankingRow[]> {
       const perCompetition = await Promise.all(
         input.competitionSlugs.map((slug) => ports.ranking.competitionLines(slug)),
       );
-      return rank(perCompetition.flat());
+      return rank(perCompetition.flat(), parisToday(ports));
     },
   };
 }
@@ -104,7 +116,9 @@ export function countsInLeague(joinedAt: string | undefined, eventLockAt: string
  * The members of a league, ranked on the league's competitions (their points add up); a member without points is listed
  * with 0. Only a member sees it. Every member gets the same ranking from the same score lines.
  */
-export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: LeagueRepository }) {
+export function getLeagueRanking(
+  ports: { ranking: RankingRepository; leagues: LeagueRepository } & Clock,
+) {
   return {
     async execute(input: { leagueId: string; competitionSlugs: string[] }): Promise<RankingRow[]> {
       const members = await ports.leagues.members(input.leagueId);
@@ -130,7 +144,7 @@ export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: L
         eventId: "",
         eventStartsAt: "",
       }));
-      return rank([...zero, ...lines]);
+      return rank([...zero, ...lines], parisToday(ports));
     },
   };
 }

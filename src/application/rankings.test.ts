@@ -52,19 +52,26 @@ const member = (userId: string): LeagueMember => ({
 });
 
 describe("getGeneralRanking", () => {
-  it("tells how many places each player won or lost with the last computed event", async () => {
-    const result = await getGeneralRanking({
-      ranking: ranking([
-        line("ana", 10),
-        line("bob", 5),
-        line("bob", 9, false, "e2", "2026-11-24T19:00:00.000Z"),
-      ]),
-    }).execute({ competitionSlugs: ["c"] });
+  it("tells how many places each player won or lost since yesterday, in Paris time", async () => {
+    const lines = [
+      line("ana", 10),
+      line("bob", 5),
+      line("bob", 9, false, "e2", "2026-11-24T19:00:00.000Z"),
+      line("cid", 1, false, "e3", "2026-11-24T20:00:00.000Z"),
+    ];
+    const at = (now: string) =>
+      getGeneralRanking({ ranking: ranking(lines), now: () => new Date(now) }).execute({
+        competitionSlugs: ["c"],
+      });
 
-    expect(result.map((r) => [r.userId, r.change, r.streak])).toEqual([
-      ["bob", 1, 2],
-      ["ana", -1, 0],
+    // The evening of the 24th: Bob passed Ana, Cid was not ranked yesterday.
+    expect((await at("2026-11-24T21:00:00Z")).map((r) => [r.userId, r.change])).toEqual([
+      ["bob", 1],
+      ["ana", -1],
+      ["cid", null],
     ]);
+    // The next day, after midnight in Paris (23:30 UTC): nobody moved since the day before.
+    expect((await at("2026-11-24T23:30:00Z")).map((r) => r.change)).toEqual([0, 0, 0]);
   });
 
   it("ranks all the players of the competition on their total", async () => {
