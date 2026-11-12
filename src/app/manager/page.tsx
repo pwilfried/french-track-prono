@@ -50,10 +50,12 @@ export default async function ManagerPage() {
               <li key={league.id}>
                 <Link
                   href={`/manager/${league.id}`}
+                  aria-label={league.name}
+                  aria-describedby={`league-${league.id}-meta`}
                   className="flex min-h-16 flex-col justify-center rounded-card border border-border bg-card p-3.5"
                 >
                   <span className="break-words font-extrabold">{league.name}</span>
-                  <span className="text-sm text-muted-foreground">
+                  <span id={`league-${league.id}-meta`} className="text-sm text-muted-foreground">
                     {text.participantsCount(league.memberCount, MANAGER_LEAGUE_MAX)} ·{" "}
                     {league.isPublic ? text.publicBadge : text.privateBadge}
                   </span>

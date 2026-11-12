@@ -8,6 +8,7 @@ import {
   LEAGUE_MAX_MEMBERS,
   PUBLIC_LEAGUE_MAX_MEMBERS,
   formatInviteCode,
+  leagueAddChoice,
   leagueCapacity,
   normalizeInviteCode,
   validateLeagueName,
@@ -113,5 +114,20 @@ describe("publicLeaguesNotice", () => {
 
   it("keeps the plain message when I am in no public league", () => {
     expect(publicLeaguesNotice([], "me")).toBe("empty");
+  });
+});
+
+describe("leagueAddChoice", () => {
+  it("says nothing is coming when the league is empty and no competition can be added", () => {
+    expect(leagueAddChoice({ counted: 0, addable: 0 })).toBe("nothing-coming");
+  });
+
+  it("offers the choices when a coming competition can be added", () => {
+    expect(leagueAddChoice({ counted: 0, addable: 2 })).toBe("choices");
+    expect(leagueAddChoice({ counted: 3, addable: 1 })).toBe("choices");
+  });
+
+  it("says everything is already added when the league counts some and nothing is left", () => {
+    expect(leagueAddChoice({ counted: 2, addable: 0 })).toBe("all-added");
   });
 });

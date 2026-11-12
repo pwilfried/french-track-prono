@@ -40,6 +40,8 @@ export type PlayerHomeProps = {
   /** The last event the player scored, with what earned the points. */
   lastResult: { event: EventSummary; points: number; exact: number; onPodium: number } | null;
   mercatoOpen: boolean;
+  /** « Complète ton profil » (#540), under the next action; left out when the profile is complete. */
+  completeProfile?: React.ReactNode;
 };
 
 /**
@@ -60,6 +62,7 @@ export function PlayerHome(props: PlayerHomeProps) {
           now={now}
         />
       ) : null}
+      {props.completeProfile}
       {isNew ? (
         <DismissibleHowItWorks
           exactPoints={props.exactPoints}

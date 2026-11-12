@@ -12,6 +12,24 @@ export const PUBLIC_LEAGUE_MAX_MEMBERS = 200;
 export const leagueCapacity = (isPublic: boolean) =>
   isPublic ? PUBLIC_LEAGUE_MAX_MEMBERS : LEAGUE_MAX_MEMBERS;
 
+/** What the creator of a league can do with its competitions (#550). */
+export type LeagueAddChoice = "nothing-coming" | "choices" | "all-added";
+
+/**
+ * « choices » while a coming competition can be added; otherwise « nothing-coming » for an empty
+ * league (nothing announced yet) and « all-added » for a league that already counts them all.
+ */
+export function leagueAddChoice({
+  counted,
+  addable,
+}: {
+  counted: number;
+  addable: number;
+}): LeagueAddChoice {
+  if (addable > 0) return "choices";
+  return counted === 0 ? "nothing-coming" : "all-added";
+}
+
 /**
  * An invite code as typed: spaces and dashes removed, upper case. Returns null when it cannot be a
  * code (wrong length or a character outside the alphabet), so the app can answer without a lookup.

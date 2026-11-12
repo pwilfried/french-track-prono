@@ -229,7 +229,12 @@ code FT010) ; un joueur peut la signaler (`report_league`) et l'admin la renomme
 depuis le back-office (Ligues, action journalisée `moderate_league`, #321). Depuis la v0.11 (#383),
 le back-office liste toutes les ligues (`admin_list_leagues()`), efface des signalements infondés
 (`admin_dismiss_league_reports()`), lit les membres avec leur rang (`admin_league_members()`, même
-règle que `countsInLeague`) et retire un membre (`admin_remove_league_member()`, jamais le créateur). La v0.7 (#311) exigeait une ligue
+règle que `countsInLeague`) et retire un membre (`admin_remove_league_member()`, jamais le créateur).
+Ligue officielle (#553) : une seule ligue publique `is_official` (index unique partiel), « Ligue
+FrenchTrack », sur les Championnats d'Europe, sans plafond de membres. Elle appartient au premier
+compte admin ; la migration la crée par `private.create_official_league()` (idempotente, rien sans
+compte admin : la relancer à la main si l'admin arrive après). On la rejoint sur choix, et seul
+l'admin la renomme ou la supprime, depuis le back-office. La v0.7 (#311) exigeait une ligue
 de la compétition pour pronostiquer (FT011) ; la règle est retirée le 9 novembre 2026 (#375) : on
 pronostique sans ligue, et les pages suggèrent seulement d'en créer ou d'en rejoindre une ; le classement général compte tous les points, toutes
 compétitions confondues (#319), et l'onglet Classement donne aussi celui de chaque compétition
@@ -237,7 +242,9 @@ compétitions confondues (#319), et l'onglet Classement donne aussi celui de cha
 (`countsInLeague`, #376) : un prono fait avant d'y entrer reste au général et à la compétition. L'accueil du joueur connecté
 part de sa prochaine action (#526) : `nextAction` et `leagueStanding` (`src/domain/home.ts`)
 choisissent la finale ouverte la plus proche du verrouillage, sinon la prochaine compétition, et la
-ligue où il est le mieux classé ; les compétitions par type restent sur `/competitions`, et
+ligue où il est le mieux classé. Un profil incomplet (ni club ni discipline) y voit la carte
+« Complète ton profil » (#540) : la règle, les six familles et les 30 jours de « Plus tard » vivent
+dans `src/domain/profile-reminder.ts`, la date dans `player_details.reminder_hidden_until` ; les compétitions par type restent sur `/competitions`, et
 les pages suivent la prochaine compétition par date (`src/app/competition.ts`). Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
 calculé en TypeScript à partir des lignes de points (pas de vue SQL).
 

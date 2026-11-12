@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { EventDetail, EventSummary } from "@/domain/event";
 
 import type { EventReader } from "./list-events";
-import { getMyPredictionHistory, hasPredicted, listMyPredictions } from "./list-my-predictions";
+import { countPredictions, getMyPredictionHistory, listMyPredictions } from "./list-my-predictions";
 import type { Prediction, PredictionRepository } from "./save-prediction";
 
 const prediction = (userId: string, eventId: string, useJoker = false): Prediction => ({
@@ -40,7 +40,7 @@ describe("listMyPredictions", () => {
   });
 });
 
-describe("hasPredicted", () => {
+describe("countPredictions", () => {
   function perCompetition(byCompetition: Record<string, Prediction[]>): PredictionRepository {
     return {
       find: async () => null,
@@ -50,20 +50,23 @@ describe("hasPredicted", () => {
     };
   }
 
-  it("is false for a player without any prediction", async () => {
-    const useCase = hasPredicted({
+  it("is zero for a player without any prediction", async () => {
+    const useCase = countPredictions({
       predictions: perCompetition({ c1: [prediction("other", "e1")] }),
     });
 
-    expect(await useCase.execute({ userId: "me", competitionSlugs: ["c1", "c2"] })).toBe(false);
+    expect(await useCase.execute({ userId: "me", competitionSlugs: ["c1", "c2"] })).toBe(0);
   });
 
-  it("is true once the player has predicted in any of the competitions", async () => {
-    const useCase = hasPredicted({
-      predictions: perCompetition({ c2: [prediction("me", "e9")] }),
+  it("counts the podiums of the player across the competitions", async () => {
+    const useCase = countPredictions({
+      predictions: perCompetition({
+        c1: [prediction("me", "e1")],
+        c2: [prediction("me", "e9"), prediction("other", "e9")],
+      }),
     });
 
-    expect(await useCase.execute({ userId: "me", competitionSlugs: ["c1", "c2"] })).toBe(true);
+    expect(await useCase.execute({ userId: "me", competitionSlugs: ["c1", "c2"] })).toBe(2);
   });
 });
 
