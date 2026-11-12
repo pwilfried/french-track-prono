@@ -152,7 +152,9 @@ Règles :
   change dans « Modifier mon profil ». Un seul composant l'affiche (`Bib`) : grand format sur le
   profil et le choix, pastille avec le numéro ailleurs.
 - Pages : `/connexion`, `/bienvenue`, `/profil` ; l'en-tête affiche « Se connecter » ou le
-  dossard et le pseudo.
+  dossard et le pseudo. `/bienvenue` est un profil express (#539) : pseudo, dossard et âge, puis
+  l'épreuve d'où vient le joueur ; le sexe, le club et les disciplines se donnent plus tard, dans
+  « Modifier mon profil » ou la carte « Complète ton profil » de l'accueil.
 
 **Décision B : le calcul des points vit dans le domaine TypeScript** (`src/domain/scoring.ts`,
 fonction pure, testée avec Vitest et fast-check).

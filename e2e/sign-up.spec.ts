@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
 import { clearMailbox, latestCodeFromMailbox } from "../src/infra/contract/mailbox";
-import { newPlayer } from "./players";
+import { newPlayer, signUp } from "./players";
 
 test("a visitor taps « Faire mon premier prono », signs up and lands on the first open final", async ({
   page,
@@ -40,37 +40,29 @@ test("a visitor taps « Faire mon premier prono », signs up and lands on the fi
   await code.press("Enter");
   await page.waitForURL(/\/bienvenue/);
 
+  // The express profile (#539): pseudo, bib and age; the rest waits for the profile page.
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Bienvenue !");
+  await expect(page.getByLabel("Cherche ton club")).toHaveCount(0);
+  await expect(page.getByText("Ton club et tes disciplines : plus tard")).toBeVisible();
   await page.getByLabel("Ton pseudo").fill(player.pseudo);
   await page.getByLabel("Numéro", { exact: true }).fill("42");
   await page
     .locator("label", { has: page.getByRole("radio", { name: "Rouge", exact: true }) })
     .click();
   await expect(page.getByRole("img", { name: "Dossard 42" })).toBeVisible();
-  await page.locator("label", { hasText: "Femme" }).click();
-  await page.locator("label", { hasText: /^100 m$/ }).click();
-  await page.locator("label", { hasText: /^200 m$/ }).click();
-  await page.getByLabel("Cherche ton club").fill("fictivil");
-  await page.getByRole("button", { name: /Foulées de Fictiville/ }).click();
-  await expect(page.getByRole("button", { name: "Changer" })).toBeVisible();
   await page.getByRole("checkbox", { name: /15 ans/ }).check();
-  await page.getByRole("button", { name: "Créer mon profil" }).click();
+  await page.getByRole("button", { name: "C'est parti : mon premier prono" }).click();
   await page.waitForURL(new RegExp(`/epreuves/${slug}$`));
 
   const profile = `(select id from profiles where pseudo = '${player.pseudo}')`;
   expect(sql(`select bib_number || ' ' || bib_color from profiles where id = ${profile}`)).toBe(
     "42 red",
   );
-  expect(sql(`select sex from player_details where profile_id = ${profile}`)).toBe("F");
-  expect(
-    sql(`select array_to_string(array(select unnest(disciplines) order by 1), ',')
-         from player_details where profile_id = ${profile}`),
-  ).toBe("100 m,200 m");
-  expect(
-    sql(`select c.name from profiles p join clubs c on c.id = p.club_id where p.id = ${profile}`),
-  ).toBe("Foulées de Fictiville");
 });
 
-test("a club missing from the list is typed and waits for validation", async ({ page }) => {
+test("a club missing from the list is typed on the profile and waits for validation", async ({
+  page,
+}) => {
   const player = newPlayer("club");
   await clearMailbox(player.email);
   await page.goto("/profil");
@@ -78,24 +70,22 @@ test("a club missing from the list is typed and waits for validation", async ({ 
   // No event behind this sign-in: no reminder.
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Connexion ou inscription");
   await expect(page.getByRole("note")).toHaveCount(0);
-  await page.getByLabel("Ton e-mail").fill(player.email);
-  await page.getByRole("button", { name: "Recevoir mon code" }).click();
-  await page.getByLabel(/code/i).fill(await latestCodeFromMailbox(player.email));
-  await page.getByRole("button", { name: "Me connecter" }).click();
-  await page.waitForURL(/\/bienvenue/);
+  await signUp(page, player);
+  await page.waitForURL(/\/profil$/);
 
-  await page.getByLabel("Ton pseudo").fill(player.pseudo);
+  // The club is not asked at sign-up (#539): the player gives it from their profile.
+  await page.getByRole("link", { name: "Modifier mon profil" }).click();
+  await page.waitForURL(/\/profil\/modifier$/);
   await page.getByRole("button", { name: "Mon club n'est pas dans la liste" }).click();
   await page.getByLabel("Nom de ton club").fill("Club Officiel FFA");
-  await page.getByRole("checkbox", { name: /15 ans/ }).check();
-  await page.getByRole("button", { name: "Créer mon profil" }).click();
+  await page.getByRole("button", { name: "Enregistrer" }).click();
   await expect(page.locator("main").getByRole("alert")).toContainText("nom de club");
 
   const club = `Les Foulées ${player.pseudo.slice(-6)}`;
   await page.getByLabel("Nom de ton club").fill(club);
   await page.getByLabel("Ville du club").fill("Nulle-Part");
-  await page.getByRole("button", { name: "Créer mon profil" }).click();
-  await page.waitForURL(/\/profil$/);
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+  await page.waitForURL(/\/profil\?enregistre=1$/);
 
   expect(
     sql(`select c.validated from profiles p join clubs c on c.id = p.club_id
