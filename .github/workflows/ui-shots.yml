@@ -33,6 +33,11 @@ jobs:
         with:
           fetch-depth: 0 # the diff against the base branch
 
+      # The local Supabase ports are in Linux's ephemeral range: an outgoing connection (the image
+      # pulls of `supabase start`) can hold one when the database binds it (#580). Reserve them.
+      - name: Reserve the local Supabase ports
+        run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
+
       - uses: supabase/setup-cli@v1
         with:
           version: 3.0.0
