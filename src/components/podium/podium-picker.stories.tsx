@@ -181,3 +181,13 @@ export const WithAthletePages: Story = {
     await expect(step(canvasElement, "1re")).toHaveAccessibleName("1re place : Lena Okoro");
   },
 };
+
+/** The help link says what it opens, in words and not only with « ? » (#494). */
+export const WithHelp: Story = {
+  args: { helpHref: "/regles" },
+  play: async ({ canvasElement }) => {
+    const help = within(canvasElement).getByRole("link", { name: "Comment jouer : les règles" });
+    await expect(help).toHaveAttribute("href", "/regles");
+    await expect(help).toHaveTextContent("Règles");
+  },
+};

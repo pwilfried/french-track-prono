@@ -39,10 +39,6 @@ export function removeStep(draft: PodiumDraft, step: Step): PodiumDraft {
   return { ...draft, [KEY[step]]: null };
 }
 
-export function swapSteps(draft: PodiumDraft, a: Step, b: Step): PodiumDraft {
-  return { ...draft, [KEY[a]]: draft[KEY[b]], [KEY[b]]: draft[KEY[a]] };
-}
-
 export function isComplete(draft: PodiumDraft): boolean {
   return toPodium(draft) !== null;
 }

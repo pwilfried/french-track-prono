@@ -1,12 +1,15 @@
 import { UseCaseError } from "@/application/errors";
 import { listEvents } from "@/application/list-events";
 import { ClubNotices } from "@/components/account/club-notices";
+import { CompleteProfileCard } from "@/components/home/complete-profile-card";
 import { PlayerHome } from "@/components/home/player-home";
 import { VisitorHome } from "@/components/home/visitor-home";
 import { daysUntil } from "@/domain/competition";
 import { firstFinalToPredict } from "@/domain/home";
 import { createPublicSupabaseClient, createSupabaseEventReader } from "@/infra";
 
+import { findClubsAction } from "./club-actions";
+import { completeProfileAction, completeProfileLaterAction } from "./complete-profile-actions";
 import {
   currentCompetition,
   currentDay,
@@ -86,12 +89,27 @@ export default async function Home() {
     );
   }
 
-  const { clubNotices, ...home } = player;
+  const { clubNotices, completeProfile, ...home } = player;
   return (
     <main id="main" className="flex flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
         <ClubNotices notices={clubNotices} />
-        <PlayerHome userId={user.userId} now={now} {...stepPoints(scale)} {...home} />
+        <PlayerHome
+          userId={user.userId}
+          now={now}
+          {...stepPoints(scale)}
+          {...home}
+          completeProfile={
+            completeProfile ? (
+              <CompleteProfileCard
+                firstPodium={completeProfile.firstPodium}
+                search={findClubsAction}
+                save={completeProfileAction}
+                later={completeProfileLaterAction}
+              />
+            ) : null
+          }
+        />
       </div>
     </main>
   );

@@ -25,15 +25,20 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   // No league needed to predict (#375): a league is only suggested under the podium.
   await expect(page.getByRole("heading", { name: "Joue aussi avec tes amis" })).toBeVisible();
 
+  // A first visit shows the tips above the empty podium.
+  const tips = page.getByRole("region", { name: "Premier prono : astuces" });
+  await expect(tips).toBeVisible();
+
   // Compose the podium with the first three athletes, then save.
   const athletes = page.locator("li > button[aria-pressed]");
   for (const index of [0, 1, 2]) await athletes.nth(index).click();
   await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
   await expect(page.getByRole("status")).toContainText("Podium enregistré");
 
-  // Reopening the page shows the saved podium.
+  // Reopening the page shows the saved podium, without the tips (#493).
   await page.reload();
   await expect(page.getByRole("button", { name: /^1re place : (?!vide)/ })).toBeVisible();
+  await expect(tips).toHaveCount(0);
 
   // The event locks; saving again is refused.
   sql(`update events set lock_at = now() - interval '1 second' where slug = '${slug}'`);
@@ -104,6 +109,10 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   );
   await expect(page.getByRole("region", { name: "Mon meilleur coup" })).toContainText("+12 pts");
   await expect(page.getByRole("region", { name: "Mes stats" })).toContainText("podiums parfaits");
+  // The share of computed predictions that gave points says what it counts (#490).
+  await expect(page.getByRole("region", { name: "Mes stats" })).toContainText(
+    "pronos qui rapportent",
+  );
   await expect(page.getByRole("img", { name: /Points cumulés : de 0 à \d+/ })).toBeVisible();
 
   // My latest predictions (#387): the event with its points, then every prediction of the competition.

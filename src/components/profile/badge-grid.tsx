@@ -1,5 +1,5 @@
 import { messages } from "@/app/messages.fr";
-import { nextBadge, type BadgeProgress } from "@/domain/badges";
+import { isEarned, nextBadge, type BadgeProgress } from "@/domain/badges";
 
 const text = messages.profile;
 
@@ -14,7 +14,7 @@ export function BadgeGrid({ progress }: { progress: BadgeProgress[] }) {
       <ul className="grid grid-cols-3 gap-2">
         {progress.map((p) => {
           const b = messages.badges[p.badge];
-          const earned = p.current >= p.target;
+          const earned = isEarned(p);
           return (
             <li
               key={p.badge}
