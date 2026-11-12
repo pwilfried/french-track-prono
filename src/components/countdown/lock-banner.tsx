@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 import { messages } from "@/app/messages.fr";
 import { countdown, splitDuration } from "@/domain/countdown";
+
+import { useNow } from "./use-now";
 
 const two = (n: number) => String(n).padStart(2, "0");
 
@@ -12,14 +12,7 @@ const two = (n: number) => String(n).padStart(2, "0");
  * unless `now` is given. Once locked it turns into a quiet « Verrouillé ». Nothing blinks.
  */
 export function LockBanner({ lockAt, now }: { lockAt: string; now?: Date }) {
-  const [tick, setTick] = useState(() => new Date());
-  useEffect(() => {
-    if (now) return;
-    const id = setInterval(() => setTick(new Date()), 1000);
-    return () => clearInterval(id);
-  }, [now]);
-
-  const state = countdown(now ?? tick, lockAt);
+  const state = countdown(useNow(now), lockAt);
   if (state.phase === "locked") {
     return (
       <p className="flex min-h-12 items-center gap-2 rounded-2xl bg-countdown-locked px-4 font-bold text-countdown-locked-foreground">

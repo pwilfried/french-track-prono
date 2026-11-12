@@ -1,20 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 import { messages } from "@/app/messages.fr";
 import { countdown, splitDuration } from "@/domain/countdown";
+import { useNow } from "@/components/countdown/use-now";
 
 /** Big figures « DANS 12 J 04 H 22 MIN » until the next lock; refreshes every 30 s. */
 export function LockCountdown({ lockAt, now }: { lockAt: string; now?: Date }) {
-  const [tick, setTick] = useState(() => new Date());
-  useEffect(() => {
-    if (now) return;
-    const timer = setInterval(() => setTick(new Date()), 30_000);
-    return () => clearInterval(timer);
-  }, [now]);
-
-  const state = countdown(now ?? tick, lockAt);
+  const state = countdown(useNow(now, 30_000), lockAt);
   if (state.phase === "locked") return null;
   const { days, hours, minutes } = splitDuration(state.remainingSeconds);
   const parts = [
