@@ -37,6 +37,23 @@ export async function signIn(page: Page, email: string) {
 }
 
 /**
+ * Adds an invented friend, without points, to a league (SQL): a league shows its ranking once its
+ * creator is no longer alone (#552). Returns the friend's e-mail, to delete them afterwards.
+ */
+export function addFriendTo(leagueUrl: string, tag: string) {
+  const leagueId = leagueUrl.split("/").pop()!;
+  const email = `e2e-friend-${tag}@example.test`;
+  sql(`with u as (
+      insert into auth.users (id, email) values (gen_random_uuid(), '${email}') returning id
+    ), p as (
+      insert into profiles (id, pseudo, age_confirmed_at)
+      select id, 'Ami ${tag}'::text, now() from u returning id
+    )
+    insert into league_members (league_id, user_id) select '${leagueId}', id from p`);
+  return email;
+}
+
+/**
  * Puts a player in a league of his own counting the competition (SQL, for the tests that are not
  * about leagues): a player predicts only from such a league (#311).
  */
