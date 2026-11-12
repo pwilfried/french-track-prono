@@ -34,7 +34,7 @@ test("a player creates a public league, another finds it in the list and joins w
   await walkerPage.goto("/ligues");
   await signUp(walkerPage, walker);
   await walkerPage.waitForURL(/\/ligues$/);
-  const publics = walkerPage.getByRole("list", { name: "Ligues publiques" });
+  const publics = walkerPage.getByRole("list", { name: "Autres ligues publiques" });
   await expect(publics.getByRole("listitem").filter({ hasText: name })).toContainText("1 / 200");
   await publics.getByRole("button", { name: `Rejoindre la ligue publique ${name}` }).click();
   await walkerPage.waitForURL(leagueUrl);

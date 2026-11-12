@@ -16,7 +16,7 @@ export type LeaderboardRow = RankedPlayer & {
 };
 
 /** ▲ won, ▼ lost, « = » same place as yesterday (#551). */
-function Change({ change }: { change: number }) {
+export function Change({ change, className }: { change: number; className?: string }) {
   const [symbol, style] =
     change > 0
       ? [`▲${change}`, "text-success-text"]
@@ -24,7 +24,7 @@ function Change({ change }: { change: number }) {
         ? [`▼${-change}`, "text-accent-text"]
         : ["=", "text-muted-foreground"];
   return (
-    <span className={cn("w-8 shrink-0 text-center font-mono text-xs font-bold", style)}>
+    <span className={cn("w-8 shrink-0 text-center font-mono text-xs font-bold", style, className)}>
       <span aria-hidden>{symbol}</span>
       <span className="sr-only">{messages.leaderboard.change(change)}</span>
     </span>

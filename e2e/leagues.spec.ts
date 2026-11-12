@@ -59,6 +59,46 @@ test("two friends in the same league see the same ranking", async ({ browser }) 
   await expect(rows.nth(1)).toContainText(bob.pseudo);
 });
 
+test("a player alone in a league invites a friend, who joins by the link", async ({ browser }) => {
+  const owner = newPlayer("alone");
+  const friend = newPlayer("bylink");
+  const ownerPage = await (await browser.newContext()).newPage();
+  const friendPage = await (await browser.newContext()).newPage();
+
+  await ownerPage.goto("/ligues/creer?competition=ultimate-championship-2026");
+  await signUp(ownerPage, owner);
+  await ownerPage.waitForURL(/\/ligues\/creer/);
+  await ownerPage.getByLabel("Nom de la ligue").fill("Les Seuls E2E");
+  await ownerPage.getByRole("button", { name: "Créer la ligue" }).click();
+  await expect(ownerPage.getByText("Ta ligue est prête")).toBeVisible();
+  const leagueUrl = ownerPage.url().split("?")[0]!;
+
+  // Alone: the banner asks to invite friends, no ranking yet.
+  await ownerPage.goto(leagueUrl);
+  const banner = ownerPage.getByRole("region", { name: "Tu es seul pour l'instant" });
+  await expect(banner.getByRole("button", { name: "Inviter mes amis" })).toBeVisible();
+  await expect(ownerPage.getByRole("list", { name: "Classement" })).toHaveCount(0);
+  const code = (await banner.getByText(/^Ou donne le code /).innerText())
+    .replace("Ou donne le code ", "")
+    .replace(/\s/g, "");
+  expect(code).toMatch(/^[A-Z0-9]{6}$/);
+
+  // The friend opens the link, signs up, joins in one tap and lands in the league.
+  await friendPage.goto(`/rejoindre/${code}`);
+  await signUp(friendPage, friend);
+  await friendPage.waitForURL(new RegExp(`/rejoindre/${code}$`));
+  await friendPage.getByRole("button", { name: "Rejoindre la ligue" }).click();
+  await friendPage.waitForURL(leagueUrl);
+  await expect(friendPage.getByRole("heading", { level: 1 })).toHaveText("Les Seuls E2E");
+
+  // No longer alone: the banner gives way to the ranking.
+  await ownerPage.reload();
+  await expect(ownerPage.getByRole("button", { name: "Inviter mes amis" })).toHaveCount(0);
+  const rows = ownerPage.getByRole("list", { name: "Classement" }).getByRole("listitem");
+  await expect(rows).toHaveCount(2);
+  await expect(ownerPage.getByText("2 joueurs · créée par toi")).toBeVisible();
+});
+
 test("a player opens their leagues from the bottom bar", async ({ page }) => {
   const player = newPlayer("tab");
   await page.goto("/profil");

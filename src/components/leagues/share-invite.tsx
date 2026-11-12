@@ -8,6 +8,45 @@ import { formatInviteCode } from "@/domain/league";
 import { reportError } from "@/lib/report-error";
 
 /**
+ * Shares an invite link with the phone's share sheet (when the browser has one), or copies it as
+ * the fallback; `copy` copies any text. `copied` tells the player the clipboard got it.
+ */
+export function useInviteShare({
+  path,
+  title,
+  text,
+}: {
+  path: string;
+  title: string;
+  text: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const link = () => `${window.location.origin}${path}`;
+
+  const copy = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
+  const share = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url: link() });
+      } catch (error) {
+        // Cancelled by the player: nothing to do (not reported either).
+        reportError(error, "share-invite");
+      }
+      return;
+    }
+    await copy(link());
+  };
+  return { copied, share, copy };
+}
+
+/**
  * The invite code, big and easy to read, with the phone's share sheet for the link (when the
  * browser has one) and a copy button as the fallback.
  */
@@ -23,39 +62,7 @@ export function ShareInvite({
   path?: string;
   shareText?: string;
 }) {
-  const [copied, setCopied] = useState(false);
-  const link = () => `${window.location.origin}${path}`;
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  };
-  const share = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: leagueName,
-          text: shareText,
-          url: link(),
-        });
-        return;
-      } catch (error) {
-        // Cancelled by the player: nothing to do (not reported either).
-        reportError(error, "share-invite");
-        return;
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(link());
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  };
+  const { copied, share, copy } = useInviteShare({ path, title: leagueName, text: shareText });
 
   return (
     <div className="flex flex-col gap-3">
@@ -71,7 +78,7 @@ export function ShareInvite({
       </button>
       <button
         type="button"
-        onClick={copy}
+        onClick={() => copy(code)}
         className={`${buttonVariants({ variant: "muted" })} w-full`}
       >
         {copied ? messages.leagues.copied : messages.leagues.copy}
