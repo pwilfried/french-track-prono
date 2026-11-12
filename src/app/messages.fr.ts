@@ -202,23 +202,41 @@ export const messages = {
       others: "Autres compétitions",
       coming: "Compétitions à venir",
     },
-    category: "Catégorie",
-    filters: { all: "Toutes", F: "Femmes", M: "Hommes", X: "Mixte" },
+    filters: { todo: "À faire", posed: "Posés", done: "Terminées", all: "Toutes" },
     gender: GENDER,
     /** « 100 m femmes ». */
     name: (discipline: string, gender: keyof typeof GENDER) =>
       `${discipline} ${GENDER[gender].toLowerCase()}`,
-    genderInitial: { F: "F", M: "H", X: "X" },
     status: { upcoming: "À venir", live: "En cours", finished: "Terminé" },
-    coming: "À venir",
+    /** Section titles: « Ce soir · samedi 15 août », « Demain · … », then the date. */
+    tonight: (day: string) => `Ce soir · ${day}`,
+    tomorrow: (day: string) => `Demain · ${day}`,
     done: "Déjà courues",
     featured: "Phare",
-    final: "Finale",
     posed: "✓ Posé",
     addPrediction: "+ Prono",
+    locksIn: (duration: string) => `Verrouille dans ${duration}`,
+    nextLocksIn: (duration: string) => `la prochaine verrouille dans ${duration}`,
+    locksOn: (day: string, hour: string) => `Verrouille le ${day} à ${hour}`,
+    editable: "modifiable",
+    perfect: "Podium parfait !",
+    noPrediction: "Pas de prono",
+    noPoints: "—",
+    progress: {
+      title: "Ma progression",
+      posed: (posed: number, total: number) => `${posed} / ${total} podiums posés`,
+      points: (points: number) => `${points} ${points <= 1 ? "pt" : "pts"}`,
+      start: (days: number) => `Premières finales dans ${days} j`,
+      tonight: (todo: number) =>
+        todo === 0
+          ? "Rien à poser ce soir."
+          : `${todo} ${todo === 1 ? "finale" : "finales"} à faire ce soir`,
+      open: "Tous les pronos sont ouverts : prends de l'avance, tu pourras les modifier jusqu'au départ.",
+    },
     cardLabel: (discipline: string, gender: string, hour: string) =>
       `${discipline}, ${gender}, ${hour}`,
     empty: "Aucune épreuve pour ce filtre.",
+    allPosed: "Tout est posé pour l'instant.",
     loading: "Chargement des épreuves…",
   },
   leaderboard: {

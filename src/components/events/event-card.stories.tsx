@@ -13,8 +13,8 @@ const baseEvent: EventSummary = {
   slug: "f-100m",
   discipline: "100 m",
   gender: "F",
-  startsAt: inSeconds(3600),
-  lockAt: inSeconds(3300),
+  startsAt: inSeconds(3 * 3600 + 300),
+  lockAt: inSeconds(3 * 3600),
   isFeatured: true,
   status: "upcoming",
   round: "final",
@@ -36,38 +36,64 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Visitor: only the countdown, no "À pronostiquer". */
+/** Visitor: when it locks and « + Prono », which leads to the sign-in. */
 export const Visitor: Story = {
   args: { event: baseEvent },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).queryByText(/\+ Prono/)).toBeNull();
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Verrouille dans 3 h")).toBeInTheDocument();
+    await expect(canvas.getByText("+ Prono")).toBeInTheDocument();
   },
 };
 
-/** Signed-in player who hasn't predicted yet. */
-export const Upcoming: Story = {
+/** To do: the name with its gender, when it locks, « + Prono »; no « Finale » nor initial (#546). */
+export const ToDo: Story = {
   args: { event: baseEvent, mine: { predicted: false, joker: false } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("100 m")).toBeInTheDocument();
-    await expect(canvas.getByText(/\+ Prono/)).toBeInTheDocument();
+    await expect(canvas.getByText("100 m femmes")).toBeInTheDocument();
+    await expect(canvas.getByText("Verrouille dans 3 h")).toBeInTheDocument();
+    await expect(canvas.queryByText("Finale")).toBeNull();
+    await expect(canvas.getByRole("link")).toHaveAccessibleName(
+      /^100 m, Femmes, \d\d:\d\d \+ Prono$/,
+    );
   },
 };
 
-/** Lock imminent: CountdownBadge switches to the very-soon tone. */
-export const LockImminent: Story = {
+/** To do within the hour: the lock line turns red. */
+export const ToDoUrgent: Story = {
   args: {
-    event: { ...baseEvent, lockAt: inSeconds(5 * 60), startsAt: inSeconds(10 * 60) },
+    event: { ...baseEvent, lockAt: inSeconds(42 * 60), startsAt: inSeconds(47 * 60) },
+    mine: { predicted: false, joker: false },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText("Verrouille dans 42 min")).toHaveClass(
+      "text-accent-text",
+    );
   },
 };
 
-/** The player has already submitted a prediction — no countdown shown, chip reads "Pronostiqué". */
+/** More than 24 hours ahead: the lock day and hour. */
+export const ToDoLater: Story = {
+  args: {
+    event: { ...baseEvent, lockAt: inSeconds(3 * 86_400), startsAt: inSeconds(3 * 86_400 + 300) },
+    mine: { predicted: false, joker: false },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByText(/^Verrouille le lundi 14 septembre à \d\d:\d\d$/),
+    ).toBeInTheDocument();
+  },
+};
+
+/** Posed: « ✓ Posé », still « modifiable » until the lock. */
 export const AlreadyPredicted: Story = {
   args: { event: baseEvent, mine: { predicted: true, joker: false } },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText(/Posé/)).toBeInTheDocument();
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(/· modifiable/)).toBeInTheDocument();
     // A screen reader hears the status too, not only « 100 m, femmes, hour » (#517).
-    await expect(within(canvasElement).getByRole("link")).toHaveAccessibleName(
+    await expect(canvas.getByRole("link")).toHaveAccessibleName(
       /^100 m, Femmes, \d\d:\d\d ✓ Posé$/,
     );
   },
@@ -81,9 +107,15 @@ export const PredictedWithJoker: Story = {
   },
 };
 
-/** Not featured, so no star. */
-export const NotFeatured: Story = {
-  args: { event: { ...baseEvent, discipline: "400 m haies", gender: "M", isFeatured: false } },
+/** Locked, not run yet, no podium: nothing left to do. */
+export const Locked: Story = {
+  args: {
+    event: { ...baseEvent, lockAt: inSeconds(-60), startsAt: inSeconds(240) },
+    mine: { predicted: false, joker: false },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText("🔒 Verrouillé")).toBeInTheDocument();
+  },
 };
 
 const finishedEvent: EventSummary = {
@@ -94,7 +126,7 @@ const finishedEvent: EventSummary = {
   lockAt: inSeconds(-3900),
 };
 
-/** Finished event: countdown is gone, chip reads "Terminé". */
+/** Finished, for a visitor: « Terminé ». */
 export const Finished: Story = {
   args: { event: finishedEvent },
   play: async ({ canvasElement }) => {
@@ -102,16 +134,52 @@ export const Finished: Story = {
   },
 };
 
-/** Finished and scored: the points won replace « ✓ Posé » (#488). */
+/** Finished and scored: my result in one line, my points in green (#546). */
 export const FinishedWithPoints: Story = {
-  args: { event: finishedEvent, mine: { predicted: true, joker: false, points: 12 } },
+  args: {
+    event: finishedEvent,
+    mine: {
+      predicted: true,
+      joker: false,
+      points: 6,
+      hits: { exact: 2, onPodium: 0, perfect: false },
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("+12 pts")).toBeInTheDocument();
+    await expect(canvas.getByText("2 athlètes bien placées")).toBeInTheDocument();
     await expect(canvas.queryByText(/Posé/)).toBeNull();
     await expect(canvas.getByRole("link")).toHaveAccessibleName(
-      /^100 m, Femmes, \d\d:\d\d \+12 pts$/,
+      /^100 m, Femmes, \d\d:\d\d \+6 pts$/,
     );
+  },
+};
+
+/** A perfect podium says so. */
+export const PerfectPodium: Story = {
+  args: {
+    event: finishedEvent,
+    mine: {
+      predicted: true,
+      joker: false,
+      points: 12,
+      hits: { exact: 3, onPodium: 0, perfect: true },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Podium parfait !")).toBeInTheDocument();
+    await expect(canvas.getByText("+12 pts")).toBeInTheDocument();
+  },
+};
+
+/** Finished without my podium: « Pas de prono » and a dash. */
+export const FinishedWithoutPrediction: Story = {
+  args: { event: finishedEvent, mine: { predicted: false, joker: false } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Pas de prono")).toBeInTheDocument();
+    await expect(canvas.getByText("—")).toBeInTheDocument();
   },
 };
 
@@ -128,6 +196,11 @@ export const FinishedPointsPending: Story = {
 /** Long discipline name: must wrap, not push the chip off the card. */
 export const LongName: Story = {
   args: {
-    event: { ...baseEvent, discipline: "3000 m steeple-chase hommes — qualifications" },
+    event: {
+      ...baseEvent,
+      discipline: "3000 m steeple-chase — qualifications olympiques",
+      isFeatured: false,
+    },
+    mine: { predicted: true, joker: true },
   },
 };

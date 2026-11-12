@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { countdown, eventPhase, splitDuration } from "./countdown";
+import { countdown, eventPhase, lockLabel, splitDuration } from "./countdown";
 
 const lockAt = "2026-09-12T18:30:00.000Z";
 const at = (offsetMs: number) => new Date(Date.parse(lockAt) + offsetMs);
@@ -113,5 +113,31 @@ describe("splitDuration", () => {
         expect(seconds).toBeLessThan(60);
       }),
     );
+  });
+});
+
+describe("lockLabel", () => {
+  const lockAt = "2026-08-15T18:30:00Z";
+  const before = (seconds: number) => new Date(Date.parse(lockAt) - seconds * 1000);
+
+  it("gives the lock day and hour more than 24 hours ahead", () => {
+    expect(lockLabel(before(86_401), lockAt)).toEqual({ kind: "on" });
+  });
+
+  it("counts down from 24 hours before the lock", () => {
+    expect(lockLabel(before(86_400), lockAt)).toEqual({
+      kind: "in",
+      seconds: 86_400,
+      urgent: false,
+    });
+  });
+
+  it("turns urgent one hour before the lock", () => {
+    expect(lockLabel(before(3601), lockAt)).toMatchObject({ urgent: false });
+    expect(lockLabel(before(3600), lockAt)).toMatchObject({ urgent: true });
+  });
+
+  it("is locked at the lock time", () => {
+    expect(lockLabel(before(0), lockAt)).toEqual({ kind: "locked" });
   });
 });

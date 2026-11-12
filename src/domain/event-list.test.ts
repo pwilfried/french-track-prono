@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import type { EventGender, EventSummary } from "./event";
-import { filterByGender, groupEventsByDay, openEvents, splitFinished } from "./event-list";
+import {
+  eventSections,
+  eventsProgress,
+  filterCounts,
+  filterEvents,
+  groupEventsByDay,
+  openEvents,
+  splitFinished,
+} from "./event-list";
 
 const event = (slug: string, startsAt: string, gender: EventGender = "M"): EventSummary => ({
   id: slug,
@@ -45,22 +53,6 @@ describe("groupEventsByDay", () => {
 
   it("returns no day for an empty list", () => {
     expect(groupEventsByDay([])).toEqual([]);
-  });
-});
-
-describe("filterByGender", () => {
-  const events = [
-    event("w", "2026-09-11T17:00:00Z", "F"),
-    event("m", "2026-09-11T17:00:00Z", "M"),
-    event("x", "2026-09-11T17:00:00Z", "X"),
-  ];
-
-  it("keeps only the events of the chosen gender", () => {
-    expect(filterByGender(events, "F").map((e) => e.slug)).toEqual(["w"]);
-  });
-
-  it("keeps every event when no gender is chosen", () => {
-    expect(filterByGender(events, null)).toHaveLength(3);
   });
 });
 
@@ -110,5 +102,127 @@ describe("splitFinished", () => {
     ]);
 
     expect(done.map((e) => e.slug)).toEqual(["b", "c", "a"]);
+  });
+});
+
+// The events tab (#546): Paris is UTC+2 in August.
+const at = (slug: string, startsAt: string, status: EventSummary["status"] = "upcoming") => ({
+  ...event(slug, startsAt),
+  lockAt: new Date(Date.parse(startsAt) - 5 * 60_000).toISOString(),
+  status,
+});
+const slugs = (events: EventSummary[]) => events.map((e) => e.slug);
+
+describe("filterEvents and filterCounts", () => {
+  const now = new Date("2026-08-15T10:00:00Z");
+  const events = [
+    at("todo", "2026-08-15T18:35:00Z"),
+    at("posed", "2026-08-15T19:00:00Z"),
+    at("done", "2026-08-14T19:00:00Z", "finished"),
+    at("locked", "2026-08-15T09:00:00Z", "live"),
+  ];
+  const predicted = new Set(["posed", "done"]);
+
+  it("counts what is left to do, what is posed, what has run and everything", () => {
+    expect(filterCounts(events, predicted, now)).toEqual({ todo: 1, posed: 1, done: 1, all: 4 });
+  });
+
+  it("keeps the open events I have not predicted under « À faire »", () => {
+    expect(slugs(filterEvents(events, predicted, now, "todo"))).toEqual(["todo"]);
+  });
+
+  it("files a finished event under « Terminées » only, even predicted", () => {
+    expect(slugs(filterEvents(events, predicted, now, "posed"))).toEqual(["posed"]);
+    expect(slugs(filterEvents(events, predicted, now, "done"))).toEqual(["done"]);
+  });
+
+  it("keeps every event under « Toutes »", () => {
+    expect(filterEvents(events, predicted, now, "all")).toHaveLength(4);
+  });
+});
+
+describe("eventSections", () => {
+  it("puts tonight first, then tomorrow, then the later days, then the finished events latest first", () => {
+    const sections = eventSections(
+      [
+        at("e", "2026-08-13T19:00:00Z", "finished"),
+        at("d", "2026-08-14T19:00:00Z", "finished"),
+        at("a", "2026-08-15T18:35:00Z"),
+        at("b", "2026-08-16T18:00:00Z"),
+        at("c", "2026-08-18T18:00:00Z"),
+      ],
+      new Date("2026-08-15T10:00:00Z"),
+    );
+
+    expect(sections.map((s) => [s.kind, s.day, slugs(s.events)])).toEqual([
+      ["tonight", "2026-08-15", ["a"]],
+      ["tomorrow", "2026-08-16", ["b"]],
+      ["day", "2026-08-18", ["c"]],
+      ["done", null, ["d", "e"]],
+    ]);
+  });
+
+  it("changes day at midnight in Paris, not in UTC", () => {
+    // 22:30 UTC is already 00:30 on the 16th in Paris.
+    const sections = eventSections(
+      [at("a", "2026-08-16T18:00:00Z"), at("b", "2026-08-17T18:00:00Z")],
+      new Date("2026-08-15T22:30:00Z"),
+    );
+
+    expect(sections.map((s) => s.kind)).toEqual(["tonight", "tomorrow"]);
+  });
+
+  it("gives an empty list no section", () => {
+    expect(eventSections([], new Date())).toEqual([]);
+  });
+});
+
+describe("eventsProgress", () => {
+  const first = at("first", "2026-08-15T18:35:00Z");
+
+  it("counts my podiums and adds up my points", () => {
+    const progress = eventsProgress(
+      [
+        at("a", "2026-08-14T19:00:00Z", "finished"),
+        at("b", "2026-08-14T20:00:00Z", "finished"),
+        first,
+      ],
+      new Map([
+        ["a", { points: 6 }],
+        ["b", { points: null }],
+      ]),
+      new Date("2026-08-15T10:00:00Z"),
+    );
+
+    expect([progress.posed, progress.total, progress.points]).toEqual([2, 3, 6]);
+  });
+
+  it("counts the days to the first final before the competition", () => {
+    const progress = eventsProgress([first], new Map(), new Date("2026-08-10T10:00:00Z"));
+
+    expect(progress.daysToStart).toBe(5);
+  });
+
+  it("is in the competition from midnight in Paris on the day of the first final", () => {
+    const progress = eventsProgress([first], new Map(), new Date("2026-08-14T22:30:00Z"));
+
+    expect(progress.daysToStart).toBeNull();
+  });
+
+  it("counts tonight's events left to do and gives the next lock", () => {
+    const soonest = at("soonest", "2026-08-15T18:00:00Z");
+    const progress = eventsProgress(
+      [first, soonest, at("posed", "2026-08-15T19:00:00Z"), at("tomorrow", "2026-08-16T18:00:00Z")],
+      new Map([["posed", { points: null }]]),
+      new Date("2026-08-15T10:00:00Z"),
+    );
+
+    expect(progress.tonight).toEqual({ todo: 2, nextLockAt: soonest.lockAt });
+  });
+
+  it("has nothing left tonight once tonight's events are locked", () => {
+    const progress = eventsProgress([first], new Map(), new Date("2026-08-15T19:00:00Z"));
+
+    expect(progress.tonight).toEqual({ todo: 0, nextLockAt: null });
   });
 });
