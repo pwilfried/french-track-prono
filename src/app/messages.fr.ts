@@ -343,6 +343,39 @@ export const messages = {
     joinSubmit: "Rejoindre la ligue",
     shareText: (name: string) => `Rejoins ma ligue French Track Manager « ${name} »`,
     catalogueLink: "Catalogue du mercato",
+    /** The presentation of the mode, until the player has a Manager league (#618). */
+    intro: {
+      eyebrow: "Nouveau mode de jeu",
+      tagline:
+        "Deviens manager : recrute tes athlètes, aligne-les à chaque compétition et affronte tes amis toute la saison.",
+      stepsLabel: "Le Manager en 5 étapes",
+      steps: (f: { budget: number; minTeamSize: number; lineupMax: number; winBonus: number }) => [
+        {
+          title: "Recrute au mercato",
+          text: `${f.budget} crédits pour recruter au moins ${f.minTeamSize} athlètes, par enchères secrètes.`,
+        },
+        {
+          title: "Garde ton équipe toute la saison",
+          text: "Tes athlètes restent avec toi jusqu'à la dernière compétition.",
+        },
+        {
+          title: "Aligne tes titulaires",
+          text: `Avant chaque compétition, choisis jusqu'à ${f.lineupMax} athlètes.`,
+        },
+        {
+          title: "Marque des points",
+          text: `Barème World Athletics, bonus sportifs (+${f.winBonus} pour une victoire) et tes pronos.`,
+        },
+        {
+          title: "Gagne le championnat",
+          text: "Affronte chaque participant deux fois, en confrontations aller-retour.",
+        },
+      ],
+      create: "Créer une ligue Manager",
+      haveCode: "J'ai un code d'invitation",
+      skip: "Passer",
+      skipLabel: "Passer la présentation",
+    },
   },
   catalogue: {
     title: "Catalogue du mercato",
