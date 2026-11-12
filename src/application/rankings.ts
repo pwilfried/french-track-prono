@@ -1,3 +1,4 @@
+import { DEFAULT_BIB, type Bib } from "@/domain/bib";
 import { rankClubs, type ClubRank } from "@/domain/club-ranking";
 import { rankChanges, rankPlayers, streaks, totalsOf, type RankedPlayer } from "@/domain/ranking";
 import type { ScoreReason } from "@/domain/scoring";
@@ -8,7 +9,7 @@ import type { LeagueRepository } from "./leagues";
 export type RankingLine = {
   userId: string;
   pseudo: string;
-  avatar: string;
+  bib: Bib;
   /** The player's club, shown on their card (#342); null or absent when none or not visible. */
   club?: string | null;
   /** Id of that club: the club ranking groups by it (#386). */
@@ -28,9 +29,9 @@ export interface RankingRepository {
   competitionLines(competitionSlug: string): Promise<RankingLine[]>;
 }
 
-/** A ranked player with the avatar shown next to the pseudo and the places won since the last event. */
+/** A ranked player with the bib shown next to the pseudo and the places won since the last event. */
 export type RankingRow = RankedPlayer & {
-  avatar: string;
+  bib: Bib;
   club: string | null;
   change: number | null;
   streak: number;
@@ -45,7 +46,7 @@ const rank = (lines: RankingLine[]): RankingRow[] => {
   const streakOf = streaks(dated);
   return rankPlayers(totalsOf(lines, pseudoOf)).map((player) => ({
     ...player,
-    avatar: byUser.get(player.userId)?.avatar ?? "",
+    bib: byUser.get(player.userId)?.bib ?? DEFAULT_BIB,
     club: lines.find((l) => l.userId === player.userId && l.club)?.club ?? null,
     change: changes.get(player.userId) ?? null,
     streak: streakOf.get(player.userId) ?? 0,
@@ -122,7 +123,7 @@ export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: L
       const zero = members.map((m) => ({
         userId: m.userId,
         pseudo: m.pseudo,
-        avatar: m.avatar,
+        bib: m.bib,
         club: m.club ?? null,
         points: 0,
         reasons: [],

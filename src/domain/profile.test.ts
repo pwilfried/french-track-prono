@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { AVATARS, DEFAULT_AVATAR, isAvatar, validatePseudo } from "./profile";
+import { validatePseudo } from "./profile";
 
 describe("validatePseudo", () => {
   it("accepts a simple pseudo", () => {
@@ -66,25 +66,6 @@ describe("validatePseudo", () => {
         return second.ok && second.pseudo === first.pseudo;
       }),
     );
-  });
-});
-
-describe("avatars", () => {
-  it("offers about twelve different avatars", () => {
-    expect(AVATARS.length).toBeGreaterThanOrEqual(10);
-    expect(AVATARS.length).toBeLessThanOrEqual(14);
-    expect(new Set(AVATARS).size).toBe(AVATARS.length);
-  });
-
-  it("recognizes an avatar of the list and refuses anything else", () => {
-    expect(isAvatar(AVATARS[0]!)).toBe(true);
-    expect(isAvatar("🙈")).toBe(false);
-    expect(isAvatar("")).toBe(false);
-    expect(isAvatar("javascript:alert(1)")).toBe(false);
-  });
-
-  it("uses an avatar of the list by default", () => {
-    expect(isAvatar(DEFAULT_AVATAR)).toBe(true);
   });
 });
 

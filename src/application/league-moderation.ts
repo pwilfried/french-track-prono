@@ -1,4 +1,5 @@
 import { isBannedName } from "@/domain/banned-names";
+import type { Bib } from "@/domain/bib";
 import { validateLeagueName } from "@/domain/league";
 
 import { UseCaseError } from "./errors";
@@ -23,7 +24,7 @@ export type AdminLeague = {
 export type AdminLeagueMember = {
   userId: string;
   pseudo: string;
-  avatar: string;
+  bib: Bib;
   isOwner: boolean;
   /** ISO 8601. */
   joinedAt: string;

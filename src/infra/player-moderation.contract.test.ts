@@ -10,7 +10,7 @@ playerModerationContract("in-memory fake", async () => {
     {
       id: "admin",
       pseudo: "Admin",
-      avatar: "🦅",
+      bib: { number: 7, color: "blue" },
       isAdmin: true,
       joinedAt: "2026-11-01T00:00:00.000Z",
     },
@@ -21,7 +21,13 @@ playerModerationContract("in-memory fake", async () => {
     adminId: "admin",
     async newPlayer(pseudo) {
       const id = crypto.randomUUID();
-      store.add({ id, pseudo, avatar: "🦊", isAdmin: false, joinedAt: new Date().toISOString() });
+      store.add({
+        id,
+        pseudo,
+        bib: { number: 8, color: "red" },
+        isAdmin: false,
+        joinedAt: new Date().toISOString(),
+      });
       return id;
     },
     async joinLeague(playerId, name) {

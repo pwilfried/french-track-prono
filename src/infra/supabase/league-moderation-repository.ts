@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { UseCaseError } from "@/application/errors";
 import type { LeagueModerationRepository } from "@/application/league-moderation";
+import { bibOf } from "@/domain/bib";
 
 import { readAll } from "./read-all";
 
@@ -52,7 +53,8 @@ export function createSupabaseLeagueModerationRepository(
         data as {
           user_id: string;
           pseudo: string;
-          avatar: string;
+          bib_number: number;
+          bib_color: string;
           is_owner: boolean;
           joined_at: string;
           points: number;
@@ -61,7 +63,7 @@ export function createSupabaseLeagueModerationRepository(
       ).map((row) => ({
         userId: row.user_id,
         pseudo: row.pseudo,
-        avatar: row.avatar,
+        bib: bibOf(row.bib_number, row.bib_color),
         isOwner: row.is_owner,
         joinedAt: new Date(row.joined_at).toISOString(),
         points: Number(row.points),

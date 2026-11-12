@@ -11,7 +11,8 @@ import {
 
 leagueModerationContract("in-memory fake", async () => {
   const store = createInMemoryLeagueStore();
-  const player = (id: string) => store.session({ userId: id, pseudo: id, avatar: "🦅" });
+  const player = (id: string) =>
+    store.session({ userId: id, pseudo: id, bib: { number: 7, color: "blue" } });
   return {
     creator: player("creator"),
     reporter: player("reporter"),

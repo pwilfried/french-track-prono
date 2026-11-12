@@ -2,29 +2,13 @@ import Link from "next/link";
 
 import { messages } from "@/app/messages.fr";
 
-import { SocialIcon, type SocialIconName } from "./social-icons";
+import { FRENCHTRACK_ACCOUNTS, SocialIcon } from "./social-icons";
 
 const text = messages.legal.footer;
 
 const LINKS = [
   { href: "/mentions-legales", label: text.notice },
   { href: "/confidentialite", label: text.privacy },
-];
-
-/** FrenchTrack's accounts (issue #313), without tracking parameters. */
-const SOCIAL: { href: string; label: string; icon: SocialIconName }[] = [
-  {
-    href: "https://www.instagram.com/frenchtrack",
-    label: text.social.instagram,
-    icon: "instagram",
-  },
-  { href: "https://www.youtube.com/@French_Track", label: text.social.youtube, icon: "youtube" },
-  { href: "https://www.tiktok.com/@french.track", label: text.social.tiktok, icon: "tiktok" },
-  {
-    href: "https://podcastics.com/podcast/french-track",
-    label: text.social.podcast,
-    icon: "podcast",
-  },
 ];
 
 const SMALL_LINK =
@@ -36,7 +20,7 @@ export function SiteFooter() {
     <footer className="mt-auto border-t border-border px-4 py-2">
       <nav aria-label={text.socialLabel}>
         <ul className="mx-auto flex max-w-md flex-wrap justify-center gap-x-4 text-sm font-semibold">
-          {SOCIAL.map((link) => (
+          {FRENCHTRACK_ACCOUNTS.map((link) => (
             <li key={link.href}>
               <a
                 href={link.href}

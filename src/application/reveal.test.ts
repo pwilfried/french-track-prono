@@ -8,7 +8,7 @@ const prediction = (userId: string, pseudo: string): RevealedPrediction => ({
   predictionId: `p-${userId}`,
   userId,
   pseudo,
-  avatar: "🦅",
+  bib: { number: 7, color: "blue" },
   podium: { first: "a", second: "b", third: "c" },
   useJoker: false,
   reactions: [],
@@ -55,8 +55,8 @@ describe("listEventPredictions", () => {
     const result = await listEventPredictions({
       reveal: reveal(true, all),
       leagues: leagues([
-        { userId: "b", pseudo: "Bob", avatar: "🦅" },
-        { userId: "z", pseudo: "Zoé", avatar: "🦅" },
+        { userId: "b", pseudo: "Bob", bib: { number: 7, color: "blue" } },
+        { userId: "z", pseudo: "Zoé", bib: { number: 7, color: "blue" } },
       ]),
     }).execute({ eventId: "e1", leagueId: "l1" });
 

@@ -13,6 +13,7 @@ import {
 } from "@/components/leagues/league-forms";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { ShareInvite } from "@/components/leagues/share-invite";
+import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -163,12 +164,7 @@ export default async function LeaguePage({
                   key={m.userId}
                   className="flex min-h-13 items-center gap-3 border-b border-border py-2"
                 >
-                  <span
-                    aria-hidden
-                    className="grid size-9 place-items-center rounded-full bg-muted text-lg"
-                  >
-                    {m.avatar}
-                  </span>
+                  <Bib bib={m.bib} />
                   <span className="min-w-0 flex-1 break-words font-bold">{m.pseudo}</span>
                   {m.userId === league.ownerId && (
                     <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-extrabold text-secondary-foreground">

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { UseCaseError } from "@/application/errors";
 import type { PlayerModerationRepository } from "@/application/player-moderation";
+import { bibOf } from "@/domain/bib";
 
 import { readAll } from "./read-all";
 
@@ -31,7 +32,8 @@ export function createSupabasePlayerModerationRepository(
         data as {
           user_id: string;
           pseudo: string;
-          avatar: string;
+          bib_number: number;
+          bib_color: string;
           blocked: boolean;
           is_admin: boolean;
           joined_at: string;
@@ -45,7 +47,7 @@ export function createSupabasePlayerModerationRepository(
       ).map((row) => ({
         id: row.user_id,
         pseudo: row.pseudo,
-        avatar: row.avatar,
+        bib: bibOf(row.bib_number, row.bib_color),
         blocked: row.blocked,
         isAdmin: row.is_admin,
         joinedAt: new Date(row.joined_at).toISOString(),
