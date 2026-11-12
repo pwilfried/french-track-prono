@@ -210,6 +210,8 @@ export const messages = {
       `${discipline} ${GENDER[gender].toLowerCase()}`,
     genderInitial: { F: "F", M: "H", X: "X" },
     status: { upcoming: "À venir", live: "En cours", finished: "Terminé" },
+    coming: "À venir",
+    done: "Déjà courues",
     featured: "Phare",
     final: "Finale",
     posed: "✓ Posé",

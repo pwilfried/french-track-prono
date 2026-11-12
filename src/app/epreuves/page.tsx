@@ -1,5 +1,5 @@
 import { listEvents } from "@/application/list-events";
-import { listMyPredictions } from "@/application/list-my-predictions";
+import { listMyEventMarks } from "@/application/list-my-predictions";
 import { UseCaseError } from "@/application/errors";
 import { ErrorNotice } from "@/components/error-notice";
 import { CompetitionPicker } from "@/components/events/competition-picker";
@@ -8,10 +8,11 @@ import { GenderFilter } from "@/components/events/gender-filter";
 import { InstallPrompt } from "@/components/shell/install-prompt";
 import { TIME_ZONE } from "@/domain/competition";
 import type { EventGender, EventSummary } from "@/domain/event";
-import { filterByGender, groupEventsByDay } from "@/domain/event-list";
+import { filterByGender, groupEventsByDay, splitFinished } from "@/domain/event-list";
 import {
   createPublicSupabaseClient,
   createSupabaseEventReader,
+  createSupabasePointsRepository,
   createSupabasePredictionRepository,
 } from "@/infra";
 
@@ -39,23 +40,22 @@ async function loadEvents(slug?: string): Promise<EventSummary[] | "error"> {
 }
 
 /**
- * The signed-in player's predictions by event id; null for a visitor, or when they cannot be read
- * (the list still shows, without the marks).
+ * The signed-in player's predictions by event id, with the points won; null for a visitor, or when
+ * they cannot be read (the list still shows, without the marks).
  */
 async function loadMine(slug?: string): Promise<Map<string, MyEventState> | null> {
   const competition = await currentCompetition(slug);
   const user = await getCurrentUser();
   if (!user) return null;
   try {
-    const predictions = createSupabasePredictionRepository(await getSessionClient());
-    const mine = await listMyPredictions({ predictions }).execute({
-      userId: user.userId,
-      competitionSlug: competition.slug,
-    });
-    const byEvent = new Map<string, MyEventState>(
-      mine.map((p) => [p.eventId, { predicted: true, joker: p.useJoker }]),
+    const client = await getSessionClient();
+    const marks = await listMyEventMarks({
+      predictions: createSupabasePredictionRepository(client),
+      points: createSupabasePointsRepository(client),
+    }).execute({ userId: user.userId, competitionSlug: competition.slug });
+    return new Map<string, MyEventState>(
+      marks.map((m) => [m.eventId, { predicted: true, joker: m.joker, points: m.points }]),
     );
-    return byEvent;
   } catch (error) {
     if (error instanceof UseCaseError) return null;
     throw error;
@@ -81,7 +81,12 @@ export default async function EventsPage({
     M: filterByGender(events, "M").length,
     X: filterByGender(events, "X").length,
   };
-  const days = groupEventsByDay(filterByGender(events, gender));
+  // What is still to run first, then what already ran, the latest first (#488).
+  const { coming, done } = splitFinished(filterByGender(events, gender));
+  const parts = [
+    { key: "coming", title: messages.events.coming, days: groupEventsByDay(coming) },
+    { key: "done", title: messages.events.done, days: groupEventsByDay(done) },
+  ].filter((part) => part.days.length > 0);
   const dayLabel = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
     day: "numeric",
@@ -119,30 +124,45 @@ export default async function EventsPage({
         <div className="flex flex-col gap-5">
           {loaded === "error" ? (
             <ErrorNotice retryHref="/epreuves" />
-          ) : days.length === 0 ? (
+          ) : parts.length === 0 ? (
             <p className="rounded-card bg-muted p-4">{messages.events.empty}</p>
           ) : (
-            days.map(({ day, events: dayEvents }) => (
-              <section key={day} aria-labelledby={`day-${day}`} className="flex flex-col gap-2">
-                <h2
-                  id={`day-${day}`}
-                  className="border-b border-border pb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground"
-                >
-                  {dayLabel.format(new Date(`${day}T12:00:00Z`))}
+            parts.map((part) => (
+              <section
+                key={part.key}
+                aria-labelledby={`part-${part.key}`}
+                className="flex flex-col gap-4"
+              >
+                <h2 id={`part-${part.key}`} className="font-display text-xl font-extrabold">
+                  {part.title}
                 </h2>
-                <ul className="grid gap-2 md:grid-cols-2">
-                  {dayEvents.map((event) => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      mine={
-                        mine
-                          ? (mine.get(event.id) ?? { predicted: false, joker: false })
-                          : undefined
-                      }
-                    />
-                  ))}
-                </ul>
+                {part.days.map(({ day, events: dayEvents }) => (
+                  <section
+                    key={day}
+                    aria-labelledby={`${part.key}-${day}`}
+                    className="flex flex-col gap-2"
+                  >
+                    <h3
+                      id={`${part.key}-${day}`}
+                      className="border-b border-border pb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground"
+                    >
+                      {dayLabel.format(new Date(`${day}T12:00:00Z`))}
+                    </h3>
+                    <ul className="grid gap-2 md:grid-cols-2">
+                      {dayEvents.map((event) => (
+                        <EventCard
+                          key={event.id}
+                          event={event}
+                          mine={
+                            mine
+                              ? (mine.get(event.id) ?? { predicted: false, joker: false })
+                              : undefined
+                          }
+                        />
+                      ))}
+                    </ul>
+                  </section>
+                ))}
               </section>
             ))
           )}
