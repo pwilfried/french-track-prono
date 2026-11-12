@@ -87,8 +87,11 @@ select setseed(0.1);
 select private.finish_manager_mercato(pg_temp.league(1));
 select is((select count(*)::int from pg_temp.team(1, 1)), 4,
   'an incomplete team is completed up to the size of a team');
-select is((select count(*)::int from pg_temp.team(1, 1) t
-           where t in (pg_temp.athlete(1), pg_temp.athlete(2), pg_temp.athlete(3))), 2,
+select ok(not exists (
+    select 1
+    from jsonb_array_elements(pg_temp.rules(100, 4) -> 'quotas') q
+    where (select count(*) from private.manager_team(pg_temp.league(1), pg_temp.player(1)) t
+           where t.sex = q ->> 'sex' and t.family = q ->> 'family') > (q ->> 'max')::int),
   'within the maximum of each quota');
 select ok(pg_temp.athlete(8) not in (select pg_temp.team(1, 1)),
   'never in a family without a quota');
