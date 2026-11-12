@@ -43,3 +43,18 @@ export function validateLeagueName(input: string): LeagueNameResult {
   }
   return { ok: true, name };
 }
+
+/**
+ * What the « Ligues publiques » block says when no public league is left to join, from my own
+ * public leagues, which that list leaves out (#496): I own the only one, there is no other one, or
+ * there is none at all.
+ */
+export function publicLeaguesNotice(
+  myPublicLeagues: { ownerId: string }[],
+  userId: string,
+): "only_mine" | "no_other" | "empty" {
+  if (myPublicLeagues.length === 0) return "empty";
+  return myPublicLeagues.length === 1 && myPublicLeagues[0]!.ownerId === userId
+    ? "only_mine"
+    : "no_other";
+}

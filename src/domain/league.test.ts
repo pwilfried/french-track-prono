@@ -2,6 +2,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import {
+  publicLeaguesNotice,
   INVITE_ALPHABET,
   INVITE_LENGTH,
   LEAGUE_MAX_MEMBERS,
@@ -93,5 +94,24 @@ describe("leagueCapacity", () => {
     expect(leagueCapacity(true)).toBe(PUBLIC_LEAGUE_MAX_MEMBERS);
     expect(PUBLIC_LEAGUE_MAX_MEMBERS).toBe(200);
     expect(leagueCapacity(false)).toBe(LEAGUE_MAX_MEMBERS);
+  });
+});
+
+describe("publicLeaguesNotice", () => {
+  // Shown when no public league is left to join; my public leagues are not in that list (#496).
+  it("says I already own the only public league when it is mine and I am in no other", () => {
+    expect(publicLeaguesNotice([{ ownerId: "me" }], "me")).toBe("only_mine");
+  });
+
+  it("says there is no other one when I am in a public league I do not own", () => {
+    expect(publicLeaguesNotice([{ ownerId: "someone" }], "me")).toBe("no_other");
+  });
+
+  it("says there is no other one when I am in several public leagues", () => {
+    expect(publicLeaguesNotice([{ ownerId: "me" }, { ownerId: "someone" }], "me")).toBe("no_other");
+  });
+
+  it("keeps the plain message when I am in no public league", () => {
+    expect(publicLeaguesNotice([], "me")).toBe("empty");
   });
 });

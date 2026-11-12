@@ -387,8 +387,12 @@ export const messages = {
       "Tout le monde peut la trouver et la rejoindre sans code, jusqu'à 200 joueurs. Son nom doit rester correct.",
     publicBadge: "Publique",
     publicTitle: "Ligues publiques",
-    publicEmpty: "Pas encore de ligue publique à rejoindre. Crée la première !",
-    publicNoOther: "Pas d'autre ligue publique à rejoindre pour l'instant.",
+    /** When no public league is left to join, from the player's own public leagues (#496). */
+    publicNotice: {
+      empty: "Pas encore de ligue publique à rejoindre. Crée la première !",
+      no_other: "Pas d'autre ligue publique à rejoindre pour l'instant.",
+      only_mine: "Tu possèdes déjà la seule ligue publique.",
+    },
     publicJoin: "Rejoindre",
     publicJoinLabel: (name: string) => `Rejoindre la ligue publique ${name}`,
     publicJoining: "…",
