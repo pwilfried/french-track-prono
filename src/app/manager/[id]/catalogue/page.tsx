@@ -90,8 +90,8 @@ export default async function CataloguePage({
             retryHref={`/manager/${id}/catalogue`}
             message={messages.errors.MANAGER_BIDS_UNAVAILABLE}
           />
-        ) : mine.mercatoOpen ? (
-          <MyBidsPanel bids={mine} />
+        ) : mine.mercatoOpen || mine.mercatoClosed ? (
+          <MyBidsPanel leagueId={id} bids={mine} />
         ) : (
           <p className="rounded-card bg-muted p-4 text-sm font-semibold">{text.mercatoClosed}</p>
         )}

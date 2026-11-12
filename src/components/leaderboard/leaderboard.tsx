@@ -1,7 +1,9 @@
 import Link from "next/link";
 
 import { messages } from "@/app/messages.fr";
+import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
+import type { Bib as BibValue } from "@/domain/bib";
 import type { RankedPlayer } from "@/domain/ranking";
 import { cn } from "@/lib/utils";
 
@@ -9,7 +11,7 @@ import { PlayerCard } from "./player-card";
 import { PlayerName, RankingItem } from "./player-name";
 
 export type LeaderboardRow = RankedPlayer & {
-  avatar?: string;
+  bib: BibValue;
   /** Shown on the player's card (#342). */
   club?: string | null;
   /** Places won (+) or lost (−) since the last computed event; null or absent: not shown. */
@@ -47,7 +49,7 @@ function detailOf(row: LeaderboardRow, me: boolean): string {
 }
 
 /**
- * A ranking (league or general): position, avatar, pseudo, points. Tied players share the position
+ * A ranking (league or general): position, bib, pseudo, points. Tied players share the position
  * and are marked "ex æquo"; the signed-in player's row is highlighted.
  */
 export function Leaderboard({
@@ -112,7 +114,7 @@ export function Leaderboard({
                 <PlayerCard
                   id={`player-card-${row.userId}`}
                   pseudo={row.pseudo}
-                  avatar={row.avatar ?? ""}
+                  bib={row.bib}
                   club={row.club ?? null}
                   rank={row.rank}
                   total={rows.length}
@@ -132,12 +134,7 @@ export function Leaderboard({
                   </span>
                 )}
               </span>
-              <span
-                aria-hidden
-                className="grid size-9 shrink-0 place-items-center rounded-full bg-background text-lg"
-              >
-                {row.avatar ?? "🏃"}
-              </span>
+              <Bib bib={row.bib} />
               <span className="min-w-0 flex-1 font-bold [overflow-wrap:anywhere]">
                 <PlayerName pseudo={row.pseudo}>{row.pseudo}</PlayerName>
                 {row.streak !== undefined && row.streak >= 2 && (

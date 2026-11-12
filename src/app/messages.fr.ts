@@ -66,40 +66,57 @@ export const messages = {
     dismiss: "OK",
   },
   playerHome: {
-    hello: (pseudo: string) => `Salut ${pseudo}`,
-    nextFinalIn: (duration: string) => `Prochaine finale dans ${duration}`,
-    noFinalTitle: "Choisis ta compétition",
-    noFinal: "Aucune finale ouverte aux pronos pour le moment.",
-    podiumEmpty: "Ton podium est vide",
-    podiumDone: "✓ Ton podium est posé",
-    editPodium: "Modifier mon podium",
-    leagueFirst: "Joue aussi contre tes amis : crée ou rejoins une ligue de cette compétition.",
-    createPrivate: "Ligue privée",
-    createPublic: "Ligue publique",
-    joinPublic: "ou rejoins une ligue publique",
-    season: "Ma saison",
-    general: "Classement général",
-    myLeague: (name: string) => `Ma ligue · ${name}`,
-    noLeague: "Ma ligue",
-    leagueOpen: "Voir ma ligue",
-    leagueJoin: "Crée ou rejoins une ligue",
-    toPredict: "À pronostiquer",
-    allEvents: "Toutes les épreuves",
-    predicted: "pronostiqué ✓",
-    podium: "Le podium du général",
-    lastResult: "Dernier résultat",
-    yourPoints: (points: number) =>
-      points === 0
-        ? "0 point pour toi"
-        : `+${points} ${points === 1 ? "point" : "points"} pour toi`,
-    noPrediction: "Pas de prono de ta part",
-    seeResult: "Voir le résultat",
-    publicTitle: "Joue avec la communauté",
-    publicText: "Rejoins une ligue publique d'un appui, sans code.",
-    publicLink: "Voir les ligues publiques",
-    podcastTitle: "Le podcast FrenchTrack",
-    podcastText: "Les analyses et les invités avant chaque grand rendez-vous.",
-    podcastLink: "Écouter",
+    /** « Bienvenue » until a first prediction, then « Salut » (#526). */
+    hello: (pseudo: string, isNew: boolean) => (isNew ? `Bienvenue, ${pseudo}` : `Salut ${pseudo}`),
+    action: {
+      label: "Ta prochaine action",
+      yourTurn: "À toi de jouer",
+      firstPrediction: "Ton premier prono",
+      locksIn: (duration: string) => `Verrouille dans ${duration}`,
+      startsAt: (day: string, time: string) =>
+        `Départ ${day} à ${time} (heure de Paris). Choisis ton 1er, ton 2e et ton 3e avant le verrou.`,
+      play: "Faire mon podium",
+      sameDay: (count: number) =>
+        count === 1 ? "1 autre finale ce soir" : `${count} autres finales ce soir`,
+      nextCompetition: "Prochaine compétition",
+      finals: (count: number) => (count <= 1 ? `${count} finale` : `${count} finales`),
+      programme: "Voir le programme",
+    },
+    league: {
+      title: "Ma ligue",
+      emptyTitle: "C'est entre amis que ça se joue",
+      emptyText:
+        "Crée ta ligue, partage le code, et regarde le classement bouger après chaque finale.",
+      create: "Créer ma ligue",
+      joinPublic: "Ou rejoindre une ligue publique",
+      place: (rank: number, total: number) => `${ordinal(rank)} sur ${total}`,
+      gap: (points: number, pseudo: string) =>
+        `À ${points} ${points <= 1 ? "point" : "points"} de ${pseudo}`,
+      leading: "Tu es en tête",
+      ranking: "Classement",
+    },
+    lastResult: {
+      title: "Dernier résultat",
+      /** « 2 athlètes bien placées », in the gender of the event. */
+      detail: (exact: number, onPodium: number, gender: "F" | "M" | "X") => {
+        const e = gender === "F" ? "e" : "";
+        const athletes = (n: number) => `${n} athlète${n > 1 ? "s" : ""}`;
+        if (exact > 0) return `${athletes(exact)} bien placé${e}${exact > 1 ? "s" : ""}`;
+        if (onPodium > 0) return `${athletes(onPodium)} sur le podium`;
+        return gender === "F" ? "Aucune athlète sur le podium" : "Aucun athlète sur le podium";
+      },
+      points: (points: number) => `+${points} ${points <= 1 ? "pt" : "pts"}`,
+      see: "Voir le résultat",
+    },
+    manager: {
+      mercato: "Le mercato est ouvert : place tes offres avant la fin du tour.",
+      open: "Ouvrir le Manager",
+    },
+    frenchTrack: {
+      title: "Le podcast FrenchTrack",
+      text: "Les analyses et les invités avant chaque grand rendez-vous, et l'actu sur nos réseaux.",
+      listen: "Écouter le dernier épisode",
+    },
   },
   visitorHome: {
     eyebrow: "Pronostics d'athlétisme",
@@ -133,17 +150,12 @@ export const messages = {
       },
     ],
     allRules: "Toutes les règles",
+    dismiss: "Masquer « Comment ça marche »",
   },
   start: {
-    blocksLabel: "Types de compétition",
-    block: { international: "Compétitions internationales", france: "Compétitions françaises" },
-    coming: (count: number) => (count === 0 ? "Aucune à venir" : `${count} à venir`),
-    next: "Prochaines compétitions",
     none: "Aucune compétition à venir pour l'instant.",
     inDays: (days: number) => (days === 0 ? "En cours" : days === 1 ? "Demain" : `Dans ${days} j`),
     events: (count: number) => (count <= 1 ? `${count} épreuve` : `${count} épreuves`),
-    createLeague: "Créer une ligue",
-    open: "Épreuves",
   },
   choice: {
     back: "Accueil",
@@ -184,7 +196,6 @@ export const messages = {
     addPrediction: "+ Prono",
     cardLabel: (discipline: string, gender: string, hour: string) =>
       `${discipline}, ${gender}, ${hour}`,
-    provisionalTimes: "Les horaires affichés sont provisoires (jeu de test).",
     empty: "Aucune épreuve pour ce filtre.",
     loading: "Chargement des épreuves…",
   },
@@ -331,6 +342,11 @@ export const messages = {
     noBids: "Aucune offre pour l'instant.",
     mercatoClosed:
       "Le mercato de cette ligue n'est pas ouvert : les enchères commenceront à son ouverture.",
+    mercatoOver: "Le mercato de cette ligue est clos : les équipes sont faites.",
+    lastBidder:
+      "Plus personne d'autre ne peut recruter : tu peux clore le mercato. Tes offres en cours seront traitées, puis le mercato sera clos pour tout le monde.",
+    closeMercato: "Clore le mercato",
+    closing: "Clôture…",
     myBid: (n: number) => `Mon offre : ${n} cr.`,
     bidLabel: (name: string) => `Mon offre sur ${name}, en crédits`,
     less: "Baisser mon offre d'un crédit",
@@ -1036,22 +1052,33 @@ export const messages = {
     label: "Vérification anti-robot",
   },
   signIn: {
-    title: "Connexion",
-    subtitle: "Sans mot de passe : un code arrive par e-mail.",
+    title: "Connexion ou inscription",
+    subtitle:
+      "Pas de mot de passe : on t'envoie un code par e-mail. Première fois ? Ton compte se crée tout seul.",
+    /** Reminder of the event the visitor came from (« 100 m femmes »). */
+    eventWaiting: (event: string) =>
+      `Ton podium du ${event} t'attend. Encore une minute et tu le poses.`,
     emailLabel: "Ton e-mail",
     emailHint: "Jamais affiché aux autres joueurs.",
     send: "Recevoir mon code",
     sending: "Envoi…",
-    firstTime: "Pas de compte à créer : si c'est ta première fois, il se crée tout seul.",
-    waysTitle: "Deux façons de te connecter",
-    waysBody: "Tape le code reçu ci-dessous, ou ouvre le lien du message (sur ce téléphone).",
+    perks: [
+      "Gratuit, sans argent en jeu",
+      "Ton profil en 30 secondes",
+      "Un jeu du podcast FrenchTrack",
+    ],
+    codeTitle: "Regarde tes e-mails",
+    sentTo: "Code envoyé à",
     codeLabel: "Code reçu par e-mail",
+    pasteCode: "Coller le code",
+    noCodeToPaste: "Pas de code dans le presse-papiers",
     verify: "Me connecter",
     verifying: "Vérification…",
-    resend: "Renvoyer",
+    linkTip: "Ou plus simple : ouvre le lien du message sur ce téléphone.",
+    resend: "Renvoyer un code",
     resent: "Un nouveau code vient d'être envoyé.",
     changeEmail: "Autre e-mail",
-    codeNote: "Le code expire au bout d'une heure. Pense à regarder tes spams.",
+    codeNote: "Pas reçu ? Regarde dans tes spams. Le code expire au bout d'une heure.",
     linkInvalid: "Ce lien ne fonctionne plus. Demande un nouveau code.",
   },
   account: {
@@ -1179,7 +1206,7 @@ export const messages = {
   },
   editProfile: {
     title: "Modifier mon profil",
-    subtitle: "Ton pseudo, ton avatar, ton club. Sexe et disciplines restent privés.",
+    subtitle: "Ton pseudo, ton dossard, ton club. Sexe et disciplines restent privés.",
     link: "Modifier mon profil",
     save: "Enregistrer",
     saving: "Enregistrement…",
@@ -1215,13 +1242,30 @@ export const messages = {
     done: "Ton compte est supprimé. Merci d'avoir joué !",
     home: "Retour à l'accueil",
   },
+  bib: {
+    /** Printed at the top of the big bib, like the organiser's name on a real one. */
+    brand: "FRENCH TRACK",
+    label: (number: number) => `Dossard ${number}`,
+    legend: "Ton dossard",
+    numberLabel: "Numéro",
+    numberHint: "De 0 à 999. Plusieurs joueurs peuvent avoir le même.",
+    colorLabel: "Couleur",
+    preview: "Aperçu",
+    colors: {
+      blue: "Bleu",
+      red: "Rouge",
+      gold: "Or",
+      green: "Vert",
+      white: "Blanc",
+      night: "Nuit",
+    },
+  },
   welcome: {
     title: "Bienvenue !",
     subtitle: "Dernière étape : ton profil de joueur.",
     pseudoLabel: "Ton pseudo",
     pseudoHint:
       "2 à 24 caractères : lettres, chiffres, espace, _ - . Visible par les autres joueurs.",
-    avatarLabel: "Ton avatar",
     ageLabel: "J'ai 15 ans ou plus",
     ageHint: "Obligatoire pour jouer.",
     sexLabel: "Tu es (facultatif)",
@@ -1568,7 +1612,8 @@ export const messages = {
     PSEUDO_TAKEN: "Ce pseudo est déjà pris, essaie-en un autre.",
     PSEUDO_BANNED:
       "Ce pseudo n'est pas possible (insulte, nom officiel ou lien). Choisis-en un autre.",
-    AVATAR_INVALID: "Choisis un avatar dans la liste.",
+    BIB_NUMBER_INVALID: "Ton numéro de dossard : de 0 à 999, sans zéro devant.",
+    BIB_COLOR_INVALID: "Choisis une des six couleurs de dossard.",
     PROFILE_EXISTS: "Tu as déjà un profil.",
     PROFILE_UNAVAILABLE: "Le profil n'est pas disponible pour le moment. Réessaie dans un instant.",
     NOT_ADMIN: "Seul un administrateur peut faire ça.",
@@ -1679,7 +1724,9 @@ export const messages = {
     ATHLETE_NOT_IN_CATALOGUE: "Cet athlète n'est pas dans le catalogue du mercato.",
     ATHLETE_TAKEN: "Cet athlète a déjà été recruté dans cette ligue.",
     ROUND_CLOSING:
-      "Le tour d'enchères se termine : les offres rouvrent dans quelques minutes, avec le tour suivant.",
+      "Le tour d'enchères se termine : les offres rouvrent dans quelques minutes, avec le tour suivant (ou le mercato se clôt).",
+    MERCATO_NOT_LAST_BIDDER:
+      "Tu ne peux pas clore le mercato : un autre participant peut encore recruter.",
     MANAGER_BIDS_UNAVAILABLE: "Tes offres n'ont pas pu être chargées ou enregistrées. Réessaie.",
     retry: "Réessayer",
   },
@@ -1739,7 +1786,7 @@ export const messages = {
           heading: "Ce qu'on garde",
           body: [
             "Ton adresse e-mail, uniquement pour t'envoyer ton code de connexion. Elle n'est jamais affichée aux autres joueurs.",
-            "Ton pseudo et ton avatar emoji, visibles des autres joueurs.",
+            "Ton pseudo et ton dossard (numéro et couleur), visibles des autres joueurs.",
             "Tes pronos (podiums et perfs), tes points, tes ligues et tes réactions. Tes pronos sont visibles des autres une fois l'épreuve verrouillée.",
             "La date à laquelle tu as confirmé avoir 15 ans ou plus.",
             "Si tu actives les notifications : l'adresse d'envoi que ton navigateur nous donne pour cet appareil, supprimée dès que tu les désactives. Les notifications passent par le service de ton navigateur (Google, Apple ou Mozilla), qui les transmet chiffrées sans pouvoir les lire.",

@@ -7,7 +7,7 @@ import { UseCaseError } from "./errors";
 const anna: Profile = {
   userId: "anna",
   pseudo: "Anna",
-  avatar: "🦅",
+  bib: { number: 7, color: "blue" },
   ageConfirmedAt: new Date("2026-11-07T10:00:00Z"),
 };
 

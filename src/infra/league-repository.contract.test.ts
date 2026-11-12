@@ -19,7 +19,11 @@ leagueRepositoryContract("in-memory fake", async () => {
       const userId = crypto.randomUUID();
       return {
         userId,
-        leagues: store.session({ userId, pseudo: userId.slice(0, 8), avatar: "🦅" }),
+        leagues: store.session({
+          userId,
+          pseudo: userId.slice(0, 8),
+          bib: { number: 7, color: "blue" },
+        }),
       };
     },
   };

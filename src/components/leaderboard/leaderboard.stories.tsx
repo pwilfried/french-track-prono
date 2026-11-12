@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, userEvent, within } from "storybook/test";
 
+import type { Bib } from "@/domain/bib";
 import { rankPlayers } from "@/domain/ranking";
 
 import { Leaderboard, type LeaderboardRow } from "./leaderboard";
@@ -14,10 +15,17 @@ const players = rankPlayers([
   { userId: "5", pseudo: "Démo Javelot", points: 9, perfectPodiums: 0, winnersFound: 0 },
   { userId: "6", pseudo: "Démo Sprint", points: 0, perfectPodiums: 0, winnersFound: 0 },
 ]);
-const avatars = ["🦌", "🦅", "🐆", "🐎", "🐺", "🐇"];
+const bibs: Bib[] = [
+  { number: 7, color: "blue" },
+  { number: 42, color: "red" },
+  { number: 110, color: "gold" },
+  { number: 4, color: "green" },
+  { number: 999, color: "white" },
+  { number: 0, color: "night" },
+];
 const rows: LeaderboardRow[] = players.map((p) => ({
   ...p,
-  avatar: avatars[Number(p.userId) - 1],
+  bib: bibs[Number(p.userId) - 1]!,
 }));
 
 const meta = {
@@ -102,7 +110,7 @@ export const Ties: Story = {
       { userId: "a", pseudo: "Ana", points: 10, perfectPodiums: 0, winnersFound: 1 },
       { userId: "b", pseudo: "Bob", points: 10, perfectPodiums: 0, winnersFound: 1 },
       { userId: "c", pseudo: "Cleo", points: 4, perfectPodiums: 0, winnersFound: 0 },
-    ]),
+    ]).map((p, i) => ({ ...p, bib: bibs[i]! })),
     meId: undefined,
   },
   play: async ({ canvasElement }) => {
@@ -126,6 +134,7 @@ export const LongPseudo: Story = {
         perfectPodiums: 0,
         winnersFound: 2,
         rank: 1,
+        bib: { number: 999, color: "white" },
       },
     ],
   },

@@ -4,14 +4,15 @@ Décisions du propriétaire du 8 novembre 2026 (atelier #278, inscription #328, 
 
 ## Ce que le joueur renseigne et modifie
 
-- **À l'inscription** (`/bienvenue`) : pseudo, avatar emoji, 15 ans ou plus (comme avant), puis
+- **À l'inscription** (`/bienvenue`) : pseudo, dossard (tiré au hasard, modifiable ; il remplace l'avatar emoji depuis #537), 15 ans
+  ou plus (comme avant), puis
   **sexe**, **disciplines pratiquées** et **club**. Sexe, disciplines et club sont facultatifs :
   un joueur peut jouer sans les donner, et les compléter plus tard.
 - **Disciplines** : cases à cocher regroupées par famille (Sprint : 100 m, 200 m, 400 m ; Haies ;
   Demi-fond ; Fond ; Sauts ; Lancers ; Épreuves combinées ; Marche ; Route). Plusieurs choix,
   dans une ou plusieurs familles. Les familles et les disciplines sont celles de la table
   `disciplines`.
-- **Dans son profil** (`/profil`), le joueur modifie lui-même : pseudo, avatar, sexe,
+- **Dans son profil** (`/profil`), le joueur modifie lui-même : pseudo, dossard, sexe,
   disciplines, club, et son **e-mail de connexion** (un code est envoyé sur la nouvelle adresse,
   qui ne remplace l'ancienne qu'une fois le code saisi).
 
@@ -31,7 +32,7 @@ Décisions du propriétaire du 8 novembre 2026 (atelier #278, inscription #328, 
 
 ## Ce que voient les autres joueurs
 
-Toucher un pseudo dans un classement ouvre une **fiche minimale** : pseudo, avatar, club et
+Toucher un pseudo dans un classement ouvre une **fiche minimale** : pseudo, dossard, club et
 rang. Jamais l'e-mail, ni le sexe, ni les disciplines.
 
 ## Mots interdits

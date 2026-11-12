@@ -7,7 +7,13 @@ import { PlayerCard } from "./player-card";
 const meta = {
   title: "Leaderboard/PlayerCard",
   component: PlayerCard,
-  args: { pseudo: "Démo Gazelle", avatar: "🦌", club: "Foulées de Fictiville", rank: 3, total: 12 },
+  args: {
+    pseudo: "Démo Gazelle",
+    bib: { number: 42, color: "red" },
+    club: "Foulées de Fictiville",
+    rank: 3,
+    total: 12,
+  },
   decorators: [
     (Story) => (
       <div className="max-w-[390px] bg-card p-4">
@@ -20,7 +26,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Pseudo, avatar, club and rank: nothing else. */
+/** Pseudo, bib, club and rank: nothing else. */
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const card = within(canvasElement).getByRole("region", { name: "Fiche de Démo Gazelle" });

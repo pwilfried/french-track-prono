@@ -11,12 +11,15 @@ export function SubmitButton({
   intent,
   variant = "default",
   noValidate,
+  className = "w-full",
 }: {
   children: React.ReactNode;
   pendingLabel: string;
   intent?: string;
-  variant?: "default" | "muted";
+  variant?: "default" | "muted" | "outline";
   noValidate?: boolean;
+  /** Full width by default. */
+  className?: string;
 }) {
   const { pending, data } = useFormStatus();
   // Only the pressed button shows the waiting label; the others are just disabled.
@@ -28,7 +31,7 @@ export function SubmitButton({
       value={intent}
       formNoValidate={noValidate}
       disabled={pending}
-      className={`${buttonVariants({ variant })} w-full`}
+      className={`${buttonVariants({ variant })} ${className}`}
     >
       {mine ? pendingLabel : children}
     </button>
