@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useId } from "react";
 
 import { CountdownBadge } from "@/components/countdown/countdown-badge";
 import { TIME_ZONE } from "@/domain/competition";
@@ -41,6 +42,7 @@ export function EventCard({
   const predicted = mine?.predicted ?? false;
   const finished = event.status === "finished";
   const points = mine?.points ?? null;
+  const id = useId();
 
   let status: React.ReactNode;
   if (finished)
@@ -67,12 +69,12 @@ export function EventCard({
           predicted && !finished && "border-l-4 border-l-success",
           !predicted && imminent && "border-l-4 border-l-primary",
         )}
-        aria-label={messages.events.cardLabel(
-          event.discipline,
-          messages.events.gender[event.gender],
-          hour,
-        )}
+        // Named by the event, then by the status shown on the right (#517).
+        aria-labelledby={`${id}-name ${id}-status`}
       >
+        <span id={`${id}-name`} hidden>
+          {messages.events.cardLabel(event.discipline, messages.events.gender[event.gender], hour)}
+        </span>
         <div className="flex flex-col items-start gap-0.5">
           <span className="font-mono text-base font-bold leading-none tabular-nums">{hour}</span>
           <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -97,7 +99,9 @@ export function EventCard({
             )}
           </p>
         </div>
-        <div className="flex justify-end">{status}</div>
+        <div id={`${id}-status`} className="flex justify-end">
+          {status}
+        </div>
       </Link>
     </li>
   );
