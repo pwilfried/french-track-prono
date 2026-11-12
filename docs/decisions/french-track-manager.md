@@ -86,6 +86,16 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   être complète, à budget épuisé ou sans athlète éligible abordable. Une équipe qui respecte les
   quotas minimums est validée, sinon signalée « non conforme ». La clôture est collective : la
   situation de tous est vérifiée avant de finaliser.
+- Complément (#425), dans `private.finish_manager_mercato`, après les offres en cours : un
+  athlète libre du catalogue convient à une équipe si elle a encore de la place (`teamSize`), si
+  son prix de référence tient dans le budget restant et si son sexe et sa famille ont un quota
+  (`quotas`) pas encore au maximum (une famille sans quota ne se recrute pas). Les équipes
+  reçoivent un athlète chacune à tour de rôle (ordre des identifiants), tiré au hasard parmi ceux
+  qui leur conviennent, jusqu'à ce qu'aucune ne puisse plus en recevoir. Les athlètes donnés
+  forment un dernier tour (`manager_rounds`), au prix de référence. Puis chaque équipe reçoit
+  `manager_members.team_compliant` : vrai si elle atteint le minimum de chaque quota, faux
+  (« non conforme ») sinon ; nul avant la clôture. Le tirage utilise `random()` : `setseed()` le
+  rend reproductible (tests pgTAP). L'affichage de « non conforme » n'a pas encore d'écran.
 
 ## 3. Équipe et alignement (v0.14)
 
