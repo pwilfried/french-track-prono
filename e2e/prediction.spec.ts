@@ -25,15 +25,20 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   // No league needed to predict (#375): a league is only suggested under the podium.
   await expect(page.getByRole("heading", { name: "Joue aussi avec tes amis" })).toBeVisible();
 
+  // A first visit shows the tips above the empty podium.
+  const tips = page.getByRole("region", { name: "Premier prono : astuces" });
+  await expect(tips).toBeVisible();
+
   // Compose the podium with the first three athletes, then save.
   const athletes = page.locator("li > button[aria-pressed]");
   for (const index of [0, 1, 2]) await athletes.nth(index).click();
   await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
   await expect(page.getByRole("status")).toContainText("Podium enregistré");
 
-  // Reopening the page shows the saved podium.
+  // Reopening the page shows the saved podium, without the tips (#493).
   await page.reload();
   await expect(page.getByRole("button", { name: /^1re place : (?!vide)/ })).toBeVisible();
+  await expect(tips).toHaveCount(0);
 
   // The event locks; saving again is refused.
   sql(`update events set lock_at = now() - interval '1 second' where slug = '${slug}'`);
