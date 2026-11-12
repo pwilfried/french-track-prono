@@ -98,6 +98,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   une barre fixe en bas « Tu es 3e · 52 pts · Autour de moi » ; avant la première compétition, un
   bandeau bleu « Le classement démarre » remplace le classement vide. Le jour de compétition va de
   6 h à 6 h, heure de Paris : une finale courue à 2 h du matin compte pour « Ce soir ».
+  Un visiteur voit « Général » seul, sans barre fixe, avec « Se connecter » (#573).
 - **Carte « Ma saison »** (`/profil/carte`) : image verticale 1080×1920 prête pour les stories,
   partagée par le partage natif ou téléchargée ; « Mon podium du 100 m » viendra plus tard.
 - **Liste du back-office** (clubs, joueurs, ligues) : recherche, puces de filtre avec leur

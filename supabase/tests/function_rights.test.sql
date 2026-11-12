@@ -74,7 +74,9 @@ select set_eq(
     -- Called by search_clubs, which is security invoker: it runs with the visitor's rights.
     'club_search_key(text)',
     -- The word rule of search_clubs (#479), run with the visitor's rights too.
-    'club_key_matches(text,text)'
+    'club_key_matches(text,text)',
+    -- The general ranking shown to visitors (#573) leaves the blocked players out.
+    'is_blocked(uuid)'
   ],
   'anon executes only the functions of the list');
 

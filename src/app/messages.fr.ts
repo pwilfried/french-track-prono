@@ -332,6 +332,7 @@ export const messages = {
       `${n} ${n <= 1 ? "compétition éligible" : "compétitions éligibles"}`,
     publicTitle: "Ligues publiques",
     publicEmpty: "Aucune ligue publique avec des places libres pour l'instant.",
+    publicNoOther: "Pas d'autre ligue publique avec des places libres pour l'instant.",
     joinLeague: (name: string) => `Rejoindre la ligue ${name}`,
     join: "Rejoindre",
     joining: "…",
@@ -442,7 +443,12 @@ export const messages = {
       "Tout le monde peut la trouver et la rejoindre sans code, jusqu'à 200 joueurs. Son nom doit rester correct.",
     publicBadge: "Publique",
     publicTitle: "Autres ligues publiques",
-    publicEmpty: "Pas encore de ligue publique à rejoindre. Crée la première !",
+    /** When no public league is left to join, from the player's own public leagues (#496). */
+    publicNotice: {
+      empty: "Pas encore de ligue publique à rejoindre. Crée la première !",
+      no_other: "Pas d'autre ligue publique à rejoindre pour l'instant.",
+      only_mine: "Tu possèdes déjà la seule ligue publique.",
+    },
     publicJoin: "Rejoindre",
     publicJoinLabel: (name: string) => `Rejoindre la ligue publique ${name}`,
     publicJoining: "…",
@@ -517,6 +523,7 @@ export const messages = {
       "Pas encore de points ce soir : ils arrivent dès que les résultats des finales du jour sont saisis.",
     notRankedTonight: "Pas de points pour toi ce soir.",
     predict: "Faire mes pronos",
+    visitor: "Connecte-toi pour poser tes podiums et entrer au classement.",
     starts: (startsOn: string, days: number) => {
       const day = new Date(`${startsOn}T12:00:00Z`).toLocaleDateString("fr-FR", {
         weekday: "short",

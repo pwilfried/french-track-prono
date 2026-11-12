@@ -68,7 +68,9 @@ select is(
 
 -- Anonymous visitor ----------------------------------------------------------
 set local role anon;
-select is((select count(*) from profiles), 0::bigint, 'an anonymous visitor sees no profile');
+-- #573: the public face only (pseudo, bib, club) for the general ranking; see visitor_ranking.test.sql.
+select throws_ok($$select * from profiles$$, '42501', null,
+  'an anonymous visitor cannot read a whole profile');
 
 select * from finish();
 rollback;
