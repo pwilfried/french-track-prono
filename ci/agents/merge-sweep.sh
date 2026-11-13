@@ -82,14 +82,16 @@ while read -r -u 3 pr; do
   n=$(jq -r .number <<< "$pr"); sha=$(jq -r '.headRefOid[0:7]' <<< "$pr"); full=$(jq -r .headRefOid <<< "$pr")
   state=$(check_state "$pr"); mergeable=$(jq -r .mergeable <<< "$pr")
   echo "#$n $sha: $state, $mergeable"
-  case $state in
-    red) send_back_red "$n" "$pr"; continue ;;
-    pending | none) continue ;;
-  esac
+  # A conflict first: GitHub runs no CI on a head that conflicts with main, so such a PR stays
+  # at "none" forever and would never be sent back otherwise (#713).
   case $mergeable in
     CONFLICTING) send_back_conflict "$n" "$sha"; continue ;;
     MERGEABLE) ;;
     *) continue ;; # not computed yet
+  esac
+  case $state in
+    red) send_back_red "$n" "$pr"; continue ;;
+    pending | none) continue ;;
   esac
   behind=$(as_bot gh api "repos/$repo/compare/$full...main" --jq .ahead_by)
   if [ "$behind" -gt 0 ]; then

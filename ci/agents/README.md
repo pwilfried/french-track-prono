@@ -18,6 +18,8 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
    workflow ouvre la PR (`Closes #n`, labels et milestone de l'issue).
 4. CI verte : la PR est fusionnée (squash), après y avoir fusionné `main` si elle était en retard.
    CI rouge ou conflit : la PR repart à Claude avec les logs (3 essais, puis le propriétaire).
+   Un conflit avec `main` repart à Claude même quand la PR n'a pas de CI (GitHub n'en lance pas
+   sur une branche en conflit) ou que sa CI tourne encore (#713).
 5. Une PR fusionnée n'ouvre plus d'issue de vérification : c'est la version qui en ouvre une (étape 6).
 6. Quand le milestone qui suit le dernier tag n'a plus d'issue ouverte et que tous les
    runs du dernier commit de `main` sont verts, `release.sh` pose le tag annoté : `vX.Y.0` pour un
