@@ -89,13 +89,24 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   épingles, « FRENCH TRACK », le numéro en gros, le pseudo dessous. Petit format (classements,
   en-tête, ligues, réactions) : pastille avec le numéro seul. Couleurs dans `BIB_PALETTE`
   (`src/components/profile/bib.tsx`), reprises par la carte de saison.
-- **Leaderboard** et **RankingRow** (#551) : place, dossard, pseudo, ▲/▼ depuis la veille
-  (« = » sinon), points ; ex æquo signalés, ma ligne surlignée (cible `#moi` du lien « Autour de
+- **Leaderboard** et **RankingRow** (#551, #661) : place, dossard, pseudo, ▲ n vert / ▼ n rouge
+  (« = » sinon ; lu « gagne n places »), points ; dans l'onglet Classement, l'évolution compare au
+  classement d'avant la dernière compétition terminée de la portée, ailleurs à la veille ; ex æquo signalés, ma ligne surlignée (cible `#moi` du lien « Autour de
   moi »), raison du départage sous le pseudo, pas de badge de série. Un classement long montre les
   10 premiers, « ··· », puis le joueur et deux voisins de chaque côté.
 - **Podium** (#551) : les trois premiers sur des marches 2-1-3 (dégradés or, argent, bronze),
   dossard, pseudo et points ; lu dans l'ordre 1-2-3 ; absent tant que personne n'a de points.
-- **Onglet Classement** (#551) : « Ma ligue » (ouvert par défaut), « Ce soir », « Général » ;
+- **Onglet Classement** (#551, #661) : sélecteur segmenté (onglets) « Ma ligue » (ouvert par
+  défaut), « Ce soir », « Général » ; dessous, un seul bouton de portée (**ScopeButton**) :
+  « Ligue · <nom> · N joueurs » ou « Portée · Toute la saison 2026-27 » (ou la compétition), avec
+  « Changer », qui ouvre la feuille « Choisir le classement » (**ScopeSheet**, même feuille du bas
+  que celle des Compétitions, `BottomSheet`) : onglet « Saison ou compétition » (recherche,
+  « Toute la saison » en tête, « En cours » puis « Terminées », jamais les compétitions à venir) et
+  onglet « Mes ligues » (ma place, nombre de joueurs et de compétitions, coche sur la ligue
+  affichée, « Créer ou rejoindre une ligue »). « Ce soir » affiche une ligne « Points des finales
+  de ce soir · <compétition>, <jour> ». En tête de liste, la carte **MyPlaceCard** « Ta place »
+  (rang, points, évolution depuis la dernière compétition, « 18 pts derrière <pseudo> (3e) », et
+  « Top 18 % » en Général), masquée pour un visiteur ou un joueur sans points ;
   une barre fixe en bas « Tu es 3e · 52 pts · Autour de moi » ; avant la première compétition, un
   bandeau bleu « Le classement démarre » remplace le classement vide. Le jour de compétition va de
   6 h à 6 h, heure de Paris : une finale courue à 2 h du matin compte pour « Ce soir ».

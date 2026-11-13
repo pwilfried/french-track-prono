@@ -44,24 +44,24 @@ export const Me: Story = {
   },
 };
 
-/** Two places won since yesterday. */
+/** Two places won. */
 export const Up: Story = {
   args: { row: { ...row, change: 2 } },
   play: async ({ canvasElement }) => {
     const item = within(canvasElement).getByRole("listitem");
     await expect(item).toHaveTextContent("▲2");
-    await expect(item).toHaveTextContent("2 places gagnées depuis la veille");
+    await expect(item).toHaveTextContent("gagne 2 places");
     await expect(item).not.toHaveAttribute("id");
   },
 };
 
-/** One place lost since yesterday. */
+/** One place lost. */
 export const Down: Story = {
   args: { row: { ...row, change: -1 } },
   play: async ({ canvasElement }) => {
     const item = within(canvasElement).getByRole("listitem");
     await expect(item).toHaveTextContent("▼1");
-    await expect(item).toHaveTextContent("1 place perdue depuis la veille");
+    await expect(item).toHaveTextContent("perd 1 place");
   },
 };
 
@@ -70,7 +70,7 @@ export const Same: Story = {
   play: async ({ canvasElement }) => {
     const item = within(canvasElement).getByRole("listitem");
     await expect(item).toHaveTextContent("=");
-    await expect(item).toHaveTextContent("même place que la veille");
+    await expect(item).toHaveTextContent("garde sa place");
   },
 };
 

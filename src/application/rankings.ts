@@ -2,6 +2,7 @@ import { DEFAULT_BIB, type Bib } from "@/domain/bib";
 import { rankClubs, type ClubRank } from "@/domain/club-ranking";
 import {
   linesOfDay,
+  movesSinceCompetitions,
   movesSinceYesterday,
   rankPlayers,
   totalsOf,
@@ -27,6 +28,8 @@ export type RankingLine = {
   eventStartsAt: string;
   /** Lock of the event, ISO 8601: a league counts it for a member who joined before (#376). */
   eventLockAt?: string;
+  /** The competition of the event, set when the lines are read: the moves of #661 use it. */
+  competitionSlug?: string;
 };
 
 /** Port: the score lines a ranking is made of. Real adapter = Supabase, fake = in memory. */
@@ -43,13 +46,23 @@ export type RankingRow = RankedPlayer & {
 };
 
 /**
- * Ranks the lines; `today` (a competition day, YYYY-MM-DD) gives each player's move since
- * yesterday (#551), null for everyone without it.
+ * How a ranking tells each player's move: since the ranking of the competitions `previousSlugs`
+ * (#661; null: no previous ranking, no arrow), else since yesterday when `today` (a competition
+ * day, YYYY-MM-DD) is given (#551), else not at all.
  */
-const rank = (lines: RankingLine[], today?: string): RankingRow[] => {
+type MovesInput = { today?: string; previousSlugs?: string[] | null };
+
+const rank = (lines: RankingLine[], moves: MovesInput = {}): RankingRow[] => {
   const byUser = new Map(lines.map((l) => [l.userId, l]));
   const pseudoOf = (id: string) => byUser.get(id)?.pseudo ?? "";
-  const changes = today ? movesSinceYesterday(lines, pseudoOf, today) : new Map();
+  const changes =
+    moves.previousSlugs !== undefined
+      ? moves.previousSlugs
+        ? movesSinceCompetitions(lines, pseudoOf, moves.previousSlugs)
+        : new Map()
+      : moves.today
+        ? movesSinceYesterday(lines, pseudoOf, moves.today)
+        : new Map();
   return rankPlayers(totalsOf(lines, pseudoOf)).map((player) => ({
     ...player,
     bib: byUser.get(player.userId)?.bib ?? DEFAULT_BIB,
@@ -59,7 +72,13 @@ const rank = (lines: RankingLine[], today?: string): RankingRow[] => {
 };
 
 const linesOf = async (ranking: RankingRepository, competitionSlugs: string[]) =>
-  (await Promise.all(competitionSlugs.map((slug) => ranking.competitionLines(slug)))).flat();
+  (
+    await Promise.all(
+      competitionSlugs.map(async (slug) =>
+        (await ranking.competitionLines(slug)).map((l) => ({ ...l, competitionSlug: slug })),
+      ),
+    )
+  ).flat();
 
 /**
  * All the players who scored in the competitions given, their points added up: every competition
@@ -67,8 +86,8 @@ const linesOf = async (ranking: RankingRepository, competitionSlugs: string[]) =
  */
 export function getGeneralRanking(ports: { ranking: RankingRepository }) {
   return {
-    async execute(input: { competitionSlugs: string[]; today?: string }): Promise<RankingRow[]> {
-      return rank(await linesOf(ports.ranking, input.competitionSlugs), input.today);
+    async execute(input: { competitionSlugs: string[] } & MovesInput): Promise<RankingRow[]> {
+      return rank(await linesOf(ports.ranking, input.competitionSlugs), input);
     },
   };
 }
@@ -120,11 +139,9 @@ export function countsInLeague(joinedAt: string | undefined, eventLockAt: string
  */
 export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: LeagueRepository }) {
   return {
-    async execute(input: {
-      leagueId: string;
-      competitionSlugs: string[];
-      today?: string;
-    }): Promise<RankingRow[]> {
+    async execute(
+      input: { leagueId: string; competitionSlugs: string[] } & MovesInput,
+    ): Promise<RankingRow[]> {
       const members = await ports.leagues.members(input.leagueId);
       if (!members) throw new UseCaseError("LEAGUE_NOT_FOUND");
       const joinedAt = new Map(members.map((m) => [m.userId, m.joinedAt]));
@@ -144,7 +161,7 @@ export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: L
         eventId: "",
         eventStartsAt: "",
       }));
-      return rank([...zero, ...lines], input.today);
+      return rank([...zero, ...lines], input);
     },
   };
 }

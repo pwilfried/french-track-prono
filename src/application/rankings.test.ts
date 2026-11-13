@@ -106,6 +106,59 @@ describe("getGeneralRanking over several competitions", () => {
   });
 });
 
+describe("rank movement since the last finished competition (#661)", () => {
+  it("compares the general ranking with the one before the last finished competition", async () => {
+    // given Ana ahead after the first competition, Bob scoring more in the last one, Cid new
+    const byCompetition = {
+      first: [line("ana", 10), line("bob", 4)],
+      last: [line("bob", 12), line("cid", 1)],
+    };
+
+    // when the general ranking compares with the first competition only
+    const rows = await getGeneralRanking({ ranking: ranking([], byCompetition) }).execute({
+      competitionSlugs: ["first", "last"],
+      previousSlugs: ["first"],
+      today: "2026-11-24",
+    });
+
+    // then Bob won a place, Ana lost one and Cid, new, has no arrow
+    expect(rows.map((r) => [r.userId, r.change])).toEqual([
+      ["bob", 1],
+      ["ana", -1],
+      ["cid", null],
+    ]);
+  });
+
+  it("shows no arrow when there is no previous ranking", async () => {
+    const rows = await getGeneralRanking({ ranking: ranking([line("ana", 3)]) }).execute({
+      competitionSlugs: ["only"],
+      previousSlugs: null,
+      today: "2026-11-24",
+    });
+
+    expect(rows[0]!.change).toBeNull();
+  });
+
+  it("moves a league member without points down when the others scored in the last competition", async () => {
+    const byCompetition = { first: [line("ana", 2)], last: [line("bob", 5)] };
+
+    const rows = await getLeagueRanking({
+      ranking: ranking([], byCompetition),
+      leagues: leagues([member("ana"), member("bob"), member("zoe")]),
+    }).execute({
+      leagueId: "l1",
+      competitionSlugs: ["first", "last"],
+      previousSlugs: ["first"],
+    });
+
+    expect(rows.map((r) => [r.userId, r.change])).toEqual([
+      ["bob", 1],
+      ["ana", -1],
+      ["zoe", -1],
+    ]);
+  });
+});
+
 describe("getTonightRanking", () => {
   it("ranks the players on the points of tonight's events only", async () => {
     // given Ana far ahead yesterday, Bob and Cid scoring tonight (Cid after midnight in Paris)
