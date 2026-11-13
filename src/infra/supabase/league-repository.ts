@@ -3,6 +3,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { UseCaseError } from "@/application/errors";
 import type { League, LeagueMember, LeagueRepository } from "@/application/leagues";
 import { bibOf } from "@/domain/bib";
+import {
+  LEAGUE_FAMILIES,
+  inScreenOrder,
+  type LeagueFamily,
+  type LeagueFamilyRule,
+} from "@/domain/league-families";
 
 type LeagueRow = {
   id: string;
@@ -13,7 +19,23 @@ type LeagueRow = {
   is_official: boolean;
   league_members: { count: number }[];
   league_competitions: { competitions: { slug: string } | null }[];
+  league_families: { family: LeagueFamily; added_at: string | null }[];
 };
+
+/** The families of a league in the order of the screen; absent for a league on all events. */
+const familiesOf = (rows: { family: LeagueFamily; added_at: string | null }[]) =>
+  rows.length > 0
+    ? {
+        families: inScreenOrder(
+          rows.map(
+            (r): LeagueFamilyRule => ({
+              family: r.family,
+              addedAt: r.added_at === null ? null : new Date(r.added_at).toISOString(),
+            }),
+          ),
+        ),
+      }
+    : {};
 
 const fail = (): never => {
   throw new UseCaseError("LEAGUES_UNAVAILABLE");
@@ -25,7 +47,7 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
     // Row level security only shows the leagues the player is a member of.
     const { data, error } = await client
       .from("leagues")
-      .select("id, name, invite_code, owner_id, is_public, is_official, league_members(count), league_competitions(competitions(slug))")
+      .select("id, name, invite_code, owner_id, is_public, is_official, league_members(count), league_competitions(competitions(slug)), league_families(family, added_at)")
       .returns<LeagueRow[]>();
     if (error) fail();
     return data!.map((row) => ({
@@ -40,17 +62,19 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       isPublic: row.is_public,
       // Only when it is: the other leagues stay as the contract describes them.
       ...(row.is_official ? { isOfficial: true } : {}),
+      ...familiesOf(row.league_families),
     }));
   };
 
   return {
     listMine,
 
-    async create(name, competitionSlugs, isPublic) {
+    async create(name, competitionSlugs, isPublic, families = []) {
       const { data, error } = await client.rpc("create_league", {
         p_name: name,
         p_competition_slugs: competitionSlugs,
         p_public: isPublic,
+        p_families: families,
       });
       if (error?.code === "FT010") throw new UseCaseError("LEAGUE_NAME_BANNED");
       if (error?.code === "FT014") throw new UseCaseError("ACCOUNT_BLOCKED");
@@ -66,6 +90,7 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
         memberCount: 1,
         competitionSlugs: [...new Set(competitionSlugs)].sort(),
         isPublic,
+        ...familiesOf(families.map((family) => ({ family, added_at: null }))),
       };
     },
 
@@ -144,6 +169,17 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       return fail();
     },
 
+    async addFamily(leagueId, family) {
+      const { error } = await client.rpc("add_league_family", {
+        p_league: leagueId,
+        p_family: family,
+      });
+      if (!error) return "added";
+      if (error.code === "42501") return "not_owner";
+      if (error.code === "FT029") return "all_events";
+      return fail();
+    },
+
     async listPublic() {
       const { data, error } = await client.rpc("list_public_leagues");
       if (error) return fail();
@@ -154,14 +190,19 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
           member_count: number;
           competition_slugs: string[];
           is_official: boolean;
+          families: LeagueFamily[];
         }[]
-      ).map((row) => ({
-        id: row.league_id,
-        name: row.name,
-        memberCount: Number(row.member_count),
-        competitionSlugs: row.competition_slugs,
-        ...(row.is_official ? { isOfficial: true } : {}),
-      }));
+      ).map((row) => {
+        const families = LEAGUE_FAMILIES.filter((f) => row.families.includes(f));
+        return {
+          id: row.league_id,
+          name: row.name,
+          memberCount: Number(row.member_count),
+          competitionSlugs: row.competition_slugs,
+          ...(row.is_official ? { isOfficial: true } : {}),
+          ...(families.length > 0 ? { families } : {}),
+        };
+      });
     },
 
     async joinPublic(leagueId) {

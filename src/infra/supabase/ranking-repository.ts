@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { UseCaseError } from "@/application/errors";
 import type { RankingLine, RankingRepository } from "@/application/rankings";
 import { bibOf } from "@/domain/bib";
+import type { DisciplineFamily } from "@/domain/discipline";
 import type { ScoreReason } from "@/domain/scoring";
 
 type Row = {
@@ -16,7 +17,11 @@ type Row = {
     bib_color: string;
     club: { id: string; name: string } | null;
   };
-  events: { starts_at: string; lock_at: string };
+  events: {
+    starts_at: string;
+    lock_at: string;
+    disciplines: { family: DisciplineFamily } | null;
+  };
 };
 
 /** Score lines are readable by every player and by visitors (#573): the general ranking is public. */
@@ -25,7 +30,7 @@ export function createSupabaseRankingRepository(client: SupabaseClient): Ranking
     async competitionLines(competitionSlug) {
       const { data, error } = await client
         .from("score_events")
-        .select("user_id, event_id, points, detail, profiles!inner(pseudo, bib_number, bib_color, club:clubs(id, name)), events!inner(starts_at, lock_at, competitions!inner(slug))")
+        .select("user_id, event_id, points, detail, profiles!inner(pseudo, bib_number, bib_color, club:clubs(id, name)), events!inner(starts_at, lock_at, disciplines(family), competitions!inner(slug))")
         .eq("events.competitions.slug", competitionSlug)
         .returns<Row[]>();
       if (error) throw new UseCaseError("RANKING_UNAVAILABLE");
@@ -41,6 +46,7 @@ export function createSupabaseRankingRepository(client: SupabaseClient): Ranking
           eventId: row.event_id,
           eventStartsAt: new Date(row.events.starts_at).toISOString(),
           eventLockAt: new Date(row.events.lock_at).toISOString(),
+          ...(row.events.disciplines ? { eventFamily: row.events.disciplines.family } : {}),
         }),
       );
     },

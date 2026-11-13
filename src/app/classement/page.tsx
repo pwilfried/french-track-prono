@@ -74,7 +74,12 @@ export default async function RankingPage({
       rows = await getLeagueRanking({
         ranking,
         leagues: createSupabaseLeagueRepository(client),
-      }).execute({ leagueId: league.id, competitionSlugs: league.competitionSlugs, today });
+      }).execute({
+        leagueId: league.id,
+        competitionSlugs: league.competitionSlugs,
+        families: league.families,
+        today,
+      });
     } else if (view === "soir") {
       rows = await getTonightRanking({ ranking }).execute({
         competitionSlugs: all.map((c) => c.slug),
