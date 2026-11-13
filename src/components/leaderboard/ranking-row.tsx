@@ -11,11 +11,11 @@ export type LeaderboardRow = RankedPlayer & {
   bib: BibValue;
   /** Shown on the player's card (#342). */
   club?: string | null;
-  /** Places won (+) or lost (−) since yesterday (#551); null or absent: not shown. */
+  /** Places won (+) or lost (−) since the previous ranking (#551, #661); null or absent: none. */
   change?: number | null;
 };
 
-/** ▲ won, ▼ lost, « = » same place as yesterday (#551). */
+/** ▲ won, ▼ lost, « = » same place as in the previous ranking (#551, #661). */
 export function Change({ change, className }: { change: number; className?: string }) {
   const [symbol, style] =
     change > 0
@@ -41,7 +41,7 @@ function detailOf(row: LeaderboardRow, me: boolean): string {
 }
 
 /**
- * One line of a ranking (#551): rank, bib, pseudo, move since yesterday, points. The player's own
+ * One line of a ranking (#551): rank, bib, pseudo, move, points. The player's own
  * line is highlighted and is the target of « Autour de moi » (`#moi`). Lives in an `<ol>`.
  */
 export function RankingRow({
