@@ -10,6 +10,12 @@ import { defineConfig, devices } from "@playwright/test";
  */
 process.env.PUBLIC_CACHE_FLUSH_SECRET ??= "e2e-public-cache";
 
+/**
+ * E2E_BASE_URL: a deployed site to test (pre-production, #636), instead of the local build started
+ * below. Signing in and SQL there need the helpers of #695.
+ */
+const deployed = process.env.E2E_BASE_URL;
+
 export default defineConfig({
   testDir: "e2e",
   retries: 0,
@@ -18,14 +24,16 @@ export default defineConfig({
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
     // localhost, not 127.0.0.1: the sign-in link of the local Supabase points to localhost.
-    baseURL: "http://localhost:3000",
+    baseURL: deployed ?? "http://localhost:3000",
     ...devices["Pixel 7"],
     trace: "retain-on-failure",
   },
-  webServer: {
-    command: "npm run start",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
-  },
+  webServer: deployed
+    ? undefined
+    : {
+        command: "npm run start",
+        url: "http://localhost:3000",
+        reuseExistingServer: !process.env.CI,
+        timeout: 60_000,
+      },
 });
