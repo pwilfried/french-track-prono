@@ -329,6 +329,15 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   tables « piste courte »). Une discipline absente des tables (relais mixte 4 × 100 m, ou créée
   par l'admin sous un autre nom) n'a pas de barème : le calcul renvoie « pas de table ».
 
+## Réponse du propriétaire (#440, 10 novembre 2026)
+
+- **Compétitions et journées** : une compétition éligible = une journée, chaque participant y a
+  un adversaire. Il en faut au moins 2 × (n − 1) pour n participants (#644 en déduit le nombre de
+  joueurs). Les autres options (une compétition pour plusieurs journées, aller simple quand les
+  compétitions manquent) sont écartées.
+- **Compétitions en trop** (13 novembre 2026, #432) : des journées bonus à la fin, sans
+  confrontation (section 5).
+
 ## Questions encore ouvertes
 
 - Aucune : #440 a sa réponse (« Une compétition = une journée », section 5).
