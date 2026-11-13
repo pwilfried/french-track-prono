@@ -44,13 +44,17 @@ titres de PR en anglais. Dialogue avec le propriétaire en français.
    `agent:ready` (décision du propriétaire du 13 nov. 2026) ; pour en retenir une, il met
    `agent:blocked` ou `needs-human`. Claude ouvre une branche et applique le TDD (voir plus bas).
 3. Avant de dire « terminé » : voir « Before saying it is done ».
-4. PR → CI verte → fusion (automatique pour les PR d'agents).
+4. PR → CI verte → fusion (automatique pour les PR d'agents). Chaque fusion dans `main` part en
+   préprod (https://french-track-preprod.vercel.app) : migrations sur la base de préprod, puis
+   déploiement (`preprod.yml`, `docs/SETUP.md`, « Préproduction »).
 5. Quand toutes les issues d'un milestone sont fermées (`refactor-check` et `docs-check` comprises)
    et que `main` est vert, `agents-merge` pose le tag `vX.Y.0` (décision du propriétaire du
    11 nov. 2026), ou `vX.Y.Z` pour un milestone correctif `vX.Y.Z …` (décision du 12 nov. 2026).
-   Le tag met la version en prod : migrations, puis déploiement Vercel (`docs/SETUP.md`). Le
-   propriétaire vérifie le critère « It works when… » en production ; un correctif sans
-   milestone reste tagué à la main.
+   Le tag met la version en prod : migrations, puis déploiement Vercel (`docs/SETUP.md`). Tout
+   est automatique, sans feu vert humain (décision du propriétaire du 13 nov. 2026) : seul
+   garde-fou, si le déploiement en préprod de ce commit a échoué, le tag attend le passage
+   suivant. Le propriétaire vérifie le critère « It works when… » en production ; un correctif
+   sans milestone reste tagué à la main.
 
 ## Screenshots in PRs
 
@@ -153,8 +157,10 @@ Claude Code tourne sur les issues et les PR depuis GitHub Actions (`agents.yml`,
 - Une session Claude Code locale qui prend une issue y pose `agent:local` avant d'écrire la moindre
   ligne (et le retire si elle abandonne) : la chaîne ne la prend pas en double (#583).
 - PR verte : fusionnée. Rouge ou en conflit : renvoyée à Claude, 3 fois, puis au propriétaire.
-- Milestone fini et `main` vert : tag `vX.Y.0` (ou `vX.Y.Z` pour un milestone correctif) posé avec `AGENTS_PAT` (sinon il ne déclencherait
-  pas le déploiement), release GitHub qui liste les PR, milestone fermé (`ci/agents/release.sh`).
+- Milestone fini et `main` vert (préprod comprise) : tag `vX.Y.0` (ou `vX.Y.Z` pour un milestone
+  correctif) posé avec `AGENTS_PAT` (sinon il ne déclencherait pas le déploiement), sans attendre
+  de go ; release GitHub qui liste les PR, milestone fermé (`ci/agents/release.sh`). Un déploiement
+  préprod en échec sur ce commit fait attendre le tag jusqu'au passage suivant.
 
 Quand tu tournes là-bas :
 

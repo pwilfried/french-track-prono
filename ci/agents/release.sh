@@ -3,9 +3,13 @@
 # The version is the open milestone right after the latest tag: `vX.Y …` is tagged vX.Y.0, a patch
 # milestone `vX.Y.Z …` is tagged vX.Y.Z (owner's decision, 12 Nov 2026). It is tagged when:
 #   - the milestone has closed issues and no open one;
-#   - every push run on main's last commit (CI, …) is completed and green.
+#   - every push run on main's last commit (CI, pre-production deploy, …) is completed and green.
+# Every merge into main is already deployed to pre-production (preprod.yml). No human go before
+# the tag (owner's decision, 13 Nov 2026): the only automatic guard is that a failed pre-production
+# deploy of that commit makes the tag wait for the next sweep.
 # The tag is made with AGENTS_PAT: a tag made with github.token would start no workflow.
-# Then a GitHub release lists the PRs (its notification tells the owners) and the milestone closes.
+# Then a GitHub release lists the PRs (its notification tells the owners), a needs-human issue
+# « Vérifier vX.Y.Z en prod » lists the screens to look at, and the milestone closes.
 # main red: no tag, a warning in the run; the hourly sweep tries again.
 # Env: BOT_TOKEN, PAT_TOKEN.
 set -euo pipefail
@@ -51,6 +55,12 @@ runs=$(as_bot gh api "repos/$repo/actions/runs?head_sha=$sha&event=push&per_page
   --jq '.workflow_runs[] | "\(.name)|\(.status)|\(.conclusion)"')
 if [ -z "$runs" ] || ! grep -q '^CI|' <<< "$runs"; then
   echo "$version is finished, but main's CI has not run yet on ${sha:0:7}."
+  exit 0
+fi
+if grep -q '^Pre-production|completed|' <<< "$runs" &&
+  ! grep -q '^Pre-production|completed|\(success\|skipped\|neutral\)$' <<< "$runs"; then
+  echo "::warning::$version is finished, but the pre-production deploy of ${sha:0:7} failed: no tag."
+  echo "$runs"
   exit 0
 fi
 if grep -qv '|completed|\(success\|skipped\|neutral\)$' <<< "$runs"; then

@@ -20,13 +20,18 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
    CI rouge ou conflit : la PR repart à Claude avec les logs (3 essais, puis le propriétaire).
    Un conflit avec `main` repart à Claude même quand la PR n'a pas de CI (GitHub n'en lance pas
    sur une branche en conflit) ou que sa CI tourne encore (#713).
-5. Une PR fusionnée n'ouvre plus d'issue de vérification : c'est la version qui en ouvre une (étape 6).
+5. Chaque fusion dans `main` part en préprod (`preprod.yml`) : migrations sur la base de
+   préprod, puis déploiement sur https://french-track-preprod.vercel.app. Une PR fusionnée
+   n'ouvre pas d'issue de vérification : c'est la version qui en ouvre une (étape 6).
 6. Quand le milestone qui suit le dernier tag n'a plus d'issue ouverte et que tous les
-   runs du dernier commit de `main` sont verts, `release.sh` pose le tag annoté : `vX.Y.0` pour un
-   milestone `vX.Y …`, `vX.Y.Z` pour un milestone correctif `vX.Y.Z …`. Il le pose avec
-   `AGENTS_PAT`, ce qui lance la mise en prod (`migrations.yml`). Une release GitHub liste les PR
-   (sa notification prévient les propriétaires) et le milestone est fermé. `main` rouge : pas de
-   tag, un avertissement dans le run, nouvel essai à la vérification suivante.
+   runs du dernier commit de `main` sont verts (CI et préprod), `release.sh` pose le tag annoté :
+   `vX.Y.0` pour un milestone `vX.Y …`, `vX.Y.Z` pour un milestone correctif `vX.Y.Z …`. Il le pose
+   avec `AGENTS_PAT`, ce qui lance la mise en prod (`migrations.yml`). Aucun feu vert humain
+   (décision du propriétaire du 13 nov. 2026). Une release GitHub liste les PR (sa notification
+   prévient les propriétaires), l'issue `needs-human` « Vérifier vX.Y.Z en prod » liste le critère
+   et une case par PR qui touche l'interface, et le milestone est fermé. Seul garde-fou : si le
+   déploiement en préprod de ce commit a échoué, pas de tag, un avertissement dans le run, nouvel
+   essai à la vérification suivante (au plus une heure). Même chose si la CI de `main` est rouge.
 
 Une issue n'est jamais prise si elle a `needs-human`, `agent:blocked`, `after-ui` ou `agent:local`,
 si elle est assignée à quelqu'un (une personne la traite : Yannis s'assigne ses issues), ou si une
@@ -89,7 +94,8 @@ sont créés avec cette PR.
 ## Ce qui n'est pas automatique
 
 - Les captures d'écran 390 px (clair et sombre) : Claude ne les produit pas sur le runner ; l'issue
-  « Vérifier vX.Y.Z en prod » sert à regarder les écrans une fois la version en production.
+  « Vérifier vX.Y.Z en prod » sert à regarder les écrans une fois la version en production (la
+  préprod permet de les voir avant, sans rien bloquer).
 - La base Supabase locale (pgTAP, adaptateurs, e2e) : Claude ne la lance pas, la CI de la PR le fait.
 - Un tag de correctif sans milestone : à la main, comme avant. Avec un milestone `vX.Y.Z …`, il est
   posé automatiquement.
