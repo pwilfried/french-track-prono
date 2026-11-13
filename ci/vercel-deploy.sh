@@ -16,6 +16,10 @@ base="${1:?usage: ci/vercel-deploy.sh <base url>}"
 here=$(cd "$(dirname "$0")" && pwd)
 smoke="${SMOKE_TEST:-$here/../scripts/smoke.sh}"
 vercel() { npx --yes vercel@latest "$@" --token="$VERCEL_TOKEN"; }
+# `promote` and `rollback` act on a deployment, not on the linked project: without the team scope
+# they look in the token's personal account and fail with « User not found » (#732).
+scope=()
+[ -n "${VERCEL_ORG_ID:-}" ] && scope=(--scope "$VERCEL_ORG_ID")
 
 # The variables without which every page fails (src/infra/supabase).
 required=(NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -37,7 +41,7 @@ fi
 
 vercel build --prod
 url=$(vercel deploy --prebuilt --prod --skip-domain)
-vercel promote "$url" --yes
+vercel promote "$url" --yes "${scope[@]}"
 
 if "$smoke" "$base"; then
   exit 0
@@ -45,7 +49,7 @@ fi
 
 echo "::error::The smoke test of $base failed: rolling back to the previous deployment."
 rolled_back="oui"
-vercel rollback || rolled_back="non (à faire à la main : Vercel → Deployments → Instant Rollback)"
+vercel rollback "${scope[@]}" || rolled_back="non (à faire à la main : Vercel → Deployments → Instant Rollback)"
 
 repo=${GITHUB_REPOSITORY:?}
 owners=${AGENTS_OWNER:-${repo%%/*}}
