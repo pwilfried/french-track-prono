@@ -44,22 +44,26 @@ test("a player shares the season card: native share on mobile, a download otherw
   await page.getByRole("button", { name: "Partager ma carte de saison" }).click();
   expect((await download).suggestedFilename()).toBe("ma-saison-french-track-prono.png");
 
-  // A phone opens its share sheet with the image.
+  // A phone opens its share sheet with the image. The card is rendered again on the server,
+  // which can take longer than a poll's 5 s on CI: wait for the response and for the call.
   await page.evaluate(() => {
-    const shared: string[] = [];
+    const shared = new Promise<string[]>((resolve) => {
+      Object.defineProperty(navigator, "share", {
+        value: async (data: { files: File[] }) => {
+          resolve(data.files.map((f) => `${f.name} ${f.type}`));
+        },
+        configurable: true,
+      });
+    });
     Object.assign(window, { shared });
     Object.defineProperty(navigator, "canShare", { value: () => true, configurable: true });
-    Object.defineProperty(navigator, "share", {
-      value: async (data: { files: File[] }) => {
-        shared.push(...data.files.map((f) => `${f.name} ${f.type}`));
-      },
-      configurable: true,
-    });
   });
+  const rendered = page.waitForResponse((r) => r.url().endsWith("/profil/carte"));
   await page.getByRole("button", { name: "Partager ma carte de saison" }).click();
-  await expect
-    .poll(() => page.evaluate(() => (window as unknown as { shared: string[] }).shared))
-    .toEqual(["ma-saison-french-track-prono.png image/png"]);
+  expect((await rendered).status()).toBe(200);
+  expect(
+    await page.evaluate(() => (window as unknown as { shared: Promise<string[]> }).shared),
+  ).toEqual(["ma-saison-french-track-prono.png image/png"]);
 
   sql(`delete from competitions where slug = '${tag}'`);
 });
