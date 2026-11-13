@@ -792,6 +792,46 @@ export const messages = {
     saved: (n: number) =>
       `✓ Liste de départ enregistrée : ${n} ${n <= 1 ? "athlète" : "athlètes"}.`,
   },
+  performances: {
+    title: "Performances",
+    back: "Épreuve",
+    link: "Performances Manager",
+    intro:
+      "Pour French Track Manager : la place, la marque et les records de chaque athlète. Une nouvelle saisie remplace la précédente.",
+    empty: "Personne au départ : saisis d'abord la liste de départ.",
+    missing: (missing: number, linedUp: number) =>
+      linedUp === 0
+        ? "Aucun athlète de cette épreuve n'est aligné dans une ligue Manager."
+        : missing === 0
+          ? linedUp === 1
+            ? "✓ L'athlète aligné a une performance."
+            : `✓ Les ${linedUp} athlètes alignés ont une performance.`
+          : `${missing} ${missing <= 1 ? "athlète aligné attend" : "athlètes alignés attendent"} une performance (sur ${linedUp}).`,
+    linedUp: "Aligné",
+    linedUpMissing: "Aligné · à saisir",
+    status: "Statut",
+    statusName: {
+      none: "Non saisi",
+      ok: "Arrivé",
+      dns: "Non partant (DNS)",
+      dnf: "Abandon (DNF)",
+      dq: "Disqualifié (DQ)",
+    },
+    place: "Place",
+    mark: "Marque",
+    records: (name: string) => `Records de ${name}`,
+    recordShort: { pb: "RP", sb: "MPS", nr: "RN", ar: "RC", wr: "RM" },
+    recordName: {
+      pb: "Record personnel",
+      sb: "Meilleure performance de la saison",
+      nr: "Record national",
+      ar: "Record continental",
+      wr: "Record du monde",
+    },
+    save: "Enregistrer les performances",
+    saving: "Enregistrement…",
+    saved: (n: number) => `✓ Performances enregistrées : ${n} ${n <= 1 ? "athlète" : "athlètes"}.`,
+  },
   install: {
     title: "Installe l'appli",
     body: "Tes pronos en un geste, sur ton écran d'accueil.",
@@ -834,6 +874,7 @@ export const messages = {
       create_discipline: "Discipline créée",
       moderate_club: "Club modifié",
       set_manager_rules: "Règles Manager modifiées",
+      set_performances: "Performances saisies",
     },
     noEvent: "Épreuve supprimée",
     size: (
@@ -850,7 +891,8 @@ export const messages = {
         | "moderate_player"
         | "create_discipline"
         | "moderate_club"
-        | "set_manager_rules",
+        | "set_manager_rules"
+        | "set_performances",
       n: number,
     ) =>
       kind === "set_rule" || kind === "set_manager_rules"
@@ -1945,6 +1987,10 @@ export const messages = {
     ATHLETE_INVALID: "Il faut un nom, un code pays à trois lettres (FRA, USA…) et un genre.",
     MARK_INVALID:
       "Cette marque ne correspond pas à la discipline (ex. 10.62, 1:56.70, 2.04, 8125).",
+    PERFORMANCES_INVALID:
+      "Chaque athlète une seule fois, une place à partir de 1, et rien d'autre que le statut pour un DNS, DNF ou DQ.",
+    PERFORMANCE_MARK_MISSING: "Un athlète arrivé a besoin de sa marque.",
+    PERFORMANCES_UNAVAILABLE: "Impossible de lire ou d'enregistrer les performances. Réessaie.",
     DATE_INVALID: "La date doit être au format AAAA-MM-JJ.",
     DISCIPLINE_NOT_FOUND: "Cette discipline n'existe pas.",
     DISCIPLINE_EXISTS: "Cette discipline existe déjà.",
