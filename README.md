@@ -49,7 +49,7 @@ et `NEXT_PUBLIC_SUPABASE_ANON_KEY` (la clé « Publishable » de `supabase statu
 dans `.env.example`.
 
 ```bash
-npm run dev           # http://localhost:3000, la liste des épreuves est sur /epreuves
+npm run dev           # http://localhost:3000, la liste des épreuves est sur /competitions
 ```
 
 Autres commandes : `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`,

@@ -38,6 +38,8 @@ async function main() {
     {
       due: () => query("select * from private.push_due()"),
       markSent: (sent) => query(`select private.push_mark_sent(${literal(sent)}::jsonb)`),
+      programDue: () => query("select * from private.program_due()"),
+      markProgramSent: (sent) => query(`select private.program_mark_sent(${literal(sent)}::jsonb)`),
       forget: (endpoints) =>
         query(
           `select private.push_forget(array(select jsonb_array_elements_text(${literal(endpoints)}::jsonb)))`,

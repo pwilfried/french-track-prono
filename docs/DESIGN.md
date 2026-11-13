@@ -51,7 +51,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Écran | Contenu clé |
 |---|---|
 | Accueil (joueur connecté, #526) | Salutation ; carte « Ta prochaine action » (finale à pronostiquer la plus proche du verrouillage, sinon prochaine compétition) ; dessous, « Complète ton profil » tant que le profil n'a ni club ni discipline (#540 : recherche de club, six familles en boutons à bascule, « Préciser les épreuves », × « Plus tard » pour 30 jours ; bandeau vert « Ton premier podium est posé ! » au-dessus après le premier prono) ; « Comment ça marche » avant le premier prono (refermable) ; ma ligue (place, écart, trois lignes) ou l'invitation à en créer une ; dernier résultat noté ; French Track Manager ; bloc FrenchTrack (podcast, réseaux). Un bloc vide ne s'affiche pas |
-| Épreuves (onglet, #546) | Sélecteur de compétition ; carte de progression (joueur connecté) ; filtres « À faire » (par défaut), « Posés », « Terminées », « Toutes » ; sections « Ce soir », « Demain », puis les dates, puis « Déjà courues ». Un visiteur n'a ni la carte ni les filtres « À faire » et « Posés » |
+| Compétitions (onglet, #546, #659) | Libellé « Compétition » puis bouton-carte (pavé date, nom en `h1`, ville, dates, nombre d'épreuves, « Changer ») qui ouvre la feuille « Choisir une compétition » (recherche, Toutes / Internationales / France, « Dans mes ligues » puis par mois, puis « Terminées ») ; barre des jours (`?jour=`, « AUJ. », pastille pour un jour fini et pour aujourd'hui) ; bandeau d'une ligne (à pronostiquer ce jour, podiums posés, points) ; sélecteur segmenté « À faire » (par défaut s'il reste à faire), « Posés », « Terminées » (si le jour a des épreuves finies), « Toutes » ; sessions Matin / Après-midi / Soir. Sans programme : « Le programme n'est pas encore publié », jours avant le début, « Me prévenir à la publication ». Un visiteur n'a ni le bandeau ni les filtres « À faire » et « Posés » |
 | Épreuve | Liste de départ, **podium à composer** (glisser-déposer ou taps), joker, verrou |
 | Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
 | Ligue | Classement, derniers pronos révélés, réactions emoji ; tant que le joueur y est seul, **InviteBanner** à la place du classement |
@@ -111,8 +111,8 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **Liste du back-office** (clubs, joueurs, ligues) : recherche, puces de filtre avec leur
   nombre, tableau triable, actions groupées sur la sélection, panneau de détail ; même gabarit
   pour les trois listes.
-- **Navigation** (#471) : sur mobile, barre du bas « Accueil, Épreuves, Classement, Ligues,
-  Manager » ; sur desktop, menu du haut « Accueil, Épreuves, Classement, Ma ligue, Manager ». Le
+- **Navigation** (#471) : sur mobile, barre du bas « Accueil, Compétitions, Classement, Ligues,
+  Manager » ; sur desktop, menu du haut « Accueil, Compétitions, Classement, Ma ligue, Manager ». Le
   profil s'ouvre depuis le pseudo et le dossard de l'en-tête.
 - **Menu admin** : entrées groupées par rubrique, le tableau de bord en tête.
 - **BadgeGrid** : badges gagnés en couleur, les autres grisés avec leur règle ; dessous, le

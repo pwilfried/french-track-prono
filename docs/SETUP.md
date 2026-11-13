@@ -169,7 +169,7 @@ propre sur « maintenant ». Comme `db:open-events` et `db:demo-players`, il ne 
 ```bash
 npm install
 cp .env.example .env.local     # puis remplir les deux variables ci-dessous
-npm run dev                    # http://localhost:3000 ; la liste des épreuves est sur /epreuves
+npm run dev                    # http://localhost:3000 ; la liste des épreuves est sur /competitions
 ```
 
 Dans `.env.local` :
@@ -224,9 +224,9 @@ En production, le même fichier se charge une fois dans l'éditeur SQL de Supaba
 ### Choisir la compétition affichée
 
 L'accueil liste les compétitions de la base (internationales et françaises). Les pages
-« Épreuves », « Classement », « Mes points » et le back-office suivent la **prochaine compétition
+« Compétitions », « Classement », « Mes points » et le back-office suivent la **prochaine compétition
 par date** (celle en cours, sinon la prochaine à commencer ; toutes finies : la plus récente).
-Une compétition se choisit aussi par son lien (`/competitions/<slug>`, `/epreuves?competition=<slug>`).
+Une compétition se choisit aussi par son lien (`/competitions/<slug>`, `/competitions?competition=<slug>`, l'ancien `/epreuves?…` y redirige).
 La variable `COMPETITION_SLUG` (côté serveur, `.env.local`) force une compétition : la CI s'en sert
 pour épingler les tests de bout en bout sur l'Ultimate Championship. Le nom, la ville et les dates
 viennent de la table `competitions` (back-office « Compétitions ») ; les horaires s'affichent

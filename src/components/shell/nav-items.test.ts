@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { isActive, MOBILE_NAV } from "./nav-items";
+import { isActive, isItemActive, MOBILE_NAV } from "./nav-items";
 
 describe("MOBILE_NAV", () => {
   it("has five tabs, the Manager after the leagues and no profile", () => {
     expect(MOBILE_NAV.map((item) => item.href)).toEqual([
       "/",
-      "/epreuves",
+      "/competitions",
       "/classement",
       "/ligues",
       "/manager",
@@ -22,5 +22,12 @@ describe("MOBILE_NAV", () => {
   it("keeps the leagues tab active on a league page", () => {
     expect(isActive("/ligues", "/ligues/abc")).toBe(true);
     expect(isActive("/ligues", "/profil")).toBe(false);
+  });
+
+  it("keeps the competitions tab active on an event page", () => {
+    const competitions = MOBILE_NAV[1]!;
+    expect(isItemActive(competitions, "/competitions")).toBe(true);
+    expect(isItemActive(competitions, "/epreuves/f-100m")).toBe(true);
+    expect(isItemActive(competitions, "/classement")).toBe(false);
   });
 });

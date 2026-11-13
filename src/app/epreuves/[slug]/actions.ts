@@ -61,6 +61,6 @@ export async function savePredictionAction(
     if (error instanceof UseCaseError) return { ...state, error: error.code };
     throw error;
   }
-  revalidatePath("/epreuves");
+  revalidatePath("/competitions");
   return { ...state, saved: true };
 }
