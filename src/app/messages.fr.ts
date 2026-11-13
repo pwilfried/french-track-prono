@@ -308,7 +308,7 @@ export const messages = {
     createTitle: "Créer une ligue Manager",
     createSubtitle: "Tu en deviens l'administrateur.",
     rulesNote:
-      "Les règles (budget, quotas, compétitions) sont celles de French Track Prono au moment de la création, et ne changent plus ensuite.",
+      "Les règles (budget, quotas, alignement) sont celles de French Track Prono au moment de la création, et ne changent plus ensuite.",
     nameLabel: "Nom de la ligue",
     nameHint: "2 à 40 caractères.",
     publicLabel: "Ligue publique",
@@ -338,10 +338,27 @@ export const messages = {
     inviteTitle: "Inviter des amis",
     mercatoTitle: "Régler le mercato",
     mercatoHint: "Seul le créateur règle le mercato, jusqu'à son lancement.",
-    targetLabel: "Nombre de joueurs",
-    targetHint:
-      "Pair, de 4 à 10 : chaque journée, chacun a un adversaire. Jamais sous le nombre d'inscrits.",
-    targetOption: (n: number) => `${n} joueurs`,
+    competitionsLabel: "Compétitions de la saison",
+    competitionsHint:
+      "Au moins 6, parmi celles qui ne sont pas terminées. Le championnat est un aller-retour : le nombre de joueurs en découle.",
+    competitionsNone:
+      "Il n'y a pas encore 6 compétitions disponibles : reviens quand le calendrier sera complété.",
+    competitionsEditLabel: "Compétitions de la saison",
+    competitionsEditHint:
+      "Tu peux en ajouter ou en retirer jusqu'au lancement du mercato. Le nombre de joueurs suit, jamais sous le nombre d'inscrits.",
+    competitionOption: (name: string, when: string) => `${name} · ${when}`,
+    /** « 8 compétitions → 4 joueurs · 6 journées aller-retour + 2 bonus ». */
+    seasonFormat: (competitions: number, players: number, duelDays: number, bonusDays: number) =>
+      `${competitions} compétitions → ${players} joueurs · ${duelDays} journées aller-retour${bonusDays > 0 ? ` + ${bonusDays} bonus` : ""}`,
+    seasonTooFew: (competitions: number) =>
+      `${competitions} ${competitions <= 1 ? "compétition" : "compétitions"} : il en faut au moins 6.`,
+    saveCompetitions: "Enregistrer les compétitions",
+    competitionsSaved: "Compétitions enregistrées.",
+    /** The custom mercato ends less than 1 hour before the first competition. */
+    seasonMissed: (missed: string, when: string, next: string | null) =>
+      `Ton mercato finira après le début de ${missed} (le ${when}). Elle ne comptera pas${next ? ` : la saison commencera à ${next}` : ""}.`,
+    seasonShort:
+      "Il ne reste plus assez de compétitions pour l'aller-retour : ajoute une compétition ou raccourcis le mercato pour pouvoir le lancer.",
     startsAtLabel: "Début du mercato (heure de Paris)",
     startsAtHint:
       "Le mercato s'ouvre à cette heure si et seulement si tous les joueurs sont là. Laisse vide pour le lancer toi-même.",
@@ -367,6 +384,14 @@ export const messages = {
     lineup: (n: number) => `${n} athlètes alignés au plus par compétition`,
     competitions: (n: number) =>
       `${n} ${n <= 1 ? "compétition éligible" : "compétitions éligibles"}`,
+    /** A day in Paris time: « samedi 10 janvier ». */
+    day: (iso: string) =>
+      new Date(iso).toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        timeZone: "Europe/Paris",
+      }),
     publicTitle: "Ligues publiques",
     publicEmpty: "Aucune ligue publique avec des places libres pour l'instant.",
     publicNoOther: "Pas d'autre ligue publique avec des places libres pour l'instant.",
@@ -2100,8 +2125,13 @@ export const messages = {
       "Ces règles ne permettent pas de jouer : vérifie que les quotas remplissent l'équipe, que l'alignement y tient et qu'un mode de clôture est coché.",
     MANAGER_RULES_UNAVAILABLE: "Les règles Manager n'ont pas pu être chargées. Réessaie.",
     MERCATO_OPEN: "Le mercato de cette ligue a commencé : les inscriptions sont closes.",
-    MERCATO_TARGET_INVALID:
-      "Le nombre de joueurs doit être pair, de 4 à 10, et pas sous le nombre de joueurs déjà inscrits.",
+    MANAGER_COMPETITIONS_TOO_FEW: "Choisis au moins 6 compétitions.",
+    MANAGER_COMPETITIONS_REFUSED:
+      "Une de ces compétitions n'est plus disponible (terminée ou retirée). Recharge la page et choisis à nouveau.",
+    MANAGER_COMPETITIONS_UNDER_PLAYERS:
+      "Avec ces compétitions, la ligue compterait moins de joueurs que d'inscrits : garde-en davantage.",
+    MERCATO_COMPETITIONS_MISSING:
+      "Il ne reste pas assez de compétitions après la fin prévue du mercato : ajoute une compétition ou raccourcis le mercato.",
     MERCATO_ROUNDS_INVALID: "Choisis une durée de tour de 12, 24, 48 ou 72 heures.",
     MERCATO_PLAYERS_MISSING:
       "Il manque encore des joueurs : le mercato se lance quand tout le monde est là.",

@@ -1,32 +1,75 @@
-import type { RoundRules } from "./manager-round";
+import { roundEndsAt, type RoundRules } from "./manager-round";
 
 /**
- * A French Track Manager league plays with an even number of players, 4 to 10, so that everyone
- * has an opponent on each matchday (#619). The creator picks that number, the target; the mercato
- * opens only once the target is reached. The database does the same in launch_manager_mercato()
- * and private.open_manager_mercatos().
+ * A French Track Manager league plays a home-and-away championship (#644): with N players, each
+ * meets the others twice, 2 × (N − 1) matchdays, one competition each. The creator chooses the
+ * competitions (at least 6, none finished); the players follow, exactly: the largest even N from 4
+ * to 10 whose home-and-away fits. The competitions left over, at the end, are bonus matchdays
+ * (Manager points only, no duel). The database does the same in private.manager_player_count().
  */
-const MANAGER_LEAGUE_MIN = 4;
-const MANAGER_LEAGUE_MAX = 10;
+export const MIN_SEASON_COMPETITIONS = 6;
+const MAX_PLAYERS = 10;
+
+/** The matchdays of a home-and-away championship of `players`. */
+const duelDaysOf = (players: number) => 2 * (players - 1);
+
+export type SeasonFormat = { players: number; duelDays: number; bonusDays: number };
+
+/** The players and matchdays of `competitions`, or null under 6 competitions. */
+export function seasonFormat(competitions: number): SeasonFormat | null {
+  if (!Number.isInteger(competitions) || competitions < MIN_SEASON_COMPETITIONS) return null;
+  const fitting = Math.floor(competitions / 2) + 1;
+  const players = Math.min(MAX_PLAYERS, fitting - (fitting % 2));
+  const duelDays = duelDaysOf(players);
+  return { players, duelDays, bonusDays: competitions - duelDays };
+}
+
+/** Competitions the creator may keep: at least 6, never fewer players than already in. */
+export const fitsMembers = (competitions: number, members: number) =>
+  (seasonFormat(competitions)?.players ?? 0) >= members;
 
 /** The round durations a creator may choose, in hours. */
 export const ROUND_HOUR_CHOICES = [12, 24, 48, 72] as const;
 
-export const isPlayerTarget = (n: number) =>
-  Number.isInteger(n) && n >= MANAGER_LEAGUE_MIN && n <= MANAGER_LEAGUE_MAX && n % 2 === 0;
+/**
+ * The rounds a mercato is planned to last: its planned end decides which competitions the season
+ * can count before it opens (#644). The calendar of the league page shows them.
+ */
+export const PLANNED_ROUNDS = 3;
 
-/** A target the creator may set: even, 4 to 10, never under the players already in. */
-export const isAllowedTarget = (target: number, members: number) =>
-  isPlayerTarget(target) && target >= members;
+/** A competition counts only if the mercato ends at least 1 hour before its first event. */
+const SEASON_MARGIN_MS = 3_600_000;
 
-/** The targets the creator may pick, smallest first. */
-export function playerTargets(members: number): number[] {
-  const targets: number[] = [];
-  for (let n = MANAGER_LEAGUE_MIN; n <= MANAGER_LEAGUE_MAX; n += 2) {
-    if (isAllowedTarget(n, members)) targets.push(n);
-  }
-  return targets;
+/** When a mercato opening at `start` ends, after its planned rounds (ISO). */
+export const plannedMercatoEnd = (start: string, rounds: RoundRules) =>
+  roundEndsAt(start, rounds, PLANNED_ROUNDS);
+
+/** The competitions the season counts for a mercato ending at `mercatoEndsAt`, first one first. */
+export function seasonCompetitions<C extends { firstEventAt: string }>(
+  competitions: readonly C[],
+  mercatoEndsAt: string,
+): C[] {
+  const end = Date.parse(mercatoEndsAt);
+  return [...competitions]
+    .filter((c) => Date.parse(c.firstEventAt) - end >= SEASON_MARGIN_MS)
+    .sort((a, b) => Date.parse(a.firstEventAt) - Date.parse(b.firstEventAt));
 }
+
+/** The first competition the mercato misses, if any, and the one the season starts with. */
+export function seasonStart<C extends { firstEventAt: string }>(
+  competitions: readonly C[],
+  mercatoEndsAt: string,
+): { missed: C | null; first: C | null } {
+  const counted = seasonCompetitions(competitions, mercatoEndsAt);
+  const missed = [...competitions]
+    .filter((c) => !counted.includes(c))
+    .sort((a, b) => Date.parse(a.firstEventAt) - Date.parse(b.firstEventAt))[0];
+  return { missed: missed ?? null, first: counted[0] ?? null };
+}
+
+/** Whether `counted` competitions hold the home-and-away of `players`. */
+export const hasEnoughCompetitions = (players: number, counted: number) =>
+  counted >= duelDaysOf(players);
 
 /** What the launch of a mercato reads: the target, the players in, and its times (ISO). */
 export type MercatoLaunch = {

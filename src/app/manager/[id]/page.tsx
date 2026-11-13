@@ -4,8 +4,11 @@ import { notFound } from "next/navigation";
 import { UseCaseError } from "@/application/errors";
 import {
   getManagerLeague,
+  listSeasonCompetitions,
   mercatoLaunch,
+  seasonFits,
   type ManagerLeagueFile,
+  type SeasonCompetition,
 } from "@/application/manager-leagues";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
@@ -13,21 +16,26 @@ import { ShareInvite } from "@/components/leagues/share-invite";
 import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
 import { utcToParis } from "@/domain/competition";
-import { playersAwaited, playerTargets } from "@/domain/manager-league";
+import { PLANNED_ROUNDS, playersAwaited, seasonFormat } from "@/domain/manager-league";
 import { roundEndsAt, roundHours } from "@/domain/manager-round";
 
 import { messages } from "../../messages.fr";
 import { managerPorts } from "../data";
-import { LaunchMercatoForm, MercatoSettingsForm } from "../mercato-form";
-
-/** How many rounds the calendar shows. */
-const CALENDAR_ROUNDS = 3;
+import { CompetitionsForm, LaunchMercatoForm, MercatoSettingsForm } from "../mercato-form";
 
 const text = messages.manager;
 
+/** The league's competitions, then those still available it does not have, first one first. */
+function competitionChoices(league: SeasonCompetition[], available: SeasonCompetition[]) {
+  const ids = new Set(league.map((c) => c.id));
+  return [...league, ...available.filter((c) => !ids.has(c.id))].sort((a, b) =>
+    a.firstEventAt.localeCompare(b.firstEventAt),
+  );
+}
+
 /**
- * A Manager league (#419): its participants « N/cible », its mercato (set and launched by its
- * creator, #619), its frozen rules.
+ * A Manager league (#419): its participants « N/cible », its competitions and its mercato (set and
+ * launched by its creator, #619, #644), its frozen rules.
  */
 export default async function ManagerLeaguePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -54,6 +62,15 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
   const isOwner = league.ownerId === ports.userId;
   const open = mercato.openedAt !== null;
   const calendarStart = mercato.openedAt ?? mercato.startsAt;
+  const format = seasonFormat(league.competitions.length);
+  // The creator may add competitions still available until the mercato opens.
+  const available =
+    isOwner && !open
+      ? await listSeasonCompetitions(ports)
+          .execute()
+          .catch(() => [])
+      : [];
+  const short = !open && !seasonFits(league, new Date().toISOString());
 
   return (
     <main id="main" className="flex flex-1 flex-col">
@@ -89,10 +106,14 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
               {text.mercatoTitle}
             </h2>
             <p className="text-sm text-muted-foreground">{text.mercatoHint}</p>
+            <CompetitionsForm
+              leagueId={league.id}
+              competitions={competitionChoices(league.competitions, available)}
+              chosen={league.competitions.map((c) => c.id)}
+            />
             <MercatoSettingsForm
               leagueId={league.id}
-              targets={playerTargets(count)}
-              target={mercato.target}
+              competitions={league.competitions}
               startsAt={mercato.startsAt ? utcToParis(mercato.startsAt) : ""}
               rounds={
                 mercato.roundMode === "custom"
@@ -105,7 +126,7 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
               }
               autoHours={rules.rounds.firstHours}
             />
-            <LaunchMercatoForm leagueId={league.id} awaited={awaited} />
+            <LaunchMercatoForm leagueId={league.id} awaited={awaited} short={short} />
           </section>
         )}
 
@@ -120,7 +141,7 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
             aria-labelledby="calendar"
             className="flex flex-col gap-1 rounded-card bg-muted p-4 text-sm"
           >
-            {Array.from({ length: CALENDAR_ROUNDS }, (_, i) => i + 1).map((n) => (
+            {Array.from({ length: PLANNED_ROUNDS }, (_, i) => i + 1).map((n) => (
               <li key={n}>
                 <span className="font-semibold">
                   {text.calendarRound(n, roundHours(rules.rounds, n))}
@@ -205,7 +226,16 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
             <li>{text.budget(rules.budget)}</li>
             <li>{text.minTeamSize(rules.minTeamSize)}</li>
             <li>{text.lineup(rules.lineup.max)}</li>
-            <li>{text.competitions(league.competitionCount)}</li>
+            <li>
+              {format
+                ? text.seasonFormat(
+                    league.competitions.length,
+                    format.players,
+                    format.duelDays,
+                    format.bonusDays,
+                  )
+                : text.competitions(league.competitions.length)}
+            </li>
           </ul>
         </section>
       </div>

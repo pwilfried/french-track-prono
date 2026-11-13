@@ -129,3 +129,29 @@ export function joinTestLeague(userId: string, competitionSlug: string): void {
     insert into league_competitions (league_id, competition_id)
     select l.id, c.id from l, competitions c where c.slug = '${competitionSlug}'`);
 }
+
+/** The season competitions the Manager tests share: invented, far ahead, never finished. */
+export const MANAGER_SEASON_NAME = "Saison Manager";
+
+/**
+ * The ids of `count` competitions a Manager league can be created with (#644), first one first:
+ * eligible (manager_competitions) and not finished, at least 6 for a league. Shared by every test
+ * and made eligible again at each call: the Manager rule tests replace the eligible list for a
+ * while. Their names are « Saison Manager 1 » to « Saison Manager 10 ».
+ */
+export function managerSeasonCompetitions(count = 6): string[] {
+  return sql(`
+    with c as (
+      insert into competitions (slug, name, starts_on, ends_on)
+      select 'test-manager-season-' || n, '${MANAGER_SEASON_NAME} ' || n,
+             date '2030-01-07' + 7 * n, date '2030-01-07' + 7 * n
+      from generate_series(1, 10) n
+      on conflict (slug) do update set status = 'upcoming'
+      returning id, starts_on
+    ), e as (
+      insert into manager_competitions (competition_id) select id from c on conflict do nothing
+    )
+    select string_agg(id::text, ',' order by starts_on) from (
+      select id, starts_on from c order by starts_on limit ${count}
+    ) s`).split(",");
+}

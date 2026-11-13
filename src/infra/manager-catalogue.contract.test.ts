@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 
-import { sql } from "./contract/database";
+import { managerSeasonCompetitions, sql } from "./contract/database";
 import { managerCatalogueContract } from "./contract/manager-catalogue.contract";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryManagerCatalogue, createSupabaseManagerCatalogue } from "./index";
@@ -46,6 +46,7 @@ if (url && key) {
     const { data: leagueId, error } = await participant.client.rpc("create_manager_league", {
       p_name: "Catalogue",
       p_public: false,
+      p_competitions: managerSeasonCompetitions(),
     });
     if (error) throw new Error(error.message);
     const athleteId = sql(`select a.id from athletes a

@@ -4,18 +4,30 @@ import { useActionState } from "react";
 
 import { messages } from "@/app/messages.fr";
 import { Field } from "@/components/account/field";
+import type { SeasonCompetition } from "@/application/manager-leagues";
 import { SubmitButton } from "@/components/account/submit-button";
 
 import { createManagerLeagueAction, type ManagerLeagueFormState } from "./actions";
+import { CompetitionPicker } from "./competition-picker";
 
 const text = messages.manager;
 
-/** The name of the league and whether anyone may join it (#419). */
-export function CreateManagerLeagueForm() {
+/** Errors about the competitions, shown under them rather than under the name. */
+const COMPETITION_ERRORS = new Set([
+  "MANAGER_COMPETITIONS_TOO_FEW",
+  "MANAGER_COMPETITIONS_REFUSED",
+]);
+
+/**
+ * The name of the league, whether anyone may join it (#419), and its competitions: the number of
+ * players follows (#644).
+ */
+export function CreateManagerLeagueForm({ competitions }: { competitions: SeasonCompetition[] }) {
   const [state, action] = useActionState<ManagerLeagueFormState, FormData>(
     createManagerLeagueAction,
-    { value: "", isPublic: false },
+    { value: "", isPublic: false, competitionIds: [] },
   );
+  const competitionError = state.error && COMPETITION_ERRORS.has(state.error);
   return (
     <form action={action} noValidate className="flex flex-col gap-5">
       <Field
@@ -23,7 +35,7 @@ export function CreateManagerLeagueForm() {
         name="name"
         label={text.nameLabel}
         hint={text.nameHint}
-        error={state.error ? messages.errors[state.error] : undefined}
+        error={state.error && !competitionError ? messages.errors[state.error] : undefined}
         defaultValue={state.value}
         maxLength={60}
         autoComplete="off"
@@ -44,6 +56,17 @@ export function CreateManagerLeagueForm() {
           </span>
         </span>
       </label>
+      <CompetitionPicker
+        competitions={competitions}
+        chosen={state.competitionIds}
+        label={text.competitionsLabel}
+        hint={text.competitionsHint}
+      />
+      {competitionError && (
+        <p role="alert" className="text-sm font-semibold text-accent-text">
+          {messages.errors[state.error!]}
+        </p>
+      )}
       <SubmitButton pendingLabel={text.creating}>{text.submit}</SubmitButton>
     </form>
   );

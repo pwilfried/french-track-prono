@@ -1,38 +1,64 @@
 import { describe, expect, it } from "vitest";
 
+import fc from "fast-check";
+
 import {
   canLaunchMercato,
-  isAllowedTarget,
-  isPlayerTarget,
+  fitsMembers,
+  hasEnoughCompetitions,
   isRoundHours,
   mercatoRounds,
   newestArrival,
   opensAutomatically,
+  plannedMercatoEnd,
   playersAwaited,
-  playerTargets,
+  seasonCompetitions,
+  seasonFormat,
+  seasonStart,
 } from "./manager-league";
 
-describe("isPlayerTarget", () => {
-  it.each([4, 6, 8, 10])("accepts %i players", (n) => {
-    expect(isPlayerTarget(n)).toBe(true);
+describe("seasonFormat", () => {
+  it.each([
+    [6, { players: 4, duelDays: 6, bonusDays: 0 }],
+    [7, { players: 4, duelDays: 6, bonusDays: 1 }],
+    [8, { players: 4, duelDays: 6, bonusDays: 2 }],
+    [10, { players: 6, duelDays: 10, bonusDays: 0 }],
+    [14, { players: 8, duelDays: 14, bonusDays: 0 }],
+    [18, { players: 10, duelDays: 18, bonusDays: 0 }],
+    [25, { players: 10, duelDays: 18, bonusDays: 7 }],
+  ])("derives the players of %i competitions", (competitions, format) => {
+    expect(seasonFormat(competitions)).toEqual(format);
   });
 
-  it.each([0, 2, 3, 5, 7, 9, 11, 12, 4.5, Number.NaN])("refuses %d players", (n) => {
-    expect(isPlayerTarget(n)).toBe(false);
+  it.each([0, 1, 5])("refuses %i competitions, fewer than 6", (competitions) => {
+    expect(seasonFormat(competitions)).toBeNull();
+  });
+
+  it("always gives an even count from 4 to 10 whose home-and-away fits the competitions", () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 6, max: 60 }), (competitions) => {
+        const format = seasonFormat(competitions)!;
+        expect(format.players % 2).toBe(0);
+        expect(format.players).toBeGreaterThanOrEqual(4);
+        expect(format.players).toBeLessThanOrEqual(10);
+        expect(format.duelDays).toBe(2 * (format.players - 1));
+        expect(format.duelDays + format.bonusDays).toBe(competitions);
+        // Exact: two more players would not fit, unless 10 is reached.
+        if (format.players < 10) expect(2 * (format.players + 1)).toBeGreaterThan(competitions);
+      }),
+    );
   });
 });
 
-describe("isAllowedTarget", () => {
-  it("never goes under the players already in", () => {
-    expect(isAllowedTarget(4, 5)).toBe(false);
-    expect(isAllowedTarget(6, 5)).toBe(true);
-    expect(isAllowedTarget(6, 6)).toBe(true);
+describe("fitsMembers", () => {
+  it("accepts competitions whose player count is not under the players already in", () => {
+    expect(fitsMembers(6, 4)).toBe(true);
+    expect(fitsMembers(10, 6)).toBe(true);
   });
 
-  it("offers the even counts from the players already in up to 10", () => {
-    expect(playerTargets(1)).toEqual([4, 6, 8, 10]);
-    expect(playerTargets(5)).toEqual([6, 8, 10]);
-    expect(playerTargets(10)).toEqual([10]);
+  it("refuses fewer than 6 competitions, or a player count under the players already in", () => {
+    expect(fitsMembers(5, 1)).toBe(false);
+    expect(fitsMembers(8, 5)).toBe(false);
   });
 });
 
@@ -83,6 +109,72 @@ describe("opensAutomatically", () => {
         "2027-01-02T08:00:00.000Z",
       ),
     ).toBe(false);
+  });
+});
+
+const at = (iso: string) => ({ firstEventAt: iso });
+
+describe("seasonCompetitions", () => {
+  const end = "2027-03-01T18:00:00.000Z";
+
+  it("counts a competition whose first event is at least 1 hour after the end of the mercato", () => {
+    expect(seasonCompetitions([at("2027-03-01T19:00:00.000Z")], end)).toHaveLength(1);
+  });
+
+  it("does not count a competition that starts less than 1 hour after the mercato", () => {
+    expect(seasonCompetitions([at("2027-03-01T18:59:00.000Z")], end)).toEqual([]);
+    expect(seasonCompetitions([at("2027-02-28T18:00:00.000Z")], end)).toEqual([]);
+  });
+
+  it("keeps the counted competitions first one first", () => {
+    const later = at("2027-05-01T18:00:00.000Z");
+    const sooner = at("2027-04-01T18:00:00.000Z");
+    expect(seasonCompetitions([later, at("2027-03-01T18:30:00.000Z"), sooner], end)).toEqual([
+      sooner,
+      later,
+    ]);
+  });
+});
+
+describe("seasonStart", () => {
+  const end = "2027-03-01T18:00:00.000Z";
+  const missed = { ...at("2027-03-01T18:30:00.000Z"), name: "missed" };
+  const next = { ...at("2027-04-01T18:00:00.000Z"), name: "next" };
+
+  it("names the first competition the mercato misses and the one the season starts with", () => {
+    expect(seasonStart([next, missed], end)).toEqual({ missed, first: next });
+  });
+
+  it("misses nothing when the mercato ends in time", () => {
+    expect(seasonStart([next], end)).toEqual({ missed: null, first: next });
+  });
+
+  it("has no first competition when the mercato misses them all", () => {
+    expect(seasonStart([missed], end)).toEqual({ missed, first: null });
+  });
+});
+
+describe("hasEnoughCompetitions", () => {
+  it("lets 4 players launch with 6 competitions counted, not 5", () => {
+    expect(hasEnoughCompetitions(4, 6)).toBe(true);
+    expect(hasEnoughCompetitions(4, 5)).toBe(false);
+  });
+
+  it("asks 18 competitions of 10 players", () => {
+    expect(hasEnoughCompetitions(10, 18)).toBe(true);
+    expect(hasEnoughCompetitions(10, 17)).toBe(false);
+  });
+});
+
+describe("plannedMercatoEnd", () => {
+  it("ends after the 3 planned rounds of the league", () => {
+    expect(
+      plannedMercatoEnd("2027-01-01T08:00:00.000Z", {
+        firstHours: 48,
+        longRounds: 1,
+        nextHours: 12,
+      }),
+    ).toBe("2027-01-04T08:00:00.000Z");
   });
 });
 
