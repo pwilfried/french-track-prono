@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   publicLeaguesNotice,
+  countsSinceEntry,
+  isOpenToLeagues,
   INVITE_ALPHABET,
   INVITE_LENGTH,
   LEAGUE_MAX_MEMBERS,
@@ -129,5 +131,50 @@ describe("leagueAddChoice", () => {
 
   it("says everything is already added when the league counts some and nothing is left", () => {
     expect(leagueAddChoice({ counted: 2, addable: 0 })).toBe("all-added");
+  });
+});
+
+describe("isOpenToLeagues", () => {
+  // 13 Nov 2026, 18:00 in Paris.
+  const now = "2026-11-13T17:00:00Z";
+
+  it("offers a competition still to come", () => {
+    expect(isOpenToLeagues({ endsOn: "2026-11-21" }, now)).toBe(true);
+  });
+
+  it("offers a competition under way, up to its last day", () => {
+    expect(isOpenToLeagues({ endsOn: "2026-11-14" }, now)).toBe(true);
+    expect(isOpenToLeagues({ endsOn: "2026-11-13" }, now)).toBe(true);
+  });
+
+  it("never offers a finished competition", () => {
+    expect(isOpenToLeagues({ endsOn: "2026-11-12" }, now)).toBe(false);
+  });
+
+  it("reads the day in Paris time: after midnight in Paris, yesterday's competition is over", () => {
+    // 23:30 UTC on the 13th is already 00:30 on the 14th in Paris.
+    expect(isOpenToLeagues({ endsOn: "2026-11-13" }, "2026-11-13T23:30:00Z")).toBe(false);
+    expect(isOpenToLeagues({ endsOn: "2026-11-13" }, "2026-11-13T22:30:00Z")).toBe(true);
+  });
+});
+
+describe("countsSinceEntry", () => {
+  const entered = "2026-11-13T17:00:00.000Z";
+
+  it("leaves out an event locked just before the competition entered the league", () => {
+    expect(countsSinceEntry("2026-11-13T16:59:00.000Z", entered)).toBe(false);
+  });
+
+  it("counts an event locked just after", () => {
+    expect(countsSinceEntry("2026-11-13T17:01:00.000Z", entered)).toBe(true);
+  });
+
+  it("counts every event of a competition counted from the start (no entry date)", () => {
+    expect(countsSinceEntry("2020-01-01T00:00:00.000Z", null)).toBe(true);
+    expect(countsSinceEntry("2020-01-01T00:00:00.000Z", undefined)).toBe(true);
+  });
+
+  it("counts an event whose lock time is unknown", () => {
+    expect(countsSinceEntry(undefined, entered)).toBe(true);
   });
 });

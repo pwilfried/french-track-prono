@@ -20,16 +20,20 @@ create function act_as(p_user text) returns void language sql as $$
   select set_config('request.jwt.claims', json_build_object('sub', p_user, 'role', 'authenticated')::text, true)
 $$;
 
+-- A coming competition: a league is created only on an active one (#614).
+insert into competitions (slug, name, starts_on, ends_on)
+values ('test-public-leagues', 'Test', current_date + 10, current_date + 11);
+
 set local role authenticated;
 select act_as('bbbb0000-0000-0000-0000-000000000001');
-insert into pub select * from create_league('Les Gazelles', array['ultimate-championship-2026'], true);
-insert into priv select * from create_league('Entre nous', array['ultimate-championship-2026']);
+insert into pub select * from create_league('Les Gazelles', array['test-public-leagues'], true);
+insert into priv select * from create_league('Entre nous', array['test-public-leagues']);
 
-select throws_ok($$ select create_league('Ligue officielle', array[]::text[], true) $$, 'FT010', null,
+select throws_ok($$ select create_league('Ligue officielle', array['test-public-leagues'], true) $$, 'FT010', null,
   'a public league with a banned name is refused');
-select throws_ok($$ select create_league('La F F A', array[]::text[], true) $$, 'FT010', null,
+select throws_ok($$ select create_league('La F F A', array['test-public-leagues'], true) $$, 'FT010', null,
   'a banned word typed apart is refused too');
-select lives_ok($$ select create_league('Concorde AC', array[]::text[], true) $$,
+select lives_ok($$ select create_league('Concorde AC', array['test-public-leagues'], true) $$,
   'a name that only starts like a banned word is fine');
 
 -- Another player finds it in the list and joins without a code.

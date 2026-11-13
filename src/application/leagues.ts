@@ -17,6 +17,11 @@ export type League = {
   memberCount: number;
   /** The competitions whose points the league adds up. */
   competitionSlugs: string[];
+  /**
+   * When each competition entered the league, ISO 8601, by slug (#614): only its events locked
+   * after count. A competition missing here counts every event (before #614, official league).
+   */
+  competitionAddedAt?: Record<string, string>;
   /** Joined in one tap without a code, up to 200 players (#277). */
   isPublic: boolean;
   /** The one official league, « Ligue FrenchTrack », without a member limit (#553). */
@@ -60,7 +65,10 @@ export type JoinOutcome =
  * (the database functions check the rules), fake = in memory.
  */
 export interface LeagueRepository {
-  /** `families` empty or absent: a league on all events (#613). */
+  /**
+   * `families` empty or absent: a league on all events (#613). Throws COMPETITION_FINISHED for a
+   * finished competition and LEAGUE_COMPETITION_REQUIRED without any (#614).
+   */
   create(
     name: string,
     competitionSlugs: string[],
@@ -74,11 +82,11 @@ export interface LeagueRepository {
   members(leagueId: string): Promise<LeagueMember[] | null>;
   leave(leagueId: string): Promise<"left" | "must_hand_over">;
   handOver(leagueId: string, newOwnerId: string): Promise<"done" | "not_owner" | "unknown_member">;
-  /** Adds a coming competition to a league; only its creator may. */
+  /** Adds a competition not finished yet to a league; only its creator may (#614). */
   addCompetition(
     leagueId: string,
     competitionSlug: string,
-  ): Promise<"added" | "not_owner" | "unknown" | "started">;
+  ): Promise<"added" | "not_owner" | "unknown" | "finished">;
   /**
    * Adds a family to a league limited to families; only its creator may, and none is ever removed
    * (#613). Adding a family it already has changes nothing.
@@ -110,13 +118,11 @@ export function createLeague(ports: Ports) {
       const isPublic = input.isPublic ?? false;
       // Everyone sees a public league: its name is moderated (#277).
       if (isPublic && isBannedName(name.name)) throw new UseCaseError("LEAGUE_NAME_BANNED");
-      // A league may start without competition: its creator adds them afterwards (#312).
-      return ports.leagues.create(
-        name.name,
-        [...new Set(input.competitionSlugs)],
-        isPublic,
-        families.families,
-      );
+      // At least one competition, not finished (decision of the owner, 12 Nov 2026, #614): the
+      // repository checks that none is finished.
+      const competitionSlugs = [...new Set(input.competitionSlugs)];
+      if (competitionSlugs.length === 0) throw new UseCaseError("LEAGUE_COMPETITION_REQUIRED");
+      return ports.leagues.create(name.name, competitionSlugs, isPublic, families.families);
     },
   };
 }
@@ -188,7 +194,7 @@ export function addLeagueCompetition(ports: Ports) {
       const outcome = await ports.leagues.addCompetition(input.leagueId, input.competitionSlug);
       if (outcome === "not_owner") throw new UseCaseError("NOT_LEAGUE_OWNER");
       if (outcome === "unknown") throw new UseCaseError("COMPETITION_NOT_FOUND");
-      if (outcome === "started") throw new UseCaseError("COMPETITION_STARTED");
+      if (outcome === "finished") throw new UseCaseError("COMPETITION_FINISHED");
     },
   };
 }

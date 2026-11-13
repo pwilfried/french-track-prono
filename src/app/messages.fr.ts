@@ -1019,19 +1019,20 @@ export const messages = {
     tieHelp: "Comment sont départagées les égalités ?",
     createTitle: "Créer une ligue",
     listSubtitle: "Une ligue compte une ou plusieurs compétitions.",
-    createSubtitle: "Ses compétitions maintenant ou plus tard, leurs points s'additionnent.",
-    noCompetitionYet:
-      "Aucune compétition pour l'instant : tu pourras en ajouter depuis la ligue, quand tu veux.",
+    createSubtitle:
+      "Au moins une compétition maintenant, d'autres plus tard : leurs points s'additionnent.",
+    competitionRequired:
+      "Choisis au moins une compétition à venir ou en cours pour créer ta ligue.",
     competitionsTitle: "Compétitions de la ligue",
     noCompetition: "Pas encore de compétition : le classement démarre dès que tu en ajoutes une.",
     noCompetitionMember: "Pas encore de compétition : le créateur de la ligue en ajoutera.",
     noComingCompetition:
       "Aucune compétition à venir pour l'instant : tu pourras l'ajouter dès qu'elle sera annoncée.",
-    addLabel: "Ajouter une compétition à venir",
+    addLabel: "Ajouter une compétition à venir ou en cours",
     addSubmit: "Ajouter",
     adding: "Ajout…",
     added: "✓ Compétition ajoutée au classement de la ligue.",
-    nothingToAdd: "Toutes les compétitions à venir sont déjà dans la ligue.",
+    nothingToAdd: "Toutes les compétitions à venir ou en cours sont déjà dans la ligue.",
     publicLabel: "Ligue publique",
     publicHint:
       "Tout le monde peut la trouver et la rejoindre sans code, jusqu'à 200 joueurs. Son nom doit rester correct.",
@@ -1090,7 +1091,7 @@ export const messages = {
     remove: (name: string) => `Retirer ${name}`,
     addCompetition: "+ Ajouter une compétition",
     howTitle: "Comment ça compte ?",
-    how: "Le classement de la ligue additionne les points de toutes ses compétitions. Tu inviteras tes amis avec un code juste après.",
+    how: "Le classement de la ligue additionne les points de ses compétitions, sur les épreuves qui se verrouillent après leur entrée dans la ligue. Tu inviteras tes amis avec un code juste après.",
     nameLabel: "Nom de la ligue",
     nameHint: "2 à 40 caractères. Emoji bienvenus.",
     createSubmit: "Créer la ligue",
@@ -2581,7 +2582,9 @@ export const messages = {
     COMPETITION_INVALID:
       "Il faut un nom, un type, des dates dans l'ordre, un fuseau horaire valide et un code pays à trois lettres (facultatif).",
     COMPETITION_NOT_FOUND: "Cette compétition n'existe pas.",
-    COMPETITION_STARTED: "Cette compétition a déjà commencé : choisis-en une à venir.",
+    COMPETITION_FINISHED: "Cette compétition est terminée : choisis-en une à venir ou en cours.",
+    LEAGUE_COMPETITION_REQUIRED:
+      "Choisis au moins une compétition à venir ou en cours pour créer ta ligue.",
     COMPETITIONS_UNAVAILABLE: "Les compétitions n'ont pas pu être chargées. Réessaie.",
     HAS_PREDICTIONS:
       "Des joueurs ont déjà pronostiqué : on ne peut plus supprimer, ni changer le tour d'une épreuve.",

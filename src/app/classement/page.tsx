@@ -92,6 +92,7 @@ export default async function RankingPage({
           leagueId: l.id,
           competitionSlugs: l.competitionSlugs,
           families: l.families,
+          competitionAddedAt: l.competitionAddedAt,
           previousSlugs: previousOf(l.competitionSlugs),
         }),
       ),

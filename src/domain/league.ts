@@ -1,3 +1,5 @@
+import { utcToParis } from "./competition";
+
 /** Invite code alphabet: no 0/O nor 1/I/L, so a code read out loud or typed on a phone is not misread. */
 export const INVITE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 export const INVITE_LENGTH = 6;
@@ -11,6 +13,27 @@ export const PUBLIC_LEAGUE_MAX_MEMBERS = 200;
 /** How many players a league can hold. */
 export const leagueCapacity = (isPublic: boolean) =>
   isPublic ? PUBLIC_LEAGUE_MAX_MEMBERS : LEAGUE_MAX_MEMBERS;
+
+/**
+ * True when a competition can join a league, at creation or later (#614): still to come or under
+ * way, never finished. The day is read in Paris time, the time of the app.
+ */
+export function isOpenToLeagues(competition: { endsOn: string }, now: string): boolean {
+  return competition.endsOn >= utcToParis(now).slice(0, 10);
+}
+
+/**
+ * True when an event counts in a league for a competition that entered it at `enteredAt` (#614):
+ * only the events locked after that moment. A competition without entry date (counted from the
+ * start, as before #614, or in the official league) counts every event.
+ */
+export function countsSinceEntry(
+  eventLockAt: string | undefined,
+  enteredAt: string | null | undefined,
+): boolean {
+  if (!enteredAt || !eventLockAt) return true;
+  return Date.parse(eventLockAt) > Date.parse(enteredAt);
+}
 
 /** What the creator of a league can do with its competitions (#550). */
 export type LeagueAddChoice = "nothing-coming" | "choices" | "all-added";

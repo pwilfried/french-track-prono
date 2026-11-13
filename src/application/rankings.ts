@@ -1,6 +1,7 @@
 import { DEFAULT_BIB, type Bib } from "@/domain/bib";
 import { rankClubs, type ClubRank } from "@/domain/club-ranking";
 import type { DisciplineFamily } from "@/domain/discipline";
+import { countsSinceEntry } from "@/domain/league";
 import { countsForFamilies, type LeagueFamilyRule } from "@/domain/league-families";
 import {
   linesOfDay,
@@ -150,6 +151,8 @@ export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: L
         competitionSlugs: string[];
         /** The league's families (#613); none or absent: every event counts. */
         families?: LeagueFamilyRule[];
+        /** When each competition entered the league (#614); absent: every event counts. */
+        competitionAddedAt?: Record<string, string>;
       } & MovesInput,
     ): Promise<RankingRow[]> {
       const members = await ports.leagues.members(input.leagueId);
@@ -157,7 +160,11 @@ export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: L
       const joinedAt = new Map(members.map((m) => [m.userId, m.joinedAt]));
       // Only the predictions made as a member count in a league (decision of 9 Nov 2026, #376):
       // an event locked before the player joined stays out of this league's ranking.
+      // Only the events locked after a competition entered the league count in it (#614).
       const lines = (await linesOf(ports.ranking, input.competitionSlugs))
+        .filter((l) =>
+          countsSinceEntry(l.eventLockAt, input.competitionAddedAt?.[l.competitionSlug]),
+        )
         .filter((l) => joinedAt.has(l.userId))
         .filter((l) => countsInLeague(joinedAt.get(l.userId), l.eventLockAt))
         .filter((l) =>

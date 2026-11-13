@@ -271,9 +271,15 @@ Ligues (v0.5, décisions du propriétaire dans l'issue #112) : code d'invitation
 caractères ambigus (ni 0/O, ni 1/I/L), 50 membres au plus, le créateur passe la main à un membre
 avant de partir (seul, partir supprime la ligue). Depuis la v0.9 (#267), une ligue compte une ou
 plusieurs compétitions choisies par son créateur (`create_league(nom, slugs[])`) et son classement
-additionne leurs points. Depuis la v0.7 (#312), une ligue peut aussi naître sans compétition :
-son créateur ajoute ensuite des compétitions à venir (`add_league_competition`, code FT009 pour une
-compétition déjà commencée). Ligues publiques (v0.7, #277) : tout joueur en crée une (case « Ligue
+additionne leurs points. Depuis la v0.17 (#614, décision du propriétaire du 12 nov. 2026), une
+ligue, privée ou publique, naît avec au moins une compétition active, à venir ou en cours (code
+FT030 sans compétition, FT009 pour une compétition terminée, jour lu à l'heure de Paris :
+`isOpenToLeagues`) ; son créateur en ajoute ensuite d'autres, avec la même règle
+(`add_league_competition`). La date d'entrée de chaque compétition est enregistrée
+(`league_competitions.added_at`) et le classement de la ligue ne compte que ses épreuves verrouillées
+après (`countsSinceEntry`) ; elles comptent toujours au classement général et dans les autres ligues.
+Une compétition sans date d'entrée (ligues d'avant #614, Ligue FrenchTrack) compte toutes ses
+épreuves. Ligues publiques (v0.7, #277) : tout joueur en crée une (case « Ligue
 publique »), elle se rejoint d'un appui sans code (`join_public_league`), 200 membres au plus, et
 son nom ne doit contenir aucun mot interdit (`isBannedLeagueName` / `is_banned_league_name`,
 code FT010) ; un joueur peut la signaler (`report_league`) et l'admin la renomme ou la supprime

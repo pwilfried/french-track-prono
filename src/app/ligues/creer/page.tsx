@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { CreateLeagueForm } from "@/components/leagues/league-forms";
 import { LeagueHero } from "@/components/leagues/league-hero";
+import { isOpenToLeagues } from "@/domain/league";
 
 import { loadCompetitions } from "../../competition";
 import { paramList } from "../../search-params";
@@ -14,7 +15,8 @@ const withCompetitions = (slugs: string[]) =>
 
 /**
  * League creation (board v0.9 « Créer la ligue »): its name and its competitions, the ones ticked
- * on the choice page. None is fine: the creator adds them from the league afterwards (#312).
+ * on the choice page. At least one, not finished (#614): a finished one is left out, and the form
+ * stays disabled while none is chosen.
  */
 export default async function CreateLeaguePage({
   searchParams,
@@ -24,9 +26,9 @@ export default async function CreateLeaguePage({
   const params = await searchParams;
   const asked = [...new Set(paramList(params.competition))];
   await leaguePorts(asked.length ? `/ligues/creer?${withCompetitions(asked)}` : "/ligues/creer");
-  const { coming, past } = await loadCompetitions();
-  const known = [...coming, ...past];
-  const chosen = known.filter((c) => asked.includes(c.slug));
+  const { coming } = await loadCompetitions();
+  const now = new Date().toISOString();
+  const chosen = coming.filter((c) => asked.includes(c.slug) && isOpenToLeagues(c, now));
   const slugs = chosen.map((c) => c.slug);
   const scope = chosen[0]?.scope ?? "international";
 
@@ -47,7 +49,7 @@ export default async function CreateLeaguePage({
           </h2>
           {chosen.length === 0 && (
             <p className="rounded-2xl bg-muted px-3.5 py-3 text-sm text-muted-foreground">
-              {messages.leagues.noCompetitionYet}
+              {messages.leagues.competitionRequired}
             </p>
           )}
           <ul aria-labelledby="chosen" className="flex flex-col gap-2">

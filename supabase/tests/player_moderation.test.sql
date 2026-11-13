@@ -22,6 +22,10 @@ select u, e.competition_id, e.id, 'prediction', 10, 'prediction'
 from (values ('eeeeeeee-0000-0000-0000-000000000002'::uuid), ('eeeeeeee-0000-0000-0000-000000000003'::uuid)) v(u),
      (select id, competition_id from events order by id limit 1) e;
 
+-- A coming competition: a league is created only on an active one (#614).
+insert into competitions (slug, name, starts_on, ends_on)
+values ('test-player-moderation', 'Test', current_date + 10, current_date + 11);
+
 set local role authenticated;
 
 -- A player cannot moderate, nor unblock themselves.
@@ -56,7 +60,7 @@ select is((select count(*)::int from league_members where league_id = 'eeeeeeee-
 -- Fred himself cannot join a league.
 select set_config('request.jwt.claims',
   '{"sub":"eeeeeeee-0000-0000-0000-000000000002","role":"authenticated"}', true);
-select throws_ok($$select create_league('Ligue de Fred', '{}')$$, 'FT014', null,
+select throws_ok($$select create_league('Ligue de Fred', array['test-player-moderation'])$$, 'FT014', null,
   'a blocked player creates no league');
 
 -- Unblocked, he is back.
