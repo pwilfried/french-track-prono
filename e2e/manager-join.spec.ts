@@ -34,6 +34,8 @@ test("a player joins a public Manager league in one tap and a private one by its
   await joinerPage.goto("/manager");
   await signUp(joinerPage, joiner);
   await joinerPage.waitForURL(/\/manager$/);
+  // The tutorial opens at the first visit (#616).
+  await joinerPage.getByRole("button", { name: "Passer le tutoriel" }).click();
   // Without a Manager league the presentation comes first; « Passer » shows the leagues (#618).
   await joinerPage.getByRole("link", { name: "Passer la présentation" }).click();
   await joinerPage.waitForURL(/\/manager\?passer=1$/);

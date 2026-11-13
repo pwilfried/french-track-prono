@@ -1,5 +1,7 @@
 // Every visible UI string lives here (French only in v1, no i18n library).
 
+import type { ManagerIntroFigures } from "@/domain/manager-intro";
+
 /** « 1er », « 2e »… */
 const ordinal = (rank: number) => (rank === 1 ? "1er" : `${rank}e`);
 const GENDER = { F: "Femmes", M: "Hommes", X: "Mixte" } as const;
@@ -387,7 +389,7 @@ export const messages = {
       tagline:
         "Deviens manager : recrute tes athlètes, aligne-les à chaque compétition et affronte tes amis toute la saison.",
       stepsLabel: "Le Manager en 5 étapes",
-      steps: (f: { budget: number; minTeamSize: number; lineupMax: number; winBonus: number }) => [
+      steps: (f: ManagerIntroFigures) => [
         {
           title: "Recrute au mercato",
           text: `${f.budget} crédits pour recruter au moins ${f.minTeamSize} athlètes, par enchères secrètes.`,
@@ -413,6 +415,48 @@ export const messages = {
       haveCode: "J'ai un code d'invitation",
       skip: "Passer",
       skipLabel: "Passer la présentation",
+    },
+    /** The tutorial (#616): seven short steps, at the first visit then on demand. */
+    tutorial: {
+      label: "Comment ça marche",
+      progress: (step: number, total: number) => `Comment ça marche · ${step} / ${total}`,
+      stepLabel: (step: number, total: number) => `Étape ${step} sur ${total}`,
+      skip: "Passer",
+      skipLabel: "Passer le tutoriel",
+      previous: "Précédent",
+      next: "Suivant",
+      done: "C'est parti",
+      open: "Comment ça marche ?",
+      steps: (f: ManagerIntroFigures) => [
+        {
+          title: "Une ligue entre amis",
+          text: `Crée ta ligue ou rejoins celle d'un ami : de ${f.leagueMin} à ${f.leagueMax} joueurs, en nombre pair. Les règles sont les mêmes pour tous.`,
+        },
+        {
+          title: "Le mercato",
+          text: `Tu as ${f.budget} crédits pour recruter. Les offres sont secrètes : à la fin de chaque tour, les cartes se retournent et les enchères sont dévoilées.`,
+        },
+        {
+          title: "Ton équipe pour la saison",
+          text: `Au moins ${f.minTeamSize} athlètes, gardés jusqu'à la dernière compétition. Pas d'achat ni de vente en cours de route.`,
+        },
+        {
+          title: "Aligne tes titulaires",
+          text: `Avant chaque compétition, place jusqu'à ${f.lineupMax} titulaires au stade, sur les places de leur famille ou les places libres. Les autres restent remplaçants.`,
+        },
+        {
+          title: "Marque des points",
+          text: `Tes titulaires marquent selon le barème World Athletics, plus les bonus sportifs (+${f.winBonus} pour une victoire). Tes pronos de la compétition comptent aussi.`,
+        },
+        {
+          title: "Une confrontation par journée",
+          text: "À chaque compétition, tu affrontes un autre joueur : victoire 3 points, nul 1, défaite 0. Tu joues chacun deux fois, à l'aller et au retour.",
+        },
+        {
+          title: "Deviens champion",
+          text: "À la fin de la saison, le premier du classement est champion. Ton palmarès reste dans ton profil.",
+        },
+      ],
     },
   },
   catalogue: {
