@@ -41,6 +41,7 @@ esac`,
       PULLED: pulled,
       SMOKE_TEST: join(root, "smoke.sh"),
       VERCEL_TOKEN: "token",
+      VERCEL_ORG_ID: "team_abc",
       GH_TOKEN: "x",
       GITHUB_REPOSITORY: "owner/repo",
       GITHUB_RUN_ID: "99",
@@ -92,7 +93,7 @@ it("rolls production back and opens an issue for the owners when the smoke test 
   const run = deploy({ pulled: complete, smoke: 1 });
 
   expect(run.status).not.toBe(0);
-  expect(run.calls).toContainEqual(expect.stringMatching(/^vercel rollback/));
+  expect(run.calls).toContainEqual(expect.stringMatching(/^vercel rollback --scope team_abc/));
   const issue = run.calls.find((c) => c.startsWith("gh issue create")) ?? "";
   expect(issue).toContain("-R owner/repo");
   expect(issue).toContain("@alice @bob");
