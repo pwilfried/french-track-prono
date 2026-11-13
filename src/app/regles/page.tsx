@@ -3,17 +3,17 @@ import type { Metadata } from "next";
 import { listDisciplines } from "@/application/disciplines";
 import { UseCaseError } from "@/application/errors";
 import type { Discipline } from "@/domain/discipline";
-import { createPublicSupabaseClient, createSupabaseDisciplineRepository } from "@/infra";
 
 import { messages } from "../messages.fr";
 import { loadScale } from "../scale";
+import { publicDisciplines } from "../public-data";
 
 export const metadata: Metadata = { title: messages.rules.title };
 
 async function loadTolerances(): Promise<Discipline[]> {
   try {
     const all = await listDisciplines({
-      disciplines: createSupabaseDisciplineRepository(createPublicSupabaseClient()),
+      disciplines: publicDisciplines(),
     }).execute();
     const examples = ["100 m", "400 m", "Saut en longueur", "Saut en hauteur", "Lancer du javelot"];
     return all.filter((d) => examples.includes(d.name));

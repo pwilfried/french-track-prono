@@ -6,17 +6,13 @@ import { AccountHero } from "@/components/account/account-hero";
 import { ErrorNotice } from "@/components/error-notice";
 import { CompetitionChips } from "@/components/events/competition-chips";
 import { PredictionLineCard } from "@/components/profile/prediction-history";
-import {
-  createPublicSupabaseClient,
-  createSupabaseEventReader,
-  createSupabasePointsRepository,
-  createSupabasePredictionRepository,
-} from "@/infra";
+import { createSupabasePointsRepository, createSupabasePredictionRepository } from "@/infra";
 
 import { currentCompetition, loadCompetitions } from "../../competition";
 import { messages } from "../../messages.fr";
 import { paramText } from "../../search-params";
 import { getCurrentUser, getSessionClient } from "../../session";
+import { publicEventReader } from "../../public-data";
 
 const text = messages.predictionHistory;
 
@@ -41,7 +37,7 @@ export default async function MyPredictionsPage({
     const client = await getSessionClient();
     lines = await getMyPredictionHistory({
       predictions: createSupabasePredictionRepository(client),
-      events: createSupabaseEventReader(createPublicSupabaseClient()),
+      events: publicEventReader(),
       points: createSupabasePointsRepository(client),
     }).execute({ userId: user.userId, competitionSlugs: [competition.slug] });
   } catch (error) {

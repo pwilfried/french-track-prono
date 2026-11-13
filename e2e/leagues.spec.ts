@@ -59,6 +59,22 @@ test("two friends in the same league see the same ranking", async ({ browser }) 
   await expect(rows.nth(0)).toContainText("12");
   await expect(rows.nth(1)).toContainText(bob.pseudo);
 
+  // The rankings tab opens on that league for both, with the same list (#661).
+  await annaPage.goto("/classement");
+  await bobPage.goto("/classement");
+  for (const page of [annaPage, bobPage]) {
+    await expect(
+      page.getByRole("button", { name: /Changer de classement \(Les Foulées E2E/ }),
+    ).toBeVisible();
+  }
+  const tabByAnna = await annaPage.getByRole("list", { name: "Classement" }).innerText();
+  const tabByBob = await bobPage.getByRole("list", { name: "Classement" }).innerText();
+  expect(tabByAnna.replace("Toi · ", "")).toBe(tabByBob.replace("Toi · ", ""));
+  // « Ta place »: Bob is 9 points behind Anna.
+  await expect(bobPage.getByRole("region", { name: "Ta place" })).toContainText(
+    `9 pts derrière ${anna.pseudo} (1er)`,
+  );
+
   deleteCompetition(competition);
 });
 

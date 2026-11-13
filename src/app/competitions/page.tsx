@@ -18,8 +18,6 @@ import type { EventSummary } from "@/domain/event";
 import { eventsProgress, filterCounts, filterEvents, type EventFilter } from "@/domain/event-list";
 import { defaultDay, eventsBySession, eventsOfDay, programDays } from "@/domain/program";
 import {
-  createPublicSupabaseClient,
-  createSupabaseEventReader,
   createSupabasePointsRepository,
   createSupabasePredictionRepository,
   createSupabaseProgramAlertRepository,
@@ -38,13 +36,14 @@ import { messages } from "../messages.fr";
 import { paramText } from "../search-params";
 import { getCurrentUser, getSessionClient } from "../session";
 import { ProgramAlertButton } from "./program-alert-button";
+import { publicEventReader } from "../public-data";
 
 const text = messages.competitions;
 const filterList: EventFilter[] = ["todo", "posed", "done", "all"];
 
 async function loadEvents(competition: ShownCompetition): Promise<EventSummary[] | "error"> {
   try {
-    const events = createSupabaseEventReader(createPublicSupabaseClient());
+    const events = publicEventReader();
     return await listEvents({ events }).execute({ competitionSlug: competition.slug });
   } catch (error) {
     // Only known error codes are expected here; anything else is a bug and stays visible.

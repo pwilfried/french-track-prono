@@ -7,6 +7,7 @@ import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { createSupabaseDisciplineRepository } from "@/infra";
 
 import { formText } from "../../form-data";
+import { publicDataChanged } from "../../public-data";
 import { adminOnly } from "../guard";
 
 export type ToleranceState = { error?: ErrorCode; saved?: boolean };
@@ -27,6 +28,7 @@ export async function saveToleranceAction(
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
   }
+  publicDataChanged("discipline");
   revalidatePath("/admin/disciplines");
   return { saved: true };
 }
@@ -52,6 +54,7 @@ export async function createDisciplineAction(
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
   }
+  publicDataChanged("discipline");
   revalidatePath("/admin/disciplines");
   return { created: name.replace(/\s+/g, " ").trim() };
 }

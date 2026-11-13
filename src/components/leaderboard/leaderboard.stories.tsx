@@ -67,8 +67,8 @@ export const WithChanges: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const items = canvas.getAllByRole("listitem");
-    await expect(canvas.getByText("2 places gagnées depuis la veille")).toBeInTheDocument();
-    await expect(canvas.getByText("1 place perdue depuis la veille")).toBeInTheDocument();
+    await expect(canvas.getByText("gagne 2 places")).toBeInTheDocument();
+    await expect(canvas.getByText("perd 1 place")).toBeInTheDocument();
     await expect(items[0]).toHaveTextContent("▲2");
     await expect(items[2]).toHaveTextContent("=");
     await expect(items[4]).not.toHaveTextContent(/[▲▼=]/);

@@ -19,14 +19,31 @@ function hasPsql(): boolean {
   }
 }
 
-/** Runs SQL on the local database and returns the first column of the first row. */
-export function sql(statement: string): string {
+/**
+ * In the end-to-end tests (PUBLIC_CACHE_FLUSH_SECRET set by playwright.config.ts), a change made in
+ * SQL bypasses the back-office, so the app's cache of public data is expired by hand (#693),
+ * before the test goes on. Synchronous like `sql`; does nothing if the app is not up.
+ */
+function flushPublicCache(): void {
+  const secret = process.env.PUBLIC_CACHE_FLUSH_SECRET;
+  if (!secret) return;
+  const target = `${process.env.PUBLIC_CACHE_FLUSH_URL ?? "http://localhost:3000"}/api/public-cache`;
+  const script = `fetch(${JSON.stringify(target)}, { method: "POST", headers: { "x-flush-secret": ${JSON.stringify(secret)} } }).catch(() => {})`;
+  execFileSync(process.execPath, ["-e", script], { stdio: "ignore", timeout: 10_000 });
+}
+
+/**
+ * Runs SQL on the local database and returns the first column of the first row. `keepCache`: the
+ * app's cache of public data is left as is (a test that shows the cache at work).
+ */
+export function sql(statement: string, options: { keepCache?: boolean } = {}): string {
   const args = ["-tA", "-v", "ON_ERROR_STOP=1", "-c", statement];
   const output = hasPsql()
     ? execFileSync("psql", [url, ...args], { encoding: "utf8" })
     : execFileSync("docker", ["exec", container, "psql", "-U", "postgres", ...args], {
         encoding: "utf8",
       });
+  if (!options.keepCache && !/^\s*select\b/i.test(statement)) flushPublicCache();
   return output.trim().split("\n")[0] ?? "";
 }
 
