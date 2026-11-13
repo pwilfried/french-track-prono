@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
+import { chooseSeason, seasonReady } from "./manager-season";
 import { newPlayer, signUp } from "./players";
 
 test("a participant lines up their team before a competition and can no longer change it once it has started", async ({
   page,
 }) => {
+  seasonReady();
   const tag = `${Date.now() % 1000000}`;
   const league = `Alignement ${tag}`;
   const meeting = `Meeting Alignement ${tag}`;
@@ -39,6 +41,7 @@ test("a participant lines up their team before a competition and can no longer c
   await signUp(page, owner);
   await page.waitForURL(/\/manager\/creer$/);
   await page.getByLabel("Nom de la ligue").fill(league);
+  await chooseSeason(page);
   await page.getByRole("button", { name: "Créer la ligue" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(league);
   const id = sql(`select id from manager_leagues where name = '${league}'`);

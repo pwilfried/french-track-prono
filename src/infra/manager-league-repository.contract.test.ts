@@ -2,7 +2,9 @@ import { describe, it } from "vitest";
 
 import type { ManagerRuleSet } from "@/application/manager-rules";
 
-import { lockSharedRow, sql } from "./contract/database";
+import type { ManagerLeagueRepository } from "@/application/manager-leagues";
+
+import { lockSharedRow, managerSeasonCompetitions, sql } from "./contract/database";
 import { managerLeagueRepositoryContract } from "./contract/manager-league-repository.contract";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryManagerLeagueStore, createSupabaseManagerLeagueRepository } from "./index";
@@ -32,8 +34,14 @@ managerLeagueRepositoryContract("in-memory fake", async () => {
       competitionSlugs: [],
     },
   };
-  const store = createInMemoryManagerLeagueStore(rules);
+  const competitions = Array.from({ length: 10 }, (_, i) => ({
+    id: `c${i + 1}`,
+    name: `Saison Manager ${i + 1}`,
+    firstEventAt: `2030-${String(i + 1).padStart(2, "0")}-15T18:00:00.000Z`,
+  }));
+  const store = createInMemoryManagerLeagueStore(rules, competitions);
   return {
+    competitionIds: competitions.map((c) => c.id),
     creator: store.session({
       userId: "u1",
       pseudo: "Créatrice",
@@ -64,8 +72,17 @@ if (url && key) {
     let held: { budget: string; unlock: () => void } | null = null;
     const write = (value: number | string) =>
       void sql(`update manager_rules set rules = jsonb_set(rules, '{budget}', '${value}')`);
+    // The Manager rule tests replace the eligible competitions for a while: make them eligible
+    // again right before each choice.
+    const eligibleAgain = (repo: ManagerLeagueRepository): ManagerLeagueRepository => ({
+      ...repo,
+      availableCompetitions: () => (managerSeasonCompetitions(), repo.availableCompetitions()),
+      create: (...args) => (managerSeasonCompetitions(), repo.create(...args)),
+      setCompetitions: (...args) => (managerSeasonCompetitions(), repo.setCompetitions(...args)),
+    });
     return {
-      creator: createSupabaseManagerLeagueRepository(creator.client),
+      competitionIds: managerSeasonCompetitions(10),
+      creator: eligibleAgain(createSupabaseManagerLeagueRepository(creator.client)),
       creatorId: creator.userId,
       other: createSupabaseManagerLeagueRepository(other.client),
       setBudget: async (value) => {

@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 
-import { sql } from "./contract/database";
+import { managerSeasonCompetitions, sql } from "./contract/database";
 import { managerBidContract } from "./contract/manager-bid.contract";
 import { signedInPlayer } from "./contract/test-player";
 import {
@@ -52,6 +52,7 @@ if (url && key) {
       const { data, error } = await first.client.rpc("create_manager_league", {
         p_name: name,
         p_public: false,
+        p_competitions: managerSeasonCompetitions(),
       });
       if (error) throw new Error(error.message);
       return data as string;

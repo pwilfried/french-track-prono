@@ -10,12 +10,24 @@ from generate_series(1, 13) n;
 insert into profiles (id, pseudo, age_confirmed_at)
 select ('adadad00-0000-0000-0000-0000000000' || lpad(n::text, 2, '0'))::uuid, 'Joueur ' || n, now()
 from generate_series(1, 13) n;
+-- Ten season competitions, far ahead, eligible (#644): a league is created on 6 or more.
+insert into competitions (slug, name, starts_on, ends_on)
+select 'tap-season-' || n, 'Saison ' || n, current_date + 30 + 7 * n, current_date + 30 + 7 * n
+from generate_series(1, 10) n;
+insert into manager_competitions (competition_id)
+select id from competitions where slug like 'tap-season-%';
+create function pg_temp.season(p_count int) returns uuid[] language sql stable as $$
+  select array_agg(id order by starts_on) from (
+    select id, starts_on from competitions where slug like 'tap-season-%'
+    order by starts_on limit p_count) s
+$$;
+grant execute on function pg_temp.season(int) to authenticated;
 
 set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub":"adadad00-0000-0000-0000-000000000001","role":"authenticated"}', true);
-select create_manager_league('Ligue Publique', true);
-select create_manager_league('Ligue Privee', false);
+select create_manager_league('Ligue Publique', true, pg_temp.season(6));
+select create_manager_league('Ligue Privee', false, pg_temp.season(6));
 
 -- Their ids and codes, for the players who cannot read them yet.
 reset role;

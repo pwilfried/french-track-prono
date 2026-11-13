@@ -21,6 +21,19 @@ insert into athlete_disciplines (athlete_id, discipline, is_primary) values
 insert into athlete_records (athlete_id, discipline, kind, mark, mark_value) values
   ('aeaeae00-0000-0000-0000-0000000000a1', '100 m', 'pr', '11.02', 11.02);
 
+-- Ten season competitions, far ahead, eligible (#644): a league is created on 6 or more.
+insert into competitions (slug, name, starts_on, ends_on)
+select 'tap-season-' || n, 'Saison ' || n, current_date + 30 + 7 * n, current_date + 30 + 7 * n
+from generate_series(1, 10) n;
+insert into manager_competitions (competition_id)
+select id from competitions where slug like 'tap-season-%';
+create function pg_temp.season(p_count int) returns uuid[] language sql stable as $$
+  select array_agg(id order by starts_on) from (
+    select id, starts_on from competitions where slug like 'tap-season-%'
+    order by starts_on limit p_count) s
+$$;
+grant execute on function pg_temp.season(int) to authenticated;
+
 set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub":"aeaeae00-0000-0000-0000-000000000002","role":"authenticated"}', true);
@@ -36,7 +49,7 @@ select throws_ok($$select admin_set_athlete_price('aeaeae00-0000-0000-0000-00000
 
 select set_config('request.jwt.claims',
   '{"sub":"aeaeae00-0000-0000-0000-000000000002","role":"authenticated"}', true);
-select create_manager_league('Catalogue', false);
+select create_manager_league('Catalogue', false, pg_temp.season(6));
 reset role;
 create temp table t_league as select id from manager_leagues;
 grant select on t_league to authenticated;
