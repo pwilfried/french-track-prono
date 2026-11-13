@@ -11,6 +11,7 @@ import {
   type PerformanceStatus,
   type RecordFlag,
 } from "@/domain/performance";
+import { matchResults, parseResultsTable, type ResultRow } from "@/domain/result-import";
 
 import type { AdminActionState } from "../actions";
 import { savePerformancesAction } from "./actions";
@@ -30,22 +31,48 @@ export type PerformanceRow = {
 const t = messages.performances;
 
 /**
- * One card per athlete of the start list, those lined up in a Manager league first: status
- * (finished, DNS, DNF, DQ, or not entered), place, mark and records. Typing a place or a mark marks
- * the athlete as finished; an athlete left « not entered » has no line.
+ * The results sheet of an event (#665): one card per athlete of the start list, those lined up in
+ * a Manager league first: status (finished, DNS, DNF, DQ, or not entered), place, mark and records.
+ * Typing a place or a mark marks the athlete as finished; an athlete left « not entered » has no
+ * line. Places 1 to 3 make the podium of the predictions; without a Manager league on the
+ * competition (`manager` false) they are all it needs.
  */
 export function PerformanceForm({
   eventId,
   slug,
+  manager,
   initial,
 }: {
   eventId: string;
   slug: string;
+  manager: boolean;
   initial: PerformanceRow[];
 }) {
   const [state, action] = useActionState<AdminActionState, FormData>(savePerformancesAction, {});
   const [rows, setRows] = useState<PerformanceRow[]>(initial);
+  const [pasted, setPasted] = useState("");
+  const [report, setReport] = useState<{ matched: number; unmatched: ResultRow[] } | null>(null);
   const missing = rows.filter((r) => r.linedUp && r.status === "").length;
+
+  // Pre-fills the sheet from a pasted World Athletics table (#666); nothing is saved yet.
+  const prefill = () => {
+    const { lines, unmatched } = matchResults(parseResultsTable(pasted), rows);
+    setRows(
+      rows.map((r) => {
+        const line = lines.find((l) => l.athleteId === r.athleteId);
+        return line
+          ? {
+              ...r,
+              status: line.status,
+              place: line.place === null ? "" : String(line.place),
+              mark: line.mark ?? "",
+              records: line.records,
+            }
+          : r;
+      }),
+    );
+    setReport({ matched: lines.length, unmatched });
+  };
 
   const update = (athleteId: string, change: Partial<PerformanceRow>) =>
     setRows(rows.map((r) => (r.athleteId === athleteId ? { ...r, ...change } : r)));
@@ -70,6 +97,58 @@ export function PerformanceForm({
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="lines" value={JSON.stringify(lines)} />
 
+      {rows.length > 0 && (
+        <details className="rounded-card border border-border bg-card p-3">
+          <summary className="flex min-h-11 cursor-pointer items-center font-semibold">
+            {t.paste.title}
+          </summary>
+          <div className="mt-2 flex flex-col gap-2">
+            <p className="text-sm text-muted-foreground">{t.paste.hint}</p>
+            <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
+              {t.paste.label}
+              <textarea
+                value={pasted}
+                onChange={(e) => setPasted(e.target.value)}
+                rows={6}
+                className="rounded-xl border-2 border-border bg-background p-2 font-mono text-sm text-foreground"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={prefill}
+              disabled={pasted.trim() === ""}
+              className="min-h-11 rounded-xl border-2 border-brand px-4 font-semibold text-brand disabled:opacity-50 dark:border-secondary dark:text-secondary"
+            >
+              {t.paste.apply}
+            </button>
+            {report && (
+              <div role="status" className="flex flex-col gap-1 text-sm">
+                {report.matched === 0 && report.unmatched.length === 0 ? (
+                  <p className="font-semibold text-accent-text">{t.paste.none}</p>
+                ) : (
+                  <p className="font-semibold">{t.paste.matched(report.matched)}</p>
+                )}
+                {report.unmatched.length > 0 && (
+                  <>
+                    <p className="font-semibold text-gold-ink">
+                      {t.paste.unmatched(report.unmatched.length)}
+                    </p>
+                    <ul className="list-disc pl-5">
+                      {report.unmatched.map((u, n) => (
+                        <li key={n} className="break-words">
+                          {u.name}
+                          {u.countryCode && ` (${u.countryCode})`}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </details>
+      )}
+
       <p
         role="status"
         className={
@@ -78,7 +157,7 @@ export function PerformanceForm({
             : "rounded-2xl bg-muted px-3.5 py-3 text-sm font-semibold"
         }
       >
-        {t.missing(missing, rows.filter((r) => r.linedUp).length)}
+        {manager ? t.missing(missing, rows.filter((r) => r.linedUp).length) : t.podiumOnly}
       </p>
 
       {rows.length === 0 ? (

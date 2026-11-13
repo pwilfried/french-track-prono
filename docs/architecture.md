@@ -184,10 +184,16 @@ glisser-déposer) ; le compte à rebours passe à l'orange à 1 h et au rouge à
 verrouillage. La base refuse un prono après `lock_at`, un athlète hors liste de départ, un
 deuxième joker dans la compétition, et la suppression d'un prono après le verrouillage.
 
-**Résultats et points (v0.4).** L'admin saisit le podium officiel dans `/admin` (ex æquo : les
-athlètes partagent la place, décision du propriétaire), puis clique sur « Calculer les points » ;
-le coup de flair est calculé sur tous les pronos de l'épreuve. Le joueur voit le détail dans
-`/mes-points`.
+**Résultats et points (v0.4, puis #665).** L'admin saisit une seule feuille de résultats par
+épreuve (`/admin/<épreuve>/performances`) : le podium officiel des pronos en est tiré (places 1
+à 3, ex æquo compris : les athlètes partagent la place, décision du propriétaire), et
+l'enregistrement calcule tout de suite les points (`src/application/save-result-sheet.ts`) ; le
+bouton « Recalculer » relance le même calcul en secours. Le coup de flair est calculé sur tous les
+pronos de l'épreuve. Le joueur voit le détail dans `/mes-points`. Depuis #666, l'admin peut
+coller le tableau de la page de résultats World Athletics : `src/domain/result-import.ts` le lit
+(place, nom, pays, marque, records, DNS / DNF / DQ) et le rapproche de la liste de départ par nom
+normalisé et pays ; la feuille est seulement pré-remplie, les lignes non reconnues sont listées à
+part, et rien n'est enregistré avant « Enregistrer ». Aucun appel réseau vers World Athletics.
 
 **Ligues et classements (v0.5).** Voir « Modèle de données » pour les règles des ligues. Le
 classement (`src/domain/ranking.ts`, R9) départage aux points, puis aux podiums parfaits, puis
@@ -212,11 +218,11 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 
 | Groupe | Tables |
 |---|---|
-| Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions` |
+| Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions`, `league_families` |
 | Référentiel | `competitions`, `events` (dont `kind` et `sub_disciplines` des épreuves combinées), `athletes`, `entries` (liste de départ), `results`, `athlete_records` (PR, SB, WR, WB) |
 | Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions` |
 | Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
-| Fonctions | `create_league()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()` |
+| Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()` |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers` ; `badges` et `user_badges` restent vides : les badges sont calculés (v0.11) |
 
 Garanties portées par la base : pronostic impossible après `lock_at`, pronos des autres
@@ -237,7 +243,21 @@ depuis le back-office (Ligues, action journalisée `moderate_league`, #321). Dep
 le back-office liste toutes les ligues (`admin_list_leagues()`), efface des signalements infondés
 (`admin_dismiss_league_reports()`), lit les membres avec leur rang (`admin_league_members()`, même
 règle que `countsInLeague`) et retire un membre (`admin_remove_league_member()`, jamais le créateur).
-Ligue officielle (#553) : une seule ligue publique `is_official` (index unique partiel), « Ligue
+Ligues thématiques (v0.17, #613) : à la création, une ligue compte « Toutes les épreuves » (par
+défaut) ou une ou plusieurs familles parmi huit (sprint, haies, demi-fond, fond, sauts, lancers,
+épreuves combinées, relais ; les sauts réunissent les deux familles de sauts de `disciplines`),
+rangées dans `league_families` (`create_league(nom, slugs[], publique, familles[])`) ; pas de
+famille = toutes les épreuves, comme toutes les ligues d'avant. Seul le classement de la ligue
+change : il ne compte que les épreuves de ses familles (`countsForFamilies`,
+`src/domain/league-families.ts`, appliqué par `getLeagueRanking` avec la famille de la discipline
+lue sur chaque ligne de points) ; les pronos, le classement général et ceux des compétitions ne
+changent pas. Le créateur ajoute une famille plus tard (`add_league_family`, page
+`/ligues/[id]/familles` avec l'aperçu « compte / ne compte pas »), jamais à une ligue sur toutes les
+épreuves (FT029), et n'en retire jamais (décision du propriétaire du 13 nov. 2026) : une famille
+ajoutée garde sa date (`added_at`) et ne compte que les épreuves qui commencent après. Badge
+« Sprint · Haies » sur la carte et la page de la ligue ; dans la ligue, les épreuves des autres
+familles sont grisées « Hors ligue » et restent pronostiquables ; les membres voient l'ajout d'une
+famille sur la page de la ligue. Ligue officielle (#553) : une seule ligue publique `is_official` (index unique partiel), « Ligue
 FrenchTrack », sur les Championnats d'Europe, sans plafond de membres. Elle appartient au premier
 compte admin ; la migration la crée par `private.create_official_league()` (idempotente, rien sans
 compte admin : la relancer à la main si l'admin arrive après). On la rejoint sur choix, et seul
@@ -271,17 +291,22 @@ fonctions `set_start_list()`, `set_results()` et `set_event_scores()`, avec la s
 Chacune écrit une ligne dans `admin_actions` (journal lisible par les admins seulement, écrit par
 la base elle-même via `private.log_admin_action()`, hors de l'API).
 
-Performances Manager (v0.15, issue #429) : place, marque, statut (DNS, DNF, DQ) et indicateurs de
-records de chaque athlète d'une épreuve, dans `event_performances`, à part de `results`. Écriture par
-`admin_set_performances()` (journalisée), lecture publique ; `admin_manager_lined_up()` signale à
-l'admin les athlètes alignés. Détail : `docs/decisions/french-track-manager.md`, section 4.
+Feuille de résultats (v0.15, issue #429, puis #665) : place, marque, statut (DNS, DNF, DQ) et
+indicateurs de records de chaque athlète d'une épreuve, dans `event_performances`. Écriture par
+`admin_set_performances()` (journalisée), qui remplace aussi `results` par les arrivés classés 1
+à 3 (même règle que `podiumFromPerformances` dans `src/domain/performance.ts`) ; lecture publique ;
+`admin_manager_lined_up()` signale à l'admin les athlètes alignés. Détail :
+`docs/decisions/french-track-manager.md`, section 4.
 
 Points Manager (v0.15, issue #431) : les tables World Athletics vivent en TypeScript, donc le calcul
 se fait côté serveur avec la session de l'admin. `admin_manager_scoring_sheet()` lui donne les
 alignements (privés), les performances et les points de pronos de la compétition ;
 `src/domain/manager-score.ts` calcule ; `admin_set_manager_scores()` remplace d'un bloc les lignes
 de `manager_scores` (journalisée `run_manager_scoring`). Les participants d'une ligue en lisent
-les scores ; `my_manager_score()` rend celui du joueur avec le nom de ses athlètes.
+les scores ; `my_manager_score()` rend celui du joueur avec le nom de ses athlètes. Depuis #665, le
+calcul suit chaque feuille de résultats : tant qu'une épreuve de la compétition n'a pas de
+résultat, les scores sont provisoires (`manager_scores.complete` faux, décidé par la base) ; la
+confrontation s'affiche, mais ne compte au classement et ne clôt la saison qu'une fois complète.
 
 Calendrier Manager (v0.16, issue #432) : à la clôture du mercato, un déclencheur sur
 `manager_leagues.mercato_closed_at` tire une fois le calendrier aller-retour

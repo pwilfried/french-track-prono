@@ -38,6 +38,7 @@ const ranking = (
 const leagues = (members: LeagueMember[] | null): LeagueRepository => ({
   create: async () => Promise.reject(new Error("unused")),
   addCompetition: async () => "added",
+  addFamily: async () => "added",
   listPublic: async () => [],
   joinPublic: async () => ({ outcome: "unknown_code" }),
   report: async () => "unknown",
@@ -363,5 +364,101 @@ describe("standingIn (#552)", () => {
     }).execute({ leagueId: "l1", competitionSlugs: ["c1"] });
     expect(standingIn(rows, "bob")).toBeNull();
     expect(standingIn(rows, "zoe")).toBeNull();
+  });
+});
+
+describe("a league limited to event families counts only their events (#613)", () => {
+  const of = (
+    family: RankingLine["eventFamily"],
+    l: RankingLine,
+    eventStartsAt = l.eventStartsAt,
+  ): RankingLine => ({ ...l, eventFamily: family, eventStartsAt });
+
+  it("counts the 100 m and not the javelin in a sprint league", async () => {
+    // given Ana and Bob in a sprint league, both scoring on a 100 m and a javelin
+    const lines = [
+      of("sprint", line("ana", 4, false, "100m")),
+      of("throws", line("ana", 9, false, "javelin")),
+      of("sprint", line("bob", 6, false, "100m")),
+      of("throws", line("bob", 1, false, "javelin")),
+    ];
+    // when the league ranking is computed
+    const result = await getLeagueRanking({
+      ranking: ranking(lines),
+      leagues: leagues([member("ana"), member("bob")]),
+    }).execute({
+      leagueId: "l",
+      competitionSlugs: ["c"],
+      families: [{ family: "sprint", addedAt: null }],
+    });
+    // then only the 100 m counts
+    expect(result.map((r) => [r.pseudo, r.points, r.rank])).toEqual([
+      ["BOB", 6, 1],
+      ["ANA", 4, 2],
+    ]);
+  });
+
+  it("keeps the tie rule on the counted events only", async () => {
+    // given equal sprint points, Ana with a perfect sprint podium, Bob with one on a javelin
+    const lines = [
+      of("sprint", line("ana", 5, true, "100m")),
+      of("sprint", line("bob", 5, false, "100m")),
+      of("throws", line("bob", 5, true, "javelin")),
+    ];
+    const result = await getLeagueRanking({
+      ranking: ranking(lines),
+      leagues: leagues([member("ana"), member("bob")]),
+    }).execute({
+      leagueId: "l",
+      competitionSlugs: ["c"],
+      families: [{ family: "sprint", addedAt: null }],
+    });
+    // then Ana is ahead: Bob's perfect javelin podium is out of the league
+    expect(result.map((r) => [r.pseudo, r.points, r.rank])).toEqual([
+      ["ANA", 5, 1],
+      ["BOB", 5, 2],
+    ]);
+  });
+
+  it("counts an added family only for the events not started when it was added", async () => {
+    const lines = [
+      of("throws", line("ana", 7, false, "shot"), "2026-11-12T18:00:00.000Z"),
+      of("throws", line("ana", 3, false, "javelin"), "2026-11-14T18:00:00.000Z"),
+    ];
+    const result = await getLeagueRanking({
+      ranking: ranking(lines),
+      leagues: leagues([member("ana")]),
+    }).execute({
+      leagueId: "l",
+      competitionSlugs: ["c"],
+      families: [
+        { family: "sprint", addedAt: null },
+        { family: "throws", addedAt: "2026-11-13T12:00:00.000Z" },
+      ],
+    });
+    expect(result.map((r) => [r.pseudo, r.points])).toEqual([["ANA", 3]]);
+  });
+
+  it("gives the same ranking as before for a league on all events", async () => {
+    const lines = [
+      of("sprint", line("ana", 4, false, "100m")),
+      of("throws", line("bob", 9, false, "javelin")),
+      line("ana", 2, false, "old"),
+    ];
+    const ports = { ranking: ranking(lines), leagues: leagues([member("ana"), member("bob")]) };
+    const before = await getLeagueRanking(ports).execute({
+      leagueId: "l",
+      competitionSlugs: ["c"],
+    });
+    const allEvents = await getLeagueRanking(ports).execute({
+      leagueId: "l",
+      competitionSlugs: ["c"],
+      families: [],
+    });
+    expect(allEvents).toEqual(before);
+    expect(before.map((r) => [r.pseudo, r.points])).toEqual([
+      ["BOB", 9],
+      ["ANA", 6],
+    ]);
   });
 });

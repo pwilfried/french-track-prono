@@ -15,6 +15,7 @@ const lines = (
   eventId: string,
   eventStartsAt: string,
   eventLockAt: string,
+  eventFamily: RankingLine["eventFamily"],
 ): RankingLine[] => [
   {
     userId: ana,
@@ -25,6 +26,7 @@ const lines = (
     eventId,
     eventStartsAt,
     eventLockAt,
+    eventFamily,
   },
   {
     userId: bob,
@@ -35,6 +37,7 @@ const lines = (
     eventId,
     eventStartsAt,
     eventLockAt,
+    eventFamily,
   },
 ];
 
@@ -47,6 +50,7 @@ rankingRepositoryContract("in-memory fake", async () => {
     "e1",
     "2026-11-23T19:00:00.000Z",
     "2026-11-23T18:55:00.000Z",
+    "sprint",
   );
   return {
     competitionSlug: "c",
@@ -80,6 +84,9 @@ if (url && key) {
       eventId,
       startsAt,
       lockAt,
+      // The family of the event's discipline (#613).
+      sql(`select d.family from events e join disciplines d on d.name = e.discipline
+        where e.id = '${eventId}'`) as RankingLine["eventFamily"],
     );
     for (const l of expected) {
       // A new profile draws a random bib: pin it to the expected one.

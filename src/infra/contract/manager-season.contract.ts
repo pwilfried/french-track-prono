@@ -5,7 +5,8 @@ import type { ManagerSeasonRepository } from "@/application/manager-championship
 /**
  * A Manager league of two players whose mercato closed: three competitions of the league, first
  * one first (two head-to-head matchdays, then a bonus one); the first competition is scored,
- * `first` 900 and `second` 700.
+ * `first` 900 and `second` 700. The second one may have provisional scores: not every event has
+ * its result yet (#665).
  */
 export type ManagerSeasonWorld = {
   leagueId: string;
@@ -46,7 +47,7 @@ export function managerSeasonContract(name: string, world: () => Promise<Manager
       expect([two!.home, two!.away]).toEqual([one!.away, one!.home]);
     });
 
-    it("gives the Manager scores of the league", async () => {
+    it("gives the complete Manager scores of the league, not the provisional ones", async () => {
       const w = await world();
 
       const { scores } = await w.player.season(w.leagueId);

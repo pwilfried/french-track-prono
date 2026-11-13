@@ -7,6 +7,12 @@ const ordinal = (rank: number) => (rank === 1 ? "1er" : `${rank}e`);
 const GENDER = { F: "Femmes", M: "Hommes", X: "Mixte" } as const;
 /** The contact address published on the site: written here only. */
 const CONTACT_EMAIL = "frenchtrackprono@gmail.com";
+/** Competition levels with a name of their own (#647). */
+const LEVEL_NAMES: Record<string, string | undefined> = {
+  championnat: "Championnat",
+  "diamond-league": "Diamond League",
+  "world-indoor-tour-gold": "World Indoor Tour Gold",
+};
 
 export const messages = {
   /** Name and place of each competition the app can show (see src/app/competition.ts). */
@@ -965,6 +971,37 @@ export const messages = {
     publicHint:
       "Tout le monde peut la trouver et la rejoindre sans code, jusqu'à 200 joueurs. Son nom doit rester correct.",
     publicBadge: "Publique",
+    privateBadge: "Privée",
+    /** The summed-up league card and « Découvrir » (#662). */
+    competitionCount: (n: number) => `${n} ${n <= 1 ? "compétition" : "compétitions"}`,
+    period: (start: string, end: string) => {
+      const month = (ym: string, year: boolean) =>
+        new Date(`${ym}-01T12:00:00Z`).toLocaleDateString("fr-FR", {
+          month: "short",
+          ...(year ? { year: "numeric" } : {}),
+          timeZone: "UTC",
+        });
+      if (start === end) return month(end, true);
+      return `${month(start, start.slice(0, 4) !== end.slice(0, 4))} → ${month(end, true)}`;
+    },
+    outOf: (n: number) => `sur ${n}`,
+    nextCompetition: (name: string, startsOn: string) =>
+      `Prochaine : ${name}, ${new Date(`${startsOn}T12:00:00Z`).toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "short",
+        timeZone: "UTC",
+      })}`,
+    listTabs: { mine: (n: number) => `Mes ligues · ${n}`, discover: "Découvrir" },
+    listTabsLabel: "Mes ligues ou découvrir",
+    searchLabel: "Chercher une ligue publique",
+    searchPlaceholder: "Nom de la ligue",
+    familyFilterLabel: "Famille d'épreuves",
+    allFamilies: "Toutes",
+    sortLabel: "Trier par",
+    sorts: { places: "Places restantes", players: "Plus de joueurs", recent: "Plus récentes" },
+    noMatch: "Aucune ligue publique ne correspond. Essaie un autre nom ou une autre famille.",
+    fillLabel: (n: number, max: number) => `${n} places prises sur ${max}`,
+    loadingLeagues: "Chargement des ligues…",
     publicTitle: "Autres ligues publiques",
     /** When no public league is left to join, from the player's own public leagues (#496). */
     publicNotice: {
@@ -975,7 +1012,7 @@ export const messages = {
     publicJoin: "Rejoindre",
     publicJoinLabel: (name: string) => `Rejoindre la ligue publique ${name}`,
     publicJoining: "…",
-    publicPlaces: (n: number, max: number) => `${n} / ${max} joueurs`,
+    publicPlaces: (n: number, max: number) => `${n}/${max} joueurs`,
     officialBadge: "Officielle",
     officialOpen: "Ouverte à tous",
     officialPitch: "Mesure-toi à toute la communauté FrenchTrack",
@@ -1025,6 +1062,62 @@ export const messages = {
     inviteSubtitle: "Lien d'invitation",
     invited: (code: string) => `Tu as été invité dans une ligue avec le code ${code}.`,
     inviteNote: "Tu rejoins la ligue en un appui ; tu pourras la quitter quand tu veux.",
+    /** Leagues limited to event families (#613). */
+    family: {
+      sprint: "Sprint",
+      hurdles: "Haies",
+      middle: "Demi-fond",
+      long: "Fond",
+      jumps: "Sauts",
+      throws: "Lancers",
+      combined: "Épreuves combinées",
+      relay: "Relais",
+    },
+    familiesTitle: "Épreuves qui comptent",
+    allEvents: "Toutes les épreuves",
+    allEventsHint: "Toutes les épreuves des compétitions de la ligue comptent.",
+    someFamilies: "Certaines familles",
+    someFamiliesHint: "Pour les spécialistes et les clubs : seules ces familles comptent.",
+    familiesSummary: (names: string[]) => `Comptent dans la ligue : ${names.join(", ")}`,
+    familiesNone: "Choisis au moins une famille pour créer la ligue.",
+    familiesNote:
+      "Tu pourras ajouter une famille plus tard, jamais en retirer. Les pronos restent les mêmes partout.",
+    familiesBadge: (names: string[]) => names.join(" · "),
+    familiesBadgeLabel: (names: string[]) => `Épreuves qui comptent : ${names.join(", ")}`,
+    eventsTitle: "Épreuves de la ligue",
+    eventsEmpty: "Pas encore d'épreuve annoncée dans les compétitions de la ligue.",
+    outOfLeague: "Hors ligue",
+    outOfLeagueNote:
+      "Hors ligue : tu peux toujours les pronostiquer, mais elles ne comptent pas dans cette ligue.",
+    eventDay: (iso: string) =>
+      new Date(iso).toLocaleDateString("fr-FR", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        timeZone: "Europe/Paris",
+      }),
+    addFamily: "+ Ajouter une famille",
+    addFamilyTitle: "Ajouter une famille",
+    addFamilySubtitle: "Les familles déjà choisies restent : aucune ne se retire.",
+    lockedFamily: (name: string) => `${name}, déjà dans la ligue`,
+    chooseFamily: "Famille à ajouter",
+    previewTitle: (name: string) => `${name} dans la ligue`,
+    previewCounts: "Compte",
+    previewNotCounted: "Ne compte pas",
+    previewNote:
+      "Seules les épreuves pas encore commencées compteront. Une épreuve commencée ou terminée ne donne aucun point dans la ligue.",
+    previewEmpty:
+      "Aucune épreuve de cette famille dans les compétitions de la ligue pour l'instant.",
+    addFamilySubmit: (name: string) => `Ajouter ${name}`,
+    addingFamily: "Ajout…",
+    noFamilyToAdd: "Toutes les familles comptent déjà dans cette ligue.",
+    /** Shown to every member after the creator added a family. */
+    familyAdded: (name: string, iso: string) =>
+      `${name} compte dans la ligue depuis le ${new Date(iso).toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "long",
+        timeZone: "Europe/Paris",
+      })} : seules ses épreuves suivantes rapportent des points.`,
   },
   ranking: {
     title: "Classement",
@@ -1140,23 +1233,15 @@ export const messages = {
     },
     empty: "Aucune épreuve dans cet état.",
     lockedOnly: "Seules les épreuves verrouillées peuvent recevoir un résultat.",
-    officialPodium: "Podium officiel",
-    addTie: "Ajouter un ex æquo",
-    tieRank: "Place",
-    tieAthlete: "Athlète",
-    tieAdd: "Ajouter",
-    tieLabel: (rank: number) => `ex æquo ${rank === 1 ? "1re" : `${rank}e`} place`,
-    removeTie: (name: string) => `Retirer ${name}`,
-    marks: "Marques (facultatif)",
-    saveResult: "Enregistrer le résultat",
-    savingResult: "Enregistrement…",
-    resultSaved: "✓ Résultat enregistré. Les points ne sont pas encore calculés.",
-    compute: "Confirmer le calcul",
+    noSheet:
+      "Aucun résultat pour l'instant : une seule feuille par épreuve donne le podium des pronos et les points du Manager.",
+    enterSheet: "Saisir la feuille de résultats",
+    resultSaved: "✓ Feuille de résultats enregistrée.",
     recompute: "Recalculer",
     computing: "Calcul…",
-    correct: "Corriger le résultat",
+    correct: "Corriger la feuille de résultats",
     computeNote:
-      "Calculer peut être relancé après une correction : les points sont remplacés, jamais ajoutés deux fois.",
+      "Chaque feuille enregistrée calcule les points des pronos puis ceux du Manager. « Recalculer » relance le même calcul en secours : les points sont remplacés, jamais ajoutés deux fois.",
     computed: (players: number) =>
       `✓ Points calculés pour ${players} ${players <= 1 ? "joueur" : "joueurs"}.`,
     kpi: {
@@ -1166,13 +1251,8 @@ export const messages = {
       averageAndBest: (average: string, best: number) =>
         `Moyenne ${average} pts · meilleur score ${best} pts`,
     },
-    preview: {
-      title: "Aperçu du calcul",
-      note: "Rien n'est encore enregistré : vérifie les points, puis confirme.",
-      detail: "Points qui seront enregistrés",
-    },
     missingRanks: (ranks: number[]) =>
-      `Podium incomplet : il manque ${ranks.map((r) => (r === 1 ? "la 1re place" : `la ${r}e place`)).join(" et ")}. Corrige le résultat avant de calculer.`,
+      `Podium incomplet : il manque ${ranks.map((r) => (r === 1 ? "la 1re place" : `la ${r}e place`)).join(" et ")}. Corrige la feuille de résultats.`,
     detail: "Détail",
     noPrediction: "Personne n'a pronostiqué cette épreuve.",
   },
@@ -1205,12 +1285,13 @@ export const messages = {
       `✓ Liste de départ enregistrée : ${n} ${n <= 1 ? "athlète" : "athlètes"}.`,
   },
   performances: {
-    title: "Performances",
+    title: "Feuille de résultats",
     back: "Épreuve",
-    link: "Performances Manager",
+    link: "Feuille de résultats",
     intro:
-      "Pour French Track Manager : la place, la marque et les records de chaque athlète. Une nouvelle saisie remplace la précédente.",
+      "Une seule saisie par épreuve : les places 1 à 3 font le podium officiel des pronos, les marques et les records comptent pour French Track Manager. À l'enregistrement, les points des pronos et du Manager sont calculés. Une nouvelle saisie remplace la précédente.",
     empty: "Personne au départ : saisis d'abord la liste de départ.",
+    podiumOnly: "Aucune équipe Manager sur cette compétition : le podium suffit.",
     missing: (missing: number, linedUp: number) =>
       linedUp === 0
         ? "Aucun athlète de cette épreuve n'est aligné dans une ligue Manager."
@@ -1218,7 +1299,7 @@ export const messages = {
           ? linedUp === 1
             ? "✓ L'athlète aligné a une performance."
             : `✓ Les ${linedUp} athlètes alignés ont une performance.`
-          : `${missing} ${missing <= 1 ? "athlète aligné attend" : "athlètes alignés attendent"} une performance (sur ${linedUp}).`,
+          : `${missing} ${missing <= 1 ? "athlète aligné sans performance" : "athlètes alignés sans performance"} (sur ${linedUp}) : sans performance, un aligné compte 0.`,
     linedUp: "Aligné",
     linedUpMissing: "Aligné · à saisir",
     status: "Statut",
@@ -1240,9 +1321,18 @@ export const messages = {
       ar: "Record continental",
       wr: "Record du monde",
     },
-    save: "Enregistrer les performances",
-    saving: "Enregistrement…",
-    saved: (n: number) => `✓ Performances enregistrées : ${n} ${n <= 1 ? "athlète" : "athlètes"}.`,
+    save: "Enregistrer et calculer les points",
+    saving: "Enregistrement et calcul…",
+    paste: {
+      title: "Coller les résultats",
+      hint: "Copie le tableau de la page de résultats World Athletics et colle-le ici : la feuille se pré-remplit. Vérifie-la, rien n'est enregistré avant « Enregistrer ».",
+      label: "Tableau de résultats",
+      apply: "Pré-remplir la feuille",
+      none: "Aucune ligne de résultat trouvée dans le texte collé.",
+      matched: (n: number) => (n <= 1 ? `${n} athlète pré-rempli.` : `${n} athlètes pré-remplis.`),
+      unmatched: (n: number) =>
+        n <= 1 ? `${n} ligne non reconnue :` : `${n} lignes non reconnues :`,
+    },
   },
   install: {
     title: "Installe l'appli",
@@ -1286,7 +1376,7 @@ export const messages = {
       create_discipline: "Discipline créée",
       moderate_club: "Club modifié",
       set_manager_rules: "Règles Manager modifiées",
-      set_performances: "Performances saisies",
+      set_performances: "Feuille de résultats saisie",
       run_manager_scoring: "Points Manager calculés",
     },
     noEvent: "Épreuve supprimée",
@@ -1686,6 +1776,28 @@ export const messages = {
     featured: "★ À la une",
     list: { coming: "À venir", past: "Terminées" },
     none: "Aucune compétition.",
+    /** The filters of the list (#647), kept in the address. */
+    filters: {
+      scope: "Portée",
+      venue: "Lieu",
+      level: "Niveau",
+      status: "Statut",
+      allFeminine: "Toutes",
+      allMasculine: "Tous",
+      scopes: { international: "Internationales", france: "France" },
+      venues: { indoor: "Salle", outdoor: "Plein air" },
+      statuses: { coming: "À venir", live: "En cours", past: "Terminées" },
+      count: (n: number) => (n <= 1 ? `${n} compétition` : `${n} compétitions`),
+      reset: "Réinitialiser",
+      empty: "Aucune compétition ne correspond à ces filtres",
+    },
+    /** A competition level: the known ones by name, the others from their code. */
+    level: (level: string) =>
+      LEVEL_NAMES[level] ??
+      level
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" "),
     scope: { international: "Internationale", france: "Française" },
     type: "Type",
     venueLabel: "Lieu",
@@ -1718,10 +1830,10 @@ export const messages = {
     withdraw: (name: string) => `Retirer ${name} de la compétition`,
     managerTitle: "Points Manager",
     managerHint:
-      "Après le verrouillage : barème World Athletics des titulaires, bonus sportifs et pronos de chaque participant. Relance le calcul après une correction des performances ou des pronos.",
-    managerCompute: "Calculer les points Manager",
+      "Calculés à chaque feuille de résultats enregistrée : barème World Athletics des titulaires, bonus sportifs et pronos de chaque participant. En secours, relance le même calcul pour toute la compétition.",
+    managerCompute: "Recalculer les points Manager",
     managerComputed: (n: number) =>
-      `✓ Points Manager calculés : ${n} ${n <= 1 ? "participant" : "participants"}.`,
+      `✓ Points Manager recalculés : ${n} ${n <= 1 ? "participant" : "participants"}.`,
   },
   odds: {
     link: "Cotes",
@@ -2335,6 +2447,8 @@ export const messages = {
       "Ce nom n'est pas valable : 2 à 40 caractères (lettres, chiffres, emoji, ponctuation simple).",
     LEAGUE_NAME_BANNED:
       "Ce nom n'est pas possible pour une ligue (insulte, nom officiel ou lien). Choisis-en un autre.",
+    LEAGUE_FAMILY_INVALID: "Cette famille d'épreuves n'existe pas.",
+    LEAGUE_ALL_EVENTS: "Cette ligue compte déjà toutes les épreuves.",
     LEAGUE_CODE_UNKNOWN: "Ce code ne correspond à aucune ligue. Vérifie-le auprès de ton ami.",
     ALREADY_MEMBER: "Tu fais déjà partie de cette ligue.",
     LEAGUE_FULL: "Cette ligue est complète (50 membres au maximum).",
@@ -2414,7 +2528,7 @@ export const messages = {
       "Cette marque ne correspond pas à la discipline (ex. 10.62, 1:56.70, 2.04, 8125).",
     PERFORMANCES_INVALID:
       "Chaque athlète une seule fois, une place à partir de 1, et rien d'autre que le statut pour un DNS, DNF ou DQ.",
-    PERFORMANCE_MARK_MISSING: "Un athlète arrivé a besoin de sa marque.",
+    PERFORMANCE_MARK_MISSING: "Un athlète arrivé a besoin d'une place ou d'une marque.",
     PERFORMANCES_UNAVAILABLE: "Impossible de lire ou d'enregistrer les performances. Réessaie.",
     DATE_INVALID: "La date doit être au format AAAA-MM-JJ.",
     DISCIPLINE_NOT_FOUND: "Cette discipline n'existe pas.",

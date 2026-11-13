@@ -42,13 +42,12 @@ export interface PointsRepository {
 
 /**
  * Computes the points of every player who predicted an event, from its official result. Can be run
- * again (after a corrected result): the lines of the event are replaced, never duplicated. A dry
- * run makes the same checks and returns the lines that would be stored, without storing them.
+ * again (after a corrected result): the lines of the event are replaced, never duplicated.
  */
 export function computeEventPoints(ports: { points: PointsRepository; now?: () => Date }) {
   const now = ports.now ?? (() => new Date());
   return {
-    async execute(input: { eventId: string; dryRun?: boolean }): Promise<ScoreLine[]> {
+    async execute(input: { eventId: string }): Promise<ScoreLine[]> {
       const event = await ports.points.loadEvent(input.eventId);
       if (!event) throw new UseCaseError("EVENT_NOT_FOUND");
       if (eventPhase(now(), event.lockAt) === "open") throw new UseCaseError("EVENT_NOT_LOCKED");
@@ -60,7 +59,6 @@ export function computeEventPoints(ports: { points: PointsRepository; now?: () =
         userId: prediction.userId,
         ...scorePrediction(prediction, event.results, event.rules, context, event.bets),
       }));
-      if (input.dryRun) return lines;
       const outcome = await ports.points.replaceEventScores(input.eventId, lines);
       if (outcome === "not_admin") throw new UseCaseError("NOT_ADMIN");
       return lines;

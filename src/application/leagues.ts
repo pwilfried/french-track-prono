@@ -1,6 +1,11 @@
 import { isBannedName } from "@/domain/banned-names";
 import type { Bib } from "@/domain/bib";
 import { normalizeInviteCode, validateLeagueName } from "@/domain/league";
+import {
+  validateLeagueFamilies,
+  type LeagueFamily,
+  type LeagueFamilyRule,
+} from "@/domain/league-families";
 
 import { UseCaseError } from "./errors";
 
@@ -16,6 +21,8 @@ export type League = {
   isPublic: boolean;
   /** The one official league, « Ligue FrenchTrack », without a member limit (#553). */
   isOfficial?: boolean;
+  /** The families it is limited to (#613); absent or empty: every event counts. */
+  families?: LeagueFamilyRule[];
 };
 
 /** A public league as listed for players who may join it. */
@@ -25,6 +32,10 @@ export type PublicLeague = {
   memberCount: number;
   competitionSlugs: string[];
   isOfficial?: boolean;
+  /** The families it is limited to (#613); absent or empty: every event counts. */
+  families?: LeagueFamily[];
+  /** When it was created, ISO 8601: « Découvrir » can show the latest first (#662). */
+  createdAt: string;
 };
 
 export type LeagueMember = {
@@ -49,7 +60,13 @@ export type JoinOutcome =
  * (the database functions check the rules), fake = in memory.
  */
 export interface LeagueRepository {
-  create(name: string, competitionSlugs: string[], isPublic: boolean): Promise<League>;
+  /** `families` empty or absent: a league on all events (#613). */
+  create(
+    name: string,
+    competitionSlugs: string[],
+    isPublic: boolean,
+    families?: LeagueFamily[],
+  ): Promise<League>;
   join(code: string): Promise<JoinOutcome>;
   /** The leagues the player is a member of. */
   listMine(): Promise<League[]>;
@@ -62,6 +79,11 @@ export interface LeagueRepository {
     leagueId: string,
     competitionSlug: string,
   ): Promise<"added" | "not_owner" | "unknown" | "started">;
+  /**
+   * Adds a family to a league limited to families; only its creator may, and none is ever removed
+   * (#613). Adding a family it already has changes nothing.
+   */
+  addFamily(leagueId: string, family: LeagueFamily): Promise<"added" | "not_owner" | "all_events">;
   /** Every public league. */
   listPublic(): Promise<PublicLeague[]>;
   /** Joins a public league without its code; "unknown_code" when it is not a public league. */
@@ -78,14 +100,23 @@ export function createLeague(ports: Ports) {
       name: string;
       competitionSlugs: string[];
       isPublic?: boolean;
+      /** None: « Toutes les épreuves » (#613). */
+      families?: string[];
     }): Promise<League> {
       const name = validateLeagueName(input.name);
       if (!name.ok) throw new UseCaseError(name.code);
+      const families = validateLeagueFamilies(input.families ?? []);
+      if (!families.ok) throw new UseCaseError(families.code);
       const isPublic = input.isPublic ?? false;
       // Everyone sees a public league: its name is moderated (#277).
       if (isPublic && isBannedName(name.name)) throw new UseCaseError("LEAGUE_NAME_BANNED");
       // A league may start without competition: its creator adds them afterwards (#312).
-      return ports.leagues.create(name.name, [...new Set(input.competitionSlugs)], isPublic);
+      return ports.leagues.create(
+        name.name,
+        [...new Set(input.competitionSlugs)],
+        isPublic,
+        families.families,
+      );
     },
   };
 }
@@ -158,6 +189,24 @@ export function addLeagueCompetition(ports: Ports) {
       if (outcome === "not_owner") throw new UseCaseError("NOT_LEAGUE_OWNER");
       if (outcome === "unknown") throw new UseCaseError("COMPETITION_NOT_FOUND");
       if (outcome === "started") throw new UseCaseError("COMPETITION_STARTED");
+    },
+  };
+}
+
+/**
+ * The creator adds a family to a league limited to families (#613): it counts from now on, only
+ * for the events not started yet; a family is never removed.
+ */
+export function addLeagueFamily(ports: Ports) {
+  return {
+    async execute(input: { leagueId: string; family: string }): Promise<void> {
+      const families = validateLeagueFamilies([input.family]);
+      if (!families.ok || families.families.length !== 1) {
+        throw new UseCaseError("LEAGUE_FAMILY_INVALID");
+      }
+      const outcome = await ports.leagues.addFamily(input.leagueId, families.families[0]!);
+      if (outcome === "not_owner") throw new UseCaseError("NOT_LEAGUE_OWNER");
+      if (outcome === "all_events") throw new UseCaseError("LEAGUE_ALL_EVENTS");
     },
   };
 }

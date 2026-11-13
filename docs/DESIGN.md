@@ -56,7 +56,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
 | Ligue | Classement, derniers pronos révélés, réactions emoji ; tant que le joueur y est seul, **InviteBanner** à la place du classement |
 | Accueil Manager (onglet, #606) | Titre et accroche ; bloc bleu nuit « Ma saison » (ligue et joueurs, journée N sur M, place, points V · N · D, différence, prochaine confrontation avec les dossards, l'action du moment : mercato, « Aligner mon équipe · verrouillage dans 2 j », résultats ou fin de saison) ; raccourcis (Mon équipe, Classement, Calendrier, Mes derniers points) ; « Le déroulé de la saison » en sept étapes, faites cochées, en cours en rouge ; puis mes ligues Manager et les ligues publiques. Sans ligue : la présentation (#618), puis le déroulé et « Créer ou rejoindre une ligue » |
-| Mes ligues | Mes ligues (**LeagueCard**), puis les ligues publiques ; au-dessus d'elles, tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553 : « Officielle », « Ouverte à tous », « Rejoindre la Ligue FrenchTrack ») ; une fois membre, elle rejoint ses ligues avec le badge « Officielle » |
+| Ligues (#662) | « Créer une ligue » et « J'ai un code », puis deux onglets **Mes ligues · N** / **Découvrir** (`?onglet=decouvrir`). Mes ligues : cartes résumées (**LeagueCard**). Découvrir : tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553) ; puis les ligues publiques (**DiscoverLeagues**) : recherche par nom, puces de famille (Toutes + celles présentes), tri (places restantes par défaut, plus de joueurs, plus récentes), une **PublicLeagueRow** par ligue. Une fois membre, la ligue officielle rejoint Mes ligues avec le badge « Officielle » |
 | Classement général | Top de la communauté, ma progression |
 | Profil | Dossard (grand format, avec le pseudo), club ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager ; palmarès Manager (une ligne par saison finie, en or si champion, #434) |
 | Back-office (toi) | Tableau de bord (choses à faire, préparation), compétitions et épreuves, résultats et calcul, listes des clubs, joueurs et ligues |
@@ -111,9 +111,13 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   bandeau bleu « Le classement démarre » remplace le classement vide. Le jour de compétition va de
   6 h à 6 h, heure de Paris : une finale courue à 2 h du matin compte pour « Ce soir ».
   Un visiteur voit « Général » seul, sans barre fixe, avec « Se connecter » (#573).
-- **LeagueCard** (#552) : une de mes ligues dans « Mes ligues » ; nom (badge « Publique » ou
-  « Officielle »), joueurs et compétitions dessous ; à droite ma place en gros et ▲/▼ depuis la
-  veille, « Pas encore de points » sans points.
+- **LeagueCard** (#552, résumée en #662) : une de mes ligues ; nom sur deux lignes au plus,
+  étiquette « Privée », « Publique » ou « Officielle », badge de familles (#613), « 12 compétitions ·
+  déc. 2026 → avr. 2027 » (jamais leurs noms, qui restent sur la page de la ligue), « Prochaine :
+  <compétition>, <date> » ; à droite ma place en gros, « sur N » et ▲/▼ depuis la veille, « Pas
+  encore de points » sans points.
+- **PublicLeagueRow** (#662) : une ligue publique de « Découvrir » ; nom, badge de familles,
+  « 12/200 joueurs · 3 compétitions · période », barre de remplissage, « Rejoindre » et « Signaler ».
 - **InviteBanner** (#552) : dans une ligue où le joueur est seul, fond bleu doux, « Tu es seul
   pour l'instant », un grand bouton « Inviter mes amis » (partage natif, sinon lien copié) et le
   code lisible dessous pour le dire à voix haute.

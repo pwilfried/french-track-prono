@@ -76,18 +76,6 @@ describe("computeEventPoints", () => {
     expect(lines[0]!.reasons).toContainEqual({ kind: "joker" });
   });
 
-  it("previews the points without storing them in a dry run", async () => {
-    const { points, stored } = repository(scoredEvent());
-
-    const lines = await computeEventPoints({ points, now: () => NOW }).execute({
-      eventId: "e1",
-      dryRun: true,
-    });
-
-    expect(lines.map((l) => l.points)).toEqual([24, 4, 0]);
-    expect(stored.has("e1")).toBe(false);
-  });
-
   it("refuses a podium of two ranks with RESULT_INCOMPLETE, and stores nothing", async () => {
     const { points, stored } = repository(
       scoredEvent({
@@ -188,7 +176,6 @@ describe("computeEventPoints with odds and marks", () => {
 
     const [anna] = await computeEventPoints({ points, now: () => NOW }).execute({
       eventId: "e1",
-      dryRun: true,
     });
 
     // Perfect podium 12, odds (2 + 3 + 4) × 3 = 27, mark +5.

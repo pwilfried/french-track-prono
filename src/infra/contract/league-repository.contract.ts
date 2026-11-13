@@ -97,7 +97,9 @@ export function leagueRepositoryContract(
         name: pub.name,
         memberCount: 1,
         competitionSlugs: [competitionSlug],
+        createdAt: expect.any(String),
       });
+      expect(Number.isNaN(Date.parse(listed.find((l) => l.id === pub.id)!.createdAt))).toBe(false);
       expect(listed.some((l) => l.id === priv.id)).toBe(false);
 
       expect(await friend.leagues.joinPublic(pub.id)).toEqual({
@@ -118,6 +120,47 @@ export function leagueRepositoryContract(
       await expect(owner.leagues.create("Ligue officielle", [], true)).rejects.toMatchObject({
         code: "LEAGUE_NAME_BANNED",
       });
+    });
+
+    it("creates a league limited to families; its creator adds one, never removes any (#613)", async () => {
+      const { newPlayer, competitionSlug } = await setup();
+      const [owner, friend] = [await newPlayer(), await newPlayer()];
+      const league = await owner.leagues.create("Sprint 613", [competitionSlug], true, [
+        "sprint",
+        "hurdles",
+      ]);
+      expect(league.families).toEqual([
+        { family: "sprint", addedAt: null },
+        { family: "hurdles", addedAt: null },
+      ]);
+      await friend.leagues.joinPublic(league.id);
+
+      expect(await friend.leagues.addFamily(league.id, "throws")).toBe("not_owner");
+      expect(await owner.leagues.addFamily(league.id, "throws")).toBe("added");
+      expect(await owner.leagues.addFamily(league.id, "sprint")).toBe("added");
+
+      const seen = (await friend.leagues.listMine()).find((l) => l.id === league.id)!;
+      expect(seen.families!.map((f) => [f.family, f.addedAt === null])).toEqual([
+        ["sprint", true],
+        ["hurdles", true],
+        ["throws", false],
+      ]);
+      expect(Number.isNaN(Date.parse(seen.families![2]!.addedAt!))).toBe(false);
+      const listed = (await newPlayer()).leagues.listPublic();
+      expect((await listed).find((l) => l.id === league.id)?.families).toEqual([
+        "sprint",
+        "hurdles",
+        "throws",
+      ]);
+    });
+
+    it("adds no family to a league on all events", async () => {
+      const { newPlayer, competitionSlug } = await setup();
+      const owner = await newPlayer();
+      const league = await owner.leagues.create("Tout 613", [competitionSlug], false, []);
+
+      expect(await owner.leagues.addFamily(league.id, "throws")).toBe("all_events");
+      expect((await owner.leagues.listMine())[0]!.families).toBeUndefined();
     });
 
     it("refuses to join with a code after ten wrong codes", async () => {
