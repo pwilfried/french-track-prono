@@ -18,13 +18,23 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
    workflow ouvre la PR (`Closes #n`, labels et milestone de l'issue).
 4. CI verte : la PR est fusionnée (squash), après y avoir fusionné `main` si elle était en retard.
    CI rouge ou conflit : la PR repart à Claude avec les logs (3 essais, puis le propriétaire).
-5. Une PR fusionnée n'ouvre plus d'issue de vérification : c'est la version qui en ouvre une (étape 6).
+5. Chaque fusion dans `main` part en préprod (`preprod.yml`) : migrations sur la base de
+   préprod, puis déploiement sur https://french-track-preprod.vercel.app. Une PR fusionnée
+   n'ouvre pas d'issue de vérification : c'est la version qui en ouvre une (étape 6).
 6. Quand le milestone qui suit le dernier tag n'a plus d'issue ouverte et que tous les
-   runs du dernier commit de `main` sont verts, `release.sh` pose le tag annoté : `vX.Y.0` pour un
-   milestone `vX.Y …`, `vX.Y.Z` pour un milestone correctif `vX.Y.Z …`. Il le pose avec
-   `AGENTS_PAT`, ce qui lance la mise en prod (`migrations.yml`). Une release GitHub liste les PR
-   (sa notification prévient les propriétaires) et le milestone est fermé. `main` rouge : pas de
-   tag, un avertissement dans le run, nouvel essai à la vérification suivante.
+   runs du dernier commit de `main` sont verts (CI et préprod), `release.sh` ouvre l'issue
+   `needs-human` « Valider vX.Y.Z en préprod » (#634) : adresse de la préprod, critère de la
+   version, une case par PR qui touche l'interface. Rien ne part en prod sans le go d'un
+   propriétaire, y compris pour un milestone correctif.
+7. **Go** : un commentaire `go prod` d'un login de `AGENTS_OWNER` sur cette issue, ou l'issue
+   fermée comme terminée (une fermeture « not planned » n'est pas un go). À la vérification
+   suivante (au plus une heure), si `main` est toujours vert, `release.sh` pose le tag annoté
+   sur le dernier commit de `main` (celui que montre la préprod) : `vX.Y.0` pour un milestone
+   `vX.Y …`, `vX.Y.Z` pour un milestone correctif `vX.Y.Z …`. Il le pose avec `AGENTS_PAT`, ce
+   qui lance la mise en prod (`migrations.yml`). Une release GitHub liste les PR (sa
+   notification prévient les propriétaires), l'issue de validation et le milestone sont fermés.
+   `main` rouge (préprod comprise) : pas de tag, un avertissement dans le run, nouvel essai à la
+   vérification suivante.
 
 Une issue n'est jamais prise si elle a `needs-human`, `agent:blocked`, `after-ui` ou `agent:local`,
 si elle est assignée à quelqu'un (une personne la traite : Yannis s'assigne ses issues), ou si une
@@ -87,7 +97,8 @@ sont créés avec cette PR.
 ## Ce qui n'est pas automatique
 
 - Les captures d'écran 390 px (clair et sombre) : Claude ne les produit pas sur le runner ; l'issue
-  « Vérifier vX.Y.Z en prod » sert à regarder les écrans une fois la version en production.
+  « Valider vX.Y.Z en préprod » sert à regarder les écrans en préprod avant la mise en prod.
+- Le go prod : toujours un propriétaire.
 - La base Supabase locale (pgTAP, adaptateurs, e2e) : Claude ne la lance pas, la CI de la PR le fait.
 - Un tag de correctif sans milestone : à la main, comme avant. Avec un milestone `vX.Y.Z …`, il est
-  posé automatiquement.
+  posé automatiquement après le go.

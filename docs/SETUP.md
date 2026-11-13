@@ -356,6 +356,39 @@ Sans ces trois secrets, le job de déploiement échoue (exprès : la prod ne doi
 sans qu'on le voie). Les variables d'environnement de l'application restent dans Vercel ;
 `vercel pull` les récupère pour le build.
 
+## Préproduction
+
+Une version est testée en ligne avant la prod (#634, décision du propriétaire du 13 nov. 2026).
+
+- **Adresse** : https://french-track-preprod.vercel.app, publique pour l'instant, cachée aux
+  moteurs de recherche (`NEXT_PUBLIC_SITE_NOINDEX=1` au build : balise `noindex` et
+  `robots.txt` qui interdit tout).
+- **Projets séparés** : projet Supabase `french-track-preprod`, projet Vercel
+  `french-track-preprod` (équipe `frenchtrackprono`), environnement GitHub `preprod`. Aucun
+  secret ni aucune donnée de prod : la base de préprod ne contient que des données fictives.
+- **Déploiement continu** : chaque fusion dans `main` lance « Pre-production »
+  (`.github/workflows/preprod.yml`) : migrations sur la base de préprod (`supabase db push`), puis
+  `supabase/seed.sql` (idempotent), puis build et déploiement Vercel, puis test de fumée sur
+  l'adresse de préprod. Une migration qui échoue arrête tout : le site de préprod n'est pas
+  déployé, la prod n'est jamais touchée. À la main : Actions → « Pre-production » → Run workflow
+  (seulement `main`).
+- **Garde-fou** : le workflow refuse un `SUPABASE_PROJECT_REF` qui n'est pas celui de la préprod
+  (un secret de prod collé par erreur).
+- **Pas de remise à zéro** : ce que le propriétaire crée à la main en préprod reste d'un
+  déploiement à l'autre.
+- **À venir** : le jeu de démo propre à la préprod (#694) et les tests e2e lancés contre la
+  préprod après chaque déploiement (#695).
+- **Pas de captcha ni de notifications push** en préprod (pas de clé Turnstile ni VAPID).
+- **Go prod** : la prod suit toujours les tags, et le tag attend le go du propriétaire sur
+  l'issue « Valider vX.Y.Z en préprod » (`ci/agents/README.md`, étapes 6 et 7). Un run
+  « Pre-production » rouge sur `main` bloque le tag.
+
+Secrets de l'environnement GitHub `preprod` (Settings → Environments → preprod), ceux du projet
+de préprod, jamais ceux de la prod : `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`,
+`SUPABASE_PROJECT_REF`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. Les variables de
+l'application (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+`NEXT_PUBLIC_SITE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) vivent dans le projet Vercel de préprod.
+
 ## Test de la prod après déploiement
 
 Le workflow « Production smoke test » (`.github/workflows/smoke.yml`, script `scripts/smoke.sh`)
