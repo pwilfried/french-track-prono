@@ -22,6 +22,11 @@ export {
   type PerformanceEventFixture,
 } from "./in-memory/performance-repository";
 export { createSupabasePerformanceRepository } from "./supabase/performance-repository";
+export {
+  createInMemoryManagerScoreStore,
+  type ManagerScoreFixture,
+} from "./in-memory/manager-score-repository";
+export { createSupabaseManagerScoreRepository } from "./supabase/manager-score-repository";
 export { createInMemoryLeagueStore } from "./in-memory/league-repository";
 export { createSupabaseLeagueRepository } from "./supabase/league-repository";
 export { createSupabaseLeagueModerationRepository } from "./supabase/league-moderation-repository";

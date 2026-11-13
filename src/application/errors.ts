@@ -112,7 +112,9 @@ export type ErrorCode =
   | "ROUND_NOT_FOUND"
   | "PERFORMANCES_INVALID"
   | "PERFORMANCE_MARK_MISSING"
-  | "PERFORMANCES_UNAVAILABLE";
+  | "PERFORMANCES_UNAVAILABLE"
+  | "COMPETITION_NOT_STARTED"
+  | "MANAGER_SCORES_UNAVAILABLE";
 
 let reportUnavailable: ((code: ErrorCode) => void) | undefined;
 

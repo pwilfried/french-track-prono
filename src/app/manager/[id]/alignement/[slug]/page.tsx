@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
@@ -64,6 +65,14 @@ export default async function LineupPage({
             <p className="text-sm font-semibold text-muted-foreground">
               <LockLine lockAt={lineup.lockAt} />
             </p>
+            {lineup.status === "locked" && (
+              <Link
+                href={`/manager/${id}/points/${lineup.slug}`}
+                className="inline-flex min-h-11 items-center self-start rounded-full bg-brand px-5 font-bold text-brand-foreground"
+              >
+                {messages.managerPoints.link} ›
+              </Link>
+            )}
             <LineupForm
               leagueId={id}
               competitionId={lineup.competitionId}

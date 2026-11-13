@@ -15,9 +15,11 @@ import {
   editCompetitionEvent,
 } from "@/application/edit-competition";
 import { UseCaseError } from "@/application/errors";
+import { computeManagerScores } from "@/application/manager-scores";
 import {
   createSupabaseCompetitionAdminRepository,
   createSupabaseCompetitionEditRepository,
+  createSupabaseManagerScoreRepository,
 } from "@/infra";
 
 import { formText } from "../../form-data";
@@ -139,5 +141,16 @@ export async function deleteEventAction(data: FormData) {
       competitions: createSupabaseCompetitionEditRepository(client),
     }).execute({ eventSlug });
     return `/admin/competitions/${competition}?enregistre=1`;
+  });
+}
+
+/** Computes the Manager score of every participant playing the competition, again if need be (#431). */
+export async function computeManagerScoresAction(data: FormData) {
+  const competition = formText(data, "competition");
+  await change(`/admin/competitions/${competition}`, async (client) => {
+    const lines = await computeManagerScores({
+      scores: createSupabaseManagerScoreRepository(client),
+    }).execute({ competitionSlug: competition });
+    return `/admin/competitions/${competition}?manager=${lines.length}`;
   });
 }

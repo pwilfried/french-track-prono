@@ -192,6 +192,20 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - **Pronostics classiques obligatoires** sur toutes les épreuves de chaque compétition éligible,
   verrouillés au départ ;
   sans pronostic, 0 sur cette partie.
+- Calcul (#431) : back-office › compétition › « Calculer les points Manager », possible une fois
+  les alignements verrouillés ; à relancer après une correction (performances ou pronos), il
+  remplace tous les scores de la compétition. Pour chaque participant d'une ligue dont le mercato
+  est clos : sans alignement, 0 au total (pronos compris) ; sinon, pour chaque titulaire, les
+  points des tables (0 pour DNS, DNF, DQ, sans performance saisie, marque illisible ou discipline
+  sans table) plus ses bonus, puis la somme des points de pronos du joueur sur la compétition
+  (`score_events`). Règles pures : `src/domain/manager-score.ts` ; en base : `manager_scores`
+  (lecture par les participants de la ligue). Écran « Mes points » :
+  `/manager/<id>/points/<compétition>`, depuis l'alignement verrouillé ; le détail des titulaires va
+  du plus fort au plus faible, les bonus en étiquettes dorées.
+- Décisions du coordinateur (à revoir aux tests du propriétaire) : un athlète engagé dans plusieurs
+  épreuves de la compétition (séries et finale, deux disciplines) rapporte sa **meilleure ligne**,
+  sans cumul ; les bonus de place (1re, 2e, 3e) ne comptent qu'en **finale**, un record battu en
+  série compte. Le lien vers la journée viendra avec #433.
 
 ## 5. Championnat (v0.16)
 

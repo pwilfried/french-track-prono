@@ -271,6 +271,13 @@ records de chaque athlète d'une épreuve, dans `event_performances`, à part de
 `admin_set_performances()` (journalisée), lecture publique ; `admin_manager_lined_up()` signale à
 l'admin les athlètes alignés. Détail : `docs/decisions/french-track-manager.md`, section 4.
 
+Points Manager (v0.15, issue #431) : les tables World Athletics vivent en TypeScript, donc le calcul
+se fait côté serveur avec la session de l'admin. `admin_manager_scoring_sheet()` lui donne les
+alignements (privés), les performances et les points de pronos de la compétition ;
+`src/domain/manager-score.ts` calcule ; `admin_set_manager_scores()` remplace d'un bloc les lignes
+de `manager_scores` (journalisée `run_manager_scoring`). Les participants d'une ligue en lisent
+les scores ; `my_manager_score()` rend celui du joueur avec le nom de ses athlètes.
+
 Records (v0.8, issue #196) : le trigger `update_records_from_result` met à jour le PB (`kind = 'pr'` en base) et le SB
 à chaque ligne de résultat. Les marques texte sont lues par `parse_mark()` (secondes, mètres ou
 points) et comparées par `is_better_mark()` : temps plus bas pour les courses (discipline avec une
