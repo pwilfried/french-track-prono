@@ -6,9 +6,12 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
 
 ## Comment ça tourne
 
-1. Un propriétaire met le label `agent:ready` sur une issue d'un milestone `vX.Y …`.
+1. Un propriétaire range une issue dans un milestone `vX.Y …`. Le label `agent:ready` n'est plus
+   nécessaire (décision du propriétaire du 13 nov. 2026, #655).
 2. `agents-merge.yml` (après chaque CI, chaque run d'agent, et toutes les heures) prend les issues
-   `agent:ready` du milestone en cours, deux à la fois, et leur met `agent:claude`. Le milestone
+   ouvertes du milestone en cours, deux à la fois, et leur met `agent:claude`. Ordre :
+   `milestone-plan`, puis les features (`p1` d'abord) une fois `milestone-plan` fermée, puis
+   `refactor-check`, puis `docs-check`. Le milestone
    en cours est le plus petit `vX.Y` qui a encore une issue sans PR ouverte : une version dont
    toutes les issues attendent leur fusion ne bloque pas la suivante.
 3. `agents.yml` lance Claude Code : il travaille sur une branche `claude/…`, la pousse, et le
@@ -36,8 +39,9 @@ un commentaire le dit. Un commentaire `@claude …` lance toujours Claude.
 
 ## Depuis le téléphone (app GitHub)
 
-- Lancer : label `agent:ready` (la chaîne la prendra), ou `agent:claude` (tout de suite), ou un
-  commentaire `@claude …` sur une issue ou une PR.
+- Lancer : rien à faire pour une issue du milestone en cours (la chaîne la prendra), sinon
+  `agent:claude` (tout de suite) ou un commentaire `@claude …` sur une issue ou une PR.
+- Retenir une issue : `agent:blocked` ou `needs-human` (la chaîne la saute).
 - Répondre : Claude mentionne les propriétaires et met `agent:needs-answer` ; répondre par un
   commentaire `@claude …`.
 - Tout arrêter : désactiver le workflow `agents-merge` (Actions, agents-merge, « … », Disable
