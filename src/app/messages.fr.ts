@@ -317,12 +317,50 @@ export const messages = {
     submit: "Créer la ligue",
     publicBadge: "Publique",
     privateBadge: "Privée",
-    participantsCount: (n: number, max: number) => `${n} / ${max} participants`,
+    participantsCount: (n: number, target: number) => `${n} / ${target} participants`,
     adminBadge: "admin",
     participants: "Participants",
-    ready: "Prêt : la saison peut être lancée.",
-    notReady: (min: number, max: number) =>
-      `Il faut de ${min} à ${max} participants, en nombre pair, pour lancer la saison.`,
+    ready: "Tout le monde est là : le mercato peut être lancé.",
+    awaited: (n: number) => (n <= 1 ? "Encore 1 joueur attendu." : `Encore ${n} joueurs attendus.`),
+    opensAt: (when: string) =>
+      `Le mercato s'ouvrira le ${when} (heure de Paris) si tous les joueurs sont là ; sinon il attendra.`,
+    mercatoOpened: (when: string) => `Mercato ouvert depuis le ${when} (heure de Paris).`,
+    /** An instant in Paris time: « samedi 10 janvier à 20:00 ». */
+    when: (iso: string) =>
+      new Date(iso).toLocaleString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Paris",
+      }),
+    inviteTitle: "Inviter des amis",
+    mercatoTitle: "Régler le mercato",
+    mercatoHint: "Seul le créateur règle le mercato, jusqu'à son lancement.",
+    targetLabel: "Nombre de joueurs",
+    targetHint:
+      "Pair, de 4 à 10 : chaque journée, chacun a un adversaire. Jamais sous le nombre d'inscrits.",
+    targetOption: (n: number) => `${n} joueurs`,
+    startsAtLabel: "Début du mercato (heure de Paris)",
+    startsAtHint:
+      "Le mercato s'ouvre à cette heure si et seulement si tous les joueurs sont là. Laisse vide pour le lancer toi-même.",
+    roundsLabel: "Durée des tours",
+    roundsAuto: (hours: number) => `Automatique · règles French Track (${hours} h)`,
+    roundsCustom: "Personnalisé",
+    firstRoundLabel: "1er tour",
+    nextRoundsLabel: "Tours suivants",
+    hours: (n: number) => `${n} h`,
+    calendarTitle: "Calendrier des tours",
+    calendarRound: (n: number, hours: number) => `Tour ${n} · ${hours} h`,
+    calendarEnds: (when: string) => `jusqu'au ${when}`,
+    saveMercato: "Enregistrer les réglages",
+    savingMercato: "Enregistrement…",
+    mercatoSaved: "Réglages enregistrés.",
+    launch: "Lancer le mercato maintenant",
+    launching: "Lancement…",
+    launchWaiting: (n: number) =>
+      n <= 1 ? "Encore 1 joueur attendu" : `Encore ${n} joueurs attendus`,
     rules: "Règles de la ligue",
     budget: (n: number) => `${n} crédits de budget`,
     minTeamSize: (n: number) => `Équipes d'au moins ${n} athlètes, sans maximum`,
@@ -2004,6 +2042,11 @@ export const messages = {
       "Ces règles ne permettent pas de jouer : vérifie que les quotas remplissent l'équipe, que l'alignement y tient et qu'un mode de clôture est coché.",
     MANAGER_RULES_UNAVAILABLE: "Les règles Manager n'ont pas pu être chargées. Réessaie.",
     MERCATO_OPEN: "Le mercato de cette ligue a commencé : les inscriptions sont closes.",
+    MERCATO_TARGET_INVALID:
+      "Le nombre de joueurs doit être pair, de 4 à 10, et pas sous le nombre de joueurs déjà inscrits.",
+    MERCATO_ROUNDS_INVALID: "Choisis une durée de tour de 12, 24, 48 ou 72 heures.",
+    MERCATO_PLAYERS_MISSING:
+      "Il manque encore des joueurs : le mercato se lance quand tout le monde est là.",
     MANAGER_BID_INVALID: "Une offre est un nombre entier de crédits, au moins 1.",
     MANAGER_BID_BELOW_PRICE: "Une offre est au moins égale au prix de départ de l'athlète.",
     MANAGER_BID_OVER_BUDGET:

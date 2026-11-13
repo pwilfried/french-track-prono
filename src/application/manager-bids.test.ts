@@ -228,6 +228,7 @@ describe("isMercatoOpenForMe", () => {
         inviteCode: "CODE",
         ownerId: "u1",
         memberCount: 2,
+        target: 4,
       })),
   });
   const byLeague = (states: Record<string, MyManagerBids | "not_member">) =>

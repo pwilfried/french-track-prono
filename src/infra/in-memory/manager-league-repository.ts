@@ -6,44 +6,51 @@ import type {
 } from "@/application/manager-leagues";
 import type { ManagerRuleSet } from "@/application/manager-rules";
 import { isBannedName } from "@/domain/banned-names";
-import { MANAGER_LEAGUE_MAX } from "@/domain/manager-league";
+import { isAllowedTarget, mercatoRounds } from "@/domain/manager-league";
 
 /**
  * Test double of the ManagerLeagueRepository port: one store, a session per player. `rules` is
  * read at each creation, like the table of the rules: change it to test that leagues keep theirs.
  */
 export function createInMemoryManagerLeagueStore(rules: { current: ManagerRuleSet }) {
-  const leagues: (Omit<ManagerLeagueFile, "memberCount" | "participants" | "mercatoOpensAt"> & {
+  const leagues: (Omit<ManagerLeagueFile, "memberCount" | "participants" | "target"> & {
     members: ManagerParticipant[];
   })[] = [];
-  /** League → when its mercato opened. */
-  const mercatoOpen = new Map<string, string>();
   let next = 0;
   const view = (league: (typeof leagues)[number]): ManagerLeagueFile => {
     const { members, ...rest } = structuredClone(league);
     return {
       ...rest,
       memberCount: members.length,
+      target: rest.mercato.target,
       participants: members,
-      mercatoOpensAt: mercatoOpen.get(league.id) ?? null,
     };
   };
+  const isOpen = (league: (typeof leagues)[number]) => league.mercato.openedAt !== null;
   return {
-    /** What the mercato (v0.13) will do: nobody joins any more. */
+    /** Opens a mercato as the database would, whatever its players. */
     openMercato(id: string) {
-      mercatoOpen.set(id, new Date().toISOString());
+      const league = leagues.find((l) => l.id === id);
+      if (league) league.mercato.openedAt = new Date().toISOString();
     },
     session(player: ManagerParticipant): ManagerLeagueRepository {
       const enter = (league: (typeof leagues)[number]): JoinOutcome => {
         if (league.members.some((m) => m.userId === player.userId)) {
           return { outcome: "joined", leagueId: league.id };
         }
-        if (mercatoOpen.has(league.id)) return { outcome: "mercato_open" };
-        if (league.members.length >= MANAGER_LEAGUE_MAX) return { outcome: "full" };
+        if (isOpen(league)) return { outcome: "mercato_open" };
+        if (league.members.length >= league.mercato.target) return { outcome: "full" };
         league.members.push({ ...player });
         return { outcome: "joined", leagueId: league.id };
       };
       const mine = () => leagues.filter((l) => l.members.some((m) => m.userId === player.userId));
+      /** The league of this player, created by them, its mercato not open. */
+      const own = (id: string) => {
+        const league = leagues.find((l) => l.id === id);
+        if (!league || league.ownerId !== player.userId) return "not_owner" as const;
+        if (isOpen(league)) return "mercato_open" as const;
+        return league;
+      };
       return {
         async create(name, isPublic) {
           if (isBannedName(name)) return "banned";
@@ -56,6 +63,7 @@ export function createInMemoryManagerLeagueStore(rules: { current: ManagerRuleSe
             ownerId: player.userId,
             rules: structuredClone(rules.current.rules),
             competitionCount: rules.current.competitionSlugs.length,
+            mercato: { target: 4, startsAt: null, openedAt: null, roundMode: "auto" },
             members: [{ ...player }],
           });
           return { id };
@@ -73,25 +81,51 @@ export function createInMemoryManagerLeagueStore(rules: { current: ManagerRuleSe
             .filter(
               (l) =>
                 l.isPublic &&
-                !mercatoOpen.has(l.id) &&
-                l.members.length < MANAGER_LEAGUE_MAX &&
+                !isOpen(l) &&
+                l.members.length < l.mercato.target &&
                 !l.members.some((m) => m.userId === player.userId),
             )
-            .map((l) => ({ id: l.id, name: l.name, memberCount: l.members.length }));
+            .map((l) => ({
+              id: l.id,
+              name: l.name,
+              memberCount: l.members.length,
+              target: l.mercato.target,
+            }));
         },
         async listMine() {
-          return mine().map(({ id, name, isPublic, inviteCode, ownerId, members }) => ({
+          return mine().map(({ id, name, isPublic, inviteCode, ownerId, members, mercato }) => ({
             id,
             name,
             isPublic,
             inviteCode,
             ownerId,
             memberCount: members.length,
+            target: mercato.target,
           }));
         },
         async find(id) {
           const league = mine().find((l) => l.id === id);
           return league ? view(league) : null;
+        },
+        async setMercato(id, settings) {
+          const league = own(id);
+          if (typeof league === "string") return league;
+          if (!isAllowedTarget(settings.target, league.members.length)) return "target_refused";
+          league.mercato = {
+            ...league.mercato,
+            target: settings.target,
+            startsAt: settings.startsAt,
+            roundMode: settings.rounds.mode,
+          };
+          league.rules.rounds = mercatoRounds(settings.rounds, rules.current.rules.rounds);
+          return "set";
+        },
+        async launchMercato(id) {
+          const league = own(id);
+          if (typeof league === "string") return league;
+          if (league.members.length !== league.mercato.target) return "players_missing";
+          league.mercato.openedAt = new Date().toISOString();
+          return "launched";
         },
       };
     },

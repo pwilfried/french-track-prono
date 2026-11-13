@@ -6,10 +6,14 @@ import {
   getManagerLeague,
   joinManagerLeague,
   joinPublicManagerLeague,
+  launchManagerMercato,
   listMyManagerLeagues,
+  setManagerMercato,
   type JoinOutcome,
   type ManagerLeague,
+  type ManagerLeagueFile,
   type ManagerLeagueRepository,
+  type MercatoSettings,
 } from "./manager-leagues";
 
 function repository(
@@ -31,6 +35,8 @@ function repository(
     },
     joinPublic: async () => joinAnswer,
     listPublic: async () => [],
+    setMercato: async () => "set",
+    launchMercato: async () => "launched",
   };
   return { repo, created, codes };
 }
@@ -78,6 +84,7 @@ describe("listMyManagerLeagues", () => {
       inviteCode: "ABC234",
       ownerId: "u1",
       memberCount: 1,
+      target: 4,
     });
     const { repo } = repository([league("Zèbres"), league("Antilopes")]);
 
@@ -147,5 +154,135 @@ describe("joinPublicManagerLeague", () => {
     await expect(
       joinPublicManagerLeague({ managerLeagues: repo }).execute({ id: "league-1" }),
     ).rejects.toEqual(new UseCaseError("LEAGUE_FULL"));
+  });
+});
+
+/** A league of `members` players created by u1, its mercato waiting for `target`. */
+function mercatoRepository(members: number, target = 4, openedAt: string | null = null) {
+  const league = {
+    id: "league-1",
+    name: "Les Lanceurs",
+    isPublic: false,
+    inviteCode: "ABC234",
+    ownerId: "u1",
+    memberCount: members,
+    competitionCount: 0,
+    participants: [],
+    mercato: { target, startsAt: null, openedAt, roundMode: "auto" },
+  } as unknown as ManagerLeagueFile;
+  const settings: MercatoSettings[] = [];
+  const launched: string[] = [];
+  const repo: ManagerLeagueRepository = {
+    ...repository().repo,
+    find: async () => league,
+    setMercato: async (_, s) => {
+      settings.push(s);
+      return "set";
+    },
+    launchMercato: async (id) => {
+      launched.push(id);
+      return "launched";
+    },
+  };
+  return { repo, settings, launched };
+}
+
+describe("setManagerMercato", () => {
+  it("lets the creator wait for 6 players with rounds of 48 then 12 hours", async () => {
+    // Given a league of 3 players
+    const { repo, settings } = mercatoRepository(3);
+    // When its creator sets its mercato
+    await setManagerMercato({ managerLeagues: repo, userId: "u1" }).execute({
+      id: "league-1",
+      target: 6,
+      startsAt: "2027-01-10T19:00:00.000Z",
+      rounds: { mode: "custom", firstHours: 48, nextHours: 12 },
+    });
+    // Then the settings are kept
+    expect(settings).toEqual([
+      {
+        target: 6,
+        startsAt: "2027-01-10T19:00:00.000Z",
+        rounds: { mode: "custom", firstHours: 48, nextHours: 12 },
+      },
+    ]);
+  });
+
+  it.each([
+    ["an odd number of players", 5, { mode: "auto" }, "MERCATO_TARGET_INVALID"],
+    ["fewer players than those already in", 4, { mode: "auto" }, "MERCATO_TARGET_INVALID"],
+    ["12 players", 12, { mode: "auto" }, "MERCATO_TARGET_INVALID"],
+    [
+      "rounds of 36 hours",
+      6,
+      { mode: "custom", firstHours: 36, nextHours: 24 },
+      "MERCATO_ROUNDS_INVALID",
+    ],
+  ] as const)("refuses %s", async (_, target, rounds, code) => {
+    const { repo, settings } = mercatoRepository(5, 6);
+
+    await expect(
+      setManagerMercato({ managerLeagues: repo, userId: "u1" }).execute({
+        id: "league-1",
+        target,
+        startsAt: null,
+        rounds,
+      }),
+    ).rejects.toEqual(new UseCaseError(code));
+    expect(settings).toEqual([]);
+  });
+
+  it("does not let another participant set the mercato", async () => {
+    const { repo } = mercatoRepository(3);
+
+    await expect(
+      setManagerMercato({ managerLeagues: repo, userId: "u2" }).execute({
+        id: "league-1",
+        target: 4,
+        startsAt: null,
+        rounds: { mode: "auto" },
+      }),
+    ).rejects.toEqual(new UseCaseError("NOT_LEAGUE_OWNER"));
+  });
+
+  it("does not set a mercato already open", async () => {
+    const { repo } = mercatoRepository(4, 4, "2027-01-01T08:00:00.000Z");
+
+    await expect(
+      setManagerMercato({ managerLeagues: repo, userId: "u1" }).execute({
+        id: "league-1",
+        target: 4,
+        startsAt: null,
+        rounds: { mode: "auto" },
+      }),
+    ).rejects.toEqual(new UseCaseError("MERCATO_OPEN"));
+  });
+});
+
+describe("launchManagerMercato", () => {
+  it("launches the mercato once the 4 players are in", async () => {
+    // Given a league of 4 players waiting for 4
+    const { repo, launched } = mercatoRepository(4);
+    // When its creator launches the mercato
+    await launchManagerMercato({ managerLeagues: repo, userId: "u1" }).execute({ id: "league-1" });
+    // Then it opens
+    expect(launched).toEqual(["league-1"]);
+  });
+
+  it("waits while a player is missing", async () => {
+    const { repo, launched } = mercatoRepository(3);
+
+    await expect(
+      launchManagerMercato({ managerLeagues: repo, userId: "u1" }).execute({ id: "league-1" }),
+    ).rejects.toEqual(new UseCaseError("MERCATO_PLAYERS_MISSING"));
+    expect(launched).toEqual([]);
+  });
+
+  it("does not let another participant launch it", async () => {
+    const { repo } = mercatoRepository(4);
+
+    await expect(
+      launchManagerMercato({ managerLeagues: repo, userId: "u2" }).execute({ id: "league-1" }),
+    ).rejects.toEqual(new UseCaseError("NOT_LEAGUE_OWNER"));
   });
 });

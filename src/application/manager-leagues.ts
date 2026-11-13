@@ -1,6 +1,13 @@
 import { isBannedName } from "@/domain/banned-names";
 import type { Bib } from "@/domain/bib";
 import { normalizeInviteCode, validateLeagueName } from "@/domain/league";
+import {
+  canLaunchMercato,
+  isAllowedTarget,
+  isRoundHours,
+  type MercatoLaunch,
+  type RoundMode,
+} from "@/domain/manager-league";
 import type { ManagerRules } from "@/domain/manager-rules";
 
 import { UseCaseError } from "./errors";
@@ -13,21 +20,36 @@ export type ManagerLeague = {
   inviteCode: string;
   ownerId: string;
   memberCount: number;
+  /** The players the league waits for (#619). */
+  target: number;
 };
 
 export type ManagerParticipant = { userId: string; pseudo: string; bib: Bib };
 
+/**
+ * The mercato of a league, as its creator set it (#619): the players it waits for, when it opens
+ * by itself (ISO, null: only when launched), when it opened, and whether its rounds follow French
+ * Track rules. The durations themselves are in `rules.rounds`.
+ */
+export type ManagerMercato = {
+  target: number;
+  startsAt: string | null;
+  openedAt: string | null;
+  roundMode: RoundMode["mode"];
+};
+
+export type MercatoSettings = { target: number; startsAt: string | null; rounds: RoundMode };
+
 /** A league with the rules it copied at its creation and its participants, first joined first. */
 export type ManagerLeagueFile = ManagerLeague & {
   rules: ManagerRules;
+  mercato: ManagerMercato;
   competitionCount: number;
   participants: ManagerParticipant[];
-  /** When the mercato opens (ISO), null while no date is set (#620). */
-  mercatoOpensAt: string | null;
 };
 
 /** A public league the player can still join. */
-export type PublicManagerLeague = { id: string; name: string; memberCount: number };
+export type PublicManagerLeague = { id: string; name: string; memberCount: number; target: number };
 
 export type JoinOutcome =
   | { outcome: "joined"; leagueId: string }
@@ -43,9 +65,17 @@ export interface ManagerLeagueRepository {
   listMine(): Promise<ManagerLeague[]>;
   /** Null for a league the player is not in. */
   find(id: string): Promise<ManagerLeagueFile | null>;
+  /** The creator only, while the mercato is not open; the database checks the target again. */
+  setMercato(
+    id: string,
+    settings: MercatoSettings,
+  ): Promise<"set" | "not_owner" | "mercato_open" | "target_refused">;
+  /** The creator only, once the target is reached: round 1 opens. */
+  launchMercato(id: string): Promise<"launched" | "not_owner" | "mercato_open" | "players_missing">;
 }
 
 type Ports = { managerLeagues: ManagerLeagueRepository };
+type OwnerPorts = Ports & { userId: string };
 
 /** Any player creates a league and is its admin; every name is moderated, public or not. */
 export function createManagerLeague(ports: Ports) {
@@ -112,4 +142,73 @@ export function joinPublicManagerLeague(ports: Ports) {
 
 export function listPublicManagerLeagues(ports: Ports) {
   return { execute: () => ports.managerLeagues.listPublic() };
+}
+
+/** What the launch rules read of a league. */
+export const mercatoLaunch = (league: ManagerLeagueFile): MercatoLaunch => ({
+  target: league.mercato.target,
+  members: league.memberCount,
+  openedAt: league.mercato.openedAt,
+  startsAt: league.mercato.startsAt,
+});
+
+/** The league of the creator, its mercato not open yet. */
+async function ownLeagueBeforeMercato(ports: OwnerPorts, id: string): Promise<ManagerLeagueFile> {
+  const league = await ports.managerLeagues.find(id);
+  if (!league) throw new UseCaseError("LEAGUE_NOT_FOUND");
+  if (league.ownerId !== ports.userId) throw new UseCaseError("NOT_LEAGUE_OWNER");
+  if (league.mercato.openedAt !== null) throw new UseCaseError("MERCATO_OPEN");
+  return league;
+}
+
+function refused(outcome: "not_owner" | "mercato_open" | "target_refused" | "players_missing") {
+  if (outcome === "not_owner") return new UseCaseError("NOT_LEAGUE_OWNER");
+  if (outcome === "mercato_open") return new UseCaseError("MERCATO_OPEN");
+  if (outcome === "target_refused") return new UseCaseError("MERCATO_TARGET_INVALID");
+  return new UseCaseError("MERCATO_PLAYERS_MISSING");
+}
+
+/**
+ * The creator sets the mercato (#619): an even number of players from 4 to 10, never under the
+ * players already in; when it opens by itself; rounds as French Track rules or 12 to 72 hours.
+ */
+export function setManagerMercato(ports: OwnerPorts) {
+  return {
+    async execute(input: { id: string } & MercatoSettings): Promise<void> {
+      const league = await ownLeagueBeforeMercato(ports, input.id);
+      if (!isAllowedTarget(input.target, league.memberCount)) {
+        throw new UseCaseError("MERCATO_TARGET_INVALID");
+      }
+      const { rounds } = input;
+      if (
+        rounds.mode === "custom" &&
+        !(isRoundHours(rounds.firstHours) && isRoundHours(rounds.nextHours))
+      ) {
+        throw new UseCaseError("MERCATO_ROUNDS_INVALID");
+      }
+      if (input.startsAt !== null && Number.isNaN(Date.parse(input.startsAt))) {
+        throw new UseCaseError("DATE_INVALID");
+      }
+      const outcome = await ports.managerLeagues.setMercato(input.id, {
+        target: input.target,
+        startsAt: input.startsAt,
+        rounds,
+      });
+      if (outcome !== "set") throw refused(outcome);
+    },
+  };
+}
+
+/** The creator launches the mercato now, once every player it waits for is in: round 1 opens. */
+export function launchManagerMercato(ports: OwnerPorts) {
+  return {
+    async execute(input: { id: string }): Promise<void> {
+      const league = await ownLeagueBeforeMercato(ports, input.id);
+      if (!canLaunchMercato(mercatoLaunch(league), true)) {
+        throw new UseCaseError("MERCATO_PLAYERS_MISSING");
+      }
+      const outcome = await ports.managerLeagues.launchMercato(input.id);
+      if (outcome !== "launched") throw refused(outcome);
+    },
+  };
 }

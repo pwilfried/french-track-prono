@@ -129,7 +129,7 @@ export default async function CataloguePage({
           />
         ) : (
           // Before the mercato: when it opens and who plays, no bid yet (#620).
-          <MercatoBanner opensAt={league.mercatoOpensAt} participants={league.participants} />
+          <MercatoBanner opensAt={league.mercato.startsAt} participants={league.participants} />
         )}
         {reveals !== "error" && reveals.rounds.length > 0 && (
           <nav aria-labelledby="round-results" className="flex flex-col gap-2">
