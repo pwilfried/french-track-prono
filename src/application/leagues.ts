@@ -34,6 +34,8 @@ export type PublicLeague = {
   isOfficial?: boolean;
   /** The families it is limited to (#613); absent or empty: every event counts. */
   families?: LeagueFamily[];
+  /** When it was created, ISO 8601: « Découvrir » can show the latest first (#662). */
+  createdAt: string;
 };
 
 export type LeagueMember = {

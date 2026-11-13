@@ -16,6 +16,8 @@ type Stored = {
   isPublic: boolean;
   /** Empty: a league on all events (#613). */
   families: LeagueFamilyRule[];
+  /** ISO 8601. */
+  createdAt: string;
 };
 
 /** The families in the order of the screen; absent for a league on all events. */
@@ -135,6 +137,7 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
             inviteCode: newCode(),
             ownerId: me,
             members: [],
+            createdAt: new Date().toISOString(),
           };
           enter(league, me);
           leagues.set(league.id, league);
@@ -213,6 +216,7 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
                 memberCount: l.members.length,
                 competitionSlugs: [...l.competitionSlugs],
                 ...(families ? { families } : {}),
+                createdAt: l.createdAt,
               };
             });
         },

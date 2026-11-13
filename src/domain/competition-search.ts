@@ -10,7 +10,7 @@ type Searchable = {
 };
 
 /** Lower case, without accents nor extra spaces: « Élite » matches « elite ». */
-const plain = (text: string) =>
+export const plain = (text: string) =>
   text
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
