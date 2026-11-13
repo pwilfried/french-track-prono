@@ -1,11 +1,11 @@
-import { badgesOf, type Badge } from "@/domain/badges";
+import { badgeProgress, type BadgeProgress } from "@/domain/badges";
 import { groupEventsByDay } from "@/domain/event-list";
 
 import type { EventReader } from "./list-events";
 import type { RankingRepository } from "./rankings";
 import type { PredictionRepository } from "./save-prediction";
 
-/** The badges a player earned in a competition (rules in src/domain/badges.ts). */
+/** Every badge of a competition, earned or not, with the progress towards it (src/domain/badges.ts). */
 export function getMyBadges(ports: {
   ranking: RankingRepository;
   predictions: PredictionRepository;
@@ -16,7 +16,7 @@ export function getMyBadges(ports: {
       userId: string;
       competitionSlug: string;
       timeZone: string;
-    }): Promise<Badge[]> {
+    }): Promise<BadgeProgress[]> {
       const [lines, predictions, events] = await Promise.all([
         ports.ranking.competitionLines(input.competitionSlug),
         ports.predictions.listForCompetition(input.userId, input.competitionSlug),
@@ -41,7 +41,7 @@ export function getMyBadges(ports: {
         }),
       );
 
-      return badgesOf({
+      return badgeProgress({
         myLines,
         computedEvents: [...computed].map(([eventId, startsAt]) => ({ eventId, startsAt })),
         frenchWinnerEvents: new Set(french.filter((id): id is string => id !== null)),

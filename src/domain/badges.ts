@@ -25,7 +25,7 @@ const HUNTER = 3;
  * computed events in a row with at least 1 point, at any time. Bleus: a French winner found.
  * Fidèle: a prediction on every event of a competition day.
  */
-export function badgesOf(input: BadgeInput): Badge[] {
+export function badgeProgress(input: BadgeInput): BadgeProgress[] {
   const has = (kind: ScoreReason["kind"]) =>
     input.myLines.some((l) => l.reasons.some((r) => r.kind === kind));
   const winners = input.myLines.filter((l) =>
@@ -43,15 +43,48 @@ export function badgesOf(input: BadgeInput): Badge[] {
     best = Math.max(best, run);
   }
 
-  const earned: Record<Badge, boolean> = {
-    nostradamus: has("perfect_podium"),
-    chasseur: winners >= HUNTER,
-    flair: has("flair"),
-    serie: best >= STREAK,
-    bleus: input.frenchWinnerEvents.size > 0,
-    fidele: input.days.some(
-      (day) => day.length > 0 && day.every((id) => input.predictedEventIds.has(id)),
-    ),
+  const bestDay = input.days.reduce(
+    (top, day) => {
+      const done = day.filter((id) => input.predictedEventIds.has(id)).length;
+      // The day closest to complete: fewest events left, then the most predicted.
+      const left = day.length - done;
+      return day.length > 0 && (left < top.goal - top.progress || top.goal === 0)
+        ? { progress: done, goal: day.length }
+        : top;
+    },
+    { progress: 0, goal: 0 },
+  );
+
+  const progress: Record<Badge, { progress: number; goal: number }> = {
+    nostradamus: { progress: has("perfect_podium") ? 1 : 0, goal: 1 },
+    chasseur: { progress: Math.min(winners, HUNTER), goal: HUNTER },
+    flair: { progress: has("flair") ? 1 : 0, goal: 1 },
+    serie: { progress: Math.min(best, STREAK), goal: STREAK },
+    bleus: { progress: input.frenchWinnerEvents.size > 0 ? 1 : 0, goal: 1 },
+    fidele: bestDay.goal > 0 ? bestDay : { progress: 0, goal: 1 },
   };
-  return BADGES.filter((b) => earned[b]);
+  return BADGES.map((badge) => ({
+    badge,
+    ...progress[badge],
+    earned: progress[badge].progress >= progress[badge].goal,
+  }));
+}
+
+export type BadgeProgress = { badge: Badge; earned: boolean; progress: number; goal: number };
+
+/** The badges earned, in display order. */
+export function badgesOf(input: BadgeInput): Badge[] {
+  return badgeProgress(input)
+    .filter((b) => b.earned)
+    .map((b) => b.badge);
+}
+
+/** The badge to aim for: not earned yet, the fewest steps left, the display order on a tie. */
+export function nextBadge(progress: readonly BadgeProgress[]): BadgeProgress | null {
+  return progress
+    .filter((b) => !b.earned)
+    .reduce<BadgeProgress | null>(
+      (top, b) => (!top || b.goal - b.progress < top.goal - top.progress ? b : top),
+      null,
+    );
 }

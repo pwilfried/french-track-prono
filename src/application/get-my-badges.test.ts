@@ -77,7 +77,7 @@ describe("getMyBadges", () => {
       events: reader,
     }).execute({ userId: "me", competitionSlug: "c", timeZone: "Europe/London" });
 
-    expect(badges).toEqual(["bleus", "fidele"]);
+    expect(badges.filter((b) => b.earned).map((b) => b.badge)).toEqual(["bleus", "fidele"]);
   });
 
   it("gives no Bleus when the winner found is not French", async () => {
@@ -87,6 +87,7 @@ describe("getMyBadges", () => {
       events: reader,
     }).execute({ userId: "me", competitionSlug: "c", timeZone: "Europe/London" });
 
-    expect(badges).toEqual([]);
+    expect(badges.filter((b) => b.earned)).toEqual([]);
+    expect(badges.find((b) => b.badge === "chasseur")).toMatchObject({ progress: 1, goal: 3 });
   });
 });
