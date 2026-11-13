@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   missingPerformances,
   performanceProblem,
+  podiumFromPerformances,
   tidyPerformances,
   type Performance,
 } from "./performance";
@@ -70,8 +71,12 @@ describe("performanceProblem", () => {
     }
   });
 
-  it("rejects a finisher without a mark", () => {
-    expect(performanceProblem([line({ mark: null })], "time")).toBe("mark_missing");
+  it("rejects a finisher with neither a place nor a mark", () => {
+    expect(performanceProblem([line({ place: null, mark: null })], "time")).toBe("mark_missing");
+  });
+
+  it("accepts a placed finisher without a mark: the podium alone is enough (#665)", () => {
+    expect(performanceProblem([line({ place: 2, mark: null })], "time")).toBeNull();
   });
 
   it("rejects a mark it cannot read in the unit of the discipline", () => {
@@ -103,5 +108,42 @@ describe("missingPerformances", () => {
     expect(missingPerformances(["a1"], [line({ status: "dns", place: null, mark: null })])).toEqual(
       [],
     );
+  });
+});
+
+describe("podiumFromPerformances", () => {
+  it("takes the finishers placed 1 to 3, best place first, with their marks", () => {
+    expect(
+      podiumFromPerformances([
+        line({ athleteId: "a4", place: 4, mark: "10.90" }),
+        line({ athleteId: "a2", place: 2, mark: "10.70" }),
+        line({ athleteId: "a1", place: 1, mark: "10.62" }),
+        line({ athleteId: "a5", place: null, mark: "11.00" }),
+        line({ athleteId: "a3", place: 3, mark: null }),
+      ]),
+    ).toEqual([
+      { athleteId: "a1", rank: 1, mark: "10.62" },
+      { athleteId: "a2", rank: 2, mark: "10.70" },
+      { athleteId: "a3", rank: 3, mark: null },
+    ]);
+  });
+
+  it("keeps tied athletes on the same step", () => {
+    expect(
+      podiumFromPerformances([
+        line({ athleteId: "b", place: 1 }),
+        line({ athleteId: "a", place: 1 }),
+        line({ athleteId: "c", place: 3 }),
+      ]).map((l) => `${l.athleteId}:${l.rank}`),
+    ).toEqual(["a:1", "b:1", "c:3"]);
+  });
+
+  it("leaves out DNS, DNF and DQ", () => {
+    expect(
+      podiumFromPerformances([
+        line({ athleteId: "a1", status: "dq", place: null, mark: null }),
+        line({ athleteId: "a2", place: 1 }),
+      ]),
+    ).toEqual([{ athleteId: "a2", rank: 1, mark: "10.62" }]);
   });
 });
