@@ -16,6 +16,7 @@ import {
 import { createPublicSupabaseClient, createSupabaseEventReader } from "@/infra";
 
 import { formText } from "../../../form-data";
+import { publicDataChanged } from "../../../public-data";
 import { adminOnly } from "../../guard";
 import type { AdminActionState } from "../actions";
 import { sheetPorts } from "../sheet-ports";
@@ -75,6 +76,7 @@ export async function savePerformancesAction(
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
   }
+  publicDataChanged("result");
   revalidatePath("/admin");
   redirect(`/admin/${slug}?enregistre=1`);
 }

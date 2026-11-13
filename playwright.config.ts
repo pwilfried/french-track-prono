@@ -4,6 +4,12 @@ import { defineConfig, devices } from "@playwright/test";
  * End-to-end tests: the Next.js build against a local Supabase (see docs/SETUP.md).
  * No retry: a failing test is fixed or removed, never run again until it passes.
  */
+/**
+ * Lets the tests expire the app's cache of public data after a change made in SQL (#693): the
+ * server started below gets the same secret (see src/infra/contract/database.ts).
+ */
+process.env.PUBLIC_CACHE_FLUSH_SECRET ??= "e2e-public-cache";
+
 export default defineConfig({
   testDir: "e2e",
   retries: 0,

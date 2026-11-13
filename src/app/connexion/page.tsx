@@ -4,18 +4,18 @@ import { UseCaseError } from "@/application/errors";
 import { getEvent } from "@/application/get-event";
 import { eventPhase } from "@/domain/countdown";
 import { eventSlugOfPath, safeRedirectPath } from "@/domain/redirect";
-import { createPublicSupabaseClient, createSupabaseEventReader } from "@/infra";
 
 import { messages } from "../messages.fr";
 import { getCurrentUser } from "../session";
 import { SignInForm } from "./sign-in-form";
+import { publicEventReader } from "../public-data";
 
 /** The name of the open event `next` points to (« 100 m femmes »), null for any other page. */
 async function waitingEventName(next: string): Promise<string | null> {
   const slug = eventSlugOfPath(next);
   if (!slug) return null;
   try {
-    const events = createSupabaseEventReader(createPublicSupabaseClient());
+    const events = publicEventReader();
     const event = await getEvent({ events }).execute({ competitionSlug: null, eventSlug: slug });
     if (eventPhase(new Date(), event.lockAt) !== "open") return null;
     return messages.events.name(event.discipline, event.gender);

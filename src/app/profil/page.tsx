@@ -27,10 +27,7 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { TIME_ZONE } from "@/domain/competition";
 import {
-  createPublicSupabaseClient,
   createSupabaseClubNoticeRepository,
-  createSupabaseDisciplineRepository,
-  createSupabaseEventReader,
   createSupabaseManagerHonoursRepository,
   createSupabasePlayerDetailsRepository,
   createSupabasePointsRepository,
@@ -43,6 +40,7 @@ import { currentCompetition, seasonCompetitionSlugs } from "../competition";
 import { messages } from "../messages.fr";
 import { turnOffNotificationsAction, turnOnNotificationsAction } from "../push-actions";
 import { getCurrentUser, getSessionClient } from "../session";
+import { publicEventReader, publicDisciplines } from "../public-data";
 
 /** The season and the club ranking over every competition, the badges of the current one; null when unreadable. */
 async function loadSeason(userId: string) {
@@ -50,13 +48,13 @@ async function loadSeason(userId: string) {
   const slugs = await seasonCompetitionSlugs();
   try {
     const client = await getSessionClient();
-    const events = createSupabaseEventReader(createPublicSupabaseClient());
+    const events = publicEventReader();
     const [season, badges, clubs, latest] = await Promise.all([
       getMySeason({
         ranking: createSupabaseRankingRepository(client),
         predictions: createSupabasePredictionRepository(client),
         events,
-        disciplines: createSupabaseDisciplineRepository(createPublicSupabaseClient()),
+        disciplines: publicDisciplines(),
       }).execute({ userId, competitionSlugs: slugs }),
       getMyBadges({
         ranking: createSupabaseRankingRepository(client),
