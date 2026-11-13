@@ -7,19 +7,35 @@ import {
   type ManagerLeague,
   type PublicManagerLeague,
 } from "@/application/manager-leagues";
+import { getManagerRules } from "@/application/manager-rules";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
+import { ManagerIntro } from "@/components/manager/manager-intro";
 import { buttonVariants } from "@/components/ui/button";
+import { managerIntroFigures, type ManagerIntroFigures } from "@/domain/manager-intro";
+import { createSupabaseManagerRuleRepository } from "@/infra";
 
 import { messages } from "../messages.fr";
+import { getSessionClient } from "../session";
 import { managerPorts } from "./data";
 import { JoinPublicManagerLeagueForm } from "./join-forms";
 
 const text = messages.manager;
 
-/** French Track Manager (#419): the player's Manager leagues and a way to create one. */
-export default async function ManagerPage() {
+/** « Passer » on the presentation: the page as if the player had seen it. */
+const SKIP_HREF = "/manager?passer=1";
+
+/**
+ * French Track Manager (#419): the player's Manager leagues and a way to create one. Until the
+ * player has one, the presentation of the mode comes first (#618).
+ */
+export default async function ManagerPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ passer?: string | string[] }>;
+}) {
   const ports = await managerPorts("/manager");
+  const { passer } = await searchParams;
   let leagues: ManagerLeague[] | "error";
   let publics: PublicManagerLeague[] = [];
   try {
@@ -30,6 +46,18 @@ export default async function ManagerPage() {
   } catch (error) {
     if (!(error instanceof UseCaseError)) throw error;
     leagues = "error";
+  }
+
+  if (leagues !== "error" && leagues.length === 0 && passer === undefined) {
+    const figures = await introFigures();
+    // Without the rules there are no figures to quote: the page itself, as before.
+    if (figures) {
+      return (
+        <main id="main" className="flex flex-1 flex-col">
+          <ManagerIntro figures={figures} skipHref={SKIP_HREF} />
+        </main>
+      );
+    }
   }
 
   return (
@@ -109,4 +137,15 @@ export default async function ManagerPage() {
       </div>
     </main>
   );
+}
+
+async function introFigures(): Promise<ManagerIntroFigures | undefined> {
+  try {
+    const rules = createSupabaseManagerRuleRepository(await getSessionClient());
+    const { rules: current } = await getManagerRules({ rules }).execute();
+    return managerIntroFigures(current);
+  } catch (error) {
+    if (!(error instanceof UseCaseError)) throw error;
+    return undefined;
+  }
 }

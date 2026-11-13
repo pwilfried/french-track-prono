@@ -25,8 +25,16 @@ test("a player creates a private French Track Manager league that keeps its rule
       "aria-current",
       "page",
     );
-    await expect(page.getByText("Tu n'es dans aucune ligue Manager")).toBeVisible();
+    // Without a Manager league, the presentation of the mode, its figures from the rules (#618).
+    const steps = page.getByRole("list", { name: "Le Manager en 5 étapes" });
+    await expect(steps.getByRole("listitem")).toHaveCount(5);
+    await expect(steps).toContainText(`${budget} crédits pour recruter`);
+    await expect(page.getByRole("link", { name: "J'ai un code d'invitation" })).toHaveAttribute(
+      "href",
+      "/manager/rejoindre",
+    );
     await page.getByRole("link", { name: "Créer une ligue Manager" }).click();
+    await page.waitForURL(/\/manager\/creer$/);
 
     // Every name is moderated, private leagues too.
     await page.getByLabel("Nom de la ligue").fill("Ligue FFA");

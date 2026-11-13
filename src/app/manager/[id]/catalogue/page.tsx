@@ -4,10 +4,12 @@ import { notFound, redirect } from "next/navigation";
 import { UseCaseError } from "@/application/errors";
 import { getMyManagerBids } from "@/application/manager-bids";
 import { browseManagerCatalogue } from "@/application/manager-catalogue";
+import { getManagerLeague } from "@/application/manager-leagues";
 import { getManagerRevealRounds } from "@/application/manager-reveal";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { CatalogueCard } from "@/components/manager/catalogue-card";
+import { MercatoBanner } from "@/components/manager/mercato-banner";
 import { CompetitionChips } from "@/components/events/competition-chips";
 import { buttonVariants } from "@/components/ui/button";
 import { MANAGER_FAMILIES, MANAGER_SEXES, type ManagerSex } from "@/domain/manager-rules";
@@ -39,6 +41,7 @@ function caught(error: unknown): "error" {
  * The mercato catalogue of a league (#421): search and filters in the address, so they work
  * without script and survive a reload; a page of 30 athletes at a time. The filters are one row
  * of chips that apply at once, so the first athlete shows without scrolling on a phone (#497).
+ * Before the mercato opens, a band says when and who plays; the catalogue shows without bids (#620).
  */
 export default async function CataloguePage({
   params,
@@ -49,7 +52,7 @@ export default async function CataloguePage({
 }) {
   const { id } = await params;
   const search = await searchParams;
-  await managerPorts(`/manager/${id}/catalogue`);
+  const ports = await managerPorts(`/manager/${id}/catalogue`);
   const sex = MANAGER_SEXES.includes(search.sexe as ManagerSex)
     ? (search.sexe as ManagerSex)
     : null;
@@ -59,7 +62,7 @@ export default async function CataloguePage({
 
   const client = await getSessionClient();
   const catalogue = createSupabaseManagerCatalogue(client);
-  const [view, mine, reveals] = await Promise.all([
+  const [view, mine, reveals, league] = await Promise.all([
     browseManagerCatalogue({ catalogue })
       .execute({
         leagueId: id,
@@ -74,6 +77,7 @@ export default async function CataloguePage({
     getManagerRevealRounds({ reveals: createSupabaseManagerReveals(client) })
       .execute({ leagueId: id })
       .catch(caught),
+    getManagerLeague(ports).execute({ id }).catch(caught),
   ]);
   // The first visit after the close of a round opens its reveal, once (#604).
   if (reveals !== "error" && reveals.toReveal !== null) {
@@ -118,8 +122,14 @@ export default async function CataloguePage({
           />
         ) : mine.mercatoOpen || mine.mercatoClosed ? (
           <MyBidsPanel leagueId={id} bids={mine} />
+        ) : league === "error" ? (
+          <ErrorNotice
+            retryHref={`/manager/${id}/catalogue`}
+            message={messages.errors.LEAGUES_UNAVAILABLE}
+          />
         ) : (
-          <p className="rounded-card bg-muted p-4 text-sm font-semibold">{text.mercatoClosed}</p>
+          // Before the mercato: when it opens and who plays, no bid yet (#620).
+          <MercatoBanner opensAt={league.mercato.startsAt} participants={league.participants} />
         )}
         {reveals !== "error" && reveals.rounds.length > 0 && (
           <nav aria-labelledby="round-results" className="flex flex-col gap-2">

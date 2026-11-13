@@ -34,6 +34,9 @@ test("a player joins a public Manager league in one tap and a private one by its
   await joinerPage.goto("/manager");
   await signUp(joinerPage, joiner);
   await joinerPage.waitForURL(/\/manager$/);
+  // Without a Manager league the presentation comes first; « Passer » shows the leagues (#618).
+  await joinerPage.getByRole("link", { name: "Passer la présentation" }).click();
+  await joinerPage.waitForURL(/\/manager\?passer=1$/);
   const publics = joinerPage.getByRole("list", { name: "Ligues publiques" });
   await expect(publics.getByRole("listitem").filter({ hasText: open })).toContainText(
     "1 / 4 participants",

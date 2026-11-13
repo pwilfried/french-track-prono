@@ -168,10 +168,27 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 
 - **Barème hongrois** : chaque athlète aligné rapporte des points selon sa performance réelle ;
   la place n'entre pas dans ce calcul. Tables World Athletics (#428) ; DNS, DNF, DQ = 0 point.
+  Calcul : `src/domain/world-athletics-points.ts`, à partir de la discipline, du sexe et de la
+  performance (secondes, mètres, ou total officiel pour les épreuves combinées).
 - **Bonus sportifs**, tous cumulables, valeurs fixées par l'admin : 1re, 2e, 3e place, record
   personnel, meilleure performance de la saison, record national, continental et du monde.
+  Calcul : `src/domain/manager-bonus.ts`, à partir de la place (aucune pour DNS, DNF, DQ) et des
+  records cochés par l'admin ; chaque record compte s'il est coché (un record du monde ne coche
+  pas les autres de lui-même).
 - **Saisie** : l'admin entre places, performances et indicateurs de records ; le calcul est
   automatique.
+- Saisie (#429), back-office › épreuve › « Performances Manager » (`/admin/<épreuve>/performances`),
+  une fois l'épreuve commencée : pour chaque athlète de la liste de départ, un statut (arrivé, DNS,
+  DNF, DQ, ou non saisi), la place (facultative, les ex æquo la partagent), la marque (obligatoire
+  pour un arrivé, lue dans l'unité de la discipline et récrite comme les autres) et les records
+  RP, MPS, RN, RC, RM. Un DNS, DNF ou DQ n'a que son statut. Les athlètes alignés dans au moins une
+  ligue Manager pour la compétition viennent en tête, signalés « à saisir » tant qu'ils n'ont pas de
+  ligne, avec le compte de ceux qui manquent. Une nouvelle saisie remplace la précédente : un
+  résultat corrigé se saisit à nouveau, et le calcul repartira de cette saisie (#416). En base :
+  table `event_performances`, à part de `results` (le podium des pronos ne change pas), lecture
+  publique, écriture seulement par `admin_set_performances` (journalisée `set_performances` dans
+  `admin_actions`) ; `admin_manager_lined_up` dit à l'admin seul quels athlètes de la liste sont
+  alignés (les alignements restent privés). Règles pures : `src/domain/performance.ts`.
 - **Pronostics classiques obligatoires** sur toutes les épreuves de chaque compétition éligible,
   verrouillés au départ ;
   sans pronostic, 0 sur cette partie.
@@ -211,6 +228,20 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - **Prix de référence** : fixé à la main par l'admin, attribut de l'athlète (back-office ›
   Athlètes › fiche, « Prix French Track Manager »). Un athlète sans prix n'est pas dans le
   catalogue. Le prix servira aussi au futur onglet athlète (#443).
+
+## Réponses du propriétaire (#428, 12 novembre 2026)
+
+- **Tables de cotation World Athletics** : elles peuvent être récupérées et embarquées dans l'app.
+  Édition **2025**, coefficients repris de la bibliothèque GlaivePro/IaafPoints (licence MIT,
+  commit épinglé), formule `points = floor(a × (perf + b)² + c)`. Le script
+  `scripts/world-athletics-tables.mjs` les importe dans `src/domain/world-athletics-tables.ts`,
+  fichier généré et versionné ; une nouvelle édition = changer l'édition et le commit dans le
+  script, le relancer, vérifier les valeurs de référence des tests.
+- **Épreuves combinées** : pas de tables du décathlon ou de l'heptathlon par épreuve. La
+  performance saisie est le total officiel, converti par les tables comme toute autre épreuve.
+- Chronométrage électronique et piste de 400 m seulement (pas de correction manuelle, pas de
+  tables « piste courte »). Une discipline absente des tables (relais mixte 4 × 100 m, ou créée
+  par l'admin sous un autre nom) n'a pas de barème : le calcul renvoie « pas de table ».
 
 ## Questions encore ouvertes
 

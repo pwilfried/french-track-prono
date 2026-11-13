@@ -109,7 +109,10 @@ export type ErrorCode =
   | "LINEUP_LOCKED"
   | "LINEUP_INVALID"
   | "LINEUPS_UNAVAILABLE"
-  | "ROUND_NOT_FOUND";
+  | "ROUND_NOT_FOUND"
+  | "PERFORMANCES_INVALID"
+  | "PERFORMANCE_MARK_MISSING"
+  | "PERFORMANCES_UNAVAILABLE";
 
 let reportUnavailable: ((code: ErrorCode) => void) | undefined;
 

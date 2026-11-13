@@ -62,3 +62,10 @@ export function mercatoRounds(mode: RoundMode, frenchTrack: RoundRules): RoundRu
   if (mode.mode === "auto") return { ...frenchTrack };
   return { firstHours: mode.firstHours, longRounds: 1, nextHours: mode.nextHours };
 }
+
+/**
+ * The participant who joined last, first joined first in the list: the catalogue before the
+ * mercato says « X vient de rejoindre la ligue » (#620). Nobody while the creator is alone.
+ */
+export const newestArrival = <P>(participants: readonly P[]): P | null =>
+  participants.length > 1 ? participants[participants.length - 1]! : null;

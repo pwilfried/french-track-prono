@@ -79,6 +79,7 @@ export function managerLeagueRepositoryContract(
       const late = await w.creator.create("Les Retardataires", true);
       if (late === "banned") throw new Error("the name is not banned");
       await w.openMercato(late.id);
+      expect((await w.creator.find(late.id))?.mercato.openedAt).not.toBeNull();
       expect((await w.other.listPublic()).map((l) => l.id)).not.toContain(late.id);
       expect(await w.other.joinPublic(late.id)).toEqual({ outcome: "mercato_open" });
     });

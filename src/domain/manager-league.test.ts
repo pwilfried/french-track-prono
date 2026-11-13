@@ -6,6 +6,7 @@ import {
   isPlayerTarget,
   isRoundHours,
   mercatoRounds,
+  newestArrival,
   opensAutomatically,
   playersAwaited,
   playerTargets,
@@ -106,5 +107,15 @@ describe("mercatoRounds", () => {
 
   it.each([0, 6, 36, 96])("refuses rounds of %i hours", (h) => {
     expect(isRoundHours(h)).toBe(false);
+  });
+});
+
+describe("newestArrival", () => {
+  it("is nobody while the creator is alone in the league", () => {
+    expect(newestArrival(["creator"])).toBeNull();
+  });
+
+  it("is the participant who joined last", () => {
+    expect(newestArrival(["creator", "first", "last"])).toBe("last");
   });
 });
