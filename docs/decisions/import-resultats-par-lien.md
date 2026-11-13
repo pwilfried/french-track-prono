@@ -176,4 +176,8 @@ sous licence).
   casse) : **une issue moyenne, 1 à 2 jours d'agent**.
 - Plus une modification du non-objectif 3 dans `docs/architecture.md`.
 
-NEEDS-ANSWER: Les conditions d'utilisation de World Athletics (clause 4.1) interdisent toute lecture automatique sans accord écrit ; veux-tu qu'on en reste au collage du tableau (#666) et à la saisie manuelle des fiches, ou préfères-tu écrire à World Athletics pour demander une autorisation avant d'aller plus loin ?
+## Question encore ouverte
+
+Posée au propriétaire dans #670 : en rester au collage du tableau (#666) et à la saisie manuelle
+des fiches, ou écrire à World Athletics pour demander une autorisation avant d'aller plus loin ?
+Les conditions d'utilisation (clause 4.1) interdisent toute lecture automatique sans accord écrit.
