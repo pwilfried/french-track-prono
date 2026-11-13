@@ -2,6 +2,9 @@ import Link from "next/link";
 
 import { messages } from "@/app/messages.fr";
 import { Change } from "@/components/leaderboard/ranking-row";
+import type { LeagueFamily } from "@/domain/league-families";
+
+import { FamilyBadge } from "./family-badge";
 
 const text = messages.leagues;
 
@@ -16,6 +19,7 @@ export function LeagueCard({
   competitionNames,
   isPublic = false,
   isOfficial = false,
+  families = [],
   standing,
 }: {
   href: string;
@@ -24,6 +28,8 @@ export function LeagueCard({
   competitionNames: string[];
   isPublic?: boolean;
   isOfficial?: boolean;
+  /** The families it is limited to (#613); none: all events, no badge. */
+  families?: LeagueFamily[];
   standing: { rank: number; change: number | null } | null;
 }) {
   const details = [
@@ -44,6 +50,11 @@ export function LeagueCard({
             </span>
           )}
         </span>
+        {families.length > 0 && (
+          <span className="block py-0.5">
+            <FamilyBadge families={families} />
+          </span>
+        )}
         <span className="block break-words text-sm text-muted-foreground">{details}</span>
       </span>
       {standing ? (

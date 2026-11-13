@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { UseCaseError } from "./errors";
 import {
   addLeagueCompetition,
+  addLeagueFamily,
   createLeague,
   joinPublicLeague,
   listPublicLeagues,
@@ -26,20 +27,26 @@ const league = (id: string, name: string): League => ({
   isPublic: false,
 });
 
-function repository(
-  overrides: Partial<LeagueRepository> = {},
-): LeagueRepository & { created: string[]; competitions: string[][]; publics: boolean[] } {
+function repository(overrides: Partial<LeagueRepository> = {}): LeagueRepository & {
+  created: string[];
+  competitions: string[][];
+  publics: boolean[];
+  families: (string[] | undefined)[];
+} {
   const created: string[] = [];
   const competitions: string[][] = [];
   const publics: boolean[] = [];
+  const families: (string[] | undefined)[] = [];
   return {
     created,
     competitions,
     publics,
-    create: async (name, slugs, isPublic) => {
+    families,
+    create: async (name, slugs, isPublic, chosen) => {
       created.push(name);
       competitions.push(slugs);
       publics.push(isPublic);
+      families.push(chosen);
       return league("new", name);
     },
     join: async () => ({ outcome: "joined", leagueId: "l1" }),
@@ -48,6 +55,7 @@ function repository(
     leave: async () => "left",
     handOver: async () => "done",
     addCompetition: async () => "added",
+    addFamily: async () => "added",
     listPublic: async () => [],
     joinPublic: async (id) => ({ outcome: "joined", leagueId: id }),
     report: async () => "reported",
@@ -65,6 +73,36 @@ const codeOf = async (promise: Promise<unknown>) => {
 };
 
 describe("createLeague", () => {
+  it("creates a league limited to the families chosen, in the order of the screen (#613)", async () => {
+    const leagues = repository();
+    await createLeague({ leagues }).execute({
+      name: "Sprinteurs",
+      competitionSlugs: ["c"],
+      families: ["hurdles", "sprint", "sprint"],
+    });
+    expect(leagues.families).toEqual([["sprint", "hurdles"]]);
+  });
+
+  it("creates a league on all events when no family is chosen", async () => {
+    const leagues = repository();
+    await createLeague({ leagues }).execute({ name: "Tout", competitionSlugs: ["c"] });
+    expect(leagues.families).toEqual([[]]);
+  });
+
+  it("refuses an unknown family with LEAGUE_FAMILY_INVALID, without creating anything", async () => {
+    const leagues = repository();
+    expect(
+      await codeOf(
+        createLeague({ leagues }).execute({
+          name: "Curling",
+          competitionSlugs: ["c"],
+          families: ["curling"],
+        }),
+      ),
+    ).toBe("LEAGUE_FAMILY_INVALID");
+    expect(leagues.created).toEqual([]);
+  });
+
   it("creates a league with the cleaned name", async () => {
     const leagues = repository();
 
@@ -318,5 +356,36 @@ describe("joining with a code, too many wrong codes", () => {
     expect(await codeOf(joinLeague({ leagues }).execute({ code: "K7M2QX" }))).toBe(
       "LEAGUE_TOO_MANY_ATTEMPTS",
     );
+  });
+});
+
+describe("addLeagueFamily (#613)", () => {
+  it("adds a family to the league of its creator", async () => {
+    const asked: [string, string][] = [];
+    const leagues = repository({
+      addFamily: async (leagueId, family) => {
+        asked.push([leagueId, family]);
+        return "added";
+      },
+    });
+    await addLeagueFamily({ leagues }).execute({ leagueId: "l1", family: "throws" });
+    expect(asked).toEqual([["l1", "throws"]]);
+  });
+
+  it("refuses an unknown family with LEAGUE_FAMILY_INVALID", async () => {
+    const leagues = repository();
+    expect(
+      await codeOf(addLeagueFamily({ leagues }).execute({ leagueId: "l1", family: "curling" })),
+    ).toBe("LEAGUE_FAMILY_INVALID");
+  });
+
+  it.each([
+    ["not_owner", "NOT_LEAGUE_OWNER"],
+    ["all_events", "LEAGUE_ALL_EVENTS"],
+  ] as const)("turns %s into %s", async (outcome, code) => {
+    const leagues = repository({ addFamily: async () => outcome });
+    expect(
+      await codeOf(addLeagueFamily({ leagues }).execute({ leagueId: "l1", family: "throws" })),
+    ).toBe(code);
   });
 });

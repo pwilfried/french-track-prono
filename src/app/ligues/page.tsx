@@ -10,6 +10,7 @@ import {
 import { getLeagueRanking, standingIn } from "@/application/rankings";
 import { ErrorNotice } from "@/components/error-notice";
 import { JoinPublicLeagueForm, ReportLeagueForm } from "@/components/leagues/league-forms";
+import { FamilyBadge } from "@/components/leagues/family-badge";
 import { LeagueCard } from "@/components/leagues/league-card";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { OfficialLeague } from "@/components/leagues/official-league";
@@ -35,6 +36,7 @@ export default async function LeaguesPage() {
         const ranking = await getLeagueRanking(ports).execute({
           leagueId: league.id,
           competitionSlugs: league.competitionSlugs,
+          families: league.families,
           today: currentCompetitionDay(),
         });
         return { league, standing: standingIn(ranking, ports.userId) };
@@ -86,6 +88,7 @@ export default async function LeaguesPage() {
                   competitionNames={namesOf(league.competitionSlugs)}
                   isPublic={league.isPublic}
                   isOfficial={league.isOfficial}
+                  families={league.families?.map((f) => f.family)}
                   standing={standing}
                 />
               </li>
@@ -133,6 +136,11 @@ export default async function LeaguesPage() {
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block break-words font-extrabold">{league.name}</span>
+                      {league.families && (
+                        <span className="block py-0.5">
+                          <FamilyBadge families={league.families} />
+                        </span>
+                      )}
                       <span className="block text-sm text-muted-foreground">
                         {[
                           messages.leagues.publicPlaces(

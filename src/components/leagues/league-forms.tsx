@@ -1,15 +1,19 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { messages } from "@/app/messages.fr";
 import { Field } from "@/components/account/field";
 import { SubmitButton } from "@/components/account/submit-button";
 import { Bib } from "@/components/profile/bib";
 import type { Bib as BibValue } from "@/domain/bib";
+import type { LeagueFamily } from "@/domain/league-families";
+
+import { LeagueFamilyPicker } from "./league-family-picker";
 
 import {
   addLeagueCompetitionAction,
+  addLeagueFamilyAction,
   createLeagueAction,
   joinPublicLeagueAction,
   reportLeagueAction,
@@ -32,6 +36,7 @@ export function CreateLeagueForm({
     value: "",
     isPublic,
   });
+  const [ready, setReady] = useState(true);
   return (
     <form action={action} noValidate className="flex flex-col gap-5">
       {competitionSlugs.map((slug) => (
@@ -63,7 +68,12 @@ export function CreateLeagueForm({
           </span>
         </span>
       </label>
-      <SubmitButton pendingLabel={messages.leagues.creating}>
+      <LeagueFamilyPicker
+        key={state.families?.join() ?? ""}
+        defaultFamilies={state.families}
+        onReadyChange={setReady}
+      />
+      <SubmitButton pendingLabel={messages.leagues.creating} disabled={!ready}>
         {messages.leagues.createSubmit}
       </SubmitButton>
     </form>
@@ -339,6 +349,33 @@ export function ReportLeagueForm({ leagueId, name }: { leagueId: string; name: s
           {messages.errors[state.error]}
         </p>
       )}
+    </form>
+  );
+}
+
+/** The creator adds one family (#613); it counts from now on, for the coming events only. */
+export function AddLeagueFamilyForm({
+  leagueId,
+  family,
+}: {
+  leagueId: string;
+  family: LeagueFamily;
+}) {
+  const [state, action] = useActionState<LeagueFormState, FormData>(addLeagueFamilyAction, {
+    value: family,
+  });
+  return (
+    <form action={action} className="flex flex-col gap-2">
+      <input type="hidden" name="leagueId" value={leagueId} />
+      <input type="hidden" name="family" value={family} />
+      {state.error && (
+        <p role="alert" className="text-sm font-semibold text-accent-text">
+          {messages.errors[state.error]}
+        </p>
+      )}
+      <SubmitButton pendingLabel={messages.leagues.addingFamily}>
+        {messages.leagues.addFamilySubmit(messages.leagues.family[family])}
+      </SubmitButton>
     </form>
   );
 }

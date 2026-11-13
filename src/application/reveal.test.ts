@@ -20,6 +20,7 @@ const reveal = (locked: boolean, predictions: RevealedPrediction[]): RevealRepos
 const leagues = (members: LeagueMember[] | null): LeagueRepository => ({
   create: async () => Promise.reject(new Error("unused")),
   addCompetition: async () => "added",
+  addFamily: async () => "added",
   listPublic: async () => [],
   joinPublic: async () => ({ outcome: "unknown_code" }),
   report: async () => "unknown",
