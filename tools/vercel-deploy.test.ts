@@ -13,7 +13,7 @@ const executable = (path: string, body: string) => {
 
 // Runs the deploy script with a fake Vercel CLI (npx), a fake gh and a fake smoke test.
 // `pulled` is the environment file `vercel pull` writes; `smoke` is the smoke test's exit code.
-function deploy({ pulled, smoke }: { pulled: string; smoke: number }) {
+function deploy({ pulled, smoke, extra }: { pulled: string; smoke: number; extra?: string }) {
   const root = mkdtempSync(join(tmpdir(), "vercel-deploy-"));
   const bin = join(root, "bin");
   mkdirSync(bin);
@@ -25,6 +25,7 @@ function deploy({ pulled, smoke }: { pulled: string; smoke: number }) {
 echo "vercel $*" >> "${calls}"
 case "$1" in
   pull) mkdir -p .vercel && printf '%s' "$PULLED" > .vercel/.env.production.local ;;
+  build) cp .vercel/.env.production.local "${root}/built-env" ;;
   deploy) echo "https://french-track-abc.vercel.app" ;;
 esac`,
   );
@@ -44,12 +45,14 @@ esac`,
       GITHUB_REPOSITORY: "owner/repo",
       GITHUB_RUN_ID: "99",
       AGENTS_OWNER: "alice bob",
+      ...(extra ? { VERCEL_EXTRA_ENV: extra } : {}),
     },
   });
   return {
     status: run.status,
     output: run.stdout + run.stderr,
     calls: readFileSync(calls, "utf8").trim().split("\n"),
+    builtEnv: () => readFileSync(join(root, "built-env"), "utf8"),
   };
 }
 
@@ -95,4 +98,12 @@ it("rolls production back and opens an issue for the owners when the smoke test 
   expect(issue).toContain("@alice @bob");
   expect(issue).toContain("https://github.com/owner/repo/actions/runs/99");
   expect(run.output).not.toContain("anon-secret-value");
+});
+
+it("adds the extra build variables to the pulled environment (pre-production's noindex)", () => {
+  const run = deploy({ pulled: complete, smoke: 0, extra: "NEXT_PUBLIC_SITE_NOINDEX=1" });
+
+  expect(run.status).toBe(0);
+  expect(run.builtEnv()).toContain("NEXT_PUBLIC_SUPABASE_ANON_KEY=");
+  expect(run.builtEnv()).toMatch(/^NEXT_PUBLIC_SITE_NOINDEX=1$/m);
 });
