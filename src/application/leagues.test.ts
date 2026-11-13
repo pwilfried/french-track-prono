@@ -123,21 +123,23 @@ describe("createLeague", () => {
     expect(leagues.competitions).toEqual([["a", "b"]]);
   });
 
-  it("creates a league without competition, to complete later", async () => {
-    const leagues = repository();
-
-    await createLeague({ leagues }).execute({ name: "Potes", competitionSlugs: [] });
-
-    expect(leagues.competitions).toEqual([[]]);
-  });
-
-  it("refuses an invalid name with LEAGUE_NAME_INVALID, without creating anything", async () => {
+  it("refuses a league without competition with LEAGUE_COMPETITION_REQUIRED, without creating anything", async () => {
     const leagues = repository();
 
     expect(
-      await codeOf(createLeague({ leagues }).execute({ name: "A", competitionSlugs: ["c"] })),
-    ).toBe("LEAGUE_NAME_INVALID");
+      await codeOf(createLeague({ leagues }).execute({ name: "Potes", competitionSlugs: [] })),
+    ).toBe("LEAGUE_COMPETITION_REQUIRED");
     expect(leagues.created).toEqual([]);
+  });
+
+  it("passes on a finished competition refused by the repository (#614)", async () => {
+    const leagues = repository({
+      create: async () => Promise.reject(new UseCaseError("COMPETITION_FINISHED")),
+    });
+
+    expect(
+      await codeOf(createLeague({ leagues }).execute({ name: "Potes", competitionSlugs: ["old"] })),
+    ).toBe("COMPETITION_FINISHED");
   });
 });
 
@@ -256,7 +258,7 @@ describe("addLeagueCompetition", () => {
   it.each([
     ["not_owner", "NOT_LEAGUE_OWNER"],
     ["unknown", "COMPETITION_NOT_FOUND"],
-    ["started", "COMPETITION_STARTED"],
+    ["finished", "COMPETITION_FINISHED"],
   ] as const)("turns %s into %s", async (outcome, code) => {
     const leagues = repository({ addCompetition: async () => outcome });
 

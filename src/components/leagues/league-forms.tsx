@@ -23,7 +23,10 @@ import {
   type LeagueFormState,
 } from "@/app/ligues/actions";
 
-/** The league counts the competitions given (sent as hidden fields). */
+/**
+ * The league counts the competitions given (sent as hidden fields); without any, it cannot be
+ * created (#614) and the button stays disabled.
+ */
 export function CreateLeagueForm({
   competitionSlugs,
   isPublic = false,
@@ -73,7 +76,10 @@ export function CreateLeagueForm({
         defaultFamilies={state.families}
         onReadyChange={setReady}
       />
-      <SubmitButton pendingLabel={messages.leagues.creating} disabled={!ready}>
+      <SubmitButton
+        pendingLabel={messages.leagues.creating}
+        disabled={!ready || competitionSlugs.length === 0}
+      >
         {messages.leagues.createSubmit}
       </SubmitButton>
     </form>

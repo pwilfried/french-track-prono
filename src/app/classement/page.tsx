@@ -78,6 +78,7 @@ export default async function RankingPage({
         leagueId: league.id,
         competitionSlugs: league.competitionSlugs,
         families: league.families,
+        competitionAddedAt: league.competitionAddedAt,
         today,
       });
     } else if (view === "soir") {

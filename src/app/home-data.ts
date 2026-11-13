@@ -94,6 +94,7 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
                 leagueId: league.id,
                 competitionSlugs: league.competitionSlugs,
                 families: league.families,
+                competitionAddedAt: league.competitionAddedAt,
               }),
             )) ?? [],
         })),

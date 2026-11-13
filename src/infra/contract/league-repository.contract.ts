@@ -9,11 +9,12 @@ export function leagueRepositoryContract(
   name: string,
   setup: () => Promise<{
     newPlayer: () => Promise<LeaguePlayer>;
+    /** A competition under way. */
     competitionSlug: string;
-    /** A second competition, for a league on several; it has already started. */
-    otherCompetitionSlug: string;
-    /** A competition still to come, that a league can add later. */
+    /** A competition still to come, for a league on several or added later. */
     comingCompetitionSlug: string;
+    /** A finished competition, never offered to a league (#614). */
+    finishedCompetitionSlug: string;
   }>,
 ) {
   describe(`LeagueRepository contract: ${name}`, () => {
@@ -32,52 +33,75 @@ export function leagueRepositoryContract(
           ownerId: owner.userId,
           memberCount: 1,
           competitionSlugs: [competitionSlug],
+          competitionAddedAt: { [competitionSlug]: expect.any(String) },
           isPublic: false,
         },
       ]);
     });
 
-    it("creates a league on several competitions", async () => {
-      const { newPlayer, competitionSlug, otherCompetitionSlug } = await setup();
+    it("creates a league on several competitions, each entered at its creation (#614)", async () => {
+      const { newPlayer, competitionSlug, comingCompetitionSlug } = await setup();
       const owner = await newPlayer();
+      const before = Date.now() - 60_000;
 
       const league = await owner.leagues.create(
         "Deux",
-        [otherCompetitionSlug, competitionSlug],
+        [comingCompetitionSlug, competitionSlug],
         false,
       );
 
-      const expected = [competitionSlug, otherCompetitionSlug].sort();
+      const expected = [competitionSlug, comingCompetitionSlug].sort();
       expect(league.competitionSlugs).toEqual(expected);
-      expect((await owner.leagues.listMine())[0]?.competitionSlugs).toEqual(expected);
+      const mine = (await owner.leagues.listMine())[0]!;
+      expect(mine.competitionSlugs).toEqual(expected);
+      for (const slug of expected) {
+        expect(Date.parse(mine.competitionAddedAt![slug]!)).toBeGreaterThan(before);
+      }
     });
 
-    it("creates a league without competition, then its creator adds a coming one", async () => {
-      const { newPlayer, comingCompetitionSlug } = await setup();
+    it("refuses a league without competition or on a finished one (#614)", async () => {
+      const { newPlayer, competitionSlug, finishedCompetitionSlug } = await setup();
       const owner = await newPlayer();
-      const league = await owner.leagues.create("Plus tard", [], false);
-      expect(league.competitionSlugs).toEqual([]);
 
-      expect(await owner.leagues.addCompetition(league.id, comingCompetitionSlug)).toBe("added");
-      expect(await owner.leagues.addCompetition(league.id, comingCompetitionSlug)).toBe("added");
-
-      expect((await owner.leagues.listMine())[0]?.competitionSlugs).toEqual([
-        comingCompetitionSlug,
-      ]);
+      await expect(owner.leagues.create("Vide", [], false)).rejects.toMatchObject({
+        code: "LEAGUE_COMPETITION_REQUIRED",
+      });
+      await expect(
+        owner.leagues.create("Finie", [competitionSlug, finishedCompetitionSlug], false),
+      ).rejects.toMatchObject({ code: "COMPETITION_FINISHED" });
+      expect(await owner.leagues.listMine()).toEqual([]);
     });
 
-    it("refuses a started or unknown competition, and a player who is not the creator", async () => {
-      const { newPlayer, otherCompetitionSlug, comingCompetitionSlug } = await setup();
+    it("lets its creator add a coming competition later, with its date of entry", async () => {
+      const { newPlayer, competitionSlug, comingCompetitionSlug } = await setup();
+      const owner = await newPlayer();
+      const league = await owner.leagues.create("Plus tard", [competitionSlug], false);
+
+      expect(await owner.leagues.addCompetition(league.id, comingCompetitionSlug)).toBe("added");
+      const first = (await owner.leagues.listMine())[0]!.competitionAddedAt![comingCompetitionSlug];
+      expect(await owner.leagues.addCompetition(league.id, comingCompetitionSlug)).toBe("added");
+
+      const mine = (await owner.leagues.listMine())[0]!;
+      expect(mine.competitionSlugs).toEqual([competitionSlug, comingCompetitionSlug].sort());
+      expect(Number.isNaN(Date.parse(first!))).toBe(false);
+      expect(mine.competitionAddedAt![comingCompetitionSlug]).toBe(first);
+    });
+
+    it("refuses a finished or unknown competition, and a player who is not the creator", async () => {
+      const { newPlayer, competitionSlug, finishedCompetitionSlug, comingCompetitionSlug } =
+        await setup();
       const [owner, friend] = [await newPlayer(), await newPlayer()];
-      const league = await owner.leagues.create("Club", [], false);
+      const league = await owner.leagues.create("Club", [competitionSlug], false);
       await friend.leagues.join(league.inviteCode);
 
-      expect(await owner.leagues.addCompetition(league.id, otherCompetitionSlug)).toBe("started");
+      expect(await owner.leagues.addCompetition(league.id, finishedCompetitionSlug)).toBe(
+        "finished",
+      );
       expect(await owner.leagues.addCompetition(league.id, "no-such-competition")).toBe("unknown");
       expect(await friend.leagues.addCompetition(league.id, comingCompetitionSlug)).toBe(
         "not_owner",
       );
-      expect((await owner.leagues.listMine())[0]?.competitionSlugs).toEqual([]);
+      expect((await owner.leagues.listMine())[0]?.competitionSlugs).toEqual([competitionSlug]);
     });
 
     it("lists a public league, which a friend joins without the code", async () => {
@@ -114,10 +138,12 @@ export function leagueRepositoryContract(
     });
 
     it("refuses a banned name for a public league", async () => {
-      const { newPlayer } = await setup();
+      const { newPlayer, competitionSlug } = await setup();
       const owner = await newPlayer();
 
-      await expect(owner.leagues.create("Ligue officielle", [], true)).rejects.toMatchObject({
+      await expect(
+        owner.leagues.create("Ligue officielle", [competitionSlug], true),
+      ).rejects.toMatchObject({
         code: "LEAGUE_NAME_BANNED",
       });
     });
