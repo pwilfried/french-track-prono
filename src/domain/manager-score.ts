@@ -1,5 +1,10 @@
 import { parseMark, type MarkUnit } from "./discipline";
-import { managerBonusesEarned, type ManagerRecord } from "./manager-bonus";
+import {
+  managerBonusesEarned,
+  managerBonusPoints,
+  type ManagerBonusResult,
+  type ManagerRecord,
+} from "./manager-bonus";
 import type { ManagerBonus, ManagerSex } from "./manager-rules";
 import type { Performance, PerformanceStatus, RecordFlag } from "./performance";
 import { worldAthleticsPoints } from "./world-athletics-points";
@@ -82,16 +87,17 @@ function scorePerformance(
   p: CompetitionPerformance,
   values: Record<ManagerBonus, number>,
 ): AthleteScore {
-  const finished = p.status === "ok";
-  const earned = finished
-    ? managerBonusesEarned({
-        place: p.round === "final" ? p.place : null,
-        records: p.records.map((r) => RECORD_BONUSES[r]),
-      })
-    : [];
-  const bonuses = earned.map((bonus) => ({ bonus, points: values[bonus] }));
+  // DNS, DNF and DQ earn no bonus (#416); the place bonuses come from a final only.
+  const result: ManagerBonusResult =
+    p.status === "ok"
+      ? {
+          place: p.round === "final" ? p.place : null,
+          records: p.records.map((r) => RECORD_BONUSES[r]),
+        }
+      : { place: null, records: [] };
+  const bonuses = managerBonusesEarned(result).map((bonus) => ({ bonus, points: values[bonus] }));
   const points = tablePoints(p);
-  const bonusPoints = bonuses.reduce((sum, b) => sum + b.points, 0);
+  const bonusPoints = managerBonusPoints(result, values);
   return {
     athleteId: p.athleteId,
     discipline: p.discipline,
