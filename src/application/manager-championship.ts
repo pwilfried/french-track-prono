@@ -80,8 +80,11 @@ export type ManagerStandingsView = {
   } | null;
 };
 
-/** The league, its season and who is who; a league the player is not in is not found. */
-export async function loadManagerSeason(ports: Omit<Ports, "userId">, leagueId: string) {
+/**
+ * The league of the player and its season, matchdays in order, the current one and who is who;
+ * LEAGUE_NOT_FOUND outside it.
+ */
+export async function loadSeason(ports: Omit<Ports, "userId">, leagueId: string) {
   const league = await ports.managerLeagues.find(leagueId);
   if (!league) throw new UseCaseError("LEAGUE_NOT_FOUND");
   const season = await ports.season.season(leagueId);
@@ -96,6 +99,16 @@ export async function loadManagerSeason(ports: Omit<Ports, "userId">, leagueId: 
   return { league, season, matchdays, current, participant, scored };
 }
 
+/** First or return leg of a head-to-head matchday; null on a bonus one. */
+export function legOf(
+  matchday: SeasonMatchday,
+  matchdays: readonly SeasonMatchday[],
+): "first" | "return" | null {
+  if (matchday.bonus) return null;
+  const duelDays = matchdays.filter((m) => !m.bonus).length;
+  return matchday.round <= duelDays / 2 ? "first" : "return";
+}
+
 /**
  * A matchday of the league; without a round, the current one: the first not played yet, else the
  * last one.
@@ -103,7 +116,7 @@ export async function loadManagerSeason(ports: Omit<Ports, "userId">, leagueId: 
 export function getManagerMatchday(ports: Ports) {
   return {
     async execute(input: { leagueId: string; round?: number }): Promise<ManagerMatchdayView> {
-      const { league, season, matchdays, current, participant, scored } = await loadManagerSeason(
+      const { league, season, matchdays, current, participant, scored } = await loadSeason(
         ports,
         input.leagueId,
       );
@@ -112,7 +125,6 @@ export function getManagerMatchday(ports: Ports) {
         input.round === undefined ? current : matchdays.find((m) => m.round === input.round);
       if (!matchday) throw new UseCaseError("MATCHDAY_NOT_FOUND");
       const state = matchdayState(matchday, scored);
-      const duelDays = matchdays.filter((m) => !m.bonus).length;
       const played = new Map(
         seasonDuels(matchdays, season.fixtures, season.scores)
           .filter((d) => d.round === matchday.round)
@@ -140,7 +152,7 @@ export function getManagerMatchday(ports: Ports) {
         round: matchday.round,
         competitionName: matchday.competitionName,
         state,
-        leg: matchday.bonus ? null : matchday.round <= duelDays / 2 ? "first" : "return",
+        leg: legOf(matchday, matchdays),
         duels,
       };
     },
@@ -151,7 +163,7 @@ export function getManagerMatchday(ports: Ports) {
 export function getManagerStandings(ports: Ports) {
   return {
     async execute(input: { leagueId: string }): Promise<ManagerStandingsView> {
-      const { league, season, matchdays, participant, scored } = await loadManagerSeason(
+      const { league, season, matchdays, participant, scored } = await loadSeason(
         ports,
         input.leagueId,
       );

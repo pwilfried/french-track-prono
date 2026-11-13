@@ -44,7 +44,7 @@ function DuelSide({
   );
 }
 
-function DuelCard({ duel }: { duel: MatchdayDuel }) {
+function DuelCard({ duel, href }: { duel: MatchdayDuel; href: string }) {
   return (
     <li
       aria-label={duel.mine ? text.myDuel : text.duelLabel(duel.home.pseudo, duel.away.pseudo)}
@@ -73,6 +73,13 @@ function DuelCard({ duel }: { duel: MatchdayDuel }) {
         />
       </div>
       <p className="text-sm font-semibold">{text.result(duel.result)}</p>
+      <Link
+        href={href}
+        aria-label={messages.managerDuel.openLabel(duel.home.pseudo, duel.away.pseudo)}
+        className="inline-flex min-h-11 items-center self-start font-semibold text-brand dark:text-secondary"
+      >
+        {messages.managerDuel.open} ›
+      </Link>
     </li>
   );
 }
@@ -187,7 +194,11 @@ export default async function ManagerMatchdayPage({
             </h2>
             <ul aria-labelledby="duels" className="flex flex-col gap-2">
               {view.duels.map((d) => (
-                <DuelCard key={d.home.userId} duel={d} />
+                <DuelCard
+                  key={d.home.userId}
+                  duel={d}
+                  href={`/manager/${id}/confrontation/${view.round}/${d.home.userId}`}
+                />
               ))}
             </ul>
           </section>

@@ -4,7 +4,7 @@ import { currentSeasonStep, type SeasonProgress, type SeasonStep } from "@/domai
 import { lineupStatus } from "@/domain/manager-lineup";
 
 import { UseCaseError } from "./errors";
-import { loadManagerSeason, type ManagerSeasonRepository } from "./manager-championship";
+import { loadSeason, type ManagerSeasonRepository } from "./manager-championship";
 import type { ManagerLeagueRepository, ManagerParticipant } from "./manager-leagues";
 import type { ManagerLineupRepository } from "./manager-lineup";
 
@@ -52,7 +52,7 @@ export function getManagerHome(ports: Ports) {
     async execute(input: { now: string }): Promise<MySeason | null> {
       const [first] = await ports.managerLeagues.listMine();
       if (!first) return null;
-      const { league, season, matchdays, current, participant, scored } = await loadManagerSeason(
+      const { league, season, matchdays, current, participant, scored } = await loadSeason(
         ports,
         first.id,
       );

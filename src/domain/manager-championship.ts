@@ -14,6 +14,18 @@ export type DuelResult = "home" | "away" | "draw";
 export const duelResult = (homeScore: number, awayScore: number): DuelResult =>
   homeScore > awayScore ? "home" : homeScore < awayScore ? "away" : "draw";
 
+export type DuelOutcome = "win" | "draw" | "loss";
+
+/** A head-to-head as one of its players sees it: won, drawn or lost, and the points it brings. */
+export function duelOutcome(
+  myScore: number,
+  theirScore: number,
+): { outcome: DuelOutcome; points: number } {
+  const outcome: DuelOutcome =
+    myScore > theirScore ? "win" : myScore === theirScore ? "draw" : "loss";
+  return { outcome, points: CHAMPIONSHIP_POINTS[outcome] };
+}
+
 /** A head-to-head whose competition is scored. */
 export type PlayedDuel = { home: string; away: string; homeScore: number; awayScore: number };
 
@@ -45,21 +57,16 @@ const blank = (userId: string): StandingRow => ({
   points: 0,
 });
 
+const TALLY = { win: "wins", draw: "draws", loss: "losses" } as const;
+
 function record(row: StandingRow, scored: number, conceded: number) {
   row.played += 1;
   row.scored += scored;
   row.conceded += conceded;
   row.difference = row.scored - row.conceded;
-  if (scored > conceded) {
-    row.wins += 1;
-    row.points += CHAMPIONSHIP_POINTS.win;
-  } else if (scored === conceded) {
-    row.draws += 1;
-    row.points += CHAMPIONSHIP_POINTS.draw;
-  } else {
-    row.losses += 1;
-    row.points += CHAMPIONSHIP_POINTS.loss;
-  }
+  const { outcome, points } = duelOutcome(scored, conceded);
+  row[TALLY[outcome]] += 1;
+  row.points += points;
 }
 
 /** Positive when `a` ranks before `b`, 0 on a full tie. */
