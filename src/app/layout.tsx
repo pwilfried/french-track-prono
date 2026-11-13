@@ -8,6 +8,7 @@ import { ServiceWorker } from "@/components/shell/service-worker";
 import { PlayerOnly } from "@/components/shell/player-only";
 import { SiteHeader } from "@/components/shell/site-header";
 
+import { robotsMeta } from "./indexing";
 import { messages } from "./messages.fr";
 import "./globals.css";
 
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: messages.app.name,
   description: messages.app.description,
-  robots: { index: true, follow: true },
+  robots: robotsMeta(),
   icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
   appleWebApp: { capable: true, title: messages.app.short, statusBarStyle: "default" },
   openGraph: {
