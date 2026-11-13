@@ -227,7 +227,7 @@ export function SeasonCompetitionPicker({
     setFilters((current) => ({ ...current, [key]: value }));
 
   return (
-    <fieldset className="flex flex-col gap-3">
+    <fieldset className="flex min-w-0 flex-col gap-3">
       <legend className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
         {label}
       </legend>

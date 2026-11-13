@@ -97,6 +97,21 @@ export const Manager: Story = {
   },
 };
 
+/**
+ * Many quick selections scroll sideways inside their row: the picker keeps the width of a phone,
+ * so the page does not scroll sideways (a fieldset grows to its content by default).
+ */
+export const NarrowScreen: Story = {
+  play: async ({ canvasElement }) => {
+    const form = canvasElement.querySelector("form")!;
+    const fieldset = canvasElement.querySelector("fieldset")!;
+    const row = within(canvasElement).getByRole("group", { name: text.quickTitle });
+    await expect(row.scrollWidth).toBeGreaterThan(row.clientWidth);
+    await expect(fieldset.getBoundingClientRect().width).toBeLessThanOrEqual(form.clientWidth);
+    await expect(form.scrollWidth).toBeLessThanOrEqual(form.clientWidth);
+  },
+};
+
 /** The filters and « Tout cocher » act on the competitions shown only. */
 export const Filters: Story = {
   play: async ({ canvasElement }) => {
