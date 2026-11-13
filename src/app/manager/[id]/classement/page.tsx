@@ -11,9 +11,9 @@ import { createSupabaseManagerSeasonRepository } from "@/infra";
 import { messages } from "../../../messages.fr";
 import { getSessionClient } from "../../../session";
 import { managerPorts } from "../../data";
+import { StandingsTable } from "../../standings-table";
 
 const text = messages.managerChampionship;
-const { columns, columnLabels } = text;
 
 /**
  * « Classement » (#433): the standings of the championship (rank, player, W, D, L, difference,
@@ -74,62 +74,7 @@ export default async function ManagerStandingsPage({
                 {text.notStarted}
               </p>
             )}
-            <table className="w-full border-separate border-spacing-y-1.5 text-sm">
-              <caption className="sr-only">{text.standingsCaption}</caption>
-              <thead>
-                <tr className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                  <th scope="col" className="w-8 px-1 text-left">
-                    <abbr title={columns.rank} className="no-underline">
-                      #
-                    </abbr>
-                  </th>
-                  <th scope="col" className="px-1 text-left">
-                    {columns.player}
-                  </th>
-                  {(["wins", "draws", "losses", "difference", "points"] as const).map((c) => (
-                    <th key={c} scope="col" className="px-1 text-right">
-                      <abbr title={columnLabels[c]} className="no-underline">
-                        {columns[c]}
-                      </abbr>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {view.rows.map((r) => {
-                  const cell = r.mine ? "bg-primary-soft text-primary-ink" : "bg-card";
-                  return (
-                    <tr key={r.userId} aria-current={r.mine ? "true" : undefined}>
-                      <td
-                        className={`${cell} rounded-l-2xl px-2 py-2.5 font-display text-base font-extrabold`}
-                      >
-                        {r.rank}
-                      </td>
-                      <th scope="row" className={`${cell} px-1 py-2.5 text-left font-semibold`}>
-                        <span className="flex min-w-0 items-center gap-2">
-                          <Bib bib={r.participant.bib} />
-                          <span className="min-w-0 break-words">
-                            {r.participant.pseudo}
-                            {r.mine && <span className="font-normal"> ({text.me})</span>}
-                          </span>
-                        </span>
-                      </th>
-                      <td className={`${cell} px-1 py-2.5 text-right`}>{r.wins}</td>
-                      <td className={`${cell} px-1 py-2.5 text-right`}>{r.draws}</td>
-                      <td className={`${cell} px-1 py-2.5 text-right`}>{r.losses}</td>
-                      <td className={`${cell} px-1 py-2.5 text-right`}>
-                        {text.difference(r.difference)}
-                      </td>
-                      <td
-                        className={`${cell} rounded-r-2xl px-2 py-2.5 text-right font-display text-base font-extrabold`}
-                      >
-                        {r.points}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <StandingsTable rows={view.rows} caption={text.standingsCaption} difference />
             <p className="text-xs text-muted-foreground">{text.tieRule}</p>
 
             {view.started && (
