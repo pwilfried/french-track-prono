@@ -55,6 +55,7 @@ const FALLBACK: ShownCompetition = {
   name: messages.app.name,
   scope: "international",
   venue: "outdoor",
+  level: null,
   city: null,
   countryCode: null,
   startsOn: "2026-09-11",

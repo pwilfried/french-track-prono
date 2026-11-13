@@ -52,6 +52,7 @@ export function createInMemoryCompetitionAdminStore(athletes: EnteredAthlete[]) 
           stored.push({
             ...c,
             slug,
+            level: null,
             events: 0,
             finals: 0,
             entered: 0,
