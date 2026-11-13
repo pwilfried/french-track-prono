@@ -80,8 +80,11 @@ export type ManagerStandingsView = {
   } | null;
 };
 
-/** The league of the player and its season, matchdays in order; LEAGUE_NOT_FOUND outside it. */
-export async function loadSeason(ports: Ports, leagueId: string) {
+/**
+ * The league of the player and its season, matchdays in order, the current one and who is who;
+ * LEAGUE_NOT_FOUND outside it.
+ */
+export async function loadSeason(ports: Omit<Ports, "userId">, leagueId: string) {
   const league = await ports.managerLeagues.find(leagueId);
   if (!league) throw new UseCaseError("LEAGUE_NOT_FOUND");
   const season = await ports.season.season(leagueId);
@@ -90,7 +93,10 @@ export async function loadSeason(ports: Ports, leagueId: string) {
     byId.get(userId) ?? { userId, pseudo: "?", bib: DEFAULT_BIB };
   const scored = new Set(season.scores.map((s) => s.competitionId));
   const matchdays = [...season.matchdays].sort((a, b) => a.round - b.round);
-  return { league, season, matchdays, participant, scored };
+  // The current matchday: the first not played yet, else the last one.
+  const current =
+    matchdays.find((m) => matchdayState(m, scored) === "upcoming") ?? matchdays.at(-1);
+  return { league, season, matchdays, current, participant, scored };
 }
 
 /** First or return leg of a head-to-head matchday; null on a bonus one. */
@@ -110,13 +116,11 @@ export function legOf(
 export function getManagerMatchday(ports: Ports) {
   return {
     async execute(input: { leagueId: string; round?: number }): Promise<ManagerMatchdayView> {
-      const { league, season, matchdays, participant, scored } = await loadSeason(
+      const { league, season, matchdays, current, participant, scored } = await loadSeason(
         ports,
         input.leagueId,
       );
-      if (matchdays.length === 0) throw new UseCaseError("MANAGER_SEASON_NOT_STARTED");
-      const current =
-        matchdays.find((m) => matchdayState(m, scored) === "upcoming") ?? matchdays.at(-1)!;
+      if (!current) throw new UseCaseError("MANAGER_SEASON_NOT_STARTED");
       const matchday =
         input.round === undefined ? current : matchdays.find((m) => m.round === input.round);
       if (!matchday) throw new UseCaseError("MATCHDAY_NOT_FOUND");

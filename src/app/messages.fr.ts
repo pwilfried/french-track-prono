@@ -305,7 +305,6 @@ export const messages = {
     slogan: "Recrute tes athlètes. Construis ton équipe. Domine la saison.",
     back: "French Track Manager",
     mine: "Mes ligues Manager",
-    empty: "Tu n'es dans aucune ligue Manager pour l'instant.",
     create: "Créer une ligue Manager",
     createTitle: "Créer une ligue Manager",
     createSubtitle: "Tu en deviens l'administrateur.",
@@ -783,6 +782,55 @@ export const messages = {
     calendarLink: "Voir le calendrier",
     ended: "Saison terminée : le classement est figé.",
     endLink: "Voir la fin de saison",
+  },
+  managerHome: {
+    mySeason: "Ma saison",
+    league: (name: string, players: number) =>
+      `${name} · ${players} ${players <= 1 ? "joueur" : "joueurs"}`,
+    round: (current: number, total: number) => `Journée ${current} sur ${total}`,
+    notStarted: "Le calendrier sera tiré à la clôture du mercato.",
+    place: "Place",
+    rank: (rank: number) => ordinal(rank),
+    points: "Points",
+    record: (wins: number, draws: number, losses: number) => `${wins} V · ${draws} N · ${losses} D`,
+    difference: "Différence",
+    nextTitle: (round: number) => `Prochaine confrontation · journée ${round}`,
+    nextDuel: (me: string, opponent: string) => `${me} contre ${opponent}`,
+    vs: "contre",
+    /** The action of the moment, by step of the season. */
+    action: {
+      league: "Voir ma ligue",
+      mercato: "Aller au mercato",
+      team: "Voir mon équipe",
+      lineup: "Aligner mon équipe",
+      points: "Voir la journée",
+      duels: "Voir les résultats",
+      champion: "Voir la fin de saison",
+    } as Record<"league" | "mercato" | "team" | "lineup" | "points" | "duels" | "champion", string>,
+    lineupAction: (duration: string) => `Aligner mon équipe · verrouillage dans ${duration}`,
+    shortcuts: "Raccourcis",
+    team: "Mon équipe",
+    standings: "Classement",
+    calendar: "Calendrier",
+    lastPoints: "Mes derniers points",
+    stepsTitle: "Le déroulé de la saison",
+    steps: {
+      league: { title: "Ligue", text: "Crée ta ligue ou rejoins celle de tes amis." },
+      mercato: { title: "Mercato", text: "Recrute tes athlètes aux enchères secrètes." },
+      team: { title: "Équipe", text: "Ton équipe est fixée pour toute la saison." },
+      lineup: { title: "Alignement", text: "Aligne tes athlètes avant chaque compétition." },
+      points: { title: "Points", text: "Tes athlètes marquent des points Manager." },
+      duels: { title: "Confrontations", text: "Le plus haut score gagne la journée." },
+      champion: { title: "Champion", text: "Le premier du classement est sacré." },
+    } as Record<
+      "league" | "mercato" | "team" | "lineup" | "points" | "duels" | "champion",
+      { title: string; text: string }
+    >,
+    stepState: { done: "fait", current: "en cours", todo: "à venir" } as Record<
+      "done" | "current" | "todo",
+      string
+    >,
+    startTitle: "Créer ou rejoindre une ligue",
   },
   managerDuel: {
     title: "Confrontation",

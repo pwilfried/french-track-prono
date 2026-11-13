@@ -55,6 +55,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Épreuve | Liste de départ, **podium à composer** (glisser-déposer ou taps), joker, verrou |
 | Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
 | Ligue | Classement, derniers pronos révélés, réactions emoji ; tant que le joueur y est seul, **InviteBanner** à la place du classement |
+| Accueil Manager (onglet, #606) | Titre et accroche ; bloc bleu nuit « Ma saison » (ligue et joueurs, journée N sur M, place, points V · N · D, différence, prochaine confrontation avec les dossards, l'action du moment : mercato, « Aligner mon équipe · verrouillage dans 2 j », résultats ou fin de saison) ; raccourcis (Mon équipe, Classement, Calendrier, Mes derniers points) ; « Le déroulé de la saison » en sept étapes, faites cochées, en cours en rouge ; puis mes ligues Manager et les ligues publiques. Sans ligue : la présentation (#618), puis le déroulé et « Créer ou rejoindre une ligue » |
 | Mes ligues | Mes ligues (**LeagueCard**), puis les ligues publiques ; au-dessus d'elles, tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553 : « Officielle », « Ouverte à tous », « Rejoindre la Ligue FrenchTrack ») ; une fois membre, elle rejoint ses ligues avec le badge « Officielle » |
 | Classement général | Top de la communauté, ma progression |
 | Profil | Dossard (grand format, avec le pseudo), club ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager ; palmarès Manager (une ligne par saison finie, en or si champion, #434) |
@@ -137,6 +138,11 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   trophée ; jamais de photo) et les chiffres des règles ; « Précédent » / « Suivant » (flèches du
   clavier aussi), « Passer » à toute étape, « C'est parti » à la dernière. S'ouvre seul à la
   première visite de `/manager` (mémorisé sur l'appareil), puis par « Comment ça marche ? ».
+
+- **ManagerHome** (Manager, #606) : « Ma saison » sur le bleu nuit dans les deux thèmes, raccourcis
+  et « Le déroulé de la saison » ; l'étape en cours vient de `currentSeasonStep`
+  (`src/domain/manager-home.ts`), tirée de l'état de la ligue, du mercato, du prochain alignement et
+  de la saison. Elle revient à « Alignement » à chaque journée.
 
 ## Ton éditorial
 
