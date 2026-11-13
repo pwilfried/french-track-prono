@@ -165,6 +165,18 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   personnel, meilleure performance de la saison, record national, continental et du monde.
 - **Saisie** : l'admin entre places, performances et indicateurs de records ; le calcul est
   automatique.
+- Saisie (#429), back-office › épreuve › « Performances Manager » (`/admin/<épreuve>/performances`),
+  une fois l'épreuve commencée : pour chaque athlète de la liste de départ, un statut (arrivé, DNS,
+  DNF, DQ, ou non saisi), la place (facultative, les ex æquo la partagent), la marque (obligatoire
+  pour un arrivé, lue dans l'unité de la discipline et récrite comme les autres) et les records
+  RP, MPS, RN, RC, RM. Un DNS, DNF ou DQ n'a que son statut. Les athlètes alignés dans au moins une
+  ligue Manager pour la compétition viennent en tête, signalés « à saisir » tant qu'ils n'ont pas de
+  ligne, avec le compte de ceux qui manquent. Une nouvelle saisie remplace la précédente : un
+  résultat corrigé se saisit à nouveau, et le calcul repartira de cette saisie (#416). En base :
+  table `event_performances`, à part de `results` (le podium des pronos ne change pas), lecture
+  publique, écriture seulement par `admin_set_performances` (journalisée `set_performances` dans
+  `admin_actions`) ; `admin_manager_lined_up` dit à l'admin seul quels athlètes de la liste sont
+  alignés (les alignements restent privés). Règles pures : `src/domain/performance.ts`.
 - **Pronostics classiques obligatoires** sur toutes les épreuves de chaque compétition éligible,
   verrouillés au départ ;
   sans pronostic, 0 sur cette partie.

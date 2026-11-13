@@ -266,6 +266,11 @@ fonctions `set_start_list()`, `set_results()` et `set_event_scores()`, avec la s
 Chacune écrit une ligne dans `admin_actions` (journal lisible par les admins seulement, écrit par
 la base elle-même via `private.log_admin_action()`, hors de l'API).
 
+Performances Manager (v0.15, issue #429) : place, marque, statut (DNS, DNF, DQ) et indicateurs de
+records de chaque athlète d'une épreuve, dans `event_performances`, à part de `results`. Écriture par
+`admin_set_performances()` (journalisée), lecture publique ; `admin_manager_lined_up()` signale à
+l'admin les athlètes alignés. Détail : `docs/decisions/french-track-manager.md`, section 4.
+
 Records (v0.8, issue #196) : le trigger `update_records_from_result` met à jour le PB (`kind = 'pr'` en base) et le SB
 à chaque ligne de résultat. Les marques texte sont lues par `parse_mark()` (secondes, mètres ou
 points) et comparées par `is_better_mark()` : temps plus bas pour les courses (discipline avec une
