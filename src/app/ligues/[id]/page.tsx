@@ -11,17 +11,20 @@ import {
   LeaveLeagueForm,
   ReportLeagueForm,
 } from "@/components/leagues/league-forms";
+import { FamilyBadge } from "@/components/leagues/family-badge";
 import { LeagueCompetitions } from "@/components/leagues/league-competitions";
+import { LeagueEventList } from "@/components/leagues/league-event-list";
 import { InviteBanner } from "@/components/leagues/invite-banner";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { ShareInvite } from "@/components/leagues/share-invite";
 import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
+import { addableFamilies } from "@/domain/league-families";
 import { cn } from "@/lib/utils";
 
 import { currentCompetitionDay, currentDay, loadCompetitions } from "../../competition";
 import { messages } from "../../messages.fr";
-import { leaguePorts } from "../data";
+import { leaguePorts, loadLeagueEvents } from "../data";
 
 const TABS = ["classement", "membres", "inviter"] as const;
 type Tab = (typeof TABS)[number];
@@ -37,9 +40,16 @@ async function load(id: string, ports: Awaited<ReturnType<typeof leaguePorts>>) 
     const ranking = await getLeagueRanking(ports).execute({
       leagueId: id,
       competitionSlugs: found.league.competitionSlugs,
+      families: found.league.families,
       today: currentCompetitionDay(),
     });
-    return { ...found, ranking };
+    // A league limited to families lists its events, the others greyed « Hors ligue » (#613).
+    const families = found.league.families ?? [];
+    const events =
+      families.length > 0
+        ? await loadLeagueEvents({ competitionSlugs: found.league.competitionSlugs, families })
+        : [];
+    return { ...found, ranking, events };
   } catch (error) {
     if (error instanceof UseCaseError) {
       if (error.code === "LEAGUE_NOT_FOUND") notFound();
@@ -72,8 +82,10 @@ export default async function LeaguePage({
     );
   }
 
-  const { league, members, ranking } = loaded;
+  const { league, members, ranking, events } = loaded;
   const isOwner = league.ownerId === ports.userId;
+  const families = league.families ?? [];
+  const canAddFamily = isOwner && addableFamilies(families).length > 0;
   const known = [...competitions.coming, ...competitions.past];
   const counted = known.filter((c) => league.competitionSlugs.includes(c.slug));
   // Only competitions still to come can be added (the database checks it too).
@@ -139,6 +151,30 @@ export default async function LeaguePage({
                 {messages.leagues.added}
               </p>
             )}
+            {families.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <FamilyBadge families={families.map((f) => f.family)} className="text-sm" />
+                {canAddFamily && (
+                  <Link
+                    href={`/ligues/${id}/familles`}
+                    className="inline-flex min-h-11 items-center px-1 text-sm font-bold"
+                  >
+                    {messages.leagues.addFamily}
+                  </Link>
+                )}
+              </div>
+            )}
+            {families
+              .filter((f) => f.addedAt !== null)
+              .map((f) => (
+                <p
+                  key={f.family}
+                  role="status"
+                  className="rounded-2xl bg-brand-soft px-3.5 py-3 text-sm font-semibold text-brand-ink"
+                >
+                  {messages.leagues.familyAdded(messages.leagues.family[f.family], f.addedAt!)}
+                </p>
+              ))}
             {alone && <InviteBanner code={league.inviteCode} leagueName={league.name} />}
             <LeagueCompetitions
               competitions={counted}
@@ -147,6 +183,9 @@ export default async function LeaguePage({
             >
               <AddLeagueCompetitionForm leagueId={id} choices={addable} />
             </LeagueCompetitions>
+            {families.length > 0 && (
+              <LeagueEventList events={events} title={messages.leagues.eventsTitle} />
+            )}
             {!alone && (
               <>
                 <Leaderboard rows={ranking} meId={ports.userId} retryHref={`/ligues/${id}`} />

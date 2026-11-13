@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { UseCaseError, type ErrorCode } from "@/application/errors";
 import {
   addLeagueCompetition,
+  addLeagueFamily,
   createLeague,
   joinPublicLeague,
   reportLeague,
@@ -15,6 +16,7 @@ import {
   listMyLeagues,
 } from "@/application/leagues";
 import { normalizeInviteCode } from "@/domain/league";
+import { validateLeagueFamilies, type LeagueFamily } from "@/domain/league-families";
 import { safeRedirectPath } from "@/domain/redirect";
 import { createSupabaseLeagueRepository } from "@/infra";
 
@@ -26,6 +28,8 @@ export type LeagueFormState = {
   error?: ErrorCode;
   isPublic?: boolean;
   reported?: boolean;
+  /** The families ticked, given back with an error (#613). */
+  families?: LeagueFamily[];
 };
 
 async function leagues(back: string) {
@@ -43,6 +47,13 @@ export async function createLeagueAction(
   const competitionSlugs = data
     .getAll("competition")
     .filter((v): v is string => typeof v === "string");
+  // « Certaines familles » sends its ticked chips; « Toutes les épreuves » sends none (#613).
+  const families =
+    formText(data, "families-mode") === "some"
+      ? data.getAll("family").filter((v): v is string => typeof v === "string")
+      : [];
+  const known = validateLeagueFamilies(families);
+  const keptFamilies = known.ok ? known.families : [];
   const back = `/ligues/creer?${new URLSearchParams(competitionSlugs.map((c) => ["competition", c]))}`;
   const repository = await leagues(back);
   let id: string;
@@ -52,11 +63,14 @@ export async function createLeagueAction(
         name: value,
         competitionSlugs,
         isPublic,
+        families,
       })
     ).id;
   } catch (error) {
     // Only known error codes are expected here; anything else is a bug and stays visible.
-    if (error instanceof UseCaseError) return { value, error: error.code, isPublic };
+    if (error instanceof UseCaseError) {
+      return { value, error: error.code, isPublic, families: keptFamilies };
+    }
     throw error;
   }
   redirect(`/ligues/${id}?onglet=inviter&nouvelle=1`);
@@ -134,6 +148,24 @@ export async function addLeagueCompetitionAction(
   // From an event, the player goes back to predict; from the league, the league shows it.
   const back = formText(data, "back");
   redirect(back ? safeRedirectPath(back) : `/ligues/${leagueId}?ajoutee=1`);
+}
+
+/** The creator adds a family (#613); every member sees it on the league page. */
+export async function addLeagueFamilyAction(
+  _: LeagueFormState,
+  data: FormData,
+): Promise<LeagueFormState> {
+  const leagueId = formText(data, "leagueId");
+  const family = formText(data, "family");
+  const repository = await leagues(`/ligues/${leagueId}/familles`);
+  try {
+    await addLeagueFamily({ leagues: repository }).execute({ leagueId, family });
+  } catch (error) {
+    if (error instanceof UseCaseError) return { value: family, error: error.code };
+    throw error;
+  }
+  revalidatePath(`/ligues/${leagueId}`);
+  redirect(`/ligues/${leagueId}`);
 }
 
 /** Joins a public league from the list, then opens it. */

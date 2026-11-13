@@ -4,6 +4,7 @@ import { INVITE_ALPHABET, INVITE_LENGTH, leagueCapacity } from "@/domain/league"
 import { UseCaseError } from "@/application/errors";
 import { isBannedName } from "@/domain/banned-names";
 import { DEFAULT_BIB } from "@/domain/bib";
+import { inScreenOrder, type LeagueFamilyRule } from "@/domain/league-families";
 
 type Stored = {
   id: string;
@@ -13,7 +14,13 @@ type Stored = {
   members: string[];
   competitionSlugs: string[];
   isPublic: boolean;
+  /** Empty: a league on all events (#613). */
+  families: LeagueFamilyRule[];
 };
+
+/** The families in the order of the screen; absent for a league on all events. */
+const familiesOf = (rules: LeagueFamilyRule[]) =>
+  rules.length > 0 ? { families: inScreenOrder(rules.map((r) => ({ ...r }))) } : {};
 
 /**
  * Test double of the LeagueRepository port, with the rules of the database. One store shared by
@@ -47,6 +54,7 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
     memberCount: l.members.length,
     competitionSlugs: [...l.competitionSlugs],
     isPublic: l.isPublic,
+    ...familiesOf(l.families),
   });
 
   return {
@@ -116,10 +124,11 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
       profiles.set(player.userId, player);
       const me = player.userId;
       return {
-        async create(name, competitionSlugs, isPublic) {
+        async create(name, competitionSlugs, isPublic, families = []) {
           if (isPublic && isBannedName(name)) throw new UseCaseError("LEAGUE_NAME_BANNED");
           const league: Stored = {
             isPublic,
+            families: [...new Set(families)].map((family) => ({ family, addedAt: null })),
             competitionSlugs: [...new Set(competitionSlugs)].sort(),
             id: crypto.randomUUID(),
             name,
@@ -184,15 +193,28 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
           }
           return "added";
         },
+        async addFamily(leagueId, family) {
+          const league = leagues.get(leagueId);
+          if (!league || league.ownerId !== me) return "not_owner";
+          if (league.families.length === 0) return "all_events";
+          if (!league.families.some((f) => f.family === family)) {
+            league.families.push({ family, addedAt: new Date().toISOString() });
+          }
+          return "added";
+        },
         async listPublic() {
           return [...leagues.values()]
             .filter((l) => l.isPublic)
-            .map((l) => ({
-              id: l.id,
-              name: l.name,
-              memberCount: l.members.length,
-              competitionSlugs: [...l.competitionSlugs],
-            }));
+            .map((l) => {
+              const families = familiesOf(l.families).families?.map((f) => f.family);
+              return {
+                id: l.id,
+                name: l.name,
+                memberCount: l.members.length,
+                competitionSlugs: [...l.competitionSlugs],
+                ...(families ? { families } : {}),
+              };
+            });
         },
         async joinPublic(leagueId) {
           const league = leagues.get(leagueId);
