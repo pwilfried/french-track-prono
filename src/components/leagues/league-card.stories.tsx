@@ -3,7 +3,7 @@ import { expect, within } from "storybook/test";
 
 import { messages } from "@/app/messages.fr";
 
-import { LeagueCard } from "./league-card";
+import { LeagueCard, LeagueCardSkeleton } from "./league-card";
 
 const text = messages.leagues;
 
@@ -14,7 +14,8 @@ const meta = {
     href: "/ligues/demo",
     name: "Les Foulées",
     memberCount: 6,
-    competitionNames: ["Meeting de Testville"],
+    summary: { count: 3, start: "2027-03", end: "2027-09" },
+    next: { name: "Meeting de Testville", startsOn: "2027-06-12" },
     standing: { rank: 3, change: null },
   },
   decorators: [
@@ -29,13 +30,16 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** The player's place on the right, read out in full. */
+/** Summed up (#662): how many competitions over which months, the next one, my place out of N. */
 export const Rank: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("3e")).toBeVisible();
     await expect(canvas.getByText(text.rankLabel(3))).toBeInTheDocument();
-    await expect(canvas.getByText("6 joueurs · Meeting de Testville")).toBeVisible();
+    await expect(canvas.getByText("sur 6")).toBeVisible();
+    await expect(canvas.getByText("3 compétitions · mars → sept. 2027")).toBeVisible();
+    await expect(canvas.getByText("Prochaine : Meeting de Testville, 12 juin")).toBeVisible();
+    await expect(canvas.getByText(text.privateBadge)).toBeVisible();
   },
 };
 
@@ -49,43 +53,63 @@ export const Movement: Story = {
   },
 };
 
-/** No points yet: no place, a short note instead. */
-export const WithoutPoints: Story = {
-  args: { standing: null, memberCount: 1, competitionNames: [] },
+/** Empty: no competition nor points yet, a short note instead of a place. */
+export const Empty: Story = {
+  args: {
+    standing: null,
+    memberCount: 1,
+    summary: { count: 0, start: null, end: null },
+    next: null,
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText(text.noPointsYet)).toBeVisible();
-    await expect(canvas.getByText(`1 joueur · ${text.noCompetitionTag}`)).toBeVisible();
+    await expect(canvas.getByText(text.noCompetitionTag)).toBeVisible();
+    await expect(canvas.queryByText(/Prochaine/)).toBeNull();
   },
 };
 
-/** A league limited to families shows them in a badge: « Sprint · Haies » (#613). */
+/** A public league limited to families shows them in a badge: « Sprint · Haies » (#613). */
 export const Families: Story = {
-  args: { families: ["hurdles", "sprint"] },
+  args: { families: ["hurdles", "sprint"], isPublic: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText(text.familiesBadge(["Sprint", "Haies"]))).toBeVisible();
+    await expect(canvas.getByText(text.publicBadge)).toBeVisible();
   },
 };
 
-/** A league on all events has no badge. */
-export const AllEvents: Story = {
+/** The official league says so. */
+export const Official: Story = {
+  args: { name: "Ligue FrenchTrack", isPublic: true, isOfficial: true, memberCount: 1234 },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).queryByText(/ · Haies/)).toBeNull();
+    await expect(within(canvasElement).getByText(text.officialBadge)).toBeVisible();
   },
 };
 
-/** A long name and several competitions wrap inside the card; the place stays on the right. */
+/** While loading: a card-shaped placeholder. */
+export const Loading: Story = {
+  render: () => <LeagueCardSkeleton />,
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector("[aria-hidden]")).not.toBeNull();
+  },
+};
+
+/**
+ * A long name on two lines at most and twelve competitions over two years: no competition name,
+ * the place stays on the right.
+ */
 export const LongText: Story = {
   args: {
-    name: "Les Gazelles infatigables de la Vallée de la Haute-Testrivière",
+    name: "Les Gazelles infatigables de la Vallée de la Haute-Testrivière et de ses environs",
     isPublic: true,
     families: ["combined", "relay", "middle", "long", "jumps", "throws"],
     memberCount: 48,
-    competitionNames: [
-      "Championnats interrégionaux en salle de la Vallée de la Haute-Testrivière",
-      "Meeting de Testville",
-    ],
+    summary: { count: 12, start: "2026-12", end: "2027-09" },
+    next: {
+      name: "Championnats interrégionaux en salle de la Vallée de la Haute-Testrivière",
+      startsOn: "2027-01-23",
+    },
     standing: { rank: 12, change: -3 },
   },
   play: async ({ canvasElement }) => {
@@ -93,5 +117,7 @@ export const LongText: Story = {
     const card = canvas.getByRole("link");
     await expect(card.scrollWidth).toBeLessThanOrEqual(card.clientWidth + 1);
     await expect(canvas.getByText("12e")).toBeVisible();
+    await expect(canvas.getByText("12 compétitions · déc. 2026 → sept. 2027")).toBeVisible();
+    await expect(canvas.queryByText(/Meeting/)).toBeNull();
   },
 };

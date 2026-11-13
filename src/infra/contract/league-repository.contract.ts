@@ -97,7 +97,9 @@ export function leagueRepositoryContract(
         name: pub.name,
         memberCount: 1,
         competitionSlugs: [competitionSlug],
+        createdAt: expect.any(String),
       });
+      expect(Number.isNaN(Date.parse(listed.find((l) => l.id === pub.id)!.createdAt))).toBe(false);
       expect(listed.some((l) => l.id === priv.id)).toBe(false);
 
       expect(await friend.leagues.joinPublic(pub.id)).toEqual({

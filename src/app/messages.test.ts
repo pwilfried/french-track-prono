@@ -42,3 +42,23 @@ describe("incomplete Manager team text", () => {
     );
   });
 });
+
+describe("league period text", () => {
+  const { period, competitionCount, nextCompetition } = messages.leagues;
+
+  it.each([
+    ["2027-06", "2027-06", "juin 2027"],
+    ["2027-03", "2027-09", "mars → sept. 2027"],
+    ["2026-12", "2027-04", "déc. 2026 → avr. 2027"],
+  ])("writes the months from %s to %s as %s", (start, end, text) => {
+    expect(period(start, end)).toBe(text);
+  });
+
+  it("counts the competitions and names the next one with its day", () => {
+    expect(competitionCount(1)).toBe("1 compétition");
+    expect(competitionCount(12)).toBe("12 compétitions");
+    expect(nextCompetition("Meeting de Testville", "2027-06-12")).toBe(
+      "Prochaine : Meeting de Testville, 12 juin",
+    );
+  });
+});

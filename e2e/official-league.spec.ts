@@ -23,6 +23,9 @@ test("a player joins the Ligue FrenchTrack from my leagues and finds it among th
   await page.goto("/ligues");
   await signUp(page, player);
   await page.waitForURL(/\/ligues$/);
+  // The official league waits in « Découvrir » (#662).
+  await page.getByRole("link", { name: "Découvrir" }).click();
+  await page.waitForURL(/\/ligues\?onglet=decouvrir$/);
 
   const block = page.getByRole("region", { name: "Ligue FrenchTrack" });
   await expect(block).toContainText("Officielle");
@@ -34,5 +37,6 @@ test("a player joins the Ligue FrenchTrack from my leagues and finds it among th
   await page.goto("/ligues");
   const mine = page.locator("main").getByRole("link", { name: /Ligue FrenchTrack/ });
   await expect(mine).toContainText("Officielle");
+  await page.goto("/ligues?onglet=decouvrir");
   await expect(page.getByRole("region", { name: "Ligue FrenchTrack" })).toHaveCount(0);
 });

@@ -300,9 +300,27 @@ describe("public leagues", () => {
     const leagues = repository({
       listMine: async () => [league("mine", "Mienne")],
       listPublic: async () => [
-        { id: "small", name: "Petite", memberCount: 2, competitionSlugs: [] },
-        { id: "mine", name: "Mienne", memberCount: 9, competitionSlugs: [] },
-        { id: "big", name: "Grande", memberCount: 40, competitionSlugs: ["c"] },
+        {
+          id: "small",
+          name: "Petite",
+          memberCount: 2,
+          competitionSlugs: [],
+          createdAt: "2026-11-01T00:00:00.000Z",
+        },
+        {
+          id: "mine",
+          name: "Mienne",
+          memberCount: 9,
+          competitionSlugs: [],
+          createdAt: "2026-11-01T00:00:00.000Z",
+        },
+        {
+          id: "big",
+          name: "Grande",
+          memberCount: 40,
+          competitionSlugs: ["c"],
+          createdAt: "2026-11-01T00:00:00.000Z",
+        },
       ],
     });
 

@@ -191,6 +191,7 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
           competition_slugs: string[];
           is_official: boolean;
           families: LeagueFamily[];
+          created_at: string;
         }[]
       ).map((row) => {
         const families = LEAGUE_FAMILIES.filter((f) => row.families.includes(f));
@@ -201,6 +202,7 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
           competitionSlugs: row.competition_slugs,
           ...(row.is_official ? { isOfficial: true } : {}),
           ...(families.length > 0 ? { families } : {}),
+          createdAt: new Date(row.created_at).toISOString(),
         };
       });
     },
