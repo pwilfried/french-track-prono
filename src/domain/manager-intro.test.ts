@@ -25,12 +25,16 @@ const rules: ManagerRules = {
 
 describe("managerIntroFigures", () => {
   it("takes the budget, the team, the lineup and the win bonus from the rules", () => {
-    expect(managerIntroFigures(rules)).toEqual({
+    expect(managerIntroFigures(rules)).toMatchObject({
       budget: 250,
       minTeamSize: 12,
       lineupMax: 8,
       winBonus: 10,
     });
+  });
+
+  it("gives the league sizes a creator can choose, for the tutorial (#616)", () => {
+    expect(managerIntroFigures(rules)).toMatchObject({ leagueMin: 4, leagueMax: 10 });
   });
 
   it("follows the rules when the admin changes them", () => {

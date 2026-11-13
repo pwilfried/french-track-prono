@@ -2,6 +2,7 @@
 # Decides whether Claude runs for this event and claims the issue or PR for it.
 #   "@claude …" in a comment, a review or a new issue's body, or the label agent:claude -> Claude.
 # Only an owner (AGENTS_OWNER) starts anything: the repository is public, anyone can comment.
+# The label starts nothing on an issue an open PR closes or a person is assigned to.
 # Before starting, a one-word probe checks the plan has usage left; if not, the issue waits
 # (agent:waiting-quota) and agents-merge retries it every hour.
 # Writes claude, auto to $GITHUB_OUTPUT. Env: EVENT, ACTION, LABEL, BODY, SENDER, NUMBER,
@@ -21,6 +22,14 @@ if [ "$EVENT" = issues ] && [ "$ACTION" = labeled ]; then
   # The hourly quota retry labels it again: an issue someone already handed over keeps its one PR.
   if as_bot gh pr list -R "$repo" --state open --limit 100 --json body --jq '.[].body // ""' | closed_by | grep -qx "$NUMBER"; then
     echo "An open PR already closes #$NUMBER: nothing to start."; exit 0
+  fi
+  # A person works on it (AGENTS.md): neither the label nor the hourly quota retry starts Claude,
+  # and the label goes so that it holds no slot of the chain (next.sh).
+  assignees=$(as_bot gh api "repos/$repo/issues/$NUMBER" --jq '[.assignees[].login] | join(", ")')
+  if [ -n "$assignees" ]; then
+    remove_label "$NUMBER" agent:claude
+    comment as_bot "$NUMBER" "Assignée à $assignees : Claude ne démarre pas. Pour le lancer quand même, commente \`@claude …\`. ([run]($run_url))"
+    echo "#$NUMBER: assigned to a person: nothing to start."; exit 0
   fi
 else
   grep -qiE '(^|[^[:alnum:]_])@claude([^[:alnum:]_-]|$)' <<< "$BODY" || { echo "No @claude: nothing to start."; exit 0; }

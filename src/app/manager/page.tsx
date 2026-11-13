@@ -11,6 +11,7 @@ import { getManagerRules } from "@/application/manager-rules";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { ManagerIntro } from "@/components/manager/manager-intro";
+import { ManagerTutorialGate } from "@/components/manager/manager-tutorial";
 import { buttonVariants } from "@/components/ui/button";
 import { managerIntroFigures, type ManagerIntroFigures } from "@/domain/manager-intro";
 import { createSupabaseManagerRuleRepository } from "@/infra";
@@ -25,43 +26,56 @@ const text = messages.manager;
 /** « Passer » on the presentation: the page as if the player had seen it. */
 const SKIP_HREF = "/manager?passer=1";
 
+/** « Comment ça marche ? »: the page with the tutorial open (#616). */
+const TUTORIAL_HREF = "/manager?tutoriel=1";
+
 /**
  * French Track Manager (#419): the player's Manager leagues and a way to create one. Until the
- * player has one, the presentation of the mode comes first (#618).
+ * player has one, the presentation of the mode comes first (#618). The tutorial opens over it at
+ * the first visit, then on demand (#616).
  */
 export default async function ManagerPage({
   searchParams,
 }: {
-  searchParams: Promise<{ passer?: string | string[] }>;
+  searchParams: Promise<{ passer?: string | string[]; tutoriel?: string | string[] }>;
 }) {
   const ports = await managerPorts("/manager");
-  const { passer } = await searchParams;
+  const { passer, tutoriel } = await searchParams;
   let leagues: ManagerLeague[] | "error";
   let publics: PublicManagerLeague[] = [];
+  // Without the rules there are no figures to quote: no presentation, no tutorial.
+  let figures: ManagerIntroFigures | undefined;
   try {
-    [leagues, publics] = await Promise.all([
+    [leagues, publics, figures] = await Promise.all([
       listMyManagerLeagues(ports).execute(),
       listPublicManagerLeagues(ports).execute(),
+      introFigures(),
     ]);
   } catch (error) {
     if (!(error instanceof UseCaseError)) throw error;
     leagues = "error";
   }
+  const tutorial = figures && (
+    // A new instance each time « Comment ça marche ? » asks for it again.
+    <ManagerTutorialGate
+      key={String(tutoriel !== undefined)}
+      figures={figures}
+      open={tutoriel !== undefined}
+    />
+  );
 
-  if (leagues !== "error" && leagues.length === 0 && passer === undefined) {
-    const figures = await introFigures();
-    // Without the rules there are no figures to quote: the page itself, as before.
-    if (figures) {
-      return (
-        <main id="main" className="flex flex-1 flex-col">
-          <ManagerIntro figures={figures} skipHref={SKIP_HREF} />
-        </main>
-      );
-    }
+  if (leagues !== "error" && leagues.length === 0 && passer === undefined && figures) {
+    return (
+      <main id="main" className="flex flex-1 flex-col">
+        <ManagerIntro figures={figures} skipHref={SKIP_HREF} />
+        {tutorial}
+      </main>
+    );
   }
 
   return (
     <main id="main" className="flex flex-1 flex-col">
+      {tutorial}
       <LeagueHero title={text.title} subtitle={text.slogan} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-3 px-4 py-6">
         <h2 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
@@ -100,6 +114,14 @@ export default async function ManagerPage({
         >
           {text.joinWithCode}
         </Link>
+        {figures && (
+          <Link
+            href={TUTORIAL_HREF}
+            className="inline-flex min-h-11 items-center justify-center text-sm font-bold underline underline-offset-4"
+          >
+            {text.tutorial.open}
+          </Link>
+        )}
 
         {leagues !== "error" && (
           <section aria-labelledby="public-manager" className="flex flex-col gap-2 pt-4">

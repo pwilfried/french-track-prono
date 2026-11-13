@@ -11,7 +11,14 @@ const meta = {
   title: "Manager/ManagerIntro",
   component: ManagerIntro,
   args: {
-    figures: { budget: 250, minTeamSize: 12, lineupMax: 8, winBonus: 10 },
+    figures: {
+      budget: 250,
+      minTeamSize: 12,
+      lineupMax: 8,
+      winBonus: 10,
+      leagueMin: 4,
+      leagueMax: 10,
+    },
     skipHref: "/manager?passer=1",
   },
   decorators: [
@@ -69,7 +76,16 @@ export const Dark: Story = {
 
 /** Large figures still wrap inside the 390 px screen. */
 export const LongText: Story = {
-  args: { figures: { budget: 1234567, minTeamSize: 123, lineupMax: 99, winBonus: 1000 } },
+  args: {
+    figures: {
+      budget: 1234567,
+      minTeamSize: 123,
+      lineupMax: 99,
+      winBonus: 1000,
+      leagueMin: 4,
+      leagueMax: 10,
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText(/1234567 crédits/)).toBeVisible();
