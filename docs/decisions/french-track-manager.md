@@ -282,6 +282,11 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   nul. **Victoire 3 points, nul 1, défaite 0** (distincts des points Manager).
 - **Classement** : points au championnat, puis victoires, puis différence de points Manager
   (marqués moins encaissés), puis points Manager marqués.
+- Résultats et classement (#433) : calculés à la lecture (`src/domain/manager-championship.ts`),
+  rien n'est stocké. Une confrontation est jouée dès que les scores Manager de sa compétition sont
+  calculés ; un participant sans score y compte pour 0. Égalité complète (points, victoires,
+  différence, marqués) : même rang. Les journées bonus n'ont ni confrontation ni points de
+  classement, et ne comptent ni dans V/N/D ni dans la différence.
 - **Fin de saison** quand toutes les confrontations sont jouées et validées, sans playoffs : le
   premier est champion, le classement est figé.
 - **Palmarès** conservé : champion, classement final, statistiques individuelles, victoires / nuls

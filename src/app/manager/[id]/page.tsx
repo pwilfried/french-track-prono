@@ -189,6 +189,22 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
         >
           {messages.lineup.link}
         </Link>
+        {open && (
+          <>
+            <Link
+              href={`/manager/${league.id}/journee`}
+              className={`${buttonVariants({ variant: "muted" })} w-full`}
+            >
+              {messages.managerChampionship.matchdayLink}
+            </Link>
+            <Link
+              href={`/manager/${league.id}/classement`}
+              className={`${buttonVariants({ variant: "muted" })} w-full`}
+            >
+              {messages.managerChampionship.standingsLink}
+            </Link>
+          </>
+        )}
 
         <section aria-labelledby="participants" className="flex flex-col gap-2">
           <h2
