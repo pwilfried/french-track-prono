@@ -40,8 +40,9 @@ titres de PR en anglais. Dialogue avec le propriétaire en français.
 ## From issue to release
 
 1. Une issue appartient à un milestone (une version) et porte des labels (type, zone, priorité).
-2. Le propriétaire met `agent:ready` ; la chaîne la donne à Claude, qui ouvre une branche et
-   applique le TDD (voir plus bas).
+2. La chaîne prend d'elle-même les issues ouvertes du milestone en cours, sans attendre
+   `agent:ready` (décision du propriétaire du 13 nov. 2026) ; pour en retenir une, il met
+   `agent:blocked` ou `needs-human`. Claude ouvre une branche et applique le TDD (voir plus bas).
 3. Avant de dire « terminé » : voir « Before saying it is done ».
 4. PR → CI verte → fusion (automatique pour les PR d'agents).
 5. Quand toutes les issues d'un milestone sont fermées (`refactor-check` et `docs-check` comprises)
@@ -121,10 +122,12 @@ Claude Code tourne sur les issues et les PR depuis GitHub Actions (`agents.yml`,
 `agents-merge.yml`, scripts dans `ci/agents/`). Mise en place et pilotage depuis le téléphone :
 `ci/agents/README.md`. En bref :
 
-- Seuls les propriétaires (variable `AGENTS_OWNER`) déclenchent : label `agent:ready` (la chaîne
-  la prend), label `agent:claude` (tout de suite), ou commentaire `@claude …`.
+- Seuls les propriétaires (variable `AGENTS_OWNER`) déclenchent : label `agent:claude` (tout de
+  suite) ou commentaire `@claude …`. Sinon la chaîne prend toute issue ouverte du milestone en
+  cours, `agent:ready` ou non (décision du propriétaire du 13 nov. 2026).
 - Deux issues à la fois (`AGENTS_CLAUDE_SLOTS`), dans le milestone en cours : `milestone-plan`,
-  puis les features (`p1` d'abord), puis `refactor-check`, puis `docs-check`. Jamais une issue
+  puis les features (`p1` d'abord) une fois `milestone-plan` fermée, puis `refactor-check`, puis
+  `docs-check`. Jamais une issue
   `needs-human`, `agent:blocked`, `after-ui`, `agent:local`, assignée à quelqu'un (une personne
   la traite), ou bloquée par une issue ouverte.
 - Une session Claude Code locale qui prend une issue y pose `agent:local` avant d'écrire la moindre
@@ -148,7 +151,8 @@ Quand tu tournes là-bas :
 Quand on ouvre un milestone : l'issue `milestone-plan` découpe la version en issues petites
 (une PR chacune), chaque issue avec ses critères d'acceptation testables et ses labels. On
 construit d'abord le plus petit parcours bout en bout, puis on enrichit. Le plan est validé par
-le propriétaire avant que des issues passent en `agent:ready`.
+le propriétaire : tant que l'issue `milestone-plan` est ouverte, la chaîne ne prend aucune
+feature du milestone.
 
 ## Commands
 
