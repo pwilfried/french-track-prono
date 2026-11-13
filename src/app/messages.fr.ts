@@ -1385,6 +1385,10 @@ export const messages = {
     none: "Aucune compétition.",
     scope: { international: "Internationale", france: "Française" },
     type: "Type",
+    venueLabel: "Lieu",
+    venue: { outdoor: "En plein air", indoor: "En salle" },
+    /** The chip of an indoor competition (#642); nothing for outdoor. */
+    indoorChip: "Salle",
     city: "Ville",
     startsOn: "Début",
     endsOn: "Fin",

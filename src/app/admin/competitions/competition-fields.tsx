@@ -1,34 +1,66 @@
 import type { CompetitionFields as Fields } from "@/application/edit-competition";
-import { SCOPES } from "@/domain/competition";
+import { SCOPES, VENUES } from "@/domain/competition";
 
 import { messages } from "../../messages.fr";
 
 const field = "min-h-12 w-full rounded-xl border-2 border-border bg-card px-3.5 text-base";
 
+/** One choice among a few, as large radio tiles. */
+function Choice<T extends string>({
+  legend,
+  name,
+  options,
+  labels,
+  checked,
+}: {
+  legend: string;
+  name: string;
+  options: T[];
+  labels: Record<T, string>;
+  checked: T;
+}) {
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="mb-2 font-semibold">{legend}</legend>
+      <div className="grid grid-cols-2 gap-2">
+        {options.map((option) => (
+          <label
+            key={option}
+            className="flex min-h-12 items-center gap-2.5 rounded-xl border-2 border-border bg-card px-3.5 font-semibold has-[:checked]:border-brand has-[:checked]:bg-brand-soft has-[:checked]:text-brand-ink"
+          >
+            <input
+              type="radio"
+              name={name}
+              value={option}
+              defaultChecked={option === checked}
+              className="size-5 accent-brand"
+            />
+            {labels[option]}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 /** The fields of a competition, empty for a new one or filled for a correction. */
 export function CompetitionFields({ initial }: { initial?: Fields }) {
   return (
     <>
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 font-semibold">{messages.adminCompetitions.type}</legend>
-        <div className="grid grid-cols-2 gap-2">
-          {SCOPES.map((scope) => (
-            <label
-              key={scope}
-              className="flex min-h-12 items-center gap-2.5 rounded-xl border-2 border-border bg-card px-3.5 font-semibold has-[:checked]:border-brand has-[:checked]:bg-brand-soft has-[:checked]:text-brand-ink"
-            >
-              <input
-                type="radio"
-                name="scope"
-                value={scope}
-                defaultChecked={scope === (initial?.scope ?? SCOPES[0])}
-                className="size-5 accent-brand"
-              />
-              {messages.adminCompetitions.scope[scope]}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <Choice
+        legend={messages.adminCompetitions.type}
+        name="scope"
+        options={SCOPES}
+        labels={messages.adminCompetitions.scope}
+        checked={initial?.scope ?? "international"}
+      />
+      <Choice
+        legend={messages.adminCompetitions.venueLabel}
+        name="venue"
+        options={VENUES}
+        labels={messages.adminCompetitions.venue}
+        checked={initial?.venue ?? "outdoor"}
+      />
       <label className="flex flex-col gap-1.5 font-semibold">
         {messages.adminAthletes.name}
         <input name="name" required defaultValue={initial?.name} className={field} />

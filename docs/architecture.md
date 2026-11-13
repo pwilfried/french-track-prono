@@ -299,6 +299,13 @@ française), ses épreuves (slug unique sur toutes les compétitions) et ses eng
 liste de départ sont les engagés de la compétition (tout le monde tant que personne n'est engagé).
 La compétition mise en avant est la prochaine par date (`nextCompetition`).
 
+Salle ou plein air (issue #642) : une compétition a un lieu `venue`, `indoor` (en salle) ou
+`outdoor` (en plein air, par défaut), car records de saison et épreuves diffèrent (60 m, 3000 m en
+salle). L'admin le choisit à la création et à la modification ; une compétition en salle porte
+l'étiquette « Salle » (`VenueChip`), rien ne change pour le plein air. La reprise a mis en salle
+les slugs `world-indoor-tour-%` et `european-indoor-championships-%`
+(`private.competition_venue`).
+
 Heure de Paris (décision du propriétaire du 11/11/2026, issue #501) : un seul fuseau pour toute
 l'appli, `Europe/Paris`, défini une seule fois (`TIME_ZONE` dans `src/domain/competition.ts`).
 L'admin saisit les horaires des épreuves en heure de Paris, quel que soit le pays de la
