@@ -2,11 +2,14 @@
 # Starts the next issues of the current milestone (lowest "vX.Y …" milestone with an issue that no
 # open PR closes yet)
 # while Claude has a free slot (AGENTS_CLAUDE_SLOTS, default 2: two issues at a time).
-# An issue is picked when an owner labelled it agent:ready, it is not given to Claude yet, no open
-# PR closes it, nobody is assigned to it (a person works on it), it has no needs-human, agent:blocked nor after-ui label, and every blocker is closed
-# (GitHub's "blocked by" links, or "Blocked by #n" lines in its body).
-# Order: milestone-plan, then features (p1, p2, p3, then the oldest), then refactor-check once no
-# feature is left, then docs-check last.
+# Every open issue of that milestone is a candidate, agent:ready or not (owner's decision of
+# 13 Nov 2026, #655). It is picked when it is not given to Claude yet, no open PR closes it, nobody
+# is assigned to it (a person works on it), it has no needs-human, agent:blocked, after-ui nor
+# other agent:* label (agent:ready aside), and every blocker is closed (GitHub's "blocked by"
+# links, or "Blocked by #n" lines in its body).
+# Order: milestone-plan, then features (p1, p2, p3, then the oldest) once no milestone-plan is
+# open (the plan is validated first), then refactor-check once no feature is left, then docs-check
+# last.
 # It labels each picked issue agent:claude as an owner (AGENTS_PAT), which starts Claude.
 # Env: BOT_TOKEN, PAT_TOKEN, AGENTS_CLAUDE_SLOTS.
 set -euo pipefail
@@ -49,11 +52,11 @@ picks=()
 while read -r i; do
   [ "${#picks[@]}" -lt "$free" ] || break
   n=$(jq -r .number <<< "$i"); k=$(jq -r "$kind" <<< "$i")
-  jq -e '[.labels[].name] | index("agent:ready")' <<< "$i" >/dev/null || continue
   jq -e '[.labels[].name] | any((startswith("agent:") and . != "agent:ready") or . == "needs-human" or . == "after-ui")' <<< "$i" >/dev/null && continue
   grep -qx "$n" <<< "$closing" && continue
   jq -e '(.assignees // []) | length > 0' <<< "$i" >/dev/null && { echo "#$n: assigned to a person"; continue; }
   case $k in
+    feature) [ "$plans" -gt 0 ] && { echo "#$n: features wait for the milestone-plan"; continue; } ;;
     refactor) { [ "$features" -gt 0 ] || [ "$plans" -gt 0 ]; } && { echo "#$n: refactor-check waits for the features"; continue; } ;;
     docs) { [ "$features" -gt 0 ] || [ "$plans" -gt 0 ] || [ "$refactors" -gt 0 ]; } && { echo "#$n: docs-check waits for the rest"; continue; } ;;
   esac
