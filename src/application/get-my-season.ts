@@ -25,14 +25,22 @@ export function getMySeason(ports: {
 }) {
   return {
     async execute(input: { userId: string; competitionSlugs: string[] }): Promise<MySeason> {
-      const [lines, predictions, events, disciplines] = await Promise.all([
-        Promise.all(input.competitionSlugs.map((s) => ports.ranking.competitionLines(s))),
-        Promise.all(
-          input.competitionSlugs.map((s) => ports.predictions.listForCompetition(input.userId, s)),
-        ),
-        Promise.all(input.competitionSlugs.map((s) => ports.events.listByCompetition(s))),
-        ports.disciplines.list(),
-      ]);
+      const disciplines = await ports.disciplines.list();
+      // One competition at a time: three reads for each of them at once flooded the API and made
+      // one of them fail now and then (the season card's 503).
+      const lines = [];
+      const predictions = [];
+      const events = [];
+      for (const slug of input.competitionSlugs) {
+        const read = await Promise.all([
+          ports.ranking.competitionLines(slug),
+          ports.predictions.listForCompetition(input.userId, slug),
+          ports.events.listByCompetition(slug),
+        ]);
+        lines.push(read[0]);
+        predictions.push(read[1]);
+        events.push(read[2]);
+      }
       const all = lines.flat();
       const pseudos = new Map(all.map((l) => [l.userId, l.pseudo]));
       const ranked = rankPlayers(totalsOf(all, (id) => pseudos.get(id) ?? ""));

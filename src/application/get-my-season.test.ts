@@ -98,4 +98,38 @@ describe("my season on the profile", () => {
     }).execute({ userId: "me", competitionSlugs: ["uc"] });
     expect(season).toMatchObject({ rank: null, players: 0, points: 0 });
   });
+
+  it("reads the competitions one at a time, however many there are", async () => {
+    // given forty competitions and reads that take a moment
+    let inFlight = 0;
+    let most = 0;
+    const read = async <T>(value: T): Promise<T> => {
+      inFlight += 1;
+      most = Math.max(most, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      inFlight -= 1;
+      return value;
+    };
+    const slugs = Array.from({ length: 40 }, (_, i) => `c${i}`);
+    // when my season is read
+    const season = await getMySeason({
+      ranking: {
+        competitionLines: (slug) => read(slug === "c39" ? [line("me", "e1", 1, 12)] : []),
+      },
+      predictions: {
+        find: async () => null,
+        listForCompetition: () => read([]),
+        save: async () => "saved",
+      },
+      events: { listByCompetition: () => read([]), findBySlug: async () => null },
+      disciplines: {
+        list: async () => [],
+        setTolerance: async () => "saved",
+        create: async () => "created",
+      },
+    }).execute({ userId: "me", competitionSlugs: slugs });
+    // then no more than one competition's three reads run together, and none is left out
+    expect(most).toBeLessThanOrEqual(3);
+    expect(season).toMatchObject({ rank: 1, points: 12 });
+  });
 });
