@@ -211,6 +211,24 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 
 - **Aller-retour** : chaque participant affronte tous les autres deux fois, à domicile puis à
   l'extérieur ; calendrier généré au lancement de la saison, fixe ensuite.
+- Calendrier (#432) : tiré à la **clôture du mercato** (début de la saison), quelle que soit la
+  façon dont il se clôt (déclencheur sur `manager_leagues.mercato_closed_at`), une seule fois :
+  une ligue qui a un calendrier le garde. Table `manager_fixtures` (journée, compétition,
+  domicile, extérieur), lue par les participants de la ligue, écrite par personne d'autre que
+  `private.schedule_manager_season`. Les joueurs sont tirés dans un ordre au hasard (`random()`,
+  `setseed()` dans pgTAP), puis placés par la méthode du cercle (`seasonSchedule`,
+  `src/domain/manager-schedule.ts`, même règle en SQL) : 2 × (n − 1) journées, chacun un
+  adversaire par journée, chaque paire deux fois, une fois à domicile chacun ; jamais trois
+  journées de suite à domicile ou à l'extérieur, jamais le même adversaire deux journées de
+  suite. Le retour reprend les paires de l'aller, domicile et extérieur inversés, en commençant
+  par la 2e journée de l'aller (la 1re vient en dernier). Rien avec un nombre impair de joueurs.
+- **Une compétition = une journée** (réponse du propriétaire, 10 nov. 2026, #440) : les
+  compétitions éligibles de la ligue, la première d'abord (date de début, puis nom), vont aux
+  journées 1, 2, 3… La taille maximum de la ligue est bornée par le nombre de compétitions
+  éligibles de la saison (2 × (n − 1) ≤ compétitions). En attendant que le réglage du mercato
+  applique cette borne, une compétition au-delà de la dernière journée n'a pas de confrontation,
+  et une journée au-delà de la dernière compétition n'en a pas (`competition_id` nul) et ne se
+  joue pas.
 - **Une confrontation par compétition éligible** : le score total le plus haut gagne, égalité =
   nul. **Victoire 3 points, nul 1, défaite 0** (distincts des points Manager).
 - **Classement** : points au championnat, puis victoires, puis différence de points Manager
@@ -259,4 +277,4 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 
 ## Questions encore ouvertes
 
-- Compétitions éligibles face aux 2 × (n − 1) journées d'un aller-retour : #440 (bloque #432).
+- Aucune : #440 a sa réponse (« Une compétition = une journée », section 5).
