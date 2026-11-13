@@ -971,6 +971,37 @@ export const messages = {
     publicHint:
       "Tout le monde peut la trouver et la rejoindre sans code, jusqu'à 200 joueurs. Son nom doit rester correct.",
     publicBadge: "Publique",
+    privateBadge: "Privée",
+    /** The summed-up league card and « Découvrir » (#662). */
+    competitionCount: (n: number) => `${n} ${n <= 1 ? "compétition" : "compétitions"}`,
+    period: (start: string, end: string) => {
+      const month = (ym: string, year: boolean) =>
+        new Date(`${ym}-01T12:00:00Z`).toLocaleDateString("fr-FR", {
+          month: "short",
+          ...(year ? { year: "numeric" } : {}),
+          timeZone: "UTC",
+        });
+      if (start === end) return month(end, true);
+      return `${month(start, start.slice(0, 4) !== end.slice(0, 4))} → ${month(end, true)}`;
+    },
+    outOf: (n: number) => `sur ${n}`,
+    nextCompetition: (name: string, startsOn: string) =>
+      `Prochaine : ${name}, ${new Date(`${startsOn}T12:00:00Z`).toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "short",
+        timeZone: "UTC",
+      })}`,
+    listTabs: { mine: (n: number) => `Mes ligues · ${n}`, discover: "Découvrir" },
+    listTabsLabel: "Mes ligues ou découvrir",
+    searchLabel: "Chercher une ligue publique",
+    searchPlaceholder: "Nom de la ligue",
+    familyFilterLabel: "Famille d'épreuves",
+    allFamilies: "Toutes",
+    sortLabel: "Trier par",
+    sorts: { places: "Places restantes", players: "Plus de joueurs", recent: "Plus récentes" },
+    noMatch: "Aucune ligue publique ne correspond. Essaie un autre nom ou une autre famille.",
+    fillLabel: (n: number, max: number) => `${n} places prises sur ${max}`,
+    loadingLeagues: "Chargement des ligues…",
     publicTitle: "Autres ligues publiques",
     /** When no public league is left to join, from the player's own public leagues (#496). */
     publicNotice: {
@@ -981,7 +1012,7 @@ export const messages = {
     publicJoin: "Rejoindre",
     publicJoinLabel: (name: string) => `Rejoindre la ligue publique ${name}`,
     publicJoining: "…",
-    publicPlaces: (n: number, max: number) => `${n} / ${max} joueurs`,
+    publicPlaces: (n: number, max: number) => `${n}/${max} joueurs`,
     officialBadge: "Officielle",
     officialOpen: "Ouverte à tous",
     officialPitch: "Mesure-toi à toute la communauté FrenchTrack",
@@ -1239,6 +1270,16 @@ export const messages = {
     },
     save: "Enregistrer et calculer les points",
     saving: "Enregistrement et calcul…",
+    paste: {
+      title: "Coller les résultats",
+      hint: "Copie le tableau de la page de résultats World Athletics et colle-le ici : la feuille se pré-remplit. Vérifie-la, rien n'est enregistré avant « Enregistrer ».",
+      label: "Tableau de résultats",
+      apply: "Pré-remplir la feuille",
+      none: "Aucune ligne de résultat trouvée dans le texte collé.",
+      matched: (n: number) => (n <= 1 ? `${n} athlète pré-rempli.` : `${n} athlètes pré-remplis.`),
+      unmatched: (n: number) =>
+        n <= 1 ? `${n} ligne non reconnue :` : `${n} lignes non reconnues :`,
+    },
   },
   install: {
     title: "Installe l'appli",
