@@ -35,9 +35,9 @@ test("a player creates a public league, another finds it in Découvrir and joins
   const sprint = `Sprinteuses ${tag}`;
   sql(`with l as (
       insert into leagues (name, owner_id, is_public)
-      select '${sprint}', id from profiles where pseudo = '${creator.pseudo}'
-      returning id
-    )
+      select '${sprint}', id, true from profiles where pseudo = '${creator.pseudo}'
+      returning id, owner_id
+    ), m as (insert into league_members (league_id, user_id, role) select id, owner_id, 'owner' from l)
     insert into league_families (league_id, family) select id, 'sprint' from l`);
 
   // Another player opens « Découvrir », searches by name, then filters by family.
