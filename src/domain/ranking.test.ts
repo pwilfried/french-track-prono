@@ -4,7 +4,10 @@ import { describe, expect, it } from "vitest";
 import {
   aroundMe,
   linesOfDay,
+  movesSinceCompetitions,
   movesSinceYesterday,
+  placeOf,
+  previousCompetitionSlugs,
   rankPlayers,
   totalsOf,
   type PlayerTotals,
@@ -322,5 +325,139 @@ describe("aroundMe", () => {
   it("shows everyone in a short ranking", () => {
     expect(shape(aroundMe(ranked(5), "p05"))).toEqual([1, 2, 3, 4, 5]);
     expect(aroundMe([], "p01")).toEqual([]);
+  });
+});
+
+describe("previousCompetitionSlugs", () => {
+  const competition = (slug: string, endsOn: string) => ({ slug, endsOn });
+
+  it("keeps the finished competitions but the last one", () => {
+    const list = [
+      competition("c", "2027-03-01"),
+      competition("a", "2026-09-13"),
+      competition("live", "2027-06-12"),
+      competition("b", "2026-12-01"),
+    ];
+
+    expect(previousCompetitionSlugs(list, "2027-06-10")?.sort()).toEqual(["a", "b"]);
+  });
+
+  it("gives null while fewer than two competitions are finished: no move to show", () => {
+    expect(previousCompetitionSlugs([competition("a", "2026-09-13")], "2026-10-01")).toBeNull();
+    expect(previousCompetitionSlugs([competition("a", "2027-09-13")], "2026-10-01")).toBeNull();
+    expect(previousCompetitionSlugs([], "2026-10-01")).toBeNull();
+  });
+
+  it("leaves out every competition ending on the last day, whatever their order", () => {
+    const list = [
+      competition("a", "2026-09-13"),
+      competition("b", "2026-12-01"),
+      competition("c", "2026-12-01"),
+    ];
+
+    expect(previousCompetitionSlugs(list, "2027-01-01")).toEqual(["a"]);
+  });
+});
+
+describe("movesSinceCompetitions", () => {
+  const line = (userId: string, competitionSlug: string, points: number) => ({
+    userId,
+    competitionSlug,
+    eventStartsAt: "2026-11-23T19:00:00Z",
+    points,
+    reasons: [],
+  });
+  const lines = [
+    line("ana", "first", 10),
+    line("bob", "first", 5),
+    line("cid", "first", 3),
+    line("bob", "last", 12),
+    line("cid", "last", 1),
+    line("dan", "last", 2),
+  ];
+
+  it("compares each place with the ranking at the end of the competitions given (gain, loss, same)", () => {
+    const moves = movesSinceCompetitions(lines, (id) => id, ["first"]);
+
+    expect(moves.get("bob")).toBe(1); // 2nd → 1st
+    expect(moves.get("ana")).toBe(-1); // 1st → 2nd
+    expect(moves.get("cid")).toBe(0); // 3rd → 3rd
+  });
+
+  it("gives null to a new player, who was not ranked before", () => {
+    expect(movesSinceCompetitions(lines, (id) => id, ["first"]).get("dan")).toBeNull();
+  });
+
+  it("ranks a league member without any line in both rankings", () => {
+    const zero = { userId: "zoe", eventStartsAt: "", points: 0, reasons: [] };
+
+    const moves = movesSinceCompetitions([zero, ...lines], (id) => id, ["first"]);
+
+    expect(moves.get("zoe")).toBe(-1); // 4th → 5th
+  });
+
+  it("does not depend on the order the predictions arrive in", () => {
+    const sorted = (m: Map<string, number | null>) => [...m].sort(([x], [y]) => x.localeCompare(y));
+    const expected = sorted(movesSinceCompetitions(lines, (id) => id, ["first"]));
+    fc.assert(
+      fc.property(fc.shuffledSubarray(lines, { minLength: lines.length }), (shuffled) => {
+        expect(sorted(movesSinceCompetitions(shuffled, (id) => id, ["first"]))).toEqual(expected);
+      }),
+    );
+  });
+});
+
+describe("placeOf", () => {
+  const ranked = rankPlayers([
+    player("Ana", 50),
+    player("Bob", 32),
+    player("Cleo", 32),
+    player("Dan", 14),
+    player("Eve", 0),
+  ]);
+
+  it("gives the gap with the player just ahead, with their pseudo and rank", () => {
+    expect(placeOf(ranked, "dan")).toMatchObject({
+      rank: 4,
+      points: 14,
+      ahead: { pseudo: "Cleo", rank: 2, gap: 18 },
+    });
+  });
+
+  it("looks past the players tied with me to the one strictly ahead", () => {
+    expect(placeOf(ranked, "cleo")?.ahead).toEqual({ pseudo: "Ana", rank: 1, gap: 18 });
+  });
+
+  it("gives a gap of 0 to a player behind on the tie-breakers only", () => {
+    const list = rankPlayers([player("Ana", 20, 1), player("Bob", 20, 0)]);
+
+    expect(placeOf(list, "bob")?.ahead).toEqual({ pseudo: "Ana", rank: 1, gap: 0 });
+  });
+
+  it("gives no gap to the first", () => {
+    expect(placeOf(ranked, "ana")?.ahead).toBeNull();
+  });
+
+  it("gives the top percent of the ranking, rounded up", () => {
+    expect(placeOf(ranked, "ana")?.topPercent).toBe(20);
+    expect(placeOf(ranked, "dan")?.topPercent).toBe(80);
+    const many = rankPlayers(
+      Array.from({ length: 200 }, (_, i) => player(`P${String(i).padStart(3, "0")}`, 200 - i)),
+    );
+    expect(placeOf(many, "p000")?.topPercent).toBe(1);
+    expect(placeOf(many, "p035")?.topPercent).toBe(18);
+  });
+
+  it("is null for a player not ranked or without points", () => {
+    expect(placeOf(ranked, "nobody")).toBeNull();
+    expect(placeOf(ranked, "eve")).toBeNull();
+    expect(placeOf(ranked, undefined)).toBeNull();
+  });
+
+  it("keeps the move of the row", () => {
+    const rows = ranked.map((r) => ({ ...r, change: r.userId === "dan" ? -2 : null }));
+
+    expect(placeOf(rows, "dan")?.change).toBe(-2);
+    expect(placeOf(rows, "ana")?.change).toBeNull();
   });
 });
