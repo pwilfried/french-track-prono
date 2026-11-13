@@ -30,6 +30,23 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   **si et seulement si** la cible est atteinte, sinon il attend (la tâche des tours l'ouvre dès
   que la cible est atteinte). Le créateur peut aussi le lancer tout de suite, seulement quand la
   cible est atteinte. Les inscriptions ferment au lancement. Écran : la page de la ligue.
+- En base (#619) : `manager_leagues.player_target` (pair, 4 à 10, 4 par défaut),
+  `mercato_starts_at` et `round_mode` (`auto` ou `custom`). `set_manager_mercato` enregistre les
+  réglages (créateur seul) et récrit `rules.rounds` : en `auto`, les tours des règles French Track ;
+  en `custom`, le 1er tour puis les suivants (`longRounds = 1`). `launch_manager_mercato` ouvre
+  le mercato tout de suite ; `private.open_manager_mercatos`, lancé par le job « Manager rounds »,
+  ouvre ceux dont la date est passée et la cible atteinte. Codes : FT015 mercato déjà ouvert,
+  FT025 cible refusée (impaire, hors de 4 à 10, ou sous le nombre d'inscrits), FT026 joueurs
+  manquants. Les ligues créées avant ont reçu pour cible le nombre pair d'inscrits (4 à 10). Règles
+  pures : `canStartManagerSeason`, `src/domain/manager-league.ts`.
+- **Présentation du mode** (#618) : un joueur sans ligue Manager voit sur `/manager` une courte
+  présentation (qu'il peut passer) avant de créer ou rejoindre une ligue. Ses chiffres (budget, taille minimum
+  d'équipe, titulaires, bonus de victoire) sont lus dans les règles de l'admin
+  (`managerIntroFigures`, `src/domain/manager-intro.ts`), jamais écrits dans le texte.
+- **Catalogue avant le mercato** (#620) : le catalogue s'ouvre dès l'inscription, avec SB, PB et
+  prix ; un bandeau de nuit donne le temps avant l'ouverture (« Date d'ouverture à venir » sans
+  date), les participants par leur dossard, le dernier arrivé (`newestArrival`) et rappelle que
+  les offres commencent au lancement.
 - L'**admin de French Track Prono** fixe les règles générales : budget initial, quotas de
   composition des équipes (ex. sprinteurs hommes et femmes, demi-fond, fond, lancers), règles de
   recrutement, notation, bonus sportifs, compétitions éligibles, calendrier, durée des enchères,
@@ -80,7 +97,8 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   athlète, offres de la plus haute à la plus basse, la gagnante en doré). Un tour sans offre n'a
   pas de révélation. Le résumé de chaque tour reste consultable depuis le catalogue
   (« Résultats des tours », `?vue=toutes`). Règles pures : `src/domain/manager-reveal.ts`.
-- **Tours** : 48 h pour les tours 1 et 2, 24 h ensuite.
+- **Tours** : en durée « automatique », celle des règles French Track (au départ 48 h pour les
+  tours 1 et 2, 24 h ensuite) ; en durée « personnalisée », celle choisie par le créateur (#619).
 - Clôture des tours (#423) : les tours s'enchaînent depuis `mercato_opened_at`, durées prises dans
   les règles de la ligue (`rounds`). Le workflow « Manager rounds » lance
   `private.close_manager_rounds()` toutes les 5 minutes (comme les notifications push) : pour
@@ -166,7 +184,7 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 
 **Score d'une compétition = points du barème hongrois + bonus sportifs + points de pronostics.**
 
-- **Barème hongrois** : chaque athlète aligné rapporte des points selon sa performance réelle ;
+- **Barème hongrois** (« tables World Athletics ») : chaque athlète aligné rapporte des points selon sa performance réelle ;
   la place n'entre pas dans ce calcul. Tables World Athletics (#428) ; DNS, DNF, DQ = 0 point.
   Calcul : `src/domain/world-athletics-points.ts`, à partir de la discipline, du sexe et de la
   performance (secondes, mètres, ou total officiel pour les épreuves combinées).
@@ -206,6 +224,8 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   épreuves de la compétition (séries et finale, deux disciplines) rapporte sa **meilleure ligne**,
   sans cumul ; les bonus de place (1re, 2e, 3e) ne comptent qu'en **finale**, un record battu en
   série compte. Le lien vers la journée viendra avec #433.
+- Cas chiffrés de référence (tables, bonus, score d'une compétition) : `docs/architecture.md`,
+  « Cas de test du cœur », M1 à M12.
 
 ## 5. Championnat (v0.16)
 

@@ -215,6 +215,7 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 | Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions` |
 | Référentiel | `competitions`, `events` (dont `kind` et `sub_disciplines` des épreuves combinées), `athletes`, `entries` (liste de départ), `results`, `athlete_records` (PR, SB, WR, WB) |
 | Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions` |
+| Manager (v0.12 à v0.15) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `event_performances`, `manager_scores` (détail : `docs/decisions/french-track-manager.md`) |
 | Fonctions | `create_league()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()` |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers` ; `badges` et `user_badges` restent vides : les badges sont calculés (v0.11) |
 
@@ -448,6 +449,26 @@ X 3e non proposé, C 4e ; tolérance 0,05.
 | S16 | B, C, A avec A seul proposé à 1,8 | 4 (1 + 1, cote 1,8 × 1 = 2) |
 | S17 | A, B, C avec perfs 10.81 et 10.95 | 28 (21 + 5 + 2) |
 | S18 | A, B, C, joker, perf 10.81 | 52 ((21 + 5) × 2) |
+
+**Points Manager (v0.15, tests Vitest).** Tables World Athletics, édition 2025
+(`src/domain/world-athletics-points.ts`, #428) ; bonus (`src/domain/manager-bonus.ts`, #430) et
+score d'une compétition (`src/domain/manager-score.ts`, #431) avec le barème de test 1re 50,
+2e 30, 3e 20, RP 20, MPS 10, RN 40, RC 60, RM 100.
+
+| # | Situation | Attendu |
+|---|---|---|
+| M1 | 100 m hommes en 9.58 | 1356 points |
+| M2 | 100 m femmes en 10.49 | 1314 points |
+| M3 | Saut en hauteur hommes à 2,00 m | 914 points |
+| M4 | Décathlon hommes, total officiel 8000 | 1126 points |
+| M5 | 100 m hommes en 17.5 (plus lent que le zéro de la table) | 0 point |
+| M6 | Relais mixte 4 × 100 m, 110 m haies femmes, discipline inconnue | pas de table : 0 point de table, les bonus comptent |
+| M7 | 1re place en finale, RP et MPS | 80 de bonus (50 + 20 + 10) |
+| M8 | 4e place, ou DNS, DNF, DQ | pas de bonus de place ; DNS, DNF, DQ : 0 point |
+| M9 | Pas d'alignement, 25 points de pronos | 0 pour la compétition, pronos compris |
+| M10 | Même athlète en série (11.20) puis en finale (11.05) | la meilleure ligne (11.05), sans cumul |
+| M11 | 1re place en série avec un RP | RP seul : la place ne compte qu'en finale |
+| M12 | Relancer le calcul, ou les performances dans un autre ordre | même score ; le total est la somme des parties, jamais négative |
 
 **Règles de la base (tests pgTAP)**
 
