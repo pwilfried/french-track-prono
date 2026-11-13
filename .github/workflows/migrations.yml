@@ -148,6 +148,10 @@ jobs:
     needs: apply
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    # Issues: the script opens one for the owners when it rolls production back.
+    permissions:
+      contents: read
+      issues: write
     timeout-minutes: 15
     environment: production
     env:
@@ -173,16 +177,10 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      # The production environment variables come from the Vercel project, as for a Git deploy.
-      - name: Pull the production settings
-        run: npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
-
-      - name: Build
-        run: npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
-
-      - name: Deploy
-        run: npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
-
-      # A CLI deploy creates no GitHub deployment, so the smoke workflow is not triggered: run it here.
-      - name: Smoke test of production
-        run: scripts/smoke.sh https://www.frenchtrackprono.com
+      # Pull, check the Supabase variables, build, deploy, smoke test, and roll back with an issue
+      # for the owners if the smoke test fails (#720): ci/vercel-deploy.sh, also used by pre-production.
+      - name: Deploy and smoke-test production
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AGENTS_OWNER: ${{ vars.AGENTS_OWNER }}
+        run: ci/vercel-deploy.sh https://www.frenchtrackprono.com
