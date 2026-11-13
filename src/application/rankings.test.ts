@@ -323,6 +323,33 @@ describe("a league counts only the predictions made as a member (#376)", () => {
   });
 });
 
+describe("a league counts only the events locked after its competition entered it (#614)", () => {
+  const at = (iso: string, l: RankingLine): RankingLine => ({ ...l, eventLockAt: iso });
+
+  it("leaves out an event already played when the competition entered, counts a coming one", async () => {
+    // given a league created at 18:00 on a competition under way, and one counted from the start
+    const members = [{ ...member("ana"), joinedAt: "2026-11-01T00:00:00.000Z" }];
+    const byCompetition = {
+      euro: [
+        at("2026-11-13T16:59:00.000Z", line("ana", 10, false, "played")),
+        at("2026-11-13T17:01:00.000Z", line("ana", 3, false, "coming")),
+      ],
+      old: [at("2026-11-02T18:00:00.000Z", line("ana", 5, false, "before"))],
+    };
+    // when the league ranking is read
+    const result = await getLeagueRanking({
+      ranking: ranking([], byCompetition),
+      leagues: leagues(members),
+    }).execute({
+      leagueId: "l",
+      competitionSlugs: ["euro", "old"],
+      competitionAddedAt: { euro: "2026-11-13T17:00:00.000Z" },
+    });
+    // then only the event locked after 18:00 counts for « euro », every event for « old »
+    expect(result.map((r) => [r.pseudo, r.points])).toEqual([["ANA", 8]]);
+  });
+});
+
 describe("getClubRanking", () => {
   const inClub = (userId: string, points: number, clubId: string | null): RankingLine => ({
     ...line(userId, points),

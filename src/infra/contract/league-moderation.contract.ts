@@ -10,6 +10,8 @@ export type ModerationWorld = {
   admin: LeagueModerationRepository;
   /** A player who is not admin, trying to moderate. */
   notAdmin: LeagueModerationRepository;
+  /** A competition not finished, that a league is created on (#614). */
+  competitionSlug: string;
 };
 
 /** Contract of the LeagueModerationRepository port (#321), run against the fake AND Supabase. */
@@ -19,7 +21,7 @@ export function leagueModerationContract(name: string, world: () => Promise<Mode
       const w = await world();
       const league = await w.creator.create(
         `Douteuse ${crypto.randomUUID().slice(0, 6)}`,
-        [],
+        [w.competitionSlug],
         true,
       );
 
@@ -45,7 +47,7 @@ export function leagueModerationContract(name: string, world: () => Promise<Mode
       const w = await world();
       const league = await w.creator.create(
         `Innocente ${crypto.randomUUID().slice(0, 6)}`,
-        [],
+        [w.competitionSlug],
         true,
       );
       await w.reporter.report(league.id);
@@ -60,7 +62,11 @@ export function leagueModerationContract(name: string, world: () => Promise<Mode
 
     it("reads the members, removes one, never the owner", async () => {
       const w = await world();
-      const league = await w.creator.create(`Club ${crypto.randomUUID().slice(0, 6)}`, [], true);
+      const league = await w.creator.create(
+        `Club ${crypto.randomUUID().slice(0, 6)}`,
+        [w.competitionSlug],
+        true,
+      );
       expect((await w.reporter.joinPublic(league.id)).outcome).toBe("joined");
 
       const members = await w.admin.members(league.id);
@@ -81,7 +87,7 @@ export function leagueModerationContract(name: string, world: () => Promise<Mode
 
     it("deletes a league", async () => {
       const w = await world();
-      const league = await w.creator.create("À supprimer", [], true);
+      const league = await w.creator.create("À supprimer", [w.competitionSlug], true);
       await w.reporter.report(league.id);
 
       expect(await w.admin.remove(league.id)).toBe("done");
@@ -92,14 +98,14 @@ export function leagueModerationContract(name: string, world: () => Promise<Mode
 
     it("refuses to report a private league", async () => {
       const w = await world();
-      const league = await w.creator.create("Privée", [], false);
+      const league = await w.creator.create("Privée", [w.competitionSlug], false);
 
       expect(await w.reporter.report(league.id)).toBe("unknown");
     });
 
     it("refuses a player who is not admin", async () => {
       const w = await world();
-      const league = await w.creator.create("Intouchable", [], true);
+      const league = await w.creator.create("Intouchable", [w.competitionSlug], true);
 
       expect(await w.notAdmin.list()).toBe("not_admin");
       expect(await w.notAdmin.members(league.id)).toBe("not_admin");
