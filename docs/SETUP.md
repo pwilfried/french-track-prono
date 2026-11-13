@@ -356,6 +356,24 @@ Sans ces trois secrets, le job de déploiement échoue (exprès : la prod ne doi
 sans qu'on le voie). Les variables d'environnement de l'application restent dans Vercel ;
 `vercel pull` les récupère pour le build.
 
+Le déploiement passe par `ci/vercel-deploy.sh <adresse>` (#720), réutilisable pour la préprod
+(#634) avec les secrets Vercel de son projet :
+
+1. **Vérification avant le build** : après `vercel pull`, l'environnement de production du projet
+   Vercel doit contenir `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_ANON_KEY`, non vides.
+   Sinon le job s'arrête en rouge avant le build, sans rien déployer, et donne le **nom** des
+   variables manquantes (jamais leur valeur). Le 13 novembre 2026 (v0.17.0), elles avaient disparu
+   du projet Vercel avec l'intégration Supabase du Marketplace : le build passait et toutes les
+   pages répondaient 500. Correctif : les remettre (Vercel → Settings → Environment Variables,
+   environnement Production), puis relancer le job.
+2. **Déploiement en deux temps** : `vercel deploy --prebuilt --prod --skip-domain`, puis
+   `vercel promote` qui branche ce déploiement sur les domaines (et lève un éventuel retour
+   arrière précédent, sinon les déploiements suivants ne seraient plus servis).
+3. **Retour arrière automatique** : si le test de fumée échoue, `vercel rollback` remet le
+   déploiement précédent, le job reste rouge et une issue `bug` + `needs-human` « Déploiement
+   annulé… » mentionne les propriétaires (`AGENTS_OWNER`) avec le lien du job. Après correction,
+   relancer le workflow : le `promote` du nouveau déploiement rebranche les domaines.
+
 ## Test de la prod après déploiement
 
 Le workflow « Production smoke test » (`.github/workflows/smoke.yml`, script `scripts/smoke.sh`)
