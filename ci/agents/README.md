@@ -33,6 +33,21 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
    déploiement en préprod de ce commit a échoué, pas de tag, un avertissement dans le run, nouvel
    essai à la vérification suivante (au plus une heure). Même chose si la CI de `main` est rouge.
 
+### Test quotidien de la préprod (#636)
+
+Chaque matin (04 h 23 UTC, 5 h 23 ou 6 h 23 à Paris), et à la main par « Run workflow »,
+`preprod-daily.yml` (source : `ci/preprod/daily.yml`) lance la suite `e2e/` contre la préprod,
+sans relance d'un test qui échoue. Il attend un déploiement en cours (même file que `preprod.yml`).
+
+- **Rouge** : `ci/preprod/regression-report.sh` ouvre une issue `bug` dans le milestone en cours,
+  avec les tests en échec, le lien du run et du rapport Playwright (captures et traces), et une
+  mention du propriétaire (notification GitHub sur le téléphone). Si une issue ouverte suit déjà
+  ce test, elle reçoit un commentaire au lieu d'une nouvelle issue.
+- **Vert** : aucune issue ; une issue ouverte dont les tests repassent reçoit une seule fois
+  « De nouveau vert ». Le propriétaire décide de la fermer.
+- Les comptes `e2e-…@example.test` du passage sont supprimés à la fin, même en échec
+  (`ci/preprod/cleanup-e2e.sql`).
+
 Une issue n'est jamais prise si elle a `needs-human`, `agent:blocked`, `after-ui` ou `agent:local`,
 si elle est assignée à quelqu'un (une personne la traite : Yannis s'assigne ses issues), ou si une
 issue qui la bloque est encore ouverte (lien GitHub « blocked by » ou ligne `Blocked by #n`).
