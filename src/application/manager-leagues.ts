@@ -1,6 +1,7 @@
 import { isBannedName } from "@/domain/banned-names";
 import { DEFAULT_BIB, type Bib } from "@/domain/bib";
 import { normalizeInviteCode, validateLeagueName } from "@/domain/league";
+import type { PickableCompetition } from "@/domain/season-picker";
 import {
   canLaunchMercato,
   fitsMembers,
@@ -29,7 +30,8 @@ export type ManagerLeague = {
 };
 
 /** A competition a season can be played on: an eligible one, not finished; its first event (ISO). */
-export type SeasonCompetition = { id: string; name: string; firstEventAt: string };
+/** A competition of a season, with what the picker groups and filters by (#663). */
+export type SeasonCompetition = PickableCompetition;
 
 export type ManagerParticipant = { userId: string; pseudo: string; bib: Bib };
 

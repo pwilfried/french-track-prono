@@ -5,10 +5,10 @@ import { useActionState } from "react";
 import { messages } from "@/app/messages.fr";
 import { Field } from "@/components/account/field";
 import type { SeasonCompetition } from "@/application/manager-leagues";
-import { SubmitButton } from "@/components/account/submit-button";
+import { SeasonCompetitionPicker } from "@/components/leagues/season-competition-picker";
+import { MIN_SEASON_COMPETITIONS } from "@/domain/manager-league";
 
 import { createManagerLeagueAction, type ManagerLeagueFormState } from "./actions";
-import { CompetitionPicker } from "./competition-picker";
 
 const text = messages.manager;
 
@@ -20,7 +20,7 @@ const COMPETITION_ERRORS = new Set([
 
 /**
  * The name of the league, whether anyone may join it (#419), and its competitions: the number of
- * players follows (#644).
+ * players follows (#644). The picker ends with the submit button, in its sticky bar (#663).
  */
 export function CreateManagerLeagueForm({ competitions }: { competitions: SeasonCompetition[] }) {
   const [state, action] = useActionState<ManagerLeagueFormState, FormData>(
@@ -56,18 +56,23 @@ export function CreateManagerLeagueForm({ competitions }: { competitions: Season
           </span>
         </span>
       </label>
-      <CompetitionPicker
-        competitions={competitions}
-        chosen={state.competitionIds}
-        label={text.competitionsLabel}
-        hint={text.competitionsHint}
-      />
       {competitionError && (
         <p role="alert" className="text-sm font-semibold text-accent-text">
           {messages.errors[state.error!]}
         </p>
       )}
-      <SubmitButton pendingLabel={text.creating}>{text.submit}</SubmitButton>
+      <SeasonCompetitionPicker
+        competitions={competitions}
+        chosen={state.competitionIds}
+        name="competitions"
+        minimum={MIN_SEASON_COMPETITIONS}
+        withFormat
+        label={text.competitionsLabel}
+        hint={text.competitionsHint}
+        empty={text.competitionsNone}
+        submitLabel={text.submit}
+        pendingLabel={text.creating}
+      />
     </form>
   );
 }

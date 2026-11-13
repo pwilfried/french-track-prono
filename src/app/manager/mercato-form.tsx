@@ -5,16 +5,17 @@ import { useActionState, useState } from "react";
 import { messages } from "@/app/messages.fr";
 import type { SeasonCompetition } from "@/application/manager-leagues";
 import { SubmitButton } from "@/components/account/submit-button";
+import { SeasonCompetitionPicker } from "@/components/leagues/season-competition-picker";
 import { buttonVariants } from "@/components/ui/button";
 import { parisToUtc } from "@/domain/competition";
 import {
+  MIN_SEASON_COMPETITIONS,
   plannedMercatoEnd,
   ROUND_HOUR_CHOICES,
   seasonStart,
   type RoundMode,
 } from "@/domain/manager-league";
 
-import { CompetitionPicker } from "./competition-picker";
 import {
   launchMercatoAction,
   setCompetitionsAction,
@@ -65,15 +66,18 @@ export function CompetitionsForm({
       className="flex flex-col gap-4 rounded-card border border-border bg-card p-4"
     >
       <input type="hidden" name="league" value={leagueId} />
-      <CompetitionPicker
+      <SeasonCompetitionPicker
         competitions={competitions}
         chosen={chosen}
+        name="competitions"
+        minimum={MIN_SEASON_COMPETITIONS}
+        withFormat
         label={text.competitionsEditLabel}
         hint={text.competitionsEditHint}
+        empty={text.competitionsNone}
+        submitLabel={text.saveCompetitions}
+        pendingLabel={text.savingMercato}
       />
-      <SubmitButton pendingLabel={text.savingMercato} variant="muted">
-        {text.saveCompetitions}
-      </SubmitButton>
       <FormOutcome state={state} saved={text.competitionsSaved} />
     </form>
   );

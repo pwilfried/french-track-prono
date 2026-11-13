@@ -15,6 +15,7 @@ import {
   opensAutomatically,
   plannedMercatoEnd,
   playersAwaited,
+  seasonAdvice,
   seasonCompetitions,
   seasonFormat,
   seasonStart,
@@ -217,5 +218,39 @@ describe("newestArrival", () => {
 
   it("is the participant who joined last", () => {
     expect(newestArrival(["creator", "first", "last"])).toBe("last");
+  });
+});
+
+describe("seasonAdvice", () => {
+  it.each([
+    [0, { kind: "too-few", missing: 6 }],
+    [5, { kind: "too-few", missing: 1 }],
+  ])("asks for the competitions missing under 6 (%i)", (competitions, advice) => {
+    expect(seasonAdvice(competitions)).toEqual(advice);
+  });
+
+  it.each([
+    [6, { players: 6, missing: 4 }, 0],
+    [7, { players: 6, missing: 3 }, 1],
+    [8, { players: 6, missing: 2 }, 2],
+    [18, null, 0],
+    [25, null, 7],
+  ])("tells how to land exactly with %i competitions", (competitions, nextStep, trim) => {
+    expect(seasonAdvice(competitions)).toEqual({
+      kind: "format",
+      format: seasonFormat(competitions),
+      next: nextStep,
+      trim,
+    });
+  });
+
+  it("never suggests more than the cap of players", () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 6, max: 200 }), (n) => {
+        const advice = seasonAdvice(n);
+        if (advice.kind !== "format") return false;
+        return (advice.next?.players ?? 0) <= MANAGER_LEAGUE_MAX && advice.trim >= 0;
+      }),
+    );
   });
 });
