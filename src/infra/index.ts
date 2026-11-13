@@ -15,8 +15,6 @@ export {
   type CookieToSet,
   type CurrentUser,
 } from "./supabase/session";
-export { createInMemoryResultStore, type ResultEventFixture } from "./in-memory/result-repository";
-export { createSupabaseResultRepository } from "./supabase/result-repository";
 export {
   createInMemoryPerformanceStore,
   type PerformanceEventFixture,

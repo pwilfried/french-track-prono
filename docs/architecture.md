@@ -184,10 +184,12 @@ glisser-déposer) ; le compte à rebours passe à l'orange à 1 h et au rouge à
 verrouillage. La base refuse un prono après `lock_at`, un athlète hors liste de départ, un
 deuxième joker dans la compétition, et la suppression d'un prono après le verrouillage.
 
-**Résultats et points (v0.4).** L'admin saisit le podium officiel dans `/admin` (ex æquo : les
-athlètes partagent la place, décision du propriétaire), puis clique sur « Calculer les points » ;
-le coup de flair est calculé sur tous les pronos de l'épreuve. Le joueur voit le détail dans
-`/mes-points`.
+**Résultats et points (v0.4, puis #665).** L'admin saisit une seule feuille de résultats par
+épreuve (`/admin/<épreuve>/performances`) : le podium officiel des pronos en est tiré (places 1
+à 3, ex æquo compris : les athlètes partagent la place, décision du propriétaire), et
+l'enregistrement calcule tout de suite les points (`src/application/save-result-sheet.ts`) ; le
+bouton « Recalculer » relance le même calcul en secours. Le coup de flair est calculé sur tous les
+pronos de l'épreuve. Le joueur voit le détail dans `/mes-points`.
 
 **Ligues et classements (v0.5).** Voir « Modèle de données » pour les règles des ligues. Le
 classement (`src/domain/ranking.ts`, R9) départage aux points, puis aux podiums parfaits, puis
@@ -267,17 +269,22 @@ fonctions `set_start_list()`, `set_results()` et `set_event_scores()`, avec la s
 Chacune écrit une ligne dans `admin_actions` (journal lisible par les admins seulement, écrit par
 la base elle-même via `private.log_admin_action()`, hors de l'API).
 
-Performances Manager (v0.15, issue #429) : place, marque, statut (DNS, DNF, DQ) et indicateurs de
-records de chaque athlète d'une épreuve, dans `event_performances`, à part de `results`. Écriture par
-`admin_set_performances()` (journalisée), lecture publique ; `admin_manager_lined_up()` signale à
-l'admin les athlètes alignés. Détail : `docs/decisions/french-track-manager.md`, section 4.
+Feuille de résultats (v0.15, issue #429, puis #665) : place, marque, statut (DNS, DNF, DQ) et
+indicateurs de records de chaque athlète d'une épreuve, dans `event_performances`. Écriture par
+`admin_set_performances()` (journalisée), qui remplace aussi `results` par les arrivés classés 1
+à 3 (même règle que `podiumFromPerformances` dans `src/domain/performance.ts`) ; lecture publique ;
+`admin_manager_lined_up()` signale à l'admin les athlètes alignés. Détail :
+`docs/decisions/french-track-manager.md`, section 4.
 
 Points Manager (v0.15, issue #431) : les tables World Athletics vivent en TypeScript, donc le calcul
 se fait côté serveur avec la session de l'admin. `admin_manager_scoring_sheet()` lui donne les
 alignements (privés), les performances et les points de pronos de la compétition ;
 `src/domain/manager-score.ts` calcule ; `admin_set_manager_scores()` remplace d'un bloc les lignes
 de `manager_scores` (journalisée `run_manager_scoring`). Les participants d'une ligue en lisent
-les scores ; `my_manager_score()` rend celui du joueur avec le nom de ses athlètes.
+les scores ; `my_manager_score()` rend celui du joueur avec le nom de ses athlètes. Depuis #665, le
+calcul suit chaque feuille de résultats : tant qu'une épreuve de la compétition n'a pas de
+résultat, les scores sont provisoires (`manager_scores.complete` faux, décidé par la base) ; la
+confrontation s'affiche, mais ne compte au classement et ne clôt la saison qu'une fois complète.
 
 Calendrier Manager (v0.16, issue #432) : à la clôture du mercato, un déclencheur sur
 `manager_leagues.mercato_closed_at` tire une fois le calendrier aller-retour
