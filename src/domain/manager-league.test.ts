@@ -7,6 +7,9 @@ import {
   fitsMembers,
   hasEnoughCompetitions,
   isRoundHours,
+  MANAGER_LEAGUE_MAX,
+  MANAGER_LEAGUE_MIN,
+  MIN_SEASON_COMPETITIONS,
   mercatoRounds,
   newestArrival,
   opensAutomatically,
@@ -28,6 +31,11 @@ describe("seasonFormat", () => {
     [25, { players: 10, duelDays: 18, bonusDays: 7 }],
   ])("derives the players of %i competitions", (competitions, format) => {
     expect(seasonFormat(competitions)).toEqual(format);
+  });
+
+  it("spans the league sizes, from the minimum of competitions to the cap", () => {
+    expect(seasonFormat(MIN_SEASON_COMPETITIONS)?.players).toBe(MANAGER_LEAGUE_MIN);
+    expect(seasonFormat(100)?.players).toBe(MANAGER_LEAGUE_MAX);
   });
 
   it.each([0, 1, 5])("refuses %i competitions, fewer than 6", (competitions) => {
