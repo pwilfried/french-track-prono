@@ -253,7 +253,6 @@ export const messages = {
       today: "AUJ.",
       todayLabel: "aujourd'hui",
       doneLabel: "terminé",
-      empty: "Aucune date pour cette compétition.",
     },
     sessions: { morning: "Matin", afternoon: "Après-midi", evening: "Soir" },
     progress: {
@@ -903,7 +902,6 @@ export const messages = {
   },
   managerSeasonEnd: {
     title: "Fin de saison",
-    link: "Fin de saison",
     notOver:
       "La saison continue : elle se termine après la dernière journée du calendrier, journées bonus comprises. Le champion et le palmarès viendront alors.",
     champion: "Tu es champion",
@@ -1110,7 +1108,7 @@ export const messages = {
     copied: "✓ Copié",
     shareText: (name: string) => `Rejoins ma ligue « ${name} » sur French Track Prono`,
     linkNote: "Le lien ouvre la ligue directement après connexion.",
-    tabs: { ranking: "Classement", members: "Membres", invite: "Inviter" },
+    tabs: { ranking: "Classement", members: "Membres" },
     owner: "Créateur",
     tieRule: "Égalité : podiums parfaits, puis vainqueurs trouvés. Toujours égaux : même place.",
     handOver: "Confier la ligue à un membre",

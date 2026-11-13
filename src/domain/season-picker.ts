@@ -1,4 +1,5 @@
 import { utcToParis, type CompetitionScope, type CompetitionVenue } from "./competition";
+import { plain } from "./competition-search";
 
 /**
  * The competition picker of a league (#663): quick selections built from the data, a search with
@@ -75,16 +76,8 @@ export const NO_FILTERS: PickerFilters = {
   onlyChosen: false,
 };
 
-/** Lower case, without accents nor spaces around: « Liévin » and « lievin » match. */
-export const searchable = (text: string) =>
-  text
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .trim();
-
 /** Whether a search is typed: then every month opens. */
-export const isSearching = (filters: PickerFilters) => searchable(filters.query) !== "";
+export const isSearching = (filters: PickerFilters) => plain(filters.query) !== "";
 
 /** The competitions shown: the search (name, city) and every filter set, in their order. */
 export function filterCompetitions(
@@ -92,7 +85,7 @@ export function filterCompetitions(
   filters: PickerFilters,
   chosen: ReadonlySet<string>,
 ): PickableCompetition[] {
-  const query = searchable(filters.query);
+  const query = plain(filters.query);
   return list.filter(
     (c) =>
       (!filters.scope || c.scope === filters.scope) &&
@@ -100,8 +93,8 @@ export function filterCompetitions(
       (!filters.level || c.level === filters.level) &&
       (!filters.onlyChosen || chosen.has(c.id)) &&
       (query === "" ||
-        searchable(c.name).includes(query) ||
-        (c.city !== null && searchable(c.city).includes(query))),
+        plain(c.name).includes(query) ||
+        (c.city !== null && plain(c.city).includes(query))),
   );
 }
 

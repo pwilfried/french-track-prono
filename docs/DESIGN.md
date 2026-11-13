@@ -75,9 +75,8 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   Terminée : fond atténué, mon résultat (« 2 athlètes bien placées », « Podium parfait ! »,
   « Pas de prono ») et mes points en pastille verte, « — » sans prono. Le lien est nommé par
   l'épreuve puis par son statut (#517).
-- **ProgressCard** (#546) : fond bleu FrenchTrack ; « N / total podiums posés », une barre, mes
-  points (avant la compétition : « Premières finales dans N j ») et ce qu'il reste ce soir, avec
-  le prochain verrouillage.
+- **DayProgress** (#659) : une ligne, les épreuves à pronostiquer du jour affiché, les podiums
+  posés sur toute la compétition et les points gagnés.
 - **Filtres en pastilles** (`EventFilters`) : une pastille par filtre avec son nombre, la
   pastille active pleine ; elles défilent à l'horizontale sur mobile.
 - **AthleteChip** : drapeau, nom, record de saison.
