@@ -54,8 +54,10 @@ export function performanceProblem(
     if (line.place !== null && !(Number.isInteger(line.place) && line.place >= 1)) {
       return "bad_place";
     }
-    if (line.mark === null || line.mark.trim() === "") return "mark_missing";
-    if (parseMark(line.mark, unit) === null) return "bad_mark";
+    // A placed finisher may have no mark: the podium alone is enough (#665); it then scores 0.
+    if (line.mark === null || line.mark.trim() === "") {
+      if (line.place === null) return "mark_missing";
+    } else if (parseMark(line.mark, unit) === null) return "bad_mark";
   }
   return null;
 }
@@ -64,4 +66,21 @@ export function performanceProblem(
 export function missingPerformances(linedUp: string[], lines: Performance[]): string[] {
   const entered = new Set(lines.map((l) => l.athleteId));
   return linedUp.filter((id) => !entered.has(id));
+}
+
+/** A line of the official podium of the predictions, as stored in `results`. */
+export type PodiumLine = { athleteId: string; rank: number; mark: string | null };
+
+/**
+ * The official podium of the predictions, drawn from the results sheet (#665): the finishers placed
+ * 1 to 3, tied athletes sharing their step, best place first. Same rule as admin_set_performances.
+ */
+export function podiumFromPerformances(lines: Performance[]): PodiumLine[] {
+  return lines
+    .flatMap((l) =>
+      l.status === "ok" && l.place !== null && l.place <= 3
+        ? [{ athleteId: l.athleteId, rank: l.place, mark: l.mark }]
+        : [],
+    )
+    .sort((a, b) => a.rank - b.rank || a.athleteId.localeCompare(b.athleteId));
 }

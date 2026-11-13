@@ -52,9 +52,9 @@ export interface ManagerScoreRepository {
 }
 
 /**
- * The admin computes the Manager score of every participant of every league playing the
- * competition, from the performances entered and the prediction points. Run again after a
- * corrected result: everything is computed again and replaced (#416).
+ * The Manager score of every participant of every league playing the competition, from the
+ * performances entered and the prediction points. Run by every results sheet (#665) and by the
+ * admin's « Recalculer »: everything is computed again and replaced (#416).
  */
 export function computeManagerScores(ports: { scores: ManagerScoreRepository; now?: () => Date }) {
   const now = ports.now ?? (() => new Date());
@@ -63,6 +63,8 @@ export function computeManagerScores(ports: { scores: ManagerScoreRepository; no
       const sheet = await ports.scores.sheet(input.competitionSlug);
       if (sheet === "not_admin") throw new UseCaseError("NOT_ADMIN");
       if (!sheet) throw new UseCaseError("COMPETITION_NOT_FOUND");
+      // No Manager league plays the competition: nothing to score, nothing to store (#665).
+      if (sheet.participants.length === 0) return [];
       if (now().getTime() < Date.parse(sheet.lockAt)) {
         throw new UseCaseError("COMPETITION_NOT_STARTED");
       }

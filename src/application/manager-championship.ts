@@ -25,7 +25,10 @@ export type ManagerSeasonData = {
   /** Every matchday, with the name of its competition (null: none, not played). */
   matchdays: (SeasonMatchday & { competitionName: string | null })[];
   fixtures: SeasonFixture[];
-  /** The Manager score of every participant on every scored competition of the league. */
+  /**
+   * The Manager score of every participant on every competition of the league whose events all
+   * have their result (#665); provisional scores are left out.
+   */
   scores: SeasonScore[];
 };
 

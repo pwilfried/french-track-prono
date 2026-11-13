@@ -71,6 +71,11 @@ if (url && key) {
                                      bonus, predictions)
          values ('${leagueId}', '${competitions[0]!.id}', '${first.userId}', true, 900, 900, 0, 0),
                 ('${leagueId}', '${competitions[0]!.id}', '${second.userId}', true, 700, 700, 0, 0)`);
+    // The second competition is still being entered: provisional scores only (#665).
+    sql(`insert into manager_scores (league_id, competition_id, user_id, lined_up, total, hungarian,
+                                     bonus, predictions, complete)
+         values ('${leagueId}', '${competitions[1]!.id}', '${first.userId}', true, 50, 50, 0, 0,
+                 false)`);
     return {
       leagueId,
       firstId: first.userId,

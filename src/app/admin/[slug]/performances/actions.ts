@@ -1,10 +1,11 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { enterPerformances } from "@/application/enter-performances";
 import { UseCaseError } from "@/application/errors";
 import { getEvent } from "@/application/get-event";
+import { saveResultSheet } from "@/application/save-result-sheet";
 import {
   PERFORMANCE_STATUSES,
   RECORD_FLAGS,
@@ -12,15 +13,12 @@ import {
   type PerformanceStatus,
   type RecordFlag,
 } from "@/domain/performance";
-import {
-  createPublicSupabaseClient,
-  createSupabaseEventReader,
-  createSupabasePerformanceRepository,
-} from "@/infra";
+import { createPublicSupabaseClient, createSupabaseEventReader } from "@/infra";
 
 import { formText } from "../../../form-data";
 import { adminOnly } from "../../guard";
 import type { AdminActionState } from "../actions";
+import { sheetPorts } from "../sheet-ports";
 
 /** Reads the lines the form sends as JSON; anything malformed becomes an empty list. */
 function linesOf(data: FormData): Performance[] {
@@ -51,6 +49,10 @@ function linesOf(data: FormData): Performance[] {
   }
 }
 
+/**
+ * Saves the results sheet of an event and scores it at once: prediction points, then Manager
+ * scores (#665). The event page then shows the podium and the points.
+ */
 export async function savePerformancesAction(
   _: AdminActionState,
   data: FormData,
@@ -62,8 +64,10 @@ export async function savePerformancesAction(
     const event = await getEvent({
       events: createSupabaseEventReader(createPublicSupabaseClient()),
     }).execute({ competitionSlug: null, eventSlug: slug });
-    await enterPerformances({ performances: createSupabasePerformanceRepository(client) }).execute({
+    await saveResultSheet(sheetPorts(client)).execute({
       eventId: event.id,
+      competitionSlug: event.competitionSlug ?? null,
+      final: event.round === "final",
       unit: event.markUnit ?? "time",
       lines: linesOf(data),
     });
@@ -71,5 +75,6 @@ export async function savePerformancesAction(
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
   }
-  redirect(`/admin/${slug}/performances?enregistre=1`);
+  revalidatePath("/admin");
+  redirect(`/admin/${slug}?enregistre=1`);
 }
