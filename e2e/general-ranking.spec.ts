@@ -36,6 +36,9 @@ test("the ranking opens on my league, and the general one adds up every competit
 
   // In a league counting the first competition.
   joinLeagueFor(player.email, `${tag}-0`);
+  // A league counts events locked after joining: the competitions are past, so join earlier.
+  sql(`update league_members set joined_at = now() - interval '60 days'
+       where user_id = (select id from auth.users where email = '${player.email}')`);
   // Points in each competition, as the admin would compute them: 40 then 33.
   for (const [i, points] of [40, 33].entries()) {
     sql(`insert into score_events (user_id, competition_id, event_id, source, points, reason, detail)
