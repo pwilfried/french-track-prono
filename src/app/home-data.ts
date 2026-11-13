@@ -93,6 +93,7 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
               getLeagueRanking({ ranking, leagues: leagueRepository }).execute({
                 leagueId: league.id,
                 competitionSlugs: league.competitionSlugs,
+                families: league.families,
               }),
             )) ?? [],
         })),

@@ -212,11 +212,11 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 
 | Groupe | Tables |
 |---|---|
-| Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions` |
+| Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions`, `league_families` |
 | Référentiel | `competitions`, `events` (dont `kind` et `sub_disciplines` des épreuves combinées), `athletes`, `entries` (liste de départ), `results`, `athlete_records` (PR, SB, WR, WB) |
 | Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions` |
 | Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
-| Fonctions | `create_league()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()` |
+| Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()` |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers` ; `badges` et `user_badges` restent vides : les badges sont calculés (v0.11) |
 
 Garanties portées par la base : pronostic impossible après `lock_at`, pronos des autres
@@ -237,7 +237,21 @@ depuis le back-office (Ligues, action journalisée `moderate_league`, #321). Dep
 le back-office liste toutes les ligues (`admin_list_leagues()`), efface des signalements infondés
 (`admin_dismiss_league_reports()`), lit les membres avec leur rang (`admin_league_members()`, même
 règle que `countsInLeague`) et retire un membre (`admin_remove_league_member()`, jamais le créateur).
-Ligue officielle (#553) : une seule ligue publique `is_official` (index unique partiel), « Ligue
+Ligues thématiques (v0.17, #613) : à la création, une ligue compte « Toutes les épreuves » (par
+défaut) ou une ou plusieurs familles parmi huit (sprint, haies, demi-fond, fond, sauts, lancers,
+épreuves combinées, relais ; les sauts réunissent les deux familles de sauts de `disciplines`),
+rangées dans `league_families` (`create_league(nom, slugs[], publique, familles[])`) ; pas de
+famille = toutes les épreuves, comme toutes les ligues d'avant. Seul le classement de la ligue
+change : il ne compte que les épreuves de ses familles (`countsForFamilies`,
+`src/domain/league-families.ts`, appliqué par `getLeagueRanking` avec la famille de la discipline
+lue sur chaque ligne de points) ; les pronos, le classement général et ceux des compétitions ne
+changent pas. Le créateur ajoute une famille plus tard (`add_league_family`, page
+`/ligues/[id]/familles` avec l'aperçu « compte / ne compte pas »), jamais à une ligue sur toutes les
+épreuves (FT029), et n'en retire jamais (décision du propriétaire du 13 nov. 2026) : une famille
+ajoutée garde sa date (`added_at`) et ne compte que les épreuves qui commencent après. Badge
+« Sprint · Haies » sur la carte et la page de la ligue ; dans la ligue, les épreuves des autres
+familles sont grisées « Hors ligue » et restent pronostiquables ; les membres voient l'ajout d'une
+famille sur la page de la ligue. Ligue officielle (#553) : une seule ligue publique `is_official` (index unique partiel), « Ligue
 FrenchTrack », sur les Championnats d'Europe, sans plafond de membres. Elle appartient au premier
 compte admin ; la migration la crée par `private.create_official_league()` (idempotente, rien sans
 compte admin : la relancer à la main si l'admin arrive après). On la rejoint sur choix, et seul

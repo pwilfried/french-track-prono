@@ -11,6 +11,7 @@ export function SubmitButton({
   intent,
   variant = "default",
   noValidate,
+  disabled = false,
   className = "w-full",
 }: {
   children: React.ReactNode;
@@ -18,6 +19,8 @@ export function SubmitButton({
   intent?: string;
   variant?: "default" | "muted" | "outline";
   noValidate?: boolean;
+  /** Not sendable yet (a required choice is missing). */
+  disabled?: boolean;
   /** Full width by default. */
   className?: string;
 }) {
@@ -30,7 +33,7 @@ export function SubmitButton({
       name={intent ? "intent" : undefined}
       value={intent}
       formNoValidate={noValidate}
-      disabled={pending}
+      disabled={pending || disabled}
       className={`${buttonVariants({ variant })} ${className}`}
     >
       {mine ? pendingLabel : children}

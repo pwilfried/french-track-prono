@@ -986,6 +986,62 @@ export const messages = {
     inviteSubtitle: "Lien d'invitation",
     invited: (code: string) => `Tu as été invité dans une ligue avec le code ${code}.`,
     inviteNote: "Tu rejoins la ligue en un appui ; tu pourras la quitter quand tu veux.",
+    /** Leagues limited to event families (#613). */
+    family: {
+      sprint: "Sprint",
+      hurdles: "Haies",
+      middle: "Demi-fond",
+      long: "Fond",
+      jumps: "Sauts",
+      throws: "Lancers",
+      combined: "Épreuves combinées",
+      relay: "Relais",
+    },
+    familiesTitle: "Épreuves qui comptent",
+    allEvents: "Toutes les épreuves",
+    allEventsHint: "Toutes les épreuves des compétitions de la ligue comptent.",
+    someFamilies: "Certaines familles",
+    someFamiliesHint: "Pour les spécialistes et les clubs : seules ces familles comptent.",
+    familiesSummary: (names: string[]) => `Comptent dans la ligue : ${names.join(", ")}`,
+    familiesNone: "Choisis au moins une famille pour créer la ligue.",
+    familiesNote:
+      "Tu pourras ajouter une famille plus tard, jamais en retirer. Les pronos restent les mêmes partout.",
+    familiesBadge: (names: string[]) => names.join(" · "),
+    familiesBadgeLabel: (names: string[]) => `Épreuves qui comptent : ${names.join(", ")}`,
+    eventsTitle: "Épreuves de la ligue",
+    eventsEmpty: "Pas encore d'épreuve annoncée dans les compétitions de la ligue.",
+    outOfLeague: "Hors ligue",
+    outOfLeagueNote:
+      "Hors ligue : tu peux toujours les pronostiquer, mais elles ne comptent pas dans cette ligue.",
+    eventDay: (iso: string) =>
+      new Date(iso).toLocaleDateString("fr-FR", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        timeZone: "Europe/Paris",
+      }),
+    addFamily: "+ Ajouter une famille",
+    addFamilyTitle: "Ajouter une famille",
+    addFamilySubtitle: "Les familles déjà choisies restent : aucune ne se retire.",
+    lockedFamily: (name: string) => `${name}, déjà dans la ligue`,
+    chooseFamily: "Famille à ajouter",
+    previewTitle: (name: string) => `${name} dans la ligue`,
+    previewCounts: "Compte",
+    previewNotCounted: "Ne compte pas",
+    previewNote:
+      "Seules les épreuves pas encore commencées compteront. Une épreuve commencée ou terminée ne donne aucun point dans la ligue.",
+    previewEmpty:
+      "Aucune épreuve de cette famille dans les compétitions de la ligue pour l'instant.",
+    addFamilySubmit: (name: string) => `Ajouter ${name}`,
+    addingFamily: "Ajout…",
+    noFamilyToAdd: "Toutes les familles comptent déjà dans cette ligue.",
+    /** Shown to every member after the creator added a family. */
+    familyAdded: (name: string, iso: string) =>
+      `${name} compte dans la ligue depuis le ${new Date(iso).toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "long",
+        timeZone: "Europe/Paris",
+      })} : seules ses épreuves suivantes rapportent des points.`,
   },
   ranking: {
     title: "Classement",
@@ -2242,6 +2298,8 @@ export const messages = {
       "Ce nom n'est pas valable : 2 à 40 caractères (lettres, chiffres, emoji, ponctuation simple).",
     LEAGUE_NAME_BANNED:
       "Ce nom n'est pas possible pour une ligue (insulte, nom officiel ou lien). Choisis-en un autre.",
+    LEAGUE_FAMILY_INVALID: "Cette famille d'épreuves n'existe pas.",
+    LEAGUE_ALL_EVENTS: "Cette ligue compte déjà toutes les épreuves.",
     LEAGUE_CODE_UNKNOWN: "Ce code ne correspond à aucune ligue. Vérifie-le auprès de ton ami.",
     ALREADY_MEMBER: "Tu fais déjà partie de cette ligue.",
     LEAGUE_FULL: "Cette ligue est complète (50 membres au maximum).",

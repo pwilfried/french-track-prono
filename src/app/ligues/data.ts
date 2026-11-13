@@ -1,6 +1,16 @@
 import { redirect } from "next/navigation";
 
-import { createSupabaseLeagueRepository, createSupabaseRankingRepository } from "@/infra";
+import { listLeagueEvents } from "@/application/league-events";
+import type { LeagueFamily, LeagueFamilyRule } from "@/domain/league-families";
+import {
+  createPublicSupabaseClient,
+  createSupabaseDisciplineRepository,
+  createSupabaseEventReader,
+  createSupabaseLeagueRepository,
+  createSupabaseRankingRepository,
+} from "@/infra";
+
+import { messages } from "../messages.fr";
 
 import { getCurrentUser, getSessionClient } from "../session";
 
@@ -14,4 +24,31 @@ export async function leaguePorts(back: string) {
     leagues: createSupabaseLeagueRepository(client),
     ranking: createSupabaseRankingRepository(client),
   };
+}
+
+/**
+ * The finals of a league's competitions, ready for `LeagueEventList` (#613): whether each counts
+ * in the league, or, with `adding`, whether it would count once that family is added now.
+ */
+export async function loadLeagueEvents(input: {
+  competitionSlugs: string[];
+  families: LeagueFamilyRule[];
+  adding?: LeagueFamily;
+}) {
+  const client = createPublicSupabaseClient();
+  const events = await listLeagueEvents({
+    events: createSupabaseEventReader(client),
+    disciplines: createSupabaseDisciplineRepository(client),
+  }).execute({
+    competitionSlugs: input.competitionSlugs,
+    families: input.families,
+    adding: input.adding ? { family: input.adding, now: new Date().toISOString() } : undefined,
+  });
+  return events.map((e) => ({
+    id: e.id,
+    slug: e.slug,
+    name: messages.events.name(e.discipline, e.gender),
+    startsAt: e.startsAt,
+    counts: e.counts,
+  }));
 }
