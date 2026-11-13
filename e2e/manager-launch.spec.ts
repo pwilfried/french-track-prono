@@ -22,7 +22,7 @@ test("the creator of a league of 6 competitions launches the mercato once 3 frie
   await expect(creatorPage.getByText("5 compétitions : il en faut au moins 6.")).toBeVisible();
   await chooseSeason(creatorPage, 6);
   await expect(
-    creatorPage.getByText("6 compétitions → 4 joueurs · 6 journées aller-retour", { exact: true }),
+    creatorPage.getByText("6 compétitions → 4 joueurs · 6 journées", { exact: true }),
   ).toBeVisible();
   await creatorPage.getByRole("button", { name: "Créer la ligue" }).click();
   await expect(creatorPage.getByRole("heading", { level: 1 })).toHaveText(league);
@@ -84,12 +84,11 @@ test("the creator is told when a custom mercato ends after the first competition
     await signUp(page, newPlayer("mgr-soon"));
     await page.waitForURL(/\/manager\/creer$/);
     await page.getByLabel("Nom de la ligue").fill(`Pressés ${tag}`);
+    await page.getByRole("searchbox", { name: "Rechercher une compétition" }).fill(soon);
     await page.getByRole("checkbox", { name: new RegExp(`^${soon} ·`) }).check();
     await chooseSeason(page, 6);
     // 7 competitions: 4 players, one competition left over as a bonus matchday.
-    await expect(
-      page.getByText("7 compétitions → 4 joueurs · 6 journées aller-retour + 1 bonus"),
-    ).toBeVisible();
+    await expect(page.getByText("7 compétitions → 4 joueurs · 6 journées + 1 bonus")).toBeVisible();
     await page.getByRole("button", { name: "Créer la ligue" }).click();
     await expect(page.getByText("1 / 4 participants · Privée")).toBeVisible();
 
