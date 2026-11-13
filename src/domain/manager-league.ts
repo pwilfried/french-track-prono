@@ -6,8 +6,8 @@ import type { RoundRules } from "./manager-round";
  * opens only once the target is reached. The database does the same in launch_manager_mercato()
  * and private.open_manager_mercatos().
  */
-export const MANAGER_LEAGUE_MIN = 4;
-export const MANAGER_LEAGUE_MAX = 10;
+const MANAGER_LEAGUE_MIN = 4;
+const MANAGER_LEAGUE_MAX = 10;
 
 /** The round durations a creator may choose, in hours. */
 export const ROUND_HOUR_CHOICES = [12, 24, 48, 72] as const;
