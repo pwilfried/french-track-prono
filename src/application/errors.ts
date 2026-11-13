@@ -120,7 +120,8 @@ export type ErrorCode =
   | "MANAGER_SCORES_UNAVAILABLE"
   | "MANAGER_SEASON_NOT_STARTED"
   | "MATCHDAY_NOT_FOUND"
-  | "MANAGER_SEASON_UNAVAILABLE";
+  | "MANAGER_SEASON_UNAVAILABLE"
+  | "MANAGER_HONOURS_UNAVAILABLE";
 
 let reportUnavailable: ((code: ErrorCode) => void) | undefined;
 

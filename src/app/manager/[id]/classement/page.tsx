@@ -18,6 +18,7 @@ const { columns, columnLabels } = text;
 /**
  * « Classement » (#433): the standings of the championship (rank, player, W, D, L, difference,
  * points), the player's line highlighted, the tie rule, then the player's next head-to-head.
+ * Once the season is over, a link to its end (#434).
  */
 export default async function ManagerStandingsPage({
   params,
@@ -54,6 +55,20 @@ export default async function ManagerStandingsPage({
           <ErrorNotice retryHref={path} message={messages.errors.MANAGER_SEASON_UNAVAILABLE} />
         ) : (
           <>
+            {view.ended && (
+              <div
+                role="status"
+                className="flex flex-col gap-1 rounded-card bg-gold-soft p-4 text-sm font-semibold text-gold-ink"
+              >
+                <p>{text.ended}</p>
+                <Link
+                  href={`/manager/${id}/fin-de-saison`}
+                  className="inline-flex min-h-11 items-center underline underline-offset-4"
+                >
+                  {text.endLink} ›
+                </Link>
+              </div>
+            )}
             {!view.started && (
               <p role="status" className="rounded-card bg-muted p-4 text-sm font-semibold">
                 {text.notStarted}

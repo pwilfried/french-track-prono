@@ -8,7 +8,9 @@ import { roundEndsAt, type RoundRules } from "./manager-round";
  * (Manager points only, no duel). The database does the same in private.manager_player_count().
  */
 export const MIN_SEASON_COMPETITIONS = 6;
-const MAX_PLAYERS = 10;
+/** The player counts a league can reach: 4 with the minimum of 6 competitions, 10 at most. */
+export const MANAGER_LEAGUE_MIN = 4;
+export const MANAGER_LEAGUE_MAX = 10;
 
 /** The matchdays of a home-and-away championship of `players`. */
 const duelDaysOf = (players: number) => 2 * (players - 1);
@@ -19,7 +21,7 @@ export type SeasonFormat = { players: number; duelDays: number; bonusDays: numbe
 export function seasonFormat(competitions: number): SeasonFormat | null {
   if (!Number.isInteger(competitions) || competitions < MIN_SEASON_COMPETITIONS) return null;
   const fitting = Math.floor(competitions / 2) + 1;
-  const players = Math.min(MAX_PLAYERS, fitting - (fitting % 2));
+  const players = Math.min(MANAGER_LEAGUE_MAX, fitting - (fitting % 2));
   const duelDays = duelDaysOf(players);
   return { players, duelDays, bonusDays: competitions - duelDays };
 }

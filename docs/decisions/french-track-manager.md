@@ -291,6 +291,16 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   premier est champion, le classement est figé.
 - **Palmarès** conservé : champion, classement final, statistiques individuelles, victoires / nuls
   / défaites, points Manager marqués, historique des confrontations directes.
+- Fin de saison (#434, décision du propriétaire du 13 nov. 2026) : la saison se termine après la
+  **dernière journée du calendrier, journées bonus comprises** : quand chaque journée qui a une
+  compétition a ses scores Manager (une journée sans compétition ne se joue pas et ne retient
+  rien). Un déclencheur sur `manager_scores` fige alors le palmarès dans `manager_honours`, une
+  seule fois : champion (premier du classement ; égalité complète : le premier arrivé dans la
+  ligue), classement final, confrontations, points Manager marqués (journées bonus comprises) et
+  meilleur athlète de chacun (le plus de points Manager sur la saison). Un score recalculé
+  ensuite (#416) ne change plus le palmarès. Le « principal rival » de l'écran de fin de saison
+  est le joueur juste devant au classement final (le 2e pour le champion). Nouvelle saison =
+  nouvelle ligue, nouveau mercato ; le palmarès reste dans le profil.
 
 ## Réponses du propriétaire (#416, 10 novembre 2026)
 
