@@ -96,7 +96,7 @@ export function levenshtein(a: string, b: string): number {
 }
 
 /** A name compared regardless of accents, case, punctuation and word order. */
-const key = (name: string) =>
+export const nameKey = (name: string) =>
   plain(name)
     .split(/[^a-z]+/)
     .filter(Boolean)
@@ -109,9 +109,9 @@ const key = (name: string) =>
  * several are a choice for the admin (closest first), none means a new athlete.
  */
 export function importReport(rows: ImportRow[], candidates: Candidate[]): ImportLine[] {
-  const keyed = candidates.map((athlete) => ({ athlete, key: key(athlete.name) }));
+  const keyed = candidates.map((athlete) => ({ athlete, key: nameKey(athlete.name) }));
   return rows.map((row): ImportLine => {
-    const wanted = key(row.name);
+    const wanted = nameKey(row.name);
     const close = keyed
       .map((c) => ({ athlete: c.athlete, distance: levenshtein(wanted, c.key) }))
       .filter((c) => c.distance <= MAX_DISTANCE)

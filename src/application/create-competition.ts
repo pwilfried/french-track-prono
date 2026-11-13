@@ -16,6 +16,8 @@ export type CompetitionSummary = {
   name: string;
   scope: CompetitionScope;
   venue: CompetitionVenue;
+  /** "championnat", "diamond-league"…; none for a competition typed in the back-office. */
+  level: string | null;
   city: string | null;
   countryCode: string | null;
   startsOn: string;
@@ -55,7 +57,7 @@ export interface CompetitionAdminRepository {
   find(slug: string): Promise<CompetitionFile | null>;
   /** Returns the slug kept (a number is added when taken). */
   create(
-    c: Omit<CompetitionSummary, "events" | "finals" | "entered">,
+    c: Omit<CompetitionSummary, "events" | "finals" | "entered" | "level">,
   ): Promise<string | "not_admin">;
   /** Returns the slug kept (a number is added when taken). */
   addEvent(

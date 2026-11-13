@@ -7,6 +7,12 @@ const ordinal = (rank: number) => (rank === 1 ? "1er" : `${rank}e`);
 const GENDER = { F: "Femmes", M: "Hommes", X: "Mixte" } as const;
 /** The contact address published on the site: written here only. */
 const CONTACT_EMAIL = "frenchtrackprono@gmail.com";
+/** Competition levels with a name of their own (#647). */
+const LEVEL_NAMES: Record<string, string | undefined> = {
+  championnat: "Championnat",
+  "diamond-league": "Diamond League",
+  "world-indoor-tour-gold": "World Indoor Tour Gold",
+};
 
 export const messages = {
   /** Name and place of each competition the app can show (see src/app/competition.ts). */
@@ -1030,6 +1036,37 @@ export const messages = {
     publicHint:
       "Tout le monde peut la trouver et la rejoindre sans code, jusqu'à 200 joueurs. Son nom doit rester correct.",
     publicBadge: "Publique",
+    privateBadge: "Privée",
+    /** The summed-up league card and « Découvrir » (#662). */
+    competitionCount: (n: number) => `${n} ${n <= 1 ? "compétition" : "compétitions"}`,
+    period: (start: string, end: string) => {
+      const month = (ym: string, year: boolean) =>
+        new Date(`${ym}-01T12:00:00Z`).toLocaleDateString("fr-FR", {
+          month: "short",
+          ...(year ? { year: "numeric" } : {}),
+          timeZone: "UTC",
+        });
+      if (start === end) return month(end, true);
+      return `${month(start, start.slice(0, 4) !== end.slice(0, 4))} → ${month(end, true)}`;
+    },
+    outOf: (n: number) => `sur ${n}`,
+    nextCompetition: (name: string, startsOn: string) =>
+      `Prochaine : ${name}, ${new Date(`${startsOn}T12:00:00Z`).toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "short",
+        timeZone: "UTC",
+      })}`,
+    listTabs: { mine: (n: number) => `Mes ligues · ${n}`, discover: "Découvrir" },
+    listTabsLabel: "Mes ligues ou découvrir",
+    searchLabel: "Chercher une ligue publique",
+    searchPlaceholder: "Nom de la ligue",
+    familyFilterLabel: "Famille d'épreuves",
+    allFamilies: "Toutes",
+    sortLabel: "Trier par",
+    sorts: { places: "Places restantes", players: "Plus de joueurs", recent: "Plus récentes" },
+    noMatch: "Aucune ligue publique ne correspond. Essaie un autre nom ou une autre famille.",
+    fillLabel: (n: number, max: number) => `${n} places prises sur ${max}`,
+    loadingLeagues: "Chargement des ligues…",
     publicTitle: "Autres ligues publiques",
     /** When no public league is left to join, from the player's own public leagues (#496). */
     publicNotice: {
@@ -1040,7 +1077,7 @@ export const messages = {
     publicJoin: "Rejoindre",
     publicJoinLabel: (name: string) => `Rejoindre la ligue publique ${name}`,
     publicJoining: "…",
-    publicPlaces: (n: number, max: number) => `${n} / ${max} joueurs`,
+    publicPlaces: (n: number, max: number) => `${n}/${max} joueurs`,
     officialBadge: "Officielle",
     officialOpen: "Ouverte à tous",
     officialPitch: "Mesure-toi à toute la communauté FrenchTrack",
@@ -1090,6 +1127,62 @@ export const messages = {
     inviteSubtitle: "Lien d'invitation",
     invited: (code: string) => `Tu as été invité dans une ligue avec le code ${code}.`,
     inviteNote: "Tu rejoins la ligue en un appui ; tu pourras la quitter quand tu veux.",
+    /** Leagues limited to event families (#613). */
+    family: {
+      sprint: "Sprint",
+      hurdles: "Haies",
+      middle: "Demi-fond",
+      long: "Fond",
+      jumps: "Sauts",
+      throws: "Lancers",
+      combined: "Épreuves combinées",
+      relay: "Relais",
+    },
+    familiesTitle: "Épreuves qui comptent",
+    allEvents: "Toutes les épreuves",
+    allEventsHint: "Toutes les épreuves des compétitions de la ligue comptent.",
+    someFamilies: "Certaines familles",
+    someFamiliesHint: "Pour les spécialistes et les clubs : seules ces familles comptent.",
+    familiesSummary: (names: string[]) => `Comptent dans la ligue : ${names.join(", ")}`,
+    familiesNone: "Choisis au moins une famille pour créer la ligue.",
+    familiesNote:
+      "Tu pourras ajouter une famille plus tard, jamais en retirer. Les pronos restent les mêmes partout.",
+    familiesBadge: (names: string[]) => names.join(" · "),
+    familiesBadgeLabel: (names: string[]) => `Épreuves qui comptent : ${names.join(", ")}`,
+    eventsTitle: "Épreuves de la ligue",
+    eventsEmpty: "Pas encore d'épreuve annoncée dans les compétitions de la ligue.",
+    outOfLeague: "Hors ligue",
+    outOfLeagueNote:
+      "Hors ligue : tu peux toujours les pronostiquer, mais elles ne comptent pas dans cette ligue.",
+    eventDay: (iso: string) =>
+      new Date(iso).toLocaleDateString("fr-FR", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        timeZone: "Europe/Paris",
+      }),
+    addFamily: "+ Ajouter une famille",
+    addFamilyTitle: "Ajouter une famille",
+    addFamilySubtitle: "Les familles déjà choisies restent : aucune ne se retire.",
+    lockedFamily: (name: string) => `${name}, déjà dans la ligue`,
+    chooseFamily: "Famille à ajouter",
+    previewTitle: (name: string) => `${name} dans la ligue`,
+    previewCounts: "Compte",
+    previewNotCounted: "Ne compte pas",
+    previewNote:
+      "Seules les épreuves pas encore commencées compteront. Une épreuve commencée ou terminée ne donne aucun point dans la ligue.",
+    previewEmpty:
+      "Aucune épreuve de cette famille dans les compétitions de la ligue pour l'instant.",
+    addFamilySubmit: (name: string) => `Ajouter ${name}`,
+    addingFamily: "Ajout…",
+    noFamilyToAdd: "Toutes les familles comptent déjà dans cette ligue.",
+    /** Shown to every member after the creator added a family. */
+    familyAdded: (name: string, iso: string) =>
+      `${name} compte dans la ligue depuis le ${new Date(iso).toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "long",
+        timeZone: "Europe/Paris",
+      })} : seules ses épreuves suivantes rapportent des points.`,
   },
   ranking: {
     title: "Classement",
@@ -1242,6 +1335,16 @@ export const messages = {
     },
     save: "Enregistrer et calculer les points",
     saving: "Enregistrement et calcul…",
+    paste: {
+      title: "Coller les résultats",
+      hint: "Copie le tableau de la page de résultats World Athletics et colle-le ici : la feuille se pré-remplit. Vérifie-la, rien n'est enregistré avant « Enregistrer ».",
+      label: "Tableau de résultats",
+      apply: "Pré-remplir la feuille",
+      none: "Aucune ligne de résultat trouvée dans le texte collé.",
+      matched: (n: number) => (n <= 1 ? `${n} athlète pré-rempli.` : `${n} athlètes pré-remplis.`),
+      unmatched: (n: number) =>
+        n <= 1 ? `${n} ligne non reconnue :` : `${n} lignes non reconnues :`,
+    },
   },
   install: {
     title: "Installe l'appli",
@@ -1685,6 +1788,28 @@ export const messages = {
     featured: "★ À la une",
     list: { coming: "À venir", past: "Terminées" },
     none: "Aucune compétition.",
+    /** The filters of the list (#647), kept in the address. */
+    filters: {
+      scope: "Portée",
+      venue: "Lieu",
+      level: "Niveau",
+      status: "Statut",
+      allFeminine: "Toutes",
+      allMasculine: "Tous",
+      scopes: { international: "Internationales", france: "France" },
+      venues: { indoor: "Salle", outdoor: "Plein air" },
+      statuses: { coming: "À venir", live: "En cours", past: "Terminées" },
+      count: (n: number) => (n <= 1 ? `${n} compétition` : `${n} compétitions`),
+      reset: "Réinitialiser",
+      empty: "Aucune compétition ne correspond à ces filtres",
+    },
+    /** A competition level: the known ones by name, the others from their code. */
+    level: (level: string) =>
+      LEVEL_NAMES[level] ??
+      level
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" "),
     scope: { international: "Internationale", france: "Française" },
     type: "Type",
     venueLabel: "Lieu",
@@ -2334,6 +2459,8 @@ export const messages = {
       "Ce nom n'est pas valable : 2 à 40 caractères (lettres, chiffres, emoji, ponctuation simple).",
     LEAGUE_NAME_BANNED:
       "Ce nom n'est pas possible pour une ligue (insulte, nom officiel ou lien). Choisis-en un autre.",
+    LEAGUE_FAMILY_INVALID: "Cette famille d'épreuves n'existe pas.",
+    LEAGUE_ALL_EVENTS: "Cette ligue compte déjà toutes les épreuves.",
     LEAGUE_CODE_UNKNOWN: "Ce code ne correspond à aucune ligue. Vérifie-le auprès de ton ami.",
     ALREADY_MEMBER: "Tu fais déjà partie de cette ligue.",
     LEAGUE_FULL: "Cette ligue est complète (50 membres au maximum).",

@@ -19,7 +19,7 @@ export function SubmitButton({
   intent?: string;
   variant?: "default" | "muted" | "outline";
   noValidate?: boolean;
-  /** Disabled whatever the form, e.g. under a minimum of choices. */
+  /** Not sendable yet (a required choice is missing). */
   disabled?: boolean;
   /** Full width by default. */
   className?: string;
