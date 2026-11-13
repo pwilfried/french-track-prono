@@ -4,7 +4,7 @@ import { isPlayableManagerRules, type ManagerRules } from "./manager-rules";
 
 const rules: ManagerRules = {
   budget: 100,
-  teamSize: 4,
+  minTeamSize: 4,
   quotas: [
     { sex: "F", family: "sprint", min: 1, max: 2 },
     { sex: "M", family: "sprint", min: 1, max: 2 },
@@ -31,11 +31,15 @@ describe("isPlayableManagerRules", () => {
     expect(isPlayableManagerRules(rules)).toBe(true);
   });
 
+  it("accepts a lineup as large as the minimum team", () => {
+    expect(isPlayableManagerRules({ ...rules, lineup: { max: 4, minPerFamily: {} } })).toBe(true);
+  });
+
   it.each<[string, Partial<ManagerRules>]>([
     ["no budget", { budget: 0 }],
     ["a budget with cents", { budget: 10.5 }],
-    ["a team the quotas cannot fill", { teamSize: 6 }],
-    ["a team smaller than the quota minimums", { teamSize: 1 }],
+    ["a minimum team the quotas cannot fill", { minTeamSize: 6 }],
+    ["a minimum team smaller than the quota minimums", { minTeamSize: 1 }],
     [
       "a quota whose minimum is above its maximum",
       { quotas: [{ sex: "F", family: "sprint", min: 3, max: 2 }] },
@@ -49,7 +53,7 @@ describe("isPlayableManagerRules", () => {
         ],
       },
     ],
-    ["a lineup larger than the team", { lineup: { max: 5, minPerFamily: {} } }],
+    ["a minimum team that does not cover the lineup", { lineup: { max: 5, minPerFamily: {} } }],
     ["lineup minimums above the lineup size", { lineup: { max: 3, minPerFamily: { sprint: 4 } } }],
     ["a bidding round of no hours", { rounds: { firstHours: 0, longRounds: 2, nextHours: 24 } }],
     ["no way to close the mercato", { closeModes: [] }],

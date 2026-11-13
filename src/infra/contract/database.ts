@@ -1,4 +1,7 @@
 import { execFileSync } from "node:child_process";
+import { mkdirSync, rmSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 // Direct access to the local Supabase database, for test set-up only (making an admin, creating
 // an isolated event). The app never connects this way. Uses `psql` when it is installed, else the
@@ -28,6 +31,39 @@ export function sql(statement: string): string {
 }
 
 /**
+ * Takes a lock shared by every test file (Vitest runs them in parallel workers), for a row that
+ * only exists once, like `manager_rules`. Returns the function that frees it. A lock older than
+ * a minute is taken as left behind by a crashed worker.
+ */
+export async function lockSharedRow(name: string): Promise<() => void> {
+  const dir = join(tmpdir(), `ftp-test-lock-${name}`);
+  for (;;) {
+    try {
+      mkdirSync(dir);
+      return () => rmSync(dir, { recursive: true, force: true });
+    } catch {
+      try {
+        if (Date.now() - statSync(dir).mtimeMs > 60_000)
+          rmSync(dir, { recursive: true, force: true });
+      } catch {
+        // Freed in between: try again.
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+  }
+}
+
+/**
+ * The athletes of the seed's start lists, ordered by id. Tests that borrow athletes take them
+ * from here, never from the whole table: other test files create athletes with random ids and
+ * delete them in parallel, so one of those could be picked and vanish before it is used.
+ */
+export const seedAthletes = `select distinct en.athlete_id as id from entries en
+  join events ev on ev.id = en.event_id
+  join competitions c on c.id = ev.competition_id
+  where c.slug = 'ultimate-championship-2026' order by en.athlete_id`;
+
+/**
  * A competition of its own, so that no other test (nor the seed counts) sees it: `open` events
  * whose predictions lock in an hour, then `locked` events already locked. Each has the same four
  * athletes on its start list; a fifth athlete is on none.
@@ -40,7 +76,7 @@ export function createTestCompetition(counts: { open: number; locked?: number })
   const tag = crypto.randomUUID().slice(0, 8);
   const competitionSlug = `test-${tag}`;
   const ids = sql(
-    "select string_agg(id::text, ',' order by id) from (select id from athletes order by id limit 5) a",
+    `select string_agg(id::text, ',' order by id) from (${seedAthletes} limit 5) a`,
   ).split(",");
   const athleteIds = ids.slice(0, 4);
   const competitionId = sql(`insert into competitions (slug, name, starts_on, ends_on)
@@ -92,4 +128,30 @@ export function joinTestLeague(userId: string, competitionSlug: string): void {
     )
     insert into league_competitions (league_id, competition_id)
     select l.id, c.id from l, competitions c where c.slug = '${competitionSlug}'`);
+}
+
+/** The season competitions the Manager tests share: invented, far ahead, never finished. */
+export const MANAGER_SEASON_NAME = "Saison Manager";
+
+/**
+ * The ids of `count` competitions a Manager league can be created with (#644), first one first:
+ * eligible (manager_competitions) and not finished, at least 6 for a league. Shared by every test
+ * and made eligible again at each call: the Manager rule tests replace the eligible list for a
+ * while. Their names are « Saison Manager 1 » to « Saison Manager 10 ».
+ */
+export function managerSeasonCompetitions(count = 6): string[] {
+  return sql(`
+    with c as (
+      insert into competitions (slug, name, starts_on, ends_on)
+      select 'test-manager-season-' || n, '${MANAGER_SEASON_NAME} ' || n,
+             date '2030-01-07' + 7 * n, date '2030-01-07' + 7 * n
+      from generate_series(1, 10) n
+      on conflict (slug) do update set status = 'upcoming'
+      returning id, starts_on
+    ), e as (
+      insert into manager_competitions (competition_id) select id from c on conflict do nothing
+    )
+    select string_agg(id::text, ',' order by starts_on) from (
+      select id, starts_on from c order by starts_on limit ${count}
+    ) s`).split(",");
 }

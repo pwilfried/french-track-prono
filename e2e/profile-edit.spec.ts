@@ -10,6 +10,14 @@ test("a player changes pseudo and club, then signs in with a new address", async
   await signUp(page, player);
   await page.waitForURL(/\/profil$/);
 
+  // The profile opens from the pseudo and bib of the header, on every page (#471).
+  const bar = page.getByRole("navigation", { name: "Navigation principale" });
+  await expect(bar.getByRole("link")).toHaveCount(5);
+  await expect(bar.getByRole("link", { name: "Profil" })).toHaveCount(0);
+  await page.goto("/epreuves");
+  await page.getByRole("banner").getByRole("link", { name: "Mon profil", exact: true }).click();
+  await page.waitForURL(/\/profil$/);
+
   // Pseudo and club
   await page.getByRole("link", { name: "Modifier mon profil" }).click();
   await page.waitForURL(/\/profil\/modifier$/);

@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
+import { chooseSeason, seasonReady } from "./manager-season";
 import { newPlayer, signUp } from "./players";
 
 test("the admin prices an athlete, who then shows in the catalogue of a Manager league", async ({
   page,
 }) => {
+  seasonReady();
   const tag = `${Date.now() % 1000000}`;
   const name = `Lanceuse Catalogue ${tag}`;
   const slug = `lanceuse-catalogue-${tag}`;
@@ -46,22 +48,43 @@ test("the admin prices an athlete, who then shows in the catalogue of a Manager 
     // A participant finds them in the catalogue of their league, with the filters.
     await page.goto("/manager/creer");
     await page.getByLabel("Nom de la ligue").fill(`Mercato ${tag}`);
+    await chooseSeason(page);
     await page.getByRole("button", { name: "Créer la ligue" }).click();
     await page.getByRole("link", { name: "Catalogue du mercato" }).click();
+    // The first athlete shows without scrolling on a phone (#497).
+    await page.setViewportSize({ width: 390, height: 844 });
+    const first = page.getByRole("list", { name: "Catalogue du mercato" }).getByRole("article");
+    await expect(first.first()).toBeInViewport();
+    // The search applies on Enter; each filter chip applies at once and keeps the others.
     await page.getByLabel("Rechercher un athlète").fill(`lanceuse ${tag}`);
-    await page.getByLabel("Famille").selectOption({ label: "Lancers" });
-    await page.getByLabel("Sexe").selectOption({ label: "Femmes" });
-    await page.getByText("Seulement les athlètes libres").click();
-    await page.getByRole("button", { name: "Filtrer" }).click();
+    await page.getByLabel("Rechercher un athlète").press("Enter");
+    const filters = page.getByRole("navigation", { name: "Filtres du catalogue" });
+    await filters.getByRole("link", { name: "Lancers" }).click();
+    await expect(filters.getByRole("link", { name: "Lancers" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await filters.getByRole("link", { name: "Femmes" }).click();
+    await expect(filters.getByRole("link", { name: "Femmes" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await filters.getByRole("link", { name: "Libres" }).click();
+    await expect(page).toHaveURL(/q=lanceuse.*sexe=F&famille=throws&libres=1/);
     const card = page.getByRole("article", { name });
     await expect(card).toContainText("14 cr.");
     // A free athlete shows no status label since #503: only a taken one says "Recruté".
     await expect(card).not.toContainText("Recruté");
     await expect(card).not.toContainText("Libre");
     await expect(page.getByRole("status")).toHaveText("1 athlète");
+    // Before the launch, a member sees the catalogue and who plays, without any bid (#620).
+    const band = page.getByRole("region", { name: "Avant le mercato" });
+    await expect(band).toContainText("1 participant");
+    await expect(band).toContainText("Date d'ouverture à venir");
+    await expect(card).toContainText("PB—");
+    await expect(page.getByRole("button", { name: "Enchérir" })).toHaveCount(0);
 
-    await page.getByLabel("Sexe").selectOption({ label: "Hommes" });
-    await page.getByRole("button", { name: "Filtrer" }).click();
+    await filters.getByRole("link", { name: "Hommes" }).click();
     await expect(page.getByText("Aucun athlète ne correspond.")).toBeVisible();
   } finally {
     sql(`delete from athletes where slug = '${slug}'`);

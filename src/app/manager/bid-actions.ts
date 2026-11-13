@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { UseCaseError, type ErrorCode } from "@/application/errors";
 import {
@@ -52,5 +53,6 @@ export async function closeMercatoAction(_: BidFormState, data: FormData): Promi
     throw error;
   }
   revalidatePath(`/manager/${leagueId}/catalogue`);
-  return {};
+  // The bids under way became a last round: the mercato opens its reveal (#604).
+  redirect(`/manager/${leagueId}/catalogue`);
 }

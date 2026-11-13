@@ -1,5 +1,7 @@
 // Every visible UI string lives here (French only in v1, no i18n library).
 
+import type { ManagerIntroFigures } from "@/domain/manager-intro";
+
 /** « 1er », « 2e »… */
 const ordinal = (rank: number) => (rank === 1 ? "1er" : `${rank}e`);
 const GENDER = { F: "Femmes", M: "Hommes", X: "Mixte" } as const;
@@ -35,7 +37,7 @@ export const messages = {
     ranking: "Classement",
     league: "Ma ligue",
     leagues: "Ligues",
-    profile: "Profil",
+    manager: "Manager",
   },
   home: {
     current: "Compétition en cours",
@@ -202,21 +204,41 @@ export const messages = {
       others: "Autres compétitions",
       coming: "Compétitions à venir",
     },
-    category: "Catégorie",
-    filters: { all: "Toutes", F: "Femmes", M: "Hommes", X: "Mixte" },
+    filters: { todo: "À faire", posed: "Posés", done: "Terminées", all: "Toutes" },
     gender: GENDER,
     /** « 100 m femmes ». */
     name: (discipline: string, gender: keyof typeof GENDER) =>
       `${discipline} ${GENDER[gender].toLowerCase()}`,
-    genderInitial: { F: "F", M: "H", X: "X" },
     status: { upcoming: "À venir", live: "En cours", finished: "Terminé" },
+    /** Section titles: « Ce soir · samedi 15 août », « Demain · … », then the date. */
+    tonight: (day: string) => `Ce soir · ${day}`,
+    tomorrow: (day: string) => `Demain · ${day}`,
+    done: "Déjà courues",
     featured: "Phare",
-    final: "Finale",
     posed: "✓ Posé",
     addPrediction: "+ Prono",
+    locksIn: (duration: string) => `Verrouille dans ${duration}`,
+    nextLocksIn: (duration: string) => `la prochaine verrouille dans ${duration}`,
+    locksOn: (day: string, hour: string) => `Verrouille le ${day} à ${hour}`,
+    editable: "modifiable",
+    perfect: "Podium parfait !",
+    noPrediction: "Pas de prono",
+    noPoints: "—",
+    progress: {
+      title: "Ma progression",
+      posed: (posed: number, total: number) => `${posed} / ${total} podiums posés`,
+      points: (points: number) => `${points} ${points <= 1 ? "pt" : "pts"}`,
+      start: (days: number) => `Premières finales dans ${days} j`,
+      tonight: (todo: number) =>
+        todo === 0
+          ? "Rien à poser ce soir."
+          : `${todo} ${todo === 1 ? "finale" : "finales"} à faire ce soir`,
+      open: "Tous les pronos sont ouverts : prends de l'avance, tu pourras les modifier jusqu'au départ.",
+    },
     cardLabel: (discipline: string, gender: string, hour: string) =>
       `${discipline}, ${gender}, ${hour}`,
     empty: "Aucune épreuve pour ce filtre.",
+    allPosed: "Tout est posé pour l'instant.",
     loading: "Chargement des épreuves…",
   },
   leaderboard: {
@@ -282,14 +304,13 @@ export const messages = {
     title: "French Track Manager",
     slogan: "Recrute tes athlètes. Construis ton équipe. Domine la saison.",
     back: "French Track Manager",
-    entry: "French Track Manager",
     mine: "Mes ligues Manager",
     empty: "Tu n'es dans aucune ligue Manager pour l'instant.",
     create: "Créer une ligue Manager",
     createTitle: "Créer une ligue Manager",
     createSubtitle: "Tu en deviens l'administrateur.",
     rulesNote:
-      "Les règles (budget, quotas, compétitions) sont celles de French Track Prono au moment de la création, et ne changent plus ensuite.",
+      "Les règles (budget, quotas, alignement) sont celles de French Track Prono au moment de la création, et ne changent plus ensuite.",
     nameLabel: "Nom de la ligue",
     nameHint: "2 à 40 caractères.",
     publicLabel: "Ligue publique",
@@ -298,20 +319,84 @@ export const messages = {
     submit: "Créer la ligue",
     publicBadge: "Publique",
     privateBadge: "Privée",
-    participantsCount: (n: number, max: number) => `${n} / ${max} participants`,
+    participantsCount: (n: number, target: number) => `${n} / ${target} participants`,
     adminBadge: "admin",
     participants: "Participants",
-    ready: "Prêt : la saison peut être lancée.",
-    notReady: (min: number, max: number) =>
-      `Il faut de ${min} à ${max} participants, en nombre pair, pour lancer la saison.`,
+    ready: "Tout le monde est là : le mercato peut être lancé.",
+    awaited: (n: number) => (n <= 1 ? "Encore 1 joueur attendu." : `Encore ${n} joueurs attendus.`),
+    opensAt: (when: string) =>
+      `Le mercato s'ouvrira le ${when} (heure de Paris) si tous les joueurs sont là ; sinon il attendra.`,
+    mercatoOpened: (when: string) => `Mercato ouvert depuis le ${when} (heure de Paris).`,
+    /** An instant in Paris time: « samedi 10 janvier à 20:00 ». */
+    when: (iso: string) =>
+      new Date(iso).toLocaleString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Paris",
+      }),
+    inviteTitle: "Inviter des amis",
+    mercatoTitle: "Régler le mercato",
+    mercatoHint: "Seul le créateur règle le mercato, jusqu'à son lancement.",
+    competitionsLabel: "Compétitions de la saison",
+    competitionsHint:
+      "Au moins 6, parmi celles qui ne sont pas terminées. Le championnat est un aller-retour : le nombre de joueurs en découle.",
+    competitionsNone:
+      "Il n'y a pas encore 6 compétitions disponibles : reviens quand le calendrier sera complété.",
+    competitionsEditLabel: "Compétitions de la saison",
+    competitionsEditHint:
+      "Tu peux en ajouter ou en retirer jusqu'au lancement du mercato. Le nombre de joueurs suit, jamais sous le nombre d'inscrits.",
+    competitionOption: (name: string, when: string) => `${name} · ${when}`,
+    /** « 8 compétitions → 4 joueurs · 6 journées aller-retour + 2 bonus ». */
+    seasonFormat: (competitions: number, players: number, duelDays: number, bonusDays: number) =>
+      `${competitions} compétitions → ${players} joueurs · ${duelDays} journées aller-retour${bonusDays > 0 ? ` + ${bonusDays} bonus` : ""}`,
+    seasonTooFew: (competitions: number) =>
+      `${competitions} ${competitions <= 1 ? "compétition" : "compétitions"} : il en faut au moins 6.`,
+    saveCompetitions: "Enregistrer les compétitions",
+    competitionsSaved: "Compétitions enregistrées.",
+    /** The custom mercato ends less than 1 hour before the first competition. */
+    seasonMissed: (missed: string, when: string, next: string | null) =>
+      `Ton mercato finira après le début de ${missed} (le ${when}). Elle ne comptera pas${next ? ` : la saison commencera à ${next}` : ""}.`,
+    seasonShort:
+      "Il ne reste plus assez de compétitions pour l'aller-retour : ajoute une compétition ou raccourcis le mercato pour pouvoir le lancer.",
+    startsAtLabel: "Début du mercato (heure de Paris)",
+    startsAtHint:
+      "Le mercato s'ouvre à cette heure si et seulement si tous les joueurs sont là. Laisse vide pour le lancer toi-même.",
+    roundsLabel: "Durée des tours",
+    roundsAuto: (hours: number) => `Automatique · règles French Track (${hours} h)`,
+    roundsCustom: "Personnalisé",
+    firstRoundLabel: "1er tour",
+    nextRoundsLabel: "Tours suivants",
+    hours: (n: number) => `${n} h`,
+    calendarTitle: "Calendrier des tours",
+    calendarRound: (n: number, hours: number) => `Tour ${n} · ${hours} h`,
+    calendarEnds: (when: string) => `jusqu'au ${when}`,
+    saveMercato: "Enregistrer les réglages",
+    savingMercato: "Enregistrement…",
+    mercatoSaved: "Réglages enregistrés.",
+    launch: "Lancer le mercato maintenant",
+    launching: "Lancement…",
+    launchWaiting: (n: number) =>
+      n <= 1 ? "Encore 1 joueur attendu" : `Encore ${n} joueurs attendus`,
     rules: "Règles de la ligue",
     budget: (n: number) => `${n} crédits de budget`,
-    teamSize: (n: number) => `Équipes de ${n} athlètes`,
+    minTeamSize: (n: number) => `Équipes d'au moins ${n} athlètes, sans maximum`,
     lineup: (n: number) => `${n} athlètes alignés au plus par compétition`,
     competitions: (n: number) =>
       `${n} ${n <= 1 ? "compétition éligible" : "compétitions éligibles"}`,
+    /** A day in Paris time: « samedi 10 janvier ». */
+    day: (iso: string) =>
+      new Date(iso).toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        timeZone: "Europe/Paris",
+      }),
     publicTitle: "Ligues publiques",
     publicEmpty: "Aucune ligue publique avec des places libres pour l'instant.",
+    publicNoOther: "Pas d'autre ligue publique avec des places libres pour l'instant.",
     joinLeague: (name: string) => `Rejoindre la ligue ${name}`,
     join: "Rejoindre",
     joining: "…",
@@ -323,20 +408,92 @@ export const messages = {
     joinSubmit: "Rejoindre la ligue",
     shareText: (name: string) => `Rejoins ma ligue French Track Manager « ${name} »`,
     catalogueLink: "Catalogue du mercato",
+    /** The presentation of the mode, until the player has a Manager league (#618). */
+    intro: {
+      eyebrow: "Nouveau mode de jeu",
+      tagline:
+        "Deviens manager : recrute tes athlètes, aligne-les à chaque compétition et affronte tes amis toute la saison.",
+      stepsLabel: "Le Manager en 5 étapes",
+      steps: (f: ManagerIntroFigures) => [
+        {
+          title: "Recrute au mercato",
+          text: `${f.budget} crédits pour recruter au moins ${f.minTeamSize} athlètes, par enchères secrètes.`,
+        },
+        {
+          title: "Garde ton équipe toute la saison",
+          text: "Tes athlètes restent avec toi jusqu'à la dernière compétition.",
+        },
+        {
+          title: "Aligne tes titulaires",
+          text: `Avant chaque compétition, choisis jusqu'à ${f.lineupMax} athlètes.`,
+        },
+        {
+          title: "Marque des points",
+          text: `Barème World Athletics, bonus sportifs (+${f.winBonus} pour une victoire) et tes pronos.`,
+        },
+        {
+          title: "Gagne le championnat",
+          text: "Affronte chaque participant deux fois, en confrontations aller-retour.",
+        },
+      ],
+      create: "Créer une ligue Manager",
+      haveCode: "J'ai un code d'invitation",
+      skip: "Passer",
+      skipLabel: "Passer la présentation",
+    },
+    /** The tutorial (#616): seven short steps, at the first visit then on demand. */
+    tutorial: {
+      label: "Comment ça marche",
+      progress: (step: number, total: number) => `Comment ça marche · ${step} / ${total}`,
+      stepLabel: (step: number, total: number) => `Étape ${step} sur ${total}`,
+      skip: "Passer",
+      skipLabel: "Passer le tutoriel",
+      previous: "Précédent",
+      next: "Suivant",
+      done: "C'est parti",
+      open: "Comment ça marche ?",
+      steps: (f: ManagerIntroFigures) => [
+        {
+          title: "Une ligue entre amis",
+          text: `Crée ta ligue ou rejoins celle d'un ami : de ${f.leagueMin} à ${f.leagueMax} joueurs, en nombre pair. Les règles sont les mêmes pour tous.`,
+        },
+        {
+          title: "Le mercato",
+          text: `Tu as ${f.budget} crédits pour recruter. Les offres sont secrètes : à la fin de chaque tour, les cartes se retournent et les enchères sont dévoilées.`,
+        },
+        {
+          title: "Ton équipe pour la saison",
+          text: `Au moins ${f.minTeamSize} athlètes, gardés jusqu'à la dernière compétition. Pas d'achat ni de vente en cours de route.`,
+        },
+        {
+          title: "Aligne tes titulaires",
+          text: `Avant chaque compétition, place jusqu'à ${f.lineupMax} titulaires au stade, sur les places de leur famille ou les places libres. Les autres restent remplaçants.`,
+        },
+        {
+          title: "Marque des points",
+          text: `Tes titulaires marquent selon le barème World Athletics, plus les bonus sportifs (+${f.winBonus} pour une victoire). Tes pronos de la compétition comptent aussi.`,
+        },
+        {
+          title: "Une confrontation par journée",
+          text: "À chaque compétition, tu affrontes un autre joueur : victoire 3 points, nul 1, défaite 0. Tu joues chacun deux fois, à l'aller et au retour.",
+        },
+        {
+          title: "Deviens champion",
+          text: "À la fin de la saison, le premier du classement est champion. Ton palmarès reste dans ton profil.",
+        },
+      ],
+    },
   },
   catalogue: {
     title: "Catalogue du mercato",
     subtitle: "Les athlètes à recruter, avec leur prix de départ.",
     search: "Rechercher un athlète",
     searchPlaceholder: "Nom, pays ou discipline",
-    sex: "Sexe",
-    family: "Famille",
-    all: "Toutes",
-    allSexes: "Tous",
+    filters: "Filtres du catalogue",
+    all: "Tous",
     sexes: { F: "Femmes", M: "Hommes" },
     sexShort: { F: "F", M: "H" },
-    availableOnly: "Seulement les athlètes libres",
-    apply: "Filtrer",
+    availableOnly: "Libres",
     found: (n: number) => (n <= 1 ? `${n} athlète` : `${n} athlètes`),
     empty: "Aucun athlète ne correspond.",
     emptyCatalogue: "Le catalogue est vide : l'admin n'a encore donné de prix à aucun athlète.",
@@ -358,11 +515,15 @@ export const messages = {
     noTeam: "Aucun athlète remporté pour l'instant.",
     wonIn: (round: number) => `tour ${round}`,
     secret:
-      "Tes offres sont secrètes : les autres participants ne voient ni tes offres, ni leur nombre. La dernière offre compte.",
+      "Tes offres restent secrètes jusqu'à la fin du tour : les autres participants ne voient ni tes offres, ni leur nombre. Puis toutes les offres du tour sont révélées. La dernière offre compte.",
     myBids: "Mes offres",
     noBids: "Aucune offre pour l'instant.",
-    mercatoClosed:
-      "Le mercato de cette ligue n'est pas ouvert : les enchères commenceront à son ouverture.",
+    beforeMercato: "Avant le mercato",
+    opensIn: "Ouverture dans",
+    opensLater: "Date d'ouverture à venir",
+    participants: (n: number) => (n <= 1 ? `${n} participant` : `${n} participants`),
+    justJoined: (pseudo: string) => `${pseudo} vient de rejoindre la ligue`,
+    prepare: "Prépare tes choix : les enchères s'ouvrent au lancement.",
     mercatoOver: "Le mercato de cette ligue est clos : les équipes sont faites.",
     lastBidder:
       "Plus personne d'autre ne peut recruter : tu peux clore le mercato. Tes offres en cours seront traitées, puis le mercato sera clos pour tout le monde.",
@@ -379,17 +540,300 @@ export const messages = {
     withdraw: "Retirer",
     bidding: "…",
   },
+  roundReveal: {
+    title: "L'heure de vérité",
+    subtitle: (round: number) => `Fin du tour ${round} : tes offres`,
+    hiddenLabel: "Offre cachée",
+    yourBid: (n: number) => `Ton offre : ${n} cr`,
+    won: "GAGNÉ",
+    lost: "PERDU",
+    wonLine: (n: number) => `${n} crédits · à toi pour la saison`,
+    lostLine: (pseudo: string, n: number) => `${pseudo} l'a eu à ${n} cr`,
+    cardLabel: (name: string, won: boolean) => `${name} : ${won ? "gagné" : "perdu"}`,
+    revealNext: "Révéler la suivante",
+    revealAll: "Tout révéler",
+    noBid: "Tu n'as fait aucune offre pendant ce tour.",
+    tally: "Mon bilan du tour",
+    tallyWon: "Offres gagnées",
+    tallyAthletes: "Athlètes",
+    tallyLeft: "Crédits restants",
+    ratio: (n: number, of: number) => `${n}/${of}`,
+    seeAll: "Voir toutes les enchères du tour",
+    allTitle: (round: number) => `Toutes les enchères du tour ${round}`,
+    offers: (n: number) => (n <= 1 ? "seule offre" : `${n} offres`),
+    empty: "Personne n'a fait d'offre pendant ce tour.",
+    backToMercato: "Retour au mercato · tour suivant",
+    seeTeam: "Voir mon équipe",
+    roundsTitle: "Résultats des tours",
+    roundLink: (round: number) => `Tour ${round}`,
+  },
+  team: {
+    title: "Mon équipe",
+    subtitle: "Tes athlètes pour toute la saison.",
+    link: "Mon équipe",
+    summary: "Résumé de mon équipe",
+    athletes: "Effectif",
+    count: (n: number) => (n <= 1 ? `${n} athlète` : `${n} athlètes`),
+    spent: "Crédits dépensés",
+    left: "Crédits restants",
+    fixed: "Équipe fixe pour la saison",
+    notFixed: "Le mercato n'est pas fini : ton équipe peut encore changer.",
+    empty: "Aucun athlète dans ton équipe pour l'instant.",
+    groups: {
+      sprint: "Sprint et haies",
+      middle: "Demi-fond",
+      long: "Fond",
+      jumps: "Sauts",
+      throws: "Lancers",
+      combined: "Épreuves combinées",
+    },
+    codes: {
+      sprint: "SPR",
+      middle: "DEM",
+      long: "FON",
+      jumps: "SAU",
+      throws: "LAN",
+      combined: "COM",
+    },
+    /** « aucune lanceuse », « aucun sprinteur »: what was missing at the end of the mercato. */
+    nobody: {
+      F: {
+        sprint: "aucune sprinteuse",
+        hurdles: "aucune hurdleuse",
+        middle: "aucune demi-fondeuse",
+        long: "aucune fondeuse",
+        relay: "aucune relayeuse",
+        horizontal_jumps: "aucune sauteuse en longueur ou au triple saut",
+        vertical_jumps: "aucune sauteuse en hauteur ou à la perche",
+        throws: "aucune lanceuse",
+        combined: "aucune heptathlonienne",
+      },
+      M: {
+        sprint: "aucun sprinteur",
+        hurdles: "aucun hurdleur",
+        middle: "aucun demi-fondeur",
+        long: "aucun fondeur",
+        relay: "aucun relayeur",
+        horizontal_jumps: "aucun sauteur en longueur ou au triple saut",
+        vertical_jumps: "aucun sauteur en hauteur ou à la perche",
+        throws: "aucun lanceur",
+        combined: "aucun décathlonien",
+      },
+    },
+    short: (count: number, minimum: number, nobody: string[]) => {
+      const athletes = count <= 1 ? "athlète" : "athlètes";
+      const missing =
+        nobody.length === 0
+          ? ""
+          : nobody.length === 1
+            ? nobody[0]
+            : `${nobody.slice(0, -1).join(", ")} ni ${nobody[nobody.length - 1]}`;
+      const why = missing ? ` : il ne restait plus ${missing} libre à la fin du mercato` : "";
+      return `Ton équipe compte ${count} ${athletes} au lieu de ${minimum}${why}. Tu joues quand même.`;
+    },
+    cardLabel: (name: string, discipline: string, paid: number) =>
+      `${name}, ${discipline}, payé ${paid} crédits`,
+    selected: "Sélectionné",
+    absent: "Absent·e",
+  },
+  lineup: {
+    title: "Mon alignement",
+    subtitle: "Aligne tes athlètes avant chaque compétition.",
+    link: "Mon alignement",
+    competitions: "Compétitions éligibles",
+    noCompetition: "Aucune compétition éligible dans cette ligue pour l'instant.",
+    status: { todo: "À aligner", validated: "Validé", locked: "Verrouillé" },
+    places: (filled: number, total: number) => `${filled}/${total} places`,
+    stadium: "Le stade",
+    place: {
+      sprint: "Sprint",
+      middle: "Demi-fond",
+      long: "Fond",
+      jumps: "Sauts",
+      throws: "Lancers",
+      combined: "Combinées",
+      free: "Libre",
+    },
+    emptyPlace: (place: string) => `Place ${place}, vide`,
+    takenPlace: (place: string, name: string) => `Place ${place} : ${name}, renvoyer sur le banc`,
+    lockedPlace: (place: string, name: string) => `Place ${place} : ${name}`,
+    unfillablePlace: (place: string) => `Place ${place} : aucun athlète de ton équipe disponible`,
+    nobody: "Personne",
+    bench: "Remplaçants",
+    benchEmpty: "Tous tes athlètes engagés sont alignés.",
+    hint: "Touche un athlète du banc puis une place qui s'allume, ou fais-le glisser. Touche un athlète du stade pour le renvoyer sur le banc.",
+    toFill: (places: { label: string; count: number }[]) =>
+      `À remplir : ${places.map((p) => (p.count > 1 ? `${p.label} ×${p.count}` : p.label)).join(", ")}`,
+    full: "Toutes les places sont remplies.",
+    validate: "Valider mon alignement",
+    validated: "Alignement validé, modifiable jusqu'au verrouillage.",
+    locked: "Verrouillé : la compétition a commencé.",
+    notOver: "Le mercato n'est pas fini : tu aligneras ton équipe une fois qu'il sera clos.",
+    noTeam: "Ton équipe n'a aucun athlète : rien à aligner.",
+  },
+  managerPoints: {
+    title: "Mes points",
+    link: "Mes points",
+    summary: "Mon score de la compétition",
+    total: "Total de la compétition",
+    points: (n: number) => `${n} pts`,
+    hungarian: "Barème hongrois",
+    bonus: "Bonus sportifs",
+    predictions: "Mes pronos",
+    starters: "Mes titulaires",
+    athletePoints: (n: number) => `${n}`,
+    performance: (a: { discipline: string | null; mark: string | null; status: string | null }) =>
+      a.status === null
+        ? "Pas de performance saisie"
+        : a.status === "ok"
+          ? `${a.discipline} · ${a.mark}`
+          : `${a.discipline} · ${{ dns: "Non-partant", dnf: "Abandon", dq: "Disqualifié·e" }[a.status] ?? a.status}`,
+    bonusTag: (
+      bonus:
+        | "first"
+        | "second"
+        | "third"
+        | "personal_best"
+        | "season_best"
+        | "national_record"
+        | "area_record"
+        | "world_record",
+      points: number,
+    ) =>
+      `${
+        {
+          first: "1re",
+          second: "2e",
+          third: "3e",
+          personal_best: "Record perso",
+          season_best: "Meilleure perf. de la saison",
+          national_record: "Record national",
+          area_record: "Record continental",
+          world_record: "Record du monde",
+        }[bonus]
+      } +${points}`,
+    help: "La performance donne les points, quelle que soit la place ; les bonus s'ajoutent.",
+    notYet: "Les points de cette compétition ne sont pas encore calculés.",
+    noLineup: "Pas d'alignement validé avant le verrouillage : 0 point pour cette compétition.",
+    lineupLink: "Mon alignement",
+  },
+  managerChampionship: {
+    matchdayLink: "La journée",
+    standingsLink: "Classement",
+    matchdays: "Journées du championnat",
+    matchdayTab: (round: number) => `J${round}`,
+    matchdayTabLabel: (round: number) => `Journée ${round}`,
+    matchdayTitle: (round: number) => `Journée ${round}`,
+    noCompetition: "Sans compétition",
+    leg: { first: "Aller", return: "Retour" } as Record<"first" | "return", string>,
+    duelCount: (n: number) => `${n} ${n <= 1 ? "confrontation" : "confrontations"}`,
+    state: {
+      played: "Terminée",
+      upcoming: "À venir",
+      bonus: "Journée bonus",
+      not_played: "Non jouée",
+    } as Record<"played" | "upcoming" | "bonus" | "not_played", string>,
+    duels: "Confrontations",
+    vs: "contre",
+    duelLabel: (home: string, away: string) => `${home} contre ${away}`,
+    myDuel: "Ma confrontation",
+    score: (n: number | null) => (n === null ? "–" : `${n}`),
+    result: (result: "home" | "away" | "draw" | null) =>
+      result === null
+        ? "Résultat après le calcul des points Manager"
+        : result === "draw"
+          ? "Match nul · +1 chacun"
+          : result === "home"
+            ? "Victoire à domicile · +3"
+            : "Victoire à l'extérieur · +3",
+    bonusText:
+      "Journée bonus : chacun marque ses points Manager, sans confrontation ni points au classement.",
+    notPlayedText: "Plus de compétition pour cette journée : elle ne se joue pas.",
+    standingsTitle: "Classement",
+    standingsCaption: "Classement du championnat",
+    columns: {
+      rank: "Rang",
+      player: "Joueur",
+      wins: "V",
+      draws: "N",
+      losses: "D",
+      difference: "Diff.",
+      points: "Pts",
+    },
+    columnLabels: {
+      wins: "Victoires",
+      draws: "Matchs nuls",
+      losses: "Défaites",
+      difference: "Différence de points Manager",
+      points: "Points au championnat",
+    },
+    difference: (n: number) => (n > 0 ? `+${n}` : `${n}`),
+    me: "toi",
+    tieRule:
+      "Victoire 3 points, nul 1, défaite 0. À égalité : nombre de victoires, puis différence de points Manager (marqués moins encaissés), puis points Manager marqués. Les journées bonus ne comptent pas.",
+    notStarted: "Le calendrier sera tiré à la clôture du mercato : tout le monde part de zéro.",
+    nextTitle: (round: number) => `Journée ${round} · le choc`,
+    nextAgainst: (home: boolean) => (home ? "À domicile contre" : "À l'extérieur contre"),
+    noNext: "Plus de confrontation à jouer cette saison.",
+    calendarLink: "Voir le calendrier",
+    ended: "Saison terminée : le classement est figé.",
+    endLink: "Voir la fin de saison",
+  },
+  managerSeasonEnd: {
+    title: "Fin de saison",
+    link: "Fin de saison",
+    notOver:
+      "La saison continue : elle se termine après la dernière journée du calendrier, journées bonus comprises. Le champion et le palmarès viendront alors.",
+    champion: "Tu es champion",
+    place: (rank: number, players: number) => `Tu finis ${ordinal(rank)} sur ${players}`,
+    championOf: (pseudo: string) => `Champion : ${pseudo}`,
+    season: (league: string, year: number) => `${league} · saison ${year}`,
+    summary: (champion: boolean, wins: number, played: number) =>
+      champion
+        ? `${wins} ${wins <= 1 ? "victoire" : "victoires"} en ${played} ${played <= 1 ? "confrontation" : "confrontations"} : le titre est pour toi.`
+        : `${wins} ${wins <= 1 ? "victoire" : "victoires"} en ${played} ${played <= 1 ? "confrontation" : "confrontations"}. La prochaine saison sera la bonne.`,
+    standingsTitle: "Classement final",
+    standingsCaption: "Classement final du championnat",
+    championBadge: "Champion",
+    mySeason: "Ma saison",
+    managerPoints: "Points Manager marqués",
+    record: "V · N · D",
+    recordValue: (wins: number, draws: number, losses: number) => `${wins} · ${draws} · ${losses}`,
+    bestAthlete: "Meilleur athlète",
+    bestAthleteValue: (name: string, points: number) => `${name} · ${points} pts`,
+    noBestAthlete: "Aucun athlète aligné",
+    rival: (pseudo: string) => `Face à ${pseudo}`,
+    rivalValue: (wins: number, draws: number, losses: number) =>
+      `${wins} V · ${draws} N · ${losses} D`,
+    nextSeason:
+      "Nouvelle saison = nouvelle ligue et nouveau mercato. Ton palmarès reste dans ton profil.",
+    honoursTitle: "Palmarès Manager",
+    honourPlace: (champion: boolean, rank: number, players: number) =>
+      champion ? "🏆 Champion" : `${ordinal(rank)} sur ${players}`,
+  },
   leagues: {
     title: "Mes ligues",
     back: "Mes ligues",
-    members: (n: number) => `${n} ${n <= 1 ? "membre" : "membres"}`,
-    codeShort: (code: string) => `code ${code}`,
+    players: (n: number) => `${n} ${n <= 1 ? "joueur" : "joueurs"}`,
     createdByMe: "créée par toi",
-    rankOf: (rank: number, of: number) => `${ordinal(rank)} sur ${of}`,
+    createdBy: (pseudo: string) => `créée par ${pseudo}`,
+    noCompetitionTag: "sans compétition",
+    rank: (rank: number) => ordinal(rank),
+    rankLabel: (rank: number) => `Ta place : ${ordinal(rank)}`,
+    noPointsYet: "Pas encore de points",
     emptyTitle: "Joue entre amis",
     emptyText: "Crée une ligue et partage son code, ou rejoins celle d'un ami.",
     create: "Créer une ligue",
     join: "Rejoindre avec un code",
+    haveCode: "J'ai un code",
+    myLeagues: "Mes ligues",
+    aloneTitle: "Tu es seul pour l'instant",
+    aloneText: "Une ligue se joue entre amis : envoie-leur le lien, ils arrivent directement ici.",
+    inviteFriends: "Inviter mes amis",
+    orGiveCode: (code: string) => `Ou donne le code ${code}`,
+    linkCopied: "✓ Lien copié : colle-le à tes amis",
+    invite: "Inviter",
+    tieHelp: "Comment sont départagées les égalités ?",
     createTitle: "Créer une ligue",
     listSubtitle: "Une ligue compte une ou plusieurs compétitions.",
     createSubtitle: "Ses compétitions maintenant ou plus tard, leurs points s'additionnent.",
@@ -409,8 +853,13 @@ export const messages = {
     publicHint:
       "Tout le monde peut la trouver et la rejoindre sans code, jusqu'à 200 joueurs. Son nom doit rester correct.",
     publicBadge: "Publique",
-    publicTitle: "Ligues publiques",
-    publicEmpty: "Pas encore de ligue publique à rejoindre. Crée la première !",
+    publicTitle: "Autres ligues publiques",
+    /** When no public league is left to join, from the player's own public leagues (#496). */
+    publicNotice: {
+      empty: "Pas encore de ligue publique à rejoindre. Crée la première !",
+      no_other: "Pas d'autre ligue publique à rejoindre pour l'instant.",
+      only_mine: "Tu possèdes déjà la seule ligue publique.",
+    },
     publicJoin: "Rejoindre",
     publicJoinLabel: (name: string) => `Rejoindre la ligue publique ${name}`,
     publicJoining: "…",
@@ -460,7 +909,6 @@ export const messages = {
     leave: "Quitter la ligue",
     leaving: "Départ…",
     actions: "Gérer la ligue",
-    general: "Classement général",
     inviteTitle: "Rejoindre une ligue",
     inviteSubtitle: "Lien d'invitation",
     invited: (code: string) => `Tu as été invité dans une ligue avec le code ${code}.`,
@@ -486,6 +934,7 @@ export const messages = {
       "Pas encore de points ce soir : ils arrivent dès que les résultats des finales du jour sont saisis.",
     notRankedTonight: "Pas de points pour toi ce soir.",
     predict: "Faire mes pronos",
+    visitor: "Connecte-toi pour poser tes podiums et entrer au classement.",
     starts: (startsOn: string, days: number) => {
       const day = new Date(`${startsOn}T12:00:00Z`).toLocaleDateString("fr-FR", {
         weekday: "short",
@@ -590,6 +1039,46 @@ export const messages = {
     saved: (n: number) =>
       `✓ Liste de départ enregistrée : ${n} ${n <= 1 ? "athlète" : "athlètes"}.`,
   },
+  performances: {
+    title: "Performances",
+    back: "Épreuve",
+    link: "Performances Manager",
+    intro:
+      "Pour French Track Manager : la place, la marque et les records de chaque athlète. Une nouvelle saisie remplace la précédente.",
+    empty: "Personne au départ : saisis d'abord la liste de départ.",
+    missing: (missing: number, linedUp: number) =>
+      linedUp === 0
+        ? "Aucun athlète de cette épreuve n'est aligné dans une ligue Manager."
+        : missing === 0
+          ? linedUp === 1
+            ? "✓ L'athlète aligné a une performance."
+            : `✓ Les ${linedUp} athlètes alignés ont une performance.`
+          : `${missing} ${missing <= 1 ? "athlète aligné attend" : "athlètes alignés attendent"} une performance (sur ${linedUp}).`,
+    linedUp: "Aligné",
+    linedUpMissing: "Aligné · à saisir",
+    status: "Statut",
+    statusName: {
+      none: "Non saisi",
+      ok: "Arrivé",
+      dns: "Non partant (DNS)",
+      dnf: "Abandon (DNF)",
+      dq: "Disqualifié (DQ)",
+    },
+    place: "Place",
+    mark: "Marque",
+    records: (name: string) => `Records de ${name}`,
+    recordShort: { pb: "RP", sb: "MPS", nr: "RN", ar: "RC", wr: "RM" },
+    recordName: {
+      pb: "Record personnel",
+      sb: "Meilleure performance de la saison",
+      nr: "Record national",
+      ar: "Record continental",
+      wr: "Record du monde",
+    },
+    save: "Enregistrer les performances",
+    saving: "Enregistrement…",
+    saved: (n: number) => `✓ Performances enregistrées : ${n} ${n <= 1 ? "athlète" : "athlètes"}.`,
+  },
   install: {
     title: "Installe l'appli",
     body: "Tes pronos en un geste, sur ton écran d'accueil.",
@@ -632,6 +1121,8 @@ export const messages = {
       create_discipline: "Discipline créée",
       moderate_club: "Club modifié",
       set_manager_rules: "Règles Manager modifiées",
+      set_performances: "Performances saisies",
+      run_manager_scoring: "Points Manager calculés",
     },
     noEvent: "Épreuve supprimée",
     size: (
@@ -648,7 +1139,9 @@ export const messages = {
         | "moderate_player"
         | "create_discipline"
         | "moderate_club"
-        | "set_manager_rules",
+        | "set_manager_rules"
+        | "set_performances"
+        | "run_manager_scoring",
       n: number,
     ) =>
       kind === "set_rule" || kind === "set_manager_rules"
@@ -669,7 +1162,7 @@ export const messages = {
                       ? "compétition"
                       : kind === "set_odds"
                         ? `${n} cotes`
-                        : kind === "run_scoring"
+                        : kind === "run_scoring" || kind === "run_manager_scoring"
                           ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
                           : kind === "set_results"
                             ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
@@ -829,7 +1322,7 @@ export const messages = {
       "Les règles générales de French Track Manager. Une ligue copie les règles en vigueur à sa création et les garde : un changement ne touche que les ligues créées ensuite.",
     team: "Budget et équipe",
     budget: "Budget de départ (crédits)",
-    teamSize: "Taille d'une équipe",
+    minTeamSize: "Taille minimum d'une équipe",
     quotas: "Quotas de l'équipe (minimum et maximum par sexe)",
     quotaHint: "Une famille à 0 au maximum ne se recrute pas.",
     family: "Famille",
@@ -930,6 +1423,7 @@ export const messages = {
     create: "Nouvel athlète",
     createSubmit: "Créer l'athlète",
     mainDiscipline: "Discipline principale",
+    offCatalogueNoMainDiscipline: "Absent du catalogue : discipline principale manquante",
   },
   adminDashboard: {
     title: (pseudo: string) => `Bonjour ${pseudo}`,
@@ -968,7 +1462,6 @@ export const messages = {
     newCompetition: "+ Nouvelle compétition",
   },
   adminList: {
-    search: "Chercher",
     filters: "Filtres",
     selectAll: "Tout sélectionner sur la page",
     select: (label: string) => `Sélectionner ${label}`,
@@ -1030,6 +1523,10 @@ export const messages = {
     none: "Aucune compétition.",
     scope: { international: "Internationale", france: "Française" },
     type: "Type",
+    venueLabel: "Lieu",
+    venue: { outdoor: "En plein air", indoor: "En salle" },
+    /** The chip of an indoor competition (#642); nothing for outdoor. */
+    indoorChip: "Salle",
     city: "Ville",
     startsOn: "Début",
     endsOn: "Fin",
@@ -1054,6 +1551,12 @@ export const messages = {
     noAthlete: "Personne n'est engagé : cherche un athlète ci-dessus.",
     athletesList: "Athlètes engagés",
     withdraw: (name: string) => `Retirer ${name} de la compétition`,
+    managerTitle: "Points Manager",
+    managerHint:
+      "Après le verrouillage : barème World Athletics des titulaires, bonus sportifs et pronos de chaque participant. Relance le calcul après une correction des performances ou des pronos.",
+    managerCompute: "Calculer les points Manager",
+    managerComputed: (n: number) =>
+      `✓ Points Manager calculés : ${n} ${n <= 1 ? "participant" : "participants"}.`,
   },
   odds: {
     link: "Cotes",
@@ -1130,7 +1633,7 @@ export const messages = {
   },
   account: {
     signIn: "Se connecter",
-    myProfile: (pseudo: string) => `Mon profil : ${pseudo}`,
+    myProfile: "Mon profil",
     backOffice: "Back-office",
   },
   badges: {
@@ -1203,7 +1706,6 @@ export const messages = {
     allBadges: "Tous les badges sont à toi !",
     emailPrivate: "Ton e-mail reste privé : il n'apparaît jamais dans l'application.",
     signOut: "Se déconnecter",
-    signingOut: "Déconnexion…",
     deleteLink: "Supprimer mon compte",
     joined: (club: string | null, date: string) =>
       `${club ? `${club} · ` : ""}joueur depuis le ${date}`,
@@ -1513,9 +2015,6 @@ export const messages = {
     subtitle:
       "Les clubs importés chaque mois et ceux saisis par les joueurs. Valide, corrige, ajoute ou supprime ; chaque action est notée dans l'historique.",
     searchLabel: "Nom ou ville",
-    search: "Chercher",
-    pendingOnly: "À valider seulement",
-    empty: "Aucun club pour cette recherche.",
     pending: "À valider",
     source: { import: "Importé", player: "Saisi par un joueur", admin: "Ajouté par l'admin" },
     players: (n: number) => `${n} ${n <= 1 ? "joueur" : "joueurs"}`,
@@ -1525,11 +2024,8 @@ export const messages = {
     newClub: "+ Nouveau club",
     create: "Créer le club",
     save: "Enregistrer",
-    edit: "Modifier",
     validate: "Valider",
     pendingAction: "…",
-    remove: "Supprimer le club",
-    removing: "Suppression…",
     done: "✓ C'est fait.",
     summary: (total: number, pending: number) =>
       `${total} ${total <= 1 ? "club" : "clubs"} · ${pending} à valider`,
@@ -1750,6 +2246,10 @@ export const messages = {
     ATHLETE_INVALID: "Il faut un nom, un code pays à trois lettres (FRA, USA…) et un genre.",
     MARK_INVALID:
       "Cette marque ne correspond pas à la discipline (ex. 10.62, 1:56.70, 2.04, 8125).",
+    PERFORMANCES_INVALID:
+      "Chaque athlète une seule fois, une place à partir de 1, et rien d'autre que le statut pour un DNS, DNF ou DQ.",
+    PERFORMANCE_MARK_MISSING: "Un athlète arrivé a besoin de sa marque.",
+    PERFORMANCES_UNAVAILABLE: "Impossible de lire ou d'enregistrer les performances. Réessaie.",
     DATE_INVALID: "La date doit être au format AAAA-MM-JJ.",
     DISCIPLINE_NOT_FOUND: "Cette discipline n'existe pas.",
     DISCIPLINE_EXISTS: "Cette discipline existe déjà.",
@@ -1763,6 +2263,16 @@ export const messages = {
       "Ces règles ne permettent pas de jouer : vérifie que les quotas remplissent l'équipe, que l'alignement y tient et qu'un mode de clôture est coché.",
     MANAGER_RULES_UNAVAILABLE: "Les règles Manager n'ont pas pu être chargées. Réessaie.",
     MERCATO_OPEN: "Le mercato de cette ligue a commencé : les inscriptions sont closes.",
+    MANAGER_COMPETITIONS_TOO_FEW: "Choisis au moins 6 compétitions.",
+    MANAGER_COMPETITIONS_REFUSED:
+      "Une de ces compétitions n'est plus disponible (terminée ou retirée). Recharge la page et choisis à nouveau.",
+    MANAGER_COMPETITIONS_UNDER_PLAYERS:
+      "Avec ces compétitions, la ligue compterait moins de joueurs que d'inscrits : garde-en davantage.",
+    MERCATO_COMPETITIONS_MISSING:
+      "Il ne reste pas assez de compétitions après la fin prévue du mercato : ajoute une compétition ou raccourcis le mercato.",
+    MERCATO_ROUNDS_INVALID: "Choisis une durée de tour de 12, 24, 48 ou 72 heures.",
+    MERCATO_PLAYERS_MISSING:
+      "Il manque encore des joueurs : le mercato se lance quand tout le monde est là.",
     MANAGER_BID_INVALID: "Une offre est un nombre entier de crédits, au moins 1.",
     MANAGER_BID_BELOW_PRICE: "Une offre est au moins égale au prix de départ de l'athlète.",
     MANAGER_BID_OVER_BUDGET:
@@ -1775,6 +2285,22 @@ export const messages = {
     MERCATO_NOT_LAST_BIDDER:
       "Tu ne peux pas clore le mercato : un autre participant peut encore recruter.",
     MANAGER_BIDS_UNAVAILABLE: "Tes offres n'ont pas pu être chargées ou enregistrées. Réessaie.",
+    MERCATO_NOT_OVER:
+      "Le mercato n'est pas fini : tu aligneras ton équipe une fois qu'il sera clos.",
+    LINEUP_LOCKED: "La compétition a commencé : ton alignement est verrouillé.",
+    LINEUP_INVALID:
+      "Cet alignement ne respecte pas les règles de la ligue : remplis chaque place avec un athlète engagé de ton équipe.",
+    LINEUPS_UNAVAILABLE: "Ton alignement n'a pas pu être chargé ou enregistré. Réessaie.",
+    ROUND_NOT_FOUND: "Ce tour n'est pas encore clos, ou personne n'y a fait d'offre.",
+    COMPETITION_NOT_STARTED:
+      "La compétition n'a pas commencé : les points Manager se calculent après le verrouillage.",
+    MANAGER_SCORES_UNAVAILABLE:
+      "Les points Manager n'ont pas pu être chargés ou calculés. Réessaie.",
+    MANAGER_SEASON_NOT_STARTED:
+      "Le championnat n'a pas commencé : le calendrier est tiré à la clôture du mercato.",
+    MATCHDAY_NOT_FOUND: "Cette journée n'existe pas dans le calendrier de la ligue.",
+    MANAGER_SEASON_UNAVAILABLE: "Le championnat n'a pas pu être chargé. Réessaie.",
+    MANAGER_HONOURS_UNAVAILABLE: "Le palmarès n'a pas pu être chargé. Réessaie.",
     retry: "Réessayer",
   },
   legal: {

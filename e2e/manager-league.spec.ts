@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
+import { chooseSeason, seasonReady } from "./manager-season";
 import { newPlayer, signUp } from "./players";
 
 test("a player creates a private French Track Manager league that keeps its rules", async ({
   page,
 }) => {
+  seasonReady();
   const budget = sql("select rules ->> 'budget' from manager_rules");
   const creator = newPlayer("manager-league");
   await page.goto("/ligues");
@@ -13,29 +15,52 @@ test("a player creates a private French Track Manager league that keeps its rule
   await page.waitForURL(/\/ligues$/);
 
   try {
-    await page.getByRole("link", { name: "French Track Manager" }).click();
+    // The Manager has its own tab in the bottom bar, no longer a link of the leagues page (#471).
+    await expect(
+      page.locator("main").getByRole("link", { name: "French Track Manager" }),
+    ).toHaveCount(0);
+    const bar = page.getByRole("navigation", { name: "Navigation principale" });
+    await bar.getByRole("link", { name: "Manager", exact: true }).click();
+    await page.waitForURL(/\/manager$/);
+    // The tutorial opens at the first visit (#616).
+    await page.getByRole("button", { name: "Passer le tutoriel" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("French Track Manager");
-    await expect(page.getByText("Tu n'es dans aucune ligue Manager")).toBeVisible();
+    await expect(bar.getByRole("link", { name: "Manager", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    // Without a Manager league, the presentation of the mode, its figures from the rules (#618).
+    const steps = page.getByRole("list", { name: "Le Manager en 5 étapes" });
+    await expect(steps.getByRole("listitem")).toHaveCount(5);
+    await expect(steps).toContainText(`${budget} crédits pour recruter`);
+    await expect(page.getByRole("link", { name: "J'ai un code d'invitation" })).toHaveAttribute(
+      "href",
+      "/manager/rejoindre",
+    );
     await page.getByRole("link", { name: "Créer une ligue Manager" }).click();
+    await page.waitForURL(/\/manager\/creer$/);
 
     // Every name is moderated, private leagues too.
     await page.getByLabel("Nom de la ligue").fill("Ligue FFA");
+    await chooseSeason(page);
     await page.getByRole("button", { name: "Créer la ligue" }).click();
     await expect(page.locator("main").getByText(/pas possible pour une ligue/)).toBeVisible();
 
     sql(`update manager_rules set rules = jsonb_set(rules, '{budget}', '130')`);
     await page.getByLabel("Nom de la ligue").fill("Les Lanceurs du dimanche");
+    await chooseSeason(page);
     await page.getByRole("button", { name: "Créer la ligue" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Les Lanceurs du dimanche");
-    await expect(page.getByText("1 / 12 participants · Privée")).toBeVisible();
+    await expect(page.getByText("1 / 4 participants · Privée")).toBeVisible();
     // The creator is its admin and first participant; the code invites the others.
     const participants = page.getByRole("list", { name: "Participants" });
     await expect(participants.getByRole("listitem")).toHaveCount(1);
     await expect(participants).toContainText(creator.pseudo);
     await expect(participants).toContainText("admin");
     await expect(page.getByText("Code d'invitation")).toBeVisible();
-    await expect(page.getByRole("status").filter({ hasText: "en nombre pair" })).toContainText(
-      "de 4 à 12 participants, en nombre pair",
+    // The mercato waits for the target, an even count from 4 to 10, 4 by default (#619).
+    await expect(page.getByRole("status").filter({ hasText: "attendus" })).toContainText(
+      "Encore 3 joueurs attendus.",
     );
 
     // The rules were copied at creation: a later change does not touch the league.

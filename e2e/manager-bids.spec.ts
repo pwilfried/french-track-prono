@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
+import { chooseSeason, seasonReady } from "./manager-season";
 import { newPlayer, signUp } from "./players";
 
 test("a participant bids secretly within the budget, changes and withdraws a bid", async ({
   browser,
 }) => {
+  seasonReady();
   const tag = `${Date.now() % 1000000}`;
   const league = `Enchères ${tag}`;
   const first = `Enchère Une ${tag}`;
@@ -34,6 +36,7 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await signUp(ownerPage, owner);
     await ownerPage.waitForURL(/\/manager\/creer$/);
     await ownerPage.getByLabel("Nom de la ligue").fill(league);
+    await chooseSeason(ownerPage);
     await ownerPage.getByRole("button", { name: "Créer la ligue" }).click();
     await expect(ownerPage.getByRole("heading", { level: 1 })).toHaveText(league);
     const code = sql(`select invite_code from manager_leagues where name = '${league}'`);
@@ -47,7 +50,11 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     const catalogue = `/manager/${sql(`select id from manager_leagues where name = '${league}'`)}/catalogue`;
     const search = `?q=${tag}`;
     await ownerPage.goto(catalogue + search);
-    await expect(ownerPage.getByText("le mercato de cette ligue n'est pas ouvert")).toBeVisible();
+    // Before the launch (#620): the band names the last one in, and no bid is possible.
+    const band = ownerPage.getByRole("region", { name: "Avant le mercato" });
+    await expect(band).toContainText("2 participants");
+    await expect(band).toContainText(`${rival.pseudo} vient de rejoindre la ligue`);
+    await expect(band).toContainText("les enchères s'ouvrent au lancement");
     await expect(ownerPage.getByRole("button", { name: "Enchérir" })).toHaveCount(0);
 
     sql(`update manager_leagues
@@ -113,13 +120,44 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
          where name = '${league}'`);
     sql(`select private.close_manager_rounds()`);
 
+    // The first visit to the mercato after the close opens the reveal of the round, once (#604):
+    // the player's cards face down, turned over, their tally, then every bid of the round.
     await ownerPage.goto(catalogue + search);
+    await ownerPage.waitForURL(/\/tour\/1$/);
+    await expect(ownerPage.getByRole("heading", { level: 1 })).toHaveText("L'heure de vérité");
+    await expect(ownerPage.getByRole("article", { name: "Offre cachée" })).toContainText(
+      "Ton offre : 35 cr",
+    );
+    await ownerPage.getByRole("button", { name: "Tout révéler" }).click();
+    const won = ownerPage.getByRole("article", { name: `${first} : gagné` });
+    await expect(won).toContainText("GAGNÉ");
+    await expect(won).toContainText("35 crédits · à toi pour la saison");
+    await expect(ownerPage.getByRole("region", { name: "Mon bilan du tour" })).toContainText(
+      "Offres gagnées1/1",
+    );
+    await ownerPage.getByRole("button", { name: "Voir toutes les enchères du tour" }).click();
+    await expect(
+      ownerPage.getByRole("heading", { name: "Toutes les enchères du tour 1" }),
+    ).toBeVisible();
+    const rivalBid = ownerPage.getByRole("article", { name: second });
+    await expect(rivalBid).toContainText("seule offre");
+    await expect(rivalBid).toContainText(rival.pseudo);
+    await expect(rivalBid).toContainText("30 cr.");
+    await ownerPage.getByRole("link", { name: "Retour au mercato · tour suivant" }).click();
+    await ownerPage.waitForURL(/\/catalogue$/);
+    await ownerPage.goto(catalogue + search);
+    await expect(ownerPage).toHaveURL(/\/catalogue\?/);
+    await expect(ownerPage.getByRole("link", { name: "Tour 1" })).toBeVisible();
     await expect(budget.getByRole("list", { name: "Mes athlètes" })).toContainText(first);
     await expect(budget).toContainText("Dépensé35 cr.");
     await expect(budget).toContainText("Disponible65 cr.");
     await expect(budget).toContainText("Aucune offre pour l'instant.");
     await expect(firstCard).toContainText("Recruté");
     await expect(firstCard.getByRole("button", { name: "Enchérir" })).toHaveCount(0);
+    await rivalPage.goto(catalogue + search);
+    await rivalPage.waitForURL(/\/tour\/1$/);
+    await rivalPage.getByRole("button", { name: "Révéler la suivante" }).click();
+    await expect(rivalPage.getByRole("article", { name: `${second} : gagné` })).toBeVisible();
     await rivalPage.goto(catalogue + search);
     await expect(theirs.getByRole("list", { name: "Mes athlètes" })).toContainText(second);
     await expect(theirs).toContainText("Disponible70 cr.");
@@ -138,9 +176,20 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await thirdCard.getByRole("button", { name: "Valider" }).click();
     await expect(thirdCard).toContainText("Mon offre : 10 cr.");
     await budget.getByRole("button", { name: "Clore le mercato" }).click();
+    // The bid under way became a last round: its reveal opens.
+    await ownerPage.waitForURL(/\/tour\/2$/);
+    await ownerPage.getByRole("button", { name: "Tout révéler" }).click();
+    await expect(ownerPage.getByRole("article", { name: `${third} : gagné` })).toBeVisible();
+    await ownerPage.goto(catalogue + search);
     await expect(budget.getByRole("status")).toContainText("Le mercato de cette ligue est clos");
     await expect(budget.getByRole("list", { name: "Mes athlètes" })).toContainText(third);
     await expect(ownerPage.getByRole("button", { name: "Enchérir" })).toHaveCount(0);
+    // The rival did not bid in the last round: no card, but every bid of the round.
+    await rivalPage.goto(catalogue + search);
+    await rivalPage.waitForURL(/\/tour\/2$/);
+    await expect(rivalPage.getByText("Tu n'as fait aucune offre pendant ce tour.")).toBeVisible();
+    await rivalPage.getByRole("button", { name: "Voir toutes les enchères du tour" }).click();
+    await expect(rivalPage.getByRole("article", { name: third })).toContainText(owner.pseudo);
     await rivalPage.goto(catalogue + search);
     await expect(theirs.getByRole("status")).toContainText("Le mercato de cette ligue est clos");
   } finally {

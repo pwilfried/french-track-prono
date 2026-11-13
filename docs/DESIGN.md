@@ -51,12 +51,13 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Écran | Contenu clé |
 |---|---|
 | Accueil (joueur connecté, #526) | Salutation ; carte « Ta prochaine action » (finale à pronostiquer la plus proche du verrouillage, sinon prochaine compétition) ; dessous, « Complète ton profil » tant que le profil n'a ni club ni discipline (#540 : recherche de club, six familles en boutons à bascule, « Préciser les épreuves », × « Plus tard » pour 30 jours ; bandeau vert « Ton premier podium est posé ! » au-dessus après le premier prono) ; « Comment ça marche » avant le premier prono (refermable) ; ma ligue (place, écart, trois lignes) ou l'invitation à en créer une ; dernier résultat noté ; French Track Manager ; bloc FrenchTrack (podcast, réseaux). Un bloc vide ne s'affiche pas |
+| Épreuves (onglet, #546) | Sélecteur de compétition ; carte de progression (joueur connecté) ; filtres « À faire » (par défaut), « Posés », « Terminées », « Toutes » ; sections « Ce soir », « Demain », puis les dates, puis « Déjà courues ». Un visiteur n'a ni la carte ni les filtres « À faire » et « Posés » |
 | Épreuve | Liste de départ, **podium à composer** (glisser-déposer ou taps), joker, verrou |
 | Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
-| Ligue | Classement, derniers pronos révélés, réactions emoji |
-| Mes ligues | Mes ligues (rang, membres), puis les ligues publiques ; au-dessus d'elles, tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553 : « Officielle », « Ouverte à tous », « Rejoindre la Ligue FrenchTrack ») ; une fois membre, elle rejoint ses ligues avec le badge « Officielle » |
+| Ligue | Classement, derniers pronos révélés, réactions emoji ; tant que le joueur y est seul, **InviteBanner** à la place du classement |
+| Mes ligues | Mes ligues (**LeagueCard**), puis les ligues publiques ; au-dessus d'elles, tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553 : « Officielle », « Ouverte à tous », « Rejoindre la Ligue FrenchTrack ») ; une fois membre, elle rejoint ses ligues avec le badge « Officielle » |
 | Classement général | Top de la communauté, ma progression |
-| Profil | Dossard (grand format, avec le pseudo), club ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager |
+| Profil | Dossard (grand format, avec le pseudo), club ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager ; palmarès Manager (une ligne par saison finie, en or si champion, #434) |
 | Back-office (toi) | Tableau de bord (choses à faire, préparation), compétitions et épreuves, résultats et calcul, listes des clubs, joueurs et ligues |
 
 ## Composants clés
@@ -67,6 +68,17 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **CountdownBadge** : « Verrouillage dans 12 min », neutre, puis orange dès 1 h et rouge dès
   10 min (jetons `--countdown-*` dans `globals.css`, contrastes AA), « 🔒 Verrouillé » ensuite ;
   rien ne clignote.
+- **EventCard** (#546) : l'heure de Paris, le nom avec le genre (« 100 m femmes »), une ligne
+  dessous, un statut à droite. À venir : « Verrouille dans … » (`LockLine`, rouge dès 1 h ; au-delà
+  de 24 h, « Verrouille le <jour> à <heure> »), « + Prono » ou « ✓ Posé » avec « modifiable ».
+  Terminée : fond atténué, mon résultat (« 2 athlètes bien placées », « Podium parfait ! »,
+  « Pas de prono ») et mes points en pastille verte, « — » sans prono. Le lien est nommé par
+  l'épreuve puis par son statut (#517).
+- **ProgressCard** (#546) : fond bleu FrenchTrack ; « N / total podiums posés », une barre, mes
+  points (avant la compétition : « Premières finales dans N j ») et ce qu'il reste ce soir, avec
+  le prochain verrouillage.
+- **Filtres en pastilles** (`EventFilters`) : une pastille par filtre avec son nombre, la
+  pastille active pleine ; elles défilent à l'horizontale sur mobile.
 - **AthleteChip** : drapeau, nom, record de saison.
 - **PointsToast** : « +9 pts, vainqueur du 100 m trouvé ! » avec petite animation.
 - **Bib** (dossard, #537) : l'avatar du joueur, un numéro (0 à 999) et une couleur parmi six,
@@ -86,15 +98,40 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   une barre fixe en bas « Tu es 3e · 52 pts · Autour de moi » ; avant la première compétition, un
   bandeau bleu « Le classement démarre » remplace le classement vide. Le jour de compétition va de
   6 h à 6 h, heure de Paris : une finale courue à 2 h du matin compte pour « Ce soir ».
+  Un visiteur voit « Général » seul, sans barre fixe, avec « Se connecter » (#573).
+- **LeagueCard** (#552) : une de mes ligues dans « Mes ligues » ; nom (badge « Publique » ou
+  « Officielle »), joueurs et compétitions dessous ; à droite ma place en gros et ▲/▼ depuis la
+  veille, « Pas encore de points » sans points.
+- **InviteBanner** (#552) : dans une ligue où le joueur est seul, fond bleu doux, « Tu es seul
+  pour l'instant », un grand bouton « Inviter mes amis » (partage natif, sinon lien copié) et le
+  code lisible dessous pour le dire à voix haute.
 - **Carte « Ma saison »** (`/profil/carte`) : image verticale 1080×1920 prête pour les stories,
   partagée par le partage natif ou téléchargée ; « Mon podium du 100 m » viendra plus tard.
 - **Liste du back-office** (clubs, joueurs, ligues) : recherche, puces de filtre avec leur
   nombre, tableau triable, actions groupées sur la sélection, panneau de détail ; même gabarit
   pour les trois listes.
+- **Navigation** (#471) : sur mobile, barre du bas « Accueil, Épreuves, Classement, Ligues,
+  Manager » ; sur desktop, menu du haut « Accueil, Épreuves, Classement, Ma ligue, Manager ». Le
+  profil s'ouvre depuis le pseudo et le dossard de l'en-tête.
 - **Menu admin** : entrées groupées par rubrique, le tableau de bord en tête.
 - **BadgeGrid** : badges gagnés en couleur, les autres grisés avec leur règle ; dessous, le
   prochain badge et ce qu'il reste à faire pour l'obtenir.
 - **CompetitionChips** : puces d'une compétition à l'autre (classement, historique des pronos).
+- **AthleteCard** (Manager, #426) : carte or d'un athlète de l'équipe ; code de famille, prix
+  payé, initiales (jamais de photo), prénom et initiale du nom ; états « Sélectionné » et
+  « Absent·e » ; format compact sur une place du stade.
+- **LineupBoard** (Manager, #427) : un stade (piste `--track` autour d'une pelouse `--field`)
+  porte les places des titulaires, une par carte, chacune d'une famille ou « Libre » (règles de la
+  ligue) ; dessous, les remplaçants. Glisser-déposer à la souris ; au toucher, une carte puis une
+  place (les places compatibles s'allument) ; toucher une carte du stade la renvoie sur le banc ;
+  tout est bouton, donc au clavier aussi. Compteur « N/M places », barre du bas « À remplir : … »
+  et « Valider mon alignement ». Une place que l'équipe ne peut pas remplir reste grise
+  (« Personne ») et n'empêche pas de valider. Bandeaux « Alignement validé » et « Verrouillé ».
+- **ManagerTutorial** (Manager, #616) : sept étapes plein écran sur le bleu nuit, dans les deux
+  thèmes ; une idée par étape, avec un dessin en formes simples (dossards, cartes, stade, barres,
+  trophée ; jamais de photo) et les chiffres des règles ; « Précédent » / « Suivant » (flèches du
+  clavier aussi), « Passer » à toute étape, « C'est parti » à la dernière. S'ouvre seul à la
+  première visite de `/manager` (mémorisé sur l'appareil), puis par « Comment ça marche ? ».
 
 ## Ton éditorial
 

@@ -32,7 +32,7 @@ export function OfficialLeague({
         {name}
       </h2>
       <p className="text-sm">
-        {text.officialPitch} · {text.members(memberCount)}
+        {text.officialPitch} · {text.players(memberCount)}
       </p>
       {children}
     </section>

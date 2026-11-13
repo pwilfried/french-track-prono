@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Tags a finished version, which puts it in production (migrations.yml runs on vX.Y.Z tags).
-# The version is the open milestone `vX.Y …` right after the latest tag. It is tagged vX.Y.0 when:
+# The version is the open milestone right after the latest tag: `vX.Y …` is tagged vX.Y.0, a patch
+# milestone `vX.Y.Z …` is tagged vX.Y.Z (owner's decision, 12 Nov 2026). It is tagged when:
 #   - the milestone has closed issues and no open one;
 #   - every push run on main's last commit (CI, …) is completed and green.
 # The tag is made with AGENTS_PAT: a tag made with github.token would start no workflow.
@@ -24,12 +25,13 @@ if [ -z "$latest" ]; then
   exit 0
 fi
 
-# Open milestones newer than the latest tag, oldest first: "<vX.Y> <number> <open> <closed>".
+# Open milestones newer than the latest tag, oldest first: "<vX.Y.Z> <number> <open> <closed>".
 next=$(as_bot gh api --paginate "repos/$repo/milestones?state=open&per_page=100" \
-  --jq '.[] | select(.title | test("^v[0-9]+\\.[0-9]+( |$)")) |
+  --jq '.[] | select(.title | test("^v[0-9]+\\.[0-9]+(\\.[0-9]+)?( |$)")) |
         "\(.title | split(" ")[0]) \(.number) \(.open_issues) \(.closed_issues)"' |
   while read -r v number open closed; do
-    if [ "$(printf '%s\n%s\n' "$latest" "$v.0" | sort -V | tail -1)" != "$latest" ]; then
+    [[ $v =~ ^v[0-9]+\.[0-9]+$ ]] && v="$v.0"
+    if [ "$(printf '%s\n%s\n' "$latest" "$v" | sort -V | tail -1)" != "$latest" ]; then
       echo "$v $number $open $closed"
     fi
   done | sort -V | head -1)
@@ -37,8 +39,8 @@ if [ -z "$next" ]; then
   echo "No milestone after $latest."
   exit 0
 fi
-read -r version number open closed <<< "$next"
-tag="$version.0"
+read -r tag number open closed <<< "$next"
+version=$tag
 if [ "$open" != 0 ] || [ "$closed" = 0 ]; then
   echo "$version: $open open issue(s), $closed closed: not finished."
   exit 0
@@ -71,5 +73,27 @@ object=$(as_owner gh api -X POST "repos/$repo/git/tags" -f "tag=$tag" -f "messag
 as_owner gh api -X POST "repos/$repo/git/refs" -f "ref=refs/tags/$tag" -f "sha=${object:-$sha}" >/dev/null
 as_owner gh api -X POST "repos/$repo/releases" -f "tag_name=$tag" -f "name=$tag" \
   -F generate_release_notes=true >/dev/null
+# One check list for the owners (decision of 12 Nov 2026): the version's criterion, then one box
+# per PR of the version that touches the interface.
+criterion=$(as_bot gh api "repos/$repo/milestones/$number" --jq '.description // ""')
+boxes=""
+for pr in $(as_bot gh api "repos/$repo/compare/$latest...$sha" --jq '.commits[].commit.message | split("\n")[0]' |
+  grep -oE '\(#[0-9]+\)$' | tr -dc '0-9\n' | sort -un); do
+  if as_bot gh api "repos/$repo/pulls/$pr/files?per_page=100" \
+    --jq '[.[].filename] | any(test("^src/(app|components)/"))' 2>/dev/null | grep -q true; then
+    boxes="$boxes
+- [ ] #$pr $(as_bot gh api "repos/$repo/pulls/$pr" --jq .title)"
+  fi
+done
+as_bot gh issue create -R "$repo" --label needs-human --title "Vérifier $tag en prod" \
+  --body "$tag est en production. Regarde-la sur ton téléphone, en clair et en sombre.
+
+**Critère de la version**
+$criterion
+
+**Écrans changés**${boxes:-
+- aucun}
+
+Une case qui ne va pas : ouvre une issue de correction liée ici. Tout est bon : ferme cette issue." >/dev/null
 as_bot gh api -X PATCH "repos/$repo/milestones/$number" -f state=closed >/dev/null
 echo "$tag tagged: the deployment runs in migrations.yml."

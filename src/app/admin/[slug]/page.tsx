@@ -159,6 +159,12 @@ export default async function AdminEventPage({
           >
             {messages.odds.link}
           </Link>
+          <Link
+            href={`/admin/${slug}/performances`}
+            className="ml-2 mt-2 inline-flex min-h-11 items-center rounded-full border border-border px-4 text-sm font-bold"
+          >
+            {messages.performances.link}
+          </Link>
           {event.previousRounds.length > 0 && (
             <nav aria-label={messages.rounds.previousLinks} className="mt-2 flex flex-wrap gap-2">
               {event.previousRounds.map((round, index) => (

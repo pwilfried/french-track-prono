@@ -4,7 +4,9 @@ import { listDisciplines } from "@/application/disciplines";
 import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { listAthletes } from "@/application/list-athletes";
 import { ErrorNotice } from "@/components/error-notice";
+import { ChipStatus } from "@/components/ui/chip-status";
 import { flagOf } from "@/domain/flag";
+import { missesCatalogueForMainDiscipline } from "@/domain/manager-catalogue";
 import { filterAthletes, searchAthletes, type AthleteFilter } from "@/domain/start-list";
 import type { Discipline } from "@/domain/discipline";
 import { createSupabaseAthleteAdminRepository, createSupabaseDisciplineRepository } from "@/infra";
@@ -185,7 +187,14 @@ export default async function AdminAthletesPage({
                 className="flex min-h-12 items-center gap-3 py-2"
               >
                 <span aria-hidden="true">{flagOf(a.countryCode)}</span>
-                <span className="min-w-0 flex-1 break-words font-semibold">{a.name}</span>
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="break-words font-semibold">{a.name}</span>
+                  {missesCatalogueForMainDiscipline(a) && (
+                    <ChipStatus tone="gold" className="self-start whitespace-normal">
+                      {messages.adminAthletes.offCatalogueNoMainDiscipline}
+                    </ChipStatus>
+                  )}
+                </span>
                 <span className="text-xs text-muted-foreground">
                   {a.countryCode} · {messages.events.gender[a.gender]}
                 </span>

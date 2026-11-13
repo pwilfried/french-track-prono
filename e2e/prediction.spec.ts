@@ -76,6 +76,19 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   await expect(page.locator('main:not([aria-busy="true"])')).toContainText("+12 pts");
   await expect(page.locator('main:not([aria-busy="true"])')).toContainText("Podium parfait");
 
+  // The events tab opens on « À faire »; « Terminées » shows it under « Déjà courues » with my
+  // result and my points (#488, #546).
+  await page.goto("/epreuves?competition=ultimate-championship-2026");
+  const filters = page.getByRole("navigation", { name: "Filtrer les épreuves" });
+  await expect(filters.getByRole("link", { name: /^À faire/ })).toHaveAttribute(
+    "aria-current",
+    "true",
+  );
+  await filters.getByRole("link", { name: /^Terminées/ }).click();
+  const done = page.getByRole("region", { name: /^Déjà courues/ });
+  await expect(done.locator(`a[href="/epreuves/${slug}"]`)).toContainText("+12 pts");
+  await expect(done.locator(`a[href="/epreuves/${slug}"]`)).toContainText("Podium parfait !");
+
   // The event page now shows the result and my podium against the official one.
   await page.goto(`/epreuves/${slug}`);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("s'impose");

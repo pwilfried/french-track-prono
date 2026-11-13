@@ -1,5 +1,11 @@
-import type { CompetitionScope } from "@/domain/competition";
-import { competitionSlug, eventSlug, isValidCompetition, parisToUtc } from "@/domain/competition";
+import type { CompetitionScope, CompetitionVenue } from "@/domain/competition";
+import {
+  competitionSlug,
+  competitionVenue,
+  eventSlug,
+  isValidCompetition,
+  parisToUtc,
+} from "@/domain/competition";
 import type { EventGender } from "@/domain/event";
 import { ROUNDS, type Round } from "@/domain/rounds";
 
@@ -9,6 +15,7 @@ export type CompetitionSummary = {
   slug: string;
   name: string;
   scope: CompetitionScope;
+  venue: CompetitionVenue;
   city: string | null;
   countryCode: string | null;
   startsOn: string;
@@ -80,6 +87,8 @@ export function createCompetition(ports: { competitions: CompetitionAdminReposit
     async execute(input: {
       name: string;
       scope: string;
+      /** « indoor » or « outdoor »; outdoor when none is given. */
+      venue?: string;
       city: string;
       countryCode: string;
       startsOn: string;
@@ -93,6 +102,7 @@ export function createCompetition(ports: { competitions: CompetitionAdminReposit
         slug: competitionSlug(input.name, input.startsOn),
         name: input.name.trim(),
         scope: input.scope as CompetitionScope,
+        venue: competitionVenue(input.venue) as CompetitionVenue,
         city: input.city.trim() || null,
         countryCode: countryCode || null,
         startsOn: input.startsOn,

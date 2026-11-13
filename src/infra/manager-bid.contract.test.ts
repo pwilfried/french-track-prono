@@ -1,9 +1,13 @@
 import { describe, it } from "vitest";
 
-import { sql } from "./contract/database";
+import { managerSeasonCompetitions, sql } from "./contract/database";
 import { managerBidContract } from "./contract/manager-bid.contract";
 import { signedInPlayer } from "./contract/test-player";
-import { createInMemoryManagerBidStore, createSupabaseManagerBids } from "./index";
+import {
+  createInMemoryManagerBidStore,
+  createSupabaseManagerBids,
+  createSupabaseManagerReveals,
+} from "./index";
 
 managerBidContract("in-memory fake", async () => {
   const store = createInMemoryManagerBidStore({
@@ -19,6 +23,13 @@ managerBidContract("in-memory fake", async () => {
     first: store.session("u1"),
     second: store.session("u2"),
     outsider: store.session("u3"),
+    firstId: "u1",
+    secondId: "u2",
+    reveals: {
+      first: store.reveals("u1"),
+      second: store.reveals("u2"),
+      outsider: store.reveals("u3"),
+    },
     cheap: "a1",
     dear: "a2",
     closeRound: async () => store.closeRound("l1"),
@@ -41,6 +52,7 @@ if (url && key) {
       const { data, error } = await first.client.rpc("create_manager_league", {
         p_name: name,
         p_public: false,
+        p_competitions: managerSeasonCompetitions(),
       });
       if (error) throw new Error(error.message);
       return data as string;
@@ -73,6 +85,13 @@ if (url && key) {
       first: createSupabaseManagerBids(first.client),
       second: createSupabaseManagerBids(second.client),
       outsider: createSupabaseManagerBids(outsider.client),
+      firstId: first.userId,
+      secondId: second.userId,
+      reveals: {
+        first: createSupabaseManagerReveals(first.client),
+        second: createSupabaseManagerReveals(second.client),
+        outsider: createSupabaseManagerReveals(outsider.client),
+      },
       cheap,
       dear,
       closeRound: async () => {

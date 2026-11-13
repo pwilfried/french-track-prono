@@ -6,6 +6,7 @@ import { listEvents } from "@/application/list-events";
 import { listMyPredictions } from "@/application/list-my-predictions";
 import { getGeneralRanking } from "@/application/rankings";
 import { EventCard, type MyEventState } from "@/components/events/event-card";
+import { VenueChip } from "@/components/events/venue-chip";
 import { LockCountdown } from "@/components/home/lock-countdown";
 import { buttonVariants } from "@/components/ui/button";
 import type { EventSummary } from "@/domain/event";
@@ -83,8 +84,9 @@ export default async function CompetitionPage({ params }: { params: Promise<{ sl
     <main id="main" className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-5 md:max-w-5xl">
       <div className="flex flex-col gap-4 md:grid md:grid-cols-[1fr_300px]">
         <section className="hero flex flex-col gap-4 rounded-card p-5 md:p-8">
-          <p className="text-xs font-bold uppercase tracking-wide text-[#dce6f5]">
+          <p className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wide text-[#dce6f5]">
             {started ? messages.home.current : messages.home.upcoming}
+            <VenueChip venue={competition.venue} className="normal-case tracking-normal" />
           </p>
           <div>
             <h1 className="font-display text-3xl font-extrabold leading-tight md:text-5xl">

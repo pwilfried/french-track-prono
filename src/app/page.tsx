@@ -54,6 +54,7 @@ async function Visitor({ coming, today }: { coming: ShownCompetition[]; today: s
         shown && {
           slug: shown.slug,
           scope: shown.scope,
+          venue: shown.venue,
           name: shown.name,
           place: shown.place,
           finals: shown.finals,

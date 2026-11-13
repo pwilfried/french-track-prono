@@ -17,6 +17,26 @@ export {
 } from "./supabase/session";
 export { createInMemoryResultStore, type ResultEventFixture } from "./in-memory/result-repository";
 export { createSupabaseResultRepository } from "./supabase/result-repository";
+export {
+  createInMemoryPerformanceStore,
+  type PerformanceEventFixture,
+} from "./in-memory/performance-repository";
+export { createSupabasePerformanceRepository } from "./supabase/performance-repository";
+export {
+  createInMemoryManagerScoreStore,
+  type ManagerScoreFixture,
+} from "./in-memory/manager-score-repository";
+export { createSupabaseManagerScoreRepository } from "./supabase/manager-score-repository";
+export {
+  createInMemoryManagerSeasonStore,
+  type ManagerSeasonFixture,
+} from "./in-memory/manager-season-repository";
+export { createSupabaseManagerSeasonRepository } from "./supabase/manager-season-repository";
+export {
+  createInMemoryManagerHonoursStore,
+  type ManagerHonoursFixture,
+} from "./in-memory/manager-honours-repository";
+export { createSupabaseManagerHonoursRepository } from "./supabase/manager-honours-repository";
 export { createInMemoryLeagueStore } from "./in-memory/league-repository";
 export { createSupabaseLeagueRepository } from "./supabase/league-repository";
 export { createSupabaseLeagueModerationRepository } from "./supabase/league-moderation-repository";
@@ -83,3 +103,6 @@ export { createInMemoryManagerCatalogue } from "./in-memory/manager-catalogue-re
 export { createSupabaseManagerCatalogue } from "./supabase/manager-catalogue-repository";
 export { createInMemoryManagerBidStore } from "./in-memory/manager-bid-repository";
 export { createSupabaseManagerBids } from "./supabase/manager-bid-repository";
+export { createSupabaseManagerReveals } from "./supabase/manager-reveal-repository";
+export { createInMemoryManagerLineupStore } from "./in-memory/manager-lineup-repository";
+export { createSupabaseManagerLineups } from "./supabase/manager-lineup-repository";

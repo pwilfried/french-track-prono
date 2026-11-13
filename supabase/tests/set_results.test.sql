@@ -1,7 +1,7 @@
 -- pgTAP: set_results replaces the official result of an event, for an admin only.
 -- Run with `supabase test db`. Everything is rolled back at the end.
 begin;
-select plan(6);
+select plan(9);
 
 insert into auth.users (id, email) values
   ('dddddddd-0000-0000-0000-000000000001', 'player@example.test'),
@@ -39,6 +39,10 @@ select is(
   (select count(*)::int from results where event_id = (select event_id from fixture) and mark is null), 3,
   'an empty mark is stored as none');
 
+select is(
+  (select status::text from events where id = (select event_id from fixture)), 'finished',
+  'an event with an official result is finished (#488)');
+
 select set_config('request.jwt.claims',
   '{"sub":"dddddddd-0000-0000-0000-000000000001","role":"authenticated"}', true);
 
@@ -53,6 +57,17 @@ select throws_ok(
 select is(
   (select count(*)::int from results where event_id = (select event_id from fixture)), 3,
   'the result is unchanged after refused attempts');
+
+select set_config('request.jwt.claims',
+  '{"sub":"dddddddd-0000-0000-0000-000000000002","role":"authenticated"}', true);
+
+select lives_ok(
+  $$select set_results((select event_id from fixture), '[]'::jsonb)$$,
+  'an admin erases the result of an event');
+
+select is(
+  (select status::text from events where id = (select event_id from fixture)), 'upcoming',
+  'an event whose result is erased is upcoming again');
 
 select * from finish();
 rollback;

@@ -24,6 +24,9 @@ test("the admin sets the French Track Manager rules and its eligible competition
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Règles Manager");
 
     await page.getByLabel("Budget de départ (crédits)").fill("150");
+    await expect(page.getByLabel("Taille minimum d'une équipe")).toHaveValue(
+      sql("select rules ->> 'minTeamSize' from manager_rules"),
+    );
     await page.getByLabel("Sprint, Femmes, max").fill("4");
     await page.getByRole("checkbox", { name: new RegExp(meeting) }).check();
     await page.getByRole("button", { name: "Enregistrer les règles" }).click();

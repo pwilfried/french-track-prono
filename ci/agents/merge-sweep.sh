@@ -63,20 +63,6 @@ send_back_conflict() { # $1 number, $2 short sha
 $mark"
 }
 
-# After merging PR $1 (JSON $2) that touches the interface: one issue for the owners to look at it.
-ui_review() {
-  local n=$1 title
-  title="Check the UI of #$n: $(jq -r .title <<< "$2")"
-  if as_bot gh issue list -R "$repo" --state all --search "\"Check the UI of #$n:\" in:title" --json number --jq 'length' | grep -qv '^0$'; then
-    return 0
-  fi
-  as_bot gh issue create -R "$repo" --label needs-human --title "$title" \
-    --body "#$n a été fusionnée sur une CI verte sans que personne n'ait regardé ses écrans.
-
-- [ ] Regarder les captures de #$n (390 px, clair et sombre) et l'écran dans l'app
-- [ ] Fermer cette issue si c'est bon, sinon ouvrir une issue de correction liée ici" >/dev/null
-}
-
 current=$(as_bot gh api "repos/$repo/milestones?state=open&per_page=100" \
   --jq '.[] | select(.title | test("^v[0-9]")) | select(.open_issues > 0) | .title' | sort -V | head -1)
 echo "Current milestone: ${current:-none}"
@@ -117,9 +103,6 @@ while read -r -u 3 pr; do
   # AGENTS.md wants no Co-Authored-By trailer.
   as_owner gh pr merge "$n" -R "$repo" --squash --delete-branch \
     --subject "$(jq -r .title <<< "$pr") (#$n)" --body "Merged by agents-merge on a green CI."
-  if jq -e '[.files[].path] | any(test("^src/(app|components)/.*\\.(tsx|css)$"))' <<< "$pr" >/dev/null; then
-    ui_review "$n" "$pr"
-  fi
   break # the other PRs are now behind main
 done 3<<< "$candidates"
 

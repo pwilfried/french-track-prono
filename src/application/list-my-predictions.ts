@@ -13,6 +13,52 @@ export function listMyPredictions(ports: { predictions: PredictionRepository }) 
   };
 }
 
+/** What a scored podium got right: athletes in their place, on the podium, all three. */
+export type PodiumHits = { exact: number; onPodium: number; perfect: boolean };
+
+/**
+ * My mark on one event of the list: predicted, with or without the joker, and the points won with
+ * what the podium got right, null until computed.
+ */
+export type MyEventMark = {
+  eventId: string;
+  joker: boolean;
+  points: number | null;
+  hits: PodiumHits | null;
+};
+
+/** My predictions in a competition with their points, null until computed (#488). */
+export function listMyEventMarks(ports: {
+  predictions: PredictionRepository;
+  points: Pick<PointsRepository, "listMine">;
+}) {
+  return {
+    async execute(input: { userId: string; competitionSlug: string }): Promise<MyEventMark[]> {
+      const [mine, scores] = await Promise.all([
+        ports.predictions.listForCompetition(input.userId, input.competitionSlug),
+        ports.points.listMine(input.userId, input.competitionSlug),
+      ]);
+      const lineOf = new Map(scores.map((l) => [l.eventId, l]));
+      return mine.map((p) => {
+        const line = lineOf.get(p.eventId);
+        const count = (kind: string) => line?.reasons.filter((r) => r.kind === kind).length ?? 0;
+        return {
+          eventId: p.eventId,
+          joker: p.useJoker,
+          points: line?.points ?? null,
+          hits: line
+            ? {
+                exact: count("exact"),
+                onPodium: count("on_podium"),
+                perfect: count("perfect_podium") > 0,
+              }
+            : null,
+        };
+      });
+    },
+  };
+}
+
 /**
  * How many podiums the player has predicted in the competitions given: none makes a new player
  * (#476), exactly one shows « Ton premier podium est posé ! » (#540).

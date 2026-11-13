@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
+import { chooseSeason, seasonReady } from "./manager-season";
 import { newPlayer, signUp } from "./players";
 
 test("a player joins a public Manager league in one tap and a private one by its link", async ({
   browser,
 }) => {
+  seasonReady();
   const tag = `${Date.now() % 1000000}`;
   const open = `Sprinteurs ${tag}`;
   const closed = `Marcheurs ${tag}`;
@@ -20,10 +22,12 @@ test("a player joins a public Manager league in one tap and a private one by its
   await creatorPage.waitForURL(/\/manager\/creer$/);
   await creatorPage.getByLabel("Nom de la ligue").fill(open);
   await creatorPage.getByText("Ligue publique").click();
+  await chooseSeason(creatorPage);
   await creatorPage.getByRole("button", { name: "Créer la ligue" }).click();
-  await expect(creatorPage.getByText("1 / 12 participants · Publique")).toBeVisible();
+  await expect(creatorPage.getByText("1 / 4 participants · Publique")).toBeVisible();
   await creatorPage.goto("/manager/creer");
   await creatorPage.getByLabel("Nom de la ligue").fill(closed);
+  await chooseSeason(creatorPage);
   await creatorPage.getByRole("button", { name: "Créer la ligue" }).click();
   await expect(creatorPage.getByRole("heading", { level: 1 })).toHaveText(closed);
   // Its creator shares the code, or the link that brings it.
@@ -34,14 +38,19 @@ test("a player joins a public Manager league in one tap and a private one by its
   await joinerPage.goto("/manager");
   await signUp(joinerPage, joiner);
   await joinerPage.waitForURL(/\/manager$/);
+  // The tutorial opens at the first visit (#616).
+  await joinerPage.getByRole("button", { name: "Passer le tutoriel" }).click();
+  // Without a Manager league the presentation comes first; « Passer » shows the leagues (#618).
+  await joinerPage.getByRole("link", { name: "Passer la présentation" }).click();
+  await joinerPage.waitForURL(/\/manager\?passer=1$/);
   const publics = joinerPage.getByRole("list", { name: "Ligues publiques" });
   await expect(publics.getByRole("listitem").filter({ hasText: open })).toContainText(
-    "1 / 12 participants",
+    "1 / 4 participants",
   );
   await expect(publics).not.toContainText(closed);
   await publics.getByRole("button", { name: `Rejoindre la ligue ${open}` }).click();
   await expect(joinerPage.getByRole("heading", { level: 1 })).toHaveText(open);
-  await expect(joinerPage.getByText("2 / 12 participants · Publique")).toBeVisible();
+  await expect(joinerPage.getByText("2 / 4 participants · Publique")).toBeVisible();
   await expect(joinerPage.getByRole("list", { name: "Participants" })).toContainText(
     creator.pseudo,
   );
@@ -51,7 +60,7 @@ test("a player joins a public Manager league in one tap and a private one by its
   await expect(joinerPage.getByLabel("Code d'invitation")).toHaveValue(code);
   await joinerPage.getByRole("button", { name: "Rejoindre la ligue" }).click();
   await expect(joinerPage.getByRole("heading", { level: 1 })).toHaveText(closed);
-  await expect(joinerPage.getByText("2 / 12 participants · Privée")).toBeVisible();
+  await expect(joinerPage.getByText("2 / 4 participants · Privée")).toBeVisible();
 
   // Once the mercato is open, nobody joins any more.
   sql(`update manager_leagues set mercato_opened_at = now() where name = '${closed}'`);

@@ -1,7 +1,7 @@
 import { describe, it } from "vitest";
 
 import { competitionEditRepositoryContract } from "./contract/competition-edit-repository.contract";
-import { sql } from "./contract/database";
+import { seedAthletes, sql } from "./contract/database";
 import { signedInPlayer } from "./contract/test-player";
 import {
   createInMemoryCompetitionAdminStore,
@@ -39,7 +39,7 @@ if (url && key) {
         sql(`update competitions set odds_enabled = false
           where id = (select competition_id from events where slug = '${eventSlug}')`);
         sql(`with e as (select id from events where slug = '${eventSlug}'),
-            a as (select id, row_number() over (order by id) n from athletes order by id limit 3),
+            a as (select id, row_number() over (order by id) n from (${seedAthletes} limit 3) s),
             en as (insert into entries (event_id, athlete_id) select e.id, a.id from e, a returning athlete_id)
           insert into predictions (user_id, event_id, p1, p2, p3)
           select '${player.userId}', e.id,

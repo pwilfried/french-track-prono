@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 import { messages } from "@/app/messages.fr";
-import type { CompetitionScope } from "@/domain/competition";
+import { VenueChip } from "@/components/events/venue-chip";
+import type { CompetitionScope, CompetitionVenue } from "@/domain/competition";
 
 import { HowItWorks } from "./how-it-works";
 
@@ -21,6 +22,7 @@ export type VisitorHomeProps = {
   competition: {
     slug: string;
     scope: CompetitionScope;
+    venue: CompetitionVenue;
     name: string;
     place: string;
     finals: number;
@@ -63,8 +65,11 @@ export function VisitorHome({
         {competition ? (
           <article className="flex flex-col gap-3 rounded-card bg-brand p-4 text-brand-foreground">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-bold uppercase tracking-wide text-[#d9e4f5]">
-                {messages.adminCompetitions.scope[competition.scope]}
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wide text-[#d9e4f5]">
+                  {messages.adminCompetitions.scope[competition.scope]}
+                </span>
+                <VenueChip venue={competition.venue} />
               </span>
               <span className="rounded-full bg-gold-soft px-2.5 py-1 text-xs font-bold tabular-nums text-gold-ink">
                 {messages.start.inDays(competition.daysLeft)}

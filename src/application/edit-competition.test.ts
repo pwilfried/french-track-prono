@@ -62,6 +62,7 @@ describe("editCompetition", () => {
         {
           name: "Meeting de Paris",
           scope: "international",
+          venue: "outdoor",
           city: "Paris",
           countryCode: "FRA",
           startsOn: "2027-06-10",
@@ -69,6 +70,18 @@ describe("editCompetition", () => {
         },
       ],
     ]);
+  });
+
+  it("lets the admin move a competition indoors", async () => {
+    const { competitions, calls } = repository();
+
+    await editCompetition({ competitions }).execute({
+      slug: "meeting",
+      ...fields,
+      venue: "indoor",
+    });
+
+    expect(calls[0]).toEqual(["update", "meeting", expect.objectContaining({ venue: "indoor" })]);
   });
 
   it("refuses dates the wrong way round with COMPETITION_INVALID, an unknown one with COMPETITION_NOT_FOUND", async () => {

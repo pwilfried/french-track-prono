@@ -15,21 +15,24 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
    workflow ouvre la PR (`Closes #n`, labels et milestone de l'issue).
 4. CI verte : la PR est fusionnée (squash), après y avoir fusionné `main` si elle était en retard.
    CI rouge ou conflit : la PR repart à Claude avec les logs (3 essais, puis le propriétaire).
-5. Une PR fusionnée qui touche l'interface laisse une issue `needs-human` « Check the UI of #n ».
-6. Quand le milestone `vX.Y …` qui suit le dernier tag n'a plus d'issue ouverte et que tous les
-   runs du dernier commit de `main` sont verts, `release.sh` pose le tag annoté `vX.Y.0` avec
+5. Une PR fusionnée n'ouvre plus d'issue de vérification : c'est la version qui en ouvre une (étape 6).
+6. Quand le milestone qui suit le dernier tag n'a plus d'issue ouverte et que tous les
+   runs du dernier commit de `main` sont verts, `release.sh` pose le tag annoté : `vX.Y.0` pour un
+   milestone `vX.Y …`, `vX.Y.Z` pour un milestone correctif `vX.Y.Z …`. Il le pose avec
    `AGENTS_PAT`, ce qui lance la mise en prod (`migrations.yml`). Une release GitHub liste les PR
    (sa notification prévient les propriétaires) et le milestone est fermé. `main` rouge : pas de
    tag, un avertissement dans le run, nouvel essai à la vérification suivante.
 
 Une issue n'est jamais prise si elle a `needs-human`, `agent:blocked`, `after-ui` ou `agent:local`,
-ou si une issue qui la bloque est encore ouverte (lien GitHub « blocked by » ou ligne `Blocked by #n`).
+si elle est assignée à quelqu'un (une personne la traite : Yannis s'assigne ses issues), ou si une
+issue qui la bloque est encore ouverte (lien GitHub « blocked by » ou ligne `Blocked by #n`).
 `agent:local` (#583) : une session Claude Code locale a pris l'issue. Elle le pose avant d'écrire
 la moindre ligne et le retire si elle abandonne ; sa PR `Closes #n` ferme l'issue comme d'habitude.
 Ce label ne prend pas de place à la chaîne.
-Le label `agent:claude` ne lance rien sur une issue qu'une PR ouverte ferme déjà (`Closes #n`),
-même quand la relance horaire d'une issue `agent:waiting-quota` le remet ; un commentaire
-`@claude …` lance toujours Claude.
+Le label `agent:claude` ne lance rien sur une issue qu'une PR ouverte ferme déjà (`Closes #n`)
+ou qui est assignée à quelqu'un, même quand la relance horaire d'une issue `agent:waiting-quota`
+le remet. Sur une issue assignée, le label est retiré (il ne garde pas de place de la chaîne) et
+un commentaire le dit. Un commentaire `@claude …` lance toujours Claude.
 
 ## Depuis le téléphone (app GitHub)
 
@@ -80,6 +83,7 @@ sont créés avec cette PR.
 ## Ce qui n'est pas automatique
 
 - Les captures d'écran 390 px (clair et sombre) : Claude ne les produit pas sur le runner ; l'issue
-  « Check the UI of #n » sert à regarder l'écran après la fusion.
+  « Vérifier vX.Y.Z en prod » sert à regarder les écrans une fois la version en production.
 - La base Supabase locale (pgTAP, adaptateurs, e2e) : Claude ne la lance pas, la CI de la PR le fait.
-- Un tag de correctif (`vX.Y.Z` hors milestone) : à la main, comme avant.
+- Un tag de correctif sans milestone : à la main, comme avant. Avec un milestone `vX.Y.Z …`, il est
+  posé automatiquement.

@@ -153,6 +153,9 @@ Règles :
   profil et le choix, pastille avec le numéro ailleurs.
 - Pages : `/connexion`, `/bienvenue`, `/profil` ; l'en-tête affiche « Se connecter » ou le
   dossard et le pseudo.
+- Profil express (#539) : `/bienvenue` ne demande que le pseudo, le dossard (tiré au hasard,
+  modifiable) et la case des 15 ans, puis renvoie le joueur où il allait ; le club et les
+  disciplines se complètent depuis l'accueil (« Complète ton profil », #540) ou le profil.
 
 **Décision B : le calcul des points vit dans le domaine TypeScript** (`src/domain/scoring.ts`,
 fonction pure, testée avec Vitest et fast-check).
@@ -170,6 +173,9 @@ Conséquences :
   session de l'admin (`profiles.is_admin`, posé en SQL seulement) : pas de clé `service_role` dans
   l'application.
 - Les joueurs ne peuvent pas écrire dans `score_events` (policy `admin_write` réservée à l'admin).
+- Un visiteur (`anon`, #573) lit le classement général : les lignes de `score_events` et, des
+  profils, seulement `id`, `pseudo`, `bib_number`, `bib_color` et `club_id` (droits colonne par
+  colonne), jamais d'un joueur bloqué ; il n'écrit rien.
 - Alternative écartée : calcul en SQL (`score_event()`), plus atomique mais plus dur à tester
   et à lire pour des agents.
 
@@ -209,6 +215,7 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 | Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions` |
 | Référentiel | `competitions`, `events` (dont `kind` et `sub_disciplines` des épreuves combinées), `athletes`, `entries` (liste de départ), `results`, `athlete_records` (PR, SB, WR, WB) |
 | Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions` |
+| Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
 | Fonctions | `create_league()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()` |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers` ; `badges` et `user_badges` restent vides : les badges sont calculés (v0.11) |
 
@@ -260,6 +267,47 @@ fonctions `set_start_list()`, `set_results()` et `set_event_scores()`, avec la s
 Chacune écrit une ligne dans `admin_actions` (journal lisible par les admins seulement, écrit par
 la base elle-même via `private.log_admin_action()`, hors de l'API).
 
+Performances Manager (v0.15, issue #429) : place, marque, statut (DNS, DNF, DQ) et indicateurs de
+records de chaque athlète d'une épreuve, dans `event_performances`, à part de `results`. Écriture par
+`admin_set_performances()` (journalisée), lecture publique ; `admin_manager_lined_up()` signale à
+l'admin les athlètes alignés. Détail : `docs/decisions/french-track-manager.md`, section 4.
+
+Points Manager (v0.15, issue #431) : les tables World Athletics vivent en TypeScript, donc le calcul
+se fait côté serveur avec la session de l'admin. `admin_manager_scoring_sheet()` lui donne les
+alignements (privés), les performances et les points de pronos de la compétition ;
+`src/domain/manager-score.ts` calcule ; `admin_set_manager_scores()` remplace d'un bloc les lignes
+de `manager_scores` (journalisée `run_manager_scoring`). Les participants d'une ligue en lisent
+les scores ; `my_manager_score()` rend celui du joueur avec le nom de ses athlètes.
+
+Calendrier Manager (v0.16, issue #432) : à la clôture du mercato, un déclencheur sur
+`manager_leagues.mercato_closed_at` tire une fois le calendrier aller-retour
+(`private.schedule_manager_season()`, même règle que `src/domain/manager-schedule.ts`) :
+`manager_matchdays` (journée, compétition, bonus) et `manager_fixtures` (confrontations). Les
+compétitions de la ligue dont la première épreuve commence au moins 1 h après la clôture, dans
+l'ordre des dates : une par journée ; celles au-delà des 2 × (n − 1) journées sont des journées
+bonus. Lecture par les participants de la ligue, aucune écriture. Détail :
+`docs/decisions/french-track-manager.md`, section 5.
+
+Championnat Manager (v0.16, issue #433) : pas de table de plus. Les participants lisent
+`manager_matchdays`, `manager_fixtures` et `manager_scores` de leur ligue
+(`ManagerSeasonRepository`) ; `src/domain/manager-championship.ts` en tire les résultats (le plus
+haut score Manager gagne, égalité = nul ; 3/1/0) et le classement (points, victoires, différence,
+points marqués ; rang partagé sur une égalité complète). Une confrontation compte dès que sa
+compétition a des scores Manager (un score absent vaut 0) ; une journée bonus n'en a aucune et ne
+donne aucun point de classement. Pages `/manager/[id]/journee/[n]` et `/manager/[id]/classement`.
+
+Fin de saison Manager (v0.16, issue #434) : la saison se termine après la dernière journée du
+calendrier, **journées bonus comprises** (décision du propriétaire, 13 nov. 2026), c'est-à-dire
+quand chaque journée qui a une compétition a des scores Manager ; une journée sans compétition
+ne la retient pas (`seasonOver`, `src/domain/manager-honours.ts`). Un déclencheur sur
+`manager_scores` appelle alors `private.close_manager_season()`, qui fige une fois pour toutes
+`manager_honours` : champion (le premier du classement ; sur une égalité complète, le premier
+arrivé dans la ligue), classement final, confrontations directes et, par joueur, points Manager
+marqués (journées bonus comprises) et meilleur athlète. Un calcul refait ensuite ne change rien.
+Lecture par les participants (`ManagerHonoursRepository`). Page `/manager/[id]/fin-de-saison`
+(rang final, « Ma saison », bilan face au rival : le joueur juste devant, le 2e pour le
+champion) ; le palmarès est rappelé dans le profil.
+
 Records (v0.8, issue #196) : le trigger `update_records_from_result` met à jour le PB (`kind = 'pr'` en base) et le SB
 à chaque ligne de résultat. Les marques texte sont lues par `parse_mark()` (secondes, mètres ou
 points) et comparées par `is_better_mark()` : temps plus bas pour les courses (discipline avec une
@@ -279,6 +327,13 @@ française), ses épreuves (slug unique sur toutes les compétitions) et ses eng
 (`competition_athletes`, remplie aussi par chaque ligne de liste de départ). Les candidats d'une
 liste de départ sont les engagés de la compétition (tout le monde tant que personne n'est engagé).
 La compétition mise en avant est la prochaine par date (`nextCompetition`).
+
+Salle ou plein air (issue #642) : une compétition a un lieu `venue`, `indoor` (en salle) ou
+`outdoor` (en plein air, par défaut), car records de saison et épreuves diffèrent (60 m, 3000 m en
+salle). L'admin le choisit à la création et à la modification ; une compétition en salle porte
+l'étiquette « Salle » (`VenueChip`), rien ne change pour le plein air. La reprise a mis en salle
+les slugs `world-indoor-tour-%` et `european-indoor-championships-%`
+(`private.competition_venue`).
 
 Heure de Paris (décision du propriétaire du 11/11/2026, issue #501) : un seul fuseau pour toute
 l'appli, `Europe/Paris`, défini une seule fois (`TIME_ZONE` dans `src/domain/competition.ts`).
@@ -357,7 +412,7 @@ Fonctions SQL (#457) : règle pour toute nouvelle fonction, vérifiée par
   `grant execute … to authenticated`. Depuis #457, une nouvelle fonction n'est plus exécutable par
   `anon` par défaut ; l'ouvrir à `anon` demande de l'ajouter, avec sa raison, à la liste du test
   (aujourd'hui `search_clubs()`, `club_search_key()` et `club_key_matches()`, pour le choix du
-  club avant l'inscription).
+  club avant l'inscription, et `is_blocked()`, pour le classement général des visiteurs).
   Une fonction appelée par une policy ouverte à `anon` doit y figurer, sinon les lectures publiques
   cassent ;
 - une fonction `admin_*` commence par `if not is_admin() then raise … using errcode = '42501'` ;
@@ -383,8 +438,9 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 | v0.9 Cotes et performances | **F14**, **F15**, **F16** | …un joueur choisit des compétitions françaises sur l'accueil, crée sa ligue dessus, pronostique un podium avec cotes et perfs, et ses points comptent cotes et perfs selon le barème réglé par l'admin |
 | v0.10 Profils et inscription | **F18**, inscription enrichie (club, sexe, disciplines), captcha, installation sur iPhone | …un joueur s'inscrit avec son club et ses disciplines, et gère son profil |
 | v0.11 Back-office et profil | Tableau de bord admin, listes filtrables (clubs, joueurs, ligues), **F11**, **F12** (carte « Ma saison »), classement des clubs, historique des pronos | …un admin traite tout ce qui est à faire depuis un tableau de bord, trouve en deux gestes un club, un joueur ou une ligue grâce aux filtres, et un joueur ouvre un profil vivant (stats, courbe, badges, club) |
-| v0.12 Manager : ligues et règles | **F19** : règles fixées par l'admin, ligue publique ou privée de 4 à 12 participants | …un joueur crée une ligue Manager, ses amis la rejoignent, et les règles de la saison sont figées |
+| v0.12 Manager : ligues et règles | **F19** : règles fixées par l'admin, ligue publique ou privée de 4 à 10 joueurs, en nombre pair déduit des compétitions choisies (#619, #644) | …un joueur crée une ligue Manager, ses amis la rejoignent, et les règles de la saison sont figées |
 | v0.13 Manager : mercato | Enchères secrètes par tours, réservation du budget, attribution, clôture et complément des équipes | …chaque participant d'une ligue finit le mercato avec une équipe validée, sans avoir vu les offres des autres |
+| v0.13.1 Refonte des écrans | Accueil qui explique le jeu, profil express, onglets Épreuves (progression, filtres) et Classement (ma ligue, ce soir, général, visiteurs), invitations depuis une ligue, Ligue FrenchTrack officielle | …un nouveau joueur comprend le jeu dès l'accueil, s'inscrit avec un profil express, voit ce qu'il lui reste à faire dans Épreuves, se situe face à ses amis dans Classement, invite ses amis depuis une ligue et peut rejoindre la Ligue FrenchTrack |
 | v0.14 Manager : équipe et alignement | Équipe fixe, alignement verrouillé au départ de chaque compétition | …un participant aligne sa sélection et ne peut plus la changer une fois la compétition commencée |
 | v0.15 Manager : points | Barème hongrois, bonus sportifs, pronos obligatoires | …le score d'un participant sur une compétition correspond au barème, aux bonus et à ses pronos |
 | v0.16 Manager : championnat | Calendrier aller-retour, confrontations, classement, palmarès | …une saison complète désigne un champion et garde son palmarès |
@@ -429,6 +485,26 @@ X 3e non proposé, C 4e ; tolérance 0,05.
 | S16 | B, C, A avec A seul proposé à 1,8 | 4 (1 + 1, cote 1,8 × 1 = 2) |
 | S17 | A, B, C avec perfs 10.81 et 10.95 | 28 (21 + 5 + 2) |
 | S18 | A, B, C, joker, perf 10.81 | 52 ((21 + 5) × 2) |
+
+**Points Manager (v0.15, tests Vitest).** Tables World Athletics, édition 2025
+(`src/domain/world-athletics-points.ts`, #428) ; bonus (`src/domain/manager-bonus.ts`, #430) et
+score d'une compétition (`src/domain/manager-score.ts`, #431) avec le barème de test 1re 50,
+2e 30, 3e 20, RP 20, MPS 10, RN 40, RC 60, RM 100.
+
+| # | Situation | Attendu |
+|---|---|---|
+| M1 | 100 m hommes en 9.58 | 1356 points |
+| M2 | 100 m femmes en 10.49 | 1314 points |
+| M3 | Saut en hauteur hommes à 2,00 m | 914 points |
+| M4 | Décathlon hommes, total officiel 8000 | 1126 points |
+| M5 | 100 m hommes en 17.5 (plus lent que le zéro de la table) | 0 point |
+| M6 | Relais mixte 4 × 100 m, 110 m haies femmes, discipline inconnue | pas de table : 0 point de table, les bonus comptent |
+| M7 | 1re place en finale, RP et MPS | 80 de bonus (50 + 20 + 10) |
+| M8 | 4e place, ou DNS, DNF, DQ | pas de bonus de place ; DNS, DNF, DQ : 0 point |
+| M9 | Pas d'alignement, 25 points de pronos | 0 pour la compétition, pronos compris |
+| M10 | Même athlète en série (11.20) puis en finale (11.05) | la meilleure ligne (11.05), sans cumul |
+| M11 | 1re place en série avec un RP | RP seul : la place ne compte qu'en finale |
+| M12 | Relancer le calcul, ou les performances dans un autre ordre | même score ; le total est la somme des parties, jamais négative |
 
 **Règles de la base (tests pgTAP)**
 

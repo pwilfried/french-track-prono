@@ -2,7 +2,9 @@ import { describe, it } from "vitest";
 
 import type { ManagerRuleSet } from "@/application/manager-rules";
 
-import { sql } from "./contract/database";
+import type { ManagerLeagueRepository } from "@/application/manager-leagues";
+
+import { lockSharedRow, managerSeasonCompetitions, sql } from "./contract/database";
 import { managerLeagueRepositoryContract } from "./contract/manager-league-repository.contract";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryManagerLeagueStore, createSupabaseManagerLeagueRepository } from "./index";
@@ -12,7 +14,7 @@ managerLeagueRepositoryContract("in-memory fake", async () => {
     current: {
       rules: {
         budget: 100,
-        teamSize: 1,
+        minTeamSize: 1,
         quotas: [{ sex: "F", family: "sprint", min: 1, max: 1 }],
         lineup: { max: 1, minPerFamily: {} },
         rounds: { firstHours: 48, longRounds: 2, nextHours: 24 },
@@ -32,8 +34,14 @@ managerLeagueRepositoryContract("in-memory fake", async () => {
       competitionSlugs: [],
     },
   };
-  const store = createInMemoryManagerLeagueStore(rules);
+  const competitions = Array.from({ length: 10 }, (_, i) => ({
+    id: `c${i + 1}`,
+    name: `Saison Manager ${i + 1}`,
+    firstEventAt: `2030-${String(i + 1).padStart(2, "0")}-15T18:00:00.000Z`,
+  }));
+  const store = createInMemoryManagerLeagueStore(rules, competitions);
   return {
+    competitionIds: competitions.map((c) => c.id),
     creator: store.session({
       userId: "u1",
       pseudo: "Créatrice",
@@ -59,17 +67,42 @@ if (url && key) {
       signedInPlayer(url, key),
       signedInPlayer(url, key),
     ]);
-    const budget = sql("select rules ->> 'budget' from manager_rules");
-    const setBudget = async (value: number) =>
+    // The rules are one row, also changed by the Manager rule tests: the first change takes it
+    // (and notes the budget to put back), restore() frees it.
+    let held: { budget: string; unlock: () => void } | null = null;
+    const write = (value: number | string) =>
       void sql(`update manager_rules set rules = jsonb_set(rules, '{budget}', '${value}')`);
+    // The Manager rule tests replace the eligible competitions for a while: make them eligible
+    // again right before each choice.
+    const eligibleAgain = (repo: ManagerLeagueRepository): ManagerLeagueRepository => ({
+      ...repo,
+      availableCompetitions: () => (managerSeasonCompetitions(), repo.availableCompetitions()),
+      create: (...args) => (managerSeasonCompetitions(), repo.create(...args)),
+      setCompetitions: (...args) => (managerSeasonCompetitions(), repo.setCompetitions(...args)),
+    });
     return {
-      creator: createSupabaseManagerLeagueRepository(creator.client),
+      competitionIds: managerSeasonCompetitions(10),
+      creator: eligibleAgain(createSupabaseManagerLeagueRepository(creator.client)),
       creatorId: creator.userId,
       other: createSupabaseManagerLeagueRepository(other.client),
-      setBudget,
+      setBudget: async (value) => {
+        if (!held) {
+          const unlock = await lockSharedRow("manager_rules");
+          held = { budget: sql("select rules ->> 'budget' from manager_rules"), unlock };
+        }
+        write(value);
+      },
       openMercato: async (id) =>
         void sql(`update manager_leagues set mercato_opened_at = now() where id = '${id}'`),
-      restore: () => setBudget(Number(budget)),
+      restore: async () => {
+        if (!held) return;
+        try {
+          write(held.budget);
+        } finally {
+          held.unlock();
+          held = null;
+        }
+      },
     };
   });
 } else {

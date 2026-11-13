@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 import { messages } from "@/app/messages.fr";
 import { countdown, splitDuration, type CountdownLevel } from "@/domain/countdown";
 import { cn } from "@/lib/utils";
+
+import { useNow } from "./use-now";
 
 const levelStyle: Record<CountdownLevel | "locked", string> = {
   far: "bg-muted text-foreground",
@@ -27,14 +27,7 @@ export function CountdownBadge({
   /** Short label for lists: "42 min" instead of "Verrouillage dans 42 min". */
   compact?: boolean;
 }) {
-  const [tick, setTick] = useState(() => new Date());
-  useEffect(() => {
-    if (now) return;
-    const id = setInterval(() => setTick(new Date()), 1000);
-    return () => clearInterval(id);
-  }, [now]);
-
-  const state = countdown(now ?? tick, lockAt);
+  const state = countdown(useNow(now), lockAt);
   const level = state.phase === "locked" ? "locked" : state.level;
   const duration =
     state.phase === "open"

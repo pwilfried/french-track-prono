@@ -46,9 +46,10 @@ titres de PR en anglais. Dialogue avec le propriétaire en français.
 4. PR → CI verte → fusion (automatique pour les PR d'agents).
 5. Quand toutes les issues d'un milestone sont fermées (`refactor-check` et `docs-check` comprises)
    et que `main` est vert, `agents-merge` pose le tag `vX.Y.0` (décision du propriétaire du
-   11 nov. 2026). Le tag met la version en prod : migrations, puis déploiement Vercel
-   (`docs/SETUP.md`). Le propriétaire vérifie le critère « It works when… » en production ; un
-   correctif hors milestone (`vX.Y.Z`) reste tagué à la main.
+   11 nov. 2026), ou `vX.Y.Z` pour un milestone correctif `vX.Y.Z …` (décision du 12 nov. 2026).
+   Le tag met la version en prod : migrations, puis déploiement Vercel (`docs/SETUP.md`). Le
+   propriétaire vérifie le critère « It works when… » en production ; un correctif sans
+   milestone reste tagué à la main.
 
 ## Screenshots in PRs
 
@@ -57,7 +58,8 @@ sombre. Pas de données personnelles dans les captures. Les captures vivent sur 
 orpheline `boards` (`boards/<issue>/*.png`) et sont liées dans la description de la PR. Le
 workflow `ui-shots` capture en plus les pages touchées par chaque PR (`boards/issue-<n>/shots/`)
 et les montre dans un commentaire tenu à jour ; un agent n'en produit pas d'autre, et l'issue
-« Check the UI of #n » ouverte après la fusion reste la vérification humaine.
+« Vérifier vX.Y.Z en prod », ouverte par `release.sh` après le tag (une case par PR qui touche
+l'interface), reste la vérification humaine.
 
 ## Issues and milestones
 
@@ -123,11 +125,12 @@ Claude Code tourne sur les issues et les PR depuis GitHub Actions (`agents.yml`,
   la prend), label `agent:claude` (tout de suite), ou commentaire `@claude …`.
 - Deux issues à la fois (`AGENTS_CLAUDE_SLOTS`), dans le milestone en cours : `milestone-plan`,
   puis les features (`p1` d'abord), puis `refactor-check`, puis `docs-check`. Jamais une issue
-  `needs-human`, `agent:blocked`, `after-ui`, `agent:local`, ou bloquée par une issue ouverte.
+  `needs-human`, `agent:blocked`, `after-ui`, `agent:local`, assignée à quelqu'un (une personne
+  la traite), ou bloquée par une issue ouverte.
 - Une session Claude Code locale qui prend une issue y pose `agent:local` avant d'écrire la moindre
   ligne (et le retire si elle abandonne) : la chaîne ne la prend pas en double (#583).
 - PR verte : fusionnée. Rouge ou en conflit : renvoyée à Claude, 3 fois, puis au propriétaire.
-- Milestone fini et `main` vert : tag `vX.Y.0` posé avec `AGENTS_PAT` (sinon il ne déclencherait
+- Milestone fini et `main` vert : tag `vX.Y.0` (ou `vX.Y.Z` pour un milestone correctif) posé avec `AGENTS_PAT` (sinon il ne déclencherait
   pas le déploiement), release GitHub qui liste les PR, milestone fermé (`ci/agents/release.sh`).
 
 Quand tu tournes là-bas :

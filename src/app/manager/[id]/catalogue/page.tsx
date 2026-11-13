@@ -1,15 +1,23 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
 import { getMyManagerBids } from "@/application/manager-bids";
 import { browseManagerCatalogue } from "@/application/manager-catalogue";
+import { getManagerLeague } from "@/application/manager-leagues";
+import { getManagerRevealRounds } from "@/application/manager-reveal";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { CatalogueCard } from "@/components/manager/catalogue-card";
+import { MercatoBanner } from "@/components/manager/mercato-banner";
+import { CompetitionChips } from "@/components/events/competition-chips";
 import { buttonVariants } from "@/components/ui/button";
 import { MANAGER_FAMILIES, MANAGER_SEXES, type ManagerSex } from "@/domain/manager-rules";
-import { createSupabaseManagerBids, createSupabaseManagerCatalogue } from "@/infra";
+import {
+  createSupabaseManagerBids,
+  createSupabaseManagerCatalogue,
+  createSupabaseManagerReveals,
+} from "@/infra";
 
 import { messages } from "../../../messages.fr";
 import { getSessionClient } from "../../../session";
@@ -31,7 +39,9 @@ function caught(error: unknown): "error" {
 
 /**
  * The mercato catalogue of a league (#421): search and filters in the address, so they work
- * without script and survive a reload; a page of 30 athletes at a time.
+ * without script and survive a reload; a page of 30 athletes at a time. The filters are one row
+ * of chips that apply at once, so the first athlete shows without scrolling on a phone (#497).
+ * Before the mercato opens, a band says when and who plays; the catalogue shows without bids (#620).
  */
 export default async function CataloguePage({
   params,
@@ -42,7 +52,7 @@ export default async function CataloguePage({
 }) {
   const { id } = await params;
   const search = await searchParams;
-  await managerPorts(`/manager/${id}/catalogue`);
+  const ports = await managerPorts(`/manager/${id}/catalogue`);
   const sex = MANAGER_SEXES.includes(search.sexe as ManagerSex)
     ? (search.sexe as ManagerSex)
     : null;
@@ -52,7 +62,7 @@ export default async function CataloguePage({
 
   const client = await getSessionClient();
   const catalogue = createSupabaseManagerCatalogue(client);
-  const [view, mine] = await Promise.all([
+  const [view, mine, reveals, league] = await Promise.all([
     browseManagerCatalogue({ catalogue })
       .execute({
         leagueId: id,
@@ -64,17 +74,37 @@ export default async function CataloguePage({
     getMyManagerBids({ bids: createSupabaseManagerBids(client), catalogue })
       .execute({ leagueId: id })
       .catch(caught),
+    getManagerRevealRounds({ reveals: createSupabaseManagerReveals(client) })
+      .execute({ leagueId: id })
+      .catch(caught),
+    getManagerLeague(ports).execute({ id }).catch(caught),
   ]);
+  // The first visit after the close of a round opens its reveal, once (#604).
+  if (reveals !== "error" && reveals.toReveal !== null) {
+    redirect(`/manager/${id}/tour/${reveals.toReveal}`);
+  }
   const bidOf = new Map(mine === "error" ? [] : mine.bids.map((b) => [b.athleteId, b.amount]));
 
-  const pageHref = (page: number) =>
-    `?${new URLSearchParams({
+  /** The address of the catalogue with some filters changed; a new filter starts at page 1. */
+  const href = (
+    change: Partial<{
+      sex: ManagerSex | null;
+      family: (typeof MANAGER_FAMILIES)[number] | null;
+      availableOnly: boolean;
+      page: number;
+    }>,
+  ) => {
+    const next = { sex, family, availableOnly, page: 1, ...change };
+    const params = new URLSearchParams({
       ...(query && { q: query }),
-      ...(sex && { sexe: sex }),
-      ...(family && { famille: family }),
-      ...(availableOnly && { libres: "1" }),
-      page: String(page),
-    })}`;
+      ...(next.sex && { sexe: next.sex }),
+      ...(next.family && { famille: next.family }),
+      ...(next.availableOnly && { libres: "1" }),
+      ...(next.page > 1 && { page: String(next.page) }),
+    }).toString();
+    return `/manager/${id}/catalogue${params && `?${params}`}`;
+  };
+  const pageHref = (page: number) => href({ page });
   const filtered = Boolean(query || sex || family || availableOnly);
 
   return (
@@ -92,58 +122,76 @@ export default async function CataloguePage({
           />
         ) : mine.mercatoOpen || mine.mercatoClosed ? (
           <MyBidsPanel leagueId={id} bids={mine} />
+        ) : league === "error" ? (
+          <ErrorNotice
+            retryHref={`/manager/${id}/catalogue`}
+            message={messages.errors.LEAGUES_UNAVAILABLE}
+          />
         ) : (
-          <p className="rounded-card bg-muted p-4 text-sm font-semibold">{text.mercatoClosed}</p>
+          // Before the mercato: when it opens and who plays, no bid yet (#620).
+          <MercatoBanner opensAt={league.mercato.startsAt} participants={league.participants} />
         )}
-        <form className="flex flex-col gap-3 rounded-card border border-border bg-card p-3.5">
-          <label className="flex flex-col gap-1 text-sm font-semibold">
-            {text.search}
-            <input
-              type="search"
-              name="q"
-              defaultValue={query}
-              placeholder={text.searchPlaceholder}
-              className={field}
-            />
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1 text-sm font-semibold">
-              {text.sex}
-              <select name="sexe" defaultValue={sex ?? ""} className={field}>
-                <option value="">{text.allSexes}</option>
-                {MANAGER_SEXES.map((s) => (
-                  <option key={s} value={s}>
-                    {text.sexes[s]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-semibold">
-              {text.family}
-              <select name="famille" defaultValue={family ?? ""} className={field}>
-                <option value="">{text.all}</option>
-                {MANAGER_FAMILIES.map((f) => (
-                  <option key={f} value={f}>
-                    {messages.disciplines.family[f]}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-semibold">
-            <input
-              type="checkbox"
-              name="libres"
-              value="1"
-              defaultChecked={availableOnly}
-              className="size-6 shrink-0 accent-primary"
-            />
-            {text.availableOnly}
-          </label>
-          <button type="submit" className={`${buttonVariants({ variant: "muted" })} w-full`}>
-            {text.apply}
-          </button>
+        {reveals !== "error" && reveals.rounds.length > 0 && (
+          <nav aria-labelledby="round-results" className="flex flex-col gap-2">
+            <h2
+              id="round-results"
+              className="text-xs font-bold uppercase tracking-wide text-muted-foreground"
+            >
+              {messages.roundReveal.roundsTitle}
+            </h2>
+            <ul className="flex flex-wrap gap-2">
+              {reveals.rounds.map((round) => (
+                <li key={round}>
+                  <Link
+                    href={`/manager/${id}/tour/${round}?vue=toutes`}
+                    prefetch={false}
+                    className={buttonVariants({ variant: "muted" })}
+                  >
+                    {messages.roundReveal.roundLink(round)}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+        {/* The search applies on Enter and keeps the other filters (#497). */}
+        <form role="search">
+          <input
+            type="search"
+            name="q"
+            aria-label={text.search}
+            defaultValue={query}
+            placeholder={text.searchPlaceholder}
+            className={field}
+          />
+          {sex && <input type="hidden" name="sexe" value={sex} />}
+          {family && <input type="hidden" name="famille" value={family} />}
+          {availableOnly && <input type="hidden" name="libres" value="1" />}
         </form>
+        <CompetitionChips
+          label={text.filters}
+          chips={[
+            { key: "all", name: text.all, active: !family, href: href({ family: null }) },
+            ...MANAGER_FAMILIES.map((f) => ({
+              key: f,
+              name: messages.disciplines.family[f],
+              active: family === f,
+              href: href({ family: family === f ? null : f }),
+            })),
+            ...MANAGER_SEXES.map((s) => ({
+              key: s,
+              name: text.sexes[s],
+              active: sex === s,
+              href: href({ sex: sex === s ? null : s }),
+            })),
+            {
+              key: "available",
+              name: text.availableOnly,
+              active: availableOnly,
+              href: href({ availableOnly: !availableOnly }),
+            },
+          ]}
+        />
 
         {view === "error" ? (
           <ErrorNotice
