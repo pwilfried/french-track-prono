@@ -57,6 +57,10 @@
   --medal-bronze-from: #d99464;
   --medal-bronze-to: #8b4513;
   --medal-bronze-ink: #ffffff;
+  /* The opponent's cards in a Manager head-to-head (#605): light blue, navy ink (AA). */
+  --duel-blue-from: #e3edfb;
+  --duel-blue-to: #a9c4ea;
+  --duel-blue-ink: #082e66;
   /* The Manager stadium (#427): a red running track around a green field. */
   --track: #c8553d;
   --field: #3d8b4f;

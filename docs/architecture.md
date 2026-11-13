@@ -296,6 +296,15 @@ points marqués ; rang partagé sur une égalité complète). Une confrontation 
 compétition a des scores Manager (un score absent vaut 0) ; une journée bonus n'en a aucune et ne
 donne aucun point de classement. Pages `/manager/[id]/journee/[n]` et `/manager/[id]/classement`.
 
+Confrontation Manager (v0.16, issue #605) : un alignement reste secret jusqu'au verrouillage de sa
+compétition (`manager_lineups`, chacun lit les siens) ; ensuite la RPC `manager_duel_lineups`
+donne à tout participant de la ligue tous les alignements de cette compétition (`locked` faux et
+aucun alignement avant ; 42501 hors ligue). Les points par athlète viennent de
+`manager_scores.athletes`. Port `ManagerDuelRepository`, cas d'usage `getManagerDuel` : les deux
+alignements placés comme dans le stade (`placeLineup`), l'adversaire en haut, le joueur en bas
+(pour un membre hors confrontation : l'extérieur en haut). Page
+`/manager/[id]/confrontation/[n]/[domicile]`, ouverte depuis chaque carte de la journée.
+
 Fin de saison Manager (v0.16, issue #434) : la saison se termine après la dernière journée du
 calendrier, **journées bonus comprises** (décision du propriétaire, 13 nov. 2026), c'est-à-dire
 quand chaque journée qui a une compétition a des scores Manager ; une journée sans compétition

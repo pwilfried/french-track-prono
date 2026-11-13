@@ -15,6 +15,7 @@ import type { ManagerSex } from "@/domain/manager-rules";
 import { cn } from "@/lib/utils";
 
 import { AthleteCard } from "./athlete-card";
+import { EmptyPlace, STADIUM_GRID, Stadium } from "./stadium";
 
 const text = messages.lineup;
 
@@ -125,11 +126,8 @@ export function LineupBoard({
           </span>
         </div>
         {/* The track, then the field: the places sit on the grass. */}
-        <div className="rounded-[2.5rem] bg-track p-3 shadow-inner">
-          <ul
-            aria-labelledby="stadium"
-            className="grid grid-cols-4 gap-2 rounded-[2rem] bg-field p-3 sm:gap-3 md:grid-cols-8"
-          >
+        <Stadium>
+          <ul aria-labelledby="stadium" className={STADIUM_GRID}>
             {places.map((place, i) => {
               const athlete = placed[i] ? byId.get(placed[i]!) : undefined;
               const label = text.place[place];
@@ -150,9 +148,9 @@ export function LineupBoard({
                   {athlete ? (
                     <AthleteCard athlete={athlete} paid={athlete.paid} compact />
                   ) : (
-                    <div
+                    <EmptyPlace
+                      label={label}
                       className={cn(
-                        "grid aspect-[3/4] place-items-center rounded-xl border-2 border-dashed p-1 text-center text-[11px] font-bold leading-tight",
                         fillable[i]
                           ? "border-white/70 text-field-foreground"
                           : "border-white/30 bg-black/20 text-field-foreground/70",
@@ -160,11 +158,8 @@ export function LineupBoard({
                           "border-solid border-secondary bg-secondary/30 motion-safe:animate-pulse",
                       )}
                     >
-                      <span>
-                        {label}
-                        {!fillable[i] && <span className="block font-semibold">{text.nobody}</span>}
-                      </span>
-                    </div>
+                      {!fillable[i] && <span className="block font-semibold">{text.nobody}</span>}
+                    </EmptyPlace>
                   )}
                   {editable && (athlete || lit) && (
                     <button
@@ -189,7 +184,7 @@ export function LineupBoard({
               );
             })}
           </ul>
-        </div>
+        </Stadium>
       </section>
 
       <section aria-labelledby="bench" className="flex flex-col gap-2">

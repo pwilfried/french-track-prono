@@ -33,6 +33,11 @@ export {
 } from "./in-memory/manager-season-repository";
 export { createSupabaseManagerSeasonRepository } from "./supabase/manager-season-repository";
 export {
+  createInMemoryManagerDuelStore,
+  type ManagerDuelFixture,
+} from "./in-memory/manager-duel-repository";
+export { createSupabaseManagerDuelRepository } from "./supabase/manager-duel-repository";
+export {
   createInMemoryManagerHonoursStore,
   type ManagerHonoursFixture,
 } from "./in-memory/manager-honours-repository";

@@ -119,7 +119,12 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **CompetitionChips** : puces d'une compétition à l'autre (classement, historique des pronos).
 - **AthleteCard** (Manager, #426) : carte or d'un athlète de l'équipe ; code de famille, prix
   payé, initiales (jamais de photo), prénom et initiale du nom ; états « Sélectionné » et
-  « Absent·e » ; format compact sur une place du stade.
+  « Absent·e » ; format compact sur une place du stade. Dans une confrontation (#605) : bonus
+  (« +20 ») en haut à droite et points en bas à la place du prix, bleu clair (`--duel-blue-*`)
+  pour l'adversaire ; un athlète à 0 a un cadre rouge en pointillés.
+- **DuelStadium** (Manager, #605) : un seul stade coupé par une ligne blanche, les titulaires de
+  l'adversaire en haut (cartes bleues), ceux du joueur en bas (cartes or), sur les places de
+  l'alignement ; « … n'a pas validé d'alignement : 0 point » à la place d'une moitié vide.
 - **LineupBoard** (Manager, #427) : un stade (piste `--track` autour d'une pelouse `--field`)
   porte les places des titulaires, une par carte, chacune d'une famille ou « Libre » (règles de la
   ligue) ; dessous, les remplaçants. Glisser-déposer à la souris ; au toucher, une carte puis une
