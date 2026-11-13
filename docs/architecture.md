@@ -76,6 +76,7 @@ Numérotées pour la planification. F11 et F12, d'abord repoussées, arrivent av
 | F17 | Ligues publiques jusqu'à 200 joueurs, sans code, noms modérés, signalement (v0.7) | Jouer avec la communauté FrenchTrack |
 | F18 | Gestion des profils : pseudo, dossard, e-mail, club, disciplines ; fiche minimale ; admin chercher, bloquer, supprimer (v0.10, `docs/decisions/profils.md`) | Un compte que le joueur maîtrise |
 | F19 | French Track Manager : équipe recrutée aux enchères secrètes, alignement avant chaque compétition, barème hongrois, bonus et pronos, championnat aller-retour (v0.12 à v0.16, `docs/decisions/french-track-manager.md`) | Jouer toute la saison en manager |
+| F20 | Ligues thématiques : une ligue limitée à une ou plusieurs familles d'épreuves (sprint, haies, lancers…), seul son classement change (v0.17, #613) | Jouer entre spécialistes d'une famille |
 
 Barème (modifiable en base) : 3 points par athlète à la bonne place, 1 point pour un athlète sur
 le podium mais à la mauvaise place, +3 pour un podium parfait, +2 de bonus coup de flair
@@ -211,6 +212,11 @@ gagner ? » est calculée sur tous les pronos de l'épreuve, jamais sur la seule
 calculés (`score_events`, raison `flair`) : il suit toujours le barème de la base.
 
 Les décisions du propriétaire prises pendant ces versions sont tracées dans l'issue #112.
+
+**Compétitions du back-office (#647).** `/admin/competitions` filtre ses deux listes (à venir,
+passées) par portée, lieu (salle, plein air), niveau et statut (à venir, en cours, terminée) :
+quatre rangées de puces, une valeur chacune, gardées dans l'adresse (`portee`, `lieu`, `niveau`,
+`statut`, valeur inconnue ignorée). Règles pures : `src/domain/competition-filter.ts`.
 
 **Cache des données publiques (#693).** Les données qui changent rarement et sont les mêmes pour
 tout le monde sont gardées d'une requête à l'autre par le cache de données de Next.js ; tout le
@@ -542,6 +548,7 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 | v0.14 Manager : équipe et alignement | Équipe fixe, alignement verrouillé au départ de chaque compétition | …un participant aligne sa sélection et ne peut plus la changer une fois la compétition commencée |
 | v0.15 Manager : points | Barème hongrois, bonus sportifs, pronos obligatoires | …le score d'un participant sur une compétition correspond au barème, aux bonus et à ses pronos |
 | v0.16 Manager : championnat | Calendrier aller-retour, confrontations, classement, palmarès | …une saison complète désigne un champion et garde son palmarès |
+| v0.17 Ligues thématiques | **F20**, onglets Compétitions (programme par jour), Classement (une portée, ma place, évolution depuis la dernière compétition) et Ligues (Mes ligues, Découvrir), sélecteur de compétitions de la saison, ligue créée avec au moins une compétition active, feuille de résultats unique qui calcule pronos et Manager, collage du tableau World Athletics, filtres des compétitions du back-office, cache des données publiques | …un joueur crée une ligue (privée ou publique) limitée à une ou plusieurs familles d'épreuves (sprint, haies, lancers…) ; seuls les pronos sur ces épreuves comptent dans le classement de la ligue ; le classement général et le jeu sans ligue ne changent pas |
 | Plus tard | Carte « Mon podium du 100 m », questions bonus, connexion Google / Apple | à planifier |
 
 ## Cas de test du cœur
@@ -622,6 +629,23 @@ score d'une compétition (`src/domain/manager-score.ts`, #431) avec le barème d
 | C10 | Journée bonus pas encore calculée, ou journée sans compétition | la saison n'est pas finie tant que la bonus manque ; une journée sans compétition ne la retient pas |
 | C11 | Rival à la fin de la saison | le joueur juste devant au classement final, le 2e pour le champion |
 | C12 | Étape de l'accueil | ligue tant que le mercato attend, mercato ouvert, alignement à faire, points en attente, confrontations, champion à la fin |
+
+**Ligues thématiques et écrans (v0.17, tests Vitest).** Familles (`src/domain/league-families.ts`,
+#613), entrée d'une compétition dans une ligue (`isOpenToLeagues`, `countsSinceEntry`,
+`src/domain/league.ts`, #614), évolution de rang (`src/domain/ranking.ts`, #661), collage des
+résultats (`src/domain/result-import.ts`, #666).
+
+| # | Situation | Attendu |
+|---|---|---|
+| L1 | Ligue sans famille | toutes les épreuves comptent, comme avant la v0.17 |
+| L2 | Ligue « Sprint · Haies », pronos sur un 100 m et un lancer du poids | seul le 100 m compte au classement de la ligue ; les deux comptent au classement général |
+| L3 | Hauteur et triple saut | même famille « Sauts » |
+| L4 | Épreuve de famille inconnue dans une ligue limitée | ne compte pas |
+| L5 | Famille ajoutée le 1er mars | ne compte que les épreuves qui commencent après ; aucune famille ajoutée à une ligue sur toutes les épreuves |
+| L6 | Compétition terminée la veille, heure de Paris | refusée à la création d'une ligue ; à venir ou en cours jusqu'à son dernier jour : acceptée |
+| L7 | Épreuve verrouillée juste avant l'entrée de sa compétition dans la ligue | ne compte pas au classement de la ligue ; juste après, elle compte ; sans date d'entrée, tout compte |
+| L8 | Évolution de rang dans l'onglet Classement | comparée au classement à la fin de l'avant-dernière compétition terminée ; aucune flèche avec moins de deux compétitions terminées, ni pour un nouveau joueur |
+| L9 | Tableau World Athletics collé (tabulations ou espaces, ex æquo, DNS / DNF / DQ, NM) | une ligne par athlète, ex æquo à la même place ; rapproché par nom sans accents et pays, un homonyme d'un autre pays n'est pas pris, les lignes inconnues sont listées à part |
 
 **Règles de la base (tests pgTAP)**
 
