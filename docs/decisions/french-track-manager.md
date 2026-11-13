@@ -269,7 +269,7 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   par la 2e journée de l'aller (la 1re vient en dernier). Rien avec un nombre impair de joueurs.
 - **Compétitions de la saison** (règle du propriétaire, 13 nov. 2026, #432) : celles de la
   ligue dont la **première épreuve commence au moins 1 h après la fin du mercato** (une
-  compétition sans épreuve compte à partir de minuit UTC de sa date de début), dans l'ordre des
+  compétition sans épreuve compte à partir de minuit, heure de Paris, de sa date de début), dans l'ordre des
   dates (première épreuve, puis nom). Une compétition qui commence plus tôt ne compte pas.
 - **Une compétition = une journée** (réponse du propriétaire, 10 nov. 2026, #440) : les
   compétitions de la saison vont aux journées 1, 2, 3… Les 2 × (n − 1) premières sont des

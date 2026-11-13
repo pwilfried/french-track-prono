@@ -4,7 +4,8 @@
 -- (mercato_closed_at, #424), and never changes: drawn once, no write for the players.
 -- Owner's rule (13 Nov. 2026): the season plays the competitions of the league whose first event
 -- starts at least 1 h after the close of the mercato (a competition without events yet counts
--- from midnight UTC of starts_on), in date order (first event, then name). One competition = one
+-- from its starts_on day in Paris, private.manager_first_event), in date order (first event, then
+-- name). One competition = one
 -- matchday (#440): the first 2 × (n − 1) are head-to-head matchdays; the ones left are bonus
 -- matchdays (Manager points only, no head-to-head, no championship points). A head-to-head
 -- matchday beyond the last competition has none (competition_id null) and is not played.
@@ -72,8 +73,7 @@ begin
   select array_agg(id order by first_event_at, name, id) into v_competitions
   from (
     select c.id, c.name,
-           coalesce((select min(e.starts_at) from events e where e.competition_id = c.id),
-                    c.starts_on::timestamp at time zone 'UTC') as first_event_at
+           private.manager_first_event(c.id) as first_event_at
     from manager_leagues l
     cross join lateral unnest(l.competition_ids) as u(id)
     join competitions c on c.id = u.id
