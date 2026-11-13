@@ -76,18 +76,28 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   await expect(page.locator('main:not([aria-busy="true"])')).toContainText("+12 pts");
   await expect(page.locator('main:not([aria-busy="true"])')).toContainText("Podium parfait");
 
-  // The events tab opens on « À faire »; « Terminées » shows it under « Déjà courues » with my
-  // result and my points (#488, #546).
-  await page.goto("/epreuves?competition=ultimate-championship-2026");
+  // On the day of the event, « Terminées » shows it with my result and my points (#488, #546,
+  // #659), and the progress line counts my points.
+  const day = sql(
+    `select to_char((starts_at at time zone 'Europe/Paris') - interval '6 hours', 'YYYY-MM-DD')
+     from events where slug = '${slug}'`,
+  );
+  await page.goto(`/competitions?competition=ultimate-championship-2026&jour=${day}`);
+  await expect(
+    page
+      .getByRole("navigation", { name: "Jours de la compétition" })
+      .locator('a[aria-current="date"]'),
+  ).toHaveAttribute("href", new RegExp(`jour=${day}`));
+  await expect(page.getByRole("region", { name: "Ma progression" })).toContainText("12 pts");
   const filters = page.getByRole("navigation", { name: "Filtrer les épreuves" });
-  await expect(filters.getByRole("link", { name: /^À faire/ })).toHaveAttribute(
+  await filters.getByRole("link", { name: /^Terminées/ }).click();
+  await expect(filters.getByRole("link", { name: /^Terminées/ })).toHaveAttribute(
     "aria-current",
     "true",
   );
-  await filters.getByRole("link", { name: /^Terminées/ }).click();
-  const done = page.getByRole("region", { name: /^Déjà courues/ });
-  await expect(done.locator(`a[href="/epreuves/${slug}"]`)).toContainText("+12 pts");
-  await expect(done.locator(`a[href="/epreuves/${slug}"]`)).toContainText("Podium parfait !");
+  const done = page.locator(`main a[href="/epreuves/${slug}"]`);
+  await expect(done).toContainText("+12 pts");
+  await expect(done).toContainText("Podium parfait !");
 
   // The event page now shows the result and my podium against the official one.
   await page.goto(`/epreuves/${slug}`);

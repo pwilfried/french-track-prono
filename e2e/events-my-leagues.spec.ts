@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { sql } from "../src/infra/contract/database";
 import { joinLeagueFor, newPlayer, signUp } from "./players";
 
-test("the events tab offers the competitions of my leagues first", async ({ page }) => {
+test("the competitions sheet offers the competitions of my leagues first", async ({ page }) => {
   const tag = `${Date.now() % 1000000}`;
   const name = `Meeting E2E ${tag}`;
   sql(`with c as (
@@ -20,12 +20,13 @@ test("the events tab offers the competitions of my leagues first", async ({ page
   await page.waitForURL(/\/profil$/);
   joinLeagueFor(player.email, `e2e-mine-${tag}`);
 
-  await page.goto("/epreuves");
-  const picker = page.getByRole("navigation", { name: "Choisir la compétition" });
-  await expect(picker.getByText("Mes ligues")).toBeVisible();
-  await picker.getByRole("link", { name: name }).click();
+  await page.goto("/competitions?competition=ultimate-championship-2026");
+  await page.getByRole("button", { name: /^Changer de compétition/ }).click();
+  const sheet = page.getByRole("dialog", { name: "Choisir une compétition" });
+  await expect(sheet.getByRole("heading", { level: 3 }).first()).toHaveText("Dans mes ligues");
+  await sheet.getByRole("link", { name: new RegExp(name) }).click();
   await page.waitForURL(new RegExp(`competition=e2e-mine-${tag}`));
-  await expect(picker.getByRole("link", { name: name })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
   // The card is a link named by the event (#517), its label kept in a hidden span.
   await expect(page.getByRole("link", { name: /^100 m, Femmes/ })).toBeVisible();
 

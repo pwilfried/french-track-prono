@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { messages } from "@/app/messages.fr";
 
 import { NavIcon } from "./nav-icon";
-import { isActive, MOBILE_NAV } from "./nav-items";
+import { isItemActive, MOBILE_NAV } from "./nav-items";
 
 /** Bottom bar on phones (hidden from md): the five sections, the current one in red. */
 export function BottomNav() {
@@ -18,13 +18,13 @@ export function BottomNav() {
     >
       <ul className="mx-auto grid max-w-md grid-cols-5">
         {MOBILE_NAV.map((item) => {
-          const active = isActive(item.href, pathname);
+          const active = isItemActive(item, pathname);
           return (
             <li key={item.href}>
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-semibold ${
+                className={`flex min-h-14 flex-col items-center justify-center gap-0.5 whitespace-nowrap text-[11px] font-semibold tracking-tight ${
                   active ? "text-accent-text" : "text-muted-foreground"
                 }`}
               >

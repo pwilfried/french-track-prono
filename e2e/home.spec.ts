@@ -23,7 +23,7 @@ test("a visitor sees one main action above the fold, how to play and the next co
   await expect(page.locator("main ol > li")).toHaveCount(3);
   await expect(page.getByRole("link", { name: "Créer une ligue" })).toBeVisible();
   await page.getByRole("link", { name: "Voir les épreuves" }).click();
-  await expect(page).toHaveURL(/\/epreuves\?competition=ultimate-championship-2026$/);
+  await expect(page).toHaveURL(/\/competitions\?competition=ultimate-championship-2026$/);
 });
 
 test("a visitor sees a competition, its next events and reaches the full list", async ({
@@ -38,7 +38,7 @@ test("a visitor sees a competition, its next events and reaches the full list", 
   ).toBeAttached();
 
   await page.getByRole("link", { name: /^Voir les \d+ épreuves$/ }).click();
-  await expect(page).toHaveURL(/\/epreuves\?competition=ultimate-championship-2026$/);
+  await expect(page).toHaveURL(/\/competitions\?competition=ultimate-championship-2026$/);
 });
 
 test("the app can be installed: the manifest and its icons are served", async ({

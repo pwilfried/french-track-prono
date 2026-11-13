@@ -91,7 +91,7 @@ function MyPointsList({ mine, events }: { mine: MyPoints; events: EventSummary[]
             <strong className="block text-foreground">{messages.points.emptyTitle}</strong>
             {messages.points.emptyText}
           </p>
-          <Link href="/epreuves" className={`${buttonVariants()} w-full`}>
+          <Link href="/competitions" className={`${buttonVariants()} w-full`}>
             {messages.points.seeEvents}
           </Link>
         </>
@@ -103,7 +103,7 @@ function MyPointsList({ mine, events }: { mine: MyPoints; events: EventSummary[]
             return (
               <li key={line.eventId}>
                 <Link
-                  href={event ? `/epreuves/${event.slug}` : "/epreuves"}
+                  href={event ? `/epreuves/${event.slug}` : "/competitions"}
                   className="flex flex-col gap-2 rounded-card border border-border bg-card p-3.5"
                 >
                   <span className="flex items-center gap-3">

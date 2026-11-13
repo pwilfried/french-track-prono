@@ -251,7 +251,7 @@ part de sa prochaine action (#526) : `nextAction` et `leagueStanding` (`src/doma
 choisissent la finale ouverte la plus proche du verrouillage, sinon la prochaine compétition, et la
 ligue où il est le mieux classé. Un profil incomplet (ni club ni discipline) y voit la carte
 « Complète ton profil » (#540) : la règle, les six familles et les 30 jours de « Plus tard » vivent
-dans `src/domain/profile-reminder.ts`, la date dans `player_details.reminder_hidden_until` ; les compétitions par type restent sur `/competitions`, et
+dans `src/domain/profile-reminder.ts`, la date dans `player_details.reminder_hidden_until` ; les compétitions par type à cocher pour une ligue sont sur `/ligues/creer/competitions` (#659), et
 les pages suivent la prochaine compétition par date (`src/app/competition.ts`). Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
 calculé en TypeScript à partir des lignes de points (pas de vue SQL).
 
@@ -411,6 +411,13 @@ seulement dans une compétition où le joueur a déjà fait un prono, puis ses p
 calculés. Une notification par heure au plus, jamais deux fois la même (`push_log`), rien pour un
 joueur bloqué. Pas de clé service_role : le workflow passe par l'API Management de Supabase,
 comme « Inactive accounts ».
+
+« Me prévenir à la publication » (#659) : sur une compétition sans programme, le joueur connecté
+s'abonne (`program_alerts`, écrite seulement par `turn_on_program_alert()` et
+`turn_off_program_alert()`, chacun ne lit que ses lignes). Dès que la compétition a sa première
+épreuve, l'Edge Function `push-notifications` lit `private.program_due()` et envoie une seule
+notification par joueur et par compétition (« Le programme de … est en ligne », lien vers
+l'onglet), notée par `private.program_mark_sent()` ; rien pour un joueur bloqué ou sans appareil.
 
 Tours (v0.8, issue #198) : une série, un quart ou une demi-finale pointe vers le tour qu'il
 alimente (`events.parent_id`). On ne pronostique que les finales, et une finale seulement quand

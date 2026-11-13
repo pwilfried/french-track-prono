@@ -24,7 +24,7 @@ test("an event of a French competition opens from its competition page", async (
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("100 m — Finale");
   await expect(page.locator("main").getByRole("link", { name: /^‹ Épreuves$/ })).toHaveAttribute(
     "href",
-    `/epreuves?competition=${tag}`,
+    new RegExp(`^/competitions\\?competition=${tag}&jour=\\d{4}-\\d{2}-\\d{2}$`),
   );
 
   sql(`delete from competitions where slug = '${tag}'`);

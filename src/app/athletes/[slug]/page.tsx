@@ -46,7 +46,7 @@ export default async function AthletePage({ params }: { params: Promise<{ slug: 
     <main id="main" className="flex flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-4">
         <Link
-          href="/epreuves"
+          href="/competitions"
           className="inline-flex min-h-11 items-center self-start font-semibold text-brand dark:text-secondary"
         >
           ‹ {messages.event.back}

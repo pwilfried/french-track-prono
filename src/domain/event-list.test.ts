@@ -2,13 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import type { EventGender, EventSummary } from "./event";
 import {
-  eventSections,
   eventsProgress,
   filterCounts,
   filterEvents,
   groupEventsByDay,
   openEvents,
-  splitFinished,
 } from "./event-list";
 
 const event = (slug: string, startsAt: string, gender: EventGender = "M"): EventSummary => ({
@@ -76,35 +74,6 @@ describe("openEvents", () => {
   });
 });
 
-describe("splitFinished", () => {
-  const upcoming = (slug: string, startsAt: string): EventSummary => ({
-    ...event(slug, startsAt),
-    status: "upcoming",
-  });
-
-  it("puts the events still to run first, in their order, and the finished ones apart", () => {
-    const { coming, done } = splitFinished([
-      event("done-early", "2026-09-11T17:00:00Z"),
-      upcoming("next", "2026-09-12T17:00:00Z"),
-      { ...upcoming("live", "2026-09-12T15:00:00Z"), status: "live" },
-      event("done-late", "2026-09-11T19:00:00Z"),
-    ]);
-
-    expect(coming.map((e) => e.slug)).toEqual(["next", "live"]);
-    expect(done.map((e) => e.slug)).toEqual(["done-late", "done-early"]);
-  });
-
-  it("orders the finished events from the latest to the earliest", () => {
-    const { done } = splitFinished([
-      event("a", "2026-09-10T17:00:00Z"),
-      event("b", "2026-09-12T17:00:00Z"),
-      event("c", "2026-09-11T17:00:00Z"),
-    ]);
-
-    expect(done.map((e) => e.slug)).toEqual(["b", "c", "a"]);
-  });
-});
-
 // The events tab (#546): Paris is UTC+2 in August.
 const at = (slug: string, startsAt: string, status: EventSummary["status"] = "upcoming") => ({
   ...event(slug, startsAt),
@@ -141,42 +110,6 @@ describe("filterEvents and filterCounts", () => {
   });
 });
 
-describe("eventSections", () => {
-  it("puts tonight first, then tomorrow, then the later days, then the finished events latest first", () => {
-    const sections = eventSections(
-      [
-        at("e", "2026-08-13T19:00:00Z", "finished"),
-        at("d", "2026-08-14T19:00:00Z", "finished"),
-        at("a", "2026-08-15T18:35:00Z"),
-        at("b", "2026-08-16T18:00:00Z"),
-        at("c", "2026-08-18T18:00:00Z"),
-      ],
-      new Date("2026-08-15T10:00:00Z"),
-    );
-
-    expect(sections.map((s) => [s.kind, s.day, slugs(s.events)])).toEqual([
-      ["tonight", "2026-08-15", ["a"]],
-      ["tomorrow", "2026-08-16", ["b"]],
-      ["day", "2026-08-18", ["c"]],
-      ["done", null, ["d", "e"]],
-    ]);
-  });
-
-  it("changes day at midnight in Paris, not in UTC", () => {
-    // 22:30 UTC is already 00:30 on the 16th in Paris.
-    const sections = eventSections(
-      [at("a", "2026-08-16T18:00:00Z"), at("b", "2026-08-17T18:00:00Z")],
-      new Date("2026-08-15T22:30:00Z"),
-    );
-
-    expect(sections.map((s) => s.kind)).toEqual(["tonight", "tomorrow"]);
-  });
-
-  it("gives an empty list no section", () => {
-    expect(eventSections([], new Date())).toEqual([]);
-  });
-});
-
 describe("eventsProgress", () => {
   const first = at("first", "2026-08-15T18:35:00Z");
 
@@ -191,38 +124,8 @@ describe("eventsProgress", () => {
         ["a", { points: 6 }],
         ["b", { points: null }],
       ]),
-      new Date("2026-08-15T10:00:00Z"),
     );
 
     expect([progress.posed, progress.total, progress.points]).toEqual([2, 3, 6]);
-  });
-
-  it("counts the days to the first final before the competition", () => {
-    const progress = eventsProgress([first], new Map(), new Date("2026-08-10T10:00:00Z"));
-
-    expect(progress.daysToStart).toBe(5);
-  });
-
-  it("is in the competition from midnight in Paris on the day of the first final", () => {
-    const progress = eventsProgress([first], new Map(), new Date("2026-08-14T22:30:00Z"));
-
-    expect(progress.daysToStart).toBeNull();
-  });
-
-  it("counts tonight's events left to do and gives the next lock", () => {
-    const soonest = at("soonest", "2026-08-15T18:00:00Z");
-    const progress = eventsProgress(
-      [first, soonest, at("posed", "2026-08-15T19:00:00Z"), at("tomorrow", "2026-08-16T18:00:00Z")],
-      new Map([["posed", { points: null }]]),
-      new Date("2026-08-15T10:00:00Z"),
-    );
-
-    expect(progress.tonight).toEqual({ todo: 2, nextLockAt: soonest.lockAt });
-  });
-
-  it("has nothing left tonight once tonight's events are locked", () => {
-    const progress = eventsProgress([first], new Map(), new Date("2026-08-15T19:00:00Z"));
-
-    expect(progress.tonight).toEqual({ todo: 0, nextLockAt: null });
   });
 });

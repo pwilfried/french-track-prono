@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { messages } from "@/app/messages.fr";
 
-import { DESKTOP_NAV, isActive } from "./nav-items";
+import { DESKTOP_NAV, isItemActive } from "./nav-items";
 
 /** Horizontal menu of the top bar from md; the current section is underlined in red. */
 export function DesktopNav() {
@@ -14,7 +14,7 @@ export function DesktopNav() {
     <nav aria-label={messages.nav.label} className="hidden md:block">
       <ul className="flex items-center gap-1">
         {DESKTOP_NAV.map((item) => {
-          const active = isActive(item.href, pathname);
+          const active = isItemActive(item, pathname);
           return (
             <li key={item.href}>
               <Link

@@ -145,7 +145,7 @@ export default async function RankingPage({
             <p className="font-display text-lg font-extrabold">
               {text.starts(start.startsOn, start.days)}
             </p>
-            <Link href="/epreuves" className={`${buttonVariants()} w-full`}>
+            <Link href="/competitions" className={`${buttonVariants()} w-full`}>
               {text.firstPodiums}
             </Link>
           </section>
@@ -206,7 +206,7 @@ export default async function RankingPage({
               )
             )}
             {user && !me && view === "general" && (
-              <Link href="/epreuves" className={`${buttonVariants()} w-full`}>
+              <Link href="/competitions" className={`${buttonVariants()} w-full`}>
                 {text.predict}
               </Link>
             )}

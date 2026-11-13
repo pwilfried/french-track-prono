@@ -33,7 +33,7 @@ export const messages = {
   nav: {
     label: "Navigation principale",
     home: "Accueil",
-    events: "Épreuves",
+    events: "Compétitions",
     ranking: "Classement",
     league: "Ma ligue",
     leagues: "Ligues",
@@ -196,50 +196,89 @@ export const messages = {
     seeLabel: (name: string) => `Voir ${name}`,
   },
   events: {
-    subtitle: (place: string, count: number) => `${place} · ${count} épreuves`,
     filtersLabel: "Filtrer les épreuves",
-    picker: {
-      label: "Choisir la compétition",
-      mine: "Mes ligues",
-      others: "Autres compétitions",
-      coming: "Compétitions à venir",
-    },
     filters: { todo: "À faire", posed: "Posés", done: "Terminées", all: "Toutes" },
     gender: GENDER,
     /** « 100 m femmes ». */
     name: (discipline: string, gender: keyof typeof GENDER) =>
       `${discipline} ${GENDER[gender].toLowerCase()}`,
     status: { upcoming: "À venir", live: "En cours", finished: "Terminé" },
-    /** Section titles: « Ce soir · samedi 15 août », « Demain · … », then the date. */
-    tonight: (day: string) => `Ce soir · ${day}`,
-    tomorrow: (day: string) => `Demain · ${day}`,
-    done: "Déjà courues",
     featured: "Phare",
     posed: "✓ Posé",
     addPrediction: "+ Prono",
     locksIn: (duration: string) => `Verrouille dans ${duration}`,
-    nextLocksIn: (duration: string) => `la prochaine verrouille dans ${duration}`,
     locksOn: (day: string, hour: string) => `Verrouille le ${day} à ${hour}`,
     editable: "modifiable",
     perfect: "Podium parfait !",
     noPrediction: "Pas de prono",
     noPoints: "—",
-    progress: {
-      title: "Ma progression",
-      posed: (posed: number, total: number) => `${posed} / ${total} podiums posés`,
-      points: (points: number) => `${points} ${points <= 1 ? "pt" : "pts"}`,
-      start: (days: number) => `Premières finales dans ${days} j`,
-      tonight: (todo: number) =>
-        todo === 0
-          ? "Rien à poser ce soir."
-          : `${todo} ${todo === 1 ? "finale" : "finales"} à faire ce soir`,
-      open: "Tous les pronos sont ouverts : prends de l'avance, tu pourras les modifier jusqu'au départ.",
-    },
     cardLabel: (discipline: string, gender: string, hour: string) =>
       `${discipline}, ${gender}, ${hour}`,
     empty: "Aucune épreuve pour ce filtre.",
     allPosed: "Tout est posé pour l'instant.",
     loading: "Chargement des épreuves…",
+  },
+  /** The « Compétitions » tab (#659): one competition, its days, its events by session. */
+  competitions: {
+    label: "Compétition",
+    change: "Changer",
+    changeLabel: (name: string) => `Changer de compétition (${name} affichée)`,
+    noProgram: "programme à venir",
+    sheet: {
+      title: "Choisir une compétition",
+      close: "Fermer",
+      search: "Rechercher une compétition ou une ville",
+      scopeLabel: "Type de compétition",
+      scope: { all: "Toutes", international: "Internationales", france: "France" },
+      mine: "Dans mes ligues",
+      past: "Terminées",
+      none: "Aucune compétition ne correspond.",
+      france: "France",
+      shown: "affichée",
+    },
+    month: (month: string) =>
+      new Date(`${month}-15T12:00:00Z`).toLocaleDateString("fr-FR", {
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      }),
+    days: {
+      label: "Jours de la compétition",
+      today: "AUJ.",
+      todayLabel: "aujourd'hui",
+      doneLabel: "terminé",
+      empty: "Aucune date pour cette compétition.",
+    },
+    sessions: { morning: "Matin", afternoon: "Après-midi", evening: "Soir" },
+    progress: {
+      label: "Ma progression",
+      todo: (n: number) => `${n} à pronostiquer`,
+      todoLabel: (n: number) => `${n} ${n <= 1 ? "épreuve" : "épreuves"} à pronostiquer ce jour`,
+      posed: (posed: number, total: number) => `${posed}/${total} posés`,
+      posedLabel: (posed: number, total: number) =>
+        `${posed} ${posed <= 1 ? "podium posé" : "podiums posés"} sur ${total} dans la compétition`,
+      points: (points: number) => `${points} ${points <= 1 ? "pt" : "pts"}`,
+      pointsLabel: (points: number) => `${points} ${points <= 1 ? "point" : "points"} gagnés`,
+    },
+    emptyDay: "Aucune épreuve ce jour-là.",
+    pending: {
+      title: "Le programme n'est pas encore publié",
+      text: "Les épreuves arrivent dès que l'organisateur publie l'horaire.",
+      startsIn: (days: number) =>
+        days === 0
+          ? "Ça commence aujourd'hui"
+          : days === 1
+            ? "Début demain"
+            : `Début dans ${days} jours`,
+      notify: "Me prévenir à la publication",
+      notified: "Tu seras prévenu",
+      notifiedHint: "Touche à nouveau pour ne plus être prévenu.",
+      signIn: "Connecte-toi pour être prévenu",
+      deviceHint:
+        "La notification arrive sur les appareils où tu as activé les notifications (profil).",
+      error: "Impossible d'enregistrer pour le moment. Réessaie dans un instant.",
+      seeLive: "Voir une compétition en cours",
+    },
   },
   leaderboard: {
     change: (n: number) =>
@@ -2275,6 +2314,7 @@ export const messages = {
   errors: {
     EVENTS_UNAVAILABLE: "Impossible de charger les épreuves pour le moment.",
     EVENT_NOT_FOUND: "Cette épreuve n'existe pas.",
+    PROGRAM_ALERT_UNAVAILABLE: "L'alerte n'a pas pu être enregistrée. Réessaie.",
     EMAIL_INVALID: "Cette adresse e-mail n'a pas l'air valide.",
     CODE_INVALID: "Code incorrect ou expiré. Vérifie-le ou demande-en un nouveau.",
     AUTH_UNAVAILABLE: "La connexion ne marche pas pour le moment. Réessaie dans un instant.",

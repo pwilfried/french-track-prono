@@ -13,7 +13,7 @@ import { ErrorNotice } from "@/components/error-notice";
 import { AddToMyLeagueForm } from "@/components/leagues/league-forms";
 import { PodiumMedals } from "@/components/podium/podium-medals";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
-import { TIME_ZONE } from "@/domain/competition";
+import { competitionDay, TIME_ZONE } from "@/domain/competition";
 import { eventPhase } from "@/domain/countdown";
 import type { EventDetail } from "@/domain/event";
 import { formatMark, tidyMark } from "@/domain/discipline";
@@ -314,7 +314,7 @@ export default async function EventPage({
       <header className="px-4 pt-4">
         <div className="mx-auto flex max-w-md flex-col gap-3">
           <Link
-            href={`/epreuves?competition=${competition.slug}`}
+            href={`/competitions?competition=${competition.slug}&jour=${competitionDay(event.startsAt)}`}
             className="inline-flex min-h-11 items-center self-start font-semibold text-brand dark:text-secondary"
           >
             ‹ {messages.event.back}
