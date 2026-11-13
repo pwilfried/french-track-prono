@@ -189,7 +189,11 @@ deuxième joker dans la compétition, et la suppression d'un prono après le ver
 à 3, ex æquo compris : les athlètes partagent la place, décision du propriétaire), et
 l'enregistrement calcule tout de suite les points (`src/application/save-result-sheet.ts`) ; le
 bouton « Recalculer » relance le même calcul en secours. Le coup de flair est calculé sur tous les
-pronos de l'épreuve. Le joueur voit le détail dans `/mes-points`.
+pronos de l'épreuve. Le joueur voit le détail dans `/mes-points`. Depuis #666, l'admin peut
+coller le tableau de la page de résultats World Athletics : `src/domain/result-import.ts` le lit
+(place, nom, pays, marque, records, DNS / DNF / DQ) et le rapproche de la liste de départ par nom
+normalisé et pays ; la feuille est seulement pré-remplie, les lignes non reconnues sont listées à
+part, et rien n'est enregistré avant « Enregistrer ». Aucun appel réseau vers World Athletics.
 
 **Ligues et classements (v0.5).** Voir « Modèle de données » pour les règles des ligues. Le
 classement (`src/domain/ranking.ts`, R9) départage aux points, puis aux podiums parfaits, puis

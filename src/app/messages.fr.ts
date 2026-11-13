@@ -1264,6 +1264,16 @@ export const messages = {
     },
     save: "Enregistrer et calculer les points",
     saving: "Enregistrement et calcul…",
+    paste: {
+      title: "Coller les résultats",
+      hint: "Copie le tableau de la page de résultats World Athletics et colle-le ici : la feuille se pré-remplit. Vérifie-la, rien n'est enregistré avant « Enregistrer ».",
+      label: "Tableau de résultats",
+      apply: "Pré-remplir la feuille",
+      none: "Aucune ligne de résultat trouvée dans le texte collé.",
+      matched: (n: number) => (n <= 1 ? `${n} athlète pré-rempli.` : `${n} athlètes pré-remplis.`),
+      unmatched: (n: number) =>
+        n <= 1 ? `${n} ligne non reconnue :` : `${n} lignes non reconnues :`,
+    },
   },
   install: {
     title: "Installe l'appli",
