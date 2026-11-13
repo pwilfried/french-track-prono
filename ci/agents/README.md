@@ -26,9 +26,10 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
 Une issue n'est jamais prise si elle a `needs-human`, `agent:blocked` ou `after-ui`, si elle est
 assignée à quelqu'un (une personne la traite : Yannis s'assigne ses issues), ou si une
 issue qui la bloque est encore ouverte (lien GitHub « blocked by » ou ligne `Blocked by #n`).
-Le label `agent:claude` ne lance rien sur une issue qu'une PR ouverte ferme déjà (`Closes #n`),
-même quand la relance horaire d'une issue `agent:waiting-quota` le remet ; un commentaire
-`@claude …` lance toujours Claude.
+Le label `agent:claude` ne lance rien sur une issue qu'une PR ouverte ferme déjà (`Closes #n`)
+ou qui est assignée à quelqu'un, même quand la relance horaire d'une issue `agent:waiting-quota`
+le remet. Sur une issue assignée, le label est retiré (il ne garde pas de place de la chaîne) et
+un commentaire le dit. Un commentaire `@claude …` lance toujours Claude.
 
 ## Depuis le téléphone (app GitHub)
 
