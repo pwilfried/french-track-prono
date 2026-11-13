@@ -7,6 +7,7 @@ import { setScoringRule } from "@/application/scoring-rules";
 import { createSupabaseScoringRuleRepository } from "@/infra";
 
 import { formText } from "../../form-data";
+import { publicDataChanged } from "../../public-data";
 import { adminOnly } from "../guard";
 
 export type RuleState = { error?: ErrorCode; saved?: boolean };
@@ -22,6 +23,7 @@ export async function saveRuleAction(_: RuleState, data: FormData): Promise<Rule
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
   }
+  publicDataChanged("scale");
   revalidatePath("/admin/bareme");
   return { saved: true };
 }

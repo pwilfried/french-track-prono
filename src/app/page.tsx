@@ -6,7 +6,6 @@ import { PlayerHome } from "@/components/home/player-home";
 import { VisitorHome } from "@/components/home/visitor-home";
 import { daysUntil } from "@/domain/competition";
 import { firstFinalToPredict } from "@/domain/home";
-import { createPublicSupabaseClient, createSupabaseEventReader } from "@/infra";
 
 import { findClubsAction } from "./club-actions";
 import { completeProfileAction, completeProfileLaterAction } from "./complete-profile-actions";
@@ -19,6 +18,7 @@ import {
 import { loadPlayerHome } from "./home-data";
 import { loadScale } from "./scale";
 import { getCurrentUser } from "./session";
+import { publicEventReader } from "./public-data";
 
 /** The points « Comment ça marche » reads from the scale. */
 function stepPoints(scale: Record<string, number>) {
@@ -34,7 +34,7 @@ async function Visitor({ coming, today }: { coming: ShownCompetition[]; today: s
   const competition = await currentCompetition();
   const [scale, events] = await Promise.all([
     loadScale(),
-    listEvents({ events: createSupabaseEventReader(createPublicSupabaseClient()) })
+    listEvents({ events: publicEventReader() })
       .execute({ competitionSlug: competition.slug })
       .catch((error: unknown) => {
         if (error instanceof UseCaseError) return [];

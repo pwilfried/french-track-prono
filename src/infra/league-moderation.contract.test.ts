@@ -18,6 +18,7 @@ leagueModerationContract("in-memory fake", async () => {
     reporter: player("reporter"),
     admin: store.moderation({ isAdmin: true }),
     notAdmin: store.moderation({ isAdmin: false }),
+    competitionSlug: "contract-moderation-coming",
   };
 });
 
@@ -33,11 +34,15 @@ if (url && key) {
       signedInPlayer(url, key),
     ]);
     sql(`update profiles set is_admin = true where id = '${admin.userId}'`);
+    sql(`insert into competitions (slug, name, starts_on, ends_on)
+      values ('contract-league-coming', 'Test league coming', current_date + 400, current_date + 401)
+      on conflict (slug) do nothing`);
     return {
       creator: createSupabaseLeagueRepository(creator.client),
       reporter: createSupabaseLeagueRepository(reporter.client),
       admin: createSupabaseLeagueModerationRepository(admin.client),
       notAdmin: createSupabaseLeagueModerationRepository(reporter.client),
+      competitionSlug: "contract-league-coming",
     };
   });
 } else {

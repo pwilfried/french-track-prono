@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
+import { comingCompetition, deleteCompetition } from "./competitions";
 import { newPlayer, signUp } from "./players";
 
 test("a player reports a public league and the admin renames it", async ({ browser }) => {
@@ -13,7 +14,8 @@ test("a player reports a public league and the admin renames it", async ({ brows
   const reporterPage = await (await browser.newContext()).newPage();
   const adminPage = await (await browser.newContext()).newPage();
 
-  await creatorPage.goto("/ligues/creer");
+  const competition = comingCompetition(`e2e-rep-${tag}`);
+  await creatorPage.goto(`/ligues/creer?competition=${competition}`);
   await signUp(creatorPage, creator);
   await creatorPage.waitForURL(/\/ligues\/creer/);
   await creatorPage.getByLabel("Nom de la ligue").fill(name);
@@ -70,4 +72,6 @@ test("a player reports a public league and the admin renames it", async ({ brows
   await expect(
     adminPage.getByRole("list", { name: "Actions" }).getByRole("listitem").first(),
   ).toContainText("Ligue modérée");
+
+  deleteCompetition(competition);
 });

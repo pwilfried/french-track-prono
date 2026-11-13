@@ -58,6 +58,7 @@ export default async function LeaguesPage({
             leagueId: league.id,
             competitionSlugs: league.competitionSlugs,
             families: league.families,
+            competitionAddedAt: league.competitionAddedAt,
             today: currentCompetitionDay(),
           });
           return { league, standing: standingIn(ranking, ports.userId) };

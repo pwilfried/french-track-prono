@@ -59,7 +59,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Ligues (#662) | « Créer une ligue » et « J'ai un code », puis deux onglets **Mes ligues · N** / **Découvrir** (`?onglet=decouvrir`). Mes ligues : cartes résumées (**LeagueCard**). Découvrir : tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553) ; puis les ligues publiques (**DiscoverLeagues**) : recherche par nom, puces de famille (Toutes + celles présentes), tri (places restantes par défaut, plus de joueurs, plus récentes), une **PublicLeagueRow** par ligue. Une fois membre, la ligue officielle rejoint Mes ligues avec le badge « Officielle » |
 | Classement général | Top de la communauté, ma progression |
 | Profil | Dossard (grand format, avec le pseudo), club ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager ; palmarès Manager (une ligne par saison finie, en or si champion, #434) |
-| Back-office (toi) | Tableau de bord (choses à faire, préparation), compétitions et épreuves, résultats et calcul, listes des clubs, joueurs et ligues |
+| Back-office (toi) | Tableau de bord (choses à faire, préparation), compétitions (filtres portée, lieu, niveau, statut, #647) et épreuves, une feuille de résultats par épreuve qui calcule tout (collage du tableau World Athletics, #665, #666), listes des clubs, joueurs et ligues |
 
 ## Composants clés
 
@@ -75,9 +75,8 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   Terminée : fond atténué, mon résultat (« 2 athlètes bien placées », « Podium parfait ! »,
   « Pas de prono ») et mes points en pastille verte, « — » sans prono. Le lien est nommé par
   l'épreuve puis par son statut (#517).
-- **ProgressCard** (#546) : fond bleu FrenchTrack ; « N / total podiums posés », une barre, mes
-  points (avant la compétition : « Premières finales dans N j ») et ce qu'il reste ce soir, avec
-  le prochain verrouillage.
+- **DayProgress** (#659) : une ligne, les épreuves à pronostiquer du jour affiché, les podiums
+  posés sur toute la compétition et les points gagnés.
 - **Filtres en pastilles** (`EventFilters`) : une pastille par filtre avec son nombre, la
   pastille active pleine ; elles défilent à l'horizontale sur mobile.
 - **AthleteChip** : drapeau, nom, record de saison.
@@ -118,6 +117,15 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   encore de points » sans points.
 - **PublicLeagueRow** (#662) : une ligue publique de « Découvrir » ; nom, badge de familles,
   « 12/200 joueurs · 3 compétitions · période », barre de remplissage, « Rejoindre » et « Signaler ».
+- **LeagueFamilyPicker** (#613) : « Épreuves qui comptent » à la création d'une ligue ; deux
+  choix, « Toutes les épreuves » (par défaut) ou « Certaines familles » avec huit puces à cocher
+  (plusieurs à la fois) ; « Créer » reste inactif tant qu'aucune puce n'est cochée.
+- **FamilyBadge** (#613) : « Sprint · Haies », pastille bleu doux sur la carte et la page d'une
+  ligue limitée ; rien pour une ligue sur toutes les épreuves.
+- **SeasonCompetitionPicker** (#663, Manager) : sélections rapides avec leur nombre, recherche,
+  filtres Portée, Lieu, Niveau, liste rangée par mois avec « Tout cocher », barre fixe « 15
+  compétitions cochées » ; vide : « Aucune compétition ne correspond à ces filtres » et
+  « Réinitialiser les filtres ».
 - **InviteBanner** (#552) : dans une ligue où le joueur est seul, fond bleu doux, « Tu es seul
   pour l'instant », un grand bouton « Inviter mes amis » (partage natif, sinon lien copié) et le
   code lisible dessous pour le dire à voix haute.

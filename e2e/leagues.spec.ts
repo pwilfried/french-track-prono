@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
+import { comingCompetition, deleteCompetition } from "./competitions";
 import { newPlayer, signUp } from "./players";
 
 test("two friends in the same league see the same ranking", async ({ browser }) => {
   const anna = newPlayer("anna");
   const bob = newPlayer("bob");
+  const competition = comingCompetition(`e2e-friends-${Date.now() % 1000000}`);
   const annaPage = await (await browser.newContext()).newPage();
   const bobPage = await (await browser.newContext()).newPage();
 
@@ -13,8 +15,8 @@ test("two friends in the same league see the same ranking", async ({ browser }) 
   await annaPage.goto("/ligues");
   await signUp(annaPage, anna);
   await annaPage.waitForURL(/\/ligues$/);
-  // A league made from a competition counts it from the start.
-  await annaPage.goto("/ligues/creer?competition=ultimate-championship-2026");
+  // A league made from a coming competition counts it from the start.
+  await annaPage.goto(`/ligues/creer?competition=${competition}`);
   await annaPage.getByLabel("Nom de la ligue").fill("Les Foulées E2E");
   await annaPage.getByRole("button", { name: "Créer la ligue" }).click();
   await expect(annaPage.getByText("Ta ligue est prête")).toBeVisible();
@@ -42,9 +44,7 @@ test("two friends in the same league see the same ranking", async ({ browser }) 
       select u.id, e.competition_id, e.id, 'prediction', ${points}, 'prediction',
              jsonb_build_object('reasons', '${reasons}'::jsonb)
       from auth.users u, events e
-      where u.email = '${email}'
-        and e.id = (select ev.id from events ev join competitions c on c.id = ev.competition_id
-                    where c.slug = 'ultimate-championship-2026' order by ev.starts_at desc limit 1)`);
+      where u.email = '${email}' and e.slug = '${competition}-100m'`);
   }
 
   // Both see the same ranking: Anna first, Bob second.
@@ -56,6 +56,7 @@ test("two friends in the same league see the same ranking", async ({ browser }) 
   const rows = annaPage.getByRole("list", { name: "Classement" }).getByRole("listitem");
   await expect(rows).toHaveCount(2);
   await expect(rows.nth(0)).toContainText(anna.pseudo);
+  await expect(rows.nth(0)).toContainText("12");
   await expect(rows.nth(1)).toContainText(bob.pseudo);
 
   // The rankings tab opens on that league for both, with the same list (#661).
@@ -73,6 +74,8 @@ test("two friends in the same league see the same ranking", async ({ browser }) 
   await expect(bobPage.getByRole("region", { name: "Ta place" })).toContainText(
     `9 pts derrière ${anna.pseudo} (1er)`,
   );
+
+  deleteCompetition(competition);
 });
 
 test("a player alone in a league invites a friend, who joins by the link", async ({ browser }) => {
@@ -80,8 +83,9 @@ test("a player alone in a league invites a friend, who joins by the link", async
   const friend = newPlayer("bylink");
   const ownerPage = await (await browser.newContext()).newPage();
   const friendPage = await (await browser.newContext()).newPage();
+  const competition = comingCompetition(`e2e-alone-${Date.now() % 1000000}`);
 
-  await ownerPage.goto("/ligues/creer?competition=ultimate-championship-2026");
+  await ownerPage.goto(`/ligues/creer?competition=${competition}`);
   await signUp(ownerPage, owner);
   await ownerPage.waitForURL(/\/ligues\/creer/);
   await ownerPage.getByLabel("Nom de la ligue").fill("Les Seuls E2E");
@@ -113,6 +117,8 @@ test("a player alone in a league invites a friend, who joins by the link", async
   const rows = ownerPage.getByRole("list", { name: "Classement" }).getByRole("listitem");
   await expect(rows).toHaveCount(2);
   await expect(ownerPage.getByText("2 joueurs · créée par toi")).toBeVisible();
+
+  deleteCompetition(competition);
 });
 
 test("a player opens their leagues from the bottom bar", async ({ page }) => {

@@ -19,11 +19,15 @@ create function act_as(p_user text) returns void language sql as $$
   select set_config('request.jwt.claims', json_build_object('sub', p_user, 'role', 'authenticated')::text, true)
 $$;
 
+-- A coming competition: a league is created only on an active one (#614).
+insert into competitions (slug, name, starts_on, ends_on)
+values ('test-league-rules', 'Test', current_date + 10, current_date + 11);
+
 set local role authenticated;
 
 -- The owner creates a league ------------------------------------------------------------------
 select act_as('aaaa0000-0000-0000-0000-000000000001');
-insert into ctx select * from create_league('  Les Foulées  ', array['ultimate-championship-2026']);
+insert into ctx select * from create_league('  Les Foulées  ', array['test-league-rules']);
 
 select matches((select code from ctx), '^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$',
   'the invite code has 6 easy-to-read characters');

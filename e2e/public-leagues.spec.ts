@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
+import { comingCompetition, deleteCompetition } from "./competitions";
 import { newPlayer, signUp } from "./players";
 
 test("a player creates a public league, another finds it in Découvrir and joins without a code", async ({
@@ -13,7 +14,8 @@ test("a player creates a public league, another finds it in Découvrir and joins
   const creatorPage = await (await browser.newContext()).newPage();
   const walkerPage = await (await browser.newContext()).newPage();
 
-  await creatorPage.goto("/ligues/creer?competition=ultimate-championship-2026");
+  const competition = comingCompetition(`e2e-pub-${tag}`);
+  await creatorPage.goto(`/ligues/creer?competition=${competition}`);
   await signUp(creatorPage, creator);
   await creatorPage.waitForURL(/\/ligues\/creer/);
   await creatorPage.getByRole("checkbox", { name: /Ligue publique/ }).check();
@@ -79,4 +81,6 @@ test("a player creates a public league, another finds it in Découvrir and joins
   ).toBeVisible();
   await walkerPage.goto("/ligues?onglet=decouvrir");
   await expect(publics.getByRole("listitem").filter({ hasText: name })).toHaveCount(0);
+
+  deleteCompetition(competition);
 });

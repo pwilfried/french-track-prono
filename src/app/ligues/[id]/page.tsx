@@ -19,10 +19,11 @@ import { LeagueHero } from "@/components/leagues/league-hero";
 import { ShareInvite } from "@/components/leagues/share-invite";
 import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
+import { isOpenToLeagues } from "@/domain/league";
 import { addableFamilies } from "@/domain/league-families";
 import { cn } from "@/lib/utils";
 
-import { currentCompetitionDay, currentDay, loadCompetitions } from "../../competition";
+import { currentCompetitionDay, loadCompetitions } from "../../competition";
 import { messages } from "../../messages.fr";
 import { leaguePorts, loadLeagueEvents } from "../data";
 
@@ -41,6 +42,7 @@ async function load(id: string, ports: Awaited<ReturnType<typeof leaguePorts>>) 
       leagueId: id,
       competitionSlugs: found.league.competitionSlugs,
       families: found.league.families,
+      competitionAddedAt: found.league.competitionAddedAt,
       today: currentCompetitionDay(),
     });
     // A league limited to families lists its events, the others greyed « Hors ligue » (#613).
@@ -88,9 +90,10 @@ export default async function LeaguePage({
   const canAddFamily = isOwner && addableFamilies(families).length > 0;
   const known = [...competitions.coming, ...competitions.past];
   const counted = known.filter((c) => league.competitionSlugs.includes(c.slug));
-  // Only competitions still to come can be added (the database checks it too).
+  // Only competitions not finished can be added (#614; the database checks it too).
+  const now = new Date().toISOString();
   const addable = competitions.coming.filter(
-    (c) => !league.competitionSlugs.includes(c.slug) && c.startsOn > currentDay(),
+    (c) => !league.competitionSlugs.includes(c.slug) && isOpenToLeagues(c, now),
   );
   const owner = members.find((m) => m.userId === league.ownerId);
   const subtitle = [

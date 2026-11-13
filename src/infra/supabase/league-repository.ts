@@ -18,7 +18,7 @@ type LeagueRow = {
   is_public: boolean;
   is_official: boolean;
   league_members: { count: number }[];
-  league_competitions: { competitions: { slug: string } | null }[];
+  league_competitions: { added_at: string | null; competitions: { slug: string } | null }[];
   league_families: { family: LeagueFamily; added_at: string | null }[];
 };
 
@@ -37,6 +37,19 @@ const familiesOf = (rows: { family: LeagueFamily; added_at: string | null }[]) =
       }
     : {};
 
+/**
+ * When each competition entered the league (#614); absent when every competition counts from the
+ * start (added before #614, or the official league).
+ */
+const addedAtOf = (rows: LeagueRow["league_competitions"]) => {
+  const dated = rows.flatMap((lc) =>
+    lc.competitions && lc.added_at
+      ? [[lc.competitions.slug, new Date(lc.added_at).toISOString()] as const]
+      : [],
+  );
+  return dated.length > 0 ? { competitionAddedAt: Object.fromEntries(dated) } : {};
+};
+
 const fail = (): never => {
   throw new UseCaseError("LEAGUES_UNAVAILABLE");
 };
@@ -47,7 +60,7 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
     // Row level security only shows the leagues the player is a member of.
     const { data, error } = await client
       .from("leagues")
-      .select("id, name, invite_code, owner_id, is_public, is_official, league_members(count), league_competitions(competitions(slug)), league_families(family, added_at)")
+      .select("id, name, invite_code, owner_id, is_public, is_official, league_members(count), league_competitions(added_at, competitions(slug)), league_families(family, added_at)")
       .returns<LeagueRow[]>();
     if (error) fail();
     return data!.map((row) => ({
@@ -59,6 +72,7 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       competitionSlugs: row.league_competitions
         .flatMap((lc) => (lc.competitions ? [lc.competitions.slug] : []))
         .sort(),
+      ...addedAtOf(row.league_competitions),
       isPublic: row.is_public,
       // Only when it is: the other leagues stay as the contract describes them.
       ...(row.is_official ? { isOfficial: true } : {}),
@@ -78,20 +92,12 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       });
       if (error?.code === "FT010") throw new UseCaseError("LEAGUE_NAME_BANNED");
       if (error?.code === "FT014") throw new UseCaseError("ACCOUNT_BLOCKED");
+      if (error?.code === "FT009") throw new UseCaseError("COMPETITION_FINISHED");
+      if (error?.code === "FT030") throw new UseCaseError("LEAGUE_COMPETITION_REQUIRED");
       const row = (data as { league_id: string; invite_code: string }[] | null)?.[0];
       if (error || !row) return fail();
-      const { data: user } = await client.auth.getUser();
-      if (!user.user) return fail();
-      return {
-        id: row.league_id,
-        name,
-        inviteCode: row.invite_code,
-        ownerId: user.user.id,
-        memberCount: 1,
-        competitionSlugs: [...new Set(competitionSlugs)].sort(),
-        isPublic,
-        ...familiesOf(families.map((family) => ({ family, added_at: null }))),
-      };
+      // Read back, with the dates the competitions entered it at (#614).
+      return (await listMine()).find((l) => l.id === row.league_id) ?? fail();
     },
 
     async join(code) {
@@ -165,7 +171,7 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       if (!error) return "added";
       if (error.code === "42501") return "not_owner";
       if (error.code === "P0002") return "unknown";
-      if (error.code === "FT009") return "started";
+      if (error.code === "FT009") return "finished";
       return fail();
     },
 

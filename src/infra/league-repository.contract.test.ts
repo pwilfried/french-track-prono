@@ -7,14 +7,14 @@ import { createInMemoryLeagueStore, createSupabaseLeagueRepository } from "./ind
 
 leagueRepositoryContract("in-memory fake", async () => {
   const store = createInMemoryLeagueStore({
-    "ultimate-championship-2026": "started",
-    "contract-league-other": "started",
+    "contract-league-running": "in_progress",
     "contract-league-coming": "coming",
+    "contract-league-finished": "finished",
   });
   return {
-    competitionSlug: "ultimate-championship-2026",
-    otherCompetitionSlug: "contract-league-other",
+    competitionSlug: "contract-league-running",
     comingCompetitionSlug: "contract-league-coming",
+    finishedCompetitionSlug: "contract-league-finished",
     newPlayer: async () => {
       const userId = crypto.randomUUID();
       return {
@@ -35,16 +35,16 @@ const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (url && key) {
   leagueRepositoryContract("Supabase (local)", async () => {
+    // Far from today's date either way, so that the Paris day never changes their state.
     sql(`insert into competitions (slug, name, starts_on, ends_on)
-      values ('contract-league-other', 'Test league other', current_date - 400, current_date - 400)
-      on conflict (slug) do nothing`);
-    sql(`insert into competitions (slug, name, starts_on, ends_on)
-      values ('contract-league-coming', 'Test league coming', current_date + 400, current_date + 401)
+      values ('contract-league-running', 'Test league running', current_date - 400, current_date + 400),
+             ('contract-league-coming', 'Test league coming', current_date + 400, current_date + 401),
+             ('contract-league-finished', 'Test league finished', current_date - 400, current_date - 400)
       on conflict (slug) do nothing`);
     return {
-      competitionSlug: "ultimate-championship-2026",
-      otherCompetitionSlug: "contract-league-other",
+      competitionSlug: "contract-league-running",
       comingCompetitionSlug: "contract-league-coming",
+      finishedCompetitionSlug: "contract-league-finished",
       newPlayer: async () => {
         const player = await signedInPlayer(url, key);
         return { userId: player.userId, leagues: createSupabaseLeagueRepository(player.client) };

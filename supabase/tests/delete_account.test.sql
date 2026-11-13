@@ -18,12 +18,16 @@ create function act_as(p_user text) returns void language sql as $$
   select set_config('request.jwt.claims', json_build_object('sub', p_user, 'role', 'authenticated')::text, true)
 $$;
 
+-- A coming competition: a league is created only on an active one (#614).
+insert into competitions (slug, name, starts_on, ends_on)
+values ('test-delete-account', 'Test', current_date + 10, current_date + 11);
+
 set local role authenticated;
 
 -- The leaving player owns two leagues: one shared with two friends, one alone.
 select act_as('dddd0000-0000-0000-0000-000000000001');
-insert into ctx (shared, code) select league_id, invite_code from create_league('Partagée', array['ultimate-championship-2026']);
-update ctx set alone = (select league_id from create_league('Solo', array['ultimate-championship-2026']));
+insert into ctx (shared, code) select league_id, invite_code from create_league('Partagée', array['test-delete-account']);
+update ctx set alone = (select league_id from create_league('Solo', array['test-delete-account']));
 select act_as('dddd0000-0000-0000-0000-000000000002');
 select join_league((select code from ctx));
 select act_as('dddd0000-0000-0000-0000-000000000003');

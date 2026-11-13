@@ -5,13 +5,10 @@ import { UseCaseError } from "@/application/errors";
 import { listMyLeagues, type League } from "@/application/leagues";
 import { listCompetitions } from "@/application/list-competitions";
 import { competitionDay, competitionsForPlayer, nextCompetition } from "@/domain/competition";
-import {
-  createPublicSupabaseClient,
-  createSupabaseCompetitionAdminRepository,
-  createSupabaseLeagueRepository,
-} from "@/infra";
+import { createSupabaseLeagueRepository } from "@/infra";
 
 import { messages } from "./messages.fr";
+import { publicCompetitions } from "./public-data";
 import { getCurrentUser, getSessionClient } from "./session";
 
 /** The competition a page shows, with its French place line ("Budapest · 11 – 13 sept. 2026"). */
@@ -34,12 +31,15 @@ export const currentDay = () => new Date().toISOString().slice(0, 10);
 /** Today's competition day, Paris time (#551): rankings move from one to the next. */
 export const currentCompetitionDay = () => competitionDay(new Date().toISOString());
 
-/** Every competition (public read), the coming ones first; empty lists when they cannot be read. */
+/**
+ * Every competition (public read, kept across requests: see public-data.ts), the coming ones
+ * first; empty lists when they cannot be read.
+ */
 export const loadCompetitions = cache(
   async (): Promise<{ coming: ShownCompetition[]; past: ShownCompetition[] }> => {
     try {
       const lists = await listCompetitions({
-        competitions: createSupabaseCompetitionAdminRepository(createPublicSupabaseClient()),
+        competitions: publicCompetitions(),
       }).execute({ today: currentDay() });
       return { coming: lists.coming.map(shown), past: lists.past.map(shown) };
     } catch (error) {

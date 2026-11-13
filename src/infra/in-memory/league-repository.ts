@@ -13,6 +13,8 @@ type Stored = {
   ownerId: string;
   members: string[];
   competitionSlugs: string[];
+  /** When each competition entered the league, ISO 8601 (#614). */
+  competitionAddedAt: Record<string, string>;
   isPublic: boolean;
   /** Empty: a league on all events (#613). */
   families: LeagueFamilyRule[];
@@ -27,9 +29,12 @@ const familiesOf = (rules: LeagueFamilyRule[]) =>
 /**
  * Test double of the LeagueRepository port, with the rules of the database. One store shared by
  * every player; `session(player)` acts as that player. `competitions` tells which competitions
- * exist and whether they have started (every competition is coming when it is not given).
+ * exist and whether they are finished (every competition is coming when it is not given).
  */
-export function createInMemoryLeagueStore(competitions?: Record<string, "coming" | "started">) {
+export function createInMemoryLeagueStore(
+  competitions?: Record<string, "coming" | "in_progress" | "finished">,
+) {
+  const stateOf = (slug: string) => (competitions ? competitions[slug] : "coming");
   const leagues = new Map<string, Stored>();
   const reports = new Map<string, Set<string>>();
   /** Wrong invite codes per player (#155): after 10, joining with a code is refused. */
@@ -55,6 +60,7 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
     ownerId: l.ownerId,
     memberCount: l.members.length,
     competitionSlugs: [...l.competitionSlugs],
+    competitionAddedAt: { ...l.competitionAddedAt },
     isPublic: l.isPublic,
     ...familiesOf(l.families),
   });
@@ -128,10 +134,18 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
       return {
         async create(name, competitionSlugs, isPublic, families = []) {
           if (isPublic && isBannedName(name)) throw new UseCaseError("LEAGUE_NAME_BANNED");
+          const slugs = [...new Set(competitionSlugs)].sort();
+          if (slugs.length === 0) throw new UseCaseError("LEAGUE_COMPETITION_REQUIRED");
+          if (slugs.some((slug) => !stateOf(slug))) throw new UseCaseError("LEAGUES_UNAVAILABLE");
+          if (slugs.some((slug) => stateOf(slug) === "finished")) {
+            throw new UseCaseError("COMPETITION_FINISHED");
+          }
+          const now = new Date().toISOString();
           const league: Stored = {
             isPublic,
             families: [...new Set(families)].map((family) => ({ family, addedAt: null })),
-            competitionSlugs: [...new Set(competitionSlugs)].sort(),
+            competitionSlugs: slugs,
+            competitionAddedAt: Object.fromEntries(slugs.map((slug) => [slug, now])),
             id: crypto.randomUUID(),
             name,
             inviteCode: newCode(),
@@ -188,11 +202,12 @@ export function createInMemoryLeagueStore(competitions?: Record<string, "coming"
         async addCompetition(leagueId, competitionSlug) {
           const league = leagues.get(leagueId);
           if (!league || league.ownerId !== me) return "not_owner";
-          const state = competitions ? competitions[competitionSlug] : "coming";
+          const state = stateOf(competitionSlug);
           if (!state) return "unknown";
-          if (state === "started") return "started";
+          if (state === "finished") return "finished";
           if (!league.competitionSlugs.includes(competitionSlug)) {
             league.competitionSlugs = [...league.competitionSlugs, competitionSlug].sort();
+            league.competitionAddedAt[competitionSlug] = new Date().toISOString();
           }
           return "added";
         },

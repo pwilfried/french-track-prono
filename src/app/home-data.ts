@@ -10,9 +10,7 @@ import { getLeagueRanking } from "@/application/rankings";
 import type { PlayerHomeProps } from "@/components/home/player-home";
 import { leagueStanding, nextAction } from "@/domain/home";
 import {
-  createPublicSupabaseClient,
   createSupabaseClubNoticeRepository,
-  createSupabaseEventReader,
   createSupabaseLeagueRepository,
   createSupabaseManagerBids,
   createSupabaseManagerLeagueRepository,
@@ -31,6 +29,7 @@ import {
   playerCompetitions,
 } from "./competition";
 import { getSessionClient } from "./session";
+import { publicEventReader } from "./public-data";
 
 /** Everything the signed-in player's home shows (#526); each part empty when it cannot be read. */
 export type PlayerHome = Omit<
@@ -72,7 +71,7 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
   const [events, mine, myPoints, rankings, clubNotices, predictionCount, mercatoOpen, askProfile] =
     await Promise.all([
       safely(() =>
-        listEvents({ events: createSupabaseEventReader(createPublicSupabaseClient()) }).execute({
+        listEvents({ events: publicEventReader() }).execute({
           competitionSlug: competition.slug,
         }),
       ),
@@ -94,6 +93,7 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
                 leagueId: league.id,
                 competitionSlugs: league.competitionSlugs,
                 families: league.families,
+                competitionAddedAt: league.competitionAddedAt,
               }),
             )) ?? [],
         })),

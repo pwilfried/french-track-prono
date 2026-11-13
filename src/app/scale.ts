@@ -3,9 +3,13 @@ import { cache } from "react";
 import { UseCaseError } from "@/application/errors";
 import { listScoringRules } from "@/application/scoring-rules";
 import { DEFAULT_RULES } from "@/domain/scoring";
-import { createPublicSupabaseClient, createSupabaseScoringRuleRepository } from "@/infra";
 
-/** The scale as stored (the admin can change it); the defaults when it cannot be read. */
+import { publicScale } from "./public-data";
+
+/**
+ * The scale as stored (the admin can change it; kept across requests, see public-data.ts); the
+ * defaults when it cannot be read.
+ */
 export const loadScale = cache(async (): Promise<Record<string, number>> => {
   const defaults: Record<string, number> = {
     exact_slot: DEFAULT_RULES.exactSlot,
@@ -23,7 +27,7 @@ export const loadScale = cache(async (): Promise<Record<string, number>> => {
   };
   try {
     const rules = await listScoringRules({
-      rules: createSupabaseScoringRuleRepository(createPublicSupabaseClient()),
+      rules: publicScale(),
     }).execute();
     return { ...defaults, ...Object.fromEntries(rules.map((r) => [r.key, r.value])) };
   } catch (error) {

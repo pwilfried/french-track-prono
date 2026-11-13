@@ -2,7 +2,10 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
-/** A row of competition chips (plain links), scrolling sideways: the rankings, « Tous mes pronos ». */
+/**
+ * A row of competition chips (plain links), scrolling sideways: « Tous mes pronos », the Manager
+ * catalogue, the admin competition list.
+ */
 export function CompetitionChips({
   label,
   chips,

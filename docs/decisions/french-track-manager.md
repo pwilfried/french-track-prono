@@ -76,6 +76,15 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   clôture du mercato, règles d'alignement.
 - Le créateur d'une ligue choisit ses compétitions parmi les compétitions éligibles non terminées
   (#644, voir plus haut).
+- **Sélecteur de compétitions** (#663, création de la ligue et réglages avant le mercato) : un seul
+  écran pour la saison, `SeasonCompetitionPicker`. En tête, des sélections rapides qui cochent
+  d'un geste (« Toute la saison », « Saison en salle », un niveau, « Grands championnats »,
+  chacune avec son nombre, absente sans compétition) ; puis la recherche par nom ou ville, les
+  filtres Portée, Lieu et Niveau, « Voir seulement mes compétitions cochées » ; la liste est
+  rangée par mois (heure de Paris, « 3 / 5 » cochées, « Tout cocher » sur ce qui est affiché) ; une
+  barre fixe compte les compétitions cochées et rappelle le minimum. Les deux listes de la base
+  (`list_manager_available_competitions`, `list_manager_league_competitions`) rendent aussi ville,
+  portée, lieu et niveau. Règles pures : `src/domain/season-picker.ts`.
 - Les règles sont **figées à la création** de la ligue : tous ses participants jouent avec les
   mêmes paramètres.
 - Écrans : back-office › Manager pour les règles (#418) ; `/manager` pour les ligues, depuis
