@@ -102,6 +102,26 @@ supabase/          migrations, seed, tests pgTAP (verrouillage, sécurité)
 - Les maquettes (« boards ») vivent sur la branche orpheline `boards`, jamais sur `main` ;
   une PR d'interface les référence par lien. Une issue `after-ui` attend la maquette validée.
 
+## Penser joueur (simple et intuitif)
+
+Le joueur est un fan d'athlé sur son téléphone. Chaque écran se comprend sans explication
+(décision du propriétaire, 13 nov. 2026, après les retours de tests de v0.17.2).
+
+1. **Retour immédiat** : tout bouton qui envoie se désactive et montre « … en cours » ; la
+   confirmation apparaît là où est le joueur, pas hors de l'écran.
+2. **Ne jamais perdre ce qu'il a commencé** : règles, fiche ou aide s'ouvrent par-dessus (feuille,
+   dialogue), ou le brouillon est gardé ; « Retour » ramène là d'où il vient.
+3. **Toute saisie est bornée** : longueur maximale, valeurs plausibles, message clair en cas
+   d'erreur.
+4. **Une chose s'écrit d'une seule façon** (points, dates, noms d'onglets) ; quand on renomme, on
+   renomme partout. Jamais de doublon.
+5. **Rien d'inutile** : pas de tiret seul, pas de raccourci qui ne sert à rien, pas d'élément en
+   double ; un écran vide propose l'action suivante.
+6. **Chaque élément ressemble à ce qu'il fait** : un sélecteur de vue ressemble à un sélecteur,
+   la sélection active se voit bien en clair comme en sombre.
+7. **Tout tient à 320–390 px** : aucun libellé ne déborde ; la police à chasse fixe est réservée
+   aux chiffres.
+
 ## i18n
 
 Français seul en v1. Tous les textes visibles sont dans un seul fichier de messages
@@ -180,6 +200,8 @@ en `.env.local`.
 6. Capture jointe si l'interface a changé.
 7. Si la PR change un parcours (page, formulaire, redirection), le test de bout en bout (`e2e/`)
    est complété ou mis à jour dans la même PR, et la CI est verte, bout en bout compris.
+8. Si la PR touche l'interface : l'écran est parcouru à 390 px, en clair et en sombre, comme un
+   joueur qui le découvre (règles « Penser joueur ») ; la PR dit ce qui pourrait le gêner.
 
 ## TDD
 
