@@ -279,6 +279,15 @@ alignements (privés), les performances et les points de pronos de la compétiti
 de `manager_scores` (journalisée `run_manager_scoring`). Les participants d'une ligue en lisent
 les scores ; `my_manager_score()` rend celui du joueur avec le nom de ses athlètes.
 
+Calendrier Manager (v0.16, issue #432) : à la clôture du mercato, un déclencheur sur
+`manager_leagues.mercato_closed_at` tire une fois le calendrier aller-retour
+(`private.schedule_manager_season()`, même règle que `src/domain/manager-schedule.ts`) :
+`manager_matchdays` (journée, compétition, bonus) et `manager_fixtures` (confrontations). Les
+compétitions de la ligue dont la première épreuve commence au moins 1 h après la clôture, dans
+l'ordre des dates : une par journée ; celles au-delà des 2 × (n − 1) journées sont des journées
+bonus. Lecture par les participants de la ligue, aucune écriture. Détail :
+`docs/decisions/french-track-manager.md`, section 5.
+
 Records (v0.8, issue #196) : le trigger `update_records_from_result` met à jour le PB (`kind = 'pr'` en base) et le SB
 à chaque ligne de résultat. Les marques texte sont lues par `parse_mark()` (secondes, mètres ou
 points) et comparées par `is_better_mark()` : temps plus bas pour les courses (discipline avec une

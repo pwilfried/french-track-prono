@@ -255,6 +255,29 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 
 - **Aller-retour** : chaque participant affronte tous les autres deux fois, à domicile puis à
   l'extérieur ; calendrier généré au lancement de la saison, fixe ensuite.
+- Calendrier (#432) : tiré à la **clôture du mercato** (début de la saison), quelle que soit la
+  façon dont il se clôt (déclencheur sur `manager_leagues.mercato_closed_at`), une seule fois :
+  une ligue qui a un calendrier le garde. Tables `manager_matchdays` (journée, compétition,
+  bonus) et `manager_fixtures` (journée, domicile, extérieur), lues par les participants de la
+  ligue, écrites par personne d'autre que `private.schedule_manager_season`. Les joueurs sont
+  tirés dans un ordre au hasard (`random()`, `setseed()` dans pgTAP), puis placés par la méthode
+  du cercle (`seasonSchedule`,
+  `src/domain/manager-schedule.ts`, même règle en SQL) : 2 × (n − 1) journées, chacun un
+  adversaire par journée, chaque paire deux fois, une fois à domicile chacun ; jamais trois
+  journées de suite à domicile ou à l'extérieur, jamais le même adversaire deux journées de
+  suite. Le retour reprend les paires de l'aller, domicile et extérieur inversés, en commençant
+  par la 2e journée de l'aller (la 1re vient en dernier). Rien avec un nombre impair de joueurs.
+- **Compétitions de la saison** (règle du propriétaire, 13 nov. 2026, #432) : celles de la
+  ligue dont la **première épreuve commence au moins 1 h après la fin du mercato** (une
+  compétition sans épreuve compte à partir de minuit, heure de Paris, de sa date de début), dans l'ordre des
+  dates (première épreuve, puis nom). Une compétition qui commence plus tôt ne compte pas.
+- **Une compétition = une journée** (réponse du propriétaire, 10 nov. 2026, #440) : les
+  compétitions de la saison vont aux journées 1, 2, 3… Les 2 × (n − 1) premières sont des
+  journées de confrontation ; **les compétitions en trop, à la fin, sont des journées bonus**
+  (`bonus`) : points du Manager seulement, sans confrontation ni points de classement. Le nombre
+  de joueurs vient des compétitions (#644) : il y en a toujours assez au lancement. Si la règle
+  de la fin du mercato en retire trop, une journée de confrontation au-delà de la dernière
+  compétition n'en a pas (`competition_id` nul) et ne se joue pas.
 - **Une confrontation par compétition éligible** : le score total le plus haut gagne, égalité =
   nul. **Victoire 3 points, nul 1, défaite 0** (distincts des points Manager).
 - **Classement** : points au championnat, puis victoires, puis différence de points Manager
@@ -303,4 +326,4 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 
 ## Questions encore ouvertes
 
-- Compétitions éligibles face aux 2 × (n − 1) journées d'un aller-retour : #440 (bloque #432).
+- Aucune : #440 a sa réponse (« Une compétition = une journée », section 5).
