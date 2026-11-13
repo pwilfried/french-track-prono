@@ -59,11 +59,28 @@ export const WithoutPoints: Story = {
   },
 };
 
+/** A league limited to families shows them in a badge: « Sprint · Haies » (#613). */
+export const Families: Story = {
+  args: { families: ["hurdles", "sprint"] },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(text.familiesBadge(["Sprint", "Haies"]))).toBeVisible();
+  },
+};
+
+/** A league on all events has no badge. */
+export const AllEvents: Story = {
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).queryByText(/ · Haies/)).toBeNull();
+  },
+};
+
 /** A long name and several competitions wrap inside the card; the place stays on the right. */
 export const LongText: Story = {
   args: {
     name: "Les Gazelles infatigables de la Vallée de la Haute-Testrivière",
     isPublic: true,
+    families: ["combined", "relay", "middle", "long", "jumps", "throws"],
     memberCount: 48,
     competitionNames: [
       "Championnats interrégionaux en salle de la Vallée de la Haute-Testrivière",

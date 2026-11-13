@@ -1,5 +1,7 @@
 import { DEFAULT_BIB, type Bib } from "@/domain/bib";
 import { rankClubs, type ClubRank } from "@/domain/club-ranking";
+import type { DisciplineFamily } from "@/domain/discipline";
+import { countsForFamilies, type LeagueFamilyRule } from "@/domain/league-families";
 import {
   linesOfDay,
   movesSinceYesterday,
@@ -27,6 +29,8 @@ export type RankingLine = {
   eventStartsAt: string;
   /** Lock of the event, ISO 8601: a league counts it for a member who joined before (#376). */
   eventLockAt?: string;
+  /** Family of the event's discipline: a league limited to families counts only theirs (#613). */
+  eventFamily?: DisciplineFamily;
 };
 
 /** Port: the score lines a ranking is made of. Real adapter = Supabase, fake = in memory. */
@@ -115,14 +119,17 @@ export function countsInLeague(joinedAt: string | undefined, eventLockAt: string
 }
 
 /**
- * The members of a league, ranked on the league's competitions (their points add up); a member without points is listed
- * with 0. Only a member sees it. Every member gets the same ranking from the same score lines.
+ * The members of a league, ranked on the league's competitions (their points add up) and, for a
+ * league limited to families, on the events of those families only (#613); a member without
+ * points is listed with 0. Only a member sees it. Every member gets the same ranking from the same score lines.
  */
 export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: LeagueRepository }) {
   return {
     async execute(input: {
       leagueId: string;
       competitionSlugs: string[];
+      /** The league's families (#613); none or absent: every event counts. */
+      families?: LeagueFamilyRule[];
       today?: string;
     }): Promise<RankingRow[]> {
       const members = await ports.leagues.members(input.leagueId);
@@ -132,7 +139,13 @@ export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: L
       // an event locked before the player joined stays out of this league's ranking.
       const lines = (await linesOf(ports.ranking, input.competitionSlugs))
         .filter((l) => joinedAt.has(l.userId))
-        .filter((l) => countsInLeague(joinedAt.get(l.userId), l.eventLockAt));
+        .filter((l) => countsInLeague(joinedAt.get(l.userId), l.eventLockAt))
+        .filter((l) =>
+          countsForFamilies(input.families ?? [], {
+            family: l.eventFamily,
+            startsAt: l.eventStartsAt,
+          }),
+        );
       // Members without any score line yet still appear, with 0 points.
       const zero = members.map((m) => ({
         userId: m.userId,
