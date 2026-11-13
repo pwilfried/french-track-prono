@@ -45,15 +45,16 @@ test("a player creates a private French Track Manager league that keeps its rule
     await page.getByLabel("Nom de la ligue").fill("Les Lanceurs du dimanche");
     await page.getByRole("button", { name: "Créer la ligue" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Les Lanceurs du dimanche");
-    await expect(page.getByText("1 / 12 participants · Privée")).toBeVisible();
+    await expect(page.getByText("1 / 4 participants · Privée")).toBeVisible();
     // The creator is its admin and first participant; the code invites the others.
     const participants = page.getByRole("list", { name: "Participants" });
     await expect(participants.getByRole("listitem")).toHaveCount(1);
     await expect(participants).toContainText(creator.pseudo);
     await expect(participants).toContainText("admin");
     await expect(page.getByText("Code d'invitation")).toBeVisible();
-    await expect(page.getByRole("status").filter({ hasText: "en nombre pair" })).toContainText(
-      "de 4 à 12 participants, en nombre pair",
+    // The mercato waits for the target, an even count from 4 to 10, 4 by default (#619).
+    await expect(page.getByRole("status").filter({ hasText: "attendus" })).toContainText(
+      "Encore 3 joueurs attendus.",
     );
 
     // The rules were copied at creation: a later change does not touch the league.
