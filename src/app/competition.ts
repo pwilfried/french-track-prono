@@ -54,6 +54,7 @@ const FALLBACK: ShownCompetition = {
   slug: "ultimate-championship-2026",
   name: messages.app.name,
   scope: "international",
+  venue: "outdoor",
   city: null,
   countryCode: null,
   startsOn: "2026-09-11",

@@ -1,4 +1,10 @@
-import { isValidCompetition, parisToUtc, type CompetitionScope } from "@/domain/competition";
+import {
+  competitionVenue,
+  isValidCompetition,
+  parisToUtc,
+  type CompetitionScope,
+  type CompetitionVenue,
+} from "@/domain/competition";
 import { ROUNDS, type Round } from "@/domain/rounds";
 
 import { UseCaseError } from "./errors";
@@ -8,6 +14,7 @@ type Outcome = "saved" | "not_admin" | "unknown" | "has_predictions";
 export type CompetitionFields = {
   name: string;
   scope: CompetitionScope;
+  venue: CompetitionVenue;
   city: string | null;
   countryCode: string | null;
   startsOn: string;
@@ -34,13 +41,15 @@ function check(outcome: Outcome, notFound: "COMPETITION_NOT_FOUND" | "EVENT_NOT_
   if (outcome === "has_predictions") throw new UseCaseError("HAS_PREDICTIONS");
 }
 
-/** The admin corrects a competition: name, kind, place, dates. */
+/** The admin corrects a competition: name, kind, venue, place, dates. */
 export function editCompetition(ports: { competitions: CompetitionEditRepository }) {
   return {
     async execute(input: {
       slug: string;
       name: string;
       scope: string;
+      /** « indoor » or « outdoor »; outdoor when none is given. */
+      venue?: string;
       city: string;
       countryCode: string;
       startsOn: string;
@@ -54,6 +63,7 @@ export function editCompetition(ports: { competitions: CompetitionEditRepository
         await ports.competitions.update(input.slug, {
           name: input.name.trim(),
           scope: input.scope as CompetitionScope,
+          venue: competitionVenue(input.venue) as CompetitionVenue,
           city: input.city.trim() || null,
           countryCode: countryCode || null,
           startsOn: input.startsOn,

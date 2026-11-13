@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
+import { chooseSeason, seasonReady } from "./manager-season";
 import { newPlayer, signUp } from "./players";
 
 test("a player creates a private French Track Manager league that keeps its rules", async ({
   page,
 }) => {
+  seasonReady();
   const budget = sql("select rules ->> 'budget' from manager_rules");
   const creator = newPlayer("manager-league");
   await page.goto("/ligues");
@@ -38,11 +40,13 @@ test("a player creates a private French Track Manager league that keeps its rule
 
     // Every name is moderated, private leagues too.
     await page.getByLabel("Nom de la ligue").fill("Ligue FFA");
+    await chooseSeason(page);
     await page.getByRole("button", { name: "Créer la ligue" }).click();
     await expect(page.locator("main").getByText(/pas possible pour une ligue/)).toBeVisible();
 
     sql(`update manager_rules set rules = jsonb_set(rules, '{budget}', '130')`);
     await page.getByLabel("Nom de la ligue").fill("Les Lanceurs du dimanche");
+    await chooseSeason(page);
     await page.getByRole("button", { name: "Créer la ligue" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Les Lanceurs du dimanche");
     await expect(page.getByText("1 / 4 participants · Privée")).toBeVisible();

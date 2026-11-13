@@ -4,11 +4,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { UseCaseError, type ErrorCode } from "@/application/errors";
-import { launchManagerMercato, setManagerMercato } from "@/application/manager-leagues";
+import {
+  launchManagerMercato,
+  setManagerCompetitions,
+  setManagerMercato,
+} from "@/application/manager-leagues";
 import { parisToUtc } from "@/domain/competition";
 import type { RoundMode } from "@/domain/manager-league";
 
-import { formText } from "../form-data";
+import { formText, formTexts } from "../form-data";
 import { managerPorts } from "./data";
 
 export type MercatoFormState = { error?: ErrorCode; saved?: boolean };
@@ -37,9 +41,28 @@ export async function setMercatoAction(
     }
     await setManagerMercato(ports).execute({
       id,
-      target: Number(formText(data, "target")),
       startsAt,
       rounds,
+    });
+  } catch (error) {
+    if (error instanceof UseCaseError) return { error: error.code };
+    throw error;
+  }
+  revalidatePath(`/manager/${id}`);
+  return { saved: true };
+}
+
+/** The creator adds or removes competitions before the mercato (#644): the players follow. */
+export async function setCompetitionsAction(
+  _: MercatoFormState,
+  data: FormData,
+): Promise<MercatoFormState> {
+  const id = formText(data, "league");
+  const ports = await managerPorts(`/manager/${id}`);
+  try {
+    await setManagerCompetitions(ports).execute({
+      id,
+      competitionIds: formTexts(data, "competitions"),
     });
   } catch (error) {
     if (error instanceof UseCaseError) return { error: error.code };
@@ -57,7 +80,7 @@ export async function launchMercatoAction(
   const id = formText(data, "league");
   const ports = await managerPorts(`/manager/${id}`);
   try {
-    await launchManagerMercato(ports).execute({ id });
+    await launchManagerMercato(ports).execute({ id, now: new Date().toISOString() });
   } catch (error) {
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;

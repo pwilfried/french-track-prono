@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 
-import { createTestEvent, sql } from "./contract/database";
+import { createTestEvent, managerSeasonCompetitions, sql } from "./contract/database";
 import { performanceRepositoryContract } from "./contract/performance-repository.contract";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryPerformanceStore, createSupabasePerformanceRepository } from "./index";
@@ -38,6 +38,7 @@ if (url && key) {
         const { data, error } = await player.client.rpc("create_manager_league", {
           p_name: "Performances",
           p_public: false,
+          p_competitions: managerSeasonCompetitions(),
         });
         if (error) throw new Error(error.message);
         sql(`insert into manager_lineups (league_id, competition_id, user_id, athlete_ids)
