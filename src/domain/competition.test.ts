@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   competitionDay,
+  competitionVenue,
   competitionsForPlayer,
   rankingStart,
   daysUntil,
@@ -41,6 +42,22 @@ describe("isValidCompetition", () => {
     expect(isValidCompetition({ ...base, name: " " })).toBe(false);
     expect(isValidCompetition({ ...base, scope: "monde" })).toBe(false);
     expect(isValidCompetition({ ...base, endsOn: "2027-06-24" })).toBe(false);
+  });
+
+  it("accepts an indoor or outdoor competition, outdoor when none is given, and refuses another venue", () => {
+    expect(isValidCompetition({ ...base, venue: "indoor" })).toBe(true);
+    expect(isValidCompetition({ ...base, venue: "outdoor" })).toBe(true);
+    expect(isValidCompetition({ ...base, venue: "beach" })).toBe(false);
+  });
+});
+
+describe("competitionVenue", () => {
+  it("is outdoor when no venue is given, keeps a known one and has none for an unknown one", () => {
+    expect(competitionVenue(undefined)).toBe("outdoor");
+    expect(competitionVenue("")).toBe("outdoor");
+    expect(competitionVenue("indoor")).toBe("indoor");
+    expect(competitionVenue("outdoor")).toBe("outdoor");
+    expect(competitionVenue("beach")).toBeNull();
   });
 });
 

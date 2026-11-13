@@ -6,6 +6,7 @@ import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { getCompetitionFile } from "@/application/list-competitions";
 import { listAthletes } from "@/application/list-athletes";
 import { ErrorNotice } from "@/components/error-notice";
+import { VenueChip } from "@/components/events/venue-chip";
 import { TIME_ZONE } from "@/domain/competition";
 import { flagOf } from "@/domain/flag";
 import { ROUNDS } from "@/domain/rounds";
@@ -107,6 +108,7 @@ export default async function AdminCompetitionPage({
       back={{ href: "/admin/competitions", label: messages.adminCompetitions.title }}
     >
       <p className="-mt-2 text-sm text-muted-foreground">
+        <VenueChip venue={file.venue} className="mr-1.5" />
         {messages.adminCompetitions.scope[file.scope]} ·{" "}
         {[file.city, messages.competition.dates(file.startsOn, file.endsOn)]
           .filter(Boolean)

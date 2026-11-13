@@ -17,6 +17,7 @@ function repository(isAdmin = true) {
         slug: "later",
         name: "Later",
         scope: "france",
+        venue: "outdoor",
         city: null,
         countryCode: null,
         startsOn: "2027-07-01",
@@ -29,6 +30,7 @@ function repository(isAdmin = true) {
         slug: "past",
         name: "Past",
         scope: "international",
+        venue: "outdoor",
         city: null,
         countryCode: null,
         startsOn: "2026-09-12",
@@ -41,6 +43,7 @@ function repository(isAdmin = true) {
         slug: "soon",
         name: "Soon",
         scope: "france",
+        venue: "outdoor",
         city: null,
         countryCode: null,
         startsOn: "2027-06-25",
@@ -56,6 +59,7 @@ function repository(isAdmin = true) {
             slug,
             name: "Soon",
             scope: "france",
+            venue: "outdoor",
             city: null,
             countryCode: null,
             startsOn: "2027-06-25",
@@ -141,12 +145,43 @@ describe("competitions in the back-office", () => {
         slug: "championnats-de-france-elite-2027",
         name: "Championnats de France Élite",
         scope: "france",
+        venue: "outdoor",
         city: "Ville",
         countryCode: "FRA",
         startsOn: "2027-06-25",
         endsOn: "2027-06-27",
       },
     ]);
+  });
+
+  it("creates an indoor competition when the admin chooses « En salle »", async () => {
+    const { competitions, calls } = repository();
+
+    await createCompetition({ competitions }).execute({
+      name: "Championnats d'Europe en salle",
+      scope: "international",
+      venue: "indoor",
+      city: "",
+      countryCode: "",
+      startsOn: "2027-03-05",
+      endsOn: "2027-03-07",
+    });
+
+    expect(calls[0]).toEqual(["create", expect.objectContaining({ venue: "indoor" })]);
+  });
+
+  it("refuses an unknown venue with COMPETITION_INVALID", async () => {
+    await expect(
+      createCompetition(repository()).execute({
+        name: "X",
+        scope: "france",
+        venue: "beach",
+        city: "",
+        countryCode: "",
+        startsOn: "2027-06-25",
+        endsOn: "2027-06-27",
+      }),
+    ).rejects.toEqual(new UseCaseError("COMPETITION_INVALID"));
   });
 
   it("refuses reversed dates and a player", async () => {

@@ -22,6 +22,7 @@ export function competitionAdminRepositoryContract(
       slug,
       name: `Test ${slug}`,
       scope: "france" as const,
+      venue: "outdoor" as const,
       city: "Ville",
       countryCode: "FRA",
       startsOn: "2099-06-25",
@@ -49,6 +50,7 @@ export function competitionAdminRepositoryContract(
       expect(file).toMatchObject({
         name: `Test ${slug}`,
         scope: "france",
+        venue: "outdoor",
         countryCode: "FRA",
         events: 1,
         finals: 1,
