@@ -2,7 +2,9 @@
 # Deploys the checked-out commit to a Vercel project's production, then smoke-tests it (#405, #720).
 # Usage: ci/vercel-deploy.sh <base url>, e.g. https://www.frenchtrackprono.com
 # Env: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (the project: production or pre-production);
-#      GH_TOKEN (issues: write), GITHUB_REPOSITORY, GITHUB_RUN_ID, AGENTS_OWNER (owners to notify).
+#      GH_TOKEN (issues: write), GITHUB_REPOSITORY, GITHUB_RUN_ID, AGENTS_OWNER (owners to notify);
+#      optional VERCEL_EXTRA_ENV: KEY=value lines added to the pulled environment before the build
+#      (pre-production's NEXT_PUBLIC_SITE_NOINDEX=1).
 #   1. `vercel pull`, then the pulled environment must hold the Supabase variables (names only are
 #      printed): on 13 Nov 2026 they had vanished, the build passed and every page answered 500.
 #   2. build, then a staged deploy (--skip-domain) promoted to the domains: `vercel promote` also
@@ -28,6 +30,9 @@ done
 if [ "${#missing[@]}" -gt 0 ]; then
   echo "::error::Missing in the Vercel production environment: ${missing[*]}. Nothing is deployed (docs/SETUP.md, « Déploiements Vercel »)."
   exit 1
+fi
+if [ -n "${VERCEL_EXTRA_ENV:-}" ]; then
+  printf '\n%s\n' "$VERCEL_EXTRA_ENV" >> "$env_file"
 fi
 
 vercel build --prod

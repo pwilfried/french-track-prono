@@ -356,8 +356,9 @@ Sans ces trois secrets, le job de déploiement échoue (exprès : la prod ne doi
 sans qu'on le voie). Les variables d'environnement de l'application restent dans Vercel ;
 `vercel pull` les récupère pour le build.
 
-Le déploiement passe par `ci/vercel-deploy.sh <adresse>` (#720), réutilisable pour la préprod
-(#634) avec les secrets Vercel de son projet :
+Le déploiement passe par `ci/vercel-deploy.sh <adresse>` (#720), appelé par le job « Deploy to
+Vercel production » de `migrations.yml` et par le job de déploiement de `preprod.yml` (#634), qui
+y ajoute `NEXT_PUBLIC_SITE_NOINDEX=1` avec `VERCEL_EXTRA_ENV` :
 
 1. **Vérification avant le build** : après `vercel pull`, l'environnement de production du projet
    Vercel doit contenir `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_ANON_KEY`, non vides.

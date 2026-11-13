@@ -150,6 +150,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production
+    permissions:
+      contents: read
+      issues: write
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -173,16 +176,10 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      # The production environment variables come from the Vercel project, as for a Git deploy.
-      - name: Pull the production settings
-        run: npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
-
-      - name: Build
-        run: npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
-
-      - name: Deploy
-        run: npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
-
-      # A CLI deploy creates no GitHub deployment, so the smoke workflow is not triggered: run it here.
-      - name: Smoke test of production
-        run: scripts/smoke.sh https://www.frenchtrackprono.com
+      # Checks the pulled Vercel variables, builds, deploys, smoke-tests; on a failed smoke test it
+      # rolls production back and opens an issue for the owners (ci/vercel-deploy.sh, #720).
+      - name: Deploy and smoke-test production
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AGENTS_OWNER: ${{ vars.AGENTS_OWNER }}
+        run: ci/vercel-deploy.sh https://www.frenchtrackprono.com

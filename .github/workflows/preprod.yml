@@ -1,4 +1,3 @@
-# To move to .github/workflows/preprod.yml (an agent cannot push workflow files: see #634).
 name: Pre-production
 
 # Every merge into main goes to pre-production (#634): its migrations on the pre-production
@@ -81,6 +80,9 @@ jobs:
     environment:
       name: preprod
       url: ${{ env.PREPROD_URL }}
+    permissions:
+      contents: read
+      issues: write
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -99,19 +101,12 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      # The pre-production project's own variables (its Supabase, its address), then noindex.
-      - name: Pull the pre-production settings
-        run: |
-          npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
-          echo "NEXT_PUBLIC_SITE_NOINDEX=1" >> .vercel/.env.production.local
-
-      - name: Build
+      # The pre-production project's own variables (its Supabase, its address), plus noindex; then
+      # the same checked deploy as production, rollback included (ci/vercel-deploy.sh, #720).
+      - name: Deploy and smoke-test pre-production
         env:
+          GH_TOKEN: ${{ github.token }}
+          AGENTS_OWNER: ${{ vars.AGENTS_OWNER }}
           NEXT_PUBLIC_SITE_NOINDEX: "1"
-        run: npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
-
-      - name: Deploy
-        run: npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
-
-      - name: Smoke test of pre-production
-        run: scripts/smoke.sh "$PREPROD_URL"
+          VERCEL_EXTRA_ENV: NEXT_PUBLIC_SITE_NOINDEX=1
+        run: ci/vercel-deploy.sh "$PREPROD_URL"
