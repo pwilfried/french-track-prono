@@ -317,6 +317,15 @@ Lecture par les participants (`ManagerHonoursRepository`). Page `/manager/[id]/f
 (rang final, « Ma saison », bilan face au rival : le joueur juste devant, le 2e pour le
 champion) ; le palmarès est rappelé dans le profil.
 
+Accueil et tutoriel Manager (v0.16, issues #606 et #616) : pas de table ni de port de plus. Le cas
+d'usage `getManagerHome` (`src/application/manager-home.ts`) réutilise les ports de la ligue, de la
+saison et des alignements pour « Ma saison » sur `/manager` (première ligue du joueur : journée,
+rang, prochaine confrontation, action du moment) ; l'étape du déroulé vient de
+`currentSeasonStep` (`src/domain/manager-home.ts`). Le tutoriel est un composant client
+(`ManagerTutorial`) : ouvert seul à la première visite (mémorisé sur l'appareil, rien en base),
+puis par `/manager?tutoriel=1` ; ses chiffres viennent de `managerIntroFigures`. Détail :
+`docs/decisions/french-track-manager.md`, section 6.
+
 Records (v0.8, issue #196) : le trigger `update_records_from_result` met à jour le PB (`kind = 'pr'` en base) et le SB
 à chaque ligne de résultat. Les marques texte sont lues par `parse_mark()` (secondes, mètres ou
 points) et comparées par `is_better_mark()` : temps plus bas pour les courses (discipline avec une
@@ -514,6 +523,25 @@ score d'une compétition (`src/domain/manager-score.ts`, #431) avec le barème d
 | M10 | Même athlète en série (11.20) puis en finale (11.05) | la meilleure ligne (11.05), sans cumul |
 | M11 | 1re place en série avec un RP | RP seul : la place ne compte qu'en finale |
 | M12 | Relancer le calcul, ou les performances dans un autre ordre | même score ; le total est la somme des parties, jamais négative |
+
+**Championnat Manager (v0.16, tests Vitest).** Calendrier (`src/domain/manager-schedule.ts`,
+#432), résultats et classement (`src/domain/manager-championship.ts`, #433), fin de saison
+(`src/domain/manager-honours.ts`, #434), étape de l'accueil (`src/domain/manager-home.ts`, #606).
+
+| # | Situation | Attendu |
+|---|---|---|
+| C1 | Calendrier de n joueurs (4 à 10, pair) | 2 × (n − 1) journées, un adversaire par journée, chaque paire deux fois (une fois à domicile chacun), aller complet puis retour |
+| C2 | Suite des journées d'un joueur | jamais trois fois de suite à domicile ou à l'extérieur, jamais le même adversaire deux journées de suite |
+| C3 | Nombre impair de joueurs | aucun calendrier |
+| C4 | Compétition dont la première épreuve commence moins de 1 h après la fin du mercato | hors saison ; les autres, dans l'ordre des dates puis des noms, une par journée |
+| C5 | Plus de compétitions que de journées de confrontation | les dernières sont des journées bonus : pas de confrontation, pas de point de classement |
+| C6 | Confrontation 900 contre 700, puis 650 contre 650 | victoire 3, nul 1, défaite 0 : 4 points contre 1, différence + 200 et − 200 |
+| C7 | Égalité de points au classement | victoires, puis différence de points Manager, puis points marqués ; égalité complète : même rang, le suivant sauté |
+| C8 | Résultats lus dans un autre ordre | même classement (property test) |
+| C9 | Compétition calculée, score d'un participant absent | la confrontation est jouée, le score absent vaut 0 |
+| C10 | Journée bonus pas encore calculée, ou journée sans compétition | la saison n'est pas finie tant que la bonus manque ; une journée sans compétition ne la retient pas |
+| C11 | Rival à la fin de la saison | le joueur juste devant au classement final, le 2e pour le champion |
+| C12 | Étape de l'accueil | ligue tant que le mercato attend, mercato ouvert, alignement à faire, points en attente, confrontations, champion à la fin |
 
 **Règles de la base (tests pgTAP)**
 
