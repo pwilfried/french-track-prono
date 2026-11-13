@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { VenueChip } from "@/components/events/venue-chip";
 import { buttonVariants } from "@/components/ui/button";
 import { daysUntil, type CompetitionScope } from "@/domain/competition";
 
@@ -91,7 +92,10 @@ export default async function CompetitionsPage({
                 className="size-5 shrink-0 accent-brand"
               />
               <span className="flex min-w-0 flex-1 flex-col">
-                <span className="font-bold">{c.name}</span>
+                <span className="flex flex-wrap items-center gap-1.5 font-bold">
+                  {c.name}
+                  <VenueChip venue={c.venue} />
+                </span>
                 <span className="text-sm text-muted-foreground">
                   {[c.place, messages.start.events(c.finals)].filter(Boolean).join(" · ")}
                 </span>
@@ -124,7 +128,10 @@ export default async function CompetitionsPage({
                 className="flex min-h-14 items-center gap-3 rounded-2xl bg-muted px-3.5 py-2"
               >
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="font-semibold">{c.name}</span>
+                  <span className="flex flex-wrap items-center gap-1.5 font-semibold">
+                    {c.name}
+                    <VenueChip venue={c.venue} />
+                  </span>
                   <span className="text-sm text-muted-foreground">{messages.choice.pastHint}</span>
                 </span>
                 <Link

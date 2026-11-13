@@ -48,6 +48,7 @@ export async function createCompetitionAction(data: FormData) {
     }).execute({
       name: formText(data, "name"),
       scope: formText(data, "scope"),
+      venue: formText(data, "venue"),
       city: formText(data, "city"),
       countryCode: formText(data, "countryCode"),
       startsOn: formText(data, "startsOn"),
@@ -98,6 +99,7 @@ export async function editCompetitionAction(data: FormData) {
       slug,
       name: formText(data, "name"),
       scope: formText(data, "scope"),
+      venue: formText(data, "venue"),
       city: formText(data, "city"),
       countryCode: formText(data, "countryCode"),
       startsOn: formText(data, "startsOn"),

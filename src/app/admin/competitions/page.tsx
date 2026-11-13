@@ -4,6 +4,7 @@ import type { CompetitionSummary } from "@/application/create-competition";
 import { UseCaseError } from "@/application/errors";
 import { listCompetitions } from "@/application/list-competitions";
 import { ErrorNotice } from "@/components/error-notice";
+import { VenueChip } from "@/components/events/venue-chip";
 import { nextCompetition } from "@/domain/competition";
 import { createSupabaseCompetitionAdminRepository } from "@/infra";
 
@@ -19,8 +20,11 @@ function CompetitionCard({ c, featured }: { c: CompetitionSummary; featured: boo
       className={`flex flex-col gap-2.5 rounded-card bg-card p-3.5 ${featured ? "border-2 border-brand" : "border border-border"}`}
     >
       <span className="flex items-center justify-between gap-2">
-        <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${SCOPE_CHIP[c.scope]}`}>
-          {messages.adminCompetitions.scope[c.scope]}
+        <span className="flex flex-wrap items-center gap-1.5">
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${SCOPE_CHIP[c.scope]}`}>
+            {messages.adminCompetitions.scope[c.scope]}
+          </span>
+          <VenueChip venue={c.venue} />
         </span>
         {featured && (
           <span className="text-xs font-bold text-success-text">
