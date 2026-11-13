@@ -163,6 +163,9 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   performance (secondes, mètres, ou total officiel pour les épreuves combinées).
 - **Bonus sportifs**, tous cumulables, valeurs fixées par l'admin : 1re, 2e, 3e place, record
   personnel, meilleure performance de la saison, record national, continental et du monde.
+  Calcul : `src/domain/manager-bonus.ts`, à partir de la place (aucune pour DNS, DNF, DQ) et des
+  records cochés par l'admin ; chaque record compte s'il est coché (un record du monde ne coche
+  pas les autres de lui-même).
 - **Saisie** : l'admin entre places, performances et indicateurs de records ; le calcul est
   automatique.
 - **Pronostics classiques obligatoires** sur toutes les épreuves de chaque compétition éligible,
