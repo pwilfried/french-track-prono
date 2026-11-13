@@ -45,6 +45,10 @@ Deno.serve(async (request) => {
           markSent: async (sent) => {
             await tx`select private.push_mark_sent(${tx.json(sent)}::jsonb)`;
           },
+          programDue: () => tx`select * from private.program_due()`,
+          markProgramSent: async (sent) => {
+            await tx`select private.program_mark_sent(${tx.json(sent)}::jsonb)`;
+          },
           forget: async (endpoints) => {
             await tx`select private.push_forget(${endpoints}::text[])`;
           },

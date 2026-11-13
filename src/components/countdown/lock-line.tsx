@@ -21,18 +21,9 @@ const hour = new Intl.DateTimeFormat("fr-FR", {
 
 /**
  * When an event locks, in words (#546): its day and hour more than 24 hours ahead, else the time
- * left, in red from one hour before. It ticks every second unless `now` is given. `next` words it
- * for the progress card: « la prochaine verrouille dans … ».
+ * left, in red from one hour before. It ticks every second unless `now` is given.
  */
-export function LockLine({
-  lockAt,
-  now,
-  next = false,
-}: {
-  lockAt: string;
-  now?: Date;
-  next?: boolean;
-}) {
+export function LockLine({ lockAt, now }: { lockAt: string; now?: Date }) {
   const label = lockLabel(useNow(now), lockAt);
   const at = new Date(lockAt);
   const text =
@@ -40,14 +31,11 @@ export function LockLine({
       ? messages.countdown.locked
       : label.kind === "on"
         ? messages.events.locksOn(day.format(at), hour.format(at))
-        : (next ? messages.events.nextLocksIn : messages.events.locksIn)(
-            messages.countdown.duration(splitDuration(label.seconds)),
-          );
+        : messages.events.locksIn(messages.countdown.duration(splitDuration(label.seconds)));
   return (
     <span
       suppressHydrationWarning
-      // Red on a card; the progress card is blue, so its sentence keeps its colour.
-      className={cn(label.kind === "in" && label.urgent && !next && "font-bold text-accent-text")}
+      className={cn(label.kind === "in" && label.urgent && "font-bold text-accent-text")}
     >
       {text}
     </span>

@@ -65,7 +65,7 @@ export const FirstPredictionWithOthers: Story = {
     await expect(canvas.getByText("Ton premier prono")).toBeVisible();
     await expect(canvas.getByRole("link", { name: "3 autres finales ce soir" })).toHaveAttribute(
       "href",
-      "/epreuves?competition=ultimate-championship-2026",
+      "/competitions?competition=ultimate-championship-2026",
     );
   },
 };

@@ -49,7 +49,7 @@ test("an event typed at 20:35 Paris time in the back-office reads 20:35 for play
   ).toBe("2099-06-25 18:35");
 
   // Players read the same time: the list of events and the event page.
-  await page.goto(`/epreuves?competition=${slug}`);
+  await page.goto(`/competitions?competition=${slug}`);
   await expect(page.getByRole("link", { name: /^100 m, Femmes/ })).toContainText("20:35");
   await page.goto(`/epreuves/${slug}-f-100-m`);
   // The loading skeleton (`aria-busy`) can still sit next to the streamed page for a moment.

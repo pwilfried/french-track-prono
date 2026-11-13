@@ -76,7 +76,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ sl
     getCurrentUser(),
   ]);
   const player = user ? await loadPlayer(user.userId, slug) : null;
-  const eventsHref = `/epreuves?competition=${slug}`;
+  const eventsHref = `/competitions?competition=${slug}`;
   const next = openEvents(events, now, 3);
   const started = events.some((e) => Date.parse(e.startsAt) <= now.getTime());
 

@@ -84,7 +84,7 @@ export function VisitorHome({
                 .join(" · ")}
             </p>
             <Link
-              href={`/epreuves?competition=${competition.slug}`}
+              href={`/competitions?competition=${competition.slug}`}
               className={`${outline} border-white/70 text-white hover:bg-white/10`}
             >
               {text.seeEvents}

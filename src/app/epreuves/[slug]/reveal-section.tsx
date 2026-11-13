@@ -124,7 +124,7 @@ export async function RevealSection({
             {leagueId ? messages.reveal.emptyLeague : messages.reveal.emptyAll}
           </p>
           <p className="text-sm text-muted-foreground">{messages.reveal.emptyText}</p>
-          <Link href="/epreuves" className={`${buttonVariants()} mt-2`}>
+          <Link href="/competitions" className={`${buttonVariants()} mt-2`}>
             {messages.reveal.seeEvents}
           </Link>
         </div>
