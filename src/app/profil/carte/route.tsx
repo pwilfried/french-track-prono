@@ -7,9 +7,6 @@ import { getPlayerDetails } from "@/application/player-details";
 import { BIB_PALETTE } from "@/components/profile/bib";
 import { seasonCardOf } from "@/domain/season-card";
 import {
-  createPublicSupabaseClient,
-  createSupabaseDisciplineRepository,
-  createSupabaseEventReader,
   createSupabasePlayerDetailsRepository,
   createSupabasePredictionRepository,
   createSupabaseProfileRepository,
@@ -19,6 +16,7 @@ import {
 import { seasonCompetitionSlugs } from "../../competition";
 import { messages } from "../../messages.fr";
 import { getCurrentUser, getSessionClient } from "../../session";
+import { publicEventReader, publicDisciplines } from "../../public-data";
 
 const text = messages.seasonCard;
 const ink = "#082e66";
@@ -41,8 +39,8 @@ export async function GET() {
       getMySeason({
         ranking: createSupabaseRankingRepository(client),
         predictions: createSupabasePredictionRepository(client),
-        events: createSupabaseEventReader(createPublicSupabaseClient()),
-        disciplines: createSupabaseDisciplineRepository(createPublicSupabaseClient()),
+        events: publicEventReader(),
+        disciplines: publicDisciplines(),
       }).execute({
         userId: user.userId,
         competitionSlugs: slugs,

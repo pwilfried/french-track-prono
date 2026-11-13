@@ -212,6 +212,44 @@ calculés (`score_events`, raison `flair`) : il suit toujours le barème de la b
 
 Les décisions du propriétaire prises pendant ces versions sont tracées dans l'issue #112.
 
+**Cache des données publiques (#693).** Les données qui changent rarement et sont les mêmes pour
+tout le monde sont gardées d'une requête à l'autre par le cache de données de Next.js ; tout le
+reste est relu à chaque page, comme avant.
+
+- Outil : `unstable_cache` + `updateTag` / `revalidateTag` (`next/cache`), le modèle documenté
+  sans Cache Components (`node_modules/next/dist/docs/01-app/02-guides/caching-without-cache-components.md`).
+  `"use cache"`, `cacheTag` et `cacheLife` demandent `cacheComponents: true`, qui rend toute
+  l'application dynamique par défaut, change la navigation (`<Activity>`) et impose des
+  `<Suspense>` partout : une migration à part, écartée ici. Le guide de migration garde
+  `unstable_cache` tel quel ; on passera à `"use cache"` avec cette migration.
+- Ce qui est gardé (`src/app/public-cache.ts`, branché dans `src/app/public-data.ts`), lu avec le
+  client anonyme, sans cookie :
+
+  | Lecture | Tag | Pages |
+  |---|---|---|
+  | Liste des compétitions (`loadCompetitions`, `currentCompetition`) | `competitions` | toutes |
+  | Épreuves d'une compétition (`EventReader.listByCompetition` : horaires, verrouillage, tours, statut) | `events` | accueil, compétitions, épreuve, profil, mes points, ligues |
+  | Disciplines (`DisciplineRepository.list`) | `disciplines` | règles, profil, ligues |
+  | Barème (`loadScale`) | `scale` | accueil, règles |
+
+- Durée : 120 s (`PUBLIC_CACHE_SECONDS`) ; une invalidation manquée se répare d'elle-même dans ce
+  délai. React `cache()` reste en plus pour dédoublonner au sein d'une requête.
+- Invalidation : chaque action du back-office appelle `publicDataChanged(<changement>)`, qui
+  expire à l'instant (`updateTag`) les tags de `STALE_AFTER` : compétition (créer, modifier,
+  supprimer, engagés) → `competitions`, `events` ; épreuve (créer, modifier, supprimer), liste de
+  départ (saisie, import, qualifiés), cotes, feuille de résultats (qui passe aussi l'épreuve à
+  « terminée ») → `events`, `competitions` (une compétition compte ses épreuves et ses engagés) ;
+  discipline → `disciplines`, `events` ; barème → `scale`. Un changement fait en SQL directement
+  (scripts `db:*`) attend au plus 120 s.
+- Jamais en cache : une épreuve seule (`findBySlug` : sa liste de départ, ses résultats, son
+  verrouillage), les pronos, les points, les classements, les ligues, le profil, le Manager, et
+  tout ce qui dépend du joueur. Le refus d'un prono après le verrouillage reste décidé par la base.
+  Le back-office lit la base directement.
+- Tests de bout en bout : ils écrivent souvent en SQL. `playwright.config.ts` donne au serveur un
+  secret `PUBLIC_CACHE_FLUSH_SECRET` ; avec lui, `POST /api/public-cache` expire tous les tags, et
+  `sql()` (`src/infra/contract/database.ts`) l'appelle après chaque écriture (sauf
+  `keepCache: true`). Sans ce secret (production), la route répond 404.
+
 ## Modèle de données
 
 Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.

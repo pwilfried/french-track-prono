@@ -11,20 +11,16 @@ import { LockCountdown } from "@/components/home/lock-countdown";
 import { buttonVariants } from "@/components/ui/button";
 import type { EventSummary } from "@/domain/event";
 import { openEvents } from "@/domain/event-list";
-import {
-  createPublicSupabaseClient,
-  createSupabaseEventReader,
-  createSupabasePredictionRepository,
-  createSupabaseRankingRepository,
-} from "@/infra";
+import { createSupabasePredictionRepository, createSupabaseRankingRepository } from "@/infra";
 
 import { loadCompetitions, type ShownCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
 import { getCurrentUser, getSessionClient } from "../../session";
+import { publicEventReader } from "../../public-data";
 
 async function loadEvents(competitionSlug: string): Promise<EventSummary[]> {
   try {
-    const events = createSupabaseEventReader(createPublicSupabaseClient());
+    const events = publicEventReader();
     return await listEvents({ events }).execute({ competitionSlug });
   } catch (error) {
     if (error instanceof UseCaseError) return [];

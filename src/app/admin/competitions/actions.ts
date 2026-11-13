@@ -23,16 +23,26 @@ import {
 } from "@/infra";
 
 import { formText } from "../../form-data";
+import { publicDataChanged } from "../../public-data";
+import type { PublicChange } from "../../public-cache";
 import { adminOnly } from "../guard";
 
 type Client = Awaited<ReturnType<typeof adminOnly>>["client"];
 
-/** Runs a change, then goes to `done` or back to `back` with the error code. */
-async function change(back: string, run: (client: Client) => Promise<string>) {
+/**
+ * Runs a change, then goes to `done` or back to `back` with the error code. `stale`: the public
+ * data it changes, whose cache expires at once (#693).
+ */
+async function change(
+  back: string,
+  stale: PublicChange | null,
+  run: (client: Client) => Promise<string>,
+) {
   const { client } = await adminOnly();
   let target: string;
   try {
     target = await run(client);
+    if (stale) publicDataChanged(stale);
   } catch (error) {
     if (!(error instanceof UseCaseError)) throw error;
     target = `${back}${back.includes("?") ? "&" : "?"}erreur=${error.code}`;
@@ -42,7 +52,7 @@ async function change(back: string, run: (client: Client) => Promise<string>) {
 }
 
 export async function createCompetitionAction(data: FormData) {
-  await change("/admin/competitions/nouvelle", async (client) => {
+  await change("/admin/competitions/nouvelle", "competition", async (client) => {
     const slug = await createCompetition({
       competitions: createSupabaseCompetitionAdminRepository(client),
     }).execute({
@@ -60,7 +70,7 @@ export async function createCompetitionAction(data: FormData) {
 
 export async function addEventAction(data: FormData) {
   const competition = formText(data, "competition");
-  await change(`/admin/competitions/${competition}`, async (client) => {
+  await change(`/admin/competitions/${competition}`, "event", async (client) => {
     await addCompetitionEvent({
       competitions: createSupabaseCompetitionAdminRepository(client),
     }).execute({
@@ -78,7 +88,7 @@ export async function addEventAction(data: FormData) {
 export async function setAthleteAction(data: FormData) {
   const competition = formText(data, "competition");
   const back = `/admin/competitions/${competition}?onglet=engages`;
-  await change(back, async (client) => {
+  await change(back, "competition", async (client) => {
     await setCompetitionAthlete({
       competitions: createSupabaseCompetitionAdminRepository(client),
     }).execute({
@@ -92,7 +102,7 @@ export async function setAthleteAction(data: FormData) {
 
 export async function editCompetitionAction(data: FormData) {
   const slug = formText(data, "slug");
-  await change(`/admin/competitions/${slug}/modifier`, async (client) => {
+  await change(`/admin/competitions/${slug}/modifier`, "competition", async (client) => {
     await editCompetition({
       competitions: createSupabaseCompetitionEditRepository(client),
     }).execute({
@@ -111,7 +121,7 @@ export async function editCompetitionAction(data: FormData) {
 
 export async function deleteCompetitionAction(data: FormData) {
   const slug = formText(data, "slug");
-  await change(`/admin/competitions/${slug}/modifier`, async (client) => {
+  await change(`/admin/competitions/${slug}/modifier`, "competition", async (client) => {
     await deleteCompetition({
       competitions: createSupabaseCompetitionEditRepository(client),
     }).execute({ slug });
@@ -121,7 +131,7 @@ export async function deleteCompetitionAction(data: FormData) {
 
 export async function editEventAction(data: FormData) {
   const eventSlug = formText(data, "eventSlug");
-  await change(`/admin/${eventSlug}`, async (client) => {
+  await change(`/admin/${eventSlug}`, "event", async (client) => {
     await editCompetitionEvent({
       competitions: createSupabaseCompetitionEditRepository(client),
     }).execute({
@@ -138,7 +148,7 @@ export async function editEventAction(data: FormData) {
 export async function deleteEventAction(data: FormData) {
   const eventSlug = formText(data, "eventSlug");
   const competition = formText(data, "competition");
-  await change(`/admin/${eventSlug}`, async (client) => {
+  await change(`/admin/${eventSlug}`, "event", async (client) => {
     await deleteCompetitionEvent({
       competitions: createSupabaseCompetitionEditRepository(client),
     }).execute({ eventSlug });
@@ -149,7 +159,7 @@ export async function deleteEventAction(data: FormData) {
 /** Computes the Manager score of every participant playing the competition, again if need be (#431). */
 export async function computeManagerScoresAction(data: FormData) {
   const competition = formText(data, "competition");
-  await change(`/admin/competitions/${competition}`, async (client) => {
+  await change(`/admin/competitions/${competition}`, null, async (client) => {
     const lines = await computeManagerScores({
       scores: createSupabaseManagerScoreRepository(client),
     }).execute({ competitionSlug: competition });

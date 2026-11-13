@@ -23,7 +23,6 @@ import { canPredictRound } from "@/domain/rounds";
 import { draftFromPodium, emptyDraft } from "@/domain/podium-draft";
 import {
   createPublicSupabaseClient,
-  createSupabaseEventReader,
   createSupabaseLeagueRepository,
   createSupabaseOddsRepository,
   createSupabasePredictionRepository,
@@ -36,10 +35,11 @@ import { getCurrentUser, getSessionClient } from "../../session";
 import { PredictionForm } from "./prediction-form";
 import { ResultSection } from "./result-section";
 import { RevealHidden, RevealSection } from "./reveal-section";
+import { publicEventReader } from "../../public-data";
 
 async function loadEvent(slug: string): Promise<EventDetail | "error"> {
   try {
-    const events = createSupabaseEventReader(createPublicSupabaseClient());
+    const events = publicEventReader();
     // Event slugs are unique: the event opens whatever its competition.
     return await getEvent({ events }).execute({ competitionSlug: null, eventSlug: slug });
   } catch (error) {

@@ -8,17 +8,14 @@ import { AccountHero } from "@/components/account/account-hero";
 import { ErrorNotice } from "@/components/error-notice";
 import { buttonVariants } from "@/components/ui/button";
 import type { EventSummary } from "@/domain/event";
-import {
-  createPublicSupabaseClient,
-  createSupabaseEventReader,
-  createSupabasePointsRepository,
-} from "@/infra";
+import { createSupabasePointsRepository } from "@/infra";
 
 import { currentCompetition } from "../competition";
 import { messages } from "../messages.fr";
 import { paramText } from "../search-params";
 import { pointsReasonLabels } from "../points-labels";
 import { getCurrentUser, getSessionClient } from "../session";
+import { publicEventReader } from "../public-data";
 
 async function load(
   userId: string,
@@ -29,7 +26,7 @@ async function load(
       getMyPoints({
         points: createSupabasePointsRepository(await getSessionClient()),
       }).execute({ userId, competitionSlug }),
-      listEvents({ events: createSupabaseEventReader(createPublicSupabaseClient()) }).execute({
+      listEvents({ events: publicEventReader() }).execute({
         competitionSlug,
       }),
     ]);

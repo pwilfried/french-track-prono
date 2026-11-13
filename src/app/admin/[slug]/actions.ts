@@ -19,6 +19,7 @@ import {
 } from "@/infra";
 
 import { formText } from "../../form-data";
+import { publicDataChanged } from "../../public-data";
 import { adminOnly } from "../guard";
 import { sheetPorts } from "./sheet-ports";
 
@@ -48,6 +49,7 @@ export async function computePointsAction(
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
   }
+  publicDataChanged("result");
   revalidatePath("/admin");
   redirect(`/admin/${slug}`);
 }
@@ -81,6 +83,7 @@ export async function saveStartListAction(
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
   }
+  publicDataChanged("startList");
   revalidatePath(`/epreuves/${slug}`);
   redirect(`/admin/${slug}/depart?enregistre=1`);
 }
@@ -130,6 +133,7 @@ export async function importStartListAction(
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
   }
+  publicDataChanged("startList");
   revalidatePath(`/epreuves/${slug}`);
   redirect(`/admin/${slug}/depart?enregistre=1`);
 }
@@ -148,6 +152,7 @@ export async function promoteAction(
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
   }
+  publicDataChanged("startList");
   revalidatePath("/admin");
   return { done: true };
 }
@@ -193,6 +198,7 @@ export async function saveOddsAction(
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
   }
+  publicDataChanged("odds");
   revalidatePath(`/epreuves/${slug}`);
   redirect(`/admin/${slug}/cotes?enregistre=1`);
 }
