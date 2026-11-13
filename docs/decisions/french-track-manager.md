@@ -219,24 +219,30 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   pas les autres de lui-même).
 - **Saisie** : l'admin entre places, performances et indicateurs de records ; le calcul est
   automatique.
-- Saisie (#429), back-office › épreuve › « Performances Manager » (`/admin/<épreuve>/performances`),
+- Saisie (#429, puis #665 : une seule feuille par épreuve, décision du propriétaire du
+  13 nov. 2026), back-office › épreuve › « Feuille de résultats » (`/admin/<épreuve>/performances`),
   une fois l'épreuve commencée : pour chaque athlète de la liste de départ, un statut (arrivé, DNS,
-  DNF, DQ, ou non saisi), la place (facultative, les ex æquo la partagent), la marque (obligatoire
-  pour un arrivé, lue dans l'unité de la discipline et récrite comme les autres) et les records
+  DNF, DQ, ou non saisi), la place (les ex æquo la partagent ; les places 1 à 3 font le podium
+  officiel des pronos), la marque (un arrivé a une place ou une marque ; sans marque, 0 point des
+  tables ; lue dans l'unité de la discipline et récrite comme les autres) et les records
   RP, MPS, RN, RC, RM. Un DNS, DNF ou DQ n'a que son statut. Les athlètes alignés dans au moins une
   ligue Manager pour la compétition viennent en tête, signalés « à saisir » tant qu'ils n'ont pas de
-  ligne, avec le compte de ceux qui manquent. Une nouvelle saisie remplace la précédente : un
-  résultat corrigé se saisit à nouveau, et le calcul repartira de cette saisie (#416). En base :
-  table `event_performances`, à part de `results` (le podium des pronos ne change pas), lecture
-  publique, écriture seulement par `admin_set_performances` (journalisée `set_performances` dans
-  `admin_actions`) ; `admin_manager_lined_up` dit à l'admin seul quels athlètes de la liste sont
+  ligne, avec le compte de ceux qui manquent (un aligné sans performance compte 0). Sans ligue
+  Manager sur la compétition, la feuille le dit : le podium suffit. Une nouvelle saisie remplace la
+  précédente : un résultat corrigé se saisit à nouveau, et tout est recalculé (#416). En base :
+  table `event_performances`, lecture publique, écriture seulement par `admin_set_performances`
+  (journalisée `set_performances` dans `admin_actions`), qui remplace aussi `results` par les
+  arrivés classés 1 à 3 ; `admin_manager_lined_up` dit à l'admin seul quels athlètes de la liste sont
   alignés (les alignements restent privés). Règles pures : `src/domain/performance.ts`.
 - **Pronostics classiques obligatoires** sur toutes les épreuves de chaque compétition éligible,
   verrouillés au départ ;
   sans pronostic, 0 sur cette partie.
-- Calcul (#431) : back-office › compétition › « Calculer les points Manager », possible une fois
-  les alignements verrouillés ; à relancer après une correction (performances ou pronos), il
-  remplace tous les scores de la compétition. Pour chaque participant d'une ligue dont le mercato
+- Calcul (#431, automatique depuis #665) : chaque feuille de résultats enregistrée calcule les
+  points des pronos de l'épreuve, puis les scores Manager de la compétition ; « Recalculer les
+  points Manager » (back-office › compétition) relance le même calcul en secours. Il remplace tous
+  les scores de la compétition. Tant qu'une épreuve de la compétition n'a pas de résultat, les
+  scores sont provisoires : la confrontation s'affiche, elle ne compte au classement (et ne clôt la
+  saison) qu'une fois toutes les épreuves saisies. Pour chaque participant d'une ligue dont le mercato
   est clos : sans alignement, 0 au total (pronos compris) ; sinon, pour chaque titulaire, les
   points des tables (0 pour DNS, DNF, DQ, sans performance saisie, marque illisible ou discipline
   sans table) plus ses bonus, puis la somme des points de pronos du joueur sur la compétition

@@ -4,7 +4,7 @@ import { worldAthleticsPoints } from "../src/domain/world-athletics-points";
 import { sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
 
-test("the admin computes the Manager points and the participant reads them, athlete by athlete", async ({
+test("the admin recomputes the Manager points and the participant reads them, athlete by athlete", async ({
   page,
 }) => {
   const tag = `${Date.now() % 1000000}`;
@@ -70,10 +70,11 @@ test("the admin computes the Manager points and the participant reads them, athl
     "Les points de cette compétition ne sont pas encore calculés.",
   );
 
-  // The admin runs the computation of the competition.
+  // The admin runs the fallback computation of the competition (#665: every results sheet runs it
+  // too; the performances here were written without a sheet).
   await page.goto(`/admin/competitions/${slug}`);
-  await page.getByRole("button", { name: "Calculer les points Manager" }).click();
-  await expect(page.getByText("✓ Points Manager calculés : 1 participant.")).toBeVisible();
+  await page.getByRole("button", { name: "Recalculer les points Manager" }).click();
+  await expect(page.getByText("✓ Points Manager recalculés : 1 participant.")).toBeVisible();
   expect(
     sql(`select count(*) from admin_actions
          where action = 'run_manager_scoring' and admin_id = '${adminId}'`),

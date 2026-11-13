@@ -117,8 +117,8 @@ select throws_ok(
 
 select throws_ok(
   $$select admin_set_performances(pg_temp.event(), jsonb_build_array(
-      pg_temp.line(1, 'ok', 1, null, array[]::text[])))$$,
-  '23514', null, 'a finisher needs a mark');
+      pg_temp.line(1, 'ok', null, null, array[]::text[])))$$,
+  '23514', null, 'a finisher needs a place or a mark');
 
 select throws_ok(
   $$select admin_set_performances(pg_temp.event(), jsonb_build_array(

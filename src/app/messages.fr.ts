@@ -1152,23 +1152,15 @@ export const messages = {
     },
     empty: "Aucune épreuve dans cet état.",
     lockedOnly: "Seules les épreuves verrouillées peuvent recevoir un résultat.",
-    officialPodium: "Podium officiel",
-    addTie: "Ajouter un ex æquo",
-    tieRank: "Place",
-    tieAthlete: "Athlète",
-    tieAdd: "Ajouter",
-    tieLabel: (rank: number) => `ex æquo ${rank === 1 ? "1re" : `${rank}e`} place`,
-    removeTie: (name: string) => `Retirer ${name}`,
-    marks: "Marques (facultatif)",
-    saveResult: "Enregistrer le résultat",
-    savingResult: "Enregistrement…",
-    resultSaved: "✓ Résultat enregistré. Les points ne sont pas encore calculés.",
-    compute: "Confirmer le calcul",
+    noSheet:
+      "Aucun résultat pour l'instant : une seule feuille par épreuve donne le podium des pronos et les points du Manager.",
+    enterSheet: "Saisir la feuille de résultats",
+    resultSaved: "✓ Feuille de résultats enregistrée.",
     recompute: "Recalculer",
     computing: "Calcul…",
-    correct: "Corriger le résultat",
+    correct: "Corriger la feuille de résultats",
     computeNote:
-      "Calculer peut être relancé après une correction : les points sont remplacés, jamais ajoutés deux fois.",
+      "Chaque feuille enregistrée calcule les points des pronos puis ceux du Manager. « Recalculer » relance le même calcul en secours : les points sont remplacés, jamais ajoutés deux fois.",
     computed: (players: number) =>
       `✓ Points calculés pour ${players} ${players <= 1 ? "joueur" : "joueurs"}.`,
     kpi: {
@@ -1178,13 +1170,8 @@ export const messages = {
       averageAndBest: (average: string, best: number) =>
         `Moyenne ${average} pts · meilleur score ${best} pts`,
     },
-    preview: {
-      title: "Aperçu du calcul",
-      note: "Rien n'est encore enregistré : vérifie les points, puis confirme.",
-      detail: "Points qui seront enregistrés",
-    },
     missingRanks: (ranks: number[]) =>
-      `Podium incomplet : il manque ${ranks.map((r) => (r === 1 ? "la 1re place" : `la ${r}e place`)).join(" et ")}. Corrige le résultat avant de calculer.`,
+      `Podium incomplet : il manque ${ranks.map((r) => (r === 1 ? "la 1re place" : `la ${r}e place`)).join(" et ")}. Corrige la feuille de résultats.`,
     detail: "Détail",
     noPrediction: "Personne n'a pronostiqué cette épreuve.",
   },
@@ -1217,12 +1204,13 @@ export const messages = {
       `✓ Liste de départ enregistrée : ${n} ${n <= 1 ? "athlète" : "athlètes"}.`,
   },
   performances: {
-    title: "Performances",
+    title: "Feuille de résultats",
     back: "Épreuve",
-    link: "Performances Manager",
+    link: "Feuille de résultats",
     intro:
-      "Pour French Track Manager : la place, la marque et les records de chaque athlète. Une nouvelle saisie remplace la précédente.",
+      "Une seule saisie par épreuve : les places 1 à 3 font le podium officiel des pronos, les marques et les records comptent pour French Track Manager. À l'enregistrement, les points des pronos et du Manager sont calculés. Une nouvelle saisie remplace la précédente.",
     empty: "Personne au départ : saisis d'abord la liste de départ.",
+    podiumOnly: "Aucune équipe Manager sur cette compétition : le podium suffit.",
     missing: (missing: number, linedUp: number) =>
       linedUp === 0
         ? "Aucun athlète de cette épreuve n'est aligné dans une ligue Manager."
@@ -1230,7 +1218,7 @@ export const messages = {
           ? linedUp === 1
             ? "✓ L'athlète aligné a une performance."
             : `✓ Les ${linedUp} athlètes alignés ont une performance.`
-          : `${missing} ${missing <= 1 ? "athlète aligné attend" : "athlètes alignés attendent"} une performance (sur ${linedUp}).`,
+          : `${missing} ${missing <= 1 ? "athlète aligné sans performance" : "athlètes alignés sans performance"} (sur ${linedUp}) : sans performance, un aligné compte 0.`,
     linedUp: "Aligné",
     linedUpMissing: "Aligné · à saisir",
     status: "Statut",
@@ -1252,9 +1240,8 @@ export const messages = {
       ar: "Record continental",
       wr: "Record du monde",
     },
-    save: "Enregistrer les performances",
-    saving: "Enregistrement…",
-    saved: (n: number) => `✓ Performances enregistrées : ${n} ${n <= 1 ? "athlète" : "athlètes"}.`,
+    save: "Enregistrer et calculer les points",
+    saving: "Enregistrement et calcul…",
   },
   install: {
     title: "Installe l'appli",
@@ -1298,7 +1285,7 @@ export const messages = {
       create_discipline: "Discipline créée",
       moderate_club: "Club modifié",
       set_manager_rules: "Règles Manager modifiées",
-      set_performances: "Performances saisies",
+      set_performances: "Feuille de résultats saisie",
       run_manager_scoring: "Points Manager calculés",
     },
     noEvent: "Épreuve supprimée",
@@ -1730,10 +1717,10 @@ export const messages = {
     withdraw: (name: string) => `Retirer ${name} de la compétition`,
     managerTitle: "Points Manager",
     managerHint:
-      "Après le verrouillage : barème World Athletics des titulaires, bonus sportifs et pronos de chaque participant. Relance le calcul après une correction des performances ou des pronos.",
-    managerCompute: "Calculer les points Manager",
+      "Calculés à chaque feuille de résultats enregistrée : barème World Athletics des titulaires, bonus sportifs et pronos de chaque participant. En secours, relance le même calcul pour toute la compétition.",
+    managerCompute: "Recalculer les points Manager",
     managerComputed: (n: number) =>
-      `✓ Points Manager calculés : ${n} ${n <= 1 ? "participant" : "participants"}.`,
+      `✓ Points Manager recalculés : ${n} ${n <= 1 ? "participant" : "participants"}.`,
   },
   odds: {
     link: "Cotes",
@@ -2426,7 +2413,7 @@ export const messages = {
       "Cette marque ne correspond pas à la discipline (ex. 10.62, 1:56.70, 2.04, 8125).",
     PERFORMANCES_INVALID:
       "Chaque athlète une seule fois, une place à partir de 1, et rien d'autre que le statut pour un DNS, DNF ou DQ.",
-    PERFORMANCE_MARK_MISSING: "Un athlète arrivé a besoin de sa marque.",
+    PERFORMANCE_MARK_MISSING: "Un athlète arrivé a besoin d'une place ou d'une marque.",
     PERFORMANCES_UNAVAILABLE: "Impossible de lire ou d'enregistrer les performances. Réessaie.",
     DATE_INVALID: "La date doit être au format AAAA-MM-JJ.",
     DISCIPLINE_NOT_FOUND: "Cette discipline n'existe pas.",
