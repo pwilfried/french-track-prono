@@ -60,7 +60,7 @@ const complete = `NEXT_PUBLIC_SUPABASE_URL="https://ref.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="anon-secret-value"
 `;
 
-it("builds, deploys, promotes and smoke-tests when the environment is complete", () => {
+it("builds, deploys straight to the domains and smoke-tests when the environment is complete", () => {
   const run = deploy({ pulled: complete, smoke: 0 });
 
   expect(run.status).toBe(0);
@@ -68,11 +68,11 @@ it("builds, deploys, promotes and smoke-tests when the environment is complete",
     "vercel pull",
     "vercel build",
     "vercel deploy",
-    "vercel promote",
     "smoke https://www.example.test",
   ]);
-  expect(run.calls[2]).toContain("--skip-domain");
-  expect(run.calls[3]).toContain("https://french-track-abc.vercel.app");
+  // `vercel promote` answered "User not found" with the project token (#731).
+  expect(run.calls[2]).toContain("--prod");
+  expect(run.calls[2]).not.toContain("--skip-domain");
 });
 
 it("stops before the build when a Supabase variable is missing, naming it without any value", () => {

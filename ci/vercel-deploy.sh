@@ -7,8 +7,10 @@
 #      (pre-production's NEXT_PUBLIC_SITE_NOINDEX=1).
 #   1. `vercel pull`, then the pulled environment must hold the Supabase variables (names only are
 #      printed): on 13 Nov 2026 they had vanished, the build passed and every page answered 500.
-#   2. build, then a staged deploy (--skip-domain) promoted to the domains: `vercel promote` also
-#      undoes an earlier rollback, which would otherwise keep the next deploys off the domains.
+#   2. build, then a production deploy that takes the domains at once (no `vercel promote`: with
+#      the project token it answers "User not found", #731). After a `vercel rollback`, Vercel
+#      keeps new deploys off the domains until the rollback is undone in the dashboard: the issue
+#      opened below says so.
 #   3. smoke test; if it fails, `vercel rollback` puts the previous deployment back and an issue
 #      tells the owners. The job stays red either way.
 set -euo pipefail
@@ -36,8 +38,7 @@ if [ -n "${VERCEL_EXTRA_ENV:-}" ]; then
 fi
 
 vercel build --prod
-url=$(vercel deploy --prebuilt --prod --skip-domain)
-vercel promote "$url" --yes
+vercel deploy --prebuilt --prod
 
 if "$smoke" "$base"; then
   exit 0
@@ -57,6 +58,6 @@ gh issue create -R "$repo" --label bug --label needs-human \
 
 Retour au déploiement précédent : $rolled_back.
 
-Regarder le journal du job, corriger, puis relancer le workflow (docs/SETUP.md, « Déploiements Vercel »)." ||
+Regarder le journal du job, corriger, annuler le retour arrière dans Vercel (Deployments → « Undo Rollback », sinon les déploiements suivants ne prennent pas les domaines), puis relancer le workflow (docs/SETUP.md, « Déploiements Vercel »)." ||
   echo "::error::Could not open the issue for the owners."
 exit 1

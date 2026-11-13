@@ -367,13 +367,14 @@ y ajoute `NEXT_PUBLIC_SITE_NOINDEX=1` avec `VERCEL_EXTRA_ENV` :
    du projet Vercel avec l'intégration Supabase du Marketplace : le build passait et toutes les
    pages répondaient 500. Correctif : les remettre (Vercel → Settings → Environment Variables,
    environnement Production), puis relancer le job.
-2. **Déploiement en deux temps** : `vercel deploy --prebuilt --prod --skip-domain`, puis
-   `vercel promote` qui branche ce déploiement sur les domaines (et lève un éventuel retour
-   arrière précédent, sinon les déploiements suivants ne seraient plus servis).
+2. **Déploiement direct** : `vercel deploy --prebuilt --prod` branche le déploiement sur les
+   domaines. Pas de `vercel promote` : avec le jeton du projet, il répond « User not found »
+   (#731, premier déploiement préprod du 13 novembre 2026).
 3. **Retour arrière automatique** : si le test de fumée échoue, `vercel rollback` remet le
    déploiement précédent, le job reste rouge et une issue `bug` + `needs-human` « Déploiement
    annulé… » mentionne les propriétaires (`AGENTS_OWNER`) avec le lien du job. Après correction,
-   relancer le workflow : le `promote` du nouveau déploiement rebranche les domaines.
+   annuler le retour arrière dans Vercel (Deployments → « Undo Rollback ») : sinon Vercel ne
+   branche plus les déploiements suivants sur les domaines. Puis relancer le workflow.
 
 ## Préproduction
 
