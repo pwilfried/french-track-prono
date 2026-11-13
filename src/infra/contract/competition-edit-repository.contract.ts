@@ -24,6 +24,7 @@ export function competitionEditRepositoryContract(
         slug: `edit-${tag}`,
         name: `Test edit ${tag}`,
         scope: "france",
+        venue: "outdoor",
         city: null,
         countryCode: null,
         startsOn: "2099-06-10",
@@ -49,6 +50,7 @@ export function competitionEditRepositoryContract(
         await w.admin.update(slug, {
           name: "Test edit bis",
           scope: "international",
+          venue: "indoor",
           city: "Lyon",
           countryCode: "FRA",
           startsOn: "2099-06-10",
@@ -64,7 +66,12 @@ export function competitionEditRepositoryContract(
       ).toBe("saved");
 
       const file = await w.admin.find(slug);
-      expect(file).toMatchObject({ name: "Test edit bis", scope: "international", city: "Lyon" });
+      expect(file).toMatchObject({
+        name: "Test edit bis",
+        scope: "international",
+        venue: "indoor",
+        city: "Lyon",
+      });
       expect(file?.eventList.find((e) => e.slug === free)).toMatchObject({
         round: "final",
         startsAt: "2099-06-11T18:35:00.000Z",

@@ -5,7 +5,7 @@ import type {
   CompetitionSummary,
 } from "@/application/create-competition";
 import { UseCaseError } from "@/application/errors";
-import type { CompetitionScope } from "@/domain/competition";
+import type { CompetitionScope, CompetitionVenue } from "@/domain/competition";
 import type { EventGender } from "@/domain/event";
 import type { Round } from "@/domain/rounds";
 
@@ -15,6 +15,7 @@ type CompetitionRow = {
   slug: string;
   name: string;
   scope: CompetitionScope;
+  venue: CompetitionVenue;
   city: string | null;
   country_code: string | null;
   starts_on: string;
@@ -24,12 +25,13 @@ type CompetitionRow = {
 };
 
 const COLUMNS =
-  "slug, name, scope, city, country_code, starts_on, ends_on, events(round), competition_athletes(count)";
+  "slug, name, scope, venue, city, country_code, starts_on, ends_on, events(round), competition_athletes(count)";
 
 const summary = (row: CompetitionRow): CompetitionSummary => ({
   slug: row.slug,
   name: row.name,
   scope: row.scope,
+  venue: row.venue,
   city: row.city,
   countryCode: row.country_code?.trim() ?? null,
   startsOn: row.starts_on,
@@ -106,6 +108,7 @@ export function createSupabaseCompetitionAdminRepository(
         p_slug: c.slug,
         p_name: c.name,
         p_scope: c.scope,
+        p_venue: c.venue,
         p_city: c.city ?? "",
         p_country: c.countryCode ?? "",
         p_starts_on: c.startsOn,

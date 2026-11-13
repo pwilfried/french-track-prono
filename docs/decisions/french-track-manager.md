@@ -20,21 +20,62 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - Un joueur crée une ligue, en devient l'administrateur, choisit son nom et sa visibilité :
   **publique** (inscription libre dans la limite des places) ou **privée** (sur invitation du
   créateur). Il voit la liste des participants.
-- **Nombre de joueurs pair, de 4 à 10** (décision du propriétaire du 12 nov. 2026, #619) :
-  chaque journée, chacun a un adversaire. Le créateur choisit ce nombre (la cible, 4 par défaut) ;
-  la ligue est complète à la cible. Il peut la changer tant que le mercato n'est pas ouvert,
-  toujours paire, jamais sous le nombre d'inscrits.
+- **Le nombre de joueurs vient des compétitions** (décision du propriétaire du 13 nov. 2026, #644,
+  qui remplace le choix d'un nombre pair de 4 à 10 de #619) : le championnat est un aller-retour,
+  avec N joueurs **2 × (N − 1) journées**, une journée = une compétition (4 → 6, 6 → 10, 8 → 14,
+  10 → 18). À la création, le créateur choisit **au moins 6 compétitions** parmi les compétitions
+  éligibles (back-office) qui ne sont pas terminées. N = le plus grand nombre pair de 4 à 10 tel que
+  2 × (N − 1) ≤ nombre de compétitions, exactement (10 compétitions → 6 joueurs). Les compétitions
+  en trop, à la fin, sont des **journées bonus** (points du Manager seulement, sans confrontation) :
+  8 compétitions → 4 joueurs, 6 journées + 2 bonus ; au-delà de 18, 10 joueurs et le reste en
+  bonus. L'écran affiche le calcul en direct (« 8 compétitions → 4 joueurs · 6 journées
+  aller-retour + 2 bonus »). La ligue est complète à ce nombre. Le créateur peut ajouter ou retirer
+  des compétitions tant que le mercato n'est pas ouvert ; le nombre suit, jamais sous les inscrits.
+- **Fin du mercato et première compétition** (#644) : une compétition ne compte que si le mercato
+  finit **au moins 1 h avant sa première épreuve**. Avant l'ouverture, la fin est prévue après
+  **3 tours** (`PLANNED_ROUNDS`, les 3 tours du calendrier de la page de la ligue). En durée
+  personnalisée, si la fin prévue tombe moins de 1 h avant la première compétition, la page prévient
+  le créateur (« Ton mercato finira après le début de … Elle ne comptera pas : la saison commencera
+  à … »). S'il ne reste plus assez de compétitions pour l'aller-retour, le mercato ne se lance pas
+  (ni à la main, ni à sa date) tant que le créateur n'a pas ajouté une compétition ou raccourci le
+  mercato. Le calendrier des journées se génèrera à la fin du mercato, avec les compétitions qui
+  remplissent la condition (`seasonCompetitions`), quand le championnat sera construit.
 - **Réglages du mercato (créateur seulement, #619)** : durée des tours « automatique » (celle des
   règles French Track, fixée dans le back-office) ou « personnalisée » (1er tour et tours suivants :
   12, 24, 48 ou 72 h) ; date et heure de début (heure de Paris). Le mercato s'ouvre à cette date
-  **si et seulement si** la cible est atteinte, sinon il attend (la tâche des tours l'ouvre dès
-  que la cible est atteinte). Le créateur peut aussi le lancer tout de suite, seulement quand la
+  **si et seulement si** la cible est atteinte et qu'il reste assez de compétitions (#644), sinon
+  il attend (la tâche des tours l'ouvre dès que c'est le cas). Le créateur peut aussi le lancer tout de suite, seulement quand la
   cible est atteinte. Les inscriptions ferment au lancement. Écran : la page de la ligue.
+- En base (#619, #644) : `manager_leagues.player_target` (pair, 4 à 10, déduit des compétitions
+  par `private.manager_player_count`), `competition_ids` (les compétitions choisies, la première
+  d'abord), `mercato_starts_at` et `round_mode` (`auto` ou `custom`).
+  `list_manager_available_competitions` liste les compétitions éligibles non terminées, avec leur
+  première épreuve (`private.manager_first_event`) ; `create_manager_league(nom, publique,
+  compétitions)` et `set_manager_competitions` (créateur seul, avant le mercato) vérifient le
+  choix et recalculent la cible. `set_manager_mercato` enregistre les réglages (créateur seul) et
+  récrit `rules.rounds` : en `auto`, les tours des règles French Track ; en `custom`, le 1er tour
+  puis les suivants (`longRounds = 1`). `launch_manager_mercato` ouvre le mercato tout de suite ;
+  `private.open_manager_mercatos`, lancé par le job « Manager rounds », ouvre ceux dont la date est
+  passée ; tous deux exigent la cible atteinte et assez de compétitions après la fin prévue
+  (`private.manager_season_fits`). Codes : FT015 mercato déjà ouvert, FT026 joueurs manquants,
+  FT027 compétitions refusées (moins de 6, indisponibles, ou moins de joueurs que d'inscrits),
+  FT028 pas assez de compétitions après la fin prévue du mercato. Les ligues créées avant gardent
+  leurs compétitions et leur cible. Règles pures : `seasonFormat`, `seasonCompetitions`,
+  `hasEnoughCompetitions`, `src/domain/manager-league.ts`.
+- **Présentation du mode** (#618) : un joueur sans ligue Manager voit sur `/manager` une courte
+  présentation (qu'il peut passer) avant de créer ou rejoindre une ligue. Ses chiffres (budget, taille minimum
+  d'équipe, titulaires, bonus de victoire) sont lus dans les règles de l'admin
+  (`managerIntroFigures`, `src/domain/manager-intro.ts`), jamais écrits dans le texte.
+- **Catalogue avant le mercato** (#620) : le catalogue s'ouvre dès l'inscription, avec SB, PB et
+  prix ; un bandeau de nuit donne le temps avant l'ouverture (« Date d'ouverture à venir » sans
+  date), les participants par leur dossard, le dernier arrivé (`newestArrival`) et rappelle que
+  les offres commencent au lancement.
 - L'**admin de French Track Prono** fixe les règles générales : budget initial, quotas de
   composition des équipes (ex. sprinteurs hommes et femmes, demi-fond, fond, lancers), règles de
   recrutement, notation, bonus sportifs, compétitions éligibles, calendrier, durée des enchères,
   clôture du mercato, règles d'alignement.
-- Le créateur d'une ligue ne choisit pas les compétitions.
+- Le créateur d'une ligue choisit ses compétitions parmi les compétitions éligibles non terminées
+  (#644, voir plus haut).
 - Les règles sont **figées à la création** de la ligue : tous ses participants jouent avec les
   mêmes paramètres.
 - Écrans : back-office › Manager pour les règles (#418) ; `/manager` pour les ligues, depuis
@@ -80,7 +121,8 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   athlète, offres de la plus haute à la plus basse, la gagnante en doré). Un tour sans offre n'a
   pas de révélation. Le résumé de chaque tour reste consultable depuis le catalogue
   (« Résultats des tours », `?vue=toutes`). Règles pures : `src/domain/manager-reveal.ts`.
-- **Tours** : 48 h pour les tours 1 et 2, 24 h ensuite.
+- **Tours** : en durée « automatique », celle des règles French Track (au départ 48 h pour les
+  tours 1 et 2, 24 h ensuite) ; en durée « personnalisée », celle choisie par le créateur (#619).
 - Clôture des tours (#423) : les tours s'enchaînent depuis `mercato_opened_at`, durées prises dans
   les règles de la ligue (`rounds`). Le workflow « Manager rounds » lance
   `private.close_manager_rounds()` toutes les 5 minutes (comme les notifications push) : pour
@@ -166,7 +208,7 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 
 **Score d'une compétition = points du barème hongrois + bonus sportifs + points de pronostics.**
 
-- **Barème hongrois** : chaque athlète aligné rapporte des points selon sa performance réelle ;
+- **Barème hongrois** (« tables World Athletics ») : chaque athlète aligné rapporte des points selon sa performance réelle ;
   la place n'entre pas dans ce calcul. Tables World Athletics (#428) ; DNS, DNF, DQ = 0 point.
   Calcul : `src/domain/world-athletics-points.ts`, à partir de la discipline, du sexe et de la
   performance (secondes, mètres, ou total officiel pour les épreuves combinées).
@@ -192,14 +234,50 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - **Pronostics classiques obligatoires** sur toutes les épreuves de chaque compétition éligible,
   verrouillés au départ ;
   sans pronostic, 0 sur cette partie.
+- Calcul (#431) : back-office › compétition › « Calculer les points Manager », possible une fois
+  les alignements verrouillés ; à relancer après une correction (performances ou pronos), il
+  remplace tous les scores de la compétition. Pour chaque participant d'une ligue dont le mercato
+  est clos : sans alignement, 0 au total (pronos compris) ; sinon, pour chaque titulaire, les
+  points des tables (0 pour DNS, DNF, DQ, sans performance saisie, marque illisible ou discipline
+  sans table) plus ses bonus, puis la somme des points de pronos du joueur sur la compétition
+  (`score_events`). Règles pures : `src/domain/manager-score.ts` ; en base : `manager_scores`
+  (lecture par les participants de la ligue). Écran « Mes points » :
+  `/manager/<id>/points/<compétition>`, depuis l'alignement verrouillé ; le détail des titulaires va
+  du plus fort au plus faible, les bonus en étiquettes dorées.
+- Décisions du coordinateur (à revoir aux tests du propriétaire) : un athlète engagé dans plusieurs
+  épreuves de la compétition (séries et finale, deux disciplines) rapporte sa **meilleure ligne**,
+  sans cumul ; les bonus de place (1re, 2e, 3e) ne comptent qu'en **finale**, un record battu en
+  série compte. Le lien vers la journée viendra avec #433.
+- Cas chiffrés de référence (tables, bonus, score d'une compétition) : `docs/architecture.md`,
+  « Cas de test du cœur », M1 à M12.
 
 ## 5. Championnat (v0.16)
 
 - **Aller-retour** : chaque participant affronte tous les autres deux fois, à domicile puis à
   l'extérieur ; calendrier généré au lancement de la saison, fixe ensuite.
-- **Une compétition éligible = une journée** (#440) : un aller-retour entre n participants compte
-  2 × (n − 1) journées (6 à 4 joueurs, 18 à 10) ; la taille maximale d'une ligue est donc bornée
-  par le nombre de compétitions éligibles de la saison.
+- Calendrier (#432) : tiré à la **clôture du mercato** (début de la saison), quelle que soit la
+  façon dont il se clôt (déclencheur sur `manager_leagues.mercato_closed_at`), une seule fois :
+  une ligue qui a un calendrier le garde. Tables `manager_matchdays` (journée, compétition,
+  bonus) et `manager_fixtures` (journée, domicile, extérieur), lues par les participants de la
+  ligue, écrites par personne d'autre que `private.schedule_manager_season`. Les joueurs sont
+  tirés dans un ordre au hasard (`random()`, `setseed()` dans pgTAP), puis placés par la méthode
+  du cercle (`seasonSchedule`,
+  `src/domain/manager-schedule.ts`, même règle en SQL) : 2 × (n − 1) journées, chacun un
+  adversaire par journée, chaque paire deux fois, une fois à domicile chacun ; jamais trois
+  journées de suite à domicile ou à l'extérieur, jamais le même adversaire deux journées de
+  suite. Le retour reprend les paires de l'aller, domicile et extérieur inversés, en commençant
+  par la 2e journée de l'aller (la 1re vient en dernier). Rien avec un nombre impair de joueurs.
+- **Compétitions de la saison** (règle du propriétaire, 13 nov. 2026, #432) : celles de la
+  ligue dont la **première épreuve commence au moins 1 h après la fin du mercato** (une
+  compétition sans épreuve compte à partir de minuit, heure de Paris, de sa date de début), dans l'ordre des
+  dates (première épreuve, puis nom). Une compétition qui commence plus tôt ne compte pas.
+- **Une compétition = une journée** (réponse du propriétaire, 10 nov. 2026, #440) : les
+  compétitions de la saison vont aux journées 1, 2, 3… Les 2 × (n − 1) premières sont des
+  journées de confrontation ; **les compétitions en trop, à la fin, sont des journées bonus**
+  (`bonus`) : points du Manager seulement, sans confrontation ni points de classement. Le nombre
+  de joueurs vient des compétitions (#644) : il y en a toujours assez au lancement. Si la règle
+  de la fin du mercato en retire trop, une journée de confrontation au-delà de la dernière
+  compétition n'en a pas (`competition_id` nul) et ne se joue pas.
 - **Une confrontation par compétition éligible** : le score total le plus haut gagne, égalité =
   nul. **Victoire 3 points, nul 1, défaite 0** (distincts des points Manager).
 - **Classement** : points au championnat, puis victoires, puis différence de points Manager
@@ -249,11 +327,12 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 ## Réponse du propriétaire (#440, 10 novembre 2026)
 
 - **Compétitions et journées** : une compétition éligible = une journée, chaque participant y a
-  un adversaire. La taille maximale d'une ligue est bornée par le nombre de compétitions éligibles
-  de la saison : il en faut au moins 2 × (n − 1) pour n participants. Les autres options (une
-  compétition pour plusieurs journées, aller simple quand les compétitions manquent) sont écartées.
+  un adversaire. Il en faut au moins 2 × (n − 1) pour n participants (#644 en déduit le nombre de
+  joueurs). Les autres options (une compétition pour plusieurs journées, aller simple quand les
+  compétitions manquent) sont écartées.
+- **Compétitions en trop** (13 novembre 2026, #432) : des journées bonus à la fin, sans
+  confrontation (section 5).
 
 ## Questions encore ouvertes
 
-- Plus de compétitions éligibles que de journées (par exemple 10 compétitions pour une ligue de
-  4, qui joue 6 journées) : lesquelles comptent pour le championnat. #432 en dépend.
+- Aucune : #440 a sa réponse (« Une compétition = une journée », section 5).

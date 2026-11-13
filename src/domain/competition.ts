@@ -2,6 +2,16 @@
 export type CompetitionScope = "international" | "france";
 export const SCOPES: CompetitionScope[] = ["international", "france"];
 
+/** Indoor (« en salle ») or outdoor (« en plein air »): season bests and events differ (#642). */
+export type CompetitionVenue = "indoor" | "outdoor";
+export const VENUES: CompetitionVenue[] = ["outdoor", "indoor"];
+
+/** The venue given, outdoor when none is; null for an unknown one. */
+export function competitionVenue(value: string | undefined): CompetitionVenue | null {
+  if (!value) return "outdoor";
+  return VENUES.includes(value as CompetitionVenue) ? (value as CompetitionVenue) : null;
+}
+
 const slugify = (text: string) =>
   text
     .normalize("NFD")
@@ -27,10 +37,11 @@ export function eventSlug(
     .join("-");
 }
 
-/** A name, a known type and dates in order (YYYY-MM-DD). */
+/** A name, a known type, a known venue (outdoor when none) and dates in order (YYYY-MM-DD). */
 export function isValidCompetition(c: {
   name: string;
   scope: string;
+  venue?: string;
   startsOn: string;
   endsOn: string;
 }): boolean {
@@ -38,6 +49,7 @@ export function isValidCompetition(c: {
   return (
     c.name.trim() !== "" &&
     SCOPES.includes(c.scope as CompetitionScope) &&
+    competitionVenue(c.venue) !== null &&
     date.test(c.startsOn) &&
     date.test(c.endsOn) &&
     c.endsOn >= c.startsOn

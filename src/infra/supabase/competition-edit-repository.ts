@@ -24,6 +24,7 @@ export function createSupabaseCompetitionEditRepository(
         p_slug: slug,
         p_name: f.name,
         p_scope: f.scope,
+        p_venue: f.venue,
         p_city: f.city ?? "",
         p_country: f.countryCode ?? "",
         p_starts_on: f.startsOn,

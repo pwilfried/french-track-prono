@@ -308,7 +308,7 @@ export const messages = {
     createTitle: "Créer une ligue Manager",
     createSubtitle: "Tu en deviens l'administrateur.",
     rulesNote:
-      "Les règles (budget, quotas, compétitions) sont celles de French Track Prono au moment de la création, et ne changent plus ensuite.",
+      "Les règles (budget, quotas, alignement) sont celles de French Track Prono au moment de la création, et ne changent plus ensuite.",
     nameLabel: "Nom de la ligue",
     nameHint: "2 à 40 caractères.",
     publicLabel: "Ligue publique",
@@ -338,10 +338,27 @@ export const messages = {
     inviteTitle: "Inviter des amis",
     mercatoTitle: "Régler le mercato",
     mercatoHint: "Seul le créateur règle le mercato, jusqu'à son lancement.",
-    targetLabel: "Nombre de joueurs",
-    targetHint:
-      "Pair, de 4 à 10 : chaque journée, chacun a un adversaire. Jamais sous le nombre d'inscrits.",
-    targetOption: (n: number) => `${n} joueurs`,
+    competitionsLabel: "Compétitions de la saison",
+    competitionsHint:
+      "Au moins 6, parmi celles qui ne sont pas terminées. Le championnat est un aller-retour : le nombre de joueurs en découle.",
+    competitionsNone:
+      "Il n'y a pas encore 6 compétitions disponibles : reviens quand le calendrier sera complété.",
+    competitionsEditLabel: "Compétitions de la saison",
+    competitionsEditHint:
+      "Tu peux en ajouter ou en retirer jusqu'au lancement du mercato. Le nombre de joueurs suit, jamais sous le nombre d'inscrits.",
+    competitionOption: (name: string, when: string) => `${name} · ${when}`,
+    /** « 8 compétitions → 4 joueurs · 6 journées aller-retour + 2 bonus ». */
+    seasonFormat: (competitions: number, players: number, duelDays: number, bonusDays: number) =>
+      `${competitions} compétitions → ${players} joueurs · ${duelDays} journées aller-retour${bonusDays > 0 ? ` + ${bonusDays} bonus` : ""}`,
+    seasonTooFew: (competitions: number) =>
+      `${competitions} ${competitions <= 1 ? "compétition" : "compétitions"} : il en faut au moins 6.`,
+    saveCompetitions: "Enregistrer les compétitions",
+    competitionsSaved: "Compétitions enregistrées.",
+    /** The custom mercato ends less than 1 hour before the first competition. */
+    seasonMissed: (missed: string, when: string, next: string | null) =>
+      `Ton mercato finira après le début de ${missed} (le ${when}). Elle ne comptera pas${next ? ` : la saison commencera à ${next}` : ""}.`,
+    seasonShort:
+      "Il ne reste plus assez de compétitions pour l'aller-retour : ajoute une compétition ou raccourcis le mercato pour pouvoir le lancer.",
     startsAtLabel: "Début du mercato (heure de Paris)",
     startsAtHint:
       "Le mercato s'ouvre à cette heure si et seulement si tous les joueurs sont là. Laisse vide pour le lancer toi-même.",
@@ -367,6 +384,14 @@ export const messages = {
     lineup: (n: number) => `${n} athlètes alignés au plus par compétition`,
     competitions: (n: number) =>
       `${n} ${n <= 1 ? "compétition éligible" : "compétitions éligibles"}`,
+    /** A day in Paris time: « samedi 10 janvier ». */
+    day: (iso: string) =>
+      new Date(iso).toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        timeZone: "Europe/Paris",
+      }),
     publicTitle: "Ligues publiques",
     publicEmpty: "Aucune ligue publique avec des places libres pour l'instant.",
     publicNoOther: "Pas d'autre ligue publique avec des places libres pour l'instant.",
@@ -601,6 +626,52 @@ export const messages = {
     locked: "Verrouillé : la compétition a commencé.",
     notOver: "Le mercato n'est pas fini : tu aligneras ton équipe une fois qu'il sera clos.",
     noTeam: "Ton équipe n'a aucun athlète : rien à aligner.",
+  },
+  managerPoints: {
+    title: "Mes points",
+    link: "Mes points",
+    summary: "Mon score de la compétition",
+    total: "Total de la compétition",
+    points: (n: number) => `${n} pts`,
+    hungarian: "Barème hongrois",
+    bonus: "Bonus sportifs",
+    predictions: "Mes pronos",
+    starters: "Mes titulaires",
+    athletePoints: (n: number) => `${n}`,
+    performance: (a: { discipline: string | null; mark: string | null; status: string | null }) =>
+      a.status === null
+        ? "Pas de performance saisie"
+        : a.status === "ok"
+          ? `${a.discipline} · ${a.mark}`
+          : `${a.discipline} · ${{ dns: "Non-partant", dnf: "Abandon", dq: "Disqualifié·e" }[a.status] ?? a.status}`,
+    bonusTag: (
+      bonus:
+        | "first"
+        | "second"
+        | "third"
+        | "personal_best"
+        | "season_best"
+        | "national_record"
+        | "area_record"
+        | "world_record",
+      points: number,
+    ) =>
+      `${
+        {
+          first: "1re",
+          second: "2e",
+          third: "3e",
+          personal_best: "Record perso",
+          season_best: "Meilleure perf. de la saison",
+          national_record: "Record national",
+          area_record: "Record continental",
+          world_record: "Record du monde",
+        }[bonus]
+      } +${points}`,
+    help: "La performance donne les points, quelle que soit la place ; les bonus s'ajoutent.",
+    notYet: "Les points de cette compétition ne sont pas encore calculés.",
+    noLineup: "Pas d'alignement validé avant le verrouillage : 0 point pour cette compétition.",
+    lineupLink: "Mon alignement",
   },
   leagues: {
     title: "Mes ligues",
@@ -913,6 +984,7 @@ export const messages = {
       moderate_club: "Club modifié",
       set_manager_rules: "Règles Manager modifiées",
       set_performances: "Performances saisies",
+      run_manager_scoring: "Points Manager calculés",
     },
     noEvent: "Épreuve supprimée",
     size: (
@@ -930,7 +1002,8 @@ export const messages = {
         | "create_discipline"
         | "moderate_club"
         | "set_manager_rules"
-        | "set_performances",
+        | "set_performances"
+        | "run_manager_scoring",
       n: number,
     ) =>
       kind === "set_rule" || kind === "set_manager_rules"
@@ -951,7 +1024,7 @@ export const messages = {
                       ? "compétition"
                       : kind === "set_odds"
                         ? `${n} cotes`
-                        : kind === "run_scoring"
+                        : kind === "run_scoring" || kind === "run_manager_scoring"
                           ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
                           : kind === "set_results"
                             ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
@@ -1312,6 +1385,10 @@ export const messages = {
     none: "Aucune compétition.",
     scope: { international: "Internationale", france: "Française" },
     type: "Type",
+    venueLabel: "Lieu",
+    venue: { outdoor: "En plein air", indoor: "En salle" },
+    /** The chip of an indoor competition (#642); nothing for outdoor. */
+    indoorChip: "Salle",
     city: "Ville",
     startsOn: "Début",
     endsOn: "Fin",
@@ -1336,6 +1413,12 @@ export const messages = {
     noAthlete: "Personne n'est engagé : cherche un athlète ci-dessus.",
     athletesList: "Athlètes engagés",
     withdraw: (name: string) => `Retirer ${name} de la compétition`,
+    managerTitle: "Points Manager",
+    managerHint:
+      "Après le verrouillage : barème World Athletics des titulaires, bonus sportifs et pronos de chaque participant. Relance le calcul après une correction des performances ou des pronos.",
+    managerCompute: "Calculer les points Manager",
+    managerComputed: (n: number) =>
+      `✓ Points Manager calculés : ${n} ${n <= 1 ? "participant" : "participants"}.`,
   },
   odds: {
     link: "Cotes",
@@ -2042,8 +2125,13 @@ export const messages = {
       "Ces règles ne permettent pas de jouer : vérifie que les quotas remplissent l'équipe, que l'alignement y tient et qu'un mode de clôture est coché.",
     MANAGER_RULES_UNAVAILABLE: "Les règles Manager n'ont pas pu être chargées. Réessaie.",
     MERCATO_OPEN: "Le mercato de cette ligue a commencé : les inscriptions sont closes.",
-    MERCATO_TARGET_INVALID:
-      "Le nombre de joueurs doit être pair, de 4 à 10, et pas sous le nombre de joueurs déjà inscrits.",
+    MANAGER_COMPETITIONS_TOO_FEW: "Choisis au moins 6 compétitions.",
+    MANAGER_COMPETITIONS_REFUSED:
+      "Une de ces compétitions n'est plus disponible (terminée ou retirée). Recharge la page et choisis à nouveau.",
+    MANAGER_COMPETITIONS_UNDER_PLAYERS:
+      "Avec ces compétitions, la ligue compterait moins de joueurs que d'inscrits : garde-en davantage.",
+    MERCATO_COMPETITIONS_MISSING:
+      "Il ne reste pas assez de compétitions après la fin prévue du mercato : ajoute une compétition ou raccourcis le mercato.",
     MERCATO_ROUNDS_INVALID: "Choisis une durée de tour de 12, 24, 48 ou 72 heures.",
     MERCATO_PLAYERS_MISSING:
       "Il manque encore des joueurs : le mercato se lance quand tout le monde est là.",
@@ -2066,6 +2154,10 @@ export const messages = {
       "Cet alignement ne respecte pas les règles de la ligue : remplis chaque place avec un athlète engagé de ton équipe.",
     LINEUPS_UNAVAILABLE: "Ton alignement n'a pas pu être chargé ou enregistré. Réessaie.",
     ROUND_NOT_FOUND: "Ce tour n'est pas encore clos, ou personne n'y a fait d'offre.",
+    COMPETITION_NOT_STARTED:
+      "La compétition n'a pas commencé : les points Manager se calculent après le verrouillage.",
+    MANAGER_SCORES_UNAVAILABLE:
+      "Les points Manager n'ont pas pu être chargés ou calculés. Réessaie.",
     retry: "Réessayer",
   },
   legal: {
