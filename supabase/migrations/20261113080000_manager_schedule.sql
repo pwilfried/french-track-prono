@@ -2,24 +2,40 @@
 -- meets every other one twice, once at home and once away, over 2 × (n − 1) matchdays. The
 -- schedule is drawn when the season starts, that is when the mercato of the league closes
 -- (mercato_closed_at, #424), and never changes: drawn once, no write for the players.
--- One eligible competition = one matchday (owner's answer, #440): the competitions of the league,
--- first one first (starts_on, then name), go to matchdays 1, 2, 3… A competition beyond the last
--- matchday has no head-to-head; a matchday beyond the last competition has none (competition_id
--- null) and is not played. The same rules are in src/domain/manager-schedule.ts.
+-- Owner's rule (13 Nov. 2026): the season plays the competitions of the league whose first event
+-- starts at least 1 h after the close of the mercato (a competition without events yet counts
+-- from midnight UTC of starts_on), in date order (first event, then name). One competition = one
+-- matchday (#440): the first 2 × (n − 1) are head-to-head matchdays; the ones left are bonus
+-- matchdays (Manager points only, no head-to-head, no championship points). A head-to-head
+-- matchday beyond the last competition has none (competition_id null) and is not played.
+-- The same rules are in src/domain/manager-schedule.ts.
 -- The players are drawn in a random order (random(): setseed() makes it reproducible in pgTAP),
 -- then placed as in seasonSchedule().
 
-create table manager_fixtures (
+create table manager_matchdays (
   league_id      uuid not null references manager_leagues(id) on delete cascade,
   round          int not null check (round >= 1),
   competition_id uuid references competitions(id) on delete set null,
-  home_id        uuid not null references profiles(id) on delete cascade,
-  away_id        uuid not null references profiles(id) on delete cascade,
+  bonus          boolean not null default false,
+  primary key (league_id, round)
+);
+create index on manager_matchdays (competition_id);
+
+create table manager_fixtures (
+  league_id uuid not null,
+  round     int not null,
+  home_id   uuid not null references profiles(id) on delete cascade,
+  away_id   uuid not null references profiles(id) on delete cascade,
   primary key (league_id, round, home_id),
   unique (league_id, round, away_id),
+  foreign key (league_id, round) references manager_matchdays(league_id, round) on delete cascade,
   check (home_id <> away_id)
 );
-create index on manager_fixtures (league_id, competition_id);
+
+alter table manager_matchdays enable row level security;
+create policy read_member on manager_matchdays for select to authenticated
+  using (is_manager_member(league_id));
+revoke insert, update, delete, truncate on manager_matchdays from anon, authenticated;
 
 alter table manager_fixtures enable row level security;
 create policy read_member on manager_fixtures for select to authenticated
@@ -27,10 +43,12 @@ create policy read_member on manager_fixtures for select to authenticated
 revoke insert, update, delete, truncate on manager_fixtures from anon, authenticated;
 
 -- Draws the schedule of a league, once: a league that has one keeps it. Nothing with an odd
--- number of participants. Returns how many head-to-heads it wrote.
+-- number of participants or before the close of the mercato. Returns how many head-to-heads it
+-- wrote.
 create function private.schedule_manager_season(p_league uuid) returns int
 language plpgsql security definer set search_path = public as $$
 declare
+  v_closed_at timestamptz;
   v_players uuid[];
   v_competitions uuid[];
   v_n int;
@@ -41,8 +59,8 @@ declare
   v_a uuid;
   v_b uuid;
 begin
-  perform 1 from manager_leagues where id = p_league for update;
-  if exists (select 1 from manager_fixtures where league_id = p_league) then
+  select mercato_closed_at into v_closed_at from manager_leagues where id = p_league for update;
+  if v_closed_at is null or exists (select 1 from manager_matchdays where league_id = p_league) then
     return 0;
   end if;
   select array_agg(user_id order by random()) into v_players
@@ -51,11 +69,21 @@ begin
   if v_n < 2 or v_n % 2 <> 0 then
     return 0;
   end if;
-  select array_agg(c.id order by c.starts_on, c.name, c.id) into v_competitions
-  from manager_leagues l
-  cross join lateral unnest(l.competition_ids) as e(id)
-  join competitions c on c.id = e.id
-  where l.id = p_league;
+  select array_agg(id order by first_event_at, name, id) into v_competitions
+  from (
+    select c.id, c.name,
+           coalesce((select min(e.starts_at) from events e where e.competition_id = c.id),
+                    c.starts_on::timestamp at time zone 'UTC') as first_event_at
+    from manager_leagues l
+    cross join lateral unnest(l.competition_ids) as u(id)
+    join competitions c on c.id = u.id
+    where l.id = p_league
+  ) s
+  where first_event_at >= v_closed_at + interval '1 hour';
+  v_m := v_n - 1;
+  insert into manager_matchdays (league_id, round, competition_id, bonus)
+  select p_league, r, v_competitions[r], r > 2 * v_m
+  from generate_series(1, greatest(2 * v_m, coalesce(array_length(v_competitions, 1), 0))) r;
   v_m := v_n - 1;
   for v_r in 0 .. v_m - 1 loop
     -- The return leg starts from the second matchday of the first leg; the first comes last.
@@ -68,9 +96,9 @@ begin
       v_a := v_players[v_m + 1];
       v_b := v_players[v_r + 1];
     end if;
-    insert into manager_fixtures (league_id, round, competition_id, home_id, away_id) values
-      (p_league, v_r + 1, v_competitions[v_r + 1], v_a, v_b),
-      (p_league, v_back, v_competitions[v_back], v_b, v_a);
+    insert into manager_fixtures (league_id, round, home_id, away_id) values
+      (p_league, v_r + 1, v_a, v_b),
+      (p_league, v_back, v_b, v_a);
     -- The k-th other pair: players r + k and r − k, home and away alternating with k.
     for v_k in 1 .. v_n / 2 - 1 loop
       if v_k % 2 = 1 then
@@ -80,9 +108,9 @@ begin
         v_a := v_players[(v_r - v_k + v_m) % v_m + 1];
         v_b := v_players[(v_r + v_k) % v_m + 1];
       end if;
-      insert into manager_fixtures (league_id, round, competition_id, home_id, away_id) values
-        (p_league, v_r + 1, v_competitions[v_r + 1], v_a, v_b),
-        (p_league, v_back, v_competitions[v_back], v_b, v_a);
+      insert into manager_fixtures (league_id, round, home_id, away_id) values
+        (p_league, v_r + 1, v_a, v_b),
+        (p_league, v_back, v_b, v_a);
     end loop;
   end loop;
   return v_n * v_m;

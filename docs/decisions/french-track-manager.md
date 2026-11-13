@@ -213,22 +213,27 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   l'extérieur ; calendrier généré au lancement de la saison, fixe ensuite.
 - Calendrier (#432) : tiré à la **clôture du mercato** (début de la saison), quelle que soit la
   façon dont il se clôt (déclencheur sur `manager_leagues.mercato_closed_at`), une seule fois :
-  une ligue qui a un calendrier le garde. Table `manager_fixtures` (journée, compétition,
-  domicile, extérieur), lue par les participants de la ligue, écrite par personne d'autre que
-  `private.schedule_manager_season`. Les joueurs sont tirés dans un ordre au hasard (`random()`,
-  `setseed()` dans pgTAP), puis placés par la méthode du cercle (`seasonSchedule`,
+  une ligue qui a un calendrier le garde. Tables `manager_matchdays` (journée, compétition,
+  bonus) et `manager_fixtures` (journée, domicile, extérieur), lues par les participants de la
+  ligue, écrites par personne d'autre que `private.schedule_manager_season`. Les joueurs sont
+  tirés dans un ordre au hasard (`random()`, `setseed()` dans pgTAP), puis placés par la méthode
+  du cercle (`seasonSchedule`,
   `src/domain/manager-schedule.ts`, même règle en SQL) : 2 × (n − 1) journées, chacun un
   adversaire par journée, chaque paire deux fois, une fois à domicile chacun ; jamais trois
   journées de suite à domicile ou à l'extérieur, jamais le même adversaire deux journées de
   suite. Le retour reprend les paires de l'aller, domicile et extérieur inversés, en commençant
   par la 2e journée de l'aller (la 1re vient en dernier). Rien avec un nombre impair de joueurs.
+- **Compétitions de la saison** (règle du propriétaire, 13 nov. 2026, #432) : celles de la
+  ligue dont la **première épreuve commence au moins 1 h après la fin du mercato** (une
+  compétition sans épreuve compte à partir de minuit UTC de sa date de début), dans l'ordre des
+  dates (première épreuve, puis nom). Une compétition qui commence plus tôt ne compte pas.
 - **Une compétition = une journée** (réponse du propriétaire, 10 nov. 2026, #440) : les
-  compétitions éligibles de la ligue, la première d'abord (date de début, puis nom), vont aux
-  journées 1, 2, 3… La taille maximum de la ligue est bornée par le nombre de compétitions
-  éligibles de la saison (2 × (n − 1) ≤ compétitions). En attendant que le réglage du mercato
-  applique cette borne, une compétition au-delà de la dernière journée n'a pas de confrontation,
-  et une journée au-delà de la dernière compétition n'en a pas (`competition_id` nul) et ne se
-  joue pas.
+  compétitions de la saison vont aux journées 1, 2, 3… Les 2 × (n − 1) premières sont des
+  journées de confrontation ; **les compétitions en trop, à la fin, sont des journées bonus**
+  (`bonus`) : points du Manager seulement, sans confrontation ni points de classement. Le nombre
+  de joueurs vient des compétitions (#644) : il y en a toujours assez au lancement. Si la règle
+  de la fin du mercato en retire trop, une journée de confrontation au-delà de la dernière
+  compétition n'en a pas (`competition_id` nul) et ne se joue pas.
 - **Une confrontation par compétition éligible** : le score total le plus haut gagne, égalité =
   nul. **Victoire 3 points, nul 1, défaite 0** (distincts des points Manager).
 - **Classement** : points au championnat, puis victoires, puis différence de points Manager

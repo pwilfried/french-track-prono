@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  matchdayCompetitions,
+  seasonCompetitions,
+  seasonMatchdays,
   seasonRounds,
   seasonSchedule,
   type Fixture,
@@ -80,23 +81,80 @@ describe("seasonSchedule", () => {
   });
 });
 
-describe("matchdayCompetitions", () => {
-  it("gives each matchday the next eligible competition, first one first", () => {
-    expect(matchdayCompetitions(6, ["c1", "c2", "c3", "c4", "c5", "c6"])).toEqual([
-      "c1",
-      "c2",
-      "c3",
-      "c4",
-      "c5",
-      "c6",
+const comp = (id: string, firstEventAt: string, name = id) => ({ id, name, firstEventAt });
+const CLOSE = "2027-05-01T18:00:00Z";
+
+describe("seasonCompetitions", () => {
+  it("keeps the competitions whose first event starts at least 1 h after the mercato closes", () => {
+    expect(
+      seasonCompetitions(CLOSE, [
+        comp("c1", "2027-05-01T18:59:00Z"),
+        comp("c2", "2027-05-01T19:00:00Z"),
+        comp("c3", "2027-06-01T18:00:00Z"),
+      ]),
+    ).toEqual(["c2", "c3"]);
+  });
+
+  it("leaves out a competition already started when the mercato closes", () => {
+    expect(
+      seasonCompetitions(CLOSE, [
+        comp("c1", "2027-04-30T18:00:00Z"),
+        comp("c2", "2027-06-01T18:00:00Z"),
+      ]),
+    ).toEqual(["c2"]);
+  });
+
+  it("orders the competitions by the date of their first event, then by name", () => {
+    expect(
+      seasonCompetitions(CLOSE, [
+        comp("c3", "2027-07-01T18:00:00Z"),
+        comp("c2", "2027-06-01T18:00:00Z", "Zurich"),
+        comp("c1", "2027-06-01T18:00:00Z", "Oslo"),
+      ]),
+    ).toEqual(["c1", "c2", "c3"]);
+  });
+});
+
+describe("seasonMatchdays", () => {
+  it("gives each head-to-head matchday the next competition, first one first", () => {
+    expect(seasonMatchdays(6, ["c1", "c2", "c3", "c4", "c5", "c6"])).toEqual([
+      { round: 1, competition: "c1", bonus: false },
+      { round: 2, competition: "c2", bonus: false },
+      { round: 3, competition: "c3", bonus: false },
+      { round: 4, competition: "c4", bonus: false },
+      { round: 5, competition: "c5", bonus: false },
+      { round: 6, competition: "c6", bonus: false },
     ]);
   });
 
-  it("leaves the competitions beyond the last matchday without a head-to-head", () => {
-    expect(matchdayCompetitions(2, ["c1", "c2", "c3"])).toEqual(["c1", "c2"]);
+  it("makes the competitions beyond the last head-to-head matchday bonus matchdays", () => {
+    const matchdays = seasonMatchdays(6, ["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"]);
+    expect(matchdays.filter((d) => !d.bonus)).toHaveLength(6);
+    expect(matchdays.slice(6)).toEqual([
+      { round: 7, competition: "c7", bonus: true },
+      { round: 8, competition: "c8", bonus: true },
+    ]);
   });
 
-  it("leaves the matchdays beyond the last competition without one", () => {
-    expect(matchdayCompetitions(4, ["c1", "c2"])).toEqual(["c1", "c2", null, null]);
+  it("leaves the head-to-head matchdays beyond the last competition without one", () => {
+    expect(seasonMatchdays(4, ["c1", "c2"])).toEqual([
+      { round: 1, competition: "c1", bonus: false },
+      { round: 2, competition: "c2", bonus: false },
+      { round: 3, competition: null, bonus: false },
+      { round: 4, competition: null, bonus: false },
+    ]);
+  });
+
+  it("starts the season after a competition left out by the close of the mercato", () => {
+    const competitions = seasonCompetitions(CLOSE, [
+      comp("early", "2027-05-01T18:30:00Z"),
+      ...["c1", "c2", "c3", "c4", "c5", "c6", "c7"].map((id, i) =>
+        comp(id, `2027-06-0${i + 1}T18:00:00Z`),
+      ),
+    ]);
+    const matchdays = seasonMatchdays(seasonRounds(4), competitions);
+    expect(matchdays.map((d) => d.competition)).not.toContain("early");
+    expect(matchdays[0]).toEqual({ round: 1, competition: "c1", bonus: false });
+    expect(matchdays.filter((d) => d.bonus).map((d) => d.competition)).toEqual(["c7"]);
   });
 });
