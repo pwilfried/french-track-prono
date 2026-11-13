@@ -7,6 +7,12 @@ const ordinal = (rank: number) => (rank === 1 ? "1er" : `${rank}e`);
 const GENDER = { F: "Femmes", M: "Hommes", X: "Mixte" } as const;
 /** The contact address published on the site: written here only. */
 const CONTACT_EMAIL = "frenchtrackprono@gmail.com";
+/** Competition levels with a name of their own (#647). */
+const LEVEL_NAMES: Record<string, string | undefined> = {
+  championnat: "Championnat",
+  "diamond-league": "Diamond League",
+  "world-indoor-tour-gold": "World Indoor Tour Gold",
+};
 
 export const messages = {
   /** Name and place of each competition the app can show (see src/app/competition.ts). */
@@ -1633,6 +1639,28 @@ export const messages = {
     featured: "★ À la une",
     list: { coming: "À venir", past: "Terminées" },
     none: "Aucune compétition.",
+    /** The filters of the list (#647), kept in the address. */
+    filters: {
+      scope: "Portée",
+      venue: "Lieu",
+      level: "Niveau",
+      status: "Statut",
+      allFeminine: "Toutes",
+      allMasculine: "Tous",
+      scopes: { international: "Internationales", france: "France" },
+      venues: { indoor: "Salle", outdoor: "Plein air" },
+      statuses: { coming: "À venir", live: "En cours", past: "Terminées" },
+      count: (n: number) => (n <= 1 ? `${n} compétition` : `${n} compétitions`),
+      reset: "Réinitialiser",
+      empty: "Aucune compétition ne correspond à ces filtres",
+    },
+    /** A competition level: the known ones by name, the others from their code. */
+    level: (level: string) =>
+      LEVEL_NAMES[level] ??
+      level
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" "),
     scope: { international: "Internationale", france: "Française" },
     type: "Type",
     venueLabel: "Lieu",

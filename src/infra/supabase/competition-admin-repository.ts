@@ -16,6 +16,7 @@ type CompetitionRow = {
   name: string;
   scope: CompetitionScope;
   venue: CompetitionVenue;
+  level: string | null;
   city: string | null;
   country_code: string | null;
   starts_on: string;
@@ -25,13 +26,14 @@ type CompetitionRow = {
 };
 
 const COLUMNS =
-  "slug, name, scope, venue, city, country_code, starts_on, ends_on, events(round), competition_athletes(count)";
+  "slug, name, scope, venue, level, city, country_code, starts_on, ends_on, events(round), competition_athletes(count)";
 
 const summary = (row: CompetitionRow): CompetitionSummary => ({
   slug: row.slug,
   name: row.name,
   scope: row.scope,
   venue: row.venue,
+  level: row.level,
   city: row.city,
   countryCode: row.country_code?.trim() ?? null,
   startsOn: row.starts_on,

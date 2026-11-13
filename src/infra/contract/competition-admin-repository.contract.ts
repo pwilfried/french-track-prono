@@ -51,6 +51,7 @@ export function competitionAdminRepositoryContract(
         name: `Test ${slug}`,
         scope: "france",
         venue: "outdoor",
+        level: null,
         countryCode: "FRA",
         events: 1,
         finals: 1,
