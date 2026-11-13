@@ -22,6 +22,8 @@ test("a player creates a private French Track Manager league that keeps its rule
     const bar = page.getByRole("navigation", { name: "Navigation principale" });
     await bar.getByRole("link", { name: "Manager", exact: true }).click();
     await page.waitForURL(/\/manager$/);
+    // The tutorial opens at the first visit (#616).
+    await page.getByRole("button", { name: "Passer le tutoriel" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("French Track Manager");
     await expect(bar.getByRole("link", { name: "Manager", exact: true })).toHaveAttribute(
       "aria-current",

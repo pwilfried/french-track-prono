@@ -127,6 +127,11 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   tout est bouton, donc au clavier aussi. Compteur « N/M places », barre du bas « À remplir : … »
   et « Valider mon alignement ». Une place que l'équipe ne peut pas remplir reste grise
   (« Personne ») et n'empêche pas de valider. Bandeaux « Alignement validé » et « Verrouillé ».
+- **ManagerTutorial** (Manager, #616) : sept étapes plein écran sur le bleu nuit, dans les deux
+  thèmes ; une idée par étape, avec un dessin en formes simples (dossards, cartes, stade, barres,
+  trophée ; jamais de photo) et les chiffres des règles ; « Précédent » / « Suivant » (flèches du
+  clavier aussi), « Passer » à toute étape, « C'est parti » à la dernière. S'ouvre seul à la
+  première visite de `/manager` (mémorisé sur l'appareil), puis par « Comment ça marche ? ».
 
 ## Ton éditorial
 
