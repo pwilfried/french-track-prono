@@ -8,7 +8,7 @@ export type ManagerLeagueWorld = {
   creatorId: string;
   other: ManagerLeagueRepository;
   setBudget: (budget: number) => Promise<void>;
-  /** What the mercato (v0.13) will do: nobody joins any more. */
+  /** Opens the mercato of a league, whatever its players: nobody joins any more. */
   openMercato: (leagueId: string) => Promise<void>;
   restore: () => Promise<void>;
 };
@@ -34,7 +34,6 @@ export function managerLeagueRepositoryContract(
           ownerId: w.creatorId,
           memberCount: 1,
           participants: [{ userId: w.creatorId }],
-          mercatoOpensAt: null,
         });
         expect(league?.rules.budget).toBe(120);
         expect((await w.creator.listMine()).map((l) => l.id)).toContain(created.id);
@@ -69,6 +68,7 @@ export function managerLeagueRepositoryContract(
         id: created.id,
         name: "Les Relayeurs",
         memberCount: 1,
+        target: 4,
       });
       expect(await w.other.joinPublic(created.id)).toEqual({
         outcome: "joined",
@@ -79,9 +79,68 @@ export function managerLeagueRepositoryContract(
       const late = await w.creator.create("Les Retardataires", true);
       if (late === "banned") throw new Error("the name is not banned");
       await w.openMercato(late.id);
-      expect((await w.creator.find(late.id))?.mercatoOpensAt).not.toBeNull();
+      expect((await w.creator.find(late.id))?.mercato.openedAt).not.toBeNull();
       expect((await w.other.listPublic()).map((l) => l.id)).not.toContain(late.id);
       expect(await w.other.joinPublic(late.id)).toEqual({ outcome: "mercato_open" });
+    });
+
+    it("keeps the mercato its creator sets, and lets them launch it once the players are in", async () => {
+      const w = await world();
+      const created = await w.creator.create("Les Lanceurs de Poids", false);
+      if (created === "banned") throw new Error("the name is not banned");
+      const code = (await w.creator.find(created.id))!.inviteCode;
+      expect((await w.creator.find(created.id))?.mercato).toEqual({
+        target: 4,
+        startsAt: null,
+        openedAt: null,
+        roundMode: "auto",
+      });
+
+      expect(await w.other.join(code)).toEqual({ outcome: "joined", leagueId: created.id });
+      expect(
+        await w.creator.setMercato(created.id, {
+          target: 6,
+          startsAt: "2027-01-10T19:00:00.000Z",
+          rounds: { mode: "custom", firstHours: 48, nextHours: 12 },
+        }),
+      ).toBe("set");
+      const set = await w.creator.find(created.id);
+      expect(set?.mercato).toEqual({
+        target: 6,
+        startsAt: "2027-01-10T19:00:00.000Z",
+        openedAt: null,
+        roundMode: "custom",
+      });
+      expect(set?.rules.rounds).toEqual({ firstHours: 48, longRounds: 1, nextHours: 12 });
+
+      expect(
+        await w.other.setMercato(created.id, {
+          target: 4,
+          startsAt: null,
+          rounds: { mode: "auto" },
+        }),
+      ).toBe("not_owner");
+      expect(await w.other.launchMercato(created.id)).toBe("not_owner");
+      expect(await w.creator.launchMercato(created.id)).toBe("players_missing");
+
+      // With 2 players out of 4, the creator cannot launch either.
+      expect(
+        await w.creator.setMercato(created.id, {
+          target: 4,
+          startsAt: null,
+          rounds: { mode: "auto" },
+        }),
+      ).toBe("set");
+      expect(await w.creator.launchMercato(created.id)).toBe("players_missing");
+      await w.openMercato(created.id);
+      expect(await w.creator.launchMercato(created.id)).toBe("mercato_open");
+      expect(
+        await w.creator.setMercato(created.id, {
+          target: 4,
+          startsAt: null,
+          rounds: { mode: "auto" },
+        }),
+      ).toBe("mercato_open");
     });
 
     it("refuses a banned name", async () => {

@@ -2,24 +2,33 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
-import { getManagerLeague, type ManagerLeagueFile } from "@/application/manager-leagues";
+import {
+  getManagerLeague,
+  mercatoLaunch,
+  type ManagerLeagueFile,
+} from "@/application/manager-leagues";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { ShareInvite } from "@/components/leagues/share-invite";
 import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
-import {
-  canStartManagerSeason,
-  MANAGER_LEAGUE_MAX,
-  MANAGER_LEAGUE_MIN,
-} from "@/domain/manager-league";
+import { utcToParis } from "@/domain/competition";
+import { playersAwaited, playerTargets } from "@/domain/manager-league";
+import { roundEndsAt, roundHours } from "@/domain/manager-round";
 
 import { messages } from "../../messages.fr";
 import { managerPorts } from "../data";
+import { LaunchMercatoForm, MercatoSettingsForm } from "../mercato-form";
+
+/** How many rounds the calendar shows. */
+const CALENDAR_ROUNDS = 3;
 
 const text = messages.manager;
 
-/** A Manager league (#419): its participants, whether the season can start, its frozen rules. */
+/**
+ * A Manager league (#419): its participants « N/cible », its mercato (set and launched by its
+ * creator, #619), its frozen rules.
+ */
 export default async function ManagerLeaguePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const ports = await managerPorts(`/manager/${id}`);
@@ -40,33 +49,108 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
   }
 
   const count = league.participants.length;
-  const ready = canStartManagerSeason(count);
+  const { mercato, rules } = league;
+  const awaited = playersAwaited(mercatoLaunch(league));
   const isOwner = league.ownerId === ports.userId;
-  const { rules } = league;
+  const open = mercato.openedAt !== null;
+  const calendarStart = mercato.openedAt ?? mercato.startsAt;
 
   return (
     <main id="main" className="flex flex-1 flex-col">
       <LeagueHero
         title={league.name}
-        subtitle={`${text.participantsCount(count, MANAGER_LEAGUE_MAX)} · ${league.isPublic ? text.publicBadge : text.privateBadge}`}
+        subtitle={`${text.participantsCount(count, mercato.target)} · ${league.isPublic ? text.publicBadge : text.privateBadge}`}
         back={{ href: "/manager", label: text.back }}
         icon="🏟️"
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
-        <p
+        <div
           role="status"
-          className={`rounded-2xl px-3.5 py-3 text-sm font-semibold ${ready ? "bg-success/15 text-success-text" : "bg-muted text-foreground"}`}
+          className={`flex flex-col gap-1 rounded-2xl px-3.5 py-3 text-sm font-semibold ${open || awaited === 0 ? "bg-success/15 text-success-text" : "bg-muted text-foreground"}`}
         >
-          {ready ? text.ready : text.notReady(MANAGER_LEAGUE_MIN, MANAGER_LEAGUE_MAX)}
-        </p>
+          {open ? (
+            <p>{text.mercatoOpened(text.when(mercato.openedAt!))}</p>
+          ) : (
+            <>
+              <p>{awaited === 0 ? text.ready : text.awaited(awaited)}</p>
+              {mercato.startsAt && (
+                <p className="font-normal">{text.opensAt(text.when(mercato.startsAt))}</p>
+              )}
+            </>
+          )}
+        </div>
 
-        {isOwner && !league.isPublic && (
-          <ShareInvite
-            code={league.inviteCode}
-            leagueName={league.name}
-            path={`/manager/rejoindre?code=${league.inviteCode}`}
-            shareText={text.shareText(league.name)}
-          />
+        {isOwner && !open && (
+          <section aria-labelledby="mercato" className="flex flex-col gap-3">
+            <h2
+              id="mercato"
+              className="text-xs font-bold uppercase tracking-wide text-muted-foreground"
+            >
+              {text.mercatoTitle}
+            </h2>
+            <p className="text-sm text-muted-foreground">{text.mercatoHint}</p>
+            <MercatoSettingsForm
+              leagueId={league.id}
+              targets={playerTargets(count)}
+              target={mercato.target}
+              startsAt={mercato.startsAt ? utcToParis(mercato.startsAt) : ""}
+              rounds={
+                mercato.roundMode === "custom"
+                  ? {
+                      mode: "custom",
+                      firstHours: rules.rounds.firstHours,
+                      nextHours: rules.rounds.nextHours,
+                    }
+                  : { mode: "auto" }
+              }
+              autoHours={rules.rounds.firstHours}
+            />
+            <LaunchMercatoForm leagueId={league.id} awaited={awaited} />
+          </section>
+        )}
+
+        <section aria-labelledby="calendar" className="flex flex-col gap-2">
+          <h2
+            id="calendar"
+            className="text-xs font-bold uppercase tracking-wide text-muted-foreground"
+          >
+            {text.calendarTitle}
+          </h2>
+          <ol
+            aria-labelledby="calendar"
+            className="flex flex-col gap-1 rounded-card bg-muted p-4 text-sm"
+          >
+            {Array.from({ length: CALENDAR_ROUNDS }, (_, i) => i + 1).map((n) => (
+              <li key={n}>
+                <span className="font-semibold">
+                  {text.calendarRound(n, roundHours(rules.rounds, n))}
+                </span>
+                {calendarStart && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    {text.calendarEnds(text.when(roundEndsAt(calendarStart, rules.rounds, n)))}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {isOwner && !open && !league.isPublic && (
+          <section aria-labelledby="invite" className="flex flex-col gap-2">
+            <h2
+              id="invite"
+              className="text-xs font-bold uppercase tracking-wide text-muted-foreground"
+            >
+              {text.inviteTitle}
+            </h2>
+            <ShareInvite
+              code={league.inviteCode}
+              leagueName={league.name}
+              path={`/manager/rejoindre?code=${league.inviteCode}`}
+              shareText={text.shareText(league.name)}
+            />
+          </section>
         )}
 
         <Link href={`/manager/${league.id}/catalogue`} className={`${buttonVariants()} w-full`}>
