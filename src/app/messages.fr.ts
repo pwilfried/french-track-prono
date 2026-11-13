@@ -732,6 +732,40 @@ export const messages = {
     nextAgainst: (home: boolean) => (home ? "À domicile contre" : "À l'extérieur contre"),
     noNext: "Plus de confrontation à jouer cette saison.",
     calendarLink: "Voir le calendrier",
+    ended: "Saison terminée : le classement est figé.",
+    endLink: "Voir la fin de saison",
+  },
+  managerSeasonEnd: {
+    title: "Fin de saison",
+    link: "Fin de saison",
+    notOver:
+      "La saison continue : elle se termine après la dernière journée du calendrier, journées bonus comprises. Le champion et le palmarès viendront alors.",
+    champion: "Tu es champion",
+    place: (rank: number, players: number) => `Tu finis ${ordinal(rank)} sur ${players}`,
+    championOf: (pseudo: string) => `Champion : ${pseudo}`,
+    season: (league: string, year: number) => `${league} · saison ${year}`,
+    summary: (champion: boolean, wins: number, played: number) =>
+      champion
+        ? `${wins} ${wins <= 1 ? "victoire" : "victoires"} en ${played} ${played <= 1 ? "confrontation" : "confrontations"} : le titre est pour toi.`
+        : `${wins} ${wins <= 1 ? "victoire" : "victoires"} en ${played} ${played <= 1 ? "confrontation" : "confrontations"}. La prochaine saison sera la bonne.`,
+    standingsTitle: "Classement final",
+    standingsCaption: "Classement final du championnat",
+    championBadge: "Champion",
+    mySeason: "Ma saison",
+    managerPoints: "Points Manager marqués",
+    record: "V · N · D",
+    recordValue: (wins: number, draws: number, losses: number) => `${wins} · ${draws} · ${losses}`,
+    bestAthlete: "Meilleur athlète",
+    bestAthleteValue: (name: string, points: number) => `${name} · ${points} pts`,
+    noBestAthlete: "Aucun athlète aligné",
+    rival: (pseudo: string) => `Face à ${pseudo}`,
+    rivalValue: (wins: number, draws: number, losses: number) =>
+      `${wins} V · ${draws} N · ${losses} D`,
+    nextSeason:
+      "Nouvelle saison = nouvelle ligue et nouveau mercato. Ton palmarès reste dans ton profil.",
+    honoursTitle: "Palmarès Manager",
+    honourPlace: (champion: boolean, rank: number, players: number) =>
+      champion ? "🏆 Champion" : `${ordinal(rank)} sur ${players}`,
   },
   leagues: {
     title: "Mes ligues",
@@ -2222,6 +2256,7 @@ export const messages = {
       "Le championnat n'a pas commencé : le calendrier est tiré à la clôture du mercato.",
     MATCHDAY_NOT_FOUND: "Cette journée n'existe pas dans le calendrier de la ligue.",
     MANAGER_SEASON_UNAVAILABLE: "Le championnat n'a pas pu être chargé. Réessaie.",
+    MANAGER_HONOURS_UNAVAILABLE: "Le palmarès n'a pas pu être chargé. Réessaie.",
     retry: "Réessayer",
   },
   legal: {

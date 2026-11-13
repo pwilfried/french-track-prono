@@ -215,7 +215,7 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 | Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions` |
 | Référentiel | `competitions`, `events` (dont `kind` et `sub_disciplines` des épreuves combinées), `athletes`, `entries` (liste de départ), `results`, `athlete_records` (PR, SB, WR, WB) |
 | Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions` |
-| Manager (v0.12 à v0.15) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `event_performances`, `manager_scores` (détail : `docs/decisions/french-track-manager.md`) |
+| Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
 | Fonctions | `create_league()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()` |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers` ; `badges` et `user_badges` restent vides : les badges sont calculés (v0.11) |
 
@@ -295,6 +295,18 @@ haut score Manager gagne, égalité = nul ; 3/1/0) et le classement (points, vic
 points marqués ; rang partagé sur une égalité complète). Une confrontation compte dès que sa
 compétition a des scores Manager (un score absent vaut 0) ; une journée bonus n'en a aucune et ne
 donne aucun point de classement. Pages `/manager/[id]/journee/[n]` et `/manager/[id]/classement`.
+
+Fin de saison Manager (v0.16, issue #434) : la saison se termine après la dernière journée du
+calendrier, **journées bonus comprises** (décision du propriétaire, 13 nov. 2026), c'est-à-dire
+quand chaque journée qui a une compétition a des scores Manager ; une journée sans compétition
+ne la retient pas (`seasonOver`, `src/domain/manager-honours.ts`). Un déclencheur sur
+`manager_scores` appelle alors `private.close_manager_season()`, qui fige une fois pour toutes
+`manager_honours` : champion (le premier du classement ; sur une égalité complète, le premier
+arrivé dans la ligue), classement final, confrontations directes et, par joueur, points Manager
+marqués (journées bonus comprises) et meilleur athlète. Un calcul refait ensuite ne change rien.
+Lecture par les participants (`ManagerHonoursRepository`). Page `/manager/[id]/fin-de-saison`
+(rang final, « Ma saison », bilan face au rival : le joueur juste devant, le 2e pour le
+champion) ; le palmarès est rappelé dans le profil.
 
 Records (v0.8, issue #196) : le trigger `update_records_from_result` met à jour le PB (`kind = 'pr'` en base) et le SB
 à chaque ligne de résultat. Les marques texte sont lues par `parse_mark()` (secondes, mètres ou

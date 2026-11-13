@@ -189,10 +189,32 @@ describe("getManagerStandings", () => {
     });
   });
 
+  it("says the season is over only once the bonus matchday is scored too", async () => {
+    // Given every head-to-head matchday is scored, the bonus one not yet
+    const duelDays = [1, 2, 3, 4, 5, 6].flatMap((r) =>
+      ["zoe", "max", "ali", "bea"].map((userId) => ({
+        competitionId: `c${r}`,
+        userId,
+        total: 100,
+      })),
+    );
+    const standings = getManagerStandings(world({ scores: duelDays }));
+
+    // When zoe opens the standings, then the season still plays
+    expect((await standings.execute({ leagueId: "L" })).ended).toBe(false);
+
+    // Given the bonus matchday is scored, then the season is over
+    const all = [...duelDays, { competitionId: "c7", userId: "zoe", total: 50 }];
+    expect(
+      (await getManagerStandings(world({ scores: all })).execute({ leagueId: "L" })).ended,
+    ).toBe(true);
+  });
+
   it("lists every participant at zero before the season starts", async () => {
     const view = await getManagerStandings(world({ started: false })).execute({ leagueId: "L" });
 
     expect(view.started).toBe(false);
+    expect(view.ended).toBe(false);
     expect(view.next).toBeNull();
     expect(view.rows.map((r) => [r.rank, r.points])).toEqual([
       [1, 0],

@@ -12,6 +12,7 @@ import {
   type SeasonScore,
   type StandingRow,
 } from "@/domain/manager-championship";
+import { seasonOver } from "@/domain/manager-honours";
 
 import { UseCaseError } from "./errors";
 import type { ManagerLeagueRepository, ManagerParticipant } from "./manager-leagues";
@@ -68,6 +69,8 @@ export type ManagerMatchdayView = {
 export type ManagerStandingsView = {
   leagueName: string;
   started: boolean;
+  /** Every matchday of the schedule is scored, bonus ones included (#434). */
+  ended: boolean;
   rows: (StandingRow & { participant: ManagerParticipant; mine: boolean })[];
   next: {
     round: number;
@@ -157,6 +160,7 @@ export function getManagerStandings(ports: Ports) {
       return {
         leagueName: league.name,
         started: matchdays.length > 0,
+        ended: seasonOver(matchdays, scored),
         rows,
         next: next && {
           round: next.round,

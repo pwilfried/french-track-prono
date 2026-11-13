@@ -7,6 +7,7 @@ import { getMyBadges } from "@/application/get-my-badges";
 import { getProfile } from "@/application/get-profile";
 import { getPlayerDetails } from "@/application/player-details";
 import { getMySeason } from "@/application/get-my-season";
+import { getMyManagerHonours } from "@/application/manager-honours";
 import { ShareSeasonCard } from "@/components/profile/share-season-card";
 import { getMyPredictionHistory } from "@/application/list-my-predictions";
 import { getClubRanking } from "@/application/rankings";
@@ -30,6 +31,7 @@ import {
   createSupabaseClubNoticeRepository,
   createSupabaseDisciplineRepository,
   createSupabaseEventReader,
+  createSupabaseManagerHonoursRepository,
   createSupabasePlayerDetailsRepository,
   createSupabasePointsRepository,
   createSupabasePredictionRepository,
@@ -91,7 +93,7 @@ export default async function ProfilePage({
     profiles: createSupabaseProfileRepository(client),
   }).execute({ userId: user.userId });
   if (!profile) redirect(`/bienvenue?next=${encodeURIComponent("/profil")}`);
-  const [season, details, params, clubNotices] = await Promise.all([
+  const [season, details, params, clubNotices, honours] = await Promise.all([
     loadSeason(user.userId),
     getPlayerDetails({ details: createSupabasePlayerDetailsRepository(client) })
       .execute({ userId: user.userId })
@@ -101,6 +103,15 @@ export default async function ProfilePage({
       }),
     searchParams,
     getClubNotices({ notices: createSupabaseClubNoticeRepository(client) })
+      .execute()
+      .catch((error: unknown) => {
+        if (error instanceof UseCaseError) return [];
+        throw error;
+      }),
+    getMyManagerHonours({
+      honours: createSupabaseManagerHonoursRepository(client),
+      userId: user.userId,
+    })
       .execute()
       .catch((error: unknown) => {
         if (error instanceof UseCaseError) return [];
@@ -167,6 +178,32 @@ export default async function ProfilePage({
             myClub={details?.club?.validated ? details.club : null}
           />
         </>
+      )}
+
+      {honours.length > 0 && (
+        <section aria-labelledby="honours" className="flex flex-col gap-2">
+          <h2
+            id="honours"
+            className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+          >
+            {messages.managerSeasonEnd.honoursTitle}
+          </h2>
+          <ul aria-labelledby="honours" className="flex flex-col gap-1.5">
+            {honours.map((h) => (
+              <li key={h.leagueId}>
+                <Link
+                  href={`/manager/${h.leagueId}/fin-de-saison`}
+                  className={`flex min-h-12 items-center justify-between gap-3 rounded-card border px-4 py-2 font-semibold ${h.champion ? "border-transparent bg-gold-soft text-gold-ink" : "border-border bg-card"}`}
+                >
+                  <span className="min-w-0 break-words">{h.leagueName}</span>
+                  <span className="shrink-0 text-sm">
+                    {messages.managerSeasonEnd.honourPlace(h.champion, h.rank, h.players)}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <section aria-labelledby="season" className="flex flex-col gap-2">
