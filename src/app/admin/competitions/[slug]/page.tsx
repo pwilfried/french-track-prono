@@ -18,7 +18,7 @@ import {
 
 import { messages } from "../../../messages.fr";
 import { adminOnly } from "../../guard";
-import { addEventAction, setAthleteAction } from "../actions";
+import { addEventAction, computeManagerScoresAction, setAthleteAction } from "../actions";
 import { ActionNotice, AdminShell } from "../admin-shell";
 
 const field = "min-h-12 w-full rounded-xl border-2 border-border bg-card px-3 text-base";
@@ -51,7 +51,13 @@ export default async function AdminCompetitionPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ onglet?: string; q?: string; enregistre?: string; erreur?: string }>;
+  searchParams: Promise<{
+    onglet?: string;
+    q?: string;
+    enregistre?: string;
+    erreur?: string;
+    manager?: string;
+  }>;
 }) {
   const { client } = await adminOnly();
   const { slug } = await params;
@@ -111,6 +117,14 @@ export default async function AdminCompetitionPage({
         </Link>
       </p>
       <ActionNotice saved={!!search.enregistre} error={error} />
+      {search.manager !== undefined && !error && (
+        <p
+          role="status"
+          className="rounded-2xl bg-success/15 px-3.5 py-3 text-sm font-semibold text-success-text"
+        >
+          {messages.adminCompetitions.managerComputed(Number(search.manager) || 0)}
+        </p>
+      )}
       <nav
         aria-label={messages.adminCompetitions.tabs}
         className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1"
@@ -243,6 +257,26 @@ export default async function AdminCompetitionPage({
               </button>
             </form>
           </details>
+          <section
+            aria-labelledby="manager-points"
+            className="flex flex-col gap-2 rounded-card border border-border bg-card p-3.5"
+          >
+            <h2 id="manager-points" className="font-bold">
+              {messages.adminCompetitions.managerTitle}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {messages.adminCompetitions.managerHint}
+            </p>
+            <form action={computeManagerScoresAction}>
+              <input type="hidden" name="competition" value={slug} />
+              <button
+                type="submit"
+                className="min-h-12 w-full rounded-full bg-brand font-bold text-brand-foreground"
+              >
+                {messages.adminCompetitions.managerCompute}
+              </button>
+            </form>
+          </section>
         </>
       ) : (
         <>
