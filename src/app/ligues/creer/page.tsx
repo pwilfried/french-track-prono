@@ -71,7 +71,7 @@ export default async function CreateLeaguePage({
             ))}
           </ul>
           <Link
-            href={`/competitions?type=${scope}&${withCompetitions(slugs)}`}
+            href={`/ligues/creer/competitions?type=${scope}&${withCompetitions(slugs)}`}
             className="inline-flex min-h-11 items-center self-start font-bold"
           >
             {messages.leagues.addCompetition}

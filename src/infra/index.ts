@@ -15,8 +15,6 @@ export {
   type CookieToSet,
   type CurrentUser,
 } from "./supabase/session";
-export { createInMemoryResultStore, type ResultEventFixture } from "./in-memory/result-repository";
-export { createSupabaseResultRepository } from "./supabase/result-repository";
 export {
   createInMemoryPerformanceStore,
   type PerformanceEventFixture,
@@ -98,6 +96,8 @@ export { createInMemoryClubNoticeStore } from "./in-memory/club-notice-repositor
 export { createSupabaseClubNoticeRepository } from "./supabase/club-notice-repository";
 export { createInMemoryPushSubscriptionStore } from "./in-memory/push-subscription-repository";
 export { createSupabasePushSubscriptionRepository } from "./supabase/push-subscription-repository";
+export { createInMemoryProgramAlertStore } from "./in-memory/program-alert-repository";
+export { createSupabaseProgramAlertRepository } from "./supabase/program-alert-repository";
 export { createInMemoryReadinessStore } from "./in-memory/readiness-reader";
 export { createSupabaseReadinessReader } from "./supabase/readiness-reader";
 export { createInMemoryManagerRuleStore } from "./in-memory/manager-rule-repository";

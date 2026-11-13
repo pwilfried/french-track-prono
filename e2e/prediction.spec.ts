@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
 
-test("a new player predicts a perfect podium, the admin enters the result and the player gets 12 points", async ({
+test("a new player predicts a perfect podium, the admin enters the results sheet and the player gets 12 points", async ({
   page,
 }) => {
   // An event still open (run `npm run db:open-events` first).
@@ -45,29 +45,42 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
   await expect(page.locator("main").getByRole("alert")).toContainText("Trop tard");
 
-  // The player is made admin (from SQL, as documented) and enters the same podium.
+  // The player is made admin (from SQL, as documented) and enters the same podium on the one
+  // results sheet of the event: places 1 to 3 only, no click on « Calculer » (#665).
   sql(
     `update profiles set is_admin = true where id = (select id from auth.users where email = '${email}')`,
   );
+  const podium = ["p1", "p2", "p3"].map((step) =>
+    sql(`select a.name from predictions p join events e on e.id = p.event_id
+         join athletes a on a.id = p.${step}
+         join auth.users u on u.id = p.user_id
+         where e.slug = '${slug}' and u.email = '${email}'`),
+  );
   await page.goto(`/admin/${slug}`);
-  const official = page.locator("li > button[aria-pressed]");
-  for (const index of [0, 1, 2]) await official.nth(index).click();
-  await page.getByRole("button", { name: "Enregistrer le résultat" }).click();
-  await expect(page.getByRole("status")).toContainText("Résultat enregistré");
+  await page.getByRole("link", { name: "Saisir la feuille de résultats" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Feuille de résultats");
+  for (const [index, name] of podium.entries()) {
+    await page
+      .getByRole("listitem", { name, exact: true })
+      .getByLabel("Place")
+      .fill(`${index + 1}`);
+  }
+  await page.getByRole("button", { name: "Enregistrer et calculer les points" }).click();
 
-  // A dry run shows the points before anything is stored; confirming stores them.
-  const preview = page.getByRole("region", { name: "Aperçu du calcul" });
-  await expect(preview).toContainText("Rien n'est encore enregistré");
-  await expect(preview.getByRole("listitem").first()).toContainText("12");
-  await page.getByRole("button", { name: "Confirmer le calcul" }).click();
-  await expect(page.getByRole("status")).toContainText("Points calculés");
+  // Back on the event: the points are already computed.
+  await page.waitForURL(new RegExp(`/admin/${slug}\\?enregistre=1$`));
+  await expect(page.getByText(/✓ Points calculés pour \d+ joueurs?\./)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Recalculer" })).toBeVisible();
 
-  // The admin log keeps both actions, newest first.
+  // The admin log keeps the sheet and the computation, by the player.
   await page.goto("/admin/historique");
   const log = page.getByRole("list", { name: "Actions" }).getByRole("listitem");
-  await expect(log.nth(0)).toContainText("Points calculés");
-  await expect(log.nth(1)).toContainText("Résultat saisi");
-  await expect(log.nth(0)).toContainText(`par ${player.pseudo}`);
+  await expect(log.filter({ hasText: "Points calculés" }).first()).toContainText(
+    `par ${player.pseudo}`,
+  );
+  await expect(log.filter({ hasText: "Feuille de résultats saisie" }).first()).toContainText(
+    `par ${player.pseudo}`,
+  );
   // Back to a player to look at the public pages as they see them.
   sql(
     `update profiles set is_admin = false where id = (select id from auth.users where email = '${player.email}')`,
@@ -76,18 +89,28 @@ test("a new player predicts a perfect podium, the admin enters the result and th
   await expect(page.locator('main:not([aria-busy="true"])')).toContainText("+12 pts");
   await expect(page.locator('main:not([aria-busy="true"])')).toContainText("Podium parfait");
 
-  // The events tab opens on « À faire »; « Terminées » shows it under « Déjà courues » with my
-  // result and my points (#488, #546).
-  await page.goto("/epreuves?competition=ultimate-championship-2026");
+  // On the day of the event, « Terminées » shows it with my result and my points (#488, #546,
+  // #659), and the progress line counts my points.
+  const day = sql(
+    `select to_char((starts_at at time zone 'Europe/Paris') - interval '6 hours', 'YYYY-MM-DD')
+     from events where slug = '${slug}'`,
+  );
+  await page.goto(`/competitions?competition=ultimate-championship-2026&jour=${day}`);
+  await expect(
+    page
+      .getByRole("navigation", { name: "Jours de la compétition" })
+      .locator('a[aria-current="date"]'),
+  ).toHaveAttribute("href", new RegExp(`jour=${day}`));
+  await expect(page.getByRole("region", { name: "Ma progression" })).toContainText("12 pts");
   const filters = page.getByRole("navigation", { name: "Filtrer les épreuves" });
-  await expect(filters.getByRole("link", { name: /^À faire/ })).toHaveAttribute(
+  await filters.getByRole("link", { name: /^Terminées/ }).click();
+  await expect(filters.getByRole("link", { name: /^Terminées/ })).toHaveAttribute(
     "aria-current",
     "true",
   );
-  await filters.getByRole("link", { name: /^Terminées/ }).click();
-  const done = page.getByRole("region", { name: /^Déjà courues/ });
-  await expect(done.locator(`a[href="/epreuves/${slug}"]`)).toContainText("+12 pts");
-  await expect(done.locator(`a[href="/epreuves/${slug}"]`)).toContainText("Podium parfait !");
+  const done = page.locator(`main a[href="/epreuves/${slug}"]`);
+  await expect(done).toContainText("+12 pts");
+  await expect(done).toContainText("Podium parfait !");
 
   // The event page now shows the result and my podium against the official one.
   await page.goto(`/epreuves/${slug}`);

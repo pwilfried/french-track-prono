@@ -33,7 +33,7 @@ export const messages = {
   nav: {
     label: "Navigation principale",
     home: "Accueil",
-    events: "Épreuves",
+    events: "Compétitions",
     ranking: "Classement",
     league: "Ma ligue",
     leagues: "Ligues",
@@ -196,50 +196,89 @@ export const messages = {
     seeLabel: (name: string) => `Voir ${name}`,
   },
   events: {
-    subtitle: (place: string, count: number) => `${place} · ${count} épreuves`,
     filtersLabel: "Filtrer les épreuves",
-    picker: {
-      label: "Choisir la compétition",
-      mine: "Mes ligues",
-      others: "Autres compétitions",
-      coming: "Compétitions à venir",
-    },
     filters: { todo: "À faire", posed: "Posés", done: "Terminées", all: "Toutes" },
     gender: GENDER,
     /** « 100 m femmes ». */
     name: (discipline: string, gender: keyof typeof GENDER) =>
       `${discipline} ${GENDER[gender].toLowerCase()}`,
     status: { upcoming: "À venir", live: "En cours", finished: "Terminé" },
-    /** Section titles: « Ce soir · samedi 15 août », « Demain · … », then the date. */
-    tonight: (day: string) => `Ce soir · ${day}`,
-    tomorrow: (day: string) => `Demain · ${day}`,
-    done: "Déjà courues",
     featured: "Phare",
     posed: "✓ Posé",
     addPrediction: "+ Prono",
     locksIn: (duration: string) => `Verrouille dans ${duration}`,
-    nextLocksIn: (duration: string) => `la prochaine verrouille dans ${duration}`,
     locksOn: (day: string, hour: string) => `Verrouille le ${day} à ${hour}`,
     editable: "modifiable",
     perfect: "Podium parfait !",
     noPrediction: "Pas de prono",
     noPoints: "—",
-    progress: {
-      title: "Ma progression",
-      posed: (posed: number, total: number) => `${posed} / ${total} podiums posés`,
-      points: (points: number) => `${points} ${points <= 1 ? "pt" : "pts"}`,
-      start: (days: number) => `Premières finales dans ${days} j`,
-      tonight: (todo: number) =>
-        todo === 0
-          ? "Rien à poser ce soir."
-          : `${todo} ${todo === 1 ? "finale" : "finales"} à faire ce soir`,
-      open: "Tous les pronos sont ouverts : prends de l'avance, tu pourras les modifier jusqu'au départ.",
-    },
     cardLabel: (discipline: string, gender: string, hour: string) =>
       `${discipline}, ${gender}, ${hour}`,
     empty: "Aucune épreuve pour ce filtre.",
     allPosed: "Tout est posé pour l'instant.",
     loading: "Chargement des épreuves…",
+  },
+  /** The « Compétitions » tab (#659): one competition, its days, its events by session. */
+  competitions: {
+    label: "Compétition",
+    change: "Changer",
+    changeLabel: (name: string) => `Changer de compétition (${name} affichée)`,
+    noProgram: "programme à venir",
+    sheet: {
+      title: "Choisir une compétition",
+      close: "Fermer",
+      search: "Rechercher une compétition ou une ville",
+      scopeLabel: "Type de compétition",
+      scope: { all: "Toutes", international: "Internationales", france: "France" },
+      mine: "Dans mes ligues",
+      past: "Terminées",
+      none: "Aucune compétition ne correspond.",
+      france: "France",
+      shown: "affichée",
+    },
+    month: (month: string) =>
+      new Date(`${month}-15T12:00:00Z`).toLocaleDateString("fr-FR", {
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      }),
+    days: {
+      label: "Jours de la compétition",
+      today: "AUJ.",
+      todayLabel: "aujourd'hui",
+      doneLabel: "terminé",
+      empty: "Aucune date pour cette compétition.",
+    },
+    sessions: { morning: "Matin", afternoon: "Après-midi", evening: "Soir" },
+    progress: {
+      label: "Ma progression",
+      todo: (n: number) => `${n} à pronostiquer`,
+      todoLabel: (n: number) => `${n} ${n <= 1 ? "épreuve" : "épreuves"} à pronostiquer ce jour`,
+      posed: (posed: number, total: number) => `${posed}/${total} posés`,
+      posedLabel: (posed: number, total: number) =>
+        `${posed} ${posed <= 1 ? "podium posé" : "podiums posés"} sur ${total} dans la compétition`,
+      points: (points: number) => `${points} ${points <= 1 ? "pt" : "pts"}`,
+      pointsLabel: (points: number) => `${points} ${points <= 1 ? "point" : "points"} gagnés`,
+    },
+    emptyDay: "Aucune épreuve ce jour-là.",
+    pending: {
+      title: "Le programme n'est pas encore publié",
+      text: "Les épreuves arrivent dès que l'organisateur publie l'horaire.",
+      startsIn: (days: number) =>
+        days === 0
+          ? "Ça commence aujourd'hui"
+          : days === 1
+            ? "Début demain"
+            : `Début dans ${days} jours`,
+      notify: "Me prévenir à la publication",
+      notified: "Tu seras prévenu",
+      notifiedHint: "Touche à nouveau pour ne plus être prévenu.",
+      signIn: "Connecte-toi pour être prévenu",
+      deviceHint:
+        "La notification arrive sur les appareils où tu as activé les notifications (profil).",
+      error: "Impossible d'enregistrer pour le moment. Réessaie dans un instant.",
+      seeLive: "Voir une compétition en cours",
+    },
   },
   leaderboard: {
     change: (n: number) =>
@@ -1104,23 +1143,15 @@ export const messages = {
     },
     empty: "Aucune épreuve dans cet état.",
     lockedOnly: "Seules les épreuves verrouillées peuvent recevoir un résultat.",
-    officialPodium: "Podium officiel",
-    addTie: "Ajouter un ex æquo",
-    tieRank: "Place",
-    tieAthlete: "Athlète",
-    tieAdd: "Ajouter",
-    tieLabel: (rank: number) => `ex æquo ${rank === 1 ? "1re" : `${rank}e`} place`,
-    removeTie: (name: string) => `Retirer ${name}`,
-    marks: "Marques (facultatif)",
-    saveResult: "Enregistrer le résultat",
-    savingResult: "Enregistrement…",
-    resultSaved: "✓ Résultat enregistré. Les points ne sont pas encore calculés.",
-    compute: "Confirmer le calcul",
+    noSheet:
+      "Aucun résultat pour l'instant : une seule feuille par épreuve donne le podium des pronos et les points du Manager.",
+    enterSheet: "Saisir la feuille de résultats",
+    resultSaved: "✓ Feuille de résultats enregistrée.",
     recompute: "Recalculer",
     computing: "Calcul…",
-    correct: "Corriger le résultat",
+    correct: "Corriger la feuille de résultats",
     computeNote:
-      "Calculer peut être relancé après une correction : les points sont remplacés, jamais ajoutés deux fois.",
+      "Chaque feuille enregistrée calcule les points des pronos puis ceux du Manager. « Recalculer » relance le même calcul en secours : les points sont remplacés, jamais ajoutés deux fois.",
     computed: (players: number) =>
       `✓ Points calculés pour ${players} ${players <= 1 ? "joueur" : "joueurs"}.`,
     kpi: {
@@ -1130,13 +1161,8 @@ export const messages = {
       averageAndBest: (average: string, best: number) =>
         `Moyenne ${average} pts · meilleur score ${best} pts`,
     },
-    preview: {
-      title: "Aperçu du calcul",
-      note: "Rien n'est encore enregistré : vérifie les points, puis confirme.",
-      detail: "Points qui seront enregistrés",
-    },
     missingRanks: (ranks: number[]) =>
-      `Podium incomplet : il manque ${ranks.map((r) => (r === 1 ? "la 1re place" : `la ${r}e place`)).join(" et ")}. Corrige le résultat avant de calculer.`,
+      `Podium incomplet : il manque ${ranks.map((r) => (r === 1 ? "la 1re place" : `la ${r}e place`)).join(" et ")}. Corrige la feuille de résultats.`,
     detail: "Détail",
     noPrediction: "Personne n'a pronostiqué cette épreuve.",
   },
@@ -1169,12 +1195,13 @@ export const messages = {
       `✓ Liste de départ enregistrée : ${n} ${n <= 1 ? "athlète" : "athlètes"}.`,
   },
   performances: {
-    title: "Performances",
+    title: "Feuille de résultats",
     back: "Épreuve",
-    link: "Performances Manager",
+    link: "Feuille de résultats",
     intro:
-      "Pour French Track Manager : la place, la marque et les records de chaque athlète. Une nouvelle saisie remplace la précédente.",
+      "Une seule saisie par épreuve : les places 1 à 3 font le podium officiel des pronos, les marques et les records comptent pour French Track Manager. À l'enregistrement, les points des pronos et du Manager sont calculés. Une nouvelle saisie remplace la précédente.",
     empty: "Personne au départ : saisis d'abord la liste de départ.",
+    podiumOnly: "Aucune équipe Manager sur cette compétition : le podium suffit.",
     missing: (missing: number, linedUp: number) =>
       linedUp === 0
         ? "Aucun athlète de cette épreuve n'est aligné dans une ligue Manager."
@@ -1182,7 +1209,7 @@ export const messages = {
           ? linedUp === 1
             ? "✓ L'athlète aligné a une performance."
             : `✓ Les ${linedUp} athlètes alignés ont une performance.`
-          : `${missing} ${missing <= 1 ? "athlète aligné attend" : "athlètes alignés attendent"} une performance (sur ${linedUp}).`,
+          : `${missing} ${missing <= 1 ? "athlète aligné sans performance" : "athlètes alignés sans performance"} (sur ${linedUp}) : sans performance, un aligné compte 0.`,
     linedUp: "Aligné",
     linedUpMissing: "Aligné · à saisir",
     status: "Statut",
@@ -1204,9 +1231,8 @@ export const messages = {
       ar: "Record continental",
       wr: "Record du monde",
     },
-    save: "Enregistrer les performances",
-    saving: "Enregistrement…",
-    saved: (n: number) => `✓ Performances enregistrées : ${n} ${n <= 1 ? "athlète" : "athlètes"}.`,
+    save: "Enregistrer et calculer les points",
+    saving: "Enregistrement et calcul…",
   },
   install: {
     title: "Installe l'appli",
@@ -1250,7 +1276,7 @@ export const messages = {
       create_discipline: "Discipline créée",
       moderate_club: "Club modifié",
       set_manager_rules: "Règles Manager modifiées",
-      set_performances: "Performances saisies",
+      set_performances: "Feuille de résultats saisie",
       run_manager_scoring: "Points Manager calculés",
     },
     noEvent: "Épreuve supprimée",
@@ -1682,10 +1708,10 @@ export const messages = {
     withdraw: (name: string) => `Retirer ${name} de la compétition`,
     managerTitle: "Points Manager",
     managerHint:
-      "Après le verrouillage : barème World Athletics des titulaires, bonus sportifs et pronos de chaque participant. Relance le calcul après une correction des performances ou des pronos.",
-    managerCompute: "Calculer les points Manager",
+      "Calculés à chaque feuille de résultats enregistrée : barème World Athletics des titulaires, bonus sportifs et pronos de chaque participant. En secours, relance le même calcul pour toute la compétition.",
+    managerCompute: "Recalculer les points Manager",
     managerComputed: (n: number) =>
-      `✓ Points Manager calculés : ${n} ${n <= 1 ? "participant" : "participants"}.`,
+      `✓ Points Manager recalculés : ${n} ${n <= 1 ? "participant" : "participants"}.`,
   },
   odds: {
     link: "Cotes",
@@ -2266,6 +2292,7 @@ export const messages = {
   errors: {
     EVENTS_UNAVAILABLE: "Impossible de charger les épreuves pour le moment.",
     EVENT_NOT_FOUND: "Cette épreuve n'existe pas.",
+    PROGRAM_ALERT_UNAVAILABLE: "L'alerte n'a pas pu être enregistrée. Réessaie.",
     EMAIL_INVALID: "Cette adresse e-mail n'a pas l'air valide.",
     CODE_INVALID: "Code incorrect ou expiré. Vérifie-le ou demande-en un nouveau.",
     AUTH_UNAVAILABLE: "La connexion ne marche pas pour le moment. Réessaie dans un instant.",
@@ -2379,7 +2406,7 @@ export const messages = {
       "Cette marque ne correspond pas à la discipline (ex. 10.62, 1:56.70, 2.04, 8125).",
     PERFORMANCES_INVALID:
       "Chaque athlète une seule fois, une place à partir de 1, et rien d'autre que le statut pour un DNS, DNF ou DQ.",
-    PERFORMANCE_MARK_MISSING: "Un athlète arrivé a besoin de sa marque.",
+    PERFORMANCE_MARK_MISSING: "Un athlète arrivé a besoin d'une place ou d'une marque.",
     PERFORMANCES_UNAVAILABLE: "Impossible de lire ou d'enregistrer les performances. Réessaie.",
     DATE_INVALID: "La date doit être au format AAAA-MM-JJ.",
     DISCIPLINE_NOT_FOUND: "Cette discipline n'existe pas.",

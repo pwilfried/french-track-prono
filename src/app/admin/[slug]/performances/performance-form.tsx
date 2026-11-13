@@ -30,17 +30,21 @@ export type PerformanceRow = {
 const t = messages.performances;
 
 /**
- * One card per athlete of the start list, those lined up in a Manager league first: status
- * (finished, DNS, DNF, DQ, or not entered), place, mark and records. Typing a place or a mark marks
- * the athlete as finished; an athlete left « not entered » has no line.
+ * The results sheet of an event (#665): one card per athlete of the start list, those lined up in
+ * a Manager league first: status (finished, DNS, DNF, DQ, or not entered), place, mark and records.
+ * Typing a place or a mark marks the athlete as finished; an athlete left « not entered » has no
+ * line. Places 1 to 3 make the podium of the predictions; without a Manager league on the
+ * competition (`manager` false) they are all it needs.
  */
 export function PerformanceForm({
   eventId,
   slug,
+  manager,
   initial,
 }: {
   eventId: string;
   slug: string;
+  manager: boolean;
   initial: PerformanceRow[];
 }) {
   const [state, action] = useActionState<AdminActionState, FormData>(savePerformancesAction, {});
@@ -78,7 +82,7 @@ export function PerformanceForm({
             : "rounded-2xl bg-muted px-3.5 py-3 text-sm font-semibold"
         }
       >
-        {t.missing(missing, rows.filter((r) => r.linedUp).length)}
+        {manager ? t.missing(missing, rows.filter((r) => r.linedUp).length) : t.podiumOnly}
       </p>
 
       {rows.length === 0 ? (

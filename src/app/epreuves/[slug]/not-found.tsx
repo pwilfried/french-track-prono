@@ -13,7 +13,7 @@ export default function EventNotFound() {
       <p role="alert" className="rounded-card bg-muted p-4">
         {messages.errors.EVENT_NOT_FOUND}
       </p>
-      <Link href="/epreuves" className={buttonVariants({ variant: "outline" })}>
+      <Link href="/competitions" className={buttonVariants({ variant: "outline" })}>
         {messages.event.back}
       </Link>
     </main>

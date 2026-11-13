@@ -131,6 +131,21 @@ describe("computeManagerScores", () => {
     expect(w.stored()[0]!.total).toBe(points + 12);
   });
 
+  it("stores nothing when no Manager league plays the competition", async () => {
+    const w = world();
+    w.sheet.participants = [];
+    let written = false;
+    const scores = w.scores({ isAdmin: true });
+
+    const lines = await computeManagerScores({
+      scores: { ...scores, replace: async () => ((written = true), "saved") },
+      now: after,
+    }).execute({ competitionSlug: "meeting" });
+
+    expect(lines).toEqual([]);
+    expect(written).toBe(false);
+  });
+
   it("refuses to compute before the competition has started", async () => {
     const w = world();
     const before = () => new Date("2026-07-10T15:00:00Z");

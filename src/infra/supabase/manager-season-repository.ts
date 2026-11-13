@@ -16,7 +16,8 @@ type ScoreRow = { competition_id: string; user_id: string; total: number };
 
 /**
  * The participants read the schedule (#432) and the Manager scores (#431) of their leagues
- * directly, row level security keeping out everyone else.
+ * directly, row level security keeping out everyone else. Provisional scores (#665) are left out:
+ * the season and its standings only count complete competitions.
  */
 export function createSupabaseManagerSeasonRepository(
   client: SupabaseClient,
@@ -48,6 +49,8 @@ export function createSupabaseManagerSeasonRepository(
             .from("manager_scores")
             .select("competition_id, user_id, total")
             .eq("league_id", leagueId)
+            // A competition counts once every event has its result (#665).
+            .eq("complete", true)
             .order("competition_id")
             .order("user_id")
             .range(from, to),

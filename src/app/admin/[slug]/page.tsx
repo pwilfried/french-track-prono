@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { computeEventPoints, type ScoreLine } from "@/application/compute-event-points";
+import type { ScoreLine } from "@/application/compute-event-points";
 import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { getEvent } from "@/application/get-event";
 import { ErrorNotice } from "@/components/error-notice";
@@ -11,7 +11,6 @@ import { TIME_ZONE } from "@/domain/competition";
 import { eventPhase } from "@/domain/countdown";
 import type { EventDetail } from "@/domain/event";
 import { missingPodiumRanks } from "@/domain/official-result";
-import type { PodiumDraft } from "@/domain/podium-draft";
 import {
   createPublicSupabaseClient,
   createSupabaseEventReader,
@@ -26,15 +25,12 @@ import { adminOnly } from "../guard";
 import { ComputeForm } from "./compute-form";
 import { EventEdit } from "./event-edit";
 import { PromoteForm } from "./promote-form";
-import { ResultForm } from "./result-form";
 import { ScoreTable, type Scored } from "./score-table";
 
 type Loaded = {
   event: EventDetail;
   /** The stored points of the event, best first. */
   scores: Scored[];
-  /** Before any computation: the points a computation would store, best first (dry run). */
-  preview: Scored[];
 };
 
 async function load(
@@ -45,16 +41,7 @@ async function load(
     const event = await getEvent({
       events: createSupabaseEventReader(createPublicSupabaseClient()),
     }).execute({ competitionSlug: null, eventSlug: slug });
-    const points = createSupabasePointsRepository(client);
-    const lines = await points.findEventScores(event.id);
-    const canPreview =
-      lines.length === 0 &&
-      event.results.length > 0 &&
-      missingPodiumRanks(event.results).length === 0 &&
-      eventPhase(new Date(), event.lockAt) === "locked";
-    const previewLines = canPreview
-      ? await computeEventPoints({ points }).execute({ eventId: event.id, dryRun: true })
-      : [];
+    const lines = await createSupabasePointsRepository(client).findEventScores(event.id);
     // One profile read per player: fine for the size of a league of friends.
     const profiles = createSupabaseProfileRepository(client);
     const withPseudo = async (rows: ScoreLine[]) =>
@@ -66,7 +53,7 @@ async function load(
           })),
         )
       ).sort((a, b) => b.points - a.points);
-    return { event, scores: await withPseudo(lines), preview: await withPseudo(previewLines) };
+    return { event, scores: await withPseudo(lines) };
   } catch (error) {
     if (error instanceof UseCaseError) {
       if (error.code === "EVENT_NOT_FOUND") notFound();
@@ -81,12 +68,11 @@ export default async function AdminEventPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ corriger?: string; enregistre?: string; erreur?: string }>;
+  searchParams: Promise<{ enregistre?: string; erreur?: string }>;
 }) {
   const { client } = await adminOnly();
   const { slug } = await params;
   const search = await searchParams;
-  const correcting = search.corriger === "1";
   const notice =
     search.erreur && search.erreur in messages.errors
       ? messages.errors[search.erreur as ErrorCode]
@@ -101,7 +87,7 @@ export default async function AdminEventPage({
     );
   }
 
-  const { event, scores, preview } = loaded;
+  const { event, scores } = loaded;
   // Times in the event's own competition.
   const competition = await currentCompetition(event.competitionSlug);
   const locked = eventPhase(new Date(), event.lockAt) === "locked";
@@ -115,15 +101,6 @@ export default async function AdminEventPage({
     minute: "2-digit",
     timeZone: TIME_ZONE,
   }).format(new Date(event.startsAt));
-
-  // The form starts from the current result: first athlete of each rank on the steps, the others as ties.
-  const firstOf = (rank: number) => event.results.find((r) => r.rank === rank)?.athleteId ?? null;
-  const draft: PodiumDraft = { first: firstOf(1), second: firstOf(2), third: firstOf(3) };
-  const onSteps = [draft.first, draft.second, draft.third];
-  const ties = event.results
-    .filter((r) => !onSteps.includes(r.athleteId) && r.rank <= 3)
-    .map((r) => ({ athleteId: r.athleteId, rank: r.rank as 1 | 2 | 3 }));
-  const marks = Object.fromEntries(event.results.map((r) => [r.athleteId, r.mark ?? ""]));
 
   return (
     <main id="main" className="flex flex-1 flex-col">
@@ -182,7 +159,7 @@ export default async function AdminEventPage({
             <ActionNotice saved={!!search.enregistre} error={notice} />
             <EventEdit event={event} />
           </div>
-          {hasResult && !correcting && (
+          {hasResult && (
             <div className="mt-4 rounded-card border border-border bg-card p-4">
               <PodiumMedals results={event.results} />
             </div>
@@ -193,15 +170,13 @@ export default async function AdminEventPage({
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 py-6">
         {!locked ? (
           <p className="mx-4 rounded-card bg-muted p-4">{messages.errors.EVENT_NOT_LOCKED}</p>
-        ) : !hasResult || correcting ? (
-          <ResultForm
-            eventId={event.id}
-            slug={slug}
-            athletes={event.entries}
-            initialDraft={draft}
-            initialTies={ties}
-            initialMarks={marks}
-          />
+        ) : !hasResult ? (
+          <div className="flex flex-col gap-3 px-4">
+            <p className="rounded-card bg-muted p-4 text-sm">{messages.admin.noSheet}</p>
+            <Link href={`/admin/${slug}/performances`} className={`${buttonVariants()} w-full`}>
+              {messages.admin.enterSheet}
+            </Link>
+          </div>
         ) : (
           <div className="flex flex-col gap-3 px-4">
             <p
@@ -216,24 +191,18 @@ export default async function AdminEventPage({
               <p role="alert" className="rounded-card bg-muted p-4 text-sm font-semibold">
                 {messages.admin.missingRanks(missing)}
               </p>
-            ) : preview.length === 0 ? (
-              <p className="rounded-card bg-muted p-4 text-sm">{messages.admin.noPrediction}</p>
             ) : (
-              <section aria-labelledby="preview-title" className="flex flex-col gap-3">
-                <h2 id="preview-title" className="font-display text-xl font-extrabold">
-                  {messages.admin.preview.title}
-                </h2>
-                <p className="text-sm text-muted-foreground">{messages.admin.preview.note}</p>
-                <ScoreTable lines={preview} title={messages.admin.preview.detail} />
-              </section>
+              event.round === "final" && (
+                <p className="rounded-card bg-muted p-4 text-sm">{messages.admin.noPrediction}</p>
+              )
             )}
             {event.round !== "final" ? (
               <PromoteForm eventId={event.id} slug={slug} />
             ) : (
-              missing.length === 0 && <ComputeForm eventId={event.id} slug={slug} again={scored} />
+              missing.length === 0 && <ComputeForm slug={slug} />
             )}
             <Link
-              href={`/admin/${slug}?corriger=1`}
+              href={`/admin/${slug}/performances`}
               className={`${buttonVariants({ variant: "muted" })} w-full`}
             >
               {messages.admin.correct}

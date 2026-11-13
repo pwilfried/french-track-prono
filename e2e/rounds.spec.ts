@@ -26,8 +26,13 @@ test("a final opens to predictions once its semi-finals are run, and shows the s
   // The first semi-final has its result, which finishes it (#488); the second has not run yet.
   runRound(`${tag}-semi1`, "sha-carri-richardson", "22.05");
 
-  // Players see the final only in the list.
-  await page.goto("/epreuves");
+  // Players see the final only in the list of its day (#659).
+  const day = sql(
+    `select to_char((starts_at at time zone 'Europe/Paris') - interval '6 hours', 'YYYY-MM-DD')
+     from events where slug = '${tag}-final'`,
+  );
+  await page.goto(`/competitions?competition=ultimate-championship-2026&jour=${day}&filtre=all`);
+  await expect(page.locator(`main a[href="/epreuves/${tag}-final"]`)).toBeVisible();
   await expect(page.locator(`a[href^="/epreuves/${tag}-semi"]`)).toHaveCount(0);
 
   await page.goto(`/epreuves/${tag}-final`);

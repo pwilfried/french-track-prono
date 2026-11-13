@@ -50,6 +50,10 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   allowedDevOrigins: devOrigins,
   poweredByHeader: false,
+  // #659: the events tab became « Compétitions »; old links keep their ?competition= and ?filtre=.
+  async redirects() {
+    return [{ source: "/epreuves", destination: "/competitions", permanent: true }];
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
