@@ -80,8 +80,8 @@ test("the admin pastes a World Athletics results table: the sheet is pre-filled,
          where r.event_id = '${event}'`),
   ).toBe("1,2,3");
   expect(
-    sql(`select points_awarded > 0 from predictions where user_id = '${adminId}'
-         and event_id = '${event}'`),
+    sql(`select sum(points) > 0 from score_events where user_id = '${adminId}'
+         and event_id = '${event}' and source = 'prediction'`),
   ).toBe("t");
 
   sql(`delete from competitions where id = '${competition}'`);
