@@ -27,6 +27,11 @@ export {
   type ManagerScoreFixture,
 } from "./in-memory/manager-score-repository";
 export { createSupabaseManagerScoreRepository } from "./supabase/manager-score-repository";
+export {
+  createInMemoryManagerSeasonStore,
+  type ManagerSeasonFixture,
+} from "./in-memory/manager-season-repository";
+export { createSupabaseManagerSeasonRepository } from "./supabase/manager-season-repository";
 export { createInMemoryLeagueStore } from "./in-memory/league-repository";
 export { createSupabaseLeagueRepository } from "./supabase/league-repository";
 export { createSupabaseLeagueModerationRepository } from "./supabase/league-moderation-repository";

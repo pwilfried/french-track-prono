@@ -673,6 +673,66 @@ export const messages = {
     noLineup: "Pas d'alignement validé avant le verrouillage : 0 point pour cette compétition.",
     lineupLink: "Mon alignement",
   },
+  managerChampionship: {
+    matchdayLink: "La journée",
+    standingsLink: "Classement",
+    matchdays: "Journées du championnat",
+    matchdayTab: (round: number) => `J${round}`,
+    matchdayTabLabel: (round: number) => `Journée ${round}`,
+    matchdayTitle: (round: number) => `Journée ${round}`,
+    noCompetition: "Sans compétition",
+    leg: { first: "Aller", return: "Retour" } as Record<"first" | "return", string>,
+    duelCount: (n: number) => `${n} ${n <= 1 ? "confrontation" : "confrontations"}`,
+    state: {
+      played: "Terminée",
+      upcoming: "À venir",
+      bonus: "Journée bonus",
+      not_played: "Non jouée",
+    } as Record<"played" | "upcoming" | "bonus" | "not_played", string>,
+    duels: "Confrontations",
+    vs: "contre",
+    duelLabel: (home: string, away: string) => `${home} contre ${away}`,
+    myDuel: "Ma confrontation",
+    score: (n: number | null) => (n === null ? "–" : `${n}`),
+    result: (result: "home" | "away" | "draw" | null) =>
+      result === null
+        ? "Résultat après le calcul des points Manager"
+        : result === "draw"
+          ? "Match nul · +1 chacun"
+          : result === "home"
+            ? "Victoire à domicile · +3"
+            : "Victoire à l'extérieur · +3",
+    bonusText:
+      "Journée bonus : chacun marque ses points Manager, sans confrontation ni points au classement.",
+    notPlayedText: "Plus de compétition pour cette journée : elle ne se joue pas.",
+    standingsTitle: "Classement",
+    standingsCaption: "Classement du championnat",
+    columns: {
+      rank: "Rang",
+      player: "Joueur",
+      wins: "V",
+      draws: "N",
+      losses: "D",
+      difference: "Diff.",
+      points: "Pts",
+    },
+    columnLabels: {
+      wins: "Victoires",
+      draws: "Matchs nuls",
+      losses: "Défaites",
+      difference: "Différence de points Manager",
+      points: "Points au championnat",
+    },
+    difference: (n: number) => (n > 0 ? `+${n}` : `${n}`),
+    me: "toi",
+    tieRule:
+      "Victoire 3 points, nul 1, défaite 0. À égalité : nombre de victoires, puis différence de points Manager (marqués moins encaissés), puis points Manager marqués. Les journées bonus ne comptent pas.",
+    notStarted: "Le calendrier sera tiré à la clôture du mercato : tout le monde part de zéro.",
+    nextTitle: (round: number) => `Journée ${round} · le choc`,
+    nextAgainst: (home: boolean) => (home ? "À domicile contre" : "À l'extérieur contre"),
+    noNext: "Plus de confrontation à jouer cette saison.",
+    calendarLink: "Voir le calendrier",
+  },
   leagues: {
     title: "Mes ligues",
     back: "Mes ligues",
@@ -2158,6 +2218,10 @@ export const messages = {
       "La compétition n'a pas commencé : les points Manager se calculent après le verrouillage.",
     MANAGER_SCORES_UNAVAILABLE:
       "Les points Manager n'ont pas pu être chargés ou calculés. Réessaie.",
+    MANAGER_SEASON_NOT_STARTED:
+      "Le championnat n'a pas commencé : le calendrier est tiré à la clôture du mercato.",
+    MATCHDAY_NOT_FOUND: "Cette journée n'existe pas dans le calendrier de la ligue.",
+    MANAGER_SEASON_UNAVAILABLE: "Le championnat n'a pas pu être chargé. Réessaie.",
     retry: "Réessayer",
   },
   legal: {

@@ -288,6 +288,14 @@ l'ordre des dates : une par journée ; celles au-delà des 2 × (n − 1) journ�
 bonus. Lecture par les participants de la ligue, aucune écriture. Détail :
 `docs/decisions/french-track-manager.md`, section 5.
 
+Championnat Manager (v0.16, issue #433) : pas de table de plus. Les participants lisent
+`manager_matchdays`, `manager_fixtures` et `manager_scores` de leur ligue
+(`ManagerSeasonRepository`) ; `src/domain/manager-championship.ts` en tire les résultats (le plus
+haut score Manager gagne, égalité = nul ; 3/1/0) et le classement (points, victoires, différence,
+points marqués ; rang partagé sur une égalité complète). Une confrontation compte dès que sa
+compétition a des scores Manager (un score absent vaut 0) ; une journée bonus n'en a aucune et ne
+donne aucun point de classement. Pages `/manager/[id]/journee/[n]` et `/manager/[id]/classement`.
+
 Records (v0.8, issue #196) : le trigger `update_records_from_result` met à jour le PB (`kind = 'pr'` en base) et le SB
 à chaque ligne de résultat. Les marques texte sont lues par `parse_mark()` (secondes, mètres ou
 points) et comparées par `is_better_mark()` : temps plus bas pour les courses (discipline avec une
