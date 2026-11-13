@@ -247,7 +247,8 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - Décisions du coordinateur (à revoir aux tests du propriétaire) : un athlète engagé dans plusieurs
   épreuves de la compétition (séries et finale, deux disciplines) rapporte sa **meilleure ligne**,
   sans cumul ; les bonus de place (1re, 2e, 3e) ne comptent qu'en **finale**, un record battu en
-  série compte. Le lien vers la journée viendra avec #433.
+  série compte. « Mes points » ne mène pas encore à la journée : on y va par la page de la ligue
+  (« Journée ») ou le classement.
 - Cas chiffrés de référence (tables, bonus, score d'une compétition) : `docs/architecture.md`,
   « Cas de test du cœur », M1 à M12.
 
@@ -287,6 +288,15 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   calculés ; un participant sans score y compte pour 0. Égalité complète (points, victoires,
   différence, marqués) : même rang. Les journées bonus n'ont ni confrontation ni points de
   classement, et ne comptent ni dans V/N/D ni dans la différence.
+- Écrans (#433) : `/manager/<id>/journee/<n>` (sans numéro : la journée en cours) montre les
+  confrontations de la journée avec leurs scores, ou « Journée bonus » ; `/manager/<id>/classement`
+  le classement (rang, points, V/N/D, différence, marqués). On y va depuis la page de la ligue.
+- **Confrontation** (#605) : `/manager/<id>/confrontation/<n>/<domicile>`, ouverte depuis chaque
+  carte de la journée, montre les deux alignements sur le stade (l'adversaire en haut, le joueur en
+  bas ; pour un membre hors confrontation, l'extérieur en haut) avec les points de chaque athlète.
+  Un alignement reste secret jusqu'au verrou de sa compétition ; ensuite tout participant de la
+  ligue lit tous les alignements de cette compétition (`manager_duel_lineups`), les points par
+  athlète venant de `manager_scores.athletes`.
 - **Fin de saison** quand toutes les confrontations sont jouées et validées, sans playoffs : le
   premier est champion, le classement est figé.
 - **Palmarès** conservé : champion, classement final, statistiques individuelles, victoires / nuls
@@ -300,7 +310,30 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   meilleur athlète de chacun (le plus de points Manager sur la saison). Un score recalculé
   ensuite (#416) ne change plus le palmarès. Le « principal rival » de l'écran de fin de saison
   est le joueur juste devant au classement final (le 2e pour le champion). Nouvelle saison =
-  nouvelle ligue, nouveau mercato ; le palmarès reste dans le profil.
+  nouvelle ligue, nouveau mercato ; le palmarès reste dans le profil. Écran :
+  `/manager/<id>/fin-de-saison` (rang final, « Ma saison », bilan face au rival), annoncé sur le
+  classement une fois la saison finie.
+
+## 6. Accueil et tutoriel (v0.16)
+
+- **Ma saison** (#606) : un joueur qui a une ligue Manager voit sur `/manager`, pour sa première
+  ligue, le nom de la ligue, la journée N sur M, son rang et son bilan (points, V/N/D,
+  différence), sa prochaine confrontation (adversaire, domicile ou extérieur), l'action du moment
+  (aligner pour la prochaine compétition, voir ses derniers points) et « Le déroulé de la
+  saison » en sept étapes : ligue, mercato, équipe, alignement, points, confrontations, champion.
+  L'étape en cours vient de l'état de la ligue (`currentSeasonStep`, `src/domain/manager-home.ts`) :
+  « ligue » tant que le mercato attend ses joueurs, « mercato » pendant qu'il est ouvert, puis
+  « alignement » tant que la prochaine compétition attend un alignement, « points » une fois
+  l'alignement validé ou verrouillé jusqu'au calcul, « confrontations » après une journée calculée,
+  « champion » à la fin de la saison. Les quatre étapes du milieu reviennent à chaque journée. Cas
+  d'usage : `getManagerHome`, `src/application/manager-home.ts`.
+- **Tutoriel « Comment ça marche ? »** (#616) : sept étapes plein écran (une ligue entre amis, le
+  mercato, l'équipe pour la saison, l'alignement, les points, une confrontation par journée,
+  devenir champion), chacune avec un dessin en formes simples. Il s'ouvre seul à la première
+  visite de `/manager` (vu, mémorisé sur l'appareil), puis à la demande par « Comment ça
+  marche ? » (`/manager?tutoriel=1`) ; « Passer » à toute étape. Ses chiffres (budget, taille
+  minimum, titulaires, bonus de victoire, 4 à 10 joueurs) viennent des règles de l'admin
+  (`managerIntroFigures`), comme ceux de la présentation (#618).
 
 ## Réponses du propriétaire (#416, 10 novembre 2026)
 
