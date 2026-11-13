@@ -1,4 +1,3 @@
-import { DEFAULT_BIB } from "@/domain/bib";
 import {
   duelResult,
   managerStandings,
@@ -15,7 +14,11 @@ import {
 import { seasonOver } from "@/domain/manager-honours";
 
 import { UseCaseError } from "./errors";
-import type { ManagerLeagueRepository, ManagerParticipant } from "./manager-leagues";
+import {
+  participantLookup,
+  type ManagerLeagueRepository,
+  type ManagerParticipant,
+} from "./manager-leagues";
 
 /** The season of a league as its participants read it: schedule (#432) and Manager scores (#431). */
 export type ManagerSeasonData = {
@@ -88,9 +91,7 @@ export async function loadSeason(ports: Omit<Ports, "userId">, leagueId: string)
   const league = await ports.managerLeagues.find(leagueId);
   if (!league) throw new UseCaseError("LEAGUE_NOT_FOUND");
   const season = await ports.season.season(leagueId);
-  const byId = new Map(league.participants.map((p) => [p.userId, p]));
-  const participant = (userId: string): ManagerParticipant =>
-    byId.get(userId) ?? { userId, pseudo: "?", bib: DEFAULT_BIB };
+  const participant = participantLookup(league.participants);
   const scored = new Set(season.scores.map((s) => s.competitionId));
   const matchdays = [...season.matchdays].sort((a, b) => a.round - b.round);
   // The current matchday: the first not played yet, else the last one.

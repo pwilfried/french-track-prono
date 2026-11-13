@@ -1,5 +1,5 @@
 import { isBannedName } from "@/domain/banned-names";
-import type { Bib } from "@/domain/bib";
+import { DEFAULT_BIB, type Bib } from "@/domain/bib";
 import { normalizeInviteCode, validateLeagueName } from "@/domain/league";
 import {
   canLaunchMercato,
@@ -32,6 +32,13 @@ export type ManagerLeague = {
 export type SeasonCompetition = { id: string; name: string; firstEventAt: string };
 
 export type ManagerParticipant = { userId: string; pseudo: string; bib: Bib };
+
+/** Who is who in a league: a user no longer among its participants reads as « ? ». */
+export function participantLookup(participants: readonly ManagerParticipant[]) {
+  const byId = new Map(participants.map((p) => [p.userId, p]));
+  return (userId: string): ManagerParticipant =>
+    byId.get(userId) ?? { userId, pseudo: "?", bib: DEFAULT_BIB };
+}
 
 /**
  * The mercato of a league, as its creator set it (#619): the players it waits for (derived from

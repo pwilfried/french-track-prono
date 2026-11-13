@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { DEFAULT_BIB } from "@/domain/bib";
+
 import { UseCaseError } from "./errors";
 import {
   createManagerLeague,
@@ -8,6 +10,7 @@ import {
   joinPublicManagerLeague,
   launchManagerMercato,
   listMyManagerLeagues,
+  participantLookup,
   setManagerCompetitions,
   setManagerMercato,
   type JoinOutcome,
@@ -432,5 +435,14 @@ describe("launchManagerMercato", () => {
         now,
       }),
     ).rejects.toEqual(new UseCaseError("NOT_LEAGUE_OWNER"));
+  });
+});
+
+describe("participantLookup", () => {
+  it("finds a participant of the league and reads anyone else as an unknown player", () => {
+    const ana = { userId: "ana", pseudo: "Ana", bib: DEFAULT_BIB };
+    const participant = participantLookup([ana]);
+    expect(participant("ana")).toEqual(ana);
+    expect(participant("gone")).toEqual({ userId: "gone", pseudo: "?", bib: DEFAULT_BIB });
   });
 });

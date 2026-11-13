@@ -1,9 +1,12 @@
-import { DEFAULT_BIB } from "@/domain/bib";
 import type { StandingRow } from "@/domain/manager-championship";
 import { seasonReview, type ManagerHonours, type SeasonReview } from "@/domain/manager-honours";
 
 import { UseCaseError } from "./errors";
-import type { ManagerLeagueRepository, ManagerParticipant } from "./manager-leagues";
+import {
+  participantLookup,
+  type ManagerLeagueRepository,
+  type ManagerParticipant,
+} from "./manager-leagues";
 
 /**
  * Port: the frozen honours of the finished Manager seasons (#434). Real adapter = Supabase (the
@@ -55,9 +58,7 @@ export function getManagerSeasonEnd(ports: Ports) {
           review: null,
         };
       }
-      const byId = new Map(league.participants.map((p) => [p.userId, p]));
-      const participant = (userId: string): ManagerParticipant =>
-        byId.get(userId) ?? { userId, pseudo: "?", bib: DEFAULT_BIB };
+      const participant = participantLookup(league.participants);
       const review = seasonReview(ports.userId, honours);
       return {
         leagueName: league.name,
