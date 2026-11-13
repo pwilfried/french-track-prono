@@ -4,8 +4,8 @@ name: Pre-production
 # Every merge into main goes to pre-production (#634): its migrations on the pre-production
 # Supabase project, the public seed, then the commit deployed on the pre-production Vercel project
 # (https://french-track-preprod.vercel.app, kept out of search engines). Production is untouched:
-# it still follows the vX.Y.Z tags (migrations.yml), set after the owner's go (ci/agents/release.sh,
-# which also waits for this workflow to be green on main).
+# it still follows the vX.Y.Z tags (migrations.yml), set automatically by ci/agents/release.sh once
+# a milestone is finished; a failed run of this workflow on main's commit makes the tag wait.
 # Secrets (GitHub > Settings > Environments > preprod, never the production ones):
 #   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, SUPABASE_PROJECT_REF,
 #   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (docs/SETUP.md, « Préproduction »).

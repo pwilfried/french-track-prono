@@ -358,7 +358,7 @@ sans qu'on le voie). Les variables d'environnement de l'application restent dans
 
 ## Préproduction
 
-Une version est testée en ligne avant la prod (#634, décision du propriétaire du 13 nov. 2026).
+Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propriétaire du 13 nov. 2026).
 
 - **Adresse** : https://french-track-preprod.vercel.app, publique pour l'instant, cachée aux
   moteurs de recherche (`NEXT_PUBLIC_SITE_NOINDEX=1` au build : balise `noindex` et
@@ -379,9 +379,10 @@ Une version est testée en ligne avant la prod (#634, décision du propriétaire
 - **À venir** : le jeu de démo propre à la préprod (#694) et les tests e2e lancés contre la
   préprod après chaque déploiement (#695).
 - **Pas de captcha ni de notifications push** en préprod (pas de clé Turnstile ni VAPID).
-- **Go prod** : la prod suit toujours les tags, et le tag attend le go du propriétaire sur
-  l'issue « Valider vX.Y.Z en préprod » (`ci/agents/README.md`, étapes 6 et 7). Un run
-  « Pre-production » rouge sur `main` bloque le tag.
+- **Mise en prod** : la prod suit toujours les tags, posés automatiquement quand un milestone est
+  fini et `main` vert, sans feu vert humain (décision du propriétaire du 13 nov. 2026,
+  `ci/agents/README.md`, étape 6). Seul garde-fou : un run « Pre-production » en échec sur le
+  commit de `main` fait attendre le tag jusqu'au passage suivant.
 
 Secrets de l'environnement GitHub `preprod` (Settings → Environments → preprod), ceux du projet
 de préprod, jamais ceux de la prod : `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`,

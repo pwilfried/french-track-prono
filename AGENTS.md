@@ -48,13 +48,13 @@ titres de PR en anglais. Dialogue avec le propriétaire en français.
    préprod (https://french-track-preprod.vercel.app) : migrations sur la base de préprod, puis
    déploiement (`preprod.yml`, `docs/SETUP.md`, « Préproduction »).
 5. Quand toutes les issues d'un milestone sont fermées (`refactor-check` et `docs-check` comprises)
-   et que `main` est vert (préprod comprise), `agents-merge` ouvre l'issue `needs-human`
-   « Valider vX.Y.Z en préprod » (décision du propriétaire du 13 nov. 2026) : critère
-   « It works when… », une case par PR qui touche l'interface. Le propriétaire teste en préprod
-   puis donne son go (commentaire `go prod`, ou fermeture de l'issue) ; alors seulement
-   `agents-merge` pose le tag `vX.Y.0`, ou `vX.Y.Z` pour un milestone correctif `vX.Y.Z …`. Le tag
-   met la version en prod : migrations, puis déploiement Vercel. Aucune mise en prod sans go ;
-   un correctif sans milestone reste tagué à la main.
+   et que `main` est vert, `agents-merge` pose le tag `vX.Y.0` (décision du propriétaire du
+   11 nov. 2026), ou `vX.Y.Z` pour un milestone correctif `vX.Y.Z …` (décision du 12 nov. 2026).
+   Le tag met la version en prod : migrations, puis déploiement Vercel (`docs/SETUP.md`). Tout
+   est automatique, sans feu vert humain (décision du propriétaire du 13 nov. 2026) : seul
+   garde-fou, si le déploiement en préprod de ce commit a échoué, le tag attend le passage
+   suivant. Le propriétaire vérifie le critère « It works when… » en production ; un correctif
+   sans milestone reste tagué à la main.
 
 ## Screenshots in PRs
 
@@ -63,7 +63,7 @@ sombre. Pas de données personnelles dans les captures. Les captures vivent sur 
 orpheline `boards` (`boards/<issue>/*.png`) et sont liées dans la description de la PR. Le
 workflow `ui-shots` capture en plus les pages touchées par chaque PR (`boards/issue-<n>/shots/`)
 et les montre dans un commentaire tenu à jour ; un agent n'en produit pas d'autre, et l'issue
-« Valider vX.Y.Z en préprod », ouverte par `release.sh` avant le tag (une case par PR qui touche
+« Vérifier vX.Y.Z en prod », ouverte par `release.sh` après le tag (une case par PR qui touche
 l'interface), reste la vérification humaine.
 
 ## Issues and milestones
@@ -137,10 +137,10 @@ Claude Code tourne sur les issues et les PR depuis GitHub Actions (`agents.yml`,
 - Une session Claude Code locale qui prend une issue y pose `agent:local` avant d'écrire la moindre
   ligne (et le retire si elle abandonne) : la chaîne ne la prend pas en double (#583).
 - PR verte : fusionnée. Rouge ou en conflit : renvoyée à Claude, 3 fois, puis au propriétaire.
-- Milestone fini et `main` vert : issue « Valider vX.Y.Z en préprod ». Après le go du propriétaire
-  (`go prod` ou issue fermée) : tag `vX.Y.0` (ou `vX.Y.Z` pour un milestone correctif) posé avec
-  `AGENTS_PAT` (sinon il ne déclencherait pas le déploiement), release GitHub qui liste les PR,
-  milestone fermé (`ci/agents/release.sh`).
+- Milestone fini et `main` vert (préprod comprise) : tag `vX.Y.0` (ou `vX.Y.Z` pour un milestone
+  correctif) posé avec `AGENTS_PAT` (sinon il ne déclencherait pas le déploiement), sans attendre
+  de go ; release GitHub qui liste les PR, milestone fermé (`ci/agents/release.sh`). Un déploiement
+  préprod en échec sur ce commit fait attendre le tag jusqu'au passage suivant.
 
 Quand tu tournes là-bas :
 
