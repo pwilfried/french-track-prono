@@ -114,3 +114,28 @@ export function mercatoRounds(mode: RoundMode, frenchTrack: RoundRules): RoundRu
  */
 export const newestArrival = <P>(participants: readonly P[]): P | null =>
   participants.length > 1 ? participants[participants.length - 1]! : null;
+
+/**
+ * How to land exactly (#663), under the picker: the competitions missing under 6, else the format,
+ * how many more for 2 more players (none at the cap of 10) and how many to remove for a
+ * home-and-away without bonus (the bonus matchdays, 0 when it fits exactly).
+ */
+export type SeasonAdvice =
+  | { kind: "too-few"; missing: number }
+  | {
+      kind: "format";
+      format: SeasonFormat;
+      next: { players: number; missing: number } | null;
+      trim: number;
+    };
+
+export function seasonAdvice(competitions: number): SeasonAdvice {
+  const format = seasonFormat(competitions);
+  if (!format) {
+    return { kind: "too-few", missing: MIN_SEASON_COMPETITIONS - Math.max(0, competitions) };
+  }
+  const players = format.players + 2;
+  const next =
+    players > MANAGER_LEAGUE_MAX ? null : { players, missing: duelDaysOf(players) - competitions };
+  return { kind: "format", format, next, trim: format.bonusDays };
+}

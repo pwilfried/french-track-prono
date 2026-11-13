@@ -303,7 +303,11 @@ l'admin la renomme ou la supprime, depuis le back-office. La v0.7 (#311) exigeai
 de la compétition pour pronostiquer (FT011) ; la règle est retirée le 9 novembre 2026 (#375) : on
 pronostique sans ligue, et les pages suggèrent seulement d'en créer ou d'en rejoindre une ; le classement général compte tous les points, toutes
 compétitions confondues (#319), et l'onglet Classement donne aussi celui de chaque compétition
-(#376). Dans une ligue, un membre ne compte que les épreuves verrouillées après son arrivée
+(#376). L'évolution de rang de l'onglet Classement (#661) est recalculée, sans table : le rang
+précédent est celui du classement arrêté à la fin de l'avant-dernière compétition terminée de la
+portée (`previousCompetitionSlugs`, `movesSinceCompetitions` dans `src/domain/ranking.ts`) ; un
+nouveau joueur n'a pas de flèche, « Ce soir » non plus. Les autres pages (ligues, accueil)
+gardent l'évolution depuis la veille. Dans une ligue, un membre ne compte que les épreuves verrouillées après son arrivée
 (`countsInLeague`, #376) : un prono fait avant d'y entrer reste au général et à la compétition. L'accueil du joueur connecté
 part de sa prochaine action (#526) : `nextAction` et `leagueStanding` (`src/domain/home.ts`)
 choisissent la finale ouverte la plus proche du verrouillage, sinon la prochaine compétition, et la

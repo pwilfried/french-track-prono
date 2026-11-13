@@ -63,6 +63,27 @@ type DatedLine = {
 };
 
 /**
+ * Places won (+) or lost (−) by each player since an earlier ranking, the one made of the lines
+ * `before` keeps; null for a player who was not ranked in it. The order of the lines never matters.
+ */
+function movesSince<T extends DatedLine>(
+  lines: T[],
+  pseudoOf: (userId: string) => string,
+  before: (line: T) => boolean,
+): Map<string, number | null> {
+  const now = rankPlayers(totalsOf(lines, pseudoOf));
+  const previous = new Map(
+    rankPlayers(totalsOf(lines.filter(before), pseudoOf)).map((p) => [p.userId, p.rank]),
+  );
+  return new Map(
+    now.map((player) => {
+      const rank = previous.get(player.userId);
+      return [player.userId, rank === undefined ? null : rank - player.rank];
+    }),
+  );
+}
+
+/**
  * Places won (+) or lost (−) by each player since the ranking at the end of the competition day
  * before `today` (#551): every event of the day counts as one move. Null for a player who was not
  * ranked yesterday. A player without any event (a league member at 0) is ranked on both days.
@@ -73,21 +94,72 @@ export function movesSinceYesterday(
   pseudoOf: (userId: string) => string,
   today: string,
 ): Map<string, number | null> {
-  const now = rankPlayers(totalsOf(lines, pseudoOf));
-  const before = new Map(
-    rankPlayers(
-      totalsOf(
-        lines.filter((l) => !l.eventStartsAt || competitionDay(l.eventStartsAt) < today),
-        pseudoOf,
-      ),
-    ).map((p) => [p.userId, p.rank]),
+  return movesSince(
+    lines,
+    pseudoOf,
+    (l) => !l.eventStartsAt || competitionDay(l.eventStartsAt) < today,
   );
-  return new Map(
-    now.map((player) => {
-      const previous = before.get(player.userId);
-      return [player.userId, previous === undefined ? null : previous - player.rank];
-    }),
-  );
+}
+
+/**
+ * The competitions the previous ranking of the rankings tab counts (#661): the finished ones
+ * (ended before `today`), but those ending on the last end day. Null while fewer than two
+ * competitions are finished: there is nothing to compare with.
+ */
+export function previousCompetitionSlugs(
+  competitions: { slug: string; endsOn: string }[],
+  today: string,
+): string[] | null {
+  const finished = competitions.filter((c) => c.endsOn < today);
+  const last = finished.reduce((max, c) => (c.endsOn > max ? c.endsOn : max), "");
+  const previous = finished.filter((c) => c.endsOn < last).map((c) => c.slug);
+  return previous.length > 0 ? previous : null;
+}
+
+/**
+ * Places won (+) or lost (−) by each player since the ranking made of the competitions
+ * `previousSlugs` only (#661); null for a new player, who was not ranked in it. A line without a
+ * competition (a league member at 0) counts in both rankings.
+ */
+export function movesSinceCompetitions(
+  lines: (DatedLine & { competitionSlug?: string })[],
+  pseudoOf: (userId: string) => string,
+  previousSlugs: string[],
+): Map<string, number | null> {
+  const previous = new Set(previousSlugs);
+  return movesSince(lines, pseudoOf, (l) => !l.competitionSlug || previous.has(l.competitionSlug));
+}
+
+/** Where the player stands, for the « Ta place » card (#661). */
+export type Place = {
+  rank: number;
+  points: number;
+  change: number | null;
+  /** The player just ahead (strictly better rank) and the points between them; null when first. */
+  ahead: { pseudo: string; rank: number; gap: number } | null;
+  /** « Top n % »: the rank over the players of the ranking, rounded up, at least 1. */
+  topPercent: number;
+};
+
+/** The « Ta place » card of a player (#661); null when they are not ranked or have no points. */
+export function placeOf(
+  rows: (RankedPlayer & { change?: number | null })[],
+  userId: string | undefined,
+): Place | null {
+  const index = rows.findIndex((r) => r.userId === userId);
+  const me = rows[index];
+  if (!me || me.points === 0) return null;
+  const ahead = rows
+    .slice(0, index)
+    .filter((r) => r.rank < me.rank)
+    .at(-1);
+  return {
+    rank: me.rank,
+    points: me.points,
+    change: me.change ?? null,
+    ahead: ahead ? { pseudo: ahead.pseudo, rank: ahead.rank, gap: ahead.points - me.points } : null,
+    topPercent: Math.max(1, Math.ceil((me.rank / rows.length) * 100)),
+  };
 }
 
 /** The score lines of one competition day (« Ce soir », #551). */

@@ -289,10 +289,10 @@ export const messages = {
   leaderboard: {
     change: (n: number) =>
       n > 0
-        ? `${n} ${n === 1 ? "place gagnée" : "places gagnées"} depuis la veille`
+        ? `gagne ${n} ${n === 1 ? "place" : "places"}`
         : n < 0
-          ? `${-n} ${n === -1 ? "place perdue" : "places perdues"} depuis la veille`
-          : "même place que la veille",
+          ? `perd ${-n} ${n === -1 ? "place" : "places"}`
+          : "garde sa place",
     label: "Classement",
     podium: "Podium",
     podiumPlace: (rank: number, pseudo: string, points: number) =>
@@ -392,10 +392,14 @@ export const messages = {
     competitionsEditLabel: "Compétitions de la saison",
     competitionsEditHint:
       "Tu peux en ajouter ou en retirer jusqu'au lancement du mercato. Le nombre de joueurs suit, jamais sous le nombre d'inscrits.",
-    competitionOption: (name: string, when: string) => `${name} · ${when}`,
-    /** « 8 compétitions → 4 joueurs · 6 journées aller-retour + 2 bonus ». */
+    /** « 8 compétitions → 4 joueurs · 6 journées + 2 bonus » (aller-retour, #663). */
     seasonFormat: (competitions: number, players: number, duelDays: number, bonusDays: number) =>
-      `${competitions} compétitions → ${players} joueurs · ${duelDays} journées aller-retour${bonusDays > 0 ? ` + ${bonusDays} bonus` : ""}`,
+      `${competitions} compétitions → ${players} joueurs · ${duelDays} journées${bonusDays > 0 ? ` + ${bonusDays} bonus` : ""}`,
+    /** How to land exactly, under the format (#663). */
+    seasonMore: (missing: number, players: number) =>
+      `Encore ${missing} pour passer à ${players} joueurs.`,
+    seasonTrim: (bonus: number) => `Retires-en ${bonus} pour un aller-retour sans bonus.`,
+    seasonCap: (players: number) => `${players} joueurs au plus.`,
     seasonTooFew: (competitions: number) =>
       `${competitions} ${competitions <= 1 ? "compétition" : "compétitions"} : il en faut au moins 6.`,
     saveCompetitions: "Enregistrer les compétitions",
@@ -929,6 +933,67 @@ export const messages = {
     honourPlace: (champion: boolean, rank: number, players: number) =>
       champion ? "🏆 Champion" : `${ordinal(rank)} sur ${players}`,
   },
+  /** The competition picker of a league, Manager or predictions (#663). */
+  seasonPicker: {
+    quickTitle: "Sélections rapides",
+    quick: {
+      season: "Toute la saison",
+      indoor: "Saison en salle",
+      majors: "Grands championnats",
+    },
+    /** A quick selection and its count: « Diamond League · 15 ». */
+    quickLabel: (label: string, count: number) => `${label} · ${count}`,
+    /** A level: the known ones, else read from its slug (« continental-tour-gold »). */
+    level: (level: string) =>
+      ({ championnat: "Championnats", jo: "Jeux olympiques" })[level] ??
+      level
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" "),
+    searchLabel: "Rechercher une compétition",
+    searchPlaceholder: "Nom ou ville",
+    scopeLabel: "Portée",
+    scope: { all: "Toutes", international: "Internationales", france: "France" },
+    venueLabel: "Lieu",
+    venue: { all: "Tous", indoor: "Salle", outdoor: "Plein air" },
+    levelLabel: "Niveau",
+    levelAll: "Tous les niveaux",
+    onlyChosen: "Voir seulement mes compétitions cochées",
+    checkShown: "Tout cocher",
+    uncheckShown: "Tout décocher",
+    /** « 12 affichées sur 34 ». */
+    shown: (shown: number, total: number) =>
+      `${shown} ${shown <= 1 ? "affichée" : "affichées"} sur ${total}`,
+    /** « juin 2027 ». */
+    month: (month: string) =>
+      new Date(`${month}-15T12:00:00Z`).toLocaleDateString("fr-FR", {
+        month: "long",
+        year: "numeric",
+        timeZone: "Europe/Paris",
+      }),
+    /** « 3 / 5 » beside a month: ticked out of shown. */
+    monthCount: (ticked: number, total: number) => `${ticked} / ${total}`,
+    monthToggle: (month: string, ticked: number, total: number) =>
+      `${month}, ${ticked} ${ticked <= 1 ? "cochée" : "cochées"} sur ${total}`,
+    noMatch: "Aucune compétition ne correspond à ces filtres.",
+    resetFilters: "Réinitialiser les filtres",
+    indoorChip: "Salle",
+    franceChip: "France",
+    /** A row: « Meeting de Paris · sam. 5 juin ». */
+    option: (name: string, when: string) => `${name} · ${when}`,
+    /** A day in Paris time: « sam. 5 juin ». */
+    day: (iso: string) =>
+      new Date(iso).toLocaleDateString("fr-FR", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        timeZone: "Europe/Paris",
+      }),
+    /** The sticky bar: « 15 compétitions cochées ». */
+    chosen: (n: number) => `${n} ${n <= 1 ? "compétition cochée" : "compétitions cochées"}`,
+    atLeast: (n: number) => `Il en faut au moins ${n}.`,
+    loading: "Chargement des compétitions…",
+  },
   leagues: {
     title: "Mes ligues",
     back: "Mes ligues",
@@ -1126,11 +1191,64 @@ export const messages = {
     tonightSubtitle: "Points gagnés sur les finales de ce soir · tous les joueurs",
     leagueSubtitle: (name: string) => `Ta ligue · ${name}`,
     noLeagueSubtitle: "Joue contre tes amis",
-    scopeLabel: "Choisir le classement",
     viewLabel: "Vue du classement",
     view: { ligue: "Ma ligue", soir: "Ce soir", general: "Général" },
-    leagueLabel: "Choisir la ligue",
-    general: "Général",
+    scope: {
+      league: "Ligue",
+      general: "Portée",
+      change: "Changer",
+      changeLabel: (name: string) => `Changer de classement (${name} affiché)`,
+      players: (n: number) => `${n} ${n <= 1 ? "joueur" : "joueurs"}`,
+      season: (years: { from: number; to: number } | null) =>
+        !years
+          ? "Toute la saison"
+          : years.from === years.to
+            ? `Toute la saison ${years.from}`
+            : `Toute la saison ${years.from}-${String(years.to).slice(-2)}`,
+      tonight: (competition: string | null, day: string) => {
+        const date = new Date(`${day}T12:00:00Z`).toLocaleDateString("fr-FR", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          timeZone: "UTC",
+        });
+        return competition
+          ? `Points des finales de ce soir · ${competition}, ${date}`
+          : `Points des finales de ce soir · ${date}`;
+      },
+      loading: "Chargement de la portée…",
+      error: "Les classements à choisir ne sont pas disponibles pour le moment.",
+    },
+    sheet: {
+      title: "Choisir le classement",
+      tabsLabel: "Type de classement",
+      tabs: { competitions: "Saison ou compétition", leagues: "Mes ligues" },
+      live: "En cours",
+      past: "Terminées",
+      none: "Aucune compétition ne correspond.",
+      allSeason: "Tous les joueurs · toutes les compétitions",
+      leagueRank: (rank: number | null, members: number) =>
+        rank
+          ? `${ordinal(rank)} sur ${members}`
+          : `Pas encore classé · ${members} ${members <= 1 ? "joueur" : "joueurs"}`,
+      competitions: (n: number) => `${n} ${n <= 1 ? "compétition" : "compétitions"}`,
+      noLeague: "Tu n'as pas encore de ligue : joue contre tes amis.",
+      createOrJoin: "Créer ou rejoindre une ligue",
+    },
+    place: {
+      title: "Ta place",
+      rank: (rank: number) => ordinal(rank),
+      points: (points: number) => `${points} ${points <= 1 ? "pt" : "pts"}`,
+      since: "depuis la dernière compétition",
+      ahead: (gap: number, pseudo: string, rank: number) =>
+        gap === 0
+          ? `À égalité de points avec ${pseudo} (${ordinal(rank)})`
+          : `${gap} ${gap <= 1 ? "pt" : "pts"} derrière ${pseudo} (${ordinal(rank)})`,
+      first: "Personne devant toi",
+      top: (percent: number) => `Top ${percent} %`,
+      loading: "Chargement de ta place…",
+      error: "Ta place n'est pas disponible pour le moment.",
+    },
     you: (rank: number, points: number) =>
       `Tu es ${ordinal(rank)} · ${points} ${points <= 1 ? "pt" : "pts"}`,
     aroundMe: "Autour de moi",

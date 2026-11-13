@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import type { CompetitionScope } from "./competition";
-import { competitionGroups, searchCompetitions } from "./competition-search";
+import {
+  competitionGroups,
+  rankingScopeGroups,
+  searchCompetitions,
+  seasonYears,
+} from "./competition-search";
 
 const competition = (
   slug: string,
@@ -60,5 +65,43 @@ describe("competitionGroups", () => {
     expect(competitionGroups([competition("a", "2027-06-04")], [], "2027-01-01")).toEqual([
       { kind: "month", month: "2027-06", competitions: [competition("a", "2027-06-04")] },
     ]);
+  });
+});
+
+describe("rankingScopeGroups", () => {
+  const span = (slug: string, startsOn: string, endsOn: string) => ({
+    ...competition(slug, startsOn),
+    endsOn,
+  });
+  const list = [
+    span("coming", "2027-02-01", "2027-02-02"),
+    span("live", "2027-01-09", "2027-01-11"),
+    span("old", "2026-09-11", "2026-09-13"),
+    span("recent", "2026-12-01", "2026-12-02"),
+  ];
+
+  it("lists the competitions in progress, then the finished ones the latest first, never the coming ones", () => {
+    expect(rankingScopeGroups(list, "", "2027-01-10")).toEqual({
+      live: [list[1]],
+      past: [list[3], list[2]],
+    });
+  });
+
+  it("keeps the competitions matching the search", () => {
+    expect(rankingScopeGroups(list, "rec", "2027-01-10")).toEqual({ live: [], past: [list[3]] });
+  });
+});
+
+describe("seasonYears", () => {
+  it("spans the years of the competitions", () => {
+    expect(seasonYears([competition("b", "2027-06-10"), competition("a", "2026-09-11")])).toEqual({
+      from: 2026,
+      to: 2027,
+    });
+  });
+
+  it("is one year when they all start the same year, null without competition", () => {
+    expect(seasonYears([competition("a", "2026-09-11")])).toEqual({ from: 2026, to: 2026 });
+    expect(seasonYears([])).toBeNull();
   });
 });

@@ -154,16 +154,19 @@ export const MANAGER_SEASON_NAME = "Saison Manager";
  * The ids of `count` competitions a Manager league can be created with (#644), first one first:
  * eligible (manager_competitions) and not finished, at least 6 for a league. Shared by every test
  * and made eligible again at each call: the Manager rule tests replace the eligible list for a
- * while. Their names are « Saison Manager 1 » to « Saison Manager 10 ».
+ * while. Their names are « Saison Manager 1 » to « Saison Manager 10 »; the first one is in Oslo,
+ * of level « continental-tour-gold » (the picker reads both, #663).
  */
 export function managerSeasonCompetitions(count = 6): string[] {
   return sql(`
     with c as (
-      insert into competitions (slug, name, starts_on, ends_on)
+      insert into competitions (slug, name, city, level, starts_on, ends_on)
       select 'test-manager-season-' || n, '${MANAGER_SEASON_NAME} ' || n,
+             case when n = 1 then 'Oslo' end, case when n = 1 then 'continental-tour-gold' end,
              date '2030-01-07' + 7 * n, date '2030-01-07' + 7 * n
       from generate_series(1, 10) n
-      on conflict (slug) do update set status = 'upcoming'
+      on conflict (slug) do update set status = 'upcoming', city = excluded.city,
+        level = excluded.level
       returning id, starts_on
     ), e as (
       insert into manager_competitions (competition_id) select id from c on conflict do nothing
