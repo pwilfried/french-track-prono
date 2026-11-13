@@ -7,6 +7,7 @@ import type {
   SeasonCompetition,
 } from "@/application/manager-leagues";
 import { bibOf } from "@/domain/bib";
+import { competitionVenue } from "@/domain/competition";
 import type { ManagerRules } from "@/domain/manager-rules";
 
 type LeagueRow = {
@@ -26,7 +27,15 @@ type MercatoRow = {
 
 const iso = (time: string | null) => (time === null ? null : new Date(time).toISOString());
 
-type CompetitionRow = { competition_id: string; name: string; first_event_at: string };
+type CompetitionRow = {
+  competition_id: string;
+  name: string;
+  first_event_at: string;
+  city: string | null;
+  scope: string;
+  venue: string | null;
+  level: string | null;
+};
 
 /** The competitions a function answered, first one first. */
 function competitions(result: { data: unknown; error: unknown }): SeasonCompetition[] {
@@ -35,6 +44,10 @@ function competitions(result: { data: unknown; error: unknown }): SeasonCompetit
     id: row.competition_id,
     name: row.name,
     firstEventAt: new Date(row.first_event_at).toISOString(),
+    city: row.city,
+    scope: row.scope === "france" ? "france" : "international",
+    venue: competitionVenue(row.venue ?? undefined) ?? "outdoor",
+    level: row.level,
   }));
 }
 
