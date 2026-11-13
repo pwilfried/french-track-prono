@@ -633,6 +633,11 @@ export const messages = {
     },
     cardLabel: (name: string, discipline: string, paid: number) =>
       `${name}, ${discipline}, payé ${paid} crédits`,
+    /** A card of a head-to-head (#605): the athlete's points, sporting bonuses included. */
+    scoredCardLabel: (name: string, discipline: string, points: number | null, bonus: number) =>
+      `${name}, ${discipline}, ${points === null ? "points à venir" : `${points} pts`}${bonus > 0 ? `, dont ${bonus} de bonus` : ""}`,
+    bonus: (n: number) => `+${n}`,
+    points: (n: number | null) => (n === null ? "–" : `${n} pts`),
     selected: "Sélectionné",
     absent: "Absent·e",
   },
@@ -778,6 +783,26 @@ export const messages = {
     calendarLink: "Voir le calendrier",
     ended: "Saison terminée : le classement est figé.",
     endLink: "Voir la fin de saison",
+  },
+  managerDuel: {
+    title: "Confrontation",
+    subtitle: (round: number) => `Journée ${round}`,
+    open: "Voir la confrontation",
+    openLabel: (home: string, away: string) => `Voir la confrontation ${home} contre ${away}`,
+    summary: "Résultat de la confrontation",
+    leg: { first: "Aller", return: "Retour" } as Record<"first" | "return", string>,
+    venue: (home: boolean) => (home ? "Domicile" : "Extérieur"),
+    outcome: (outcome: "win" | "draw" | "loss", points: number) =>
+      `${{ win: "Victoire", draw: "Match nul", loss: "Défaite" }[outcome]} +${points}`,
+    you: "toi",
+    opponent: "adversaire",
+    predictions: (bottom: string, bottomPoints: number, top: string, topPoints: number) =>
+      `Pronos : ${bottom} +${bottomPoints}, ${top} +${topPoints} (inclus)`,
+    secret:
+      "Les alignements restent secrets jusqu'au verrouillage de la compétition : reviens au premier départ.",
+    stadium: "Le stade de la confrontation",
+    sideOf: (pseudo: string) => `Alignement de ${pseudo}`,
+    noLineup: (pseudo: string) => `${pseudo} n'a pas validé d'alignement : 0 point.`,
   },
   managerSeasonEnd: {
     title: "Fin de saison",

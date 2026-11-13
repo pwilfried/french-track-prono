@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   CHAMPIONSHIP_POINTS,
+  duelOutcome,
   duelResult,
   managerStandings,
   matchdayState,
@@ -31,6 +32,24 @@ describe("duelResult", () => {
 
   it("is worth 3 points for a win, 1 for a draw, 0 for a defeat", () => {
     expect(CHAMPIONSHIP_POINTS).toEqual({ win: 3, draw: 1, loss: 0 });
+  });
+});
+
+describe("duelOutcome", () => {
+  it("tells a player of the head-to-head whether they won, drew or lost, and what it is worth", () => {
+    expect(duelOutcome(812, 640)).toEqual({ outcome: "win", points: 3 });
+    expect(duelOutcome(700, 700)).toEqual({ outcome: "draw", points: 1 });
+    expect(duelOutcome(500, 501)).toEqual({ outcome: "loss", points: 0 });
+  });
+
+  it("gives the two players of a head-to-head opposite outcomes", () => {
+    fc.assert(
+      fc.property(fc.nat(10000), fc.nat(10000), (a, b) => {
+        const mine = duelOutcome(a, b);
+        const theirs = duelOutcome(b, a);
+        expect(mine.points + theirs.points).toBe(a === b ? 2 : 3);
+      }),
+    );
   });
 });
 
