@@ -113,8 +113,8 @@ test("a league needs a competition; on one under way, only the events locked aft
   const rows = page.getByRole("list", { name: "Classement" }).getByRole("listitem");
   await expect(rows).toHaveCount(2);
   await expect(rows.first()).toContainText(player.pseudo);
-  await expect(rows.first()).toContainText("4 pts");
-  await expect(rows.first()).not.toContainText("14 pts");
+  await expect(rows.first()).toContainText("4 points");
+  await expect(rows.first()).not.toContainText("14 points");
 
   // Its creator adds a coming competition; its points count too.
   await page
@@ -124,7 +124,7 @@ test("a league needs a competition; on one under way, only the events locked aft
   await expect(page.locator("main").getByRole("status")).toContainText("Compétition ajoutée");
   score(`${coming}-100m`, 7);
   await page.reload();
-  await expect(rows.first()).toContainText("11 pts");
+  await expect(rows.first()).toContainText("11 points");
 
   sql(`delete from auth.users where email = '${friend}'`);
   sql(`delete from competitions where slug = '${tag}'`);
