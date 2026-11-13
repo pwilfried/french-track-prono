@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 // Direct access to the local Supabase database, for test set-up only (making an admin, creating
 // an isolated event). The app never connects this way. Uses `psql` when it is installed, else the
-// one inside the Supabase database container.
+// one inside the Supabase database container; the pre-production database when E2E_TARGET=preprod.
 const url =
   process.env.SUPABASE_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 const container = "supabase_db_french-track-prono";
@@ -33,18 +33,69 @@ function flushPublicCache(): void {
 }
 
 /**
- * Runs SQL on the local database and returns the first column of the first row. `keepCache`: the
- * app's cache of public data is left as is (a test that shows the cache at work).
+ * Runs SQL on the test database (local, or pre-production: see onPreprod) and returns the first
+ * column of the first row. `keepCache`: the app's cache of public data is left as is (a test that shows the cache at work).
  */
 export function sql(statement: string, options: { keepCache?: boolean } = {}): string {
+  const output = onPreprod() ? sqlOnPreprod(statement) : sqlOnLocal(statement);
+  if (!options.keepCache && !/^\s*select\b/i.test(statement)) flushPublicCache();
+  return output.trim().split("\n")[0] ?? "";
+}
+
+function sqlOnLocal(statement: string): string {
   const args = ["-tA", "-v", "ON_ERROR_STOP=1", "-c", statement];
-  const output = hasPsql()
+  return hasPsql()
     ? execFileSync("psql", [url, ...args], { encoding: "utf8" })
     : execFileSync("docker", ["exec", container, "psql", "-U", "postgres", ...args], {
         encoding: "utf8",
       });
-  if (!options.keepCache && !/^\s*select\b/i.test(statement)) flushPublicCache();
-  return output.trim().split("\n")[0] ?? "";
+}
+
+/**
+ * The end-to-end tests run against pre-production after each deploy (#695): E2E_TARGET=preprod.
+ * Never set locally nor in the CI of a PR.
+ */
+export function onPreprod(): boolean {
+  return process.env.E2E_TARGET === "preprod";
+}
+
+/**
+ * Runs SQL on the pre-production database through the Supabase Management API (no database
+ * address nor IPv6 needed on the runner, as ci/preprod/load-sql.sh), synchronously like psql.
+ * Prints the first column of the first row the way psql -tA does (t/f for booleans).
+ */
+function sqlOnPreprod(statement: string): string {
+  const token = process.env.SUPABASE_ACCESS_TOKEN;
+  const ref = process.env.SUPABASE_PROJECT_REF;
+  if (!token || !ref) throw new Error("SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF are needed");
+  const script = `
+    const response = await fetch(
+      "https://api.supabase.com/v1/projects/" + process.env.SUPABASE_PROJECT_REF + "/database/query",
+      {
+        method: "POST",
+        headers: {
+          authorization: "Bearer " + process.env.SUPABASE_ACCESS_TOKEN,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ query: process.env.E2E_SQL }),
+      },
+    );
+    const text = await response.text();
+    if (!response.ok) {
+      console.error(response.status + " " + text);
+      process.exit(1);
+    }
+    const rows = JSON.parse(text);
+    const value = Array.isArray(rows) && rows[0] ? Object.values(rows[0])[0] : null;
+    const shown =
+      value === null || value === undefined ? "" : value === true ? "t" : value === false ? "f"
+        : typeof value === "object" ? JSON.stringify(value) : String(value);
+    process.stdout.write(shown);`;
+  return execFileSync(process.execPath, ["--input-type=module", "-e", script], {
+    encoding: "utf8",
+    env: { ...process.env, E2E_SQL: statement },
+    timeout: 60_000,
+  });
 }
 
 /**

@@ -11,12 +11,13 @@ export function newPlayer(tag: string) {
 
 /**
  * Signs a new player up from the sign-in page (already open, e.g. after a redirect): e-mail code
- * read in the local mailbox, then the profile. Ends on the page the sign-in was asked from.
+ * read in the local mailbox (or from the admin API in pre-production), then the profile. Ends on
+ * the page the sign-in was asked from.
  */
 export async function signUp(page: Page, player: { email: string; pseudo: string }) {
   await page.getByLabel("Ton e-mail").fill(player.email);
   await page.getByRole("button", { name: "Recevoir mon code" }).click();
-  await page.getByLabel(/code/i).fill(await latestCodeFromMailbox(player.email));
+  await typeCode(page, player.email);
   await page.getByRole("button", { name: "Me connecter" }).click();
   await page.waitForURL(/\/bienvenue/);
   await page.getByLabel("Ton pseudo").fill(player.pseudo);
@@ -32,8 +33,18 @@ export async function signIn(page: Page, email: string) {
   await clearMailbox(email);
   await page.getByLabel("Ton e-mail").fill(email);
   await page.getByRole("button", { name: "Recevoir mon code" }).click();
-  await page.getByLabel(/code/i).fill(await latestCodeFromMailbox(email));
+  await typeCode(page, email);
   await page.getByRole("button", { name: "Me connecter" }).click();
+}
+
+/**
+ * Types the code sent to an address, read once the code field is shown: the app has sent it by
+ * then (against pre-production, the code asked from the admin API must come after that one).
+ */
+export async function typeCode(page: Page, email: string) {
+  const field = page.getByLabel(/code/i);
+  await field.waitFor();
+  await field.fill(await latestCodeFromMailbox(email));
 }
 
 /**

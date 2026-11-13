@@ -376,8 +376,19 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   (un secret de prod collé par erreur).
 - **Pas de remise à zéro** : ce que le propriétaire crée à la main en préprod reste d'un
   déploiement à l'autre.
-- **À venir** : le jeu de démo propre à la préprod (#694) et les tests e2e lancés contre la
-  préprod après chaque déploiement (#695).
+- **Tests e2e après chaque déploiement** (#695) : le job « End-to-end tests against
+  pre-production » lance toute la suite `e2e/` contre l'adresse de préprod (`E2E_TARGET=preprod`,
+  sans serveur local). Le SQL des tests passe par l'API de gestion Supabase, le code de
+  connexion par l'API admin (`generateLink`, clé `service_role` de la préprod), jamais par une
+  boîte mail. Les comptes admin de test sont des joueurs `e2e-…` passés admin en SQL. À la fin
+  de chaque passage, réussi ou non, `ci/preprod/e2e-cleanup.sql` supprime les comptes
+  `e2e-…@example.test` (avec leurs ligues, pronos et points, donc hors de tout classement), les
+  ligues « E2E … » et les compétitions `test-…` / `e2e-…` ; le jeu de démo et le seed n'utilisent
+  jamais ces noms. Le résultat (vert/rouge, lien du run et du rapport) est dans le résumé du run
+  et commenté dans l'issue « Valider vX.Y.Z en préprod » ouverte, s'il y en a une. Une suite
+  rouge rend le run « Pre-production » rouge, ce qui fait attendre le tag. Le changement
+  d'e-mail (`profile-edit.spec.ts`) est sauté en préprod : aucune API ne donne son code.
+- **À venir** : le jeu de démo propre à la préprod (#694).
 - **Pas de captcha ni de notifications push** en préprod (pas de clé Turnstile ni VAPID).
 - **Mise en prod** : la prod suit toujours les tags, posés automatiquement quand un milestone est
   fini et `main` vert, sans feu vert humain (décision du propriétaire du 13 nov. 2026,
@@ -386,9 +397,16 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
 
 Secrets de l'environnement GitHub `preprod` (Settings → Environments → preprod), ceux du projet
 de préprod, jamais ceux de la prod : `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`,
-`SUPABASE_PROJECT_REF`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. Les variables de
+`SUPABASE_PROJECT_REF`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, et pour les tests
+e2e `SUPABASE_URL` (`https://<ref>.supabase.co`), `SUPABASE_SERVICE_ROLE_KEY` et
+`PUBLIC_CACHE_FLUSH_SECRET` (une valeur aléatoire, la même que dans le projet Vercel de préprod :
+elle ouvre `/api/public-cache` aux tests). Réglages Auth de la préprod pour les tests : un SMTP
+personnalisé (le SMTP intégré de Supabase refuse les adresses hors équipe), une limite d'envoi
+d'e-mails relevée (la suite inscrit une soixantaine de joueurs) et un délai minimal court entre deux
+codes pour une même adresse. Les variables de
 l'application (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-`NEXT_PUBLIC_SITE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) vivent dans le projet Vercel de préprod.
+`NEXT_PUBLIC_SITE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PUBLIC_CACHE_FLUSH_SECRET`) vivent dans le
+projet Vercel de préprod (`PUBLIC_CACHE_FLUSH_SECRET` jamais en prod).
 
 ## Test de la prod après déploiement
 
