@@ -197,6 +197,9 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 
 - **Aller-retour** : chaque participant affronte tous les autres deux fois, à domicile puis à
   l'extérieur ; calendrier généré au lancement de la saison, fixe ensuite.
+- **Une compétition éligible = une journée** (#440) : un aller-retour entre n participants compte
+  2 × (n − 1) journées (6 à 4 joueurs, 18 à 10) ; la taille maximale d'une ligue est donc bornée
+  par le nombre de compétitions éligibles de la saison.
 - **Une confrontation par compétition éligible** : le score total le plus haut gagne, égalité =
   nul. **Victoire 3 points, nul 1, défaite 0** (distincts des points Manager).
 - **Classement** : points au championnat, puis victoires, puis différence de points Manager
@@ -243,6 +246,14 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   tables « piste courte »). Une discipline absente des tables (relais mixte 4 × 100 m, ou créée
   par l'admin sous un autre nom) n'a pas de barème : le calcul renvoie « pas de table ».
 
+## Réponse du propriétaire (#440, 10 novembre 2026)
+
+- **Compétitions et journées** : une compétition éligible = une journée, chaque participant y a
+  un adversaire. La taille maximale d'une ligue est bornée par le nombre de compétitions éligibles
+  de la saison : il en faut au moins 2 × (n − 1) pour n participants. Les autres options (une
+  compétition pour plusieurs journées, aller simple quand les compétitions manquent) sont écartées.
+
 ## Questions encore ouvertes
 
-- Compétitions éligibles face aux 2 × (n − 1) journées d'un aller-retour : #440 (bloque #432).
+- Plus de compétitions éligibles que de journées (par exemple 10 compétitions pour une ligue de
+  4, qui joue 6 journées) : lesquelles comptent pour le championnat. #432 en dépend.
