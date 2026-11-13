@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { notificationOf, sendDue } from "./push.mjs";
+import { notificationOf, programNotificationOf, sendDue } from "./push.mjs";
 
 const reminder = {
   user_id: "u1",
@@ -25,12 +25,32 @@ const result = {
   devices: [{ endpoint: "https://push.example.test/3", p256dh: "k3", auth: "a3" }],
 };
 
-function fakeDatabase(due: unknown[]) {
-  const calls = { marked: [] as unknown[], forgotten: [] as string[] };
+const program = {
+  user_id: "u1",
+  competition_slug: "meeting-paris-2027",
+  competition_name: "Meeting de Paris",
+  devices: reminder.devices,
+};
+
+type ProgramSent = { user_id: string; competition_slug: string };
+
+function fakeDatabase(due: unknown[], programs: ProgramSent[] = []) {
+  const calls = {
+    marked: [] as unknown[],
+    programsMarked: [] as ProgramSent[],
+    forgotten: [] as string[],
+  };
+  const isMarked = (p: ProgramSent) =>
+    calls.programsMarked.some(
+      (m) => m.user_id === p.user_id && m.competition_slug === p.competition_slug,
+    );
   return {
     calls,
     due: async () => due,
     markSent: async (sent: unknown[]) => void calls.marked.push(...sent),
+    // An alert marked sent is no longer due, as with private.program_mark_sent().
+    programDue: async () => programs.filter((p) => !isMarked(p)),
+    markProgramSent: async (marked: ProgramSent[]) => void calls.programsMarked.push(...marked),
     forget: async (endpoints: string[]) => void calls.forgotten.push(...endpoints),
   };
 }
@@ -97,10 +117,50 @@ describe("push notifications", () => {
     ]);
   });
 
+  it("words the publication of a programme", () => {
+    expect(programNotificationOf(program)).toEqual({
+      title: "Le programme de Meeting de Paris est en ligne",
+      body: "Les épreuves sont là : pose tes podiums.",
+      url: "/competitions?competition=meeting-paris-2027",
+      tag: "program-meeting-paris-2027",
+    });
+  });
+
+  it("notifies each subscriber once when the programme of a competition is published", async () => {
+    const other = {
+      ...program,
+      user_id: "u2",
+      devices: [{ endpoint: "https://push.example.test/3", p256dh: "k3", auth: "a3" }],
+    };
+    const database = fakeDatabase([], [program, other]);
+    const pushed: { endpoint: string; payload: string; ttl: number }[] = [];
+    const push = async (device: { endpoint: string }, payload: string, options: { TTL: number }) =>
+      void pushed.push({ endpoint: device.endpoint, payload, ttl: options.TTL });
+
+    const report = await sendDue(database, push);
+    expect(pushed.map((p) => p.endpoint)).toEqual([
+      "https://push.example.test/1",
+      "https://push.example.test/2",
+      "https://push.example.test/3",
+    ]);
+    expect(JSON.parse(pushed[0]!.payload)).toEqual(programNotificationOf(program));
+    expect(pushed[0]!.ttl).toBe(24 * 3600);
+    expect(database.calls.programsMarked).toEqual([
+      { user_id: "u1", competition_slug: "meeting-paris-2027" },
+      { user_id: "u2", competition_slug: "meeting-paris-2027" },
+    ]);
+    expect(report).toEqual({ sent: 2, forgotten: 0, failed: 0, failures: [] });
+
+    const again = await sendDue(database, push);
+    expect(pushed).toHaveLength(3);
+    expect(again.sent).toBe(0);
+  });
+
   it("does not touch the database when nothing is due", async () => {
     const database = fakeDatabase([]);
     const report = await sendDue(database, async () => {});
     expect(database.calls.marked).toEqual([]);
+    expect(database.calls.programsMarked).toEqual([]);
     expect(report).toEqual({ sent: 0, forgotten: 0, failed: 0, failures: [] });
   });
 });

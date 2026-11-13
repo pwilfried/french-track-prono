@@ -102,7 +102,7 @@ function Predict({
       </Link>
       {sameDay > 0 ? (
         <Link
-          href={`/epreuves?competition=${encodeURIComponent(competitionSlug)}`}
+          href={`/competitions?competition=${encodeURIComponent(competitionSlug)}`}
           className="inline-flex min-h-11 items-center self-center text-sm font-bold text-white underline underline-offset-4"
         >
           {text.sameDay(sameDay)}

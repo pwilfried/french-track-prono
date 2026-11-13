@@ -11,7 +11,7 @@ const OFFLINE = "/offline.html";
 const PRECACHE = [OFFLINE, "/icons/icon-192.png", "/brand/frenchtrack-light.png", "/brand/frenchtrack-dark.png"];
 // Public pages a visitor can reopen offline. A signed-in player's pages are never stored: they
 // hold personal data, and a device can be shared.
-const PUBLIC_PAGES = [/^\\/$/, /^\\/epreuves$/, /^\\/epreuves\\/[^/]+$/, /^\\/athletes\\/[^/]+$/];
+const PUBLIC_PAGES = [/^\\/$/, /^\\/competitions$/, /^\\/epreuves\\/[^/]+$/, /^\\/athletes\\/[^/]+$/];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(STATIC).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting()));
