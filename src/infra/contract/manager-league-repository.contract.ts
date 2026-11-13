@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 import type { ManagerLeagueRepository } from "@/application/manager-leagues";
 
 /**
- * Two players, 10 competitions a league can be created with (first one first, far ahead), and a
+ * Two players, 10 competitions a league can be created with (first one first, far ahead; the first
+ * one in Oslo, of level « continental-tour-gold », the others without city nor level), and a
  * way to change the budget of the rules in force (then put it back).
  */
 export type ManagerLeagueWorld = {
@@ -110,6 +111,23 @@ export function managerLeagueRepositoryContract(
           "00000000-0000-0000-0000-000000000000",
         ]),
       ).toBe("competitions_refused");
+    });
+
+    it("tells the city, scope, venue and level of each competition for the picker", async () => {
+      const w = await world();
+      const first = (await w.creator.availableCompetitions()).find(
+        (c) => c.id === w.competitionIds[0],
+      );
+      expect(first).toMatchObject({
+        city: "Oslo",
+        scope: "international",
+        venue: "outdoor",
+        level: "continental-tour-gold",
+      });
+      const second = (await w.creator.availableCompetitions()).find(
+        (c) => c.id === w.competitionIds[1],
+      );
+      expect(second).toMatchObject({ city: null, level: null });
     });
 
     it("derives the players from the competitions, first one first", async () => {

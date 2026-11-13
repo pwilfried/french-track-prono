@@ -216,6 +216,10 @@ const competitionsFrom = (days: number[]) =>
     id: `c${i + 1}`,
     name: `Meeting ${i + 1}`,
     firstEventAt: new Date(Date.parse("2027-01-01T08:00:00.000Z") + d * 86_400_000).toISOString(),
+    city: null,
+    scope: "international" as const,
+    venue: "outdoor" as const,
+    level: null,
   }));
 const weekly = (n: number) => competitionsFrom(Array.from({ length: n }, (_, i) => 10 + 7 * i));
 

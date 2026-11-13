@@ -38,6 +38,10 @@ managerLeagueRepositoryContract("in-memory fake", async () => {
     id: `c${i + 1}`,
     name: `Saison Manager ${i + 1}`,
     firstEventAt: `2030-${String(i + 1).padStart(2, "0")}-15T18:00:00.000Z`,
+    city: i === 0 ? "Oslo" : null,
+    scope: "international" as const,
+    venue: "outdoor" as const,
+    level: i === 0 ? "continental-tour-gold" : null,
   }));
   const store = createInMemoryManagerLeagueStore(rules, competitions);
   return {
