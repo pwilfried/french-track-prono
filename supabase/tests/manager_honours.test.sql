@@ -26,13 +26,15 @@ $$;
 grant execute on function pg_temp.player(int) to authenticated;
 grant execute on function pg_temp.as_player(int) to authenticated;
 
--- A Manager score of one participant, its athletes worth `p_athletes` each.
-create function pg_temp.score(p_league uuid, p_competition int, p_player int, p_total int,
-                              p_athletes jsonb default '[]') returns void language sql as $$
+-- The Manager scores of one matchday, written in one statement as admin_set_manager_scores does:
+-- [{player, total, athletes}], the athletes worth their `total` each.
+create function pg_temp.matchday(p_league uuid, p_competition int, p_lines jsonb)
+returns void language sql as $$
   insert into manager_scores (league_id, competition_id, user_id, lined_up, total, hungarian,
                               bonus, predictions, athletes)
-  values (p_league, pg_temp.competition(p_competition), pg_temp.player(p_player), true, p_total,
-          p_total, 0, 0, p_athletes)
+  select p_league, pg_temp.competition(p_competition), pg_temp.player((l ->> 'player')::int), true,
+         (l ->> 'total')::int, (l ->> 'total')::int, 0, 0, coalesce(l -> 'athletes', '[]'::jsonb)
+  from jsonb_array_elements(p_lines) l
 $$;
 
 insert into athletes (id, slug, name, country_code, gender) values
@@ -70,20 +72,20 @@ create temp view t_honours as
 select * from manager_honours where league_id = '1a434000-0000-0000-0000-000000000001';
 
 -- Matchday 1: player 1 900 (Athlete Un 900), player 2 700. Matchday 2: 600 – 650.
-select pg_temp.score('1a434000-0000-0000-0000-000000000001', 1, 1, 900,
-  '[{"athlete_id": "a7434000-0000-0000-0000-000000000001", "total": 900}]');
-select pg_temp.score('1a434000-0000-0000-0000-000000000001', 1, 2, 700);
-select pg_temp.score('1a434000-0000-0000-0000-000000000001', 2, 1, 600,
-  '[{"athlete_id": "a7434000-0000-0000-0000-000000000002", "total": 600}]');
-select pg_temp.score('1a434000-0000-0000-0000-000000000001', 2, 2, 650);
+select pg_temp.matchday('1a434000-0000-0000-0000-000000000001', 1, '[
+  {"player": 1, "total": 900, "athletes": [{"athlete_id": "a7434000-0000-0000-0000-000000000001", "total": 900}]},
+  {"player": 2, "total": 700}]');
+select pg_temp.matchday('1a434000-0000-0000-0000-000000000001', 2, '[
+  {"player": 1, "total": 600, "athletes": [{"athlete_id": "a7434000-0000-0000-0000-000000000002", "total": 600}]},
+  {"player": 2, "total": 650}]');
 
 select is((select count(*)::int from t_honours), 0,
   'the season goes on while the bonus matchday is not scored');
 
 -- The bonus matchday: player 2 scores 5000, no championship point.
-select pg_temp.score('1a434000-0000-0000-0000-000000000001', 3, 1, 100,
-  '[{"athlete_id": "a7434000-0000-0000-0000-000000000002", "total": 100}]');
-select pg_temp.score('1a434000-0000-0000-0000-000000000001', 3, 2, 5000);
+select pg_temp.matchday('1a434000-0000-0000-0000-000000000001', 3, '[
+  {"player": 1, "total": 100, "athletes": [{"athlete_id": "a7434000-0000-0000-0000-000000000002", "total": 100}]},
+  {"player": 2, "total": 5000}]');
 
 select is((select count(*)::int from t_honours), 1,
   'the season ends after the last matchday of the schedule, bonus matchday included');
@@ -121,16 +123,14 @@ select is(
 create temp table t_before as select * from t_honours;
 delete from manager_scores
 where league_id = '1a434000-0000-0000-0000-000000000001' and competition_id = pg_temp.competition(1);
-select pg_temp.score('1a434000-0000-0000-0000-000000000001', 1, 1, 100);
-select pg_temp.score('1a434000-0000-0000-0000-000000000001', 1, 2, 2000);
+select pg_temp.matchday('1a434000-0000-0000-0000-000000000001', 1, '[{"player": 1, "total": 100}, {"player": 2, "total": 2000}]');
 select is((select standings from t_honours), (select standings from t_before),
   'the final standings are frozen');
 select is(private.close_manager_season('1a434000-0000-0000-0000-000000000001'), false,
   'a season ends only once');
 
 -- Saison Courte: one draw, then a matchday without competition.
-select pg_temp.score('1a434000-0000-0000-0000-000000000002', 1, 3, 500);
-select pg_temp.score('1a434000-0000-0000-0000-000000000002', 1, 4, 500);
+select pg_temp.matchday('1a434000-0000-0000-0000-000000000002', 1, '[{"player": 3, "total": 500}, {"player": 4, "total": 500}]');
 select is(
   (select array_agg((r ->> 'rank')::int) from manager_honours, jsonb_array_elements(standings) r
    where league_id = '1a434000-0000-0000-0000-000000000002'),
