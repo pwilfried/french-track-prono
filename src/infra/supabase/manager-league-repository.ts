@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { UseCaseError } from "@/application/errors";
 import type { JoinOutcome, ManagerLeagueRepository } from "@/application/manager-leagues";
 import { bibOf } from "@/domain/bib";
+import type { LeagueCompetition } from "@/domain/manager-league";
 import type { ManagerRules } from "@/domain/manager-rules";
 
 type LeagueRow = {
@@ -21,6 +22,18 @@ type MercatoRow = {
 };
 
 const iso = (time: string | null) => (time === null ? null : new Date(time).toISOString());
+
+type CompetitionRow = { competition_id: string; name: string; starts_at: string };
+
+/** The competitions as the database answers them, first first. */
+function competitions(result: { data: unknown; error: unknown }): LeagueCompetition[] {
+  if (result.error) throw new UseCaseError("LEAGUES_UNAVAILABLE");
+  return (result.data as CompetitionRow[]).map((row) => ({
+    id: row.competition_id,
+    name: row.name,
+    startsAt: new Date(row.starts_at).toISOString(),
+  }));
+}
 
 const league = (row: LeagueRow, memberCount: number) => ({
   id: row.id,
@@ -46,15 +59,21 @@ function outcome(result: { data: unknown; error: { code: string } | null }): Joi
 /** The player's session: row level security shows them the leagues they are in only. */
 export function createSupabaseManagerLeagueRepository(client: SupabaseClient): ManagerLeagueRepository {
   return {
-    async create(name, isPublic) {
+    async create(name, isPublic, competitionIds) {
       const { data, error } = await client.rpc("create_manager_league", {
         p_name: name,
         p_public: isPublic,
+        p_competitions: competitionIds,
       });
       if (error?.code === "FT010") return "banned";
+      if (error?.code === "FT027" || error?.code === "22P02") return "competitions_refused";
       if (error?.code === "23514") throw new UseCaseError("LEAGUE_NAME_INVALID");
       if (error || typeof data !== "string") throw new UseCaseError("LEAGUES_UNAVAILABLE");
       return { id: data };
+    },
+
+    async openCompetitions() {
+      return competitions(await client.rpc("list_open_manager_competitions"));
     },
 
     async join(code) {
@@ -91,14 +110,13 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
       const { data, error } = await client
         .from("manager_leagues")
         .select(
-          "id, name, is_public, invite_code, owner_id, rules, competition_ids, player_target, mercato_starts_at, mercato_opened_at, round_mode, manager_members(user_id, joined_at, profiles!inner(pseudo, bib_number, bib_color))",
+          "id, name, is_public, invite_code, owner_id, rules, player_target, mercato_starts_at, mercato_opened_at, round_mode, manager_members(user_id, joined_at, profiles!inner(pseudo, bib_number, bib_color))",
         )
         .eq("id", id)
         .returns<
           (LeagueRow &
             MercatoRow & {
             rules: ManagerRules;
-            competition_ids: string[];
             manager_members: {
               user_id: string;
               joined_at: string;
@@ -111,11 +129,14 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
       if (error) throw new UseCaseError("LEAGUES_UNAVAILABLE");
       const row = data[0];
       if (!row) return null;
+      const played = competitions(
+        await client.rpc("manager_league_competitions", { p_league: id }),
+      );
       const members = [...row.manager_members].sort((a, b) => a.joined_at.localeCompare(b.joined_at));
       return {
         ...league(row, members.length),
         rules: row.rules,
-        competitionCount: row.competition_ids.length,
+        competitions: played,
         mercato: {
           target: row.player_target,
           startsAt: iso(row.mercato_starts_at),
@@ -134,7 +155,6 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
       const { rounds } = settings;
       const { error } = await client.rpc("set_manager_mercato", {
         p_league: id,
-        p_target: settings.target,
         p_starts_at: settings.startsAt,
         p_mode: rounds.mode,
         p_first_hours: rounds.mode === "custom" ? rounds.firstHours : null,
@@ -143,7 +163,6 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
       if (!error) return "set";
       if (error.code === "42501") return "not_owner";
       if (error.code === "FT015") return "mercato_open";
-      if (error.code === "FT025") return "target_refused";
       if (error.code === "22023") throw new UseCaseError("MERCATO_ROUNDS_INVALID");
       throw new UseCaseError("LEAGUES_UNAVAILABLE");
     },
@@ -154,6 +173,7 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
       if (error.code === "42501") return "not_owner";
       if (error.code === "FT015") return "mercato_open";
       if (error.code === "FT026") return "players_missing";
+      if (error.code === "FT028") return "competitions_short";
       throw new UseCaseError("LEAGUES_UNAVAILABLE");
     },
   };

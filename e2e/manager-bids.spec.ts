@@ -2,10 +2,12 @@ import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
+import { ensureManagerCompetitions, pickManagerCompetitions } from "./manager";
 
 test("a participant bids secretly within the budget, changes and withdraws a bid", async ({
   browser,
 }) => {
+  ensureManagerCompetitions();
   const tag = `${Date.now() % 1000000}`;
   const league = `Enchères ${tag}`;
   const first = `Enchère Une ${tag}`;
@@ -34,6 +36,7 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await signUp(ownerPage, owner);
     await ownerPage.waitForURL(/\/manager\/creer$/);
     await ownerPage.getByLabel("Nom de la ligue").fill(league);
+    await pickManagerCompetitions(ownerPage);
     await ownerPage.getByRole("button", { name: "Créer la ligue" }).click();
     await expect(ownerPage.getByRole("heading", { level: 1 })).toHaveText(league);
     const code = sql(`select invite_code from manager_leagues where name = '${league}'`);

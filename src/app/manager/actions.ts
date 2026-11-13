@@ -12,20 +12,29 @@ import {
 import { formText } from "../form-data";
 import { managerPorts } from "./data";
 
-export type ManagerLeagueFormState = { value: string; isPublic: boolean; error?: ErrorCode };
+export type ManagerLeagueFormState = {
+  value: string;
+  isPublic: boolean;
+  competitionIds: string[];
+  error?: ErrorCode;
+};
 
+/** A league with its name, its visibility and the competitions of its season (#644). */
 export async function createManagerLeagueAction(
   _: ManagerLeagueFormState,
   data: FormData,
 ): Promise<ManagerLeagueFormState> {
   const value = formText(data, "name");
   const isPublic = formText(data, "public") === "1";
+  const competitionIds = data.getAll("competition").filter((v) => typeof v === "string");
   const ports = await managerPorts("/manager/creer");
   let id: string;
   try {
-    id = (await createManagerLeague(ports).execute({ name: value, isPublic })).id;
+    id = (await createManagerLeague(ports).execute({ name: value, isPublic, competitionIds })).id;
   } catch (error) {
-    if (error instanceof UseCaseError) return { value, isPublic, error: error.code };
+    if (error instanceof UseCaseError) {
+      return { value, isPublic, competitionIds, error: error.code };
+    }
     throw error;
   }
   redirect(`/manager/${id}`);

@@ -2,10 +2,12 @@ import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
+import { ensureManagerCompetitions, pickManagerCompetitions } from "./manager";
 
 test("a player joins a public Manager league in one tap and a private one by its link", async ({
   browser,
 }) => {
+  ensureManagerCompetitions();
   const tag = `${Date.now() % 1000000}`;
   const open = `Sprinteurs ${tag}`;
   const closed = `Marcheurs ${tag}`;
@@ -20,10 +22,12 @@ test("a player joins a public Manager league in one tap and a private one by its
   await creatorPage.waitForURL(/\/manager\/creer$/);
   await creatorPage.getByLabel("Nom de la ligue").fill(open);
   await creatorPage.getByText("Ligue publique").click();
+  await pickManagerCompetitions(creatorPage);
   await creatorPage.getByRole("button", { name: "Créer la ligue" }).click();
   await expect(creatorPage.getByText("1 / 4 participants · Publique")).toBeVisible();
   await creatorPage.goto("/manager/creer");
   await creatorPage.getByLabel("Nom de la ligue").fill(closed);
+  await pickManagerCompetitions(creatorPage);
   await creatorPage.getByRole("button", { name: "Créer la ligue" }).click();
   await expect(creatorPage.getByRole("heading", { level: 1 })).toHaveText(closed);
   // Its creator shares the code, or the link that brings it.

@@ -20,25 +20,48 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - Un joueur crée une ligue, en devient l'administrateur, choisit son nom et sa visibilité :
   **publique** (inscription libre dans la limite des places) ou **privée** (sur invitation du
   créateur). Il voit la liste des participants.
-- **Nombre de joueurs pair, de 4 à 10** (décision du propriétaire du 12 nov. 2026, #619) :
-  chaque journée, chacun a un adversaire. Le créateur choisit ce nombre (la cible, 4 par défaut) ;
-  la ligue est complète à la cible. Il peut la changer tant que le mercato n'est pas ouvert,
-  toujours paire, jamais sous le nombre d'inscrits.
+- **Le nombre de joueurs vient des compétitions** (décision du propriétaire du 13 nov. 2026, #644,
+  qui remplace le choix « pair de 4 à 10 » du 12 nov.). La saison est un aller-retour : avec
+  N joueurs, 2 × (N − 1) journées, une compétition par journée (4 → 6, 6 → 10, 8 → 14, 10 → 18).
+  À la création, le créateur choisit les compétitions ouvertes au Manager et pas terminées (à
+  venir ou en cours), **6 au moins**. N est le plus grand nombre pair de 4 à 10 tel que
+  2 × (N − 1) ≤ nombre de compétitions ; le créateur ne le choisit plus. Les compétitions en trop
+  sont des **journées bonus**, à la fin (points du Manager seulement, sans confrontation) : 8
+  compétitions → 4 joueurs, 6 journées de duel + 2 bonus ; au-delà de 18, 10 joueurs et le reste
+  en bonus. L'écran de création affiche le calcul en direct (« 8 compétitions → 4 joueurs ·
+  6 journées aller-retour + 2 bonus »). La ligue est complète à ce nombre.
+- **Fin du mercato et première compétition** (#644) : une compétition ne compte que si le
+  mercato finit **au moins 1 h avant sa première épreuve** (sans épreuve : son premier jour, à
+  minuit, heure de Paris). La fin prévue du mercato : autant de tours que la taille minimum d'une
+  équipe (`minTeamSize`, au moins 1), aux durées de la ligue, depuis la date de début (ou
+  maintenant). Si la première compétition tombe trop tôt, le créateur lit sous la durée des tours :
+  « Ton mercato finira après le début de [Compétition] (le [date]). Elle ne comptera pas : la
+  saison commencera à [compétition suivante]. » S'il ne reste alors plus assez de compétitions
+  pour l'aller-retour, il en est prévenu et le mercato ne se lance pas (ni à la main, ni à sa
+  date) tant qu'il n'a pas été raccourci.
 - **Réglages du mercato (créateur seulement, #619)** : durée des tours « automatique » (celle des
   règles French Track, fixée dans le back-office) ou « personnalisée » (1er tour et tours suivants :
   12, 24, 48 ou 72 h) ; date et heure de début (heure de Paris). Le mercato s'ouvre à cette date
-  **si et seulement si** la cible est atteinte, sinon il attend (la tâche des tours l'ouvre dès
-  que la cible est atteinte). Le créateur peut aussi le lancer tout de suite, seulement quand la
-  cible est atteinte. Les inscriptions ferment au lancement. Écran : la page de la ligue.
-- En base (#619) : `manager_leagues.player_target` (pair, 4 à 10, 4 par défaut),
-  `mercato_starts_at` et `round_mode` (`auto` ou `custom`). `set_manager_mercato` enregistre les
-  réglages (créateur seul) et récrit `rules.rounds` : en `auto`, les tours des règles French Track ;
-  en `custom`, le 1er tour puis les suivants (`longRounds = 1`). `launch_manager_mercato` ouvre
-  le mercato tout de suite ; `private.open_manager_mercatos`, lancé par le job « Manager rounds »,
-  ouvre ceux dont la date est passée et la cible atteinte. Codes : FT015 mercato déjà ouvert,
-  FT025 cible refusée (impaire, hors de 4 à 10, ou sous le nombre d'inscrits), FT026 joueurs
-  manquants. Les ligues créées avant ont reçu pour cible le nombre pair d'inscrits (4 à 10). Règles
-  pures : `canStartManagerSeason`, `src/domain/manager-league.ts`.
+  **si et seulement si** tous les joueurs sont là et qu'il reste assez de compétitions, sinon il
+  attend (la tâche des tours l'ouvre dès que c'est le cas). Le créateur peut aussi le lancer tout
+  de suite, aux mêmes conditions. Les inscriptions ferment au lancement. Écran : la page de la
+  ligue, avec ses compétitions.
+- En base (#619, #644) : `manager_leagues.competition_ids` (les compétitions choisies),
+  `player_target` (déduit à la création), `mercato_starts_at` et `round_mode` (`auto` ou
+  `custom`). `create_manager_league(nom, publique, compétitions)` vérifie les compétitions et
+  calcule le nombre de joueurs (`private.manager_player_count`) ;
+  `list_open_manager_competitions` les propose, `manager_league_competitions` les montre aux
+  participants. `set_manager_mercato` enregistre les réglages (créateur seul) et récrit
+  `rules.rounds` : en `auto`, les tours des règles French Track ; en `custom`, le 1er tour puis
+  les suivants (`longRounds = 1`). `launch_manager_mercato` ouvre le mercato tout de suite ;
+  `private.open_manager_mercatos`, lancé par le job « Manager rounds », ouvre ceux dont la date
+  est passée ; tous deux comptent les compétitions avec `private.manager_competitions_short`.
+  Codes : FT015 mercato déjà ouvert, FT026 joueurs manquants, FT027 compétitions refusées (moins
+  de 6, hors Manager ou terminées), FT028 plus assez de compétitions à la fin du mercato. Règles
+  pures : `seasonShape`, `seasonStart`, `canLaunchMercato`, `src/domain/manager-league.ts`.
+- Pas encore fait (#644) : retirer ou ajouter une compétition après la création (le nombre de
+  joueurs se recalculerait, jamais sous les inscrits), et le calendrier aller-retour généré à la
+  fin du mercato avec les compétitions qui comptent (#432).
 - **Présentation du mode** (#618) : un joueur sans ligue Manager voit sur `/manager` une courte
   présentation (qu'il peut passer) avant de créer ou rejoindre une ligue. Ses chiffres (budget, taille minimum
   d'équipe, titulaires, bonus de victoire) sont lus dans les règles de l'admin

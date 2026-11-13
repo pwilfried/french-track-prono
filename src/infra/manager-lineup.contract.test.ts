@@ -1,6 +1,7 @@
 import { describe, it } from "vitest";
 
 import { sql } from "./contract/database";
+import { createManagerLeagueAs } from "./contract/manager-competitions";
 import { managerLineupContract } from "./contract/manager-lineup.contract";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryManagerLineupStore, createSupabaseManagerLineups } from "./index";
@@ -58,14 +59,7 @@ if (url && key) {
       signedInPlayer(url, key),
       signedInPlayer(url, key),
     ]);
-    const league = async (name: string) => {
-      const { data, error } = await first.client.rpc("create_manager_league", {
-        p_name: name,
-        p_public: false,
-      });
-      if (error) throw new Error(error.message);
-      return data as string;
-    };
+    const league = (name: string) => createManagerLeagueAs(first.client, name);
     const leagueId = await league("Alignement");
     const mercatoLeagueId = await league("Mercato");
     const code = sql(`select invite_code from manager_leagues where id = '${leagueId}'`);

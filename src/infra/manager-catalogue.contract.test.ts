@@ -1,6 +1,7 @@
 import { describe, it } from "vitest";
 
 import { sql } from "./contract/database";
+import { createManagerLeagueAs } from "./contract/manager-competitions";
 import { managerCatalogueContract } from "./contract/manager-catalogue.contract";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryManagerCatalogue, createSupabaseManagerCatalogue } from "./index";
@@ -43,11 +44,7 @@ if (url && key) {
       signedInPlayer(url, key),
       signedInPlayer(url, key),
     ]);
-    const { data: leagueId, error } = await participant.client.rpc("create_manager_league", {
-      p_name: "Catalogue",
-      p_public: false,
-    });
-    if (error) throw new Error(error.message);
+    const leagueId = await createManagerLeagueAs(participant.client, "Catalogue");
     const athleteId = sql(`select a.id from athletes a
       join athlete_disciplines ad on ad.athlete_id = a.id and ad.is_primary
       join disciplines d on d.name = ad.discipline
@@ -58,7 +55,7 @@ if (url && key) {
     );
     sql(`update athletes set manager_price = 17 where id = '${athleteId}'`);
     return {
-      leagueId: leagueId as string,
+      leagueId,
       participant: createSupabaseManagerCatalogue(participant.client),
       outsider: createSupabaseManagerCatalogue(outsider.client),
       athleteId,

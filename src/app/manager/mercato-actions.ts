@@ -37,7 +37,6 @@ export async function setMercatoAction(
     }
     await setManagerMercato(ports).execute({
       id,
-      target: Number(formText(data, "target")),
       startsAt,
       rounds,
     });
@@ -49,7 +48,10 @@ export async function setMercatoAction(
   return { saved: true };
 }
 
-/** The creator launches the mercato now, once the players are all in: round 1 opens. */
+/**
+ * The creator launches the mercato now, once the players are all in and enough competitions are
+ * left for the season: round 1 opens.
+ */
 export async function launchMercatoAction(
   _: MercatoFormState,
   data: FormData,
@@ -57,7 +59,7 @@ export async function launchMercatoAction(
   const id = formText(data, "league");
   const ports = await managerPorts(`/manager/${id}`);
   try {
-    await launchManagerMercato(ports).execute({ id });
+    await launchManagerMercato(ports).execute({ id, now: new Date().toISOString() });
   } catch (error) {
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;

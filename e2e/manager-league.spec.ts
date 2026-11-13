@@ -2,10 +2,12 @@ import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
+import { ensureManagerCompetitions, pickManagerCompetitions } from "./manager";
 
 test("a player creates a private French Track Manager league that keeps its rules", async ({
   page,
 }) => {
+  ensureManagerCompetitions();
   const budget = sql("select rules ->> 'budget' from manager_rules");
   const creator = newPlayer("manager-league");
   await page.goto("/ligues");
@@ -43,6 +45,13 @@ test("a player creates a private French Track Manager league that keeps its rule
 
     sql(`update manager_rules set rules = jsonb_set(rules, '{budget}', '130')`);
     await page.getByLabel("Nom de la ligue").fill("Les Lanceurs du dimanche");
+    // The players follow from the competitions picked: 6 at least, a season of 4 (#644).
+    await expect(page.getByText(/^0 compétition choisie : il en faut au moins 6/)).toBeVisible();
+    await page.getByRole("button", { name: "Créer la ligue" }).click();
+    await expect(page.locator("main").getByRole("alert")).toContainText(
+      "Choisis au moins 6 compétitions",
+    );
+    await pickManagerCompetitions(page);
     await page.getByRole("button", { name: "Créer la ligue" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Les Lanceurs du dimanche");
     await expect(page.getByText("1 / 4 participants · Privée")).toBeVisible();
@@ -52,7 +61,10 @@ test("a player creates a private French Track Manager league that keeps its rule
     await expect(participants).toContainText(creator.pseudo);
     await expect(participants).toContainText("admin");
     await expect(page.getByText("Code d'invitation")).toBeVisible();
-    // The mercato waits for the target, an even count from 4 to 10, 4 by default (#619).
+    const competitions = page.getByRole("list", { name: "Compétitions de la saison" });
+    await expect(competitions.getByRole("listitem")).toHaveCount(6);
+    await expect(competitions.getByRole("listitem").first()).toContainText("Meeting E2E Manager 1");
+    // The mercato waits for the players its competitions make (#644).
     await expect(page.getByRole("status").filter({ hasText: "attendus" })).toContainText(
       "Encore 3 joueurs attendus.",
     );

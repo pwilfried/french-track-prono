@@ -1,6 +1,7 @@
 import { describe, it } from "vitest";
 
 import { createTestEvent, sql } from "./contract/database";
+import { createManagerLeagueAs } from "./contract/manager-competitions";
 import { performanceRepositoryContract } from "./contract/performance-repository.contract";
 import { signedInPlayer } from "./contract/test-player";
 import { createInMemoryPerformanceStore, createSupabasePerformanceRepository } from "./index";
@@ -35,13 +36,9 @@ if (url && key) {
       // A Manager league of the player's own, with a lineup for the event's competition (its
       // predictions lock in an hour, so the lineup is still open).
       lineUp: async (ids) => {
-        const { data, error } = await player.client.rpc("create_manager_league", {
-          p_name: "Performances",
-          p_public: false,
-        });
-        if (error) throw new Error(error.message);
+        const leagueId = await createManagerLeagueAs(player.client, "Performances");
         sql(`insert into manager_lineups (league_id, competition_id, user_id, athlete_ids)
-          select '${data as string}', competition_id, '${player.userId}',
+          select '${leagueId}', competition_id, '${player.userId}',
                  array[${ids.map((id) => `'${id}'`).join(", ")}]::uuid[]
           from events where id = '${eventId}'`);
       },

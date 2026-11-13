@@ -6,13 +6,26 @@ import type {
 } from "@/application/manager-leagues";
 import type { ManagerRuleSet } from "@/application/manager-rules";
 import { isBannedName } from "@/domain/banned-names";
-import { isAllowedTarget, mercatoRounds } from "@/domain/manager-league";
+import {
+  countedCompetitions,
+  duelDays,
+  mercatoEndsAt,
+  mercatoRounds,
+  seasonShape,
+  type LeagueCompetition,
+} from "@/domain/manager-league";
 
 /**
  * Test double of the ManagerLeagueRepository port: one store, a session per player. `rules` is
  * read at each creation, like the table of the rules: change it to test that leagues keep theirs.
+ * `open` are the competitions open to the Manager and not over yet.
  */
-export function createInMemoryManagerLeagueStore(rules: { current: ManagerRuleSet }) {
+export function createInMemoryManagerLeagueStore(
+  rules: { current: ManagerRuleSet },
+  open: LeagueCompetition[] = [],
+) {
+  const firstFirst = (competitions: LeagueCompetition[]) =>
+    countedCompetitions(competitions, new Date(0).toISOString());
   const leagues: (Omit<ManagerLeagueFile, "memberCount" | "participants" | "target"> & {
     members: ManagerParticipant[];
   })[] = [];
@@ -52,8 +65,12 @@ export function createInMemoryManagerLeagueStore(rules: { current: ManagerRuleSe
         return league;
       };
       return {
-        async create(name, isPublic) {
+        async create(name, isPublic, competitionIds) {
           if (isBannedName(name)) return "banned";
+          const ids = [...new Set(competitionIds)];
+          const competitions = open.filter((c) => ids.includes(c.id));
+          const season = seasonShape(ids.length);
+          if (competitions.length !== ids.length || !season) return "competitions_refused";
           const id = `manager-league-${++next}`;
           leagues.push({
             id,
@@ -62,11 +79,19 @@ export function createInMemoryManagerLeagueStore(rules: { current: ManagerRuleSe
             inviteCode: `MGR${String(next).padStart(3, "2")}`,
             ownerId: player.userId,
             rules: structuredClone(rules.current.rules),
-            competitionCount: rules.current.competitionSlugs.length,
-            mercato: { target: 4, startsAt: null, openedAt: null, roundMode: "auto" },
+            competitions: structuredClone(firstFirst(competitions)),
+            mercato: {
+              target: season.players,
+              startsAt: null,
+              openedAt: null,
+              roundMode: "auto",
+            },
             members: [{ ...player }],
           });
           return { id };
+        },
+        async openCompetitions() {
+          return structuredClone(firstFirst(open));
         },
         async join(code) {
           const league = leagues.find((l) => l.inviteCode === code);
@@ -110,10 +135,8 @@ export function createInMemoryManagerLeagueStore(rules: { current: ManagerRuleSe
         async setMercato(id, settings) {
           const league = own(id);
           if (typeof league === "string") return league;
-          if (!isAllowedTarget(settings.target, league.members.length)) return "target_refused";
           league.mercato = {
             ...league.mercato,
-            target: settings.target,
             startsAt: settings.startsAt,
             roundMode: settings.rounds.mode,
           };
@@ -124,6 +147,16 @@ export function createInMemoryManagerLeagueStore(rules: { current: ManagerRuleSe
           const league = own(id);
           if (typeof league === "string") return league;
           if (league.members.length !== league.mercato.target) return "players_missing";
+          const end = mercatoEndsAt(
+            new Date().toISOString(),
+            league.rules.rounds,
+            league.rules.minTeamSize,
+          );
+          if (
+            countedCompetitions(league.competitions, end).length < duelDays(league.mercato.target)
+          ) {
+            return "competitions_short";
+          }
           league.mercato.openedAt = new Date().toISOString();
           return "launched";
         },

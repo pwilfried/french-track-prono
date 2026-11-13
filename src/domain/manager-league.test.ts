@@ -2,41 +2,91 @@ import { describe, expect, it } from "vitest";
 
 import {
   canLaunchMercato,
-  isAllowedTarget,
-  isPlayerTarget,
+  countedCompetitions,
   isRoundHours,
+  mercatoEndsAt,
   mercatoRounds,
   newestArrival,
   opensAutomatically,
   playersAwaited,
-  playerTargets,
+  seasonShape,
+  seasonStart,
 } from "./manager-league";
 
-describe("isPlayerTarget", () => {
-  it.each([4, 6, 8, 10])("accepts %i players", (n) => {
-    expect(isPlayerTarget(n)).toBe(true);
-  });
+describe("seasonShape", () => {
+  it.each([
+    [6, 4, 6, 0],
+    [8, 4, 6, 2],
+    [10, 6, 10, 0],
+    [14, 8, 14, 0],
+    [18, 10, 18, 0],
+    [25, 10, 18, 7],
+  ])(
+    "makes %i competitions a season of %i players, %i duel and %i bonus matchdays",
+    (n, players, duels, bonus) => {
+      expect(seasonShape(n)).toEqual({ players, duelDays: duels, bonusDays: bonus });
+    },
+  );
 
-  it.each([0, 2, 3, 5, 7, 9, 11, 12, 4.5, Number.NaN])("refuses %d players", (n) => {
-    expect(isPlayerTarget(n)).toBe(false);
-  });
-});
-
-describe("isAllowedTarget", () => {
-  it("never goes under the players already in", () => {
-    expect(isAllowedTarget(4, 5)).toBe(false);
-    expect(isAllowedTarget(6, 5)).toBe(true);
-    expect(isAllowedTarget(6, 6)).toBe(true);
-  });
-
-  it("offers the even counts from the players already in up to 10", () => {
-    expect(playerTargets(1)).toEqual([4, 6, 8, 10]);
-    expect(playerTargets(5)).toEqual([6, 8, 10]);
-    expect(playerTargets(10)).toEqual([10]);
+  it.each([0, 1, 5, 6.5, Number.NaN])("refuses %d competitions", (n) => {
+    expect(seasonShape(n)).toBeNull();
   });
 });
 
-const league = { target: 4, members: 4, openedAt: null, startsAt: null };
+const hour = 3_600_000;
+const at = (h: number) => new Date(Date.parse("2027-01-10T00:00:00.000Z") + h * hour).toISOString();
+const competitions = [
+  { id: "c2", name: "Meeting B", startsAt: at(48) },
+  { id: "c1", name: "Meeting A", startsAt: at(10) },
+  { id: "c3", name: "Meeting C", startsAt: at(72) },
+];
+
+describe("countedCompetitions", () => {
+  it("counts a competition starting 1 h after the mercato is over, first first", () => {
+    expect(countedCompetitions(competitions, at(9)).map((c) => c.id)).toEqual(["c1", "c2", "c3"]);
+  });
+
+  it("leaves out a competition starting less than 1 h after the mercato is over", () => {
+    expect(countedCompetitions(competitions, at(9.5)).map((c) => c.id)).toEqual(["c2", "c3"]);
+  });
+});
+
+describe("mercatoEndsAt", () => {
+  it("ends after as many rounds as the smallest team holds athletes", () => {
+    const rounds = { firstHours: 48, longRounds: 1, nextHours: 12 };
+    expect(mercatoEndsAt(at(0), rounds, 3)).toBe(at(72));
+    expect(mercatoEndsAt(at(0), rounds, 0)).toBe(at(48));
+  });
+});
+
+describe("seasonStart", () => {
+  it("says nothing missed when the mercato is over in time", () => {
+    expect(seasonStart(competitions, 2, at(0))).toEqual({
+      missed: null,
+      first: competitions[1],
+      short: 0,
+    });
+  });
+
+  it("names the first competition missed and the one the season starts with", () => {
+    expect(seasonStart(competitions, 2, at(20))).toEqual({
+      missed: competitions[1],
+      first: competitions[0],
+      short: 0,
+    });
+  });
+
+  it("counts the competitions the home-and-away season lacks", () => {
+    expect(seasonStart(competitions, 4, at(20)).short).toBe(4);
+    expect(seasonStart(competitions, 2, at(100))).toEqual({
+      missed: competitions[1],
+      first: null,
+      short: 2,
+    });
+  });
+});
+
+const league = { target: 4, members: 4, openedAt: null, startsAt: null, counted: 6 };
 
 describe("canLaunchMercato", () => {
   it("lets the creator launch once the players are all in", () => {
@@ -50,6 +100,10 @@ describe("canLaunchMercato", () => {
   it("waits while players are missing", () => {
     expect(canLaunchMercato({ ...league, members: 3 }, true)).toBe(false);
     expect(playersAwaited({ ...league, members: 3 })).toBe(1);
+  });
+
+  it("refuses while too few competitions are left for the home-and-away season", () => {
+    expect(canLaunchMercato({ ...league, counted: 5 }, true)).toBe(false);
   });
 
   it("does not launch a mercato twice", () => {
@@ -71,6 +125,12 @@ describe("opensAutomatically", () => {
 
   it("waits past the chosen time while players are missing", () => {
     expect(opensAutomatically({ ...scheduled, members: 3 }, "2027-01-02T08:00:00.000Z")).toBe(
+      false,
+    );
+  });
+
+  it("waits past the chosen time while too few competitions are left", () => {
+    expect(opensAutomatically({ ...scheduled, counted: 5 }, "2027-01-02T08:00:00.000Z")).toBe(
       false,
     );
   });

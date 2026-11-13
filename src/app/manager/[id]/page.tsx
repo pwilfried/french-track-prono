@@ -13,7 +13,13 @@ import { ShareInvite } from "@/components/leagues/share-invite";
 import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
 import { utcToParis } from "@/domain/competition";
-import { playersAwaited, playerTargets } from "@/domain/manager-league";
+import {
+  duelDays,
+  mercatoEndsAt,
+  playersAwaited,
+  seasonShape,
+  seasonStart,
+} from "@/domain/manager-league";
 import { roundEndsAt, roundHours } from "@/domain/manager-round";
 
 import { messages } from "../../messages.fr";
@@ -27,7 +33,7 @@ const text = messages.manager;
 
 /**
  * A Manager league (#419): its participants « N/cible », its mercato (set and launched by its
- * creator, #619), its frozen rules.
+ * creator, #619), its competitions and the season they make (#644), its frozen rules.
  */
 export default async function ManagerLeaguePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -50,10 +56,37 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
 
   const count = league.participants.length;
   const { mercato, rules } = league;
-  const awaited = playersAwaited(mercatoLaunch(league));
+  const now = new Date().toISOString();
+  const launch = mercatoLaunch(league, now);
+  const awaited = playersAwaited(launch);
   const isOwner = league.ownerId === ports.userId;
   const open = mercato.openedAt !== null;
   const calendarStart = mercato.openedAt ?? mercato.startsAt;
+  const shape = seasonShape(league.competitions.length);
+  // The season as the mercato set would make it: opening at its time, or now if launched now.
+  const plannedStart =
+    mercato.startsAt && Date.parse(mercato.startsAt) > Date.parse(now) ? mercato.startsAt : now;
+  const season = seasonStart(
+    league.competitions,
+    mercato.target,
+    mercatoEndsAt(plannedStart, rules.rounds, rules.minTeamSize),
+  );
+  const notices = [
+    ...(season.missed
+      ? [
+          text.firstMissed(
+            season.missed.name,
+            text.day(season.missed.startsAt),
+            season.first?.name ?? null,
+          ),
+        ]
+      : []),
+    ...(season.short > 0 ? [text.competitionsShort(season.short)] : []),
+  ];
+  // Launched now: the competitions the home-and-away season would lack.
+  const shortNow = Math.max(0, duelDays(mercato.target) - launch.counted);
+  const waiting =
+    awaited > 0 ? text.launchWaiting(awaited) : shortNow > 0 ? text.launchShort : null;
 
   return (
     <main id="main" className="flex flex-1 flex-col">
@@ -66,13 +99,19 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
       <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
         <div
           role="status"
-          className={`flex flex-col gap-1 rounded-2xl px-3.5 py-3 text-sm font-semibold ${open || awaited === 0 ? "bg-success/15 text-success-text" : "bg-muted text-foreground"}`}
+          className={`flex flex-col gap-1 rounded-2xl px-3.5 py-3 text-sm font-semibold ${open || waiting === null ? "bg-success/15 text-success-text" : "bg-muted text-foreground"}`}
         >
           {open ? (
             <p>{text.mercatoOpened(text.when(mercato.openedAt!))}</p>
           ) : (
             <>
-              <p>{awaited === 0 ? text.ready : text.awaited(awaited)}</p>
+              <p>
+                {awaited > 0
+                  ? text.awaited(awaited)
+                  : shortNow > 0
+                    ? text.competitionsShortNow(shortNow)
+                    : text.ready}
+              </p>
               {mercato.startsAt && (
                 <p className="font-normal">{text.opensAt(text.when(mercato.startsAt))}</p>
               )}
@@ -91,8 +130,6 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
             <p className="text-sm text-muted-foreground">{text.mercatoHint}</p>
             <MercatoSettingsForm
               leagueId={league.id}
-              targets={playerTargets(count)}
-              target={mercato.target}
               startsAt={mercato.startsAt ? utcToParis(mercato.startsAt) : ""}
               rounds={
                 mercato.roundMode === "custom"
@@ -104,8 +141,9 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
                   : { mode: "auto" }
               }
               autoHours={rules.rounds.firstHours}
+              notices={notices}
             />
-            <LaunchMercatoForm leagueId={league.id} awaited={awaited} />
+            <LaunchMercatoForm leagueId={league.id} waiting={waiting} />
           </section>
         )}
 
@@ -205,8 +243,32 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
             <li>{text.budget(rules.budget)}</li>
             <li>{text.minTeamSize(rules.minTeamSize)}</li>
             <li>{text.lineup(rules.lineup.max)}</li>
-            <li>{text.competitions(league.competitionCount)}</li>
           </ul>
+        </section>
+
+        <section aria-labelledby="competitions" className="flex flex-col gap-2">
+          <h2
+            id="competitions"
+            className="text-xs font-bold uppercase tracking-wide text-muted-foreground"
+          >
+            {text.competitionsTitle}
+          </h2>
+          {shape && (
+            <p className="text-sm font-semibold">
+              {text.seasonLine(league.competitions.length, shape)}
+            </p>
+          )}
+          <ol
+            aria-labelledby="competitions"
+            className="flex flex-col gap-1 rounded-card bg-muted p-4 text-sm"
+          >
+            {league.competitions.map((c) => (
+              <li key={c.id}>
+                <span className="font-semibold">{c.name}</span>
+                <span className="text-muted-foreground"> · {text.day(c.startsAt)}</span>
+              </li>
+            ))}
+          </ol>
         </section>
       </div>
     </main>

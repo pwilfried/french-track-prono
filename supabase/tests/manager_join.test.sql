@@ -11,11 +11,19 @@ insert into profiles (id, pseudo, age_confirmed_at)
 select ('adadad00-0000-0000-0000-0000000000' || lpad(n::text, 2, '0'))::uuid, 'Joueur ' || n, now()
 from generate_series(1, 13) n;
 
+-- Six competitions open to the Manager, not over (#644): a league of 4 players.
+insert into competitions (slug, name, starts_on, ends_on)
+select 'pgtap-mgr-' || n, 'Meeting ' || n, current_date + 30 + 7 * n, current_date + 30 + 7 * n
+from generate_series(1, 6) n;
+create temp table t_competitions as select id from competitions where slug like 'pgtap-mgr-%';
+insert into manager_competitions (competition_id) select id from t_competitions;
+grant select on t_competitions to authenticated;
+
 set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub":"adadad00-0000-0000-0000-000000000001","role":"authenticated"}', true);
-select create_manager_league('Ligue Publique', true);
-select create_manager_league('Ligue Privee', false);
+select create_manager_league('Ligue Publique', true, (select array_agg(id) from t_competitions));
+select create_manager_league('Ligue Privee', false, (select array_agg(id) from t_competitions));
 
 -- Their ids and codes, for the players who cannot read them yet.
 reset role;

@@ -16,24 +16,25 @@ const chip =
 const legend = "text-sm font-bold uppercase tracking-wide text-muted-foreground";
 const select = "min-h-11 w-full rounded-xl border-2 border-border bg-card px-2.5 text-base";
 
-/** The mercato settings of the creator (#619): players, start in Paris time, round durations. */
+/**
+ * The mercato settings of the creator (#619): start in Paris time, round durations, and under
+ * them what the creator is told about the first competition of the season (#644).
+ */
 export function MercatoSettingsForm({
   leagueId,
-  targets,
-  target,
   startsAt,
   rounds,
   autoHours,
+  notices,
 }: {
   leagueId: string;
-  /** The targets the creator may pick: even, 4 to 10, not under the players in. */
-  targets: number[];
-  target: number;
   /** Paris time, "YYYY-MM-DDTHH:mm", or "". */
   startsAt: string;
   rounds: RoundMode;
   /** The first round of French Track rules, in hours. */
   autoHours: number;
+  /** The first competition missed, the competitions short: as the settings saved stand. */
+  notices: string[];
 }) {
   const [state, action] = useActionState<MercatoFormState, FormData>(setMercatoAction, {});
   const [mode, setMode] = useState(rounds.mode);
@@ -44,25 +45,6 @@ export function MercatoSettingsForm({
       className="flex flex-col gap-4 rounded-card border border-border bg-card p-4"
     >
       <input type="hidden" name="league" value={leagueId} />
-      <fieldset className="flex flex-col gap-2">
-        <legend className={legend}>{text.targetLabel}</legend>
-        <div className="flex flex-wrap gap-2">
-          {targets.map((n) => (
-            <label key={n} className="cursor-pointer">
-              <input
-                type="radio"
-                name="target"
-                value={n}
-                defaultChecked={n === target}
-                className="peer sr-only"
-              />
-              <span className={chip}>{text.targetOption(n)}</span>
-            </label>
-          ))}
-        </div>
-        <p className="text-sm text-muted-foreground">{text.targetHint}</p>
-      </fieldset>
-
       <label className="flex flex-col gap-1.5">
         <span className={legend}>{text.startsAtLabel}</span>
         <input type="datetime-local" name="startsAt" defaultValue={startsAt} className={select} />
@@ -109,6 +91,15 @@ export function MercatoSettingsForm({
             ))}
           </div>
         )}
+        {notices.map((notice) => (
+          <p
+            key={notice}
+            role="note"
+            className="rounded-2xl bg-muted px-3.5 py-3 text-sm font-semibold text-accent-text"
+          >
+            {notice}
+          </p>
+        ))}
       </fieldset>
 
       <SubmitButton pendingLabel={text.savingMercato} variant="muted">
@@ -127,15 +118,24 @@ export function MercatoSettingsForm({
   );
 }
 
-/** « Lancer le mercato maintenant », active only once every player awaited is in. */
-export function LaunchMercatoForm({ leagueId, awaited }: { leagueId: string; awaited: number }) {
+/**
+ * « Lancer le mercato maintenant », active only once every player awaited is in and enough
+ * competitions are left; otherwise greyed out with the reason (`waiting`).
+ */
+export function LaunchMercatoForm({
+  leagueId,
+  waiting,
+}: {
+  leagueId: string;
+  waiting: string | null;
+}) {
   const [state, action] = useActionState<MercatoFormState, FormData>(launchMercatoAction, {});
   return (
     <form action={action} className="flex flex-col gap-2">
       <input type="hidden" name="league" value={leagueId} />
-      {awaited > 0 ? (
+      {waiting ? (
         <button type="button" disabled className={`${buttonVariants()} w-full`}>
-          {text.launchWaiting(awaited)}
+          {waiting}
         </button>
       ) : (
         <SubmitButton pendingLabel={text.launching}>{text.launch}</SubmitButton>

@@ -3,6 +3,14 @@
 begin;
 select plan(8);
 
+-- Six competitions open to the Manager, not over (#644): a league of 4 players.
+insert into competitions (slug, name, starts_on, ends_on)
+select 'pgtap-mgr-' || n, 'Meeting ' || n, current_date + 30 + 7 * n, current_date + 30 + 7 * n
+from generate_series(1, 6) n;
+create temp table t_competitions as select id from competitions where slug like 'pgtap-mgr-%';
+insert into manager_competitions (competition_id) select id from t_competitions;
+grant select on t_competitions to authenticated;
+
 insert into auth.users (id, email) values
   ('aeaeae00-0000-0000-0000-000000000001', 'admin@example.test'),
   ('aeaeae00-0000-0000-0000-000000000002', 'player@example.test'),
@@ -36,7 +44,7 @@ select throws_ok($$select admin_set_athlete_price('aeaeae00-0000-0000-0000-00000
 
 select set_config('request.jwt.claims',
   '{"sub":"aeaeae00-0000-0000-0000-000000000002","role":"authenticated"}', true);
-select create_manager_league('Catalogue', false);
+select create_manager_league('Catalogue', false, (select array_agg(id) from t_competitions));
 reset role;
 create temp table t_league as select id from manager_leagues;
 grant select on t_league to authenticated;

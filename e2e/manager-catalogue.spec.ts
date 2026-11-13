@@ -2,10 +2,12 @@ import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
+import { ensureManagerCompetitions, pickManagerCompetitions } from "./manager";
 
 test("the admin prices an athlete, who then shows in the catalogue of a Manager league", async ({
   page,
 }) => {
+  ensureManagerCompetitions();
   const tag = `${Date.now() % 1000000}`;
   const name = `Lanceuse Catalogue ${tag}`;
   const slug = `lanceuse-catalogue-${tag}`;
@@ -46,6 +48,7 @@ test("the admin prices an athlete, who then shows in the catalogue of a Manager 
     // A participant finds them in the catalogue of their league, with the filters.
     await page.goto("/manager/creer");
     await page.getByLabel("Nom de la ligue").fill(`Mercato ${tag}`);
+    await pickManagerCompetitions(page);
     await page.getByRole("button", { name: "Créer la ligue" }).click();
     await page.getByRole("link", { name: "Catalogue du mercato" }).click();
     // The first athlete shows without scrolling on a phone (#497).

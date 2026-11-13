@@ -1,55 +1,118 @@
-import type { RoundRules } from "./manager-round";
+import { roundEndsAt, type RoundRules } from "./manager-round";
 
 /**
- * A French Track Manager league plays with an even number of players, 4 to 10, so that everyone
- * has an opponent on each matchday (#619). The creator picks that number, the target; the mercato
- * opens only once the target is reached. The database does the same in launch_manager_mercato()
- * and private.open_manager_mercatos().
+ * A French Track Manager season is home and away (#644): with N players, everyone meets the
+ * others twice, 2 × (N − 1) matchdays, one competition each. The creator picks the competitions
+ * not over yet (6 at least) when creating the league; the number of players follows from them,
+ * the largest even number from 4 to 10 they hold. Competitions over that count are bonus
+ * matchdays, at the end: Manager points only, no head-to-head. The mercato opens only once every
+ * player is in. The database does the same in create_manager_league(),
+ * launch_manager_mercato() and private.open_manager_mercatos().
  */
 const MANAGER_LEAGUE_MIN = 4;
 const MANAGER_LEAGUE_MAX = 10;
 
+/** The fewest competitions a league is created with: a home-and-away season of 4 players. */
+export const MANAGER_MIN_COMPETITIONS = 6;
+
+/** A competition counts only if the mercato is over at least that long before it starts. */
+const MERCATO_MARGIN_MS = 3_600_000;
+
 /** The round durations a creator may choose, in hours. */
 export const ROUND_HOUR_CHOICES = [12, 24, 48, 72] as const;
 
-export const isPlayerTarget = (n: number) =>
-  Number.isInteger(n) && n >= MANAGER_LEAGUE_MIN && n <= MANAGER_LEAGUE_MAX && n % 2 === 0;
+/** How many matchdays a home-and-away season of `players` takes. */
+export const duelDays = (players: number) => 2 * (players - 1);
 
-/** A target the creator may set: even, 4 to 10, never under the players already in. */
-export const isAllowedTarget = (target: number, members: number) =>
-  isPlayerTarget(target) && target >= members;
+/** The season the chosen competitions make: its players, duel matchdays and bonus matchdays. */
+export type SeasonShape = { players: number; duelDays: number; bonusDays: number };
 
-/** The targets the creator may pick, smallest first. */
-export function playerTargets(members: number): number[] {
-  const targets: number[] = [];
-  for (let n = MANAGER_LEAGUE_MIN; n <= MANAGER_LEAGUE_MAX; n += 2) {
-    if (isAllowedTarget(n, members)) targets.push(n);
-  }
-  return targets;
+/** Null under 6 competitions: not even a season of 4 players. */
+export function seasonShape(competitions: number): SeasonShape | null {
+  if (!Number.isInteger(competitions) || competitions < MANAGER_MIN_COMPETITIONS) return null;
+  let players = MANAGER_LEAGUE_MIN;
+  while (players < MANAGER_LEAGUE_MAX && duelDays(players + 2) <= competitions) players += 2;
+  return { players, duelDays: duelDays(players), bonusDays: competitions - duelDays(players) };
 }
 
-/** What the launch of a mercato reads: the target, the players in, and its times (ISO). */
+/** A competition of a league, and when it starts (its first event, ISO). */
+export type LeagueCompetition = { id: string; name: string; startsAt: string };
+
+/**
+ * When the mercato is expected to be over: after as many rounds as the smallest team holds
+ * athletes (at least one), a round lasting as the league says.
+ */
+export const mercatoEndsAt = (startsAt: string, rounds: RoundRules, minTeamSize: number) =>
+  roundEndsAt(startsAt, rounds, Math.max(1, minTeamSize));
+
+/** The competitions that count, first first: they start at least 1 h after the mercato is over. */
+export const countedCompetitions = (
+  competitions: readonly LeagueCompetition[],
+  mercatoEnd: string,
+): LeagueCompetition[] =>
+  competitions
+    .filter((c) => Date.parse(c.startsAt) - Date.parse(mercatoEnd) >= MERCATO_MARGIN_MS)
+    .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+
+/** What the creator is told about the start of the season, for a mercato over at `mercatoEnd`. */
+export type SeasonStart = {
+  /** The first competition, when the mercato is over too late for it; null otherwise. */
+  missed: LeagueCompetition | null;
+  /** The competition the season then starts with; null when none is left. */
+  first: LeagueCompetition | null;
+  /** How many competitions the home-and-away season of the league still lacks. */
+  short: number;
+};
+
+export function seasonStart(
+  competitions: readonly LeagueCompetition[],
+  target: number,
+  mercatoEnd: string,
+): SeasonStart {
+  const counted = countedCompetitions(competitions, mercatoEnd);
+  const earliest = countedCompetitions(competitions, new Date(0).toISOString())[0] ?? null;
+  const first = counted[0] ?? null;
+  return {
+    missed: earliest && earliest.id !== first?.id ? earliest : null,
+    first,
+    short: Math.max(0, duelDays(target) - counted.length),
+  };
+}
+
+/**
+ * What the launch of a mercato reads: the target, the players in, its times (ISO), and how many
+ * competitions would count if it opened now.
+ */
 export type MercatoLaunch = {
   target: number;
   members: number;
   openedAt: string | null;
   startsAt: string | null;
+  counted: number;
 };
 
 /** How many players the league still waits for. */
 export const playersAwaited = (league: MercatoLaunch) =>
   Math.max(0, league.target - league.members);
 
-/** The creator launches the mercato now, once the players are all in; only once. */
-export const canLaunchMercato = (league: MercatoLaunch, isOwner: boolean) =>
-  isOwner && league.openedAt === null && league.members === league.target;
+/** Enough competitions left for the home-and-away season of the league. */
+const enoughCompetitions = (league: MercatoLaunch) => league.counted >= duelDays(league.target);
 
-/** At its chosen time, the mercato opens by itself if and only if the players are all in. */
-export const opensAutomatically = (league: MercatoLaunch, now: string) =>
+/**
+ * The creator launches the mercato now, once the players are all in and enough competitions are
+ * left for the season; only once.
+ */
+export const canLaunchMercato = (league: MercatoLaunch, isOwner: boolean) =>
+  isOwner &&
   league.openedAt === null &&
+  league.members === league.target &&
+  enoughCompetitions(league);
+
+/** At its chosen time, the mercato opens by itself if and only if it could be launched. */
+export const opensAutomatically = (league: MercatoLaunch, now: string) =>
   league.startsAt !== null &&
   Date.parse(league.startsAt) <= Date.parse(now) &&
-  league.members === league.target;
+  canLaunchMercato(league, true);
 
 /** How long the rounds last: as French Track rules (set by its admin), or as the creator chose. */
 export type RoundMode =

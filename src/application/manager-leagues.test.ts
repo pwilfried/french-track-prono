@@ -21,12 +21,13 @@ function repository(
   joinAnswer: JoinOutcome = { outcome: "unknown" },
 ) {
   const codes: string[] = [];
-  const created: { name: string; isPublic: boolean }[] = [];
+  const created: { name: string; isPublic: boolean; competitionIds: string[] }[] = [];
   const repo: ManagerLeagueRepository = {
-    create: async (name, isPublic) => {
-      created.push({ name, isPublic });
+    create: async (name, isPublic, competitionIds) => {
+      created.push({ name, isPublic, competitionIds });
       return { id: "league-1" };
     },
+    openCompetitions: async () => [],
     listMine: async () => leagues,
     find: async () => null,
     join: async (code) => {
@@ -41,6 +42,8 @@ function repository(
   return { repo, created, codes };
 }
 
+const six = ["c1", "c2", "c3", "c4", "c5", "c6"];
+
 describe("createManagerLeague", () => {
   it("creates a private league with the name as typed, spaces tidied", async () => {
     const { repo, created } = repository();
@@ -48,10 +51,38 @@ describe("createManagerLeague", () => {
     const league = await createManagerLeague({ managerLeagues: repo }).execute({
       name: "  Les   Lanceurs ",
       isPublic: false,
+      competitionIds: six,
     });
 
     expect(league).toEqual({ id: "league-1" });
-    expect(created).toEqual([{ name: "Les Lanceurs", isPublic: false }]);
+    expect(created).toEqual([{ name: "Les Lanceurs", isPublic: false, competitionIds: six }]);
+  });
+
+  it("refuses fewer than 6 competitions, a competition picked twice counting once", async () => {
+    // Given 5 competitions, one of them picked twice
+    const { repo, created } = repository();
+    // When a player creates a league with them
+    const creating = createManagerLeague({ managerLeagues: repo }).execute({
+      name: "Les Lanceurs",
+      isPublic: false,
+      competitionIds: ["c1", "c2", "c3", "c4", "c5", "c5"],
+    });
+    // Then it is refused: not even a home-and-away season of 4 players
+    await expect(creating).rejects.toEqual(new UseCaseError("MANAGER_COMPETITIONS_TOO_FEW"));
+    expect(created).toEqual([]);
+  });
+
+  it("answers MANAGER_COMPETITIONS_INVALID when a competition is no longer open", async () => {
+    const { repo } = repository();
+    repo.create = async () => "competitions_refused";
+
+    await expect(
+      createManagerLeague({ managerLeagues: repo }).execute({
+        name: "Les Lanceurs",
+        isPublic: false,
+        competitionIds: six,
+      }),
+    ).rejects.toEqual(new UseCaseError("MANAGER_COMPETITIONS_INVALID"));
   });
 
   it("refuses a banned word even in a private league", async () => {
@@ -61,6 +92,7 @@ describe("createManagerLeague", () => {
       createManagerLeague({ managerLeagues: repo }).execute({
         name: "Ligue FFA officielle",
         isPublic: false,
+        competitionIds: six,
       }),
     ).rejects.toEqual(new UseCaseError("LEAGUE_NAME_BANNED"));
     expect(created).toEqual([]);
@@ -70,7 +102,11 @@ describe("createManagerLeague", () => {
     const { repo } = repository();
 
     await expect(
-      createManagerLeague({ managerLeagues: repo }).execute({ name: "A", isPublic: true }),
+      createManagerLeague({ managerLeagues: repo }).execute({
+        name: "A",
+        isPublic: true,
+        competitionIds: six,
+      }),
     ).rejects.toEqual(new UseCaseError("LEAGUE_NAME_INVALID"));
   });
 });
@@ -157,8 +193,25 @@ describe("joinPublicManagerLeague", () => {
   });
 });
 
-/** A league of `members` players created by u1, its mercato waiting for `target`. */
-function mercatoRepository(members: number, target = 4, openedAt: string | null = null) {
+const now = "2027-01-10T00:00:00.000Z";
+/** Six competitions, the first starting `firstIn` hours from now, the next ones a week apart. */
+const competitions = (firstIn: number) =>
+  six.map((id, i) => ({
+    id,
+    name: `Meeting ${i + 1}`,
+    startsAt: new Date(Date.parse(now) + (firstIn + i * 168) * 3_600_000).toISOString(),
+  }));
+
+/**
+ * A league of `members` players created by u1, its mercato waiting for `target`, its rounds of
+ * 24 hours, 2 rounds expected (teams of 2 at least).
+ */
+function mercatoRepository(
+  members: number,
+  target = 4,
+  openedAt: string | null = null,
+  firstIn = 100,
+) {
   const league = {
     id: "league-1",
     name: "Les Lanceurs",
@@ -166,7 +219,8 @@ function mercatoRepository(members: number, target = 4, openedAt: string | null 
     inviteCode: "ABC234",
     ownerId: "u1",
     memberCount: members,
-    competitionCount: 0,
+    competitions: competitions(firstIn),
+    rules: { minTeamSize: 2, rounds: { firstHours: 24, longRounds: 1, nextHours: 24 } },
     participants: [],
     mercato: { target, startsAt: null, openedAt, roundMode: "auto" },
   } as unknown as ManagerLeagueFile;
@@ -188,47 +242,34 @@ function mercatoRepository(members: number, target = 4, openedAt: string | null 
 }
 
 describe("setManagerMercato", () => {
-  it("lets the creator wait for 6 players with rounds of 48 then 12 hours", async () => {
+  it("lets the creator set a start and rounds of 48 then 12 hours", async () => {
     // Given a league of 3 players
     const { repo, settings } = mercatoRepository(3);
     // When its creator sets its mercato
     await setManagerMercato({ managerLeagues: repo, userId: "u1" }).execute({
       id: "league-1",
-      target: 6,
       startsAt: "2027-01-10T19:00:00.000Z",
       rounds: { mode: "custom", firstHours: 48, nextHours: 12 },
     });
     // Then the settings are kept
     expect(settings).toEqual([
       {
-        target: 6,
         startsAt: "2027-01-10T19:00:00.000Z",
         rounds: { mode: "custom", firstHours: 48, nextHours: 12 },
       },
     ]);
   });
 
-  it.each([
-    ["an odd number of players", 5, { mode: "auto" }, "MERCATO_TARGET_INVALID"],
-    ["fewer players than those already in", 4, { mode: "auto" }, "MERCATO_TARGET_INVALID"],
-    ["12 players", 12, { mode: "auto" }, "MERCATO_TARGET_INVALID"],
-    [
-      "rounds of 36 hours",
-      6,
-      { mode: "custom", firstHours: 36, nextHours: 24 },
-      "MERCATO_ROUNDS_INVALID",
-    ],
-  ] as const)("refuses %s", async (_, target, rounds, code) => {
-    const { repo, settings } = mercatoRepository(5, 6);
+  it("refuses rounds of 36 hours", async () => {
+    const { repo, settings } = mercatoRepository(3);
 
     await expect(
       setManagerMercato({ managerLeagues: repo, userId: "u1" }).execute({
         id: "league-1",
-        target,
         startsAt: null,
-        rounds,
+        rounds: { mode: "custom", firstHours: 36, nextHours: 24 },
       }),
-    ).rejects.toEqual(new UseCaseError(code));
+    ).rejects.toEqual(new UseCaseError("MERCATO_ROUNDS_INVALID"));
     expect(settings).toEqual([]);
   });
 
@@ -238,7 +279,6 @@ describe("setManagerMercato", () => {
     await expect(
       setManagerMercato({ managerLeagues: repo, userId: "u2" }).execute({
         id: "league-1",
-        target: 4,
         startsAt: null,
         rounds: { mode: "auto" },
       }),
@@ -251,7 +291,6 @@ describe("setManagerMercato", () => {
     await expect(
       setManagerMercato({ managerLeagues: repo, userId: "u1" }).execute({
         id: "league-1",
-        target: 4,
         startsAt: null,
         rounds: { mode: "auto" },
       }),
@@ -261,10 +300,13 @@ describe("setManagerMercato", () => {
 
 describe("launchManagerMercato", () => {
   it("launches the mercato once the 4 players are in", async () => {
-    // Given a league of 4 players waiting for 4
+    // Given a league of 4 players waiting for 4, its 6 competitions after the mercato
     const { repo, launched } = mercatoRepository(4);
     // When its creator launches the mercato
-    await launchManagerMercato({ managerLeagues: repo, userId: "u1" }).execute({ id: "league-1" });
+    await launchManagerMercato({ managerLeagues: repo, userId: "u1" }).execute({
+      id: "league-1",
+      now,
+    });
     // Then it opens
     expect(launched).toEqual(["league-1"]);
   });
@@ -273,8 +315,21 @@ describe("launchManagerMercato", () => {
     const { repo, launched } = mercatoRepository(3);
 
     await expect(
-      launchManagerMercato({ managerLeagues: repo, userId: "u1" }).execute({ id: "league-1" }),
+      launchManagerMercato({ managerLeagues: repo, userId: "u1" }).execute({ id: "league-1", now }),
     ).rejects.toEqual(new UseCaseError("MERCATO_PLAYERS_MISSING"));
+    expect(launched).toEqual([]);
+  });
+
+  it("refuses when the mercato would end less than 1 h before the first competition", async () => {
+    // Given 6 competitions for 4 players, the first starting 48 h from now, and a mercato of 48 h
+    const { repo, launched } = mercatoRepository(4, 4, null, 48);
+    // When its creator launches the mercato now
+    const launching = launchManagerMercato({ managerLeagues: repo, userId: "u1" }).execute({
+      id: "league-1",
+      now,
+    });
+    // Then it stays shut: 5 competitions left, the home-and-away season needs 6
+    await expect(launching).rejects.toEqual(new UseCaseError("MERCATO_COMPETITIONS_SHORT"));
     expect(launched).toEqual([]);
   });
 
@@ -282,7 +337,7 @@ describe("launchManagerMercato", () => {
     const { repo } = mercatoRepository(4);
 
     await expect(
-      launchManagerMercato({ managerLeagues: repo, userId: "u2" }).execute({ id: "league-1" }),
+      launchManagerMercato({ managerLeagues: repo, userId: "u2" }).execute({ id: "league-1", now }),
     ).rejects.toEqual(new UseCaseError("NOT_LEAGUE_OWNER"));
   });
 });
