@@ -65,6 +65,13 @@ export function Leaderboard({
       aria-label={messages.leaderboard.label}
       className="flex flex-col gap-0.5 rounded-card border border-border bg-card p-2"
     >
+      {/* The header of the points column: the rows show bare figures under it (#706). */}
+      <li
+        aria-hidden
+        className="flex justify-end px-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground"
+      >
+        {messages.leaderboard.pointsColumn}
+      </li>
       {items.map((row, index) =>
         row === "gap" ? (
           <li

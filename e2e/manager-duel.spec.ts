@@ -102,7 +102,7 @@ test("a participant opens their head-to-head from the matchday and sees both lin
     .getByRole("list", { name: `Alignement de ${player.pseudo}` })
     .getByRole("article");
   await expect(myCards).toHaveCount(8);
-  await expect(myCards.filter({ hasText: /(^|\D)0 pts/ })).toHaveCount(1);
+  await expect(myCards.filter({ hasText: /(^|\D)0 pt\b/ })).toHaveCount(1);
   await expect(myCards.filter({ hasText: "+20" })).toHaveCount(1);
 
   await page.getByRole("link", { name: "Classement ›" }).click();
