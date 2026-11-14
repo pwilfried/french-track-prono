@@ -20,8 +20,10 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
    CI rouge ou conflit : la PR repart à Claude avec les logs (3 essais, puis le propriétaire).
    Un conflit avec `main` repart à Claude même quand la PR n'a pas de CI (GitHub n'en lance pas
    sur une branche en conflit) ou que sa CI tourne encore (#713).
-5. Chaque fusion dans `main` part en préprod (`preprod.yml`) : migrations sur la base de
-   préprod, puis déploiement sur https://french-track-preprod.vercel.app. Une PR fusionnée
+5. Chaque fusion dans `main` part en préprod (`preprod.yml`), correctifs `vX.Y.Z` compris :
+   migrations sur la base de préprod, seed et jeu de démo, puis déploiement sur
+   https://french-track-preprod.vercel.app (test de fumée, retour arrière automatique s'il
+   échoue), puis tests e2e (`docs/SETUP.md`, « Préproduction »). Une PR fusionnée
    n'ouvre pas d'issue de vérification : c'est la version qui en ouvre une (étape 6).
 6. Quand le milestone qui suit le dernier tag n'a plus d'issue ouverte et que tous les
    runs du dernier commit de `main` sont verts (CI et préprod), `release.sh` pose le tag annoté :
@@ -31,7 +33,8 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
    prévient les propriétaires), l'issue `needs-human` « Vérifier vX.Y.Z en prod » liste le critère
    et une case par PR qui touche l'interface, et le milestone est fermé. Seul garde-fou : si le
    déploiement en préprod de ce commit a échoué, pas de tag, un avertissement dans le run, nouvel
-   essai à la vérification suivante (au plus une heure). Même chose si la CI de `main` est rouge.
+   essai à la vérification suivante (au plus une heure). « Échoué » couvre tout le run
+   « Pre-production » : migrations, déploiement, test de fumée ou tests e2e. Même chose si la CI de `main` est rouge.
 
 ### Test quotidien de la préprod (#636)
 
