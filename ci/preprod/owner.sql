@@ -65,13 +65,20 @@ begin
              < case when l.is_public then 200 else 50 end)
   on conflict do nothing;
 
-  -- The Manager leagues a player could join (as private.enter_manager_league): mercato not open,
-  -- fewer members than the target of the league.
+  -- Every Manager league a player could still join (#781), as private.enter_manager_league: the
+  -- mercato not open, a place left under the target its competitions call for. Never more: an
+  -- extra player would break the home-and-away of the season.
   insert into manager_members (league_id, user_id)
   select l.id, v_id from manager_leagues l
   where l.mercato_opened_at is null
     and (select count(*) from manager_members m where m.league_id = l.id) < l.player_target
   on conflict do nothing;
+
+  -- Out of the Manager leagues an earlier run made go over their target (before #781).
+  delete from manager_members mm
+  using manager_leagues l
+  where mm.league_id = l.id and mm.user_id = v_id and l.owner_id <> v_id
+    and (select count(*) from manager_members m where m.league_id = l.id) > l.player_target;
 end $$;
 
 commit;

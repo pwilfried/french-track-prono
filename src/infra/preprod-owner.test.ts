@@ -133,6 +133,35 @@ if (url && key) {
       expect(first!.memberships).toBe(first!.openLeagues);
     });
 
+    it("joins only the Manager leagues a player could still join (#781)", () => {
+      const body = ownerSql();
+      const player = (n: number) => `'00000000-0000-4000-9000-${String(n).padStart(12, "0")}'`;
+      const league = (n: number) => `'00000000-0000-4000-9781-${String(n).padStart(12, "0")}'`;
+      // Next to the demo league (mercato open), one with places, one full at its target of 4.
+      const leagues = `insert into manager_leagues (id, name, is_public, owner_id, rules, player_target)
+        values (${league(1)}, 'Places 781', false, ${player(1)}, (select rules from manager_rules), 4),
+               (${league(2)}, 'Pleine 781', true, ${player(1)}, (select rules from manager_rules), 4);
+        insert into manager_members (league_id, user_id)
+        values (${league(1)}, ${player(1)}),
+               (${league(2)}, ${player(1)}), (${league(2)}, ${player(2)}),
+               (${league(2)}, ${player(3)}), (${league(2)}, ${player(4)});`;
+      const check = `select json_build_object(
+        'demo', exists (select 1 from manager_members where user_id = ${owner}
+                        and league_id = '00000000-0000-4000-9b00-000000000001'),
+        'places', exists (select 1 from manager_members where user_id = ${owner}
+                          and league_id = ${league(1)}),
+        'full', (select count(*) from manager_members where league_id = ${league(2)})
+      )::text;`;
+      // An earlier run (before #781) had put the owner in the full league as a 5th player.
+      const extra = `insert into manager_members (league_id, user_id) values (${league(2)}, ${owner});`;
+      const output = sqlScript(
+        `begin;\n${strip(demo)}\n${leagues}\n${body}\n${extra}\n${body}\n${check}\nrollback;\n`,
+      );
+      const line = output.split("\n").find((l) => l.startsWith("{"))!;
+
+      expect(JSON.parse(line)).toEqual({ demo: false, places: true, full: 4 });
+    });
+
     it("keeps an account that already exists and makes it admin", () => {
       const body = ownerSql();
       const existing = `insert into auth.users (id, email) values

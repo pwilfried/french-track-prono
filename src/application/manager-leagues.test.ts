@@ -4,6 +4,7 @@ import { DEFAULT_BIB } from "@/domain/bib";
 
 import { UseCaseError } from "./errors";
 import {
+  checkManagerInvite,
   createManagerLeague,
   getManagerLeague,
   joinManagerLeague,
@@ -13,6 +14,7 @@ import {
   participantLookup,
   setManagerCompetitions,
   setManagerMercato,
+  type InviteStatus,
   type JoinOutcome,
   type ManagerLeague,
   type ManagerLeagueFile,
@@ -23,6 +25,7 @@ import {
 function repository(
   leagues: ManagerLeague[] = [],
   joinAnswer: JoinOutcome = { outcome: "unknown" },
+  status: InviteStatus = "unknown",
 ) {
   const codes: string[] = [];
   const created: { name: string; isPublic: boolean; competitionIds: string[] }[] = [];
@@ -39,6 +42,10 @@ function repository(
       return joinAnswer;
     },
     joinPublic: async () => joinAnswer,
+    inviteStatus: async (code) => {
+      codes.push(code);
+      return status;
+    },
     listPublic: async () => [],
     setCompetitions: async () => "set",
     setMercato: async () => "set",
@@ -179,7 +186,7 @@ describe("joinManagerLeague", () => {
   });
 
   it.each([
-    ["full", "LEAGUE_FULL"],
+    ["full", "MANAGER_LEAGUE_FULL"],
     ["mercato_open", "MERCATO_OPEN"],
     ["too_many", "LEAGUE_TOO_MANY_ATTEMPTS"],
     ["unknown", "LEAGUE_CODE_UNKNOWN"],
@@ -201,12 +208,35 @@ describe("joinPublicManagerLeague", () => {
     ).rejects.toEqual(new UseCaseError("LEAGUE_NOT_FOUND"));
   });
 
-  it("refuses a full league with LEAGUE_FULL", async () => {
+  it("refuses a league full at its target with MANAGER_LEAGUE_FULL", async () => {
     const { repo } = repository([], { outcome: "full" });
 
     await expect(
       joinPublicManagerLeague({ managerLeagues: repo }).execute({ id: "league-1" }),
-    ).rejects.toEqual(new UseCaseError("LEAGUE_FULL"));
+    ).rejects.toEqual(new UseCaseError("MANAGER_LEAGUE_FULL"));
+  });
+});
+
+describe("checkManagerInvite", () => {
+  it.each(["open", "full", "mercato_open", "unknown"] as const)(
+    "tells an invited player that the league is %s, with the code as typed",
+    async (status) => {
+      const { repo, codes } = repository([], undefined, status);
+
+      expect(await checkManagerInvite({ managerLeagues: repo }).execute({ code: "k7m 2qx" })).toBe(
+        status,
+      );
+      expect(codes).toEqual(["K7M2QX"]);
+    },
+  );
+
+  it("answers unknown without asking for a code that cannot exist", async () => {
+    const { repo, codes } = repository([], undefined, "open");
+
+    expect(await checkManagerInvite({ managerLeagues: repo }).execute({ code: "OOOOOO" })).toBe(
+      "unknown",
+    );
+    expect(codes).toEqual([]);
   });
 });
 
