@@ -66,6 +66,12 @@ export const messages = {
     leagues: "Ligues",
     manager: "Manager",
   },
+  /** Read out while a page loads (#824); the skeleton shows its frame meanwhile. */
+  loading: {
+    page: "Chargement de la page…",
+    manager: "Chargement du Manager…",
+    event: "Chargement de l'épreuve…",
+  },
   home: {
     current: "Compétition en cours",
     upcoming: "Prochaine compétition",

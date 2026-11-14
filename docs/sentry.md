@@ -2,7 +2,16 @@
 
 Sentry reçoit les erreurs du site (serveur et navigateur) et les pannes de service
 (`…_UNAVAILABLE` : base ou service qui ne répond pas, que le joueur ne voit que comme un message,
-groupées par code grâce à l'étiquette `code`). Pas de suivi des performances, pas de replay.
+groupées par code grâce à l'étiquette `code`). Pas de replay.
+
+**Mesurer le temps des pages (#824).** Avec la variable Vercel `SENTRY_TRACES_SAMPLE_RATE`
+(production ou préprod, par exemple `1` le temps d'une mesure, puis `0.1` ou rien), le serveur
+envoie une trace par page (part de `0` à `1`). Le navigateur ne trace jamais (la variable n'a pas
+de préfixe `NEXT_PUBLIC_`). Une trace garde les chemins et les durées, jamais de query string, de
+cookie ni d'e-mail (`scrubTransaction`, `src/infra/sentry.ts`). Dans Sentry → Explore → Traces,
+filtrer sur la page (`GET /classement`…) : la durée de la transaction est le temps serveur ; les
+spans `http.client` vers `…supabase.co` sont les lectures en base (`/rest/v1/…`) et à l'auth
+(`/auth/v1/user`).
 
 Sans DSN, rien n'est envoyé ; en local et en mode fake (`FTP_FAKE_DB=1`) non plus.
 

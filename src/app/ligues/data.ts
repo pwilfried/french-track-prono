@@ -2,12 +2,12 @@ import { redirect } from "next/navigation";
 
 import { listLeagueEvents } from "@/application/league-events";
 import type { LeagueFamily, LeagueFamilyRule } from "@/domain/league-families";
-import { createSupabaseLeagueRepository, createSupabaseRankingRepository } from "@/infra";
+import { createSupabaseLeagueRepository } from "@/infra";
 
 import { messages } from "../messages.fr";
 
 import { getCurrentUser, getSessionClient } from "../session";
-import { publicEventReader, publicDisciplines } from "../public-data";
+import { publicEventReader, publicDisciplines, publicRanking } from "../public-data";
 
 /** The signed-in player and the league ports acting as them; a visitor goes to the sign-in first. */
 export async function leaguePorts(back: string) {
@@ -17,7 +17,7 @@ export async function leaguePorts(back: string) {
   return {
     userId: user.userId,
     leagues: createSupabaseLeagueRepository(client),
-    ranking: createSupabaseRankingRepository(client),
+    ranking: publicRanking(),
   };
 }
 

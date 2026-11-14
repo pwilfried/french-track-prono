@@ -1,5 +1,6 @@
 "use server";
 
+import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { UseCaseError, type ErrorCode } from "@/application/errors";
@@ -11,6 +12,9 @@ import {
 
 import { formText, formTexts } from "../form-data";
 import { managerPorts } from "./data";
+
+// After a change, `refresh()` drops the pages the browser keeps (#824): the Manager home lists the
+// new league at once.
 
 export type ManagerLeagueFormState = {
   value: string;
@@ -36,6 +40,7 @@ export async function createManagerLeagueAction(
     }
     throw error;
   }
+  refresh();
   redirect(`/manager/${id}`);
 }
 
@@ -55,6 +60,7 @@ export async function joinManagerLeagueAction(
     if (error instanceof UseCaseError) return { value, error: error.code };
     throw error;
   }
+  refresh();
   redirect(`/manager/${id}`);
 }
 
@@ -72,5 +78,6 @@ export async function joinPublicManagerLeagueAction(
     if (error instanceof UseCaseError) return { value: leagueId, error: error.code };
     throw error;
   }
+  refresh();
   redirect(`/manager/${id}`);
 }

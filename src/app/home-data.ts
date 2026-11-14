@@ -18,8 +18,6 @@ import {
   createSupabasePointsRepository,
   createSupabasePredictionRepository,
   createSupabaseProfileReminderRepository,
-  createSupabaseProfileRepository,
-  createSupabaseRankingRepository,
 } from "@/infra";
 
 import {
@@ -28,8 +26,8 @@ import {
   loadMyLeagues,
   playerCompetitions,
 } from "./competition";
-import { getSessionClient } from "./session";
-import { publicEventReader } from "./public-data";
+import { getSessionClient, getSessionProfiles } from "./session";
+import { publicEventReader, publicRanking } from "./public-data";
 
 /** Everything the signed-in player's home shows (#526); each part empty when it cannot be read. */
 export type PlayerHome = Omit<
@@ -52,9 +50,8 @@ async function safely<T>(load: () => Promise<T>): Promise<T | null> {
 
 export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerHome | null> {
   const client = await getSessionClient();
-  const profile = await safely(() =>
-    getProfile({ profiles: createSupabaseProfileRepository(client) }).execute({ userId }),
-  );
+  const profiles = await getSessionProfiles();
+  const profile = await safely(() => getProfile({ profiles }).execute({ userId }));
   if (!profile) return null;
 
   const [choices, leagues, lists] = await Promise.all([
@@ -63,7 +60,7 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
     loadCompetitions(),
   ]);
   const competition = await currentCompetition(choices.preferred);
-  const ranking = createSupabaseRankingRepository(client);
+  const ranking = publicRanking();
   const predictions = createSupabasePredictionRepository(client);
   const leagueRepository = createSupabaseLeagueRepository(client);
   const listed = [...lists.coming, ...lists.past].map((c) => c.slug);

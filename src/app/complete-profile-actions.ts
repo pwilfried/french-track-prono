@@ -15,6 +15,7 @@ import {
 
 import { formText } from "./form-data";
 import { readPlayerDetails } from "./player-details-form";
+import { publicDataChanged } from "./public-data";
 import { getCurrentUser, getSessionClient } from "./session";
 
 /** The player saves their club and families from the home card (#540). */
@@ -54,6 +55,8 @@ export async function completeProfileAction(
   }
   revalidatePath("/");
   revalidatePath("/profil");
+  // The club shows on the player's line in the cached rankings (#824).
+  publicDataChanged("player");
   return { ...state, done: true };
 }
 

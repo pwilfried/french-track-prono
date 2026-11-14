@@ -10,13 +10,12 @@ import {
   createSupabasePlayerDetailsRepository,
   createSupabasePredictionRepository,
   createSupabaseProfileRepository,
-  createSupabaseRankingRepository,
 } from "@/infra";
 
 import { seasonCompetitionSlugs } from "../../competition";
 import { messages } from "../../messages.fr";
 import { getCurrentUser, getSessionClient } from "../../session";
-import { publicEventReader, publicDisciplines } from "../../public-data";
+import { publicEventReader, publicDisciplines, publicRanking } from "../../public-data";
 
 const text = messages.seasonCard;
 const ink = "#082e66";
@@ -37,7 +36,7 @@ export async function GET() {
   try {
     const [season, details] = await Promise.all([
       getMySeason({
-        ranking: createSupabaseRankingRepository(client),
+        ranking: publicRanking(),
         predictions: createSupabasePredictionRepository(client),
         events: publicEventReader(),
         disciplines: publicDisciplines(),

@@ -6,6 +6,7 @@ import { deleteMyAccount } from "@/application/delete-my-account";
 import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { createSupabaseProfileRepository, signOutSession } from "@/infra";
 
+import { publicDataChanged } from "../../public-data";
 import { getCurrentUser, getSessionClient } from "../../session";
 
 export type DeleteAccountState = { error?: ErrorCode };
@@ -28,7 +29,8 @@ export async function deleteAccountAction(
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
   }
-  // The account is gone: drop the session cookies too.
+  // The account is gone: out of the cached rankings, and the session cookies dropped too.
+  publicDataChanged("player");
   await signOutSession(client);
   redirect("/au-revoir");
 }

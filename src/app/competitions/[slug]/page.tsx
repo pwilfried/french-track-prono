@@ -11,12 +11,12 @@ import { LockCountdown } from "@/components/home/lock-countdown";
 import { buttonVariants } from "@/components/ui/button";
 import type { EventSummary } from "@/domain/event";
 import { openEvents } from "@/domain/event-list";
-import { createSupabasePredictionRepository, createSupabaseRankingRepository } from "@/infra";
+import { createSupabasePredictionRepository } from "@/infra";
 
 import { loadCompetitions, type ShownCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
 import { getCurrentUser, getSessionClient } from "../../session";
-import { publicEventReader } from "../../public-data";
+import { publicEventReader, publicRanking } from "../../public-data";
 
 async function loadEvents(competitionSlug: string): Promise<EventSummary[]> {
   try {
@@ -33,7 +33,7 @@ async function loadPlayer(userId: string, competitionSlug: string) {
   try {
     const client = await getSessionClient();
     const [ranking, mine] = await Promise.all([
-      getGeneralRanking({ ranking: createSupabaseRankingRepository(client) }).execute({
+      getGeneralRanking({ ranking: publicRanking() }).execute({
         competitionSlugs: [competitionSlug],
       }),
       listMyPredictions({ predictions: createSupabasePredictionRepository(client) }).execute({

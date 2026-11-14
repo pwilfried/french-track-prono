@@ -1,5 +1,6 @@
 "use server";
 
+import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { confirmEmailChange, requestEmailChange } from "@/application/change-email";
@@ -37,5 +38,6 @@ export async function changeEmailAction(
     if (error instanceof UseCaseError) return { ...state, error: error.code };
     throw error;
   }
+  refresh();
   redirect("/profil?email=1");
 }
