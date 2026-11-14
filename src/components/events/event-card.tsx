@@ -103,7 +103,7 @@ export function EventCard({
         aria-labelledby={`${id}-name ${status ? `${id}-status` : `${id}-line`}`}
       >
         <span id={`${id}-name`} hidden>
-          {messages.events.cardLabel(event.discipline, messages.events.gender[event.gender], hour)}
+          {messages.events.cardLabel(messages.events.name(event.discipline, event.gender), hour)}
         </span>
         <span className="font-mono text-base font-bold leading-none tabular-nums">{hour}</span>
         <div className="min-w-0">

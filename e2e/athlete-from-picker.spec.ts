@@ -56,10 +56,10 @@ test("a player opens an athlete's page from the podium picker and keeps the podi
   await expect(page.getByRole("switch", { name: /Joker/ })).toBeChecked();
 });
 
-test("an athlete's page opened from elsewhere goes back to the events", async ({ page }) => {
+test("an athlete's page opened from elsewhere goes back to the competitions", async ({ page }) => {
   for (const from of ["https://evil.test/epreuves/x", "/competitions", "//evil.test"]) {
     await page.goto(`/athletes/sha-carri-richardson?from=${encodeURIComponent(from)}`);
-    await expect(page.getByRole("link", { name: "‹ Épreuves" })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: "‹ Compétitions" })).toHaveAttribute(
       "href",
       "/competitions",
     );

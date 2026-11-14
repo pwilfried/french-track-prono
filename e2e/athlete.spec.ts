@@ -28,7 +28,7 @@ test("a visitor opens an athlete from a start list and sees a PR and a recent ra
   const records = page.getByRole("region", { name: "Records" });
   await expect(records.getByText("PB", { exact: true }).first()).toBeVisible();
   await expect(records.getByText(/^\d+\.\d{2}$/).first()).toBeVisible();
-  const races = page.getByRole("region", { name: "Dernières courses" }).getByRole("listitem");
+  const races = page.getByRole("region", { name: "Dernières épreuves" }).getByRole("listitem");
   // Other suites may leave a more recent race for her, so look for this meeting's race by name.
   await expect(races.filter({ hasText: `Meeting ${tag}` })).toContainText("10.81");
 

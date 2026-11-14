@@ -50,7 +50,7 @@ test("an event typed at 20:35 Paris time in the back-office reads 20:35 for play
 
   // Players read the same time: the list of events and the event page.
   await page.goto(`/competitions?competition=${slug}`);
-  await expect(page.getByRole("link", { name: /^100 m, Femmes/ })).toContainText("20:35");
+  await expect(page.getByRole("link", { name: /^100 m femmes,/ })).toContainText("20:35");
   await page.goto(`/epreuves/${slug}-f-100-m`);
   // The loading skeleton (`aria-busy`) can still sit next to the streamed page for a moment.
   await expect(page.locator("main:not([aria-busy='true'])")).toContainText("20:35");
