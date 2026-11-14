@@ -394,7 +394,8 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   secret ni aucune donnée de prod : la base de préprod ne contient que des données fictives.
 - **Déploiement continu** : chaque fusion dans `main` lance « Pre-production »
   (`.github/workflows/preprod.yml`) : migrations sur la base de préprod (`supabase db push`), puis
-  `supabase/seed.sql` (idempotent), puis build et déploiement Vercel, puis test de fumée sur
+  `supabase/seed.sql` et le jeu de démo `supabase/preprod/demo.sql` (idempotents, voir plus bas),
+  puis build et déploiement Vercel, puis test de fumée sur
   l'adresse de préprod. Une migration qui échoue arrête tout : le site de préprod n'est pas
   déployé, la prod n'est jamais touchée. À la main : Actions → « Pre-production » → Run workflow
   (seulement `main`).
@@ -402,6 +403,27 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   (un secret de prod collé par erreur).
 - **Pas de remise à zéro** : ce que le propriétaire crée à la main en préprod reste d'un
   déploiement à l'autre.
+- **Jeu de démo** (#694) : `supabase/preprod/demo.sql`, versionné dans le dépôt, entièrement
+  inventé, sans aucune lecture de la prod. `ci/preprod/load-sql.sh` le charge juste après
+  `seed.sql` à chaque déploiement (un agent ne peut pas modifier `preprod.yml`). Il contient :
+  - 6 compétitions, « démo » dans le nom : une terminée avec résultats (Diamond League, il y a
+    10 jours), une en cours (championnat international : les épreuves d'hier ont leurs résultats),
+    quatre à venir (championnats de France, un meeting en salle, deux Diamond League) ;
+  - 60 athlètes inventés (30 F, 30 H) sur 7 disciplines par sexe, chacun avec PB et SB, et un prix
+    Manager ;
+  - 20 joueurs fictifs `demo-1…20@example.test` (Démo Gazelle, Démo Perche…), sans mot de passe,
+    leurs pronos et leurs points sur les épreuves terminées ;
+  - 3 ligues de pronos (dont une publique et une limitée aux sauts et lancers) et une ligue Manager
+    complète : 4 joueurs, mercato fermé, équipes de 12, 6 journées tirées, compositions, scores de
+    la 1re journée, donc un classement.
+
+  Les dates sont relatives au jour du chargement (heure de Paris) et recalées à chaque
+  déploiement : il y a toujours une compétition finie, une en cours et des compétitions à venir.
+  Relancé, il ne crée aucun doublon (clés fixes, écrit seulement ce qui manque) et ne supprime rien
+  de ce que le propriétaire a créé à la main ; seuls les dates des lignes de démo et les points des
+  joueurs de démo sont réécrits. Vérifié en CI : deux chargements de suite sur Supabase local
+  donnent les mêmes comptes (`src/infra/preprod-demo.test.ts`). À la main en local :
+  `docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/preprod/demo.sql`.
 - **Tests e2e après chaque déploiement** (#695) : le job « End-to-end tests against
   pre-production » lance toute la suite `e2e/` contre l'adresse de préprod (`E2E_BASE_URL`,
   sans serveur local). Le SQL des tests passe par l'API de gestion Supabase, le code de
@@ -417,7 +439,6 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   quotidien (`ci/preprod/daily.yml`) passe par les mêmes aides et les mêmes secrets. Un agent ne
   peut pas pousser de workflow : le job vit dans `ci/preprod/preprod.yml`, que le propriétaire
   copie dans `.github/workflows/preprod.yml`.
-- **À venir** : le jeu de démo propre à la préprod (#694).
 - **Pas de captcha ni de notifications push** en préprod (pas de clé Turnstile ni VAPID).
 - **Mise en prod** : la prod suit toujours les tags, posés automatiquement quand un milestone est
   fini et `main` vert, sans feu vert humain (décision du propriétaire du 13 nov. 2026,
