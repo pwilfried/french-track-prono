@@ -180,7 +180,7 @@ export const FinishedWithoutPrediction: Story = {
     await expect(canvas.queryByText("—")).toBeNull();
     await expect(canvas.queryByText("+ Prono")).toBeNull();
     await expect(canvas.getByRole("link")).toHaveAccessibleName(
-      /^100 m, Femmes, \d\d:\d\d Pas joué$/,
+      /^100 m femmes, \d\d:\d\d Pas joué$/,
     );
   },
 };
