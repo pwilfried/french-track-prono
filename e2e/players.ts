@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
 import { clearMailbox, latestCodeFromMailbox } from "../src/infra/contract/mailbox";
+import { messages } from "../src/app/messages.fr";
 
 /** A new invented player: e-mail on example.test, short pseudo. */
 export function newPlayer(tag: string) {
@@ -39,11 +40,17 @@ export async function signIn(page: Page, email: string) {
 
 /**
  * Types the code sent to an address, read once the code field is shown: the app has sent it by
- * then (against pre-production, the code asked from the admin API must come after that one).
+ * then (against pre-production, the code asked from the admin API must come after that one). If
+ * the auth service failed to send it (e.g. a 504 from the local Supabase), the test fails at once
+ * with that cause instead of waiting for the field until its timeout.
  */
 export async function typeCode(page: Page, email: string) {
   const field = page.getByLabel(/code/i);
-  await field.waitFor();
+  const unavailable = page.getByText(messages.errors.AUTH_UNAVAILABLE);
+  await field.or(unavailable).first().waitFor();
+  if (await unavailable.isVisible()) {
+    throw new Error(`the sign-in code could not be sent to ${email}: AUTH_UNAVAILABLE`);
+  }
   await field.fill(await latestCodeFromMailbox(email));
 }
 
