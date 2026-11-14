@@ -1454,6 +1454,28 @@ export const messages = {
       "Touche ⋯ en haut de l'écran, puis « Ouvrir dans le navigateur », pour l'ajouter à ton écran d'accueil.",
     profile: "Installer l'appli",
   },
+  /** Back-office of the season trophies (#822). */
+  adminTrophies: {
+    title: "Trophées",
+    subtitle:
+      "Les statuettes de la saison : podiums des ligues, ligues Manager, top 10 du général et exploits.",
+    awardTitle: "Attribuer",
+    awardHelp:
+      "Les trophées des ligues finies, des saisons Manager finies et des compétitions finies. Le top 10 du général attend la fin de l'année. Relancer remplace les trophées de la saison, sans doublon.",
+    seasonLabel: "Saison",
+    award: "Attribuer les trophées",
+    awarding: "Attribution en cours…",
+    awarded: (season: number, count: number) =>
+      `Saison ${season} : ${count} trophée${count > 1 ? "s" : ""} attribué${count > 1 ? "s" : ""}.`,
+    witnessTitle: "Compte FrenchTrack",
+    witnessHelp:
+      "Le Témoin d'or récompense les joueurs qui finissent une compétition devant ce compte. Sans compte, le trophée n'est pas proposé.",
+    witnessLabel: "Pseudo du compte (vide : aucun)",
+    save: "Enregistrer",
+    saving: "Enregistrement en cours…",
+    witnessSaved: "Compte FrenchTrack enregistré.",
+    witnessCleared: "Aucun compte FrenchTrack : le Témoin d'or n'est pas proposé.",
+  },
   adminLog: {
     title: "Historique",
     subtitle: "Les 50 dernières actions du back-office.",
@@ -1884,6 +1906,7 @@ export const messages = {
       players: "Joueurs",
       demoPlayers: "Joueurs démo",
       clubs: "Clubs",
+      trophies: "Trophées",
       history: "Historique",
     },
     create: "+ Nouvelle compétition",
@@ -2080,6 +2103,33 @@ export const messages = {
     name: { bronze: "Bronze", silver: "Argent", gold: "Or" },
     /** « pour le bronze », « vers l'argent »… */
     the: { bronze: "le bronze", silver: "l'argent", gold: "l'or" },
+  },
+  /** The showcase of the season trophies (#822), one shelf per season. */
+  trophies: {
+    title: "Vitrine",
+    season: (season: number) => `Saison ${season}`,
+    count: (n: number) => `${n} trophée${n > 1 ? "s" : ""}`,
+    empty:
+      "Pas encore de trophée. Termine sur le podium d'une ligue d'au moins 4 joueurs pour poser ta première statuette.",
+    metal: { gold: "d'or", silver: "d'argent", bronze: "de bronze" },
+    managerDetail: (league: string) => `Manager · ${league}`,
+    animals: {
+      cheetah: { emoji: "🐆", name: "Guépard" },
+      impala: { emoji: "🦌", name: "Impala" },
+      hare: { emoji: "🐇", name: "Lièvre" },
+      kangaroo: { emoji: "🦘", name: "Kangourou" },
+      cat: { emoji: "🐈", name: "Chat" },
+      bear: { emoji: "🐻", name: "Ours" },
+      fox: { emoji: "🦊", name: "Renard" },
+    },
+    kinds: {
+      general: { emoji: "🌿", name: "Laurier", detail: "Classement général" },
+      league: { emoji: "🏆", name: "Ligue", detail: "Ligue de pronos" },
+      manager: { emoji: "🐇", name: "Lièvre", detail: "Ligue Manager" },
+      chrono: { emoji: "⏱️", name: "Chrono figé", detail: "Meilleure soirée" },
+      record: { emoji: "🎖️", name: "Record de ligue", detail: "Record battu" },
+      witness: { emoji: "🏃", name: "Témoin d'or", detail: "Devant le compte FrenchTrack" },
+    },
   },
   seasonCard: {
     brand: "FRENCH TRACK PRONO",
@@ -2668,6 +2718,8 @@ export const messages = {
     EVENTS_UNAVAILABLE: "Impossible de charger les épreuves pour le moment.",
     EVENT_NOT_FOUND: "Cette épreuve n'existe pas.",
     PROGRAM_ALERT_UNAVAILABLE: "L'alerte n'a pas pu être enregistrée. Réessaie.",
+    TROPHY_WITNESS_UNKNOWN: "Aucun joueur ne porte ce pseudo.",
+    TROPHIES_UNAVAILABLE: "Les trophées n'ont pas pu être chargés. Réessaie.",
     REMINDER_SETTINGS_INVALID: "Choisis un délai et des heures calmes parmi ceux proposés.",
     REMINDER_SETTINGS_UNAVAILABLE:
       "Tes rappels n'ont pas pu être enregistrés. Réessaie dans un instant.",

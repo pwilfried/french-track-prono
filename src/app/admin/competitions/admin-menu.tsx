@@ -30,6 +30,7 @@ const GROUPS: { key: keyof typeof text.groups | null; items: [string, AdminSecti
       ["/admin", "results"],
       ["/admin/bareme", "scale"],
       ["/admin/manager", "manager"],
+      ["/admin/trophees", "trophies"],
     ],
   },
   {

@@ -76,7 +76,7 @@ const rank = (lines: RankingLine[], moves: MovesInput = {}): RankingRow[] => {
   }));
 };
 
-const linesOf = async (ranking: RankingRepository, competitionSlugs: string[]) =>
+export const linesOf = async (ranking: RankingRepository, competitionSlugs: string[]) =>
   (
     await Promise.all(
       competitionSlugs.map(async (slug) =>
@@ -157,22 +157,11 @@ export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: L
     ): Promise<RankingRow[]> {
       const members = await ports.leagues.members(input.leagueId);
       if (!members) throw new UseCaseError("LEAGUE_NOT_FOUND");
-      const joinedAt = new Map(members.map((m) => [m.userId, m.joinedAt]));
-      // Only the predictions made as a member count in a league (decision of 9 Nov 2026, #376):
-      // an event locked before the player joined stays out of this league's ranking.
-      // Only the events locked after a competition entered the league count in it (#614).
-      const lines = (await linesOf(ports.ranking, input.competitionSlugs))
-        .filter((l) =>
-          countsSinceEntry(l.eventLockAt, input.competitionAddedAt?.[l.competitionSlug]),
-        )
-        .filter((l) => joinedAt.has(l.userId))
-        .filter((l) => countsInLeague(joinedAt.get(l.userId), l.eventLockAt))
-        .filter((l) =>
-          countsForFamilies(input.families ?? [], {
-            family: l.eventFamily,
-            startsAt: l.eventStartsAt,
-          }),
-        );
+      const lines = leagueLines(await linesOf(ports.ranking, input.competitionSlugs), {
+        members,
+        families: input.families,
+        competitionAddedAt: input.competitionAddedAt,
+      });
       // Members without any score line yet still appear, with 0 points.
       const zero = members.map((m) => ({
         userId: m.userId,
@@ -187,6 +176,35 @@ export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: L
       return rank([...zero, ...lines], input);
     },
   };
+}
+
+/**
+ * The score lines a league counts: its members' only, and only the predictions made as a member
+ * (decision of 9 Nov 2026, #376): an event locked before the player joined stays out. Only the
+ * events locked after a competition entered the league count in it (#614), and, for a league
+ * limited to families, the events of those families only (#613). Lines need their competition.
+ */
+export function leagueLines<T extends RankingLine>(
+  lines: T[],
+  league: {
+    members: { userId: string; joinedAt?: string }[];
+    families?: LeagueFamilyRule[];
+    competitionAddedAt?: Record<string, string>;
+  },
+): T[] {
+  const joinedAt = new Map(league.members.map((m) => [m.userId, m.joinedAt]));
+  return lines
+    .filter((l) =>
+      countsSinceEntry(l.eventLockAt, league.competitionAddedAt?.[l.competitionSlug ?? ""]),
+    )
+    .filter((l) => joinedAt.has(l.userId))
+    .filter((l) => countsInLeague(joinedAt.get(l.userId), l.eventLockAt))
+    .filter((l) =>
+      countsForFamilies(league.families ?? [], {
+        family: l.eventFamily,
+        startsAt: l.eventStartsAt,
+      }),
+    );
 }
 
 /** Where a player stands in a ranking (#552): null while they have no points or are not in it. */

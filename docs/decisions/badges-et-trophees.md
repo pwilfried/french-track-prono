@@ -76,3 +76,27 @@ Le propriétaire a validé la proposition sans trancher ces points ; ils valent 
   sans compte désigné, le trophée n'est pas proposé.
 - Badges et trophées s'affichent sur le profil du joueur et pour les membres de ses ligues, comme
   le reste de son profil.
+
+## Mise en œuvre des trophées (#822)
+
+- **Calcul** : en TypeScript, comme les points (décision B) : `src/domain/trophies.ts`. L'admin
+  attribue les trophées d'une saison depuis le back-office (« Trophées », `/admin/trophees`) ;
+  relancer remplace les trophées de la saison d'un coup (`admin_replace_trophies`), sans doublon
+  (un trophée par joueur, saison, sorte et ligue). C'est aussi là qu'il désigne le compte
+  FrenchTrack, par son pseudo.
+- **Quand un trophée est acquis** : une ligue de pronos est finie le lendemain du dernier jour de
+  sa dernière compétition, et sa saison est l'année de ce jour ; une ligue Manager à la fin de sa
+  saison (#434), l'année de cette fin ; le Témoin d'or à la fin de chaque compétition ; le top 10
+  du général une fois l'année finie.
+- **Ex æquo** : les joueurs encore à égalité au classement (points, podiums parfaits, vainqueurs
+  trouvés) partagent la place, donc le métal (1, 2, 2, 4 : or, argent, argent, rien). Un joueur
+  sans point n'a jamais de trophée ; un membre sans point compte quand même dans les 4 joueurs.
+- **Animal de la ligue** : la famille qui a le plus de lignes de points dans la ligue ; à égalité,
+  l'ordre du tableau des badges de famille ; les relais, sans animal, vont au lièvre.
+- **Chrono figé** : le plus de points d'une soirée (journée de compétition, heure de Paris) dans
+  une ligue finie ; à égalité, tous les joueurs concernés.
+- **Record de ligue** : battre (strictement) le meilleur total d'une compétition précédente de la
+  ligue ; la première compétition pose le record, une fois par ligue.
+- **Témoin d'or** : finir strictement devant le compte FrenchTrack au classement d'une compétition,
+  une fois par saison ; si le compte n'a pas joué la compétition, personne ne le gagne.
+- **Qui voit** : le joueur et les membres de ses ligues (pronos et Manager), sécurité par ligne.
