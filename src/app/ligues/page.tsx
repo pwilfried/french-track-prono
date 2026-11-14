@@ -15,9 +15,9 @@ import { LeagueCard } from "@/components/leagues/league-card";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { OfficialLeague } from "@/components/leagues/official-league";
 import { buttonVariants } from "@/components/ui/button";
+import { ViewTabs } from "@/components/ui/view-tabs";
 import { publicLeaguesNotice } from "@/domain/league";
 import { leagueSummary, nextLeagueCompetition } from "@/domain/league-list";
-import { cn } from "@/lib/utils";
 
 import { currentCompetitionDay, currentDay, loadCompetitions } from "../competition";
 import { messages } from "../messages.fr";
@@ -77,9 +77,9 @@ export default async function LeaguesPage({
   const official = publics.find((l) => l.isOfficial);
   const others = publics.filter((l) => !l.isOfficial);
 
-  const tabs: { tab: Tab; label: string; href: string }[] = [
-    { tab: "mes-ligues", label: text.listTabs.mine(mine.length), href: "/ligues" },
-    { tab: "decouvrir", label: text.listTabs.discover, href: "/ligues?onglet=decouvrir" },
+  const tabs: { id: Tab; label: string; href: string }[] = [
+    { id: "mes-ligues", label: text.listTabs.mine(mine.length), href: "/ligues" },
+    { id: "decouvrir", label: text.listTabs.discover, href: "/ligues?onglet=decouvrir" },
   ];
 
   return (
@@ -98,102 +98,101 @@ export default async function LeaguesPage({
           </Link>
         </div>
 
-        <nav aria-label={text.listTabsLabel} className="grid grid-cols-2 gap-2 pt-2">
-          {tabs.map((t) => (
-            <Link
-              key={t.tab}
-              href={t.href}
-              aria-current={t.tab === tab ? "page" : undefined}
-              className={cn(
-                "inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full px-4 font-semibold",
-                t.tab === tab
-                  ? "bg-brand text-brand-foreground dark:bg-secondary dark:text-secondary-foreground"
-                  : "border border-border bg-background text-foreground",
-              )}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </nav>
-
-        {failed ? (
-          <ErrorNotice
-            retryHref={tabs.find((t) => t.tab === tab)!.href}
-            message={messages.errors.LEAGUES_UNAVAILABLE}
+        <div className="pt-2">
+          <ViewTabs
+            label={text.listTabsLabel}
+            tabs={tabs}
+            selected={tab}
+            idPrefix="onglet"
+            panelId="ligues-vue"
           />
-        ) : tab === "mes-ligues" ? (
-          rows.length === 0 ? (
-            <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
-              <strong className="block text-foreground">{text.emptyTitle}</strong>
-              {text.emptyText}
-            </p>
+        </div>
+
+        <div
+          id="ligues-vue"
+          role="tabpanel"
+          aria-labelledby={`onglet-${tab}`}
+          className="flex flex-col gap-3"
+        >
+          {failed ? (
+            <ErrorNotice
+              retryHref={tabs.find((t) => t.id === tab)!.href}
+              message={messages.errors.LEAGUES_UNAVAILABLE}
+            />
+          ) : tab === "mes-ligues" ? (
+            rows.length === 0 ? (
+              <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
+                <strong className="block text-foreground">{text.emptyTitle}</strong>
+                {text.emptyText}
+              </p>
+            ) : (
+              <ul aria-label={text.myLeagues} className="flex flex-col gap-2">
+                {rows.map(({ league, standing }) => (
+                  <li key={league.id}>
+                    <LeagueCard
+                      href={`/ligues/${league.id}`}
+                      name={league.name}
+                      memberCount={league.memberCount}
+                      summary={leagueSummary(league.competitionSlugs, competitions)}
+                      next={nextLeagueCompetition(league.competitionSlugs, competitions, today)}
+                      isPublic={league.isPublic}
+                      isOfficial={league.isOfficial}
+                      families={league.families?.map((f) => f.family)}
+                      standing={standing}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )
           ) : (
-            <ul aria-label={text.myLeagues} className="flex flex-col gap-2">
-              {rows.map(({ league, standing }) => (
-                <li key={league.id}>
-                  <LeagueCard
-                    href={`/ligues/${league.id}`}
-                    name={league.name}
-                    memberCount={league.memberCount}
-                    summary={leagueSummary(league.competitionSlugs, competitions)}
-                    next={nextLeagueCompetition(league.competitionSlugs, competitions, today)}
-                    isPublic={league.isPublic}
-                    isOfficial={league.isOfficial}
-                    families={league.families?.map((f) => f.family)}
-                    standing={standing}
+            <>
+              {official && (
+                <OfficialLeague name={official.name} memberCount={official.memberCount}>
+                  <JoinPublicLeagueForm
+                    leagueId={official.id}
+                    name={official.name}
+                    label={text.officialJoin(official.name)}
                   />
-                </li>
-              ))}
-            </ul>
-          )
-        ) : (
-          <>
-            {official && (
-              <OfficialLeague name={official.name} memberCount={official.memberCount}>
-                <JoinPublicLeagueForm
-                  leagueId={official.id}
-                  name={official.name}
-                  label={text.officialJoin(official.name)}
+                </OfficialLeague>
+              )}
+              <section aria-labelledby="public-leagues" className="flex flex-col gap-2 pt-2">
+                <h2
+                  id="public-leagues"
+                  className="border-b border-border pb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground"
+                >
+                  {text.publicTitle}
+                </h2>
+                <DiscoverLeagues
+                  // The official league, shown above while I am not in it, is a public one too.
+                  notice={
+                    text.publicNotice[
+                      official
+                        ? "no_other"
+                        : publicLeaguesNotice(
+                            mine.filter((l) => l.isPublic),
+                            ports.userId,
+                          )
+                    ]
+                  }
+                  leagues={others.map((league) => ({
+                    id: league.id,
+                    name: league.name,
+                    memberCount: league.memberCount,
+                    createdAt: league.createdAt,
+                    families: league.families,
+                    summary: leagueSummary(league.competitionSlugs, competitions),
+                    actions: (
+                      <>
+                        <JoinPublicLeagueForm leagueId={league.id} name={league.name} />
+                        <ReportLeagueForm leagueId={league.id} name={league.name} />
+                      </>
+                    ),
+                  }))}
                 />
-              </OfficialLeague>
-            )}
-            <section aria-labelledby="public-leagues" className="flex flex-col gap-2 pt-2">
-              <h2
-                id="public-leagues"
-                className="border-b border-border pb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground"
-              >
-                {text.publicTitle}
-              </h2>
-              <DiscoverLeagues
-                // The official league, shown above while I am not in it, is a public one too.
-                notice={
-                  text.publicNotice[
-                    official
-                      ? "no_other"
-                      : publicLeaguesNotice(
-                          mine.filter((l) => l.isPublic),
-                          ports.userId,
-                        )
-                  ]
-                }
-                leagues={others.map((league) => ({
-                  id: league.id,
-                  name: league.name,
-                  memberCount: league.memberCount,
-                  createdAt: league.createdAt,
-                  families: league.families,
-                  summary: leagueSummary(league.competitionSlugs, competitions),
-                  actions: (
-                    <>
-                      <JoinPublicLeagueForm leagueId={league.id} name={league.name} />
-                      <ReportLeagueForm leagueId={league.id} name={league.name} />
-                    </>
-                  ),
-                }))}
-              />
-            </section>
-          </>
-        )}
+              </section>
+            </>
+          )}
+        </div>
       </div>
     </main>
   );

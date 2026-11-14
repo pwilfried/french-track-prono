@@ -27,7 +27,7 @@ test("a player reports a public league and the admin renames it", async ({ brows
   await reporterPage.goto("/ligues");
   await signUp(reporterPage, reporter);
   await reporterPage.waitForURL(/\/ligues$/);
-  await reporterPage.getByRole("link", { name: "Découvrir" }).click();
+  await reporterPage.getByRole("tab", { name: "Découvrir" }).click();
   await reporterPage.getByRole("button", { name: `Signaler la ligue ${name} à l'admin` }).click();
   await expect(reporterPage.locator("main").getByRole("status")).toContainText("Signalée");
   sql(`insert into league_members (league_id, user_id)

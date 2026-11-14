@@ -121,3 +121,28 @@ export const LongText: Story = {
     await expect(canvas.queryByText(/Meeting/)).toBeNull();
   },
 };
+
+/** At 320 px the note on the right stays readable and the card does not overflow (#708). */
+export const NarrowEmpty: Story = {
+  args: {
+    standing: null,
+    memberCount: 1,
+    name: "Ligue des amis du dimanche matin au stade",
+    summary: { count: 0, start: null, end: null },
+    next: null,
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-[288px]">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const players = canvas.getByText(text.players(1));
+    await expect(players).toBeVisible();
+    await expect(canvas.getByText("Sans compétition")).toBeVisible();
+    await expect(canvasElement.scrollWidth).toBeLessThanOrEqual(canvasElement.clientWidth);
+  },
+};
