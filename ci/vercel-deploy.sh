@@ -85,7 +85,7 @@ on_domain() {
       echo "::warning::$host still serves $current (a rollback keeps it there): promoting $id."
       api POST "/v10/projects/$VERCEL_PROJECT_ID/promote/$id?$team" || return 1
     fi
-    sleep 5
+    sleep "${DOMAIN_WAIT_SECONDS:-5}"
   done
   echo "::error::$host still serves $current one minute after the promotion of $id."
   return 1
