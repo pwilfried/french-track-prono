@@ -87,6 +87,12 @@ export function createSupabasePredictionRepository(client: SupabaseClient): Pred
       if (error.code === "23503" && where.includes("entries")) return "athlete_not_in_event";
       // 23505: the unique index of the single joker.
       if (error.code === "23505" && where.includes("one_joker_per_competition")) return "joker_already_used";
+      // FT031: a mark outside the plausible range of the event's discipline (#702); 23514 on the
+      // bounds of a stored mark, 22003 for a number too long for the column.
+      if (error.code === "FT031" || error.code === "22003") return "mark_out_of_range";
+      if (error.code === "23514" && where.includes("predictions_marks_bounded")) {
+        return "mark_out_of_range";
+      }
       if (error.code === "23514") throw new UseCaseError("PODIUM_INVALID");
       throw new UseCaseError("PREDICTION_UNAVAILABLE");
     },

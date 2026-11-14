@@ -328,7 +328,7 @@ part de sa prochaine action (#526) : `nextAction` et `leagueStanding` (`src/doma
 choisissent la finale ouverte la plus proche du verrouillage, sinon la prochaine compétition, et la
 ligue où il est le mieux classé. Un profil incomplet (ni club ni discipline) y voit la carte
 « Complète ton profil » (#540) : la règle, les six familles et les 30 jours de « Plus tard » vivent
-dans `src/domain/profile-reminder.ts`, la date dans `player_details.reminder_hidden_until` ; les compétitions par type à cocher pour une ligue sont sur `/ligues/creer/competitions` (#659), et
+dans `src/domain/profile-reminder.ts`, la date dans `player_details.reminder_hidden_until` ; les compétitions d'une ligue se cochent sur `/ligues/creer` dans le sélecteur de saison du Manager (#721 ; l'ancienne page `/ligues/creer/competitions` y redirige), et
 les pages suivent la prochaine compétition par date (`src/app/competition.ts`). Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
 calculé en TypeScript à partir des lignes de points (pas de vue SQL).
 
@@ -448,7 +448,11 @@ chacun, plus une cote « Autre athlète » (`event_odds`, `athlete_id` nul). La 
 pronos qu'une fois les cotes saisies (`is_predictable()`). Le joueur choisit parmi les athlètes
 proposés ou « Autre athlète » (stocké nul dans `predictions.p1..p3`, une place au plus, FT006
 sinon). Perfs (#261) : `predictions.m1..m3`, dans l'unité de la discipline, verrouillées comme le
-podium. Points : voir « Cas de test du cœur », S14 à S18 ; le barème est éditable dans
+podium. Depuis #702, une perf doit être plausible pour la famille de la discipline (5 à 20 m pour
+un triple saut) : bornes dans `src/domain/mark-range.ts`, reprises par `mark_range()` en base (à
+changer ensemble) ; le formulaire le dit à côté du champ, la base refuse (FT031, et
+`predictions_marks_bounded` : positive, finie, sous 100 000). Sur la feuille de résultats (saisie
+ou collage World Athletics), une marque hors bornes n'est qu'un avertissement que l'admin confirme. Points : voir « Cas de test du cœur », S14 à S18 ; le barème est éditable dans
 `/admin/bareme` (`admin_set_scoring_rule()`, journalisée).
 
 Profils (v0.10, décisions dans `docs/decisions/profils.md`) : une seule liste de mots interdits

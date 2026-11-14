@@ -276,6 +276,33 @@ describe("saveResultSheet", () => {
     expect(w.sheet()).toEqual([]);
   });
 
+  it("warns about a mark out of the plausible range, and saves it once the admin confirms", async () => {
+    // Given a 100 m sheet whose winner ran in 2 seconds (a typo, or a deliberate entry)
+    const w = world();
+    const lines = [ok("a1", 1, "2.10"), ok("a2", 2, "11.00"), ok("a3", 3, "11.10")];
+    const sheet = {
+      eventId: EVENT,
+      competitionSlug: "meeting",
+      final: true,
+      unit: "time" as const,
+    };
+
+    // When the admin saves it, nothing is stored: a warning asks for a confirmation
+    expect(
+      await codeOf(saveResultSheet(w.admin).execute({ ...sheet, family: "sprint", lines })),
+    ).toBe("MARK_OUT_OF_RANGE_CONFIRM");
+    expect(w.calls).toEqual([]);
+
+    // Then, confirmed, it is saved and scored
+    await saveResultSheet(w.admin).execute({
+      ...sheet,
+      family: "sprint",
+      lines,
+      confirmOutOfRange: true,
+    });
+    expect(w.sheet().map((l) => l.mark)).toEqual(["2.10", "11.00", "11.10"]);
+  });
+
   it("changes nothing when the computation runs again", async () => {
     const w = world({
       predictions: [pick("zoe", "a1", "a3", "a2")],

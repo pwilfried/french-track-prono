@@ -191,3 +191,68 @@ export const WithHelp: Story = {
     await expect(help).toHaveTextContent("Règles");
   },
 };
+
+/**
+ * With rules to show, « Règles » opens them over the page (#703): the podium being built stays,
+ * Escape closes the sheet and gives the focus back to the button. Still a link without JavaScript.
+ */
+export const WithRulesSheet: Story = {
+  args: {
+    helpHref: "/regles",
+    help: <p>Chaque athlète à la bonne place rapporte 3 points.</p>,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(athlete(canvasElement, "Lena Okoro"));
+    const help = canvas.getByRole("link", { name: "Comment jouer : les règles" });
+    await expect(help).toHaveAttribute("href", "/regles");
+    await expect(help).toHaveAttribute("aria-haspopup", "dialog");
+
+    await userEvent.click(help);
+    const sheet = within(document.body).getByRole("dialog", { name: "Comment jouer" });
+    await expect(sheet).toBeVisible();
+    await expect(within(sheet).getByText(/bonne place rapporte 3 points/)).toBeVisible();
+    await expect(within(sheet).getByRole("link", { name: "Toutes les règles" })).toHaveAttribute(
+      "href",
+      "/regles",
+    );
+
+    await userEvent.keyboard("{Escape}");
+    await expect(sheet).not.toBeVisible();
+    await expect(help).toHaveFocus();
+    await expect(step(canvasElement, "1re")).toHaveAccessibleName("1re place : Lena Okoro");
+
+    // The « Fermer » button closes it too.
+    await userEvent.click(help);
+    await userEvent.click(within(sheet).getByRole("button", { name: "Fermer" }));
+    await expect(sheet).not.toBeVisible();
+    await expect(help).toHaveFocus();
+  },
+};
+
+/**
+ * The selected states stand out (#698): the step being filled has a solid ring, a placed athlete
+ * a thick border, a tinted background and his step number; nothing relies on colour alone.
+ */
+export const SelectedStates: Story = {
+  args: { initialDraft: { first: "lena", second: null, third: "mateo" } },
+  play: async ({ canvasElement }) => {
+    const activeStep = step(canvasElement, "2e");
+    await expect(activeStep).toHaveAttribute("aria-pressed", "true");
+    await expect(getComputedStyle(activeStep).boxShadow).not.toBe("none");
+    await expect(getComputedStyle(step(canvasElement, "1re")).boxShadow).toBe("none");
+
+    const placed = athlete(canvasElement, "Lena Okoro");
+    const free = athlete(canvasElement, "Kofi Mensah");
+    await expect(placed).toHaveAttribute("aria-pressed", "true");
+    await expect(getComputedStyle(placed).borderTopWidth).toBe("2px");
+    await expect(getComputedStyle(placed).borderTopColor).not.toBe(
+      getComputedStyle(free).borderTopColor,
+    );
+    await expect(getComputedStyle(placed).backgroundColor).not.toBe(
+      getComputedStyle(free).backgroundColor,
+    );
+    await expect(placed).toHaveTextContent("1");
+    await expect(athlete(canvasElement, "Mateo Ruiz")).toHaveTextContent("3");
+  },
+};

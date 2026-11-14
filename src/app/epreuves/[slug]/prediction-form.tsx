@@ -5,7 +5,9 @@ import { createPortal, useFormStatus } from "react-dom";
 
 import { buttonVariants } from "@/components/ui/button";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
-import type { MarkUnit } from "@/domain/discipline";
+import { ScaleRules } from "@/components/rules/scale-rules";
+import type { DisciplineFamily, MarkUnit } from "@/domain/discipline";
+import { MARK_MAX_LENGTH, markInputMode, markRange, readMark } from "@/domain/mark-range";
 import { isComplete, OTHER_ATHLETE, type PodiumDraft } from "@/domain/podium-draft";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +23,10 @@ export function PredictionForm({
   athletes,
   initial,
   markUnit,
+  markFamily,
+  discipline,
   tolerance,
+  scale,
 }: {
   eventId: string;
   slug: string;
@@ -29,7 +34,11 @@ export function PredictionForm({
   initial: PredictionState;
   /** Known for the discipline: the player may then predict a mark per athlete. */
   markUnit?: MarkUnit;
+  markFamily?: DisciplineFamily;
+  discipline: string;
   tolerance?: number;
+  /** The scale shown in the rules sheet of « Règles » (#703). */
+  scale: Record<string, number>;
 }) {
   const [state, action] = useActionState(savePredictionAction, initial);
   const [draft, setDraft] = useState(initial.draft);
@@ -68,9 +77,12 @@ export function PredictionForm({
   const locked = state.error === "PREDICTION_LOCKED";
   // Offline, the save would fail without a word: say it, keep the podium as composed.
   const [offline, setOffline] = useState(false);
+  // A mark refused is said next to the marks, not above the podium.
+  const markError =
+    state.error === "MARK_INVALID" || state.error === "MARK_OUT_OF_RANGE" ? state.error : undefined;
   const error = offline
     ? messages.offline.prediction
-    : state.error
+    : state.error && !markError
       ? messages.errors[state.error]
       : undefined;
   // The notice at the top of the screen, for each answer of a save (#700).
@@ -102,6 +114,7 @@ export function PredictionForm({
       <input type="hidden" name="eventId" value={eventId} />
       <input type="hidden" name="slug" value={slug} />
       {markUnit && <input type="hidden" name="markUnit" value={markUnit} />}
+      {markFamily && <input type="hidden" name="markFamily" value={markFamily} />}
       {/* Once a podium is saved the tips only push it down (#493). */}
       {!isComplete(initial.draft) && <FirstPredictionTips />}
       {/* Stays for a player who comes back; the notice is what announces a save. */}
@@ -123,6 +136,7 @@ export function PredictionForm({
             edited();
           }}
           helpHref="/regles"
+          help={<ScaleRules scale={scale} level={3} idPrefix="rules-" />}
           athleteHref={(athlete) =>
             `/athletes/${athlete.slug}?from=${encodeURIComponent(`/epreuves/${slug}`)}`
           }
@@ -134,8 +148,12 @@ export function PredictionForm({
           draft={draft}
           athletes={athletes}
           unit={markUnit}
+          family={markFamily}
+          discipline={discipline}
           tolerance={tolerance}
-          initial={state.marks}
+          initialDraft={initial.draft}
+          initial={initial.marks}
+          serverError={markError}
         />
       )}
       {!locked && (
@@ -254,20 +272,59 @@ function MarkFields({
   draft,
   athletes,
   unit,
+  family,
+  discipline,
   tolerance,
+  initialDraft,
   initial,
+  serverError,
 }: {
   draft: PodiumDraft;
   athletes: PickerAthlete[];
   unit: MarkUnit;
+  family?: DisciplineFamily;
+  discipline: string;
   tolerance?: number;
+  initialDraft: PodiumDraft;
   initial: MarkTexts;
+  /** The save refused a mark: every field says why, the podium stays as composed. */
+  serverError?: "MARK_INVALID" | "MARK_OUT_OF_RANGE";
 }) {
+  // A mark belongs to its athlete: moving him on the podium keeps it.
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      SLOTS.flatMap(([slot]) => {
+        const id = initialDraft[slot];
+        return id ? [[id, initial[slot]]] : [];
+      }),
+    ),
+  );
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
   const placed = SLOTS.flatMap(([slot, name]) => {
     const athlete = athletes.find((a) => a.athleteId === draft[slot]);
     return athlete && athlete.athleteId !== OTHER_ATHLETE ? [{ slot, name, athlete }] : [];
   });
   if (placed.length === 0) return null;
+
+  const range = markRange(unit, family);
+  const problemOf = (id: string) => {
+    const text = (values[id] ?? "").trim();
+    if (text === "") return null;
+    const read = readMark(text, unit, family);
+    if (read === "bad_mark") return messages.errors.MARK_INVALID;
+    if (read === "out_of_range") {
+      return messages.picker.markOutOfRange(
+        messages.picker.rangeMark(range.min, unit),
+        messages.picker.rangeMark(range.max, unit),
+        discipline,
+      );
+    }
+    return null;
+  };
+  const shown = (id: string) => (checked[id] || serverError ? problemOf(id) : null);
+  // The database may refuse a mark the form found fine: then it is said once, under the fields.
+  const unexplained = serverError && placed.every(({ athlete }) => !problemOf(athlete.athleteId));
+
   return (
     <fieldset className="mx-4 flex flex-col gap-3 rounded-2xl border border-border p-3.5">
       <legend className="px-1 text-xs font-bold tracking-wider text-muted-foreground uppercase">
@@ -278,22 +335,50 @@ function MarkFields({
           {messages.picker.marksHint(messages.picker.tolerance(tolerance, unit))}
         </p>
       )}
-      {placed.map(({ slot, name, athlete }) => (
-        <label key={slot} className="flex items-center gap-3">
-          <span className="min-w-0 flex-1 text-sm font-semibold">
-            {messages.picker.markLabel(athlete.name)}
-          </span>
-          <input
-            key={athlete.athleteId}
-            name={name}
-            inputMode="decimal"
-            autoComplete="off"
-            defaultValue={initial[slot]}
-            placeholder={messages.picker.markPlaceholder[unit]}
-            className="min-h-11 w-28 rounded-xl border-2 border-border bg-background px-3 text-right font-mono font-bold"
-          />
-        </label>
-      ))}
+      {placed.map(({ slot, name, athlete }) => {
+        const id = athlete.athleteId;
+        const problem = shown(id);
+        const errorId = `mark-error-${slot}`;
+        return (
+          <div key={slot} className="flex flex-col gap-1">
+            <label className="flex items-center gap-3">
+              <span className="min-w-0 flex-1 text-sm font-semibold">
+                {messages.picker.markLabel(athlete.name)}
+              </span>
+              <input
+                name={name}
+                inputMode={markInputMode(unit, family)}
+                maxLength={MARK_MAX_LENGTH}
+                autoComplete="off"
+                value={values[id] ?? ""}
+                onChange={(e) => {
+                  const text = e.target.value;
+                  setValues((v) => ({ ...v, [id]: text }));
+                }}
+                onBlur={() => setChecked((c) => ({ ...c, [id]: true }))}
+                aria-invalid={problem ? true : undefined}
+                aria-describedby={problem ? errorId : undefined}
+                placeholder={messages.picker.markPlaceholder[unit]}
+                className="min-h-11 w-28 rounded-xl border-2 border-border bg-background px-3 text-right font-mono font-bold aria-invalid:border-accent-text"
+              />
+            </label>
+            {problem && (
+              <p
+                id={errorId}
+                role="alert"
+                className="text-right text-sm font-semibold text-accent-text"
+              >
+                {problem}
+              </p>
+            )}
+          </div>
+        );
+      })}
+      {unexplained && (
+        <p role="alert" className="text-sm font-semibold text-accent-text">
+          {messages.errors[serverError]}
+        </p>
+      )}
     </fieldset>
   );
 }

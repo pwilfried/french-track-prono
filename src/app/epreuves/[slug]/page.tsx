@@ -31,6 +31,7 @@ import {
 
 import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
+import { loadScale } from "../../scale";
 import { getCurrentUser, getSessionClient } from "../../session";
 import { ForgetPodium } from "./forget-podium";
 import { PredictionForm } from "./prediction-form";
@@ -225,6 +226,7 @@ async function PredictionSection({
   };
 
   if (open) {
+    const scale = await loadScale();
     return (
       <div className="flex flex-col gap-5">
         <PredictionForm
@@ -233,7 +235,10 @@ async function PredictionSection({
           athletes={choices}
           initial={{ draft, useJoker: mine?.useJoker ?? false, marks }}
           markUnit={event.markUnit}
+          markFamily={event.markFamily}
+          discipline={event.discipline}
           tolerance={event.tolerance}
+          scale={scale}
         />
         {suggestion}
       </div>

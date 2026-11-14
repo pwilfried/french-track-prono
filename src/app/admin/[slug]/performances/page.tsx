@@ -107,6 +107,8 @@ export default async function PerformancesPage({ params }: { params: Promise<{ s
             eventId={loaded.event.id}
             slug={slug}
             manager={loaded.sheet.manager}
+            unit={loaded.event.markUnit ?? "time"}
+            family={loaded.event.markFamily}
             initial={rows}
           />
         )}

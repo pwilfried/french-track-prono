@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 import { messages } from "@/app/messages.fr";
 import type { Entry } from "@/domain/event";
@@ -18,6 +18,8 @@ import {
 } from "@/domain/podium-draft";
 import { cn } from "@/lib/utils";
 
+import { BottomSheet } from "../ui/bottom-sheet";
+
 const MEDAL_STYLE = {
   1: "bg-gradient-to-b from-(--medal-gold-from) to-(--medal-gold-to) text-(--medal-gold-ink) border-transparent",
   2: "bg-gradient-to-b from-(--medal-silver-from) to-(--medal-silver-to) text-(--medal-silver-ink) border-transparent",
@@ -27,6 +29,12 @@ const KEY = { 1: "first", 2: "second", 3: "third" } as const;
 // Display order: second on the left, winner in the middle, third on the right.
 const DISPLAY: Step[] = [2, 1, 3];
 const STEP_HEIGHT = { 1: "min-h-32", 2: "min-h-28", 3: "min-h-24" } as const;
+// The step being filled: a solid 3 px ring in the readable red (accent-text: ≥ 3:1 against the
+// page and the card in both themes, WCAG 1.4.11), set off from the step so it shows on medals too.
+const ACTIVE_STEP = "border-solid ring-3 ring-accent-text ring-offset-2 ring-offset-background";
+// Keyboard focus: an outline in the ring colour (blue in light, gold in dark), never red, so it
+// does not look like the selection.
+const FOCUS = "focus-visible:outline-3 focus-visible:outline-ring";
 
 /** An athlete to choose; with odds, also his odds and PR (« autre athlète » is one of them). */
 export type PickerAthlete = Entry & { odds?: number | null; personalBest?: string | null };
@@ -44,6 +52,7 @@ export function PodiumPicker({
   onChange,
   title = messages.picker.podium,
   helpHref,
+  help,
   athleteHref,
   onOpenAthlete,
 }: {
@@ -56,12 +65,23 @@ export function PodiumPicker({
   title?: string;
   /** Where the « ? » button next to the heading leads (the rules). */
   helpHref?: string;
+  /**
+   * The rules to show over the page (#703): « Règles » then opens them in a sheet instead of
+   * leaving, so the podium being built stays; `helpHref` remains the link without JavaScript.
+   */
+  help?: ReactNode;
   /** The page of an athlete (#336): each athlete then gets a « Fiche » link. */
   athleteHref?: (athlete: PickerAthlete) => string;
   /** Called when the player opens an athlete's page, before leaving (#699). */
   onOpenAthlete?: () => void;
 }) {
   const [draft, setDraft] = useState(initialDraft);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpButton = useRef<HTMLAnchorElement>(null);
+  const closeHelp = () => {
+    setHelpOpen(false);
+    helpButton.current?.focus();
+  };
   const [selected, setSelected] = useState<Step | null>(null);
   const active = selected ?? nextEmptyStep(draft);
   const nameOf = (id: string | null) => athletes.find((a) => a.athleteId === id) ?? null;
@@ -90,8 +110,19 @@ export function PodiumPicker({
         </h2>
         {helpHref && (
           <a
+            ref={helpButton}
             href={helpHref}
             aria-label={messages.rules.helpLabel}
+            aria-haspopup={help ? "dialog" : undefined}
+            aria-expanded={help ? helpOpen : undefined}
+            onClick={
+              help
+                ? (event) => {
+                    event.preventDefault();
+                    setHelpOpen(true);
+                  }
+                : undefined
+            }
             className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-brand-soft px-4 text-sm font-extrabold text-brand-ink"
           >
             <span aria-hidden="true">?</span>
@@ -99,6 +130,19 @@ export function PodiumPicker({
           </a>
         )}
       </div>
+      {helpHref && help && (
+        <BottomSheet open={helpOpen} onClose={closeHelp} title={messages.rules.title}>
+          <div className="flex flex-col gap-5 leading-relaxed">
+            {help}
+            <Link
+              href={helpHref}
+              className="inline-flex min-h-11 items-center self-start text-sm font-bold underline underline-offset-4"
+            >
+              {messages.rules.allRules}
+            </Link>
+          </div>
+        </BottomSheet>
+      )}
       <div className="grid grid-cols-3 items-end gap-2.5 px-4">
         {DISPLAY.map((step) => {
           const athlete = nameOf(draft[KEY[step]]);
@@ -112,11 +156,13 @@ export function PodiumPicker({
               onClick={() => setSelected(selected === step ? null : step)}
               className={cn(
                 "flex min-w-0 flex-col items-center justify-start gap-1 rounded-t-2xl rounded-b-lg border-2 px-1 py-2 text-center text-[13px] font-bold transition-shadow motion-reduce:transition-none",
+                FOCUS,
+                "focus-visible:outline-offset-[7px]",
                 STEP_HEIGHT[step],
                 athlete
                   ? MEDAL_STYLE[step]
                   : "border-dashed border-border bg-card text-muted-foreground",
-                active === step && !disabled && "ring-3 ring-primary/40",
+                active === step && !disabled && ACTIVE_STEP,
               )}
             >
               <span aria-hidden className="font-display text-2xl font-extrabold">
@@ -169,9 +215,13 @@ export function PodiumPicker({
                 aria-pressed={rank !== null}
                 onClick={() => tapAthlete(athlete.athleteId)}
                 className={cn(
-                  "flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-2xl border px-3.5 py-2 text-left",
-                  other ? "bg-brand-soft text-brand-ink" : "bg-card",
-                  rank !== null ? "border-primary" : "border-border",
+                  "flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-2xl border-2 px-3.5 py-2 text-left",
+                  FOCUS,
+                  "focus-visible:outline-offset-2",
+                  rank !== null
+                    ? "border-accent-text bg-primary-soft"
+                    : ["border-border", other ? "bg-brand-soft" : "bg-card"],
+                  other && "text-brand-ink",
                 )}
               >
                 <span aria-hidden className="w-7 shrink-0 text-center text-xl leading-none">
