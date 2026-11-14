@@ -2,6 +2,17 @@
 begin;
 select plan(16);
 
+-- The clock of the test: now, or just after midnight in Paris when the next 50 minutes would
+-- straddle two evenings (the locks below must fall on one Paris date).
+create temp table clock as
+  select case
+    when ((now() + interval '50 minutes') at time zone 'Europe/Paris')::date
+         > (now() at time zone 'Europe/Paris')::date
+    then (((now() + interval '50 minutes') at time zone 'Europe/Paris')::date + time '00:01')
+         at time zone 'Europe/Paris'
+    else now() end as t0;
+grant select on clock to authenticated;
+
 -- Three finals of one competition with a start list: locking in 10, 40 and 50 minutes, starting
 -- together in two hours (one evening).
 create temp table finals as
@@ -13,8 +24,8 @@ create temp table finals as
       group by competition_id having count(*) >= 3 order by competition_id limit 1)
   order by e.slug limit 3;
 update competitions set odds_enabled = false where id = (select competition_id from finals limit 1);
-update events set starts_at = now() + interval '2 hours', status = 'upcoming',
-  lock_at = now() + case (select n from finals f where f.id = events.id)
+update events set starts_at = (select t0 from clock) + interval '2 hours', status = 'upcoming',
+  lock_at = (select t0 from clock) + case (select n from finals f where f.id = events.id)
                       when 1 then interval '10 minutes' when 2 then interval '40 minutes'
                       else interval '50 minutes' end
 where id in (select id from finals);
@@ -67,16 +78,16 @@ select is((select count(*)::int from reminder_settings), 1, 'a player only reads
 select set_config('request.jwt.claims', '{"sub":"abab0000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
 select save_reminder_settings(false, true, true, true, true, 60, 0, 0);
 select set_config('request.jwt.claims', '{"sub":"abab0000-0000-0000-0000-00000000000d","role":"authenticated"}', true);
--- Quiet from the current hour in Paris to the next one.
+-- Quiet from the hour of the clock in Paris to the next one.
 select save_reminder_settings(true, true, true, true, true, 60,
-  extract(hour from now() at time zone 'Europe/Paris')::int,
-  (extract(hour from now() at time zone 'Europe/Paris')::int + 1) % 24);
+  extract(hour from (select t0 from clock) at time zone 'Europe/Paris')::int,
+  (extract(hour from (select t0 from clock) at time zone 'Europe/Paris')::int + 1) % 24);
 select set_config('request.jwt.claims', '{"sub":"abab0000-0000-0000-0000-00000000000e","role":"authenticated"}', true);
 select save_reminder_settings(true, true, true, true, true, 30, 0, 0);
 reset role;
 
 create temp view due as
-  select d.user_id, d.kind, d.payload from private.reminder_due() d
+  select d.user_id, d.kind, d.payload from private.reminder_due((select t0 from clock)) d
   where d.user_id::text like 'abab0000-%';
 
 select is((select jsonb_path_query_array(payload, '$.events[*].slug') from due
@@ -95,13 +106,14 @@ select is((select jsonb_path_query_array(payload, '$.events[*].slug') from due
 -- Sent: never twice the same evening, even for a final reaching the window later.
 select private.reminder_mark_sent((select jsonb_agg(jsonb_build_object(
   'user_id', d.user_id, 'kind', d.kind, 'evening', d.evening))
-  from private.reminder_due() d where d.user_id::text like 'abab0000-%'));
+  from private.reminder_due((select t0 from clock)) d where d.user_id::text like 'abab0000-%'));
 select private.reminder_mark_sent((select jsonb_agg(jsonb_build_object(
   'user_id', d.user_id, 'kind', d.kind, 'evening', d.evening))
-  from private.reminder_due() d where d.user_id::text like 'abab0000-%'));
+  from private.reminder_due((select t0 from clock)) d where d.user_id::text like 'abab0000-%'));
 select is((select count(*)::int from reminder_log where user_id::text like 'abab0000-%'), 2,
   'what was sent is recorded once');
-select is((select count(*)::int from private.reminder_due(now() + interval '15 minutes') d
+select is((select count(*)::int
+           from private.reminder_due((select t0 from clock) + interval '15 minutes') d
            where d.user_id in ('abab0000-0000-0000-0000-00000000000a',
                                'abab0000-0000-0000-0000-00000000000e')),
   0, 'at most one « Pronos oubliés » per player and evening');
@@ -123,7 +135,7 @@ select is((select concat_ws('/', payload ->> 'points', payload ->> 'finals',
   'one recap with the points of the evening and the place');
 select private.reminder_mark_sent(jsonb_build_array(jsonb_build_object(
   'user_id', 'abab0000-0000-0000-0000-00000000000b', 'kind', 'recap',
-  'evening', (select d.evening from private.reminder_due() d
+  'evening', (select d.evening from private.reminder_due((select t0 from clock)) d
               where d.user_id = 'abab0000-0000-0000-0000-00000000000b' and d.kind = 'recap'))));
 select is((select count(*)::int from due where user_id = 'abab0000-0000-0000-0000-00000000000b'),
   0, 'the recap is sent once');
