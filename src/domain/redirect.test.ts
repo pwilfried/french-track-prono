@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { eventSlugOfPath, safeRedirectPath } from "./redirect";
+import { eventReturnPath, eventSlugOfPath, safeRedirectPath } from "./redirect";
 
 describe("eventSlugOfPath", () => {
   it.each([
@@ -62,6 +62,38 @@ describe("safeRedirectPath", () => {
         expect(out.startsWith("//")).toBe(false);
         expect(out.includes("\\")).toBe(false);
         expect(new URL(out, "http://app.test").origin).toBe("http://app.test");
+      }),
+    );
+  });
+});
+
+describe("eventReturnPath", () => {
+  it("keeps the page of an event", () => {
+    expect(eventReturnPath("/epreuves/100m-femmes")).toBe("/epreuves/100m-femmes");
+    expect(eventReturnPath("/epreuves/100m-femmes/")).toBe("/epreuves/100m-femmes");
+    expect(eventReturnPath("/epreuves/100m-femmes#podium")).toBe("/epreuves/100m-femmes");
+  });
+
+  it.each([
+    undefined,
+    null,
+    "",
+    "/competitions",
+    "/epreuves",
+    "/epreuves/a/b",
+    "https://evil.test/epreuves/x",
+    "//evil.test/epreuves/x",
+    "/\\evil.test/epreuves/x",
+    "javascript:alert(1)",
+  ])("refuses %j", (input) => {
+    expect(eventReturnPath(input)).toBeNull();
+  });
+
+  it("only ever returns an event page of the app", () => {
+    fc.assert(
+      fc.property(fc.string(), (input) => {
+        const out = eventReturnPath(input);
+        if (out !== null) expect(out).toMatch(/^\/epreuves\/[^/?#\\]+$/);
       }),
     );
   });
