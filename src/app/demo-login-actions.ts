@@ -53,7 +53,8 @@ export async function signInAsDemoAction(formData: FormData): Promise<void> {
   }
   const store = await cookies();
   store.set(DEMO_RETURN_COOKIE, adminToken, { ...cookieOptions, httpOnly: true });
-  store.set(DEMO_AS_COOKIE, encodeURIComponent(signIn.pseudo), cookieOptions);
+  // Next encodes the value itself: encoding it here too would show « E2E%20demo » in the banner.
+  store.set(DEMO_AS_COOKIE, signIn.pseudo, cookieOptions);
   redirect("/");
 }
 
