@@ -13,9 +13,11 @@ function fakeWorld(): PredictionWorld {
   const athletes = ["a1", "a2", "a3", "a4"];
   const future = new Date(Date.now() + 3600_000).toISOString();
   const past = new Date(Date.now() - 3600_000).toISOString();
+  // Like the real test events: a 100 m.
+  const discipline = { unit: "time", family: "sprint" } as const;
   const fixtures = [
-    { id: "open-1", competitionSlug: "c", lockAt: future, athleteIds: athletes },
-    { id: "open-2", competitionSlug: "c", lockAt: future, athleteIds: athletes },
+    { id: "open-1", competitionSlug: "c", lockAt: future, athleteIds: athletes, discipline },
+    { id: "open-2", competitionSlug: "c", lockAt: future, athleteIds: athletes, discipline },
     { id: "locked", competitionSlug: "c", lockAt: past, athleteIds: athletes },
     { id: "semi", competitionSlug: "c", lockAt: future, athleteIds: athletes, predictable: false },
   ];
