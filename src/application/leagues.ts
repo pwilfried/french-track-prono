@@ -57,8 +57,16 @@ export type JoinOutcome =
   | { outcome: "already_member"; leagueId: string }
   | { outcome: "unknown_code" }
   | { outcome: "full" }
+  /** The first event of one of its competitions is locked: closed to newcomers (#780). */
+  | { outcome: "started" }
   /** Too many wrong codes lately: joining with a code waits an hour (#155). */
   | { outcome: "too_many" };
+
+/**
+ * What an invite code leads to, before any button (#780): a league open to the player, one that
+ * has started, one they are already in, an unknown code, or too many wrong codes lately (#155).
+ */
+export type InviteStatus = "open" | "started" | "member" | "unknown" | "too_many";
 
 /**
  * Port: leagues, seen by the signed-in player (each method acts as them). Real adapter = Supabase
@@ -96,6 +104,8 @@ export interface LeagueRepository {
   listPublic(): Promise<PublicLeague[]>;
   /** Joins a public league without its code; "unknown_code" when it is not a public league. */
   joinPublic(leagueId: string): Promise<JoinOutcome>;
+  /** What the invite code leads to; an unknown code counts as a wrong one, like `join`. */
+  inviteStatus(code: string): Promise<InviteStatus>;
   /** Reports a public league to the admin (once per player). */
   report(leagueId: string): Promise<"reported" | "unknown">;
 }
@@ -135,9 +145,21 @@ export function joinLeague(ports: Ports) {
       const joined = await ports.leagues.join(code);
       if (joined.outcome === "unknown_code") throw new UseCaseError("LEAGUE_CODE_UNKNOWN");
       if (joined.outcome === "full") throw new UseCaseError("LEAGUE_FULL");
+      if (joined.outcome === "started") throw new UseCaseError("LEAGUE_STARTED");
       if (joined.outcome === "too_many") throw new UseCaseError("LEAGUE_TOO_MANY_ATTEMPTS");
       if (joined.outcome === "already_member") throw new UseCaseError("ALREADY_MEMBER");
       return joined.leagueId;
+    },
+  };
+}
+
+/** What the invite page shows before any button: a started league is closed (#780). */
+export function leagueInvite(ports: Ports) {
+  return {
+    async execute(input: { code: string }): Promise<InviteStatus> {
+      const code = normalizeInviteCode(input.code);
+      if (!code) return "unknown";
+      return ports.leagues.inviteStatus(code);
     },
   };
 }
@@ -241,6 +263,7 @@ export function joinPublicLeague(ports: Ports) {
       const joined = await ports.leagues.joinPublic(input.leagueId);
       if (joined.outcome === "unknown_code") throw new UseCaseError("LEAGUE_NOT_FOUND");
       if (joined.outcome === "full") throw new UseCaseError("LEAGUE_FULL");
+      if (joined.outcome === "started") throw new UseCaseError("LEAGUE_STARTED");
       if (joined.outcome === "too_many") throw new UseCaseError("LEAGUE_TOO_MANY_ATTEMPTS");
       return joined.leagueId;
     },

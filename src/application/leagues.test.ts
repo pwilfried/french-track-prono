@@ -11,6 +11,7 @@ import {
   getLeague,
   handOverLeague,
   joinLeague,
+  leagueInvite,
   leaveLeague,
   listMyLeagues,
   type League,
@@ -58,6 +59,7 @@ function repository(overrides: Partial<LeagueRepository> = {}): LeagueRepository
     addFamily: async () => "added",
     listPublic: async () => [],
     joinPublic: async (id) => ({ outcome: "joined", leagueId: id }),
+    inviteStatus: async () => "open",
     report: async () => "reported",
     ...overrides,
   };
@@ -170,6 +172,7 @@ describe("joinLeague", () => {
   it.each([
     ["unknown_code", "LEAGUE_CODE_UNKNOWN"],
     ["full", "LEAGUE_FULL"],
+    ["started", "LEAGUE_STARTED"],
   ] as const)("turns %s into %s", async (outcome, code) => {
     const leagues = repository({ join: async () => ({ outcome }) });
 
@@ -346,6 +349,39 @@ describe("public leagues", () => {
     });
 
     expect(await joinPublicLeague({ leagues }).execute({ leagueId: "x" })).toBe("x");
+  });
+});
+
+describe("a league that has started (#780)", () => {
+  it("refuses a newcomer who taps « Rejoindre » on a started public league with LEAGUE_STARTED", async () => {
+    // Given a public league whose first event is locked
+    const leagues = repository({ joinPublic: async () => ({ outcome: "started" }) });
+
+    // When a newcomer joins it, then they are refused
+    expect(await codeOf(joinPublicLeague({ leagues }).execute({ leagueId: "x" }))).toBe(
+      "LEAGUE_STARTED",
+    );
+  });
+
+  it("tells the invite page whether the league is open, started or already the player's", async () => {
+    let asked = "";
+    const leagues = repository({
+      inviteStatus: async (code) => {
+        asked = code;
+        return "started";
+      },
+    });
+
+    expect(await leagueInvite({ leagues }).execute({ code: "k7m 2qx" })).toBe("started");
+    expect(asked).toBe("K7M2QX");
+  });
+
+  it("says a code that cannot exist is unknown without asking the database", async () => {
+    const leagues = repository({
+      inviteStatus: async () => Promise.reject(new Error("should not be called")),
+    });
+
+    expect(await leagueInvite({ leagues }).execute({ code: "OOO000" })).toBe("unknown");
   });
 });
 

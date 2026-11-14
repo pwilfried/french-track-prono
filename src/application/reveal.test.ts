@@ -23,6 +23,7 @@ const leagues = (members: LeagueMember[] | null): LeagueRepository => ({
   addFamily: async () => "added",
   listPublic: async () => [],
   joinPublic: async () => ({ outcome: "unknown_code" }),
+  inviteStatus: async () => "unknown",
   report: async () => "unknown",
   join: async () => ({ outcome: "unknown_code" }),
   listMine: async () => [],

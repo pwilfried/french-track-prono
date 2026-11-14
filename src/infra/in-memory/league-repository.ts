@@ -29,12 +29,16 @@ const familiesOf = (rules: LeagueFamilyRule[]) =>
 /**
  * Test double of the LeagueRepository port, with the rules of the database. One store shared by
  * every player; `session(player)` acts as that player. `competitions` tells which competitions
- * exist and whether they are finished (every competition is coming when it is not given).
+ * exist and whether they are finished (every competition is coming when it is not given);
+ * "started": under way, its first event already locked, which closes its leagues (#780).
  */
 export function createInMemoryLeagueStore(
-  competitions?: Record<string, "coming" | "in_progress" | "finished">,
+  competitions?: Record<string, "coming" | "in_progress" | "started" | "finished">,
 ) {
   const stateOf = (slug: string) => (competitions ? competitions[slug] : "coming");
+  /** Closed to newcomers once the first event of one of its competitions is locked (#780). */
+  const hasStarted = (league: Stored) =>
+    league.competitionSlugs.some((slug) => ["started", "finished"].includes(stateOf(slug) ?? ""));
   const leagues = new Map<string, Stored>();
   const reports = new Map<string, Set<string>>();
   /** Wrong invite codes per player (#155): after 10, joining with a code is refused. */
@@ -166,6 +170,7 @@ export function createInMemoryLeagueStore(
           }
           if (league.members.includes(me))
             return { outcome: "already_member", leagueId: league.id };
+          if (hasStarted(league)) return { outcome: "started" };
           if (league.members.length >= leagueCapacity(league.isPublic)) return { outcome: "full" };
           enter(league, me);
           return { outcome: "joined", leagueId: league.id };
@@ -222,7 +227,7 @@ export function createInMemoryLeagueStore(
         },
         async listPublic() {
           return [...leagues.values()]
-            .filter((l) => l.isPublic)
+            .filter((l) => l.isPublic && !hasStarted(l))
             .map((l) => {
               const families = familiesOf(l.families).families?.map((f) => f.family);
               return {
@@ -239,9 +244,20 @@ export function createInMemoryLeagueStore(
           const league = leagues.get(leagueId);
           if (!league?.isPublic) return { outcome: "unknown_code" };
           if (league.members.includes(me)) return { outcome: "already_member", leagueId };
+          if (hasStarted(league)) return { outcome: "started" };
           if (league.members.length >= leagueCapacity(true)) return { outcome: "full" };
           enter(league, me);
           return { outcome: "joined", leagueId };
+        },
+        async inviteStatus(code) {
+          if ((wrongCodes.get(me) ?? 0) >= 10) return "too_many";
+          const league = [...leagues.values()].find((l) => l.inviteCode === code);
+          if (!league) {
+            wrongCodes.set(me, (wrongCodes.get(me) ?? 0) + 1);
+            return "unknown";
+          }
+          if (league.members.includes(me)) return "member";
+          return hasStarted(league) ? "started" : "open";
         },
         async report(leagueId) {
           if (!leagues.get(leagueId)?.isPublic) return "unknown";

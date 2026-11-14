@@ -10,11 +10,13 @@ leagueRepositoryContract("in-memory fake", async () => {
     "contract-league-running": "in_progress",
     "contract-league-coming": "coming",
     "contract-league-finished": "finished",
+    "contract-league-started": "started",
   });
   return {
     competitionSlug: "contract-league-running",
     comingCompetitionSlug: "contract-league-coming",
     finishedCompetitionSlug: "contract-league-finished",
+    startedCompetitionSlug: "contract-league-started",
     newPlayer: async () => {
       const userId = crypto.randomUUID();
       return {
@@ -41,10 +43,22 @@ if (url && key) {
              ('contract-league-coming', 'Test league coming', current_date + 400, current_date + 401),
              ('contract-league-finished', 'Test league finished', current_date - 400, current_date - 400)
       on conflict (slug) do nothing`);
+    // Under way, its only event locked yesterday: its leagues are closed to newcomers (#780).
+    sql(`with c as (
+        insert into competitions (slug, name, starts_on, ends_on)
+        values ('contract-league-started', 'Test league started', current_date - 400, current_date + 400)
+        on conflict (slug) do nothing
+        returning id
+      )
+      insert into events (competition_id, slug, discipline, gender, starts_at, lock_at)
+      select id, 'contract-league-started-100m', '100 m', 'F', now() - interval '1 day',
+             now() - interval '1 day'
+      from c`);
     return {
       competitionSlug: "contract-league-running",
       comingCompetitionSlug: "contract-league-coming",
       finishedCompetitionSlug: "contract-league-finished",
+      startedCompetitionSlug: "contract-league-started",
       newPlayer: async () => {
         const player = await signedInPlayer(url, key);
         return { userId: player.userId, leagues: createSupabaseLeagueRepository(player.client) };
