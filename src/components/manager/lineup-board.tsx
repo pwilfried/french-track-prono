@@ -8,7 +8,6 @@ import { buttonVariants } from "@/components/ui/button";
 import type { DisciplineFamily } from "@/domain/discipline";
 import {
   fitsPlace,
-  lineupProgress,
   seatAthlete,
   type LineupPlace,
   type LineupStatus,
@@ -41,9 +40,7 @@ const SPOT_BUTTON =
  * there greyed with the reason (not entered, another family); pick one and the stadium changes at
  * once (an athlete already placed elsewhere swaps with whoever sat there when they fit). The
  * athletes not lined up wait on the bench below. « Valider mon alignement » turns on once every
- * place the team can fill is filled (#839: the bar says how many stay empty and why; with no
- * athlete entered, it says so and offers nothing to validate; with no athlete at all, the bench
- * says so). Validated: a banner, still editable until the lock. Locked:
+ * place the team can fill is filled. Validated: a banner, still editable until the lock. Locked:
  * read only.
  */
 export function LineupBoard({
@@ -79,14 +76,18 @@ export function LineupBoard({
     setOpen(null);
   };
 
-  const progress = lineupProgress(places, athletes, placed);
-  const nobodyEntered = !athletes.some((a) => a.entered);
+  const filled = placed.filter((id) => id !== null).length;
+  const missing = new Map<string, number>();
+  places.forEach((place, i) => {
+    if (fillable[i] && placed[i] === null) {
+      const label = text.place[place];
+      missing.set(label, (missing.get(label) ?? 0) + 1);
+    }
+  });
   const bench = athletes
     .filter((a) => !placed.includes(a.athleteId))
     .sort((a, b) => Number(b.entered) - Number(a.entered));
-  // Only athletes entered in the competition make the lineup: one withdrawn since stays on the
-  // stadium until moved, but is not sent.
-  const lineup = placed.filter((id): id is string => id !== null && byId.get(id)?.entered === true);
+  const lineup = placed.filter((id): id is string => id !== null);
 
   const spots = places.map((place, i) => {
     const athlete = placed[i] ? byId.get(placed[i]!) : undefined;
@@ -181,10 +182,10 @@ export function LineupBoard({
             {text.stadium}
           </h2>
           <span className="font-mono text-sm font-extrabold tabular-nums">
-            {text.places(progress.filled, places.length)}
+            {text.places(filled, places.length)}
           </span>
         </div>
-        {editable && !nobodyEntered && <p className="text-sm text-muted-foreground">{text.hint}</p>}
+        {editable && <p className="text-sm text-muted-foreground">{text.hint}</p>}
         <StadiumMap label={text.stadium} places={places} spots={spots} />
       </section>
 
@@ -266,51 +267,31 @@ export function LineupBoard({
         )}
       </section>
 
-      {editable && athletes.length > 0 && (
+      {editable && (
         <div className="sticky bottom-20 flex flex-col gap-2 rounded-2xl bg-foreground p-3 text-background shadow-lg md:bottom-3">
-          {nobodyEntered ? (
-            <p className="text-sm font-semibold" aria-live="polite">
-              {text.nobodyEntered}
-            </p>
-          ) : (
-            <div className="flex flex-col gap-1" aria-live="polite">
-              <p className="text-sm font-semibold">
-                {progress.toFill.length > 0
-                  ? text.toFill(
-                      progress.toFill.map(({ place, count }) => ({
-                        label: text.place[place],
-                        count,
-                      })),
-                    )
-                  : progress.unfillable > 0
-                    ? text.fullOfEntered
-                    : text.full}
-              </p>
-              {progress.unfillable > 0 && (
-                <p className="text-sm">{text.unfillable(progress.unfillable)}</p>
-              )}
-            </div>
-          )}
+          <p className="text-sm font-semibold" aria-live="polite">
+            {missing.size > 0
+              ? text.toFill([...missing].map(([label, count]) => ({ label, count })))
+              : text.full}
+          </p>
           {error && (
             <p role="alert" className="text-sm font-semibold text-secondary">
               {error}
             </p>
           )}
-          {!nobodyEntered && (
-            <button
-              type="button"
-              disabled={!progress.ready || saving}
-              onClick={async () => {
-                setSaving(true);
-                const saved = await onValidate(lineup);
-                setSaving(false);
-                if (saved) setChanged(false);
-              }}
-              className={cn(buttonVariants(), "w-full")}
-            >
-              {saving ? text.validating : text.validate}
-            </button>
-          )}
+          <button
+            type="button"
+            disabled={missing.size > 0 || saving}
+            onClick={async () => {
+              setSaving(true);
+              const saved = await onValidate(lineup);
+              setSaving(false);
+              if (saved) setChanged(false);
+            }}
+            className={cn(buttonVariants(), "w-full")}
+          >
+            {saving ? text.validating : text.validate}
+          </button>
         </div>
       )}
     </div>

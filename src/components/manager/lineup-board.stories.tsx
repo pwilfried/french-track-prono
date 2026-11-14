@@ -54,7 +54,6 @@ export const EmptyStadium: Story = {
     await expect(canvas.getByText("0/4 places")).toBeVisible();
     await expect(canvas.getByRole("button", { name: text.validate })).toBeDisabled();
     await expect(canvas.getByText("À remplir : Sprint, Demi-fond, Libre")).toBeVisible();
-    await expect(canvas.getByText(text.unfillable(1))).toBeVisible();
   },
 };
 
@@ -84,7 +83,7 @@ export const Editing: Story = {
     await userEvent.click(sheet().getByRole("button", { name: /Zoé Exemple/ }));
 
     await expect(canvas.getByText("3/4 places")).toBeVisible();
-    await expect(canvas.getByText(text.fullOfEntered)).toBeVisible();
+    await expect(canvas.getByText(text.full)).toBeVisible();
     await userEvent.click(validate);
     await waitFor(() => expect(args.onValidate).toHaveBeenCalledWith(["s1", "m1", "m2"]));
 
@@ -116,53 +115,13 @@ export const PartlyFilled: Story = {
   },
 };
 
-/**
- * Every place the team can fill is filled: the lineup can be validated, the bar says how many
- * places stay empty and why.
- */
+/** Every place the team can fill is filled: the lineup can be validated. */
 export const Full: Story = {
   args: { initial: ["s1", "m1", null, "m2"] },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText(text.fullOfEntered)).toBeVisible();
-    await expect(canvas.getByText(text.unfillable(1))).toBeVisible();
-    await expect(canvas.getByRole("button", { name: text.validate })).toBeEnabled();
-  },
-};
-
-/** Every place filled, none left that nobody could fill. */
-export const AllPlacesFilled: Story = {
-  args: {
-    places: ["sprint", "middle", "free"],
-    fillable: [true, true, true],
-    initial: ["s1", "m1", "m2"],
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(canvas.getByText("3/3 places")).toBeVisible();
     await expect(canvas.getByText(text.full)).toBeVisible();
-    await expect(canvas.queryByText(text.unfillable(1))).toBeNull();
     await expect(canvas.getByRole("button", { name: text.validate })).toBeEnabled();
-  },
-};
-
-/**
- * No athlete of the team is entered (no start list yet, #839): every place is grey, the bar says
- * so and offers no empty lineup to validate.
- */
-export const AllAbsent: Story = {
-  args: {
-    athletes: team.map((a) => ({ ...a, entered: false })),
-    fillable: [false, false, false, false],
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(canvas.getByText("0/4 places")).toBeVisible();
-    await expect(canvas.getByText(text.nobodyEntered)).toBeVisible();
-    await expect(canvas.queryByText(text.full)).toBeNull();
-    await expect(canvas.queryByText(text.hint)).toBeNull();
-    await expect(canvas.queryByRole("button", { name: text.validate })).toBeNull();
-    await expect(canvas.getAllByText(messages.team.absent)).toHaveLength(4);
   },
 };
 
@@ -198,13 +157,13 @@ export const Refused: Story = {
   },
 };
 
-/** No athlete in the team: every place is grey, the bench says so, nothing to validate. */
+/** No athlete in the team: every place is grey, an empty lineup validates. */
 export const Empty: Story = {
   args: { athletes: [], fillable: [false, false, false, false] },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText(text.noTeam)).toBeVisible();
-    await expect(canvas.queryByRole("button", { name: text.validate })).toBeNull();
+    await expect(canvas.getByRole("button", { name: text.validate })).toBeEnabled();
   },
 };
 
