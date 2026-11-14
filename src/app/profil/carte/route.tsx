@@ -136,7 +136,7 @@ export async function GET() {
           <span style={{ fontSize: 240, fontWeight: 700, color: gold, lineHeight: 1 }}>
             {card.points}
           </span>
-          <span style={{ fontSize: 64 }}>{text.points}</span>
+          <span style={{ fontSize: 64 }}>{text.points(card.points)}</span>
         </div>
         <div style={{ fontSize: 56 }}>
           {card.rank ? text.rank(card.rank, card.players) : text.notRanked}
