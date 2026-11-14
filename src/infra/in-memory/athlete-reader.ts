@@ -7,5 +7,10 @@ export function createInMemoryAthleteReader(athletes: AthleteSheet[]): AthleteRe
     async findBySlug(slug) {
       return athletes.find((a) => a.slug === slug) ?? null;
     },
+    async namesOf(athleteIds) {
+      return athletes
+        .filter((a) => athleteIds.includes(a.athleteId))
+        .map(({ athleteId, name, countryCode }) => ({ athleteId, name, countryCode }));
+    },
   };
 }

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, within } from "storybook/test";
 
+import { DISCIPLINE_FAMILIES } from "@/domain/discipline";
 import type { EventSummary } from "@/domain/event";
 
 import { EventCard } from "./event-card";
@@ -23,7 +24,7 @@ const baseEvent: EventSummary = {
 const meta = {
   title: "Events/EventCard",
   component: EventCard,
-  args: { now, tick: false },
+  args: { now, tick: false, family: "sprint" },
   decorators: [
     (Story) => (
       <ul className="max-w-sm bg-background p-6">
@@ -73,25 +74,34 @@ export const ToDoUrgent: Story = {
   },
 };
 
-/** More than 24 hours ahead: the lock day and hour. */
+/** Days ahead: still the time left to lock, in the format of the countdown (#800). */
 export const ToDoLater: Story = {
   args: {
-    event: { ...baseEvent, lockAt: inSeconds(3 * 86_400), startsAt: inSeconds(3 * 86_400 + 300) },
+    event: {
+      ...baseEvent,
+      lockAt: inSeconds(3 * 86_400 + 4 * 3600),
+      startsAt: inSeconds(3 * 86_400 + 4 * 3600 + 300),
+    },
     mine: { predicted: false, joker: false },
   },
   play: async ({ canvasElement }) => {
-    await expect(
-      within(canvasElement).getByText(/^Verrouille le lundi 14 septembre à \d\d:\d\d$/),
-    ).toBeInTheDocument();
+    await expect(within(canvasElement).getByText("Verrouille dans 3 j 4 h")).toBeInTheDocument();
   },
 };
 
-/** Posed: « ✓ Posé », still « modifiable » until the lock. */
+const myPodium = [
+  { athleteId: "a1", name: "Léa Fictive", countryCode: "FRA" },
+  { athleteId: "a2", name: "Ana Exemple", countryCode: "JAM" },
+  null,
+];
+
+/** Posed: my podium in short names instead of the lock line, still « modifiable » (#800). */
 export const AlreadyPredicted: Story = {
-  args: { event: baseEvent, mine: { predicted: true, joker: false } },
+  args: { event: baseEvent, mine: { predicted: true, joker: false, podium: myPodium } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText(/· modifiable/)).toBeInTheDocument();
+    await expect(canvas.getByText("Léa F. · Ana E. · autre · modifiable")).toBeInTheDocument();
+    await expect(canvas.queryByText(/Verrouille/)).toBeNull();
     // A screen reader hears the status too, not only « 100 m, femmes, hour » (#517).
     await expect(canvas.getByRole("link")).toHaveAccessibleName(/^100 m femmes, \d\d:\d\d ✓ Posé$/);
   },
@@ -99,7 +109,7 @@ export const AlreadyPredicted: Story = {
 
 /** Prediction + joker spent on this event. */
 export const PredictedWithJoker: Story = {
-  args: { event: baseEvent, mine: { predicted: true, joker: true } },
+  args: { event: baseEvent, mine: { predicted: true, joker: true, podium: myPodium } },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText(/Joker/)).toBeInTheDocument();
   },
@@ -122,13 +132,24 @@ const finishedEvent: EventSummary = {
   round: "final",
   startsAt: inSeconds(-3600),
   lockAt: inSeconds(-3900),
+  winner: { name: "Léa Fictive", countryCode: "FRA" },
 };
 
-/** Finished, for a visitor: « Terminé ». */
+/** Finished, for a visitor: its winner and « Terminé » (#800). */
 export const Finished: Story = {
   args: { event: finishedEvent },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText("Terminé")).toBeInTheDocument();
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Terminé")).toBeInTheDocument();
+    await expect(canvas.getByText("🥇 Léa Fictive")).toBeInTheDocument();
+  },
+};
+
+/** Finished, the result not in yet: no winner line. */
+export const FinishedWithoutResult: Story = {
+  args: { event: { ...finishedEvent, winner: null } },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).queryByText(/🥇/)).toBeNull();
   },
 };
 
@@ -145,6 +166,7 @@ export const FinishedWithPoints: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await expect(canvas.getByText("🥇 Léa Fictive")).toBeInTheDocument();
     await expect(canvas.getByText("2 athlètes bien placées")).toBeInTheDocument();
     await expect(canvas.queryByText(/Posé/)).toBeNull();
     await expect(canvas.getByRole("link")).toHaveAccessibleName(
@@ -195,7 +217,7 @@ export const FinishedPointsPending: Story = {
   },
 };
 
-/** Long discipline name: must wrap, not push the chip off the card. */
+/** Long discipline name and long athlete names: must wrap, not push the chip off the card. */
 export const LongName: Story = {
   args: {
     event: {
@@ -203,6 +225,76 @@ export const LongName: Story = {
       discipline: "3000 m steeple-chase — qualifications olympiques",
       isFeatured: false,
     },
-    mine: { predicted: true, joker: true },
+    mine: {
+      predicted: true,
+      joker: true,
+      podium: [
+        { athleteId: "a1", name: "Marie-Charlotte Exemple-Fictive", countryCode: "FRA" },
+        { athleteId: "a2", name: "Anne-Sophie Démonstration", countryCode: "BEL" },
+        { athleteId: "a3", name: "Jean-Baptiste Testeur", countryCode: "SUI" },
+      ],
+    },
+  },
+};
+
+/** A long winner name wraps under the event name. */
+export const LongWinnerName: Story = {
+  args: {
+    event: {
+      ...finishedEvent,
+      winner: { name: "Marie-Charlotte Exemple-Fictive de la Démonstration", countryCode: "FRA" },
+    },
+    mine: { predicted: false, joker: false },
+  },
+};
+
+/** Each family wears its animal (#800); relays and an unknown family, the hare. */
+export const Families: Story = {
+  args: { event: baseEvent },
+  render: (args) => (
+    <>
+      {DISCIPLINE_FAMILIES.map((family) => (
+        <EventCard
+          key={family}
+          {...args}
+          family={family}
+          event={{ ...args.event, id: family, slug: family, discipline: family }}
+        />
+      ))}
+      <EventCard
+        {...args}
+        family={null}
+        event={{ ...args.event, id: "unknown", discipline: "?" }}
+      />
+    </>
+  ),
+  decorators: [
+    (Story) => (
+      <ul className="flex max-w-sm flex-col gap-2 bg-background p-6">
+        <Story />
+      </ul>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const animals = [...canvasElement.querySelectorAll("[data-animal]")].map((svg) =>
+      svg.getAttribute("data-animal"),
+    );
+    await expect(animals).toEqual([
+      "guepard",
+      "impala",
+      "lievre",
+      "lievre",
+      "lievre",
+      "kangourou",
+      "chat",
+      "ours",
+      "renard",
+      "lievre",
+    ]);
+    // Decorative: the card is named by the event, not by its animal.
+    await expect(canvasElement.querySelector("[data-animal]")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
   },
 };

@@ -7,6 +7,7 @@ import {
   animalOf,
   animalToReach,
   bandPoints,
+  eventAnimal,
   playerAnimal,
   type BandLine,
 } from "./band";
@@ -16,6 +17,19 @@ const line = (family: BandLine["family"], points: number, day: number): BandLine
   family,
   points,
   eventStartsAt: `2026-08-${String(day).padStart(2, "0")}T19:00:00Z`,
+});
+
+describe("eventAnimal", () => {
+  it("gives an event the animal of its family", () => {
+    expect(eventAnimal("sprint")).toBe("guepard");
+    expect(eventAnimal("hurdles")).toBe("impala");
+  });
+
+  it("gives the hare, the mascot, to a relay or an event of unknown family", () => {
+    expect(eventAnimal("relay")).toBe("lievre");
+    expect(eventAnimal(null)).toBe("lievre");
+    expect(eventAnimal(undefined)).toBe("lievre");
+  });
 });
 
 describe("animalOf", () => {

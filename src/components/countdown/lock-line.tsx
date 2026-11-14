@@ -21,10 +21,19 @@ const hour = new Intl.DateTimeFormat("fr-FR", {
 
 /**
  * When an event locks, in words (#546): its day and hour more than 24 hours ahead, else the time
- * left, in red from one hour before. It ticks every second unless `now` is given.
+ * left, in red from one hour before; `timeLeft` always says the time left. It ticks every second
+ * unless `now` is given.
  */
-export function LockLine({ lockAt, now }: { lockAt: string; now?: Date }) {
-  const label = lockLabel(useNow(now), lockAt);
+export function LockLine({
+  lockAt,
+  now,
+  timeLeft = false,
+}: {
+  lockAt: string;
+  now?: Date;
+  timeLeft?: boolean;
+}) {
+  const label = lockLabel(useNow(now), lockAt, { timeLeft });
   const at = new Date(lockAt);
   const text =
     label.kind === "locked"

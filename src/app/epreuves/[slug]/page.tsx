@@ -7,12 +7,14 @@ import { getEvent } from "@/application/get-event";
 import { getEventOdds } from "@/application/set-event-odds";
 import { listMyLeagues, type League } from "@/application/leagues";
 import { getMyPrediction, type Prediction } from "@/application/save-prediction";
+import { Animal } from "@/components/band/animal";
 import { buttonVariants } from "@/components/ui/button";
 import { LockBanner } from "@/components/countdown/lock-banner";
 import { ErrorNotice } from "@/components/error-notice";
 import { AddToMyLeagueForm } from "@/components/leagues/league-forms";
 import { PodiumMedals } from "@/components/podium/podium-medals";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
+import { eventAnimal } from "@/domain/band";
 import { competitionDay, TIME_ZONE } from "@/domain/competition";
 import { eventPhase } from "@/domain/countdown";
 import type { EventDetail } from "@/domain/event";
@@ -326,21 +328,25 @@ export default async function EventPage({
           >
             ‹ {messages.event.back}
           </Link>
-          <div>
-            {winner && (
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                {messages.result.eyebrow(messages.events.name(event.discipline, event.gender))}
+          <div className="flex items-start gap-3">
+            {/* The animal of its family (#800), the hare for a relay; decorative. */}
+            <Animal kind={eventAnimal(event.markFamily)} className="mt-1" />
+            <div className="min-w-0">
+              {winner && (
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  {messages.result.eyebrow(messages.events.name(event.discipline, event.gender))}
+                </p>
+              )}
+              <h1 className="break-words font-display text-3xl font-extrabold leading-tight">
+                {winner
+                  ? messages.result.winner(winner.name)
+                  : messages.event.title(event.discipline)}
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {messages.events.gender[event.gender]} ·{" "}
+                <span className="first-letter:uppercase">{when.replace(" à ", " · ")}</span>
               </p>
-            )}
-            <h1 className="font-display text-3xl font-extrabold leading-tight">
-              {winner
-                ? messages.result.winner(winner.name)
-                : messages.event.title(event.discipline)}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {messages.events.gender[event.gender]} ·{" "}
-              <span className="first-letter:uppercase">{when.replace(" à ", " · ")}</span>
-            </p>
+            </div>
           </div>
           {event.status === "upcoming" ? (
             <LockBanner lockAt={event.lockAt} />
