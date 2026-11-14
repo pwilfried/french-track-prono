@@ -8,35 +8,22 @@ import { countdown, splitDuration } from "@/domain/countdown";
 import { seasonSteps, type SeasonStep } from "@/domain/manager-home";
 import { cn } from "@/lib/utils";
 
+import { managerPhase } from "./manager-league-card";
+
 const text = messages.managerHome;
 /** Light blue on the night blue, the same in both themes (AA). */
 const soft = "text-[#d9e4f5]";
 const eyebrow = `text-xs font-bold uppercase tracking-wide ${soft}`;
 
-export type ManagerHomeProps = {
-  /** The season of the player's league; null without a Manager league. */
-  season: MySeason | null;
-  /** For the time left before the lineup locks. */
-  now: Date;
-};
-
 /**
- * The Manager home (#606, board « 1 · Accueil Manager »): « Ma saison » on the night blue with the
- * action of the moment, the shortcuts, then the steps of the season. Without a league: the steps
- * and the ways in only.
+ * The empty Manager tab (#606, #774): the mode in one line, « Créer » and « Rejoindre », then the
+ * steps of the season, the league one in progress.
  */
-export function ManagerHome({ season, now }: ManagerHomeProps) {
+export function ManagerStart() {
   return (
     <div className="flex flex-col gap-5">
-      {season ? (
-        <>
-          <MySeasonCard season={season} now={now} />
-          <Shortcuts season={season} />
-        </>
-      ) : (
-        <StartCard />
-      )}
-      <SeasonSteps current={season?.step ?? "league"} />
+      <StartCard />
+      <SeasonSteps current="league" />
     </div>
   );
 }
@@ -69,7 +56,11 @@ function actionLabel(season: MySeason, now: Date): string {
     : text.action.lineup;
 }
 
-function MySeasonCard({ season, now }: { season: MySeason; now: Date }) {
+/**
+ * « Ma saison » on the league page (#606, #774): on the night blue the phase, the place, the next
+ * head-to-head and the action of the moment.
+ */
+export function MySeasonCard({ season, now }: { season: MySeason; now: Date }) {
   const { standing, next, round } = season;
   return (
     <section
@@ -81,11 +72,9 @@ function MySeasonCard({ season, now }: { season: MySeason; now: Date }) {
           {text.mySeason}
         </h2>
         <p className="break-words font-display text-xl font-extrabold leading-tight">
-          {text.league(season.leagueName, season.players)}
+          {managerPhase(season)}
         </p>
-        <p className={`text-sm ${soft}`}>
-          {round ? text.round(round.current, round.total) : text.notStarted}
-        </p>
+        {!round && <p className={`text-sm ${soft}`}>{text.notStarted}</p>}
       </div>
 
       {standing && (
@@ -136,34 +125,6 @@ function MySeasonCard({ season, now }: { season: MySeason; now: Date }) {
   );
 }
 
-function Shortcuts({ season }: { season: MySeason }) {
-  const base = `/manager/${season.leagueId}`;
-  const links = [
-    { href: `${base}/equipe`, label: text.team },
-    { href: `${base}/classement`, label: text.standings },
-    { href: `${base}/journee`, label: text.calendar },
-    ...(season.lastPoints
-      ? [{ href: `${base}/points/${season.lastPoints}`, label: text.lastPoints }]
-      : []),
-  ];
-  return (
-    <nav aria-label={text.shortcuts}>
-      <ul className="grid grid-cols-2 gap-2">
-        {links.map((l) => (
-          <li key={l.href}>
-            <Link
-              href={l.href}
-              className="flex min-h-12 items-center justify-center rounded-2xl border border-border bg-card px-3 text-center text-sm font-bold"
-            >
-              {l.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}
-
 function StartCard() {
   return (
     <section
@@ -173,6 +134,7 @@ function StartCard() {
       <h2 id="manager-start" className="font-display text-xl font-extrabold">
         {text.startTitle}
       </h2>
+      <p className={`text-sm ${soft}`}>{text.startText}</p>
       <Link href="/manager/creer" className={cn(buttonVariants(), "w-full")}>
         {messages.manager.create}
       </Link>

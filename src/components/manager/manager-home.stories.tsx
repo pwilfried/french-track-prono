@@ -4,7 +4,7 @@ import { expect, within } from "storybook/test";
 import type { MySeason } from "@/application/manager-home";
 import { messages } from "@/app/messages.fr";
 
-import { ManagerHome } from "./manager-home";
+import { ManagerStart, MySeasonCard } from "./manager-home";
 
 const text = messages.managerHome;
 const NOW = new Date("2026-11-13T12:00:00.000Z");
@@ -14,9 +14,8 @@ const max = { userId: "u2", pseudo: "Comète", bib: { number: 12, color: "blue" 
 
 const waiting: MySeason = {
   leagueId: "L",
-  leagueName: "Ligue des copains",
-  players: 6,
   step: "league",
+  mercato: null,
   round: null,
   standing: null,
   next: null,
@@ -47,20 +46,21 @@ function decorator(className: string) {
 
 const meta = {
   title: "Manager/ManagerHome",
-  component: ManagerHome,
+  component: MySeasonCard,
   args: { season: lineup, now: NOW },
   decorators: [decorator("bg-background text-foreground")],
-} satisfies Meta<typeof ManagerHome>;
+} satisfies Meta<typeof MySeasonCard>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Without a Manager league: the ways in, then the steps, the league one in progress. */
+/** Without a Manager league: the mode in one line, the ways in, then the steps. */
 export const NoLeague: Story = {
-  args: { season: null },
+  render: () => <ManagerStart />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("heading", { name: text.startTitle })).toBeVisible();
+    await expect(canvas.getByText(text.startText)).toBeVisible();
     await expect(canvas.getByRole("link", { name: messages.manager.create })).toHaveAttribute(
       "href",
       "/manager/creer",
@@ -72,23 +72,20 @@ export const NoLeague: Story = {
   },
 };
 
-/** The mercato is open: the action leads to the catalogue, league step ticked. */
+/** The mercato is open: its round, the action leads to the catalogue. */
 export const MercatoOpen: Story = {
-  args: { season: { ...waiting, step: "mercato" } },
+  args: {
+    season: { ...waiting, step: "mercato", mercato: { round: 1, endsAt: "2026-11-14T12:00:00Z" } },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const season = within(canvas.getByRole("region", { name: text.mySeason }));
-    await expect(season.getByText(text.league("Ligue des copains", 6))).toBeVisible();
+    await expect(season.getByText(messages.managerLeagueCard.phase.mercato(1))).toBeVisible();
     await expect(season.getByText(text.notStarted)).toBeVisible();
     await expect(season.getByRole("link", { name: text.action.mercato })).toHaveAttribute(
       "href",
       "/manager/L/catalogue",
     );
-    const steps = within(canvas.getByRole("list", { name: text.stepsTitle })).getAllByRole(
-      "listitem",
-    );
-    await expect(steps[0]).toHaveTextContent(text.stepState.done);
-    await expect(steps[1]).toHaveAttribute("aria-current", "step");
   },
 };
 
@@ -97,7 +94,7 @@ export const LineupToDo: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const season = within(canvas.getByRole("region", { name: text.mySeason }));
-    await expect(season.getByText(text.round(3, 12))).toBeVisible();
+    await expect(season.getByText(messages.managerLeagueCard.phase.season(3, 12))).toBeVisible();
     await expect(season.getByText("2e")).toBeVisible();
     await expect(season.getByText(text.record(1, 1, 0))).toBeVisible();
     await expect(season.getByText("+120")).toBeVisible();
@@ -106,19 +103,10 @@ export const LineupToDo: Story = {
       "href",
       "/manager/L/alignement/meeting-3",
     );
-    const shortcuts = within(canvas.getByRole("navigation", { name: text.shortcuts }));
-    await expect(shortcuts.getByRole("link", { name: text.lastPoints })).toHaveAttribute(
-      "href",
-      "/manager/L/points/meeting-2",
-    );
-    const steps = within(canvas.getByRole("list", { name: text.stepsTitle })).getAllByRole(
-      "listitem",
-    );
-    await expect(steps[3]).toHaveAttribute("aria-current", "step");
   },
 };
 
-/** The season is over: every step before the champion ticked, the action to its end. */
+/** The season is over: the action leads to its end. */
 export const SeasonOver: Story = {
   args: {
     season: {
@@ -140,11 +128,6 @@ export const SeasonOver: Story = {
       "href",
       "/manager/L/fin-de-saison",
     );
-    const steps = within(canvas.getByRole("list", { name: text.stepsTitle })).getAllByRole(
-      "listitem",
-    );
-    await expect(steps.slice(0, 6).every((s) => s.textContent?.includes("fait"))).toBe(true);
-    await expect(steps[6]).toHaveAttribute("aria-current", "step");
   },
 };
 
@@ -156,12 +139,11 @@ export const Dark: Story = {
   },
 };
 
-/** Long names still wrap inside the 390 px screen. */
+/** Long pseudos still wrap inside the 390 px screen. */
 export const LongText: Story = {
   args: {
     season: {
       ...lineup,
-      leagueName: "La très grande ligue des amis du stade Charléty et de ses environs",
       next: {
         ...lineup.next!,
         me: { ...zoe, pseudo: "Fléchedargentdu400mhaies" },
