@@ -12,6 +12,12 @@ export const DEMO_RETURN_COOKIE = "ftp-demo-return";
 /** Readable cookie: the pseudo of the demo player, shown by the banner (nothing secret). */
 export const DEMO_AS_COOKIE = "ftp-demo-as";
 
+/** Ends a demo session on a response (way back, sign-out): no banner, no way back left behind. */
+export function endDemoSession(response: { cookies: { delete(name: string): unknown } }) {
+  response.cookies.delete(DEMO_RETURN_COOKIE);
+  response.cookies.delete(DEMO_AS_COOKIE);
+}
+
 /** Reads the pseudo of the demo player from `document.cookie`, or null outside a demo session. */
 export function demoPseudoFrom(cookieHeader: string): string | null {
   for (const part of cookieHeader.split(";")) {

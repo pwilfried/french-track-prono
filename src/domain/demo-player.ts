@@ -1,5 +1,5 @@
 /** The domain of every invented account (demo players, tests): never a real address. */
-export const DEMO_EMAIL_DOMAIN = "example.test";
+const DEMO_EMAIL_DOMAIN = "example.test";
 
 /**
  * True for an invented account: a non-empty name and exactly the domain `example.test` (no

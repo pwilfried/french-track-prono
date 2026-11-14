@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { restoreSession, signOutSession } from "@/infra";
 
-import { DEMO_AS_COOKIE, DEMO_RETURN_COOKIE, demoLoginEnabled } from "../../demo-login";
+import { DEMO_RETURN_COOKIE, demoLoginEnabled, endDemoSession } from "../../demo-login";
 import { getSessionClient } from "../../session";
 
 /**
@@ -18,7 +18,6 @@ export async function POST(request: NextRequest) {
   if (!restored) await signOutSession(client);
   const target = restored ? "/admin/joueurs-demo" : "/connexion";
   const response = NextResponse.redirect(new URL(target, request.nextUrl.origin), 303);
-  response.cookies.delete(DEMO_RETURN_COOKIE);
-  response.cookies.delete(DEMO_AS_COOKIE);
+  endDemoSession(response);
   return response;
 }

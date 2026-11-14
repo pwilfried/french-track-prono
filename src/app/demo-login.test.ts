@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { demoLoginEnabled, demoPseudoFrom } from "./demo-login";
+import {
+  DEMO_AS_COOKIE,
+  DEMO_RETURN_COOKIE,
+  demoLoginEnabled,
+  demoPseudoFrom,
+  endDemoSession,
+} from "./demo-login";
 
 describe("the pre-production switch of the demo sign-in", () => {
   it("is on only when PREPROD_DEMO_LOGIN is 1", () => {
@@ -23,5 +29,13 @@ describe("the pseudo shown by the demo banner", () => {
   it("is absent outside a demo session", () => {
     expect(demoPseudoFrom("a=1; b=2")).toBeNull();
     expect(demoPseudoFrom("")).toBeNull();
+  });
+});
+
+describe("the end of a demo session", () => {
+  it("deletes both the way back and the banner cookies", () => {
+    const deleted: string[] = [];
+    endDemoSession({ cookies: { delete: (name: string) => deleted.push(name) } });
+    expect(deleted.sort()).toEqual([DEMO_AS_COOKIE, DEMO_RETURN_COOKIE].sort());
   });
 });
