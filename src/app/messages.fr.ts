@@ -1975,8 +1975,6 @@ export const messages = {
     podium: "Podium officiel",
     podiumEmpty: "Le résultat n'est pas encore connu.",
     podiumStep: (rank: number) => `Place ${rank}`,
-    seedNote:
-      "Seuls les podiums sont chargés dans le jeu de test. Les listes de départ complètes viendront plus tard.",
   },
   captcha: {
     label: "Vérification anti-robot",
