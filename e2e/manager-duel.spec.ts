@@ -22,15 +22,22 @@ test("a participant opens their head-to-head from the matchday and sees both lin
   // Eight athletes each: a stadium of 8 places (one sprint, one middle distance, one throws, five
   // free, the default rules).
   const disciplines = ["100 m", "800 m", "Lancer du poids", "100 m", "800 m", "5000 m", "100 m"];
-  const athletes = (who: string) =>
-    [...disciplines, "200 m"].map((discipline, n) => {
-      const slug = `mduel-${who}-${n}-${tag}`;
-      const id = sql(`insert into athletes (slug, name, country_code, gender, manager_price)
-        values ('${slug}', 'Duel${who} Athlete${n} ${tag}', 'FRA', 'F', 10) returning id`);
-      sql(`insert into athlete_disciplines (athlete_id, discipline, is_primary)
-           values ('${id}', '${discipline}', true)`);
-      return id;
-    });
+  // One statement per player: in pre-production each one costs an API call and a cache flush (#840).
+  const athletes = (who: string) => {
+    const rows = [...disciplines, "200 m"].map((discipline, n) => `(${n}, '${discipline}')`);
+    return sql(`with d (n, discipline) as (values ${rows.join(", ")}),
+      a as (
+        insert into athletes (slug, name, country_code, gender, manager_price)
+        select 'mduel-${who}-' || n || '-${tag}', 'Duel${who} Athlete' || n || ' ${tag}', 'FRA', 'F', 10
+        from d returning id, slug
+      ),
+      ad as (
+        insert into athlete_disciplines (athlete_id, discipline, is_primary)
+        select a.id, d.discipline, true from a join d on a.slug = 'mduel-${who}-' || d.n || '-${tag}'
+      )
+      select string_agg(a.id::text, ',' order by d.n)
+      from a join d on a.slug = 'mduel-${who}-' || d.n || '-${tag}'`).split(",");
+  };
   const mine = athletes("me");
   const theirs = athletes("rival");
 
@@ -82,7 +89,8 @@ test("a participant opens their head-to-head from the matchday and sees both lin
     .getByRole("listitem", { name: "Ma confrontation" })
     .getByRole("link", { name: /Voir la confrontation/ })
     .click();
-  await page.waitForURL(/\/confrontation\//);
+  // A client-side navigation: no « load » event to wait for (#840).
+  await expect(page).toHaveURL(/\/confrontation\//, { timeout: 30_000 });
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Confrontation");
   await expect(page.getByText("Journée 1 · terminée")).toBeVisible();
 

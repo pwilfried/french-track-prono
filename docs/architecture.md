@@ -257,9 +257,9 @@ reste est relu à chaque page, comme avant.
 - Tests de bout en bout : ils écrivent souvent en SQL. `playwright.config.ts` donne au serveur un
   secret `PUBLIC_CACHE_FLUSH_SECRET` ; avec lui, `POST /api/public-cache` expire tous les tags, et
   `sql()` (`src/infra/contract/database.ts`) l'appelle après chaque écriture (sauf
-  `keepCache: true`), puis attend que `GET /api/public-cache` (une sonde par tag, une ligne
-  chacune) ait changé sur toutes ses lignes : sur Vercel les tags expirent l'un après l'autre
-  (#814, #844). Sans ce secret (production), la route répond 404.
+  `keepCache: true`), puis attend, par `GET /api/public-cache` (une sonde par tag), que chaque tag
+  ait expiré : sur Vercel, chacun expire à son tour (#814, #840). Sans ce secret (production), la
+  route répond 404.
 
 ## Modèle de données
 

@@ -2,9 +2,9 @@
 // and waits until the expiry has landed (#814). On Vercel, a Route Handler answers before its
 // `revalidateTag` runs (Next.js hands it to `waitUntil`), so the page loaded right after the flush
 // could still read the old list: in pre-production, a competition made by a test was missing from
-// the league form. The app exposes one probe per public tag, one line each: once every line has
-// changed, every tag has expired (the tags expire one after another, so a probe under all of them
-// changed with the first, and the event list could still be the old one: #844). No import, no
+// the league form. The app exposes one probe per public tag, a line each (`tag=value`): once every
+// line has changed, every tag has expired. Each tag expires on its own (#840): waiting for the
+// first one only let « events » expire later and drop a list cached in between. No import, no
 // syntax beyond erasable types: Node runs this file as it is, in the child process that keeps
 // `sql()` synchronous (src/infra/contract/database.ts).
 
@@ -46,10 +46,10 @@ export async function flushPublicCacheAndWait(
   }
 }
 
-/** Each line of the probe is one tag; the flush has landed once none is the same as before. */
-function allChanged(before: string, after: string): boolean {
+/** Every line of the probe differs from the one read before the flush. */
+function allChanged(before: string, now: string): boolean {
   const old = before.split("\n");
-  return after.split("\n").every((line, index) => line !== old[index]);
+  return now.split("\n").every((line, n) => line !== old[n]);
 }
 
 function isUnreachable(error: unknown): boolean {
