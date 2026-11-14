@@ -229,3 +229,30 @@ export const WithRulesSheet: Story = {
     await expect(help).toHaveFocus();
   },
 };
+
+/**
+ * The selected states stand out (#698): the step being filled has a solid ring, a placed athlete
+ * a thick border, a tinted background and his step number; nothing relies on colour alone.
+ */
+export const SelectedStates: Story = {
+  args: { initialDraft: { first: "lena", second: null, third: "mateo" } },
+  play: async ({ canvasElement }) => {
+    const activeStep = step(canvasElement, "2e");
+    await expect(activeStep).toHaveAttribute("aria-pressed", "true");
+    await expect(getComputedStyle(activeStep).boxShadow).not.toBe("none");
+    await expect(getComputedStyle(step(canvasElement, "1re")).boxShadow).toBe("none");
+
+    const placed = athlete(canvasElement, "Lena Okoro");
+    const free = athlete(canvasElement, "Kofi Mensah");
+    await expect(placed).toHaveAttribute("aria-pressed", "true");
+    await expect(getComputedStyle(placed).borderTopWidth).toBe("2px");
+    await expect(getComputedStyle(placed).borderTopColor).not.toBe(
+      getComputedStyle(free).borderTopColor,
+    );
+    await expect(getComputedStyle(placed).backgroundColor).not.toBe(
+      getComputedStyle(free).backgroundColor,
+    );
+    await expect(placed).toHaveTextContent("1");
+    await expect(athlete(canvasElement, "Mateo Ruiz")).toHaveTextContent("3");
+  },
+};

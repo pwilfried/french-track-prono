@@ -29,6 +29,12 @@ const KEY = { 1: "first", 2: "second", 3: "third" } as const;
 // Display order: second on the left, winner in the middle, third on the right.
 const DISPLAY: Step[] = [2, 1, 3];
 const STEP_HEIGHT = { 1: "min-h-32", 2: "min-h-28", 3: "min-h-24" } as const;
+// The step being filled: a solid 3 px ring in the readable red (accent-text: ≥ 3:1 against the
+// page and the card in both themes, WCAG 1.4.11), set off from the step so it shows on medals too.
+const ACTIVE_STEP = "border-solid ring-3 ring-accent-text ring-offset-2 ring-offset-background";
+// Keyboard focus: an outline in the ring colour (blue in light, gold in dark), never red, so it
+// does not look like the selection.
+const FOCUS = "focus-visible:outline-3 focus-visible:outline-ring";
 
 /** An athlete to choose; with odds, also his odds and PR (« autre athlète » is one of them). */
 export type PickerAthlete = Entry & { odds?: number | null; personalBest?: string | null };
@@ -177,11 +183,13 @@ export function PodiumPicker({
               onClick={() => setSelected(selected === step ? null : step)}
               className={cn(
                 "flex min-w-0 flex-col items-center justify-start gap-1 rounded-t-2xl rounded-b-lg border-2 px-1 py-2 text-center text-[13px] font-bold transition-shadow motion-reduce:transition-none",
+                FOCUS,
+                "focus-visible:outline-offset-[7px]",
                 STEP_HEIGHT[step],
                 athlete
                   ? MEDAL_STYLE[step]
                   : "border-dashed border-border bg-card text-muted-foreground",
-                active === step && !disabled && "ring-3 ring-primary/40",
+                active === step && !disabled && ACTIVE_STEP,
               )}
             >
               <span aria-hidden className="font-display text-2xl font-extrabold">
@@ -234,9 +242,13 @@ export function PodiumPicker({
                 aria-pressed={rank !== null}
                 onClick={() => tapAthlete(athlete.athleteId)}
                 className={cn(
-                  "flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-2xl border px-3.5 py-2 text-left",
-                  other ? "bg-brand-soft text-brand-ink" : "bg-card",
-                  rank !== null ? "border-primary" : "border-border",
+                  "flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-2xl border-2 px-3.5 py-2 text-left",
+                  FOCUS,
+                  "focus-visible:outline-offset-2",
+                  rank !== null
+                    ? "border-accent-text bg-primary-soft"
+                    : ["border-border", other ? "bg-brand-soft" : "bg-card"],
+                  other && "text-brand-ink",
                 )}
               >
                 <span aria-hidden className="w-7 shrink-0 text-center text-xl leading-none">
