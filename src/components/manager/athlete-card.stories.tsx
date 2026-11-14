@@ -140,7 +140,7 @@ export const AtZero: Story = {
   args: { score: { points: 0, bonus: 0 } },
   play: async ({ canvasElement }) => {
     const card = within(canvasElement).getByRole("article");
-    await expect(card).toHaveTextContent("0 pts");
+    await expect(card).toHaveTextContent("0 pt");
     await expect(card.firstElementChild).toHaveClass("outline-dashed");
   },
 };
