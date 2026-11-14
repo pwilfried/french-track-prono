@@ -370,8 +370,14 @@ y ajoute `NEXT_PUBLIC_SITE_NOINDEX=1` avec `VERCEL_EXTRA_ENV` :
 2. **Déploiement direct** : `vercel deploy --prebuilt --prod` branche le déploiement sur les
    domaines. Pas de `vercel promote` : avec le jeton du projet, il répond « User not found »
    (#731, premier déploiement préprod du 13 novembre 2026).
-3. **Retour arrière automatique** : si le test de fumée échoue, `vercel rollback` remet le
-   déploiement précédent, le job reste rouge et une issue `bug` + `needs-human` « Déploiement
+3. **Retour arrière automatique** : si le test de fumée échoue, le script remet le déploiement
+   précédent par l'API REST de Vercel (`curl` avec `VERCEL_TOKEN`, toujours avec
+   `teamId=$VERCEL_ORG_ID`) : il prend le dernier déploiement de production `READY` autre que
+   celui qui vient d'être fait (`GET /v6/deployments?projectId=…&target=production&state=READY`),
+   puis `POST /v9/projects/<projet>/rollback/<id>`. Pas de `vercel rollback` : comme `promote`,
+   il répond « User not found » avec le jeton du projet (#735). Une erreur HTTP de l'API donne
+   une ligne `::error::` (sans le jeton) et l'issue dit « Retour au déploiement précédent : non… »
+   (à faire à la main : Deployments → Instant Rollback). Dans tous les cas, le job reste rouge et une issue `bug` + `needs-human` « Déploiement
    annulé… » mentionne les propriétaires (`AGENTS_OWNER`) avec le lien du job. Après correction,
    annuler le retour arrière dans Vercel (Deployments → « Undo Rollback ») : sinon Vercel ne
    branche plus les déploiements suivants sur les domaines. Puis relancer le workflow.
