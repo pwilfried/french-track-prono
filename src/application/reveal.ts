@@ -1,6 +1,6 @@
 import type { Bib } from "@/domain/bib";
 import type { Podium } from "@/domain/podium-draft";
-import type { Reaction } from "@/domain/reveal";
+import { pickDistribution, type PickShare, type Reaction } from "@/domain/reveal";
 
 import { UseCaseError } from "./errors";
 import type { LeagueRepository } from "./leagues";
@@ -18,8 +18,8 @@ export type RevealedPrediction = {
   flair: boolean;
 };
 
-/** The revealed podiums shown. */
-export type EventReveal = { predictions: RevealedPrediction[] };
+/** The revealed podiums shown, and who the whole field picked as winner (never filtered). */
+export type EventReveal = { predictions: RevealedPrediction[]; winnerPicks: PickShare[] };
 
 /** Port: the predictions of an event as the signed-in player may see them. */
 export interface RevealRepository {
@@ -50,6 +50,7 @@ export function listEventPredictions(ports: {
         predictions: [...shown].sort((a, b) =>
           a.pseudo.localeCompare(b.pseudo, "fr", { sensitivity: "base" }),
         ),
+        winnerPicks: pickDistribution(predictions.map((p) => p.podium)),
       };
     },
   };

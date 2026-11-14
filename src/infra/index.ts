@@ -53,8 +53,6 @@ export { createInMemoryPointsStore } from "./in-memory/points-repository";
 export { createSupabasePointsRepository } from "./supabase/points-repository";
 export { createInMemoryRevealRepository } from "./in-memory/reveal-repository";
 export { createSupabaseRevealRepository } from "./supabase/reveal-repository";
-export { createInMemoryConsensusRepository } from "./in-memory/consensus-repository";
-export { createSupabaseConsensusRepository } from "./supabase/consensus-repository";
 export { createInMemoryReactionRepository } from "./in-memory/reaction-repository";
 export { createSupabaseReactionRepository } from "./supabase/reaction-repository";
 export {

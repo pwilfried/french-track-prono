@@ -209,19 +209,10 @@ joueurs, avec un filtre par ligue (onglets « Tous » puis une ligue par onglet)
 rappelle que les pronos se dévoilent au verrouillage, et la base ne laisse lire que son propre
 prono. Sous le podium d'un autre joueur : six réactions fixes (🔥 😂 😮 👏 🤡 🎯, pas de texte
 libre), une par joueur et par prono, qu'on retire en la touchant à nouveau ; pas de réaction sur
-son propre prono (décisions du propriétaire, issue #16). Le badge « Coup de flair » est lu dans les points
+son propre prono (décisions du propriétaire, issue #16). La répartition « Qui ont-ils vu
+gagner ? » est calculée sur tous les pronos de l'épreuve, jamais sur la seule ligue
+(`pickDistribution`, `src/domain/reveal.ts`). Le badge « Coup de flair » est lu dans les points
 calculés (`score_events`, raison `flair`) : il suit toujours le barème de la base.
-
-**Consensus (v0.18, #680).** Au-dessus des podiums, le bloc « Ce qu'ont pronostiqué les joueurs »
-remplace l'ancienne répartition « Qui ont-ils vu gagner ? » : pour chaque place, les athlètes
-choisis avec leur pourcentage (arrondis qui totalisent 100 %, méthode du plus fort reste), mon
-choix surligné ; la part des joueurs qui ont exactement mon podium ; mon choix le plus original
-(la place où je suis le moins suivi, la plus haute en cas d'égalité) ; après le résultat, la part
-de podiums parfaits (un athlète ex æquo compte à la place qu'il partage). Les onglets « Tous les
-joueurs · N » puis une ligue par onglet (« nom · N ») filtrent le bloc comme les podiums. Calcul :
-`consensus()` dans `src/domain/consensus.ts` ; données : `event_consensus(événement, ligue)`, qui
-rend les podiums sans nom (seulement « le mien »), refuse une épreuve non verrouillée (FT033,
-aucune fuite avant le verrou, même par l'API) et une ligue dont on n'est pas membre (42501).
 
 Les décisions du propriétaire prises pendant ces versions sont tracées dans l'issue #112.
 

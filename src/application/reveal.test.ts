@@ -63,6 +63,8 @@ describe("listEventPredictions", () => {
     }).execute({ eventId: "e1", leagueId: "l1" });
 
     expect(result.predictions.map((p) => p.userId)).toEqual(["b", "z"]);
+    // Who the field picked stays computed on everyone, not only the league.
+    expect(result.winnerPicks).toEqual([{ athleteId: "a", count: 3, percent: 100 }]);
   });
 
   it("refuses a league I am not in with LEAGUE_NOT_FOUND", async () => {
