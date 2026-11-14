@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Merges Claude's green PRs, sends red or conflicting ones back to Claude (3 tries, then the
-# owners), retries the work waiting for quota (hourly run), then starts the next issues (next.sh).
+# owners), retries the work waiting for quota (hourly or manual run: GitHub's cron often skips
+# hours, #736), then starts the next issues (next.sh).
 # Only PRs from a claude/ branch of this repository: never a fork's PR (the repository is public)
 # nor a person's. Not merged automatically: drafts, agent:needs-answer, milestone-plan.
 # Before merging, a PR behind main gets main merged in (a merge commit, never a rebase) and waits
@@ -108,7 +109,7 @@ while read -r -u 3 pr; do
   break # the other PRs are now behind main
 done 3<<< "$candidates"
 
-if [ "$EVENT" = schedule ]; then
+if [ "$EVENT" = schedule ] || [ "$EVENT" = workflow_dispatch ]; then
   for n in $(as_bot gh api "repos/$repo/issues?labels=agent:waiting-quota&state=open&per_page=100" --jq '.[].number'); do
     echo "Retrying #$n (waiting for quota)"
     remove_label "$n" agent:waiting-quota

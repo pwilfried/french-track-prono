@@ -106,6 +106,10 @@ automatiquement, seules les branches `claude/…` de ce dépôt.
 Les labels `agent:claude`, `agent:working-claude`, `agent:needs-answer` et `agent:waiting-quota`
 sont créés avec cette PR.
 
+Une tâche `agent:waiting-quota` est relancée par un passage planifié d'agents-merge, ou par un
+lancement manuel (Actions → agents-merge → Run workflow) : le cron horaire de GitHub saute souvent
+des heures (#736).
+
 ## Ce qui n'est pas automatique
 
 - Les captures d'écran 390 px (clair et sombre) : Claude ne les produit pas sur le runner ; l'issue
