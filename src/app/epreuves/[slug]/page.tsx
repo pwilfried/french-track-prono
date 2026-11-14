@@ -322,7 +322,7 @@ export default async function EventPage({
           <div>
             {winner && (
               <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                {messages.result.eyebrow(event.discipline, messages.events.gender[event.gender])}
+                {messages.result.eyebrow(messages.events.name(event.discipline, event.gender))}
               </p>
             )}
             <h1 className="font-display text-3xl font-extrabold leading-tight">

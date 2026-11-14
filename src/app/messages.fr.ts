@@ -1,5 +1,6 @@
 // Every visible UI string lives here (French only in v1, no i18n library).
 
+import { eventLabel } from "@/domain/event-label";
 import type { ManagerIntroFigures } from "@/domain/manager-intro";
 
 /** « 1er », « 2e »… */
@@ -205,9 +206,9 @@ export const messages = {
     filtersLabel: "Filtrer les épreuves",
     filters: { todo: "À faire", posed: "Posés", done: "Terminées", all: "Toutes" },
     gender: GENDER,
-    /** « 100 m femmes ». */
+    /** « 100 m femmes », « Relais mixte 4x100 m » (never the gender twice). */
     name: (discipline: string, gender: keyof typeof GENDER) =>
-      `${discipline} ${GENDER[gender].toLowerCase()}`,
+      eventLabel(discipline, GENDER[gender]),
     status: { upcoming: "À venir", live: "En cours", finished: "Terminé" },
     featured: "Phare",
     posed: "✓ Posé",
@@ -218,8 +219,8 @@ export const messages = {
     perfect: "Podium parfait !",
     noPrediction: "Pas de prono",
     noPoints: "—",
-    cardLabel: (discipline: string, gender: string, hour: string) =>
-      `${discipline}, ${gender}, ${hour}`,
+    /** « 100 m femmes, 20:35 ». */
+    cardLabel: (name: string, hour: string) => `${name}, ${hour}`,
     empty: "Aucune épreuve pour ce filtre.",
     allPosed: "Tout est posé pour l'instant.",
     loading: "Chargement des épreuves…",
@@ -1523,7 +1524,7 @@ export const messages = {
     sb: "SB",
     recordsHint: "PB : record personnel · SB : meilleure perf de la saison",
     noRecord: "Pas encore de record connu.",
-    races: "Dernières courses",
+    races: "Dernières épreuves",
     noRace: "Pas encore de résultat dans le jeu.",
     rank: (rank: number) => (rank === 1 ? "1re" : `${rank}e`),
     profileOf: (name: string) => `Fiche de ${name}`,
@@ -1928,7 +1929,7 @@ export const messages = {
     joker: "🃏 Joker",
   },
   event: {
-    back: "Épreuves",
+    back: "Compétitions",
     title: (discipline: string) => `${discipline} — Finale`,
     combined: (n: number) => `Épreuve combinée · ${n} disciplines`,
     combinedNote: "Tu pronostiques le podium final, au total des points.",
@@ -2226,7 +2227,7 @@ export const messages = {
     hintComplete: "Touche un athlète déjà placé pour le retirer, ou une marche pour la changer.",
   },
   result: {
-    eyebrow: (discipline: string, gender: string) => `Résultat · ${discipline} ${gender}`,
+    eyebrow: (name: string) => `Résultat · ${name}`,
     winner: (name: string) => `${name} s'impose`,
     points: (points: number) => (points > 0 ? `+${points} pts` : `${points} pt`),
     notComputed: "Les points de cette épreuve ne sont pas encore calculés.",

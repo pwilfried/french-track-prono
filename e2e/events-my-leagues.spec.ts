@@ -28,7 +28,7 @@ test("the competitions sheet offers the competitions of my leagues first", async
   await page.waitForURL(new RegExp(`competition=e2e-mine-${tag}`));
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
   // The card is a link named by the event (#517), its label kept in a hidden span.
-  await expect(page.getByRole("link", { name: /^100 m, Femmes/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^100 m femmes,/ })).toBeVisible();
 
   sql(`delete from competitions where slug = 'e2e-mine-${tag}'`);
 });

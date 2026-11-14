@@ -48,14 +48,14 @@ test("a visitor picks another competition from the sheet, then a day shows only 
   await expect(sheet).toBeHidden();
   // The first day opens before the competition, its final in the evening session.
   const evening = page.getByRole("region", { name: /^Soir/ });
-  await expect(evening.getByRole("link", { name: /^100 m, Femmes/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /^200 m, Femmes/ })).toHaveCount(0);
+  await expect(evening.getByRole("link", { name: /^100 m femmes,/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^200 m femmes,/ })).toHaveCount(0);
 
   const days = page.getByRole("navigation", { name: "Jours de la compétition" });
   await days.getByRole("link").nth(1).click();
   await page.waitForURL(/jour=\d{4}-\d{2}-\d{2}/);
-  await expect(page.getByRole("link", { name: /^200 m, Femmes/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /^100 m, Femmes/ })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /^200 m femmes,/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^100 m femmes,/ })).toHaveCount(0);
 
   sql(`delete from competitions where slug = 'e2e-days-${tag}'`);
 });

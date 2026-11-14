@@ -29,7 +29,7 @@ test("the event list comes from the cache, and the admin's new event time shows 
     `update profiles set is_admin = true where id = (select id from auth.users where email = '${player.email}')`,
   );
 
-  const card = page.getByRole("link", { name: /^100 m, Femmes/ });
+  const card = page.getByRole("link", { name: /^100 m femmes,/ });
   await page.goto(`/competitions?competition=${competition}`);
   await expect(card).toContainText("20:35");
 
