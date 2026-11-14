@@ -81,12 +81,24 @@ const counts = `select json_build_object(
   'accounts', (select count(*) from auth.users where email = '${email}'),
   'admin', (select is_admin from profiles where id = ${owner}),
   'pseudo', (select pseudo from profiles where id = ${owner}),
-  'leagues', (select count(*) from leagues),
-  'memberships', (select count(*) from league_members where user_id = ${owner}),
-  'managerLeagues', (select count(*) from manager_leagues),
-  'managerMemberships', (select count(*) from manager_members where user_id = ${owner}),
-  'demoMembers', (select count(*) from league_members
-                  where league_id = '00000000-0000-4000-9a00-000000000002')
+  'official', (select count(*) from leagues l join league_members m on m.league_id = l.id
+               where l.is_official and m.user_id = ${owner})
+              = (select count(*) from leagues where is_official),
+  'openLeagues', (select count(*) from leagues l where not l.is_official and not exists (
+                    select 1 from league_competitions lc join events e on e.competition_id = lc.competition_id
+                    where lc.league_id = l.id and e.lock_at <= now())),
+  'memberships', (select count(*) from league_members m join leagues l on l.id = m.league_id
+                  where not l.is_official and m.user_id = ${owner}),
+  'startedMemberships', (select count(*) from league_members m where m.user_id = ${owner}
+                  and exists (select 1 from league_competitions lc
+                              join events e on e.competition_id = lc.competition_id
+                              join leagues l on l.id = lc.league_id
+                              where lc.league_id = m.league_id and not l.is_official
+                                and e.lock_at <= now())),
+  'closedManager', (select count(*) from manager_members m join manager_leagues l on l.id = m.league_id
+                    where m.user_id = ${owner} and l.mercato_opened_at is not null),
+  'overTarget', (select count(*) from manager_leagues l
+                 where (select count(*) from manager_members m where m.league_id = l.id) > l.player_target)
 )::text;`;
 
 type Counts = Record<string, number | boolean | string>;
@@ -96,7 +108,7 @@ const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (url && key) {
   describe("pre-production owner account", () => {
-    it("joins every prediction league and the open Manager leagues as an admin, once", () => {
+    it("joins only the leagues a player could join, once, when it runs twice", () => {
       const body = ownerSql();
       // Without the pseudo « admin » taken by someone else (local data may hold one).
       const free = `update profiles set pseudo = 'was-admin-' || left(id::text, 8)
@@ -111,11 +123,14 @@ if (url && key) {
 
       expect(second).toEqual(first);
       expect(first).toMatchObject({ accounts: 1, admin: true, pseudo: "admin" });
-      expect(first!.memberships).toBe(first!.leagues);
-      // The demo Manager league has its mercato open: the owner stays out of it (#781).
-      expect(first!.managerMemberships).toBeLessThan(first!.managerLeagues as number);
-      // The private demo league « Club du jeudi »: its 8 players, and the owner.
-      expect(first!.demoMembers).toBeGreaterThanOrEqual(9);
+      expect(first).toMatchObject({
+        official: true,
+        startedMemberships: 0,
+        closedManager: 0,
+        overTarget: 0,
+      });
+      // Every prediction league not started (all under their cap in the demo set).
+      expect(first!.memberships).toBe(first!.openLeagues);
     });
 
     it("joins only the Manager leagues a player could still join (#781)", () => {

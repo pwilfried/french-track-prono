@@ -1160,6 +1160,8 @@ export const messages = {
     inviteSubtitle: "Lien d'invitation",
     invited: (code: string) => `Tu as été invité dans une ligue avec le code ${code}.`,
     inviteNote: "Tu rejoins la ligue en un appui ; tu pourras la quitter quand tu veux.",
+    /** The invite page of a league that has started (#780). */
+    startedJoinPublic: "Rejoindre une ligue publique",
     /** Leagues limited to event families (#613). */
     family: {
       sprint: "Sprint",
@@ -2588,6 +2590,7 @@ export const messages = {
     LEAGUE_CODE_UNKNOWN: "Ce code ne correspond à aucune ligue. Vérifie-le auprès de ton ami.",
     ALREADY_MEMBER: "Tu fais déjà partie de cette ligue.",
     LEAGUE_FULL: "Cette ligue est complète (50 membres au maximum).",
+    LEAGUE_STARTED: "Cette ligue a déjà commencé : rejoins-en une autre ou crée la tienne.",
     LEAGUE_TOO_MANY_ATTEMPTS:
       "Trop de codes erronés : réessaie dans une heure, ou demande le lien d'invitation à ton ami.",
     LEAGUE_NOT_FOUND: "Cette ligue n'existe pas ou tu n'en fais pas partie.",

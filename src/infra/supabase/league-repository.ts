@@ -105,6 +105,7 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       const { data, error } = await client.rpc("join_league", { p_code: code });
       if (error) {
         if (error.code === "54000") return { outcome: "full" };
+        if (error.code === "FT032") return { outcome: "started" };
         if (error.code === "FT012") return { outcome: "too_many" };
         if (error.code === "FT014") throw new UseCaseError("ACCOUNT_BLOCKED");
         return fail();
@@ -219,10 +220,20 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       if (error) {
         if (error.code === "P0002" || error.code === "22P02") return { outcome: "unknown_code" };
         if (error.code === "54000") return { outcome: "full" };
+        if (error.code === "FT032") return { outcome: "started" };
         if (error.code === "FT014") throw new UseCaseError("ACCOUNT_BLOCKED");
         return fail();
       }
       return { outcome: before.has(leagueId) ? "already_member" : "joined", leagueId };
+    },
+
+    async inviteStatus(code) {
+      const { data, error } = await client.rpc("league_invite_status", { p_code: code });
+      if (error?.code === "FT012") return "too_many";
+      if (error) return fail();
+      // An unknown code answers nothing (the database remembers the failed attempt).
+      if (data === "member" || data === "started" || data === "open") return data;
+      return "unknown";
     },
 
     async report(leagueId) {
