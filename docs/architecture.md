@@ -463,7 +463,11 @@ podium. Depuis #702, une perf doit être plausible pour la famille de la discipl
 un triple saut) : bornes dans `src/domain/mark-range.ts`, reprises par `mark_range()` en base (à
 changer ensemble) ; le formulaire le dit à côté du champ, la base refuse (FT031, et
 `predictions_marks_bounded` : positive, finie, sous 100 000). Sur la feuille de résultats (saisie
-ou collage World Athletics), une marque hors bornes n'est qu'un avertissement que l'admin confirme. Points : voir « Cas de test du cœur », S14 à S18 ; le barème est éditable dans
+ou collage World Athletics), une marque hors bornes n'est qu'un avertissement que l'admin confirme.
+Saisies bornées (#712) : chaque champ joueur a une longueur maximale, reprise par le cas d'usage
+(recherches à `SEARCH_MAX_LENGTH`, 60 caractères, dans `src/domain/list-view.ts` ; e-mail à 254 ;
+nom de ligue à `LEAGUE_NAME_MAX` ; enchère Manager à `MAX_BID_DIGITS` chiffres, sinon
+`MANAGER_BID_INVALID` ; perf à `MARK_MAX_LENGTH`). Points : voir « Cas de test du cœur », S14 à S18 ; le barème est éditable dans
 `/admin/bareme` (`admin_set_scoring_rule()`, journalisée).
 
 Profils (v0.10, décisions dans `docs/decisions/profils.md`) : une seule liste de mots interdits

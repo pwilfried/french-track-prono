@@ -6,10 +6,11 @@ import { joinLeagueFor, newPlayer, signUp } from "./players";
 test("a player cannot see a friend's podium before the lock, sees it after and reacts to it", async ({
   browser,
 }) => {
-  // An open event of its own (the prediction journey uses the first one).
+  // An open event of its own, nobody's prediction on it yet: Anna's is then 100 % of them (#830).
   const slug = sql(
     `select e.slug from events e join competitions c on c.id = e.competition_id
      where c.slug = 'ultimate-championship-2026' and e.lock_at > now() + interval '5 minutes'
+       and not exists (select 1 from predictions p where p.event_id = e.id)
      order by e.starts_at offset 3 limit 1`,
   );
   expect(slug, "no open event: run npm run db:open-events").not.toBe("");

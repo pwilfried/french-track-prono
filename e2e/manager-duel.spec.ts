@@ -82,6 +82,7 @@ test("a participant opens their head-to-head from the matchday and sees both lin
     .getByRole("listitem", { name: "Ma confrontation" })
     .getByRole("link", { name: /Voir la confrontation/ })
     .click();
+  await page.waitForURL(/\/confrontation\//);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Confrontation");
   await expect(page.getByText("Journée 1 · terminée")).toBeVisible();
 
