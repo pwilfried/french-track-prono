@@ -33,6 +33,22 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
    déploiement en préprod de ce commit a échoué, pas de tag, un avertissement dans le run, nouvel
    essai à la vérification suivante (au plus une heure). Même chose si la CI de `main` est rouge.
 
+### Test quotidien de la préprod (#636)
+
+Chaque matin (04 h 23 UTC, 5 h 23 ou 6 h 23 à Paris), et à la main par « Run workflow »,
+`preprod-daily.yml` (source : `ci/preprod/daily.yml`) lance la suite `e2e/` contre la préprod,
+sans relance d'un test qui échoue. Il attend un déploiement en cours (même file que `preprod.yml`).
+
+- **Rouge** : `ci/preprod/regression-report.sh` ouvre une issue `bug` dans le milestone en cours,
+  avec les tests en échec, le lien du run et du rapport Playwright (captures et traces), et une
+  mention du propriétaire (notification GitHub sur le téléphone). Si une issue ouverte suit déjà
+  ce test, elle reçoit un commentaire au lieu d'une nouvelle issue.
+- **Vert** : aucune issue ; une issue ouverte dont les tests repassent reçoit une seule fois
+  « De nouveau vert ». Le propriétaire décide de la fermer.
+- Les comptes `e2e-…@example.test`, ligues « E2E … » et compétitions de test du passage sont
+  supprimés à la fin, même en échec (`ci/preprod/cleanup-e2e.sql`, aussi lancé après chaque
+  déploiement, #695).
+
 Une issue n'est jamais prise si elle a `needs-human`, `agent:blocked`, `after-ui` ou `agent:local`,
 si elle est assignée à quelqu'un (une personne la traite : Yannis s'assigne ses issues), ou si une
 issue qui la bloque est encore ouverte (lien GitHub « blocked by » ou ligne `Blocked by #n`).
@@ -90,6 +106,10 @@ automatiquement, seules les branches `claude/…` de ce dépôt.
 
 Les labels `agent:claude`, `agent:working-claude`, `agent:needs-answer` et `agent:waiting-quota`
 sont créés avec cette PR.
+
+Une tâche `agent:waiting-quota` est relancée par un passage planifié d'agents-merge, ou par un
+lancement manuel (Actions → agents-merge → Run workflow) : le cron horaire de GitHub saute souvent
+des heures (#736).
 
 ## Ce qui n'est pas automatique
 

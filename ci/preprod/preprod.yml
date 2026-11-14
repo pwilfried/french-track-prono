@@ -8,9 +8,7 @@ name: Pre-production
 # a milestone is finished; a failed run of this workflow on main's commit makes the tag wait.
 # Secrets (GitHub > Settings > Environments > preprod, never the production ones):
 #   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, SUPABASE_PROJECT_REF,
-#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID, and for the end-to-end tests run after the
-#   deploy (#695) SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, PUBLIC_CACHE_FLUSH_SECRET
-#   (docs/SETUP.md, « Préproduction »).
+#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (docs/SETUP.md, « Préproduction »).
 # Pre-production holds invented data only: no production export, no production secret.
 
 on:
@@ -20,8 +18,6 @@ on:
 
 permissions:
   contents: read
-  # The e2e result is commented on the open « Valider vX.Y.Z en préprod » issue, if any.
-  issues: write
 
 # One deploy at a time; a newer merge waits for the running one, then replaces the queued one.
 concurrency:
@@ -85,6 +81,9 @@ jobs:
     environment:
       name: preprod
       url: ${{ env.PREPROD_URL }}
+    permissions:
+      contents: read
+      issues: write
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -103,22 +102,15 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      # The pre-production project's own variables (its Supabase, its address), then noindex.
-      - name: Pull the pre-production settings
-        run: |
-          npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
-          echo "NEXT_PUBLIC_SITE_NOINDEX=1" >> .vercel/.env.production.local
-
-      - name: Build
+      # The pre-production project's own variables (its Supabase, its address), plus noindex; then
+      # the same checked deploy as production, rollback included (ci/vercel-deploy.sh, #720).
+      - name: Deploy and smoke-test pre-production
         env:
+          GH_TOKEN: ${{ github.token }}
+          AGENTS_OWNER: ${{ vars.AGENTS_OWNER }}
           NEXT_PUBLIC_SITE_NOINDEX: "1"
-        run: npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
-
-      - name: Deploy
-        run: npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
-
-      - name: Smoke test of pre-production
-        run: scripts/smoke.sh "$PREPROD_URL"
+          VERCEL_EXTRA_ENV: NEXT_PUBLIC_SITE_NOINDEX=1
+        run: ci/vercel-deploy.sh "$PREPROD_URL"
 
   e2e:
     name: End-to-end tests against pre-production
@@ -127,7 +119,6 @@ jobs:
     timeout-minutes: 60
     environment: preprod
     env:
-      E2E_TARGET: preprod
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -169,7 +160,7 @@ jobs:
       # Again, even if the run was cut short before its teardown (#695).
       - name: Delete the test accounts, leagues and competitions
         if: always()
-        run: ci/preprod/load-sql.sh ci/preprod/e2e-cleanup.sql
+        run: ci/preprod/load-sql.sh ci/preprod/cleanup-e2e.sql
 
       - name: Keep the report
         if: always()

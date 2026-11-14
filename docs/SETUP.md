@@ -356,8 +356,9 @@ Sans ces trois secrets, le job de déploiement échoue (exprès : la prod ne doi
 sans qu'on le voie). Les variables d'environnement de l'application restent dans Vercel ;
 `vercel pull` les récupère pour le build.
 
-Le déploiement passe par `ci/vercel-deploy.sh <adresse>` (#720), réutilisable pour la préprod
-(#634) avec les secrets Vercel de son projet :
+Le déploiement passe par `ci/vercel-deploy.sh <adresse>` (#720), appelé par le job « Deploy to
+Vercel production » de `migrations.yml` et par le job de déploiement de `preprod.yml` (#634), qui
+y ajoute `NEXT_PUBLIC_SITE_NOINDEX=1` avec `VERCEL_EXTRA_ENV` :
 
 1. **Vérification avant le build** : après `vercel pull`, l'environnement de production du projet
    Vercel doit contenir `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_ANON_KEY`, non vides.
@@ -366,13 +367,14 @@ Le déploiement passe par `ci/vercel-deploy.sh <adresse>` (#720), réutilisable 
    du projet Vercel avec l'intégration Supabase du Marketplace : le build passait et toutes les
    pages répondaient 500. Correctif : les remettre (Vercel → Settings → Environment Variables,
    environnement Production), puis relancer le job.
-2. **Déploiement en deux temps** : `vercel deploy --prebuilt --prod --skip-domain`, puis
-   `vercel promote` qui branche ce déploiement sur les domaines (et lève un éventuel retour
-   arrière précédent, sinon les déploiements suivants ne seraient plus servis).
+2. **Déploiement direct** : `vercel deploy --prebuilt --prod` branche le déploiement sur les
+   domaines. Pas de `vercel promote` : avec le jeton du projet, il répond « User not found »
+   (#731, premier déploiement préprod du 13 novembre 2026).
 3. **Retour arrière automatique** : si le test de fumée échoue, `vercel rollback` remet le
    déploiement précédent, le job reste rouge et une issue `bug` + `needs-human` « Déploiement
    annulé… » mentionne les propriétaires (`AGENTS_OWNER`) avec le lien du job. Après correction,
-   relancer le workflow : le `promote` du nouveau déploiement rebranche les domaines.
+   annuler le retour arrière dans Vercel (Deployments → « Undo Rollback ») : sinon Vercel ne
+   branche plus les déploiements suivants sur les domaines. Puis relancer le workflow.
 
 ## Préproduction
 
@@ -395,17 +397,20 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
 - **Pas de remise à zéro** : ce que le propriétaire crée à la main en préprod reste d'un
   déploiement à l'autre.
 - **Tests e2e après chaque déploiement** (#695) : le job « End-to-end tests against
-  pre-production » lance toute la suite `e2e/` contre l'adresse de préprod (`E2E_TARGET=preprod`,
+  pre-production » lance toute la suite `e2e/` contre l'adresse de préprod (`E2E_BASE_URL`,
   sans serveur local). Le SQL des tests passe par l'API de gestion Supabase, le code de
   connexion par l'API admin (`generateLink`, clé `service_role` de la préprod), jamais par une
   boîte mail. Les comptes admin de test sont des joueurs `e2e-…` passés admin en SQL. À la fin
-  de chaque passage, réussi ou non, `ci/preprod/e2e-cleanup.sql` supprime les comptes
+  de chaque passage, réussi ou non, `ci/preprod/cleanup-e2e.sql` supprime les comptes
   `e2e-…@example.test` (avec leurs ligues, pronos et points, donc hors de tout classement), les
   ligues « E2E … » et les compétitions `test-…` / `e2e-…` ; le jeu de démo et le seed n'utilisent
   jamais ces noms. Le résultat (vert/rouge, lien du run et du rapport) est dans le résumé du run
   et commenté dans l'issue « Valider vX.Y.Z en préprod » ouverte, s'il y en a une. Une suite
   rouge rend le run « Pre-production » rouge, ce qui fait attendre le tag. Le changement
-  d'e-mail (`profile-edit.spec.ts`) est sauté en préprod : aucune API ne donne son code.
+  d'e-mail (`profile-edit.spec.ts`) est sauté en préprod : aucune API ne donne son code. Le test
+  quotidien (`ci/preprod/daily.yml`) passe par les mêmes aides et les mêmes secrets. Un agent ne
+  peut pas pousser de workflow : le job vit dans `ci/preprod/preprod.yml`, que le propriétaire
+  copie dans `.github/workflows/preprod.yml`.
 - **À venir** : le jeu de démo propre à la préprod (#694).
 - **Pas de captcha ni de notifications push** en préprod (pas de clé Turnstile ni VAPID).
 - **Mise en prod** : la prod suit toujours les tags, posés automatiquement quand un milestone est

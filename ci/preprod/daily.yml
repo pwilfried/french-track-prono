@@ -1,0 +1,98 @@
+# To move to .github/workflows/preprod-daily.yml (an agent cannot push workflow files: see #634).
+name: Pre-production daily test
+
+# Is anything broken in pre-production? (#636) Every morning, the e2e suite runs against
+# https://french-track-preprod.vercel.app on the demo set. A failure opens a `bug` issue in the
+# current milestone that mentions the owner (one per test: a second failure comments it), and a
+# green run again says so on that issue (ci/preprod/regression-report.sh). No retry: a failing
+# test is fixed or removed (AGENTS.md). The e2e-… accounts of the pass are deleted, failed or not.
+
+on:
+  schedule:
+    # 04:23 UTC: 05:23 in Paris in winter, 06:23 in summer; before the production smoke test.
+    - cron: "23 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never while main is being deployed there (preprod.yml): the run waits for it.
+concurrency:
+  group: preprod
+  cancel-in-progress: false
+
+env:
+  PREPROD_PROJECT_REF: flezuosnpafwcnoubdiu
+  PREPROD_URL: https://french-track-preprod.vercel.app
+
+jobs:
+  e2e:
+    name: E2E suite against pre-production
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: preprod
+    permissions:
+      contents: read
+      issues: write
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      # SQL and sign-in codes of the tests in pre-production (#695, docs/SETUP.md).
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      PUBLIC_CACHE_FLUSH_SECRET: ${{ secrets.PUBLIC_CACHE_FLUSH_SECRET }}
+    steps:
+      - name: Check the pre-production project
+        run: |
+          if [ "$SUPABASE_PROJECT_REF" != "$PREPROD_PROJECT_REF" ] || [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN and the pre-production SUPABASE_PROJECT_REF are needed in the preprod environment."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install chromium
+
+      # The outcome is kept for the report below; the job fails at the end, after the clean-up.
+      - name: End-to-end test against pre-production
+        id: e2e
+        continue-on-error: true
+        env:
+          E2E_BASE_URL: ${{ env.PREPROD_URL }}
+          PLAYWRIGHT_JSON_OUTPUT_NAME: results.json
+        run: npx playwright test --reporter=list,json,html
+
+      - name: Delete the e2e accounts of this pass
+        if: always()
+        run: ci/preprod/load-sql.sh ci/preprod/cleanup-e2e.sql
+
+      - name: Keep the Playwright report
+        id: report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-preprod
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+      - name: Report to the issues
+        if: always()
+        env:
+          BOT_TOKEN: ${{ github.token }}
+          AGENTS_OWNER: ${{ vars.AGENTS_OWNER }}
+          REPORT_URL: ${{ steps.report.outputs.artifact-url }}
+        run: ci/preprod/regression-report.sh results.json
+
+      - name: Fail when a test failed
+        if: steps.e2e.outcome != 'success'
+        run: exit 1

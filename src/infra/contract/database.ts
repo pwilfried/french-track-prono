@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 // Direct access to the local Supabase database, for test set-up only (making an admin, creating
 // an isolated event). The app never connects this way. Uses `psql` when it is installed, else the
-// one inside the Supabase database container; the pre-production database when E2E_TARGET=preprod.
+// one inside the Supabase database container; the pre-production database when E2E_BASE_URL is set.
 const url =
   process.env.SUPABASE_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 const container = "supabase_db_french-track-prono";
@@ -52,11 +52,11 @@ function sqlOnLocal(statement: string): string {
 }
 
 /**
- * The end-to-end tests run against pre-production after each deploy (#695): E2E_TARGET=preprod.
- * Never set locally nor in the CI of a PR.
+ * The end-to-end tests run against pre-production (after each deploy and every morning, #695,
+ * #636) when E2E_BASE_URL is set. Never set locally nor in the CI of a PR.
  */
 export function onPreprod(): boolean {
-  return process.env.E2E_TARGET === "preprod";
+  return Boolean(process.env.E2E_BASE_URL);
 }
 
 /**

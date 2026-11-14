@@ -1,5 +1,5 @@
 -- What a run of the end-to-end tests leaves in pre-production (#695), deleted at the end of each
--- run, failed or not (e2e/teardown.ts, then preprod.yml again). The demo set and
+-- run, failed or not (e2e/teardown.ts, then preprod.yml or daily.yml again). The demo set and
 -- the public seed never use these names.
 -- Test accounts (e-mails e2e-…@example.test, or moved-e2e-… after an e-mail change): their
 -- profile, leagues, predictions and points go with them (on delete cascade), so they leave
