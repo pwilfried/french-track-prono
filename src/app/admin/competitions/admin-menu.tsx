@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import { currentCompetition } from "../../competition";
+import { demoLoginEnabled } from "../../demo-login";
 import { messages } from "../../messages.fr";
 import { getSessionClient } from "../../session";
 import { reportError } from "@/lib/report-error";
@@ -43,6 +44,7 @@ const GROUPS: { key: keyof typeof text.groups | null; items: [string, AdminSecti
     key: "community",
     items: [
       ["/admin/joueurs", "players"],
+      ["/admin/joueurs-demo", "demoPlayers"],
       ["/admin/ligues", "leagues"],
     ],
   },
@@ -69,35 +71,37 @@ function Links({ section, todo }: { section: AdminSection; todo: AdminTodo | nul
           {text.groups[group.key]}
         </p>
       )}
-      {group.items.map(([href, key]) => {
-        const field = COUNTED[key];
-        const count = field && todo ? todo[field] : null;
-        const current = key === section;
-        return (
-          <Link
-            key={key}
-            href={href}
-            aria-current={current ? "page" : undefined}
-            className={cn(
-              "flex min-h-11 items-center justify-between gap-2 rounded-xl px-3 font-semibold",
-              current ? "bg-brand text-brand-foreground" : "text-foreground hover:bg-brand-soft",
-            )}
-          >
-            <span>
-              {text.section[key]}
-              {count ? <span className="sr-only">{text.todo(count)}</span> : null}
-            </span>
-            {count ? (
-              <span
-                aria-hidden="true"
-                className="rounded-full bg-primary px-2 py-0.5 font-mono text-xs font-bold text-primary-foreground"
-              >
-                {count}
+      {group.items
+        .filter(([, key]) => key !== "demoPlayers" || demoLoginEnabled())
+        .map(([href, key]) => {
+          const field = COUNTED[key];
+          const count = field && todo ? todo[field] : null;
+          const current = key === section;
+          return (
+            <Link
+              key={key}
+              href={href}
+              aria-current={current ? "page" : undefined}
+              className={cn(
+                "flex min-h-11 items-center justify-between gap-2 rounded-xl px-3 font-semibold",
+                current ? "bg-brand text-brand-foreground" : "text-foreground hover:bg-brand-soft",
+              )}
+            >
+              <span>
+                {text.section[key]}
+                {count ? <span className="sr-only">{text.todo(count)}</span> : null}
               </span>
-            ) : null}
-          </Link>
-        );
-      })}
+              {count ? (
+                <span
+                  aria-hidden="true"
+                  className="rounded-full bg-primary px-2 py-0.5 font-mono text-xs font-bold text-primary-foreground"
+                >
+                  {count}
+                </span>
+              ) : null}
+            </Link>
+          );
+        })}
     </div>
   ));
 }

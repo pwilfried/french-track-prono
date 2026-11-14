@@ -17,6 +17,12 @@ const baseURL = deployed ?? "http://localhost:3000";
 if (deployed) process.env.PUBLIC_CACHE_FLUSH_URL ??= baseURL;
 else process.env.PUBLIC_CACHE_FLUSH_SECRET ??= "e2e-public-cache";
 
+/**
+ * The app under test plays pre-production for the demo sign-in (#637, e2e/demo-login.spec.ts);
+ * the switch is off in production, which a unit test covers (src/app/demo-login.test.ts).
+ */
+process.env.PREPROD_DEMO_LOGIN ??= "1";
+
 export default defineConfig({
   testDir: "e2e",
   retries: 0,

@@ -146,6 +146,9 @@ Règles :
   envoie un joueur connecté sans profil vers `/bienvenue` (règle pure : `src/domain/profile-gate.ts`).
 - Les paramètres de redirection n'acceptent que des chemins de l'application
   (`src/domain/redirect.ts`).
+- En préprod seulement (`PREPROD_DEMO_LOGIN=1`), un admin peut se connecter en tant qu'un joueur
+  démo `@example.test` (#637, `src/application/demo-login.ts`) : seul usage de la clé `service_role`
+  dans l'application, côté serveur (`src/infra/supabase/demo-accounts.ts`).
 - L'adresse e-mail n'est jamais affichée ni copiée dans `profiles`. Pseudo : 2 à 24 caractères,
   unique sans tenir compte de la casse ; avatar : un **dossard** (#537, `src/domain/bib.ts`),
   numéro de 0 à 999 sans zéro devant et une couleur parmi six (bleu, rouge, or, vert, blanc,

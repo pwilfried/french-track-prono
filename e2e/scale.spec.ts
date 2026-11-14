@@ -31,7 +31,8 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   // On a phone, the menu is a drop-down that names the current section.
   await expect(adminMenu(page).locator("summary")).toHaveText("Tableau de bord");
   await adminMenu(page).locator("summary").click();
-  await expect(adminMenu(page).getByRole("link")).toHaveCount(11);
+  // 12 with « Joueurs démo »: the e2e app plays pre-production (#637, playwright.config.ts).
+  await expect(adminMenu(page).getByRole("link")).toHaveCount(12);
   await expect(adminMenu(page).getByText("Communauté")).toBeVisible();
   // The back-office has its own interface: no player navigation, and a way to the site.
   await expect(page.getByRole("navigation", { name: "Navigation principale" })).toHaveCount(0);
