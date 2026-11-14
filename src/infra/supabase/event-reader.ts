@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { UseCaseError } from "@/application/errors";
-import type { MarkUnit } from "@/domain/discipline";
+import type { DisciplineFamily, MarkUnit } from "@/domain/discipline";
 import type { EventReader } from "@/application/list-events";
 import type {
   Entry,
@@ -110,7 +110,7 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
     async findBySlug(competitionSlug, eventSlug) {
       const query = client
         .from("events")
-        .select(`${EVENT_COLUMNS}, sub_disciplines, competitions!inner(slug, odds_enabled), disciplines(unit, tolerance)`)
+        .select(`${EVENT_COLUMNS}, sub_disciplines, competitions!inner(slug, odds_enabled), disciplines(unit, tolerance, family)`)
         .eq("slug", eventSlug);
       const found = await (competitionSlug === null
         ? query
@@ -119,7 +119,7 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
         EventRow & {
           sub_disciplines: string[] | null;
           competitions: { slug: string; odds_enabled: boolean };
-          disciplines: { unit: MarkUnit; tolerance: number | string } | null;
+          disciplines: { unit: MarkUnit; tolerance: number | string; family: DisciplineFamily } | null;
         }
       >();
       if (found.error) throw new UseCaseError("EVENTS_UNAVAILABLE");
@@ -175,6 +175,7 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
         ...(found.data.disciplines
           ? {
               markUnit: found.data.disciplines.unit,
+              markFamily: found.data.disciplines.family,
               tolerance: Number(found.data.disciplines.tolerance),
             }
           : {}),
