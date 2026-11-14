@@ -22,6 +22,10 @@ test("a visitor sees one main action above the fold, how to play and the next co
   await expect(page.getByRole("heading", { name: "Comment ça marche" })).toBeVisible();
   await expect(page.locator("main ol > li")).toHaveCount(3);
   await expect(page.getByRole("link", { name: "Créer une ligue" })).toBeVisible();
+  // No podcast block for a visitor: the footer keeps FrenchTrack's accounts (#711).
+  await expect(
+    page.getByRole("contentinfo").getByRole("link", { name: "Instagram (nouvel onglet)" }),
+  ).toBeVisible();
   await page.getByRole("link", { name: "Voir les épreuves" }).click();
   await expect(page).toHaveURL(/\/competitions\?competition=ultimate-championship-2026$/);
 });
@@ -116,6 +120,13 @@ test("a new player without a league is asked for a first podium, then for a leag
   for (const name of ["Instagram", "YouTube", "TikTok"]) {
     await expect(frenchTrack.getByRole("link", { name: `${name} (nouvel onglet)` })).toBeVisible();
   }
+  // The accounts appear once (#711): the footer leaves them out, keeps the legal links.
+  const footer = page.getByRole("contentinfo");
+  for (const name of ["Instagram", "YouTube", "TikTok", "Le podcast"]) {
+    await expect(footer.getByRole("link", { name: `${name} (nouvel onglet)` })).toBeHidden();
+  }
+  await expect(footer.getByRole("link", { name: "Mentions légales" })).toBeVisible();
+  await expect(footer.getByRole("link", { name: "Confidentialité" })).toBeVisible();
 
   // The old blocks are gone, and no block is left empty.
   const main = page.locator("main");
