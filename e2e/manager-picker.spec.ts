@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { sql } from "../src/infra/contract/database";
+import { onPreprod, sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
 
 /**
@@ -22,6 +22,8 @@ function diamondLeague(): void {
 test("a quick selection ticks the Diamond League and the season format follows", async ({
   page,
 }) => {
+  // Pre-production's demo set has Diamond League meetings of its own: the counts below differ.
+  test.skip(onPreprod(), "the demo set adds Diamond League meetings in pre-production (#819)");
   diamondLeague();
   const league = `Diamants ${Date.now() % 1000000}`;
   await page.goto("/manager/creer");

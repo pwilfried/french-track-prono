@@ -7,6 +7,8 @@ import { newPlayer, signUp } from "./players";
 test("an admin creates an athlete, adds a discipline with a PB and an SB, shown on the public page", async ({
   page,
 }) => {
+  // A failed run leaves its athlete behind (pre-production is never reset, #819).
+  sql(`delete from athletes where slug like 'inventee-e2e-%'`);
   const tag = `${Date.now() % 1000000}`;
   const name = `Inventée E2E ${tag}`;
   const slug = `inventee-e2e-${tag}`;
@@ -40,6 +42,8 @@ test("an admin creates an athlete, adds a discipline with a PB and an SB, shown 
   await expect(page.getByRole("link", { name: new RegExp(name) })).toHaveCount(0);
   await page.getByLabel("Par sexe").selectOption("F");
   await page.getByLabel("Par pays").selectOption("FRA");
+  // The search keeps her on the first page, whatever else the database holds (#819).
+  await page.getByRole("searchbox", { name: "Rechercher un athlète" }).fill(tag);
   await page.getByRole("button", { name: "Filtrer" }).click();
   await expect(page).toHaveURL(/discipline=100\+m&sexe=F&pays=FRA/);
   await expect(page.getByRole("link", { name: new RegExp(name) })).toBeVisible();

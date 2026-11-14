@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { messages } from "../src/app/messages.fr";
-import { sql } from "../src/infra/contract/database";
+import { onPreprod, sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
 
 const text = messages.notifications;
@@ -10,6 +10,7 @@ const text = messages.notifications;
 // subscription are simulated, the rest (button, server action, database) is real. The CI build
 // has a test push key.
 test("a player turns notifications on for this device, then off", async ({ page }) => {
+  test.skip(onPreprod(), "no test push key in the pre-production build (#819)");
   await page.addInitScript(() => {
     Object.defineProperty(Notification, "permission", { get: () => "granted" });
     Notification.requestPermission = async () => "granted";
