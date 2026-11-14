@@ -35,10 +35,24 @@ check "/regles" "Comment jouer"
 check "/connexion" "Connexion"
 check "/mentions-legales" "Mentions légales"
 
-# One event page, taken from the list of events (the data is read from Supabase).
-event=$(curl -sSL --max-time 20 "${headers[@]}" "$base/epreuves" | grep -o 'href="/epreuves/[a-z0-9-]*"' | head -1 | cut -d'"' -f2 || true)
+# One event page, taken from the list of events (the data is read from Supabase). The list shows
+# only today's events of the competition it opens first (#788): when there is none, the days and
+# competitions it links to are tried, a few at most.
+fetch() { curl -sSL --max-time 20 "${headers[@]}" "$base$1" || true; }
+first_event() { grep -o 'href="/epreuves/[a-z0-9-]*"' | head -1 | cut -d'"' -f2 || true; }
+list=$(fetch "/epreuves")
+event=$(first_event <<<"$list")
 if [ -z "$event" ]; then
-  echo "::error::no event linked from /epreuves: the database may be unreachable (paused project?)"
+  others=$(grep -o 'href="/competitions?[^"]*"' <<<"$list" | cut -d'"' -f2 | sed 's/&amp;/\&/g' |
+    sort -u | head -8 || true)
+  while IFS= read -r path; do
+    [ -n "$path" ] || continue
+    event=$(fetch "$path" | first_event)
+    if [ -n "$event" ]; then break; fi
+  done <<<"$others"
+fi
+if [ -z "$event" ]; then
+  echo "::error::no event linked from /epreuves nor its days: the database may be unreachable (paused project?)"
   failed=1
 else
   check "$event" "French Track Prono"
