@@ -36,7 +36,7 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
 ### Test quotidien de la préprod (#636)
 
 Chaque matin (04 h 23 UTC, 5 h 23 ou 6 h 23 à Paris), et à la main par « Run workflow »,
-`preprod-daily.yml` (source : `ci/preprod/daily.yml`) lance la suite `e2e/` contre la préprod,
+`.github/workflows/preprod-daily.yml` lance la suite `e2e/` contre la préprod,
 sans relance d'un test qui échoue. Il attend un déploiement en cours (même file que `preprod.yml`).
 
 - **Rouge** : `ci/preprod/regression-report.sh` ouvre une issue `bug` dans le milestone en cours,

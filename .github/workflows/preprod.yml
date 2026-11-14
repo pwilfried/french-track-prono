@@ -5,6 +5,7 @@ name: Pre-production
 # (https://french-track-preprod.vercel.app, kept out of search engines). Production is untouched:
 # it still follows the vX.Y.Z tags (migrations.yml), set automatically by ci/agents/release.sh once
 # a milestone is finished; a failed run of this workflow on main's commit makes the tag wait.
+# After the deploy, the e2e suite runs against pre-production; a failing test opens an issue.
 # Secrets (GitHub > Settings > Environments > preprod, never the production ones):
 #   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, SUPABASE_PROJECT_REF,
 #   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (docs/SETUP.md, « Préproduction »).
@@ -110,3 +111,96 @@ jobs:
           NEXT_PUBLIC_SITE_NOINDEX: "1"
           VERCEL_EXTRA_ENV: NEXT_PUBLIC_SITE_NOINDEX=1
         run: ci/vercel-deploy.sh "$PREPROD_URL"
+
+  # The e2e suite against the deployed commit, on the demo set (#695).
+  e2e:
+    name: End-to-end tests against pre-production
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: preprod
+    permissions:
+      contents: read
+      issues: write
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      # SQL and sign-in codes of the tests in pre-production (#695, docs/SETUP.md).
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      PUBLIC_CACHE_FLUSH_SECRET: ${{ secrets.PUBLIC_CACHE_FLUSH_SECRET }}
+    steps:
+      # Until the owner has set these (docs/SETUP.md, « Préproduction »), the tests are skipped with a
+      # warning instead of failing: a set-up not done yet must not hold the chain nor the tag (#741).
+      - name: Check the e2e secrets
+        id: check
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] || [ -z "$PUBLIC_CACHE_FLUSH_SECRET" ]; then
+            echo "::warning::SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and PUBLIC_CACHE_FLUSH_SECRET are not all in the preprod environment: e2e tests skipped (docs/SETUP.md)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$SUPABASE_PROJECT_REF" != "$PREPROD_PROJECT_REF" ] || [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN and the pre-production SUPABASE_PROJECT_REF are needed in the preprod environment."
+            exit 1
+          fi
+          if [ "$NEXT_PUBLIC_SUPABASE_URL" != "https://$PREPROD_PROJECT_REF.supabase.co" ]; then
+            echo "::error::SUPABASE_URL must be https://$PREPROD_PROJECT_REF.supabase.co: no test run."
+            exit 1
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.ready == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.ready == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+        if: steps.check.outputs.ready == 'true'
+
+      - name: Install Chromium for Playwright
+        if: steps.check.outputs.ready == 'true'
+        run: npx playwright install chromium
+
+      # No retry (AGENTS.md). The outcome is kept for the report; the job fails at the end, after
+      # the clean-up.
+      - name: End-to-end test against pre-production
+        id: e2e
+        if: steps.check.outputs.ready == 'true'
+        continue-on-error: true
+        env:
+          E2E_BASE_URL: ${{ env.PREPROD_URL }}
+          PLAYWRIGHT_JSON_OUTPUT_NAME: results.json
+        run: npx playwright test --reporter=list,json,html
+
+      - name: Delete the e2e accounts of this pass
+        if: always() && steps.check.outputs.ready == 'true'
+        run: ci/preprod/load-sql.sh ci/preprod/cleanup-e2e.sql
+
+      - name: Keep the Playwright report
+        id: report
+        if: always() && steps.check.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-preprod
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+      # An issue only when a test fails (owner's decision for #695), « de nouveau vert » after.
+      - name: Report to the issues
+        if: always() && steps.check.outputs.ready == 'true'
+        env:
+          BOT_TOKEN: ${{ github.token }}
+          AGENTS_OWNER: ${{ vars.AGENTS_OWNER }}
+          REPORT_URL: ${{ steps.report.outputs.artifact-url }}
+        run: ci/preprod/regression-report.sh results.json
+
+      - name: Fail when a test failed
+        if: steps.check.outputs.ready == 'true' && steps.e2e.outcome != 'success'
+        run: exit 1
