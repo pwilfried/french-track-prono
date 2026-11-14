@@ -523,7 +523,8 @@ de préprod, jamais ceux de la prod : `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASS
 Vercel de préprod, voir plus haut ; facultatif tant que Vercel Authentication est éteinte), et pour les tests
 e2e `SUPABASE_URL` (`https://<ref>.supabase.co`), `SUPABASE_SERVICE_ROLE_KEY` et
 `PUBLIC_CACHE_FLUSH_SECRET` (une valeur aléatoire, la même que dans le projet Vercel de préprod :
-elle ouvre `/api/public-cache` aux tests). Réglages Auth de la préprod pour les tests : un SMTP
+elle ouvre `/api/public-cache` aux tests ; après chaque `sql(...)`, le test attend que le cache
+ait bien expiré, et s'arrête avec la raison si le vidage est refusé, #814). Réglages Auth de la préprod pour les tests : un SMTP
 personnalisé (le SMTP intégré de Supabase refuse les adresses hors équipe), une limite d'envoi
 d'e-mails relevée (la suite inscrit une soixantaine de joueurs) et un délai minimal court entre deux
 codes pour une même adresse. La limite d'envoi est relevée d'elle-même à 500 par heure avant chaque
