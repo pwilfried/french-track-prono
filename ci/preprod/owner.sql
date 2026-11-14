@@ -1,11 +1,10 @@
--- The owner's account in pre-production (#769): pseudo « admin », admin role, member of every
--- prediction league (public or private) and of every Manager league there, so that what the demo
--- set and the tests leave is in sight without joining each league by hand.
+-- The owner's account in pre-production (#769): pseudo « admin », admin role, member of the
+-- official Ligue FrenchTrack only (#784): any other league he joins himself, by its join rules.
 -- Run by ci/preprod/owner.sh (never by hand, never in production), which sets the e-mail first:
 --   select set_config('preprod.owner_email', '<e-mail>', false);
 -- The e-mail lives in the PREPROD_OWNER_EMAIL secret of the preprod environment, never here.
 -- Idempotent: an existing account (signed up before, or made by an earlier run) is kept and only
--- made admin again; memberships are added when missing. Run after each load of the demo set and
+-- made admin again; the official membership is added when missing. Run after each load of the demo set and
 -- after each clean-up of the e2e accounts: the leagues the tests make during a run are created
 -- after it, so the account never counts in their members or rankings.
 begin;
@@ -52,15 +51,9 @@ begin
         blocked_at = null,
         inactivity_warned_at = null;
 
-  -- Every prediction league, public or private.
+  -- The official league only: the others are joined in the app, by their join rules (#784).
   insert into league_members (league_id, user_id, role)
-  select l.id, v_id, 'member' from leagues l
-  on conflict do nothing;
-
-  -- Every Manager league with a place left (12 participants at most, as private.enter_manager_league).
-  insert into manager_members (league_id, user_id)
-  select l.id, v_id from manager_leagues l
-  where (select count(*) from manager_members m where m.league_id = l.id) < 12
+  select l.id, v_id, 'member' from leagues l where l.is_official
   on conflict do nothing;
 end $$;
 

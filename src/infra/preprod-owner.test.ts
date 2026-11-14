@@ -81,7 +81,7 @@ const counts = `select json_build_object(
   'accounts', (select count(*) from auth.users where email = '${email}'),
   'admin', (select is_admin from profiles where id = ${owner}),
   'pseudo', (select pseudo from profiles where id = ${owner}),
-  'leagues', (select count(*) from leagues),
+  'leagues', (select count(*) from leagues where is_official),
   'memberships', (select count(*) from league_members where user_id = ${owner}),
   'managerLeagues', (select count(*) from manager_leagues),
   'managerMemberships', (select count(*) from manager_members where user_id = ${owner}),
@@ -96,7 +96,7 @@ const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (url && key) {
   describe("pre-production owner account", () => {
-    it("joins every prediction and Manager league as an admin, once, when it runs twice", () => {
+    it("joins only the official league as an admin, once, when it runs twice", () => {
       const body = ownerSql();
       // Without the pseudo « admin » taken by someone else (local data may hold one).
       const free = `update profiles set pseudo = 'was-admin-' || left(id::text, 8)
@@ -112,9 +112,9 @@ if (url && key) {
       expect(second).toEqual(first);
       expect(first).toMatchObject({ accounts: 1, admin: true, pseudo: "admin" });
       expect(first!.memberships).toBe(first!.leagues);
-      expect(first!.managerMemberships).toBeGreaterThanOrEqual(1);
-      // The private demo league « Club du jeudi »: its 8 players, and the owner.
-      expect(first!.demoMembers).toBeGreaterThanOrEqual(9);
+      expect(first!.managerMemberships).toBe(0);
+      // The private demo league « Club du jeudi »: its 8 players, without the owner.
+      expect(first!.demoMembers).toBe(8);
     });
 
     it("keeps an account that already exists and makes it admin", () => {
