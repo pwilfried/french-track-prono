@@ -110,7 +110,10 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   de ce soir · <compétition>, <jour> ». En tête de liste, la carte **MyPlaceCard** « Ta place »
   (rang, points, évolution depuis la dernière compétition, « 18 pts derrière <pseudo> (3e) », et
   « Top 18 % » en Général), masquée pour un visiteur ou un joueur sans points ;
-  une barre fixe en bas « Tu es 3e · 52 pts · Autour de moi » ; avant la première compétition, un
+  une barre fixe en bas **MyRankBar** « Tu es 3e · 52 pts », avec « Autour de moi » seulement
+  quand ma ligne est hors de l'écran (#710) ; seul dans sa ligue, le joueur voit le bandeau
+  « Tu es seul pour l'instant » (inviter ses amis) au lieu d'un classement à une ligne ; avant la
+  première compétition, un
   bandeau bleu « Le classement démarre » remplace le classement vide. Le jour de compétition va de
   6 h à 6 h, heure de Paris : une finale courue à 2 h du matin compte pour « Ce soir ».
   Un visiteur voit « Général » seul, sans barre fixe, avec « Se connecter » (#573).
