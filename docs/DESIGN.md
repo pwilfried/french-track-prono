@@ -79,7 +79,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Page d'une ligue Manager (#419, #774) | En-tête : « ‹ French Track Manager » (retour à la liste), nom, phase · participants · type ; bloc bleu nuit « Ma saison » (phase, place, points V · N · D, différence, prochaine confrontation avec les dossards, l'action du moment) ; état du mercato ; liens vers ce qu'elle contient (catalogue, Mon équipe, Mon alignement, La journée, Classement, Mes derniers points) ; calendrier, participants, règles |
 | Ligues (#662) | « Créer une ligue » et « J'ai un code », puis deux onglets **Mes ligues · N** / **Découvrir** (`?onglet=decouvrir`). Mes ligues : cartes résumées (**LeagueCard**). Découvrir : tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553) ; puis les ligues publiques (**DiscoverLeagues**) : recherche par nom, puces de famille (Toutes + celles présentes), tri (places restantes par défaut, plus de joueurs, plus récentes), une **PublicLeagueRow** par ligue. Une fois membre, la ligue officielle rejoint Mes ligues avec le badge « Officielle » |
 | Classement général | Top de la communauté, ma progression |
-| Profil | Dossard (grand format, avec le pseudo), club ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager ; palmarès Manager (une ligne par saison finie, en or si champion, #434) |
+| Profil | Célébration du lièvre (niveaux gagnés), changement d'animal ; dossard (grand format, avec le pseudo), club ; ma bande (mon animal) ; vitrine des trophées (une étagère par saison) ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager ; « Mes rappels » (`/profil/rappels`, #681) ; palmarès Manager (une ligne par saison finie, en or si champion, #434) |
 | Back-office (toi) | Tableau de bord (choses à faire, préparation), compétitions (filtres portée, lieu, niveau, statut, #647) et épreuves, une feuille de résultats par épreuve qui calcule tout (collage du tableau World Athletics, #665, #666), listes des clubs, joueurs et ligues |
 
 ## Composants clés
@@ -129,6 +129,14 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   `src/components/ui/view-tabs.tsx`) : le segment choisi est surélevé et cerné d'un anneau
   `--border`, lisible en clair comme en sombre ; les autres sont atténués.
 - **AthleteChip** : drapeau, nom, record de saison.
+- **AthleteSheet** (fiche athlète, #679) : initiales dans un rond (jamais de photo), pays,
+  disciplines ; chiffres clés (PB, SB de la discipline principale, prix Manager) ; un bloc par
+  discipline avec PB et SB de la saison, lieu et date quand on les connaît ; une marque non
+  vérifiée porte un « ? » (lu « marque à vérifier »). Records seulement, pas de résultats.
+- **ConsensusBlock** (#680) : « Ce qu'ont pronostiqué les joueurs », au-dessus des podiums révélés
+  et filtré par les mêmes onglets ; par place, les athlètes choisis et leur pourcentage, mon choix
+  surligné ; la part des joueurs qui ont mon podium, mon choix le plus original et, après le
+  résultat, la part de podiums parfaits.
 - **PointsToast** : « +9 pts, vainqueur du 100 m trouvé ! » avec petite animation.
 - **Bib** (dossard, #537) : l'avatar du joueur, un numéro (0 à 999) et une couleur parmi six,
   fixes dans les deux thèmes : bleu `#084595` (texte blanc), rouge `#E03020` (texte blanc), or
@@ -151,6 +159,9 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **Statuette** (trophée, #768) : l'animal coulé en or, argent ou bronze sur un socle en bois et
   sa plaque gravée (ligue, saison, place) ; une place vide de la vitrine montre le « ? » gris et
   ce qu'il faut pour la gagner.
+- **TrophyShowcase** (vitrine, #822) : une étagère par saison, la plus récente en haut, une
+  statuette par trophée avec son nom (« Guépard d'or », « Chrono figé ») et où il a été gagné ;
+  vide, elle dit comment gagner le premier.
 - **Leaderboard** et **RankingRow** (#551, #661) : place, dossard, pseudo, ▲ n vert / ▼ n rouge
   (« = » sinon ; lu « gagne n places »), points (chiffre seul sous l'en-tête « Pts », lu « 12 points ») ; dans l'onglet Classement, l'évolution compare au
   classement d'avant la dernière compétition terminée de la portée, ailleurs à la veille ; ex æquo signalés, ma ligne surlignée (cible `#moi` du lien « Autour de
@@ -207,8 +218,8 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **BadgeGrid** : les 6 badges de jeu, puis les 7 badges de famille ; un badge gagné porte une
   médaille (bronze, argent, or) derrière son emoji et son niveau en étiquette, les autres sont
   grisés ; chacun dit ce qu'il compte et le seuil suivant (« 2 / 3 pour le bronze »). Dessous, le
-  prochain badge et ce qu'il reste (« encore 10 pts » pour une famille). Le visuel en dossard
-  viendra de #768.
+  prochain badge et ce qu'il reste (« encore 10 pts » pour une famille). Chaque badge est un
+  **Dossard** (#838) portant l'animal de sa famille, le lièvre pour un badge de jeu.
 - **BadgeCelebration** (#821) : en haut du profil, le lièvre (qui sautille, sauf mouvement
   réduit) annonce les niveaux gagnés depuis la dernière visite, une seule fois ; « Super ! » ferme.
 - **CompetitionChips** : puces d'une compétition à l'autre (classement, historique des pronos).
