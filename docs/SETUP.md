@@ -377,7 +377,15 @@ jour pour tout le compte, et les déploiements de la préprod (un par fusion) le
 2. **Déploiement direct** : `vercel deploy --prebuilt --prod` branche le déploiement sur les
    domaines. Pas de `vercel promote` : avec le jeton du projet, il répond « User not found »
    (#731, premier déploiement préprod du 13 novembre 2026).
-3. **Retour arrière automatique** : si le test de fumée échoue, le script remet le déploiement
+3. **Le domaine sert-il le nouveau déploiement ?** Avant le test de fumée, le script demande à
+   l'API Vercel quel déploiement sert le domaine (`GET /v4/aliases/<domaine>?teamId=…`, cinq
+   essais). Si c'est un ancien, le job s'arrête en rouge, sans test de fumée ni retour arrière,
+   et ouvre une issue `bug` + `needs-human` « Déploiement pas en ligne… » : c'est un retour
+   arrière pas encore annulé (« Undo Rollback » dans Vercel, puis relancer le workflow). Le
+   14 novembre 2026, ce cas avait laissé la préprod sur un déploiement du matin : le test de fumée
+   passait contre l'ancien site et les tests de bout en bout échouaient (#819). Si l'API ne
+   répond pas, un simple avertissement, et le test de fumée suit.
+4. **Retour arrière automatique** : si le test de fumée échoue, le script remet le déploiement
    précédent par l'API REST de Vercel (`curl` avec `VERCEL_TOKEN`, toujours avec
    `teamId=$VERCEL_ORG_ID`) : il prend le dernier déploiement de production `READY` autre que
    celui qui vient d'être fait (`GET /v6/deployments?projectId=…&target=production&state=READY`),
