@@ -2,34 +2,48 @@ import { describe, expect, it } from "vitest";
 
 import type { LineupPlace } from "@/domain/manager-lineup";
 
-import { STADIUM_SPOTS, stadiumSpots } from "./stadium-spots";
+import { CARD_WIDTH, STADIUM_RATIO, STADIUM_SPOTS, stadiumSpots } from "./stadium-spots";
 
-const zoneOf = (spot: { x: number; y: number } | null) => {
+/** The narrowest stadium (a 320 px screen less its margins) and the height of a card. */
+const NARROWEST = 288;
+const CARD_HEIGHT = 46;
+
+const where = (spot: { x: number; y: number } | null) => {
   if (!spot) return "outside";
-  if (spot.y < 100) return "top-bend";
-  if (spot.y > 400) return "bottom-bend";
-  if (spot.x > 250) return "home-straight";
-  if (spot.x < 50) return "back-straight";
-  return "field";
+  if (spot.y > 85) return "bottom-straight";
+  if (spot.y < 15) return "back-straight";
+  if (spot.x < 20) return "left-bend";
+  if (spot.x > 80) return "right-bend";
+  if (spot.y < 40) return "field-top";
+  if (spot.y > 60) return "field-centre";
+  return spot.x < 50 ? "field-left" : "field-right";
 };
 
 describe("stadium spots", () => {
-  it("puts each family at its place in the stadium", () => {
-    const places: LineupPlace[] = ["sprint", "middle", "long", "jumps", "throws", "free"];
-    expect(stadiumSpots(places).map(zoneOf)).toEqual([
-      "home-straight",
-      "top-bend",
-      "bottom-bend",
-      "field",
-      "field",
+  it("puts the places of the default rules where the mock-up draws them", () => {
+    const places: LineupPlace[] = ["sprint", "middle", "throws", ...Array(5).fill("free")];
+    expect(stadiumSpots(places).map(where)).toEqual([
+      "bottom-straight",
+      "right-bend",
+      "field-right",
+      "left-bend",
+      "field-top",
+      "field-left",
+      "field-centre",
       "back-straight",
     ]);
   });
 
-  it("draws jumps on the runway, throws in the circles and combined events in between", () => {
-    const [jumps, throws, combined] = stadiumSpots(["jumps", "throws", "combined"]);
-    expect(jumps!.x).toBeLessThan(combined!.x);
-    expect(combined!.x).toBeLessThan(throws!.x);
+  it("puts races on the track and field events on the grass", () => {
+    const places: LineupPlace[] = ["sprint", "sprint", "middle", "jumps", "jumps", "throws"];
+    expect(stadiumSpots(places).map(where)).toEqual([
+      "bottom-straight",
+      "left-bend",
+      "right-bend",
+      "field-top",
+      "field-left",
+      "field-right",
+    ]);
   });
 
   it("never gives two places the same spot, even when a family overflows its zone", () => {
@@ -44,11 +58,16 @@ describe("stadium spots", () => {
     expect(stadiumSpots(places).filter((s) => s === null)).toHaveLength(2);
   });
 
-  it("keeps spots far enough apart for their cards not to overlap", () => {
+  it("keeps cards apart on a 320 px screen, inside the stadium's width", () => {
+    const height = (CARD_HEIGHT / (NARROWEST * STADIUM_RATIO)) * 100;
     const places: LineupPlace[] = Array.from({ length: STADIUM_SPOTS }, () => "free");
     const spots = stadiumSpots(places).filter((s) => s !== null);
-    for (const a of spots)
+    for (const a of spots) {
+      expect(a.x - CARD_WIDTH / 2).toBeGreaterThanOrEqual(0);
+      expect(a.x + CARD_WIDTH / 2).toBeLessThanOrEqual(100);
       for (const b of spots)
-        if (a !== b) expect(Math.abs(a.x - b.x) >= 58 || Math.abs(a.y - b.y) >= 62).toBe(true);
+        if (a !== b)
+          expect(Math.abs(a.x - b.x) >= CARD_WIDTH || Math.abs(a.y - b.y) >= height).toBe(true);
+    }
   });
 });

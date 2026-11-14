@@ -167,6 +167,30 @@ export const Empty: Story = {
   },
 };
 
+/**
+ * The default rules (one sprint, one middle distance, one throws place, five free ones): the same
+ * stadium and places as a head-to-head, a « + » on each empty one.
+ */
+export const DefaultRules: Story = {
+  args: {
+    places: ["sprint", "middle", "throws", "free", "free", "free", "free", "free"],
+    fillable: [true, true, true, true, true, true, true, true],
+    athletes: [
+      ...team.slice(0, 3),
+      athlete("t2", "Bea Démo", "Javelot", "throws"),
+      athlete("j1", "Hana Démo", "Hauteur", "vertical_jumps"),
+      athlete("j2", "Eva Fictive", "Longueur", "horizontal_jumps"),
+      athlete("s2", "Quia Fictive", "400 m", "sprint"),
+    ],
+    initial: ["s1", "m2", "t2", "s2", "j1", "j2", null, null],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("6/8 places")).toBeVisible();
+    await expect(canvas.getAllByRole("button", { name: text.emptyPlace("Libre") })).toHaveLength(2);
+  },
+};
+
 /** Long names are cut on the spots of the stadium and wrap on the bench. */
 export const LongText: Story = {
   args: {

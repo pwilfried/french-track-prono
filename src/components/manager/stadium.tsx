@@ -3,99 +3,61 @@ import type { ReactNode } from "react";
 import { messages } from "@/app/messages.fr";
 import type { DisciplineFamily } from "@/domain/discipline";
 import type { LineupPlace } from "@/domain/manager-lineup";
-import { athleteInitials, cardGroupOf, shortAthleteName } from "@/domain/manager-team";
+import { cardGroupOf, shortAthleteName } from "@/domain/manager-team";
 import { cn } from "@/lib/utils";
 
-import { STADIUM_HEIGHT, STADIUM_WIDTH, stadiumSpots } from "./stadium-spots";
+import { CARD_WIDTH, STADIUM_RATIO, stadiumSpots } from "./stadium-spots";
 
-const W = STADIUM_WIDTH;
-const H = STADIUM_HEIGHT;
-const TRACK = 40;
-const LANE = TRACK / 4;
+const W = 100;
+const H = W * STADIUM_RATIO;
 /** Where a place beyond the stadium sits: in rows of four under it. */
-const EXTRA_ROW = 70;
+const EXTRA_ROW = 54;
 
-function StadiumDrawing({ flipped }: { flipped: boolean }) {
-  const lanes = [1, 2, 3].map((n) => n * LANE);
+const RACES: DisciplineFamily[] = ["sprint", "hurdles", "middle", "long", "relay"];
+const isRace = (family: DisciplineFamily) => RACES.includes(family);
+
+/** The oval seen from above: a brick red track with a thin light line, the green field inside. */
+function StadiumDrawing() {
   return (
-    <svg
-      aria-hidden
-      viewBox={`0 0 ${W} ${H}`}
-      className={cn("absolute inset-0 size-full", flipped && "rotate-180")}
-    >
-      {/* The track, its lanes, and the finish line at the end of the home straight. */}
-      <rect width={W} height={H} rx={W / 2} className="fill-track" />
-      {lanes.map((d) => (
-        <rect
-          key={d}
-          x={d}
-          y={d}
-          width={W - 2 * d}
-          height={H - 2 * d}
-          rx={W / 2 - d}
-          fill="none"
-          className="stroke-white/40"
-          strokeWidth={1}
-        />
-      ))}
-      <line
-        x1={W - TRACK}
-        x2={W}
-        y1={H - W / 2}
-        y2={H - W / 2}
-        className="stroke-white"
-        strokeWidth={3}
-      />
-      <rect
-        x={TRACK}
-        y={TRACK}
-        width={W - 2 * TRACK}
-        height={H - 2 * TRACK}
-        rx={W / 2 - TRACK}
-        className="fill-field"
-      />
-      {/* The jumps: a runway down to its sand pit. */}
-      <rect x={84} y={110} width={16} height={230} rx={3} className="fill-track" />
-      <rect x={78} y={340} width={28} height={50} rx={4} className="fill-white/35" />
-      {/* The throws: a sector opening from its circle. */}
-      <path
-        d="M208 390 L168 110 M208 390 L248 110"
+    <svg aria-hidden viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 size-full">
+      <ellipse cx={W / 2} cy={H / 2} rx={W / 2 - 3} ry={H / 2} className="fill-track" />
+      <ellipse
+        cx={W / 2}
+        cy={H / 2}
+        rx={W / 2 - 5.5}
+        ry={H / 2 - 2.5}
         fill="none"
-        className="stroke-white/60"
-        strokeWidth={2}
+        className="stroke-white/70"
+        strokeWidth={0.4}
       />
-      <circle cx={208} cy={390} r={9} fill="none" className="stroke-white" strokeWidth={3} />
+      <ellipse cx={W / 2} cy={H / 2} rx={W / 2 - 11} ry={H / 2 - 8} className="fill-field" />
     </svg>
   );
 }
 
 /**
- * The Manager stadium seen from above (#775): a running track around a field, with one spot per
- * place of the lineup at its place (sprint on the home straight, middle and long distance on the
- * bends, jumps on the runway, throws in the sector, combined events in between, free places on the
- * back straight). `spots` gives what stands on each place, in their order. `flipped` turns the
- * drawing round, for the opponent's stadium facing the player's in a head-to-head.
+ * The Manager stadium seen from above (#775), as in the validated mock-up: one spot per place of
+ * the lineup at its place (races on the track, field events on the grass, `stadium-spots.ts`), the
+ * same in the lineup and in both stadiums of a head-to-head. `spots` gives what stands on each
+ * place, in their order.
  */
 export function StadiumMap({
   label,
   places,
   spots,
-  flipped = false,
 }: {
   label: string;
   places: LineupPlace[];
   spots: ReactNode[];
-  flipped?: boolean;
 }) {
   const positions = stadiumSpots(places);
   let extras = 0;
   const style = positions.map((p) => {
-    if (p) {
-      const { x, y } = flipped ? { x: W - p.x, y: H - p.y } : p;
-      return { left: `${(x / W) * 100}%`, top: `${(y / H) * 100}%` };
-    }
+    const width = `${CARD_WIDTH}%`;
+    if (p) return { width, left: `${p.x}%`, top: `${p.y}%` };
     const k = extras++;
     return {
+      width,
       left: `${12.5 + 25 * (k % 4)}%`,
       top: `calc(100% + ${EXTRA_ROW / 2 + 8 + Math.floor(k / 4) * EXTRA_ROW}px)`,
     };
@@ -106,7 +68,7 @@ export function StadiumMap({
       style={{ marginBottom: extras > 0 ? Math.ceil(extras / 4) * EXTRA_ROW + 16 : undefined }}
     >
       <div className="relative" style={{ aspectRatio: `${W} / ${H}` }}>
-        <StadiumDrawing flipped={flipped} />
+        <StadiumDrawing />
         <ul aria-label={label} className="absolute inset-0">
           {spots.map((spot, i) => (
             <li key={i} className="absolute -translate-x-1/2 -translate-y-1/2" style={style[i]}>
@@ -119,62 +81,78 @@ export function StadiumMap({
   );
 }
 
-const SPOT = "flex h-[62px] w-14 flex-col items-center justify-between rounded-xl p-1 text-center";
+const SPOT =
+  "flex h-[46px] w-full flex-col items-center justify-center gap-px rounded-lg px-1 text-center";
 
 /**
- * An athlete on their spot: family code (and bonus), initials (never a photo), then the short
- * name, or the points in a head-to-head. Gold for the player, light blue for the opponent; an
- * athlete at 0 gets a dashed red frame. With `label`, it reads as an article of that name.
+ * An athlete on their spot (#775): the discipline in capitals (navy for a race, red for a field
+ * event), the first name and the initial of the last name, then in a head-to-head the points
+ * (« à venir » until scored), « ▲ » and a thick navy frame when they win the duel of their place.
+ * Races on gold, field events on white, in both themes. With `label`, it reads as an article.
  */
 export function PlacedSpot({
   athlete,
-  tone = "gold",
   points,
-  bonus = 0,
+  won = false,
   label,
-  className,
 }: {
-  athlete: { name: string; family: DisciplineFamily };
-  tone?: "gold" | "blue";
+  athlete: { name: string; discipline: string; family: DisciplineFamily };
   /** In a head-to-head: the athlete's points, null until scored. */
   points?: number | null;
-  bonus?: number;
+  won?: boolean;
   label?: string;
-  className?: string;
 }) {
-  const scored = points !== undefined;
+  const race = isRace(athlete.family);
   return (
     <span
       role={label ? "article" : undefined}
       aria-label={label}
       className={cn(
         SPOT,
-        "shadow-md",
-        tone === "gold"
-          ? "bg-gradient-to-b from-(--medal-gold-from) to-(--medal-gold-to) text-(--medal-gold-ink)"
-          : "bg-gradient-to-b from-(--duel-blue-from) to-(--duel-blue-to) text-(--duel-blue-ink)",
-        points === 0 && "outline-2 outline-offset-1 outline-dashed outline-primary",
-        className,
+        "text-spot-ink shadow-md",
+        race ? "bg-spot-race" : "bg-spot-field",
+        won && "outline-3 outline-spot-ink",
       )}
     >
-      <span className="flex w-full justify-between gap-0.5 text-[9px] font-extrabold leading-none tracking-wide">
-        <span>{messages.team.codes[cardGroupOf(athlete.family)]}</span>
-        {bonus > 0 && <span className="font-mono">{messages.team.bonus(bonus)}</span>}
-      </span>
-      <span
-        aria-hidden
-        className="grid size-7 place-items-center rounded-full border border-current/30 bg-white/50 font-display text-xs font-extrabold"
-      >
-        {athleteInitials(athlete.name)}
-      </span>
       <span
         className={cn(
-          "w-full truncate text-[10px] font-extrabold leading-tight",
-          scored && "font-mono tabular-nums",
+          "w-full truncate text-[9px] font-extrabold uppercase leading-none tracking-wide",
+          !race && "text-spot-field-label",
         )}
       >
-        {scored ? messages.team.points(points) : shortAthleteName(athlete.name)}
+        {athlete.discipline}
       </span>
+      <span className="w-full truncate text-[11px] font-bold leading-tight">
+        {shortAthleteName(athlete.name)}
+      </span>
+      {points !== undefined && (
+        <span className="w-full truncate font-mono text-[11px] font-bold leading-tight tabular-nums">
+          {points === null ? messages.managerDuel.toCome : points}
+          {won && ` ${messages.managerDuel.won}`}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** A small square of an athlete's colour and family code, next to their name in a list. */
+export function SpotSwatch({
+  family,
+  muted = false,
+}: {
+  family: DisciplineFamily;
+  muted?: boolean;
+}) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "grid size-11 shrink-0 place-items-center rounded-lg text-[10px] font-extrabold text-spot-ink shadow-sm ring-1 ring-border",
+        isRace(family) ? "bg-spot-race" : "bg-spot-field",
+        muted && "grayscale",
+      )}
+    >
+      {messages.team.codes[cardGroupOf(family)]}
     </span>
   );
 }
@@ -184,26 +162,23 @@ export function EmptySpot({
   label,
   fillable,
   children,
-  className,
 }: {
   label: string;
   fillable: boolean;
   children?: ReactNode;
-  className?: string;
 }) {
   return (
     <span
       className={cn(
         SPOT,
-        "justify-center gap-0.5 border-2 border-dashed font-bold text-field-foreground",
+        "border-2 border-dashed font-bold text-field-foreground",
         fillable ? "border-white bg-black/25" : "border-white/40 bg-black/40",
-        className,
       )}
     >
-      <span aria-hidden className={fillable ? "text-xl leading-none" : "text-[10px] leading-none"}>
+      <span aria-hidden className={fillable ? "text-lg leading-none" : "text-[10px] leading-none"}>
         {fillable ? messages.lineup.add : messages.lineup.nobody}
       </span>
-      <span className="w-full break-words text-[9px] leading-tight">{label}</span>
+      <span className="w-full truncate text-[9px] leading-tight">{label}</span>
       {children}
     </span>
   );

@@ -161,20 +161,28 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **CompetitionChips** : puces d'une compétition à l'autre (classement, historique des pronos).
 - **AthleteCard** (Manager, #426) : carte or d'un athlète de l'équipe ; code de famille, prix
   payé, initiales (jamais de photo), prénom et initiale du nom ; état « Absent·e » sur le banc de
-  l'alignement. Sur le stade (#775), un athlète est une place (`PlacedSpot`) : code de famille,
-  initiales, prénom et initiale du nom, ou ses points dans une confrontation, avec le bonus
-  (« +20 ») en haut à droite, bleu clair (`--duel-blue-*`) pour l'adversaire ; un athlète à 0 a un
-  cadre rouge en pointillés.
-- **DuelStadium** (Manager, #605, #775) : les deux stades face à face, celui de l'adversaire en
-  haut (retourné, cartes bleues), celui du joueur en bas (cartes or), chaque titulaire sur sa place
-  de l'alignement avec ses points ; le pseudo et le score de chacun entre les deux stades ;
-  « … n'a pas validé d'alignement : 0 point » à la place d'un stade vide.
-- **LineupBoard** (Manager, #427, #775) : le stade vu du dessus (`StadiumMap` : piste `--track`
-  autour d'une pelouse `--field`, sautoir et fosse, cercle et secteur de lancer), une place par
-  titulaire à son endroit : sprint et haies sur la ligne droite d'arrivée, demi-fond sur le virage
-  du haut, fond sur celui du bas, sauts sur le sautoir, lancers dans le secteur, combinées entre les
-  deux, places « Libre » sur la ligne opposée (`stadium-spots.ts`). Une place montre l'athlète
-  (code de famille, initiales, prénom et initiale du nom) ou un « + » en pointillés. Toucher une
+  l'alignement. Sur le stade (#775), un athlète est une place (`PlacedSpot`), comme sur la maquette
+  validée « Confrontation stade contre stade » : les courses sur fond or (`--spot-race`), les
+  concours sur fond blanc (`--spot-field`), dans les deux thèmes ; la discipline en capitales
+  (bleu nuit pour une course, rouge `--spot-field-label` pour un concours), le prénom et l'initiale
+  du nom, puis dans une confrontation les points (chasse fixe) ou « à venir ».
+- **DuelStadium** (Manager, #605, #775) : stade contre stade. En haut « Stade de <pseudo> » et son
+  score (bleu nuit), son stade ; une ligne fine coupée par une pastille bleu nuit « 37 - 41 »
+  (chiffres or, chasse fixe) ; le stade du joueur, puis « Mon stade » et son score (rouge quand il
+  mène) ; la légende « Mêmes places que l'alignement. ▲ : duel gagné à cette épreuve. ». Chaque
+  titulaire est à la même place dans les deux stades ; « ▲ » après les points et un contour bleu
+  nuit épais pour la carte qui bat celle de la même place en face. « … n'a pas validé d'alignement :
+  0 point » à la place d'un stade vide. En tête de page : « ‹ <ligue> », « Journée N · en direct »
+  (ou « terminée ») et « N épreuves à venir ».
+- **LineupBoard** (Manager, #427, #775) : le stade vu du dessus (`StadiumMap` : un ovale, piste
+  `--track` avec un fin liseré clair autour d'une pelouse `--field`), une place par titulaire à son
+  endroit, les mêmes que dans une confrontation (`stadium-spots.ts`) : sur la piste, sprint et haies
+  en bas (« 100 m ») puis à gauche (« 400 m »), demi-fond et fond à droite (« 1500 m »), une
+  huitième place en haut ; sur la pelouse, sauts en haut (« hauteur ») puis à gauche
+  (« longueur »), lancers à droite (« javelot ») puis au centre (« poids »), combinées au centre ;
+  les places « Libre » prennent les endroits restants dans cet ordre. Quatre cartes tiennent côte à
+  côte sur la ligne du milieu, sans chevauchement de 320 à 390 px. Une place montre l'athlète ou un
+  « + » en pointillés. Toucher une
   place ouvre une feuille avec les athlètes de l'équipe : ceux qui ne vont pas sont grisés avec la
   raison (absent·e, autre famille) ; en choisir un déjà placé ailleurs échange les deux s'il le
   peut ; « Retirer de cette place ». Dessous, les remplaçants. Compteur « N/M places », barre du

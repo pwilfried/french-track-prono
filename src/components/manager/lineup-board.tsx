@@ -16,7 +16,7 @@ import type { ManagerSex } from "@/domain/manager-rules";
 import { cn } from "@/lib/utils";
 
 import { AthleteCard } from "./athlete-card";
-import { EmptySpot, PlacedSpot, StadiumMap } from "./stadium";
+import { EmptySpot, PlacedSpot, SpotSwatch, StadiumMap } from "./stadium";
 
 const text = messages.lineup;
 
@@ -31,7 +31,7 @@ export type BoardAthlete = {
 };
 
 const SPOT_BUTTON =
-  "block rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring";
+  "block w-full rounded-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring";
 
 /**
  * The lineup of a Manager team before a competition (#427), on the stadium seen from above (#775):
@@ -230,10 +230,7 @@ export function LineupBoard({
                     reason !== null && "opacity-60",
                   )}
                 >
-                  <PlacedSpot
-                    athlete={a}
-                    className={cn("h-12 w-11 shrink-0", reason !== null && "grayscale")}
-                  />
+                  <SpotSwatch family={a.family} muted={reason !== null} />
                   <span className="min-w-0 flex-1">
                     <span className="block break-words font-bold">{a.name}</span>
                     <span className="block text-sm text-muted-foreground">

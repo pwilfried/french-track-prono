@@ -1,51 +1,52 @@
 import type { LineupPlace } from "@/domain/manager-lineup";
 
 /**
- * Where the places of a lineup sit on the stadium seen from above (#775), in the units of its
- * drawing: 300 wide, 500 high, the home straight on the right. Sprint and hurdles on the home
- * straight, middle distance on the top bend, long distance on the bottom one, jumps on the runway
- * and its pit, throws in their circles and sector, combined events in between, free places on the
- * back straight. A family with more places than its zone takes the next free spot.
+ * Where the places of a lineup sit on the stadium seen from above (#775), as in the validated
+ * mock-up « Confrontation stade contre stade »: in percent of the width (x) and of the height (y)
+ * of the stadium. Races on the track: sprint at the bottom of the home straight (« 100 m »), then
+ * the left bend (« 400 m »); middle and long distance on the right bend (« 1500 m »); the back
+ * straight at the top takes an eighth place. Field events on the grass: jumps at the top
+ * (« hauteur ») then on the left (« longueur »), throws on the right (« javelot ») then in the
+ * centre (« poids »), combined events in the centre. Free places take the spots left, in the
+ * order of the mock-up. A family with more places than its zone takes the next free spot.
  */
 export type StadiumSpot = { x: number; y: number };
 
-export const STADIUM_WIDTH = 300;
-export const STADIUM_HEIGHT = 500;
+/** The height of the stadium for a width of 1: an oval a little wider than high. */
+export const STADIUM_RATIO = 0.92;
 
-const column = (x: number): StadiumSpot[] => [210, 280, 140, 350].map((y) => ({ x, y }));
-const straight = (x: number): StadiumSpot[] => [180, 250, 320].map((y) => ({ x, y }));
+/** The width of a card, in percent of the stadium: four fit side by side on the middle row. */
+export const CARD_WIDTH = 23.5;
 
-const HOME_STRAIGHT = straight(270);
-const BACK_STRAIGHT = straight(30);
-const TOP_BEND: StadiumSpot[] = [
-  { x: 150, y: 32 },
-  { x: 62, y: 72 },
-  { x: 238, y: 72 },
-];
-const BOTTOM_BEND: StadiumSpot[] = TOP_BEND.map(({ x, y }) => ({ x, y: STADIUM_HEIGHT - y }));
-const RUNWAY = column(92);
-const MIDFIELD = column(150);
-const CIRCLES = column(208);
+const BOTTOM_STRAIGHT: StadiumSpot = { x: 50, y: 91 };
+const LEFT_BEND: StadiumSpot = { x: 12, y: 50 };
+const RIGHT_BEND: StadiumSpot = { x: 88, y: 50 };
+const BACK_STRAIGHT: StadiumSpot = { x: 50, y: 9 };
+const HIGH_JUMP: StadiumSpot = { x: 50, y: 29 };
+const LONG_JUMP: StadiumSpot = { x: 37, y: 50 };
+const JAVELIN: StadiumSpot = { x: 63, y: 50 };
+const SHOT_PUT: StadiumSpot = { x: 50, y: 71 };
 
 const ZONES: Record<LineupPlace, StadiumSpot[]> = {
-  sprint: HOME_STRAIGHT,
-  middle: TOP_BEND,
-  long: BOTTOM_BEND,
-  jumps: RUNWAY,
-  throws: CIRCLES,
-  combined: MIDFIELD,
-  free: [...BACK_STRAIGHT, ...MIDFIELD],
+  sprint: [BOTTOM_STRAIGHT, LEFT_BEND, BACK_STRAIGHT],
+  middle: [RIGHT_BEND, LEFT_BEND, BACK_STRAIGHT],
+  long: [RIGHT_BEND, BACK_STRAIGHT, LEFT_BEND],
+  jumps: [HIGH_JUMP, LONG_JUMP],
+  throws: [JAVELIN, SHOT_PUT],
+  combined: [SHOT_PUT, HIGH_JUMP],
+  free: [LEFT_BEND, HIGH_JUMP, LONG_JUMP, SHOT_PUT, BACK_STRAIGHT, JAVELIN, RIGHT_BEND],
 };
 
 /** Every spot, in the order a family that overflows its zone takes them. */
 const ALL: StadiumSpot[] = [
-  ...HOME_STRAIGHT,
-  ...BACK_STRAIGHT,
-  ...TOP_BEND,
-  ...BOTTOM_BEND,
-  ...MIDFIELD,
-  ...RUNWAY,
-  ...CIRCLES,
+  BOTTOM_STRAIGHT,
+  LEFT_BEND,
+  RIGHT_BEND,
+  BACK_STRAIGHT,
+  HIGH_JUMP,
+  LONG_JUMP,
+  JAVELIN,
+  SHOT_PUT,
 ];
 
 export const STADIUM_SPOTS = ALL.length;

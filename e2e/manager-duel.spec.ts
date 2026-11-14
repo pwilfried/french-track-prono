@@ -83,17 +83,20 @@ test("a participant opens their head-to-head from the matchday and sees both lin
     .getByRole("link", { name: /Voir la confrontation/ })
     .click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Confrontation");
+  await expect(page.getByText("Journée 1 · terminée")).toBeVisible();
 
   const summary = page.getByRole("region", { name: "Résultat de la confrontation" });
   await expect(summary).toContainText("Victoire +3");
-  await expect(summary).toContainText(rivalPseudo);
-  await expect(summary).toContainText("930");
-  await expect(summary).toContainText("812");
   await expect(summary).toContainText(`Aller · `);
   await expect(summary).toContainText("Pronos : toi +30, adversaire +12 (inclus)");
 
-  // The 16 starters on one stadium: the rival's at the top, the player's at the bottom.
+  // Stadium against stadium: the rival's at the top, « Mon stade » at the bottom, 812 - 930.
   const stadium = page.getByRole("region", { name: "Le stade de la confrontation" });
+  await expect(
+    stadium.getByRole("heading", { name: new RegExp(`^Stade de ${rivalPseudo}`) }),
+  ).toContainText("812");
+  await expect(stadium.getByRole("heading", { name: /^Mon stade/ })).toContainText("930");
+  await expect(stadium.getByText("812 - 930")).toBeVisible();
   await expect(stadium.getByRole("article")).toHaveCount(16);
   await expect(
     stadium.getByRole("list", { name: `Alignement de ${rivalPseudo}` }).getByRole("article"),
@@ -102,13 +105,17 @@ test("a participant opens their head-to-head from the matchday and sees both lin
     .getByRole("list", { name: `Alignement de ${player.pseudo}` })
     .getByRole("article");
   await expect(myCards).toHaveCount(8);
-  // By name: on a spot the initials (« D1 ») sit right before the points, « D10 pt » as text.
+  // Each card reads its points, bonus included; the rival wins the duel of the first place.
+  const myList = stadium.getByRole("list", { name: `Alignement de ${player.pseudo}` });
+  await expect(myList.getByRole("article", { name: /, 0 pt$/ })).toHaveCount(1);
+  await expect(myList.getByRole("article", { name: /dont 20 de bonus$/ })).toHaveCount(1);
   await expect(
     stadium
-      .getByRole("list", { name: `Alignement de ${player.pseudo}` })
-      .getByRole("article", { name: /, 0 pt$/ }),
+      .getByRole("list", { name: `Alignement de ${rivalPseudo}` })
+      .getByRole("article")
+      .filter({ hasText: "▲" }),
   ).toHaveCount(1);
-  await expect(myCards.filter({ hasText: "+20" })).toHaveCount(1);
+  await expect(myCards.filter({ hasText: "▲" })).toHaveCount(0);
 
   await page.getByRole("link", { name: "Classement ›" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Classement");
