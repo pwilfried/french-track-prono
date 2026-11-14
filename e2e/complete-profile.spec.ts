@@ -17,13 +17,25 @@ test("a player without a club is asked to complete their profile, puts it off, t
 
   // The express profile asked neither the club nor the disciplines: the home asks for them.
   await page.goto("/");
+  // A compact card, one line and a button; the form opens in a sheet over the home.
   const card = page.getByRole("region", { name: "Complète ton profil" });
+  const sheet = page.getByRole("dialog", { name: "Complète ton profil" });
   await expect(card).toBeVisible();
-  await expect(card.getByRole("checkbox")).toHaveCount(6);
-  await expect(card.getByRole("link", { name: "Préciser les épreuves" })).toHaveAttribute(
+  await expect(card.getByRole("checkbox")).toHaveCount(0);
+  await expect(sheet).toBeHidden();
+  await card.getByRole("button", { name: "Compléter" }).click();
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByRole("checkbox")).toHaveCount(6);
+  await expect(sheet.getByRole("link", { name: "Préciser les épreuves" })).toHaveAttribute(
     "href",
     "/profil/modifier",
   );
+
+  // Closing the sheet brings the player back to the home, the card still there.
+  await sheet.getByRole("button", { name: "Fermer" }).click();
+  await expect(sheet).toBeHidden();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(card).toBeVisible();
 
   // « Plus tard » hides it, remembered for the player, not just on this device.
   const later = card.getByRole("button", { name: "Plus tard : masquer pendant 30 jours" });
@@ -49,11 +61,13 @@ test("a player without a club is asked to complete their profile, puts it off, t
   await expect(card).toBeVisible();
 
   // A club and a family: every sprint discipline is saved, and the card goes for good.
-  await card.getByLabel("Cherche ton club").fill("songeville");
-  await card.getByRole("button", { name: /Stade Imaginaire Athlétisme/ }).click();
-  await card.getByText("Sprint", { exact: true }).click();
-  await card.getByRole("button", { name: "Enregistrer" }).click();
+  await card.getByRole("button", { name: "Compléter" }).click();
+  await sheet.getByLabel("Cherche ton club").fill("songeville");
+  await sheet.getByRole("button", { name: /Stade Imaginaire Athlétisme/ }).click();
+  await sheet.getByText("Sprint", { exact: true }).click();
+  await sheet.getByRole("button", { name: "Enregistrer" }).click();
   await expect(card).toHaveCount(0);
+  await expect(sheet).toHaveCount(0);
   expect(
     sql(`select disciplines @> '{100 m,200 m}'::text[] from player_details
       where ${where(player.email)}`),

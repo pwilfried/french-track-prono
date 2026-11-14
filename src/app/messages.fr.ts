@@ -144,6 +144,7 @@ export const messages = {
     completeProfile: {
       firstPodium: "Ton premier podium est posé !",
       title: "Complète ton profil",
+      open: "Compléter",
       text: "Ton club apparaît à côté de ton pseudo. Tes disciplines restent visibles par toi seul.",
       later: "Plus tard",
       laterLabel: "Plus tard : masquer pendant 30 jours",

@@ -8,6 +8,8 @@ import type { ErrorCode } from "@/application/errors";
 import { messages } from "@/app/messages.fr";
 import { ClubPicker, type ClubPickerValue } from "@/components/account/club-picker";
 import { SubmitButton } from "@/components/account/submit-button";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { buttonVariants } from "@/components/ui/button";
 import { PROFILE_FAMILIES } from "@/domain/profile-reminder";
 import { cn } from "@/lib/utils";
 
@@ -30,8 +32,10 @@ export const EMPTY_COMPLETE_PROFILE: CompleteProfileState = {
 const CLUB_ERRORS: ErrorCode[] = ["CLUB_NAME_INVALID", "CLUB_NAME_BANNED", "CLUB_UNKNOWN"];
 
 /**
- * « Complète ton profil » (#540), under « Ta prochaine action » while the player has neither a club
- * nor a discipline: the club search and six families of disciplines. « Plus tard » hides it 30 days.
+ * « Complète ton profil » (#540, #801), under « Ta prochaine action » while the player has neither a
+ * club nor a discipline: a compact card whose « Compléter » opens the club search and six families
+ * of disciplines in a sheet over the home; closing it keeps what was typed. « Plus tard » hides the
+ * card for 30 days.
  */
 export function CompleteProfileCard({
   firstPodium,
@@ -49,6 +53,7 @@ export function CompleteProfileCard({
 }) {
   const [state, action] = useActionState(save, initial);
   const [hidden, setHidden] = useState(false);
+  const [open, setOpen] = useState(false);
   const [, startTransition] = useTransition();
   if (hidden || state.done) return null;
 
@@ -67,32 +72,38 @@ export function CompleteProfileCard({
       ) : null}
       <section
         aria-labelledby="complete-profile"
-        className="flex flex-col gap-4 rounded-card border border-border bg-card/90 p-4 backdrop-blur-sm"
+        className="flex items-center gap-2 rounded-card border border-border bg-card/90 py-2 pr-2 pl-4 backdrop-blur-sm"
       >
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex min-w-0 flex-col gap-1">
-            <h2
-              id="complete-profile"
-              className="font-display text-xl font-extrabold leading-tight break-words"
-            >
-              {text.title}
-            </h2>
-            <p className="text-sm text-muted-foreground">{text.text}</p>
-          </div>
-          <button
-            type="button"
-            aria-label={text.laterLabel}
-            title={text.later}
-            onClick={() => {
-              setHidden(true);
-              startTransition(() => later());
-            }}
-            className="-mt-2 -mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-2xl leading-none text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
-          >
-            <span aria-hidden="true">×</span>
-          </button>
-        </div>
-
+        <h2
+          id="complete-profile"
+          className="min-w-0 flex-1 font-display text-lg font-extrabold leading-tight break-words"
+        >
+          {text.title}
+        </h2>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          className={cn(buttonVariants(), "shrink-0 px-4 text-sm")}
+        >
+          {text.open}
+        </button>
+        <button
+          type="button"
+          aria-label={text.laterLabel}
+          title={text.later}
+          onClick={() => {
+            setHidden(true);
+            startTransition(() => later());
+          }}
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-2xl leading-none text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      </section>
+      <BottomSheet open={open} onClose={() => setOpen(false)} title={text.title}>
+        <p className="mb-4 text-sm text-muted-foreground">{text.text}</p>
         <form action={action} noValidate className="flex flex-col gap-4">
           <ClubPicker
             initial={{
@@ -142,7 +153,7 @@ export function CompleteProfileCard({
           ) : null}
           <SubmitButton pendingLabel={text.saving}>{text.save}</SubmitButton>
         </form>
-      </section>
+      </BottomSheet>
     </div>
   );
 }
