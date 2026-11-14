@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { messages } from "@/app/messages.fr";
 import type { EventFilter } from "@/domain/event-list";
+import { segmentSurface, segmentedTrack } from "@/components/ui/view-tabs";
 import { cn } from "@/lib/utils";
 
 /**
@@ -22,7 +23,7 @@ export function EventFilters({
   return (
     <nav aria-label={messages.events.filtersLabel}>
       <ul
-        className="grid gap-1 rounded-full bg-muted p-1"
+        className={segmentedTrack}
         style={{ gridTemplateColumns: `repeat(${filters.length}, minmax(0, 1fr))` }}
       >
         {filters.map((filter) => {
@@ -34,7 +35,7 @@ export function EventFilters({
                 aria-current={active ? "true" : undefined}
                 className={cn(
                   "flex min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-1 text-[13px] font-semibold",
-                  active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
+                  segmentSurface(active),
                 )}
               >
                 {messages.events.filters[filter]}

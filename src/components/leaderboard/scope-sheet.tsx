@@ -16,6 +16,7 @@ import {
   type SheetCompetition,
 } from "../events/competition-sheet";
 import { BottomSheet } from "../ui/bottom-sheet";
+import { segmentSurface, segmentedTrack } from "../ui/view-tabs";
 import { rankingHref } from "./ranking-href";
 
 const text = messages.ranking.sheet;
@@ -89,7 +90,7 @@ export function ScopeSheet({
             <div
               role="tablist"
               aria-label={text.tabsLabel}
-              className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1"
+              className={cn(segmentedTrack, "grid-cols-2")}
             >
               {tabs.map((t) => (
                 <button
@@ -102,7 +103,7 @@ export function ScopeSheet({
                   onClick={() => setTab(t)}
                   className={cn(
                     "min-h-11 rounded-full px-2 text-sm font-semibold",
-                    t === tab ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
+                    segmentSurface(t === tab),
                   )}
                 >
                   {text.tabs[t]}

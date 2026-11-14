@@ -27,7 +27,7 @@ const LEVEL_NAMES: Record<string, string | undefined> = {
 
 export const messages = {
   /** The only way to write points (#706). */
-  format: { pts, ptsUnit, gain, points, pointsWord },
+  format: { pts, ptsUnit, gain, points },
   /** Name and place of each competition the app can show (see src/app/competition.ts). */
   competition: {
     /**
@@ -689,8 +689,6 @@ export const messages = {
     /** A card of a head-to-head (#605): the athlete's points, sporting bonuses included. */
     scoredCardLabel: (name: string, discipline: string, points: number | null, bonus: number) =>
       `${name}, ${discipline}, ${points === null ? "points à venir" : pts(points)}${bonus > 0 ? `, dont ${bonus} de bonus` : ""}`,
-    bonus: (n: number) => `+${n}`,
-    points: (n: number | null) => (n === null ? "–" : pts(n)),
     absent: "Absent·e",
   },
   lineup: {

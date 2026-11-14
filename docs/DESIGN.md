@@ -92,8 +92,11 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   mois et année écrits une fois (« 11–13 sept. 2026 », « 30 sept. – 2 oct. 2026 »).
 - **DayProgress** (#659) : une ligne, les épreuves à pronostiquer du jour affiché, les podiums
   posés sur toute la compétition et les points gagnés.
-- **Filtres en pastilles** (`EventFilters`) : une pastille par filtre avec son nombre, la
-  pastille active pleine ; elles défilent à l'horizontale sur mobile.
+- **Sélecteurs segmentés** (#708) : vues (`ViewTabs`), filtres de l'onglet Compétitions
+  (`EventFilters`, un segment par filtre avec son nombre) et portées des feuilles du bas partagent
+  la même piste (`segmentedTrack`) et la même surface (`segmentSurface`,
+  `src/components/ui/view-tabs.tsx`) : le segment choisi est surélevé et cerné d'un anneau
+  `--border`, lisible en clair comme en sombre ; les autres sont atténués.
 - **AthleteChip** : drapeau, nom, record de saison.
 - **PointsToast** : « +9 pts, vainqueur du 100 m trouvé ! » avec petite animation.
 - **Bib** (dossard, #537) : l'avatar du joueur, un numéro (0 à 999) et une couleur parmi six,
