@@ -40,10 +40,16 @@ export async function signIn(page: Page, email: string) {
 /**
  * Types the code sent to an address, read once the code field is shown: the app has sent it by
  * then (against pre-production, the code asked from the admin API must come after that one).
+ * A refused sending (e.g. AUTH_UNAVAILABLE once the hourly e-mail cap is hit, #810) fails the test
+ * at once with the message shown, instead of waiting the whole test timeout for the field.
  */
 export async function typeCode(page: Page, email: string) {
   const field = page.getByLabel(/code/i);
-  await field.waitFor();
+  const refusal = page.getByRole("main").getByRole("alert").first();
+  await field.or(refusal).first().waitFor();
+  if (await refusal.isVisible()) {
+    throw new Error(`No sign-in code sent to ${email}: « ${await refusal.innerText()} »`);
+  }
   await field.fill(await latestCodeFromMailbox(email));
 }
 
