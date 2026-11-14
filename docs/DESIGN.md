@@ -193,8 +193,13 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   Manager » ; sur desktop, menu du haut « Accueil, Compétitions, Classement, Ma ligue, Manager ». Le
   profil s'ouvre depuis le pseudo et le dossard de l'en-tête.
 - **Menu admin** : entrées groupées par rubrique, le tableau de bord en tête.
-- **BadgeGrid** : badges gagnés en couleur, les autres grisés avec leur règle ; dessous, le
-  prochain badge et ce qu'il reste à faire pour l'obtenir.
+- **BadgeGrid** : les 6 badges de jeu, puis les 7 badges de famille ; un badge gagné porte une
+  médaille (bronze, argent, or) derrière son emoji et son niveau en étiquette, les autres sont
+  grisés ; chacun dit ce qu'il compte et le seuil suivant (« 2 / 3 pour le bronze »). Dessous, le
+  prochain badge et ce qu'il reste (« encore 10 pts » pour une famille). Le visuel en dossard
+  viendra de #768.
+- **BadgeCelebration** (#821) : en haut du profil, le lièvre (qui sautille, sauf mouvement
+  réduit) annonce les niveaux gagnés depuis la dernière visite, une seule fois ; « Super ! » ferme.
 - **CompetitionChips** : puces d'une compétition à l'autre (classement, historique des pronos).
 - **AthleteCard** (Manager, #426) : carte or d'un athlète de l'équipe ; code de famille, prix
   payé, initiales (jamais de photo), prénom et initiale du nom ; état « Absent·e » sur le banc de
@@ -224,7 +229,10 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   raison (absent·e, autre famille) ; en choisir un déjà placé ailleurs échange les deux s'il le
   peut ; « Retirer de cette place ». Dessous, les remplaçants. Compteur « N/M places », barre du
   bas « À remplir : … » et « Valider mon alignement » (« Validation en cours… »). Une place que
-  l'équipe ne peut pas remplir reste grise (« Personne ») et n'empêche pas de valider. Bandeaux
+  l'équipe ne peut pas remplir reste grise (« Personne ») et n'empêche pas de valider ; la barre
+  dit combien restent vides et pourquoi (#839). Le compteur et la barre ne comptent que les places
+  tenues par un athlète engagé (`lineupProgress`, `src/domain/manager-lineup.ts`). Aucun athlète
+  engagé : la barre le dit (« Aucun de tes athlètes n'est inscrit… ») et ne propose pas de valider. Bandeaux
   « Alignement validé » et « Verrouillé ».
 - **ManagerTutorial** (Manager, #616) : sept étapes plein écran sur le bleu nuit, dans les deux
   thèmes ; une idée par étape, avec un dessin en formes simples (dossards, cartes, stade, barres,

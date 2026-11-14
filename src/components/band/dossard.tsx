@@ -63,7 +63,7 @@ export function Dossard({
           locked ? "bg-[#D5DAE1] text-[#3F4856]" : METAL_BAND[level],
         )}
       >
-        {locked ? messages.profile.badgeLocked : messages.band.levels[level]}
+        {locked ? messages.profile.badgeLocked : messages.badgeLevels.name[level]}
       </span>
       <span className="relative flex aspect-[5/4] items-center justify-center">
         <Animal

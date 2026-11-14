@@ -1,49 +1,121 @@
-import { badgeProgress, type BadgeProgress } from "@/domain/badges";
+import {
+  badgeProgress,
+  raisedBadges,
+  type Badge,
+  type BadgeLevel,
+  type BadgeProgress,
+  type StoredLevels,
+} from "@/domain/badges";
+import type { DisciplineFamily } from "@/domain/discipline";
 import { groupEventsByDay } from "@/domain/event-list";
 
+import type { DisciplineRepository } from "./disciplines";
 import type { EventReader } from "./list-events";
 import type { RankingRepository } from "./rankings";
 import type { PredictionRepository } from "./save-prediction";
 
-/** How far a player is from each badge in a competition (rules in src/domain/badges.ts). */
-export function getMyBadges(ports: {
+/**
+ * Port: the badge levels a player has won and been shown (#821). Real adapter = Supabase, fake =
+ * in memory. A level is never lowered, never removed.
+ */
+export interface BadgeLevelRepository {
+  levels(userId: string): Promise<StoredLevels>;
+  /** Raises each badge to the level given; a lower level than the stored one is ignored. */
+  raise(userId: string, levels: { badge: Badge; level: BadgeLevel }[]): Promise<void>;
+}
+
+type Ports = {
   ranking: RankingRepository;
   predictions: PredictionRepository;
   events: EventReader;
-}) {
+  disciplines: Pick<DisciplineRepository, "list">;
+  levels: BadgeLevelRepository;
+};
+
+type Input = { userId: string; competitionSlugs: string[] };
+
+/** The badges of the profile, and the levels won since the last ones shown (to celebrate). */
+export type MyBadges = {
+  progress: BadgeProgress[];
+  raised: { badge: Badge; level: BadgeLevel }[];
+};
+
+/** Where the player stands on each badge over the season (rules in src/domain/badges.ts). */
+async function readBadges(ports: Ports, input: Input): Promise<MyBadges> {
+  const slugs = input.competitionSlugs;
+  const [lines, predictions, events, disciplines, stored] = await Promise.all([
+    Promise.all(slugs.map((s) => ports.ranking.competitionLines(s))),
+    Promise.all(slugs.map((s) => ports.predictions.listForCompetition(input.userId, s))),
+    Promise.all(slugs.map((s) => ports.events.listByCompetition(s))),
+    ports.disciplines.list(),
+    ports.levels.levels(input.userId),
+  ]);
+  const all = lines.flat();
+  const myPredictions = predictions.flat();
+  const myLines = all.filter((l) => l.userId === input.userId);
+  const computed = new Map(
+    all.filter((l) => l.eventId !== "").map((l) => [l.eventId, l.eventStartsAt]),
+  );
+  const familyOf = new Map<string, DisciplineFamily>(disciplines.map((d) => [d.name, d.family]));
+  const eventOf = new Map(
+    events.flatMap((list, i) => list.map((e) => [e.id, { ...e, competitionSlug: slugs[i] }])),
+  );
+
+  // A French winner found: read the start list of the few events where the winner was right.
+  const pickOf = new Map(myPredictions.map((p) => [p.eventId, p.podium.first]));
+  const won = myLines.filter((l) => l.reasons.some((r) => r.kind === "exact" && r.slot === 1));
+  const french = await Promise.all(
+    won.map(async (l) => {
+      const event = eventOf.get(l.eventId);
+      const detail = event
+        ? await ports.events.findBySlug(event.competitionSlug, event.slug)
+        : null;
+      const pick = detail?.entries.find((e) => e.athleteId === pickOf.get(l.eventId));
+      return pick?.countryCode === "FRA" ? l.eventId : null;
+    }),
+  );
+
+  // Players predict finals only: heats never count for the "every event of a day" badge.
+  const days = events.flatMap((list) =>
+    groupEventsByDay(
+      list
+        .filter((e) => e.round === "final")
+        .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)),
+    ).map((d) => d.events.map((e) => e.id)),
+  );
+
+  const progress = badgeProgress(
+    {
+      myLines: myLines.map((l) => {
+        const event = eventOf.get(l.eventId);
+        return { ...l, family: event ? (familyOf.get(event.discipline) ?? null) : null };
+      }),
+      computedEvents: [...computed].map(([eventId, startsAt]) => ({ eventId, startsAt })),
+      frenchWinnerEvents: new Set(french.filter((id): id is string => id !== null)),
+      days,
+      predictedEventIds: new Set(myPredictions.map((p) => p.eventId)),
+    },
+    stored,
+  );
+  return { progress, raised: raisedBadges(progress, stored) };
+}
+
+/** The profile's badges. Reading never writes: a new level stays to celebrate until it is seen. */
+export function getMyBadges(ports: Ports) {
   return {
-    async execute(input: { userId: string; competitionSlug: string }): Promise<BadgeProgress[]> {
-      const [lines, predictions, events] = await Promise.all([
-        ports.ranking.competitionLines(input.competitionSlug),
-        ports.predictions.listForCompetition(input.userId, input.competitionSlug),
-        ports.events.listByCompetition(input.competitionSlug),
-      ]);
-      // Players predict finals only: heats never count for the "every event of a day" badge.
-      const finals = events.filter((e) => e.round === "final");
-      const myLines = lines.filter((l) => l.userId === input.userId);
-      const computed = new Map(lines.map((l) => [l.eventId, l.eventStartsAt]));
-      const sorted = [...finals].sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+    execute: (input: Input): Promise<MyBadges> => readBadges(ports, input),
+  };
+}
 
-      // A French winner found: read the start list of the few events where the winner was right.
-      const pickOf = new Map(predictions.map((p) => [p.eventId, p.podium.first]));
-      const slugOf = new Map(events.map((e) => [e.id, e.slug]));
-      const won = myLines.filter((l) => l.reasons.some((r) => r.kind === "exact" && r.slot === 1));
-      const french = await Promise.all(
-        won.map(async (l) => {
-          const slug = slugOf.get(l.eventId);
-          const detail = slug ? await ports.events.findBySlug(input.competitionSlug, slug) : null;
-          const pick = detail?.entries.find((e) => e.athleteId === pickOf.get(l.eventId));
-          return pick?.countryCode === "FRA" ? l.eventId : null;
-        }),
-      );
-
-      return badgeProgress({
-        myLines,
-        computedEvents: [...computed].map(([eventId, startsAt]) => ({ eventId, startsAt })),
-        frenchWinnerEvents: new Set(french.filter((id): id is string => id !== null)),
-        days: groupEventsByDay(sorted).map((d) => d.events.map((e) => e.id)),
-        predictedEventIds: new Set(predictions.map((p) => p.eventId)),
-      });
+/**
+ * The player has seen the celebration: the levels won are stored, so it is shown once and never
+ * lost. The levels are counted again here, never taken from the browser.
+ */
+export function markBadgesSeen(ports: Ports) {
+  return {
+    async execute(input: Input): Promise<void> {
+      const { raised } = await readBadges(ports, input);
+      if (raised.length > 0) await ports.levels.raise(input.userId, raised);
     },
   };
 }

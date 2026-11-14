@@ -4,15 +4,11 @@ import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
 import { getAthlete } from "@/application/get-athlete";
-import { AthleteHero } from "@/components/athletes/athlete-hero";
-import { RecentRaces } from "@/components/athletes/recent-races";
-import { RecordsRow } from "@/components/athletes/records-row";
-import { ErrorNotice } from "@/components/error-notice";
-import { recordRows } from "@/domain/athlete";
-import { eventReturnPath } from "@/domain/redirect";
+import { AthleteSheetView } from "@/components/athletes/athlete-sheet";
+import { utcToParis } from "@/domain/competition";
+import { eventReturnPath, managerReturnPath } from "@/domain/redirect";
 import { createPublicSupabaseClient, createSupabaseAthleteReader } from "@/infra";
 
-import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
 
 async function load(slug: string) {
@@ -38,6 +34,16 @@ export async function generateMetadata({
   return athlete === "error" ? {} : { title: messages.athlete.profileOf(athlete.name) };
 }
 
+/** Where the back link leads: the page the athlete was opened from (#679), else the competitions. */
+function backOf(from: string | null): { href: string; label: string } {
+  // From an event: back to the podium being built, in view (#699).
+  const event = eventReturnPath(from);
+  if (event) return { href: `${event}#podium`, label: messages.picker.podium };
+  const manager = managerReturnPath(from);
+  if (manager) return { href: manager, label: messages.athlete.back };
+  return { href: "/competitions", label: messages.event.back };
+}
+
 export default async function AthletePage({
   params,
   searchParams,
@@ -45,57 +51,25 @@ export default async function AthletePage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ from?: string | string[] }>;
 }) {
-  const competition = await currentCompetition();
   const { slug } = await params;
   const { from } = await searchParams;
-  // Opened from a podium being built (#699): back to that podium, else to the events.
-  const podium = eventReturnPath(typeof from === "string" ? from : null);
+  const back = backOf(typeof from === "string" ? from : null);
   const athlete = await load(slug);
+  const season = Number(utcToParis(new Date().toISOString()).slice(0, 4));
 
   return (
     <main id="main" className="flex flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-4">
         <Link
-          href={podium ? `${podium}#podium` : "/competitions"}
+          href={back.href}
           className="inline-flex min-h-11 items-center self-start font-semibold text-brand dark:text-secondary"
         >
-          ‹ {podium ? messages.picker.podium : messages.event.back}
+          ‹ {back.label}
         </Link>
         {athlete === "error" ? (
-          <ErrorNotice
-            retryHref={`/athletes/${slug}`}
-            message={messages.errors.ATHLETES_UNAVAILABLE}
-          />
+          <AthleteSheetView status="error" season={season} retryHref={`/athletes/${slug}`} />
         ) : (
-          <>
-            <AthleteHero
-              name={athlete.name}
-              countryCode={athlete.countryCode}
-              gender={athlete.gender}
-            />
-            <section aria-labelledby="records-title" className="flex flex-col gap-2">
-              <h2
-                id="records-title"
-                className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
-              >
-                {messages.athlete.records}
-              </h2>
-              <RecordsRow rows={recordRows(athlete.records)} />
-              <p className="text-xs text-muted-foreground">{messages.athlete.recordsHint}</p>
-            </section>
-            <section aria-labelledby="races-title" className="flex flex-col gap-2">
-              <h2
-                id="races-title"
-                className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
-              >
-                {messages.athlete.races}
-              </h2>
-              <RecentRaces
-                races={athlete.races}
-                linkable={(race) => race.competitionSlug === competition.slug}
-              />
-            </section>
-          </>
+          <AthleteSheetView sheet={athlete} season={season} />
         )}
       </div>
     </main>

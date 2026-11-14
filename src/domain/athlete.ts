@@ -12,56 +12,71 @@ export type AthleteRecord = {
   meeting: string | null;
 };
 
-/** One official result of an athlete. */
-export type AthleteRace = {
-  competitionSlug: string;
-  eventSlug: string;
-  discipline: string;
-  /** ISO 8601, UTC. */
-  startsAt: string;
-  meeting: string;
-  rank: number;
-  mark: string | null;
-};
+/** A record as the athlete page shows it: an unverified mark carries « ? » (#679). */
+export type SheetRecord = AthleteRecord & { verified: boolean };
 
-/** Everything the athlete page shows. */
+/** Everything the athlete page shows: records only, no results (owner's decision, #679). */
 export type AthleteSheet = {
   athleteId: string;
   slug: string;
   name: string;
   countryCode: string;
   gender: EventGender;
-  records: AthleteRecord[];
-  /** Newest first. */
-  races: AthleteRace[];
+  /** The athlete's disciplines, the main one first. */
+  disciplines: string[];
+  /** Price in the Manager catalogue; null when not in it. */
+  managerPrice: number | null;
+  records: SheetRecord[];
 };
 
-/** One line of the records band: PR and SB of a discipline side by side. */
-export type RecordRow = { discipline: string; pr: AthleteRecord | null; sb: AthleteRecord | null };
-
-/** How many disciplines the records band shows. */
-export const RECORD_ROWS = 4;
+/** One block of the athlete page: the PB and the SB of the current season in a discipline. */
+export type DisciplineRecords = {
+  discipline: string;
+  /** The athlete's main discipline. */
+  main: boolean;
+  pb: SheetRecord | null;
+  sb: SheetRecord | null;
+};
 
 /**
- * The records band: one row per discipline with a PR or an SB, the most recent record first
- * (where the athlete is active), at most RECORD_ROWS rows.
+ * The blocks of the athlete page (#679): one per discipline with a PB or an SB of `season` (an SB
+ * dated an earlier year is stale; one without a date is kept). The athlete's disciplines come
+ * first in their order (the main one at the top), then any other by its latest record.
  */
-export function recordRows(records: AthleteRecord[]): RecordRow[] {
-  const rows = new Map<string, RecordRow & { latest: string }>();
-  for (const record of records) {
+export function disciplineRecords(
+  sheet: Pick<AthleteSheet, "disciplines" | "records">,
+  season: number,
+): DisciplineRecords[] {
+  const blocks = new Map<string, DisciplineRecords & { latest: string }>();
+  for (const record of sheet.records) {
     if (record.kind !== "pr" && record.kind !== "sb") continue;
-    const row = rows.get(record.discipline) ?? {
+    if (record.kind === "sb" && record.date && Number(record.date.slice(0, 4)) !== season) continue;
+    const block = blocks.get(record.discipline) ?? {
       discipline: record.discipline,
-      pr: null,
+      main: sheet.disciplines[0] === record.discipline,
+      pb: null,
       sb: null,
       latest: "",
     };
-    row[record.kind] = record;
-    if ((record.date ?? "") > row.latest) row.latest = record.date ?? "";
-    rows.set(record.discipline, row);
+    block[record.kind === "pr" ? "pb" : "sb"] = record;
+    if ((record.date ?? "") > block.latest) block.latest = record.date ?? "";
+    blocks.set(record.discipline, block);
   }
-  return [...rows.values()]
-    .sort((a, b) => b.latest.localeCompare(a.latest) || a.discipline.localeCompare(b.discipline))
-    .slice(0, RECORD_ROWS)
-    .map(({ discipline, pr, sb }) => ({ discipline, pr, sb }));
+  const rank = (discipline: string) => {
+    const at = sheet.disciplines.indexOf(discipline);
+    return at < 0 ? sheet.disciplines.length : at;
+  };
+  return [...blocks.values()]
+    .sort(
+      (a, b) =>
+        rank(a.discipline) - rank(b.discipline) ||
+        b.latest.localeCompare(a.latest) ||
+        a.discipline.localeCompare(b.discipline),
+    )
+    .map(({ discipline, main, pb, sb }) => ({ discipline, main, pb, sb }));
+}
+
+/** The block the key figures of the page come from: the main discipline, else the first one. */
+export function keyRecords(blocks: DisciplineRecords[]): DisciplineRecords | null {
+  return blocks.find((b) => b.main) ?? blocks[0] ?? null;
 }

@@ -130,16 +130,26 @@ test("a new player predicts a perfect podium, the admin enters the results sheet
   await expect(page.locator('main:not([aria-busy="true"])')).toContainText("+12 pts");
   await expect(page.getByRole("heading", { name: "Ton prono vs officiel" })).toBeVisible();
 
-  // The perfect podium earns the Nostradamus badge on the profile.
+  // The perfect podium earns the Nostradamus badge in bronze on the profile (#821), and the hare
+  // celebrates it once.
   await page.goto("/profil");
-  await expect(page.getByRole("listitem").filter({ hasText: "Nostradamus" })).toHaveAttribute(
-    "data-earned",
-    "true",
+  const celebration = page.getByRole("status").filter({ hasText: "Le lièvre a une médaille" });
+  await expect(celebration).toContainText("Nostradamus : Bronze");
+  const badges = page.getByRole("region", { name: "Badges" });
+  await expect(badges.getByRole("listitem").filter({ hasText: "Nostradamus" })).toHaveAttribute(
+    "data-level",
+    "bronze",
   );
   // The band (#768): the seven families of the season with their points.
   await expect(page.getByRole("region", { name: "Ma bande" }).getByRole("listitem")).toHaveCount(7);
   // The badges grid (#385): locked badges stay listed, and the next one is named.
-  await expect(page.getByRole("region", { name: "Badges" })).toContainText("Prochain :");
+  await expect(badges).toContainText("Prochain :");
+  // Once seen, the level is stored: the next visit does not celebrate it again.
+  await expect(async () => {
+    await page.reload();
+    await expect(page.getByRole("region", { name: "Badges" })).toBeVisible();
+    await expect(celebration).toHaveCount(0);
+  }).toPass({ timeout: 10_000 });
   // The redesigned profile (#384): the best shot and the season figures.
   await expect(page.getByRole("region", { name: "Mon meilleur coup" })).toContainText(
     "Podium parfait",
