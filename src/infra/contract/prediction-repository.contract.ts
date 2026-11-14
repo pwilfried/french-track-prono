@@ -14,7 +14,7 @@ export type PredictionWorld = {
   newPlayer(): Promise<Player>;
   /** A player in no league of the competition (#311). */
   newPlayerWithoutLeague(): Promise<Player>;
-  /** At least two events still open, in the same competition. */
+  /** At least two events still open, in the same competition: 100 m races (marks in seconds). */
   openEvents: EventFixture[];
   /** An event already locked. */
   lockedEvent: EventFixture;
@@ -67,6 +67,19 @@ export function predictionRepositoryContract(name: string, world: () => Promise<
       expect(await player.predictions.save(wanted)).toBe("saved");
 
       expect(await player.predictions.find(player.userId, wanted.eventId)).toEqual(wanted);
+    });
+
+    it("refuses a mark outside the plausible range of the discipline (#702)", async () => {
+      const w = await world();
+      const player = await w.newPlayer();
+      const absurd: Prediction = {
+        ...prediction(player, w.openEvents[0]!),
+        marks: { first: 10.85, second: 500, third: null },
+      };
+
+      expect(await player.predictions.save(absurd)).toBe("mark_out_of_range");
+
+      expect(await player.predictions.find(player.userId, absurd.eventId)).toBeNull();
     });
 
     it("refuses « autre athlète » on an event played without odds", async () => {

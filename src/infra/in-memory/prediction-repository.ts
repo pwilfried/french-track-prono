@@ -1,4 +1,6 @@
 import { eventPhase } from "@/domain/countdown";
+import type { DisciplineFamily, MarkUnit } from "@/domain/discipline";
+import { isInRange, markRange } from "@/domain/mark-range";
 import { OTHER_ATHLETE } from "@/domain/podium-draft";
 import type { Prediction, PredictionRepository } from "@/application/save-prediction";
 
@@ -12,6 +14,8 @@ export type PredictionEventFixture = {
   predictable?: boolean;
   /** With odds: the proposed athletes; the player may also put « autre athlète » on one place. */
   proposed?: string[];
+  /** How its discipline measures a mark: a predicted mark must be plausible (#702). */
+  discipline?: { unit: MarkUnit; family: DisciplineFamily };
 };
 
 /**
@@ -50,6 +54,9 @@ export function createInMemoryPredictionRepository(options: {
       if (proposed ? !athletes.every((id) => proposed.includes(id)) : athletes.length < 3) {
         return "athlete_not_proposed";
       }
+      const marks = Object.values(prediction.marks ?? {}).filter((m) => m !== null);
+      const range = event.discipline && markRange(event.discipline.unit, event.discipline.family);
+      if (range && !marks.every((m) => isInRange(m, range))) return "mark_out_of_range";
       if (prediction.useJoker) {
         const otherJoker = [...stored.values()].some(
           (p) => p.userId === prediction.userId && p.eventId !== prediction.eventId && p.useJoker,
