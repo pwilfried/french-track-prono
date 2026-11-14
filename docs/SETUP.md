@@ -377,8 +377,9 @@ y ajoute `NEXT_PUBLIC_SITE_NOINDEX=1` avec `VERCEL_EXTRA_ENV` :
    puis `POST /v9/projects/<projet>/rollback/<id>`. Pas de `vercel rollback` : comme `promote`,
    il répond « User not found » avec le jeton du projet (#735). Une erreur HTTP de l'API donne
    une ligne `::error::` (sans le jeton) et l'issue dit « Retour au déploiement précédent : non… »
-   (à faire à la main : Deployments → Instant Rollback). Dans tous les cas, le job reste rouge et une issue `bug` + `needs-human` « Déploiement
-   annulé… » mentionne les propriétaires (`AGENTS_OWNER`) avec le lien du job. Après correction,
+   (à faire à la main : Deployments → Instant Rollback). Dans tous les cas, le job reste rouge et
+   une issue `bug` + `needs-human` « Déploiement annulé… » mentionne les propriétaires
+   (`AGENTS_OWNER`) avec le lien du job. Après correction,
    annuler le retour arrière dans Vercel (Deployments → « Undo Rollback ») : sinon Vercel ne
    branche plus les déploiements suivants sur les domaines. Puis relancer le workflow.
 
@@ -398,9 +399,16 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   puis build et déploiement Vercel, puis test de fumée sur
   l'adresse de préprod. Une migration qui échoue arrête tout : le site de préprod n'est pas
   déployé, la prod n'est jamais touchée. À la main : Actions → « Pre-production » → Run workflow
-  (seulement `main`).
-- **Garde-fou** : le workflow refuse un `SUPABASE_PROJECT_REF` qui n'est pas celui de la préprod
-  (un secret de prod collé par erreur).
+  (seulement `main`). Toute version passe par là, correctifs `vX.Y.Z` compris : la préprod
+  montre `main` avant que le tag ne le mette en prod.
+- **Garde-fous** : le workflow refuse une autre branche que `main` et un `SUPABASE_PROJECT_REF`
+  qui n'est pas celui de la préprod (un secret de prod collé par erreur). Le déploiement passe par
+  le même `ci/vercel-deploy.sh` que la prod (voir « Déploiements Vercel ») : variables Supabase
+  du projet Vercel de préprod vérifiées avant le build, déploiement direct sur l'adresse de préprod.
+- **Retour arrière automatique** : si le test de fumée de la préprod échoue, le script remet le
+  déploiement de préprod précédent par l'API Vercel et ouvre l'issue `bug` + `needs-human`
+  « Déploiement annulé… » ; le run « Pre-production » reste rouge, ce qui fait attendre le tag.
+  Après correction : « Undo Rollback » dans le projet Vercel de préprod, puis relancer le workflow.
 - **Pas de remise à zéro** : ce que le propriétaire crée à la main en préprod reste d'un
   déploiement à l'autre.
 - **Jeu de démo** (#694) : `supabase/preprod/demo.sql`, versionné dans le dépôt, entièrement
@@ -452,7 +460,8 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
 - **Mise en prod** : la prod suit toujours les tags, posés automatiquement quand un milestone est
   fini et `main` vert, sans feu vert humain (décision du propriétaire du 13 nov. 2026,
   `ci/agents/README.md`, étape 6). Seul garde-fou : un run « Pre-production » en échec sur le
-  commit de `main` fait attendre le tag jusqu'au passage suivant.
+  commit de `main` (migrations, déploiement, test de fumée ou tests e2e) fait attendre le tag
+  jusqu'au passage suivant.
 
 Secrets de l'environnement GitHub `preprod` (Settings → Environments → preprod), ceux du projet
 de préprod, jamais ceux de la prod : `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`,

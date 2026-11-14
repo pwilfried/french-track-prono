@@ -2295,6 +2295,8 @@ export const messages = {
     save: "Enregistrer mon podium",
     saving: "Enregistrement…",
     saved: "✓ Podium enregistré. Tu peux le modifier jusqu'au verrouillage.",
+    /** The save, on the button and in the notice at the top of the screen. */
+    savedShort: "✓ Podium enregistré",
     jokerUsedHere: "🃏 Joker utilisé sur cette épreuve",
     none: "Tu n'avais pas pronostiqué cette épreuve : 0 point.",
     visitorTitle: "Connecte-toi pour pronostiquer",
