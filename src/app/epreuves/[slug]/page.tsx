@@ -21,6 +21,7 @@ import { flagOf } from "@/domain/flag";
 import { pickChoices } from "@/domain/odds";
 import { canPredictRound } from "@/domain/rounds";
 import { draftFromPodium, emptyDraft } from "@/domain/podium-draft";
+import { athleteHref } from "@/domain/redirect";
 import {
   createPublicSupabaseClient,
   createSupabaseLeagueRepository,
@@ -404,7 +405,7 @@ export default async function EventPage({
                         </span>
                         <span aria-hidden="true">{flagOf(r.countryCode)}</span>
                         <Link
-                          href={`/athletes/${r.slug}`}
+                          href={athleteHref(r.slug, `/epreuves/${slug}`)}
                           className="min-w-0 flex-1 break-words font-semibold"
                         >
                           {r.name}
@@ -473,7 +474,7 @@ export default async function EventPage({
                     )}
                   </span>
                   <Link
-                    href={`/athletes/${entry.slug}`}
+                    href={athleteHref(entry.slug, `/epreuves/${slug}`)}
                     className="min-w-0 flex-1 break-words font-bold underline-offset-2 hover:underline"
                   >
                     {entry.name}

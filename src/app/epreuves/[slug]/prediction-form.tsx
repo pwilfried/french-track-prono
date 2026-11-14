@@ -9,6 +9,7 @@ import { ScaleRules } from "@/components/rules/scale-rules";
 import type { DisciplineFamily, MarkUnit } from "@/domain/discipline";
 import { MARK_MAX_LENGTH, markInputMode, markRange, readMark } from "@/domain/mark-range";
 import { isComplete, OTHER_ATHLETE, type PodiumDraft } from "@/domain/podium-draft";
+import { athleteHref } from "@/domain/redirect";
 import { cn } from "@/lib/utils";
 
 import { messages } from "../../messages.fr";
@@ -137,9 +138,7 @@ export function PredictionForm({
           }}
           helpHref="/regles"
           help={<ScaleRules scale={scale} level={3} idPrefix="rules-" />}
-          athleteHref={(athlete) =>
-            `/athletes/${athlete.slug}?from=${encodeURIComponent(`/epreuves/${slug}`)}`
-          }
+          athleteHref={(athlete) => athleteHref(athlete.slug, `/epreuves/${slug}`)}
           onOpenAthlete={() => keep({ openedAthlete: true })}
         />
       </div>
