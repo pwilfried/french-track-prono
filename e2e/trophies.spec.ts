@@ -38,9 +38,13 @@ test("an admin sets the FrenchTrack account and draws the trophies; a player see
       "Compte FrenchTrack enregistré.",
     );
 
-    // Drawing the trophies says how many the season has; the button tells it is working.
-    await page.getByRole("button", { name: "Attribuer les trophées" }).click();
-    await expect(page.locator("main").getByRole("status").last()).toContainText(/Saison \d{4} :/);
+    // Drawing the trophies says how many the season has, in its own section (it comes first,
+    // above the FrenchTrack account and its own status).
+    const award = page.getByRole("region", { name: "Attribuer", exact: true });
+    await award.getByRole("button", { name: "Attribuer les trophées" }).click();
+    await expect(award.getByRole("status")).toContainText(
+      /Saison \d{4} : \d+ trophées? attribués?/,
+    );
   } finally {
     sql(`update trophy_settings set witness_id = ${witness === "null" ? "null" : `'${witness}'`}`);
     sql(
