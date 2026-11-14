@@ -1,6 +1,7 @@
 -- The owner's account in pre-production (#769): pseudo « admin », admin role, member of every
--- prediction league (public or private) and of every Manager league there, so that what the demo
--- set and the tests leave is in sight without joining each league by hand.
+-- prediction league (public or private) and of every Manager league still open to players (#781:
+-- mercato not open, a place left under its target), so that what the demo set and the tests leave
+-- is in sight without joining each league by hand.
 -- Run by ci/preprod/owner.sh (never by hand, never in production), which sets the e-mail first:
 --   select set_config('preprod.owner_email', '<e-mail>', false);
 -- The e-mail lives in the PREPROD_OWNER_EMAIL secret of the preprod environment, never here.
@@ -57,11 +58,20 @@ begin
   select l.id, v_id, 'member' from leagues l
   on conflict do nothing;
 
-  -- Every Manager league with a place left (12 participants at most, as private.enter_manager_league).
+  -- Every Manager league a player could still join (#781), as private.enter_manager_league: the
+  -- mercato not open, a place left under the target its competitions call for. Never more: an
+  -- extra player would break the home-and-away of the season.
   insert into manager_members (league_id, user_id)
   select l.id, v_id from manager_leagues l
-  where (select count(*) from manager_members m where m.league_id = l.id) < 12
+  where l.mercato_opened_at is null
+    and (select count(*) from manager_members m where m.league_id = l.id) < l.player_target
   on conflict do nothing;
+
+  -- Out of the Manager leagues an earlier run made go over their target (before #781).
+  delete from manager_members mm
+  using manager_leagues l
+  where mm.league_id = l.id and mm.user_id = v_id and l.owner_id <> v_id
+    and (select count(*) from manager_members m where m.league_id = l.id) > l.player_target;
 end $$;
 
 commit;
