@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { createTestEvent, sql } from "../src/infra/contract/database";
+import { createTestEvent, onPreprod, sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
 
 // #693: competitions, events, disciplines and the scale are kept across requests. A change made
@@ -39,8 +39,12 @@ test("the event list comes from the cache, and the admin's new event time shows 
        lock_at = timestamp '2099-06-25 20:50' at time zone 'Europe/Paris' where slug = '${event}'`,
     { keepCache: true },
   );
-  await page.reload();
-  await expect(card).toContainText("20:35");
+  // In pre-production the other tests run at the same time against the same site, and each of
+  // their SQL changes flushes the shared cache: only locally is it surely still fresh (#840).
+  if (!onPreprod()) {
+    await page.reload();
+    await expect(card).toContainText("20:35");
+  }
 
   // The admin moves the event: the cache expires at once.
   await page.goto(`/admin/${event}`);
