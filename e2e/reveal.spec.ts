@@ -1,15 +1,16 @@
 import { expect, test } from "@playwright/test";
 
-import { onPreprod, sql } from "../src/infra/contract/database";
+import { sql } from "../src/infra/contract/database";
 import { joinLeagueFor, newPlayer, signUp } from "./players";
 
 test("a player cannot see a friend's podium before the lock, sees it after and reacts to it", async ({
   browser,
 }) => {
-  // An open event of its own (the prediction journey uses the first one).
+  // An open event of its own, nobody's prediction on it yet: Anna's is then 100 % of them (#830).
   const slug = sql(
     `select e.slug from events e join competitions c on c.id = e.competition_id
      where c.slug = 'ultimate-championship-2026' and e.lock_at > now() + interval '5 minutes'
+       and not exists (select 1 from predictions p where p.event_id = e.id)
      order by e.starts_at offset 3 limit 1`,
   );
   expect(slug, "no open event: run npm run db:open-events").not.toBe("");
@@ -44,8 +45,7 @@ test("a player cannot see a friend's podium before the lock, sees it after and r
   await expect(bobPage.getByRole("heading", { name: "Les pronos" })).toBeVisible();
   await expect(bobPage.getByText(anna.pseudo)).toBeVisible();
   await expect(bobPage.getByRole("heading", { name: "Qui ont-ils vu gagner ?" })).toBeVisible();
-  // Alone locally; in pre-production, never reset, earlier runs may share the event (#819).
-  await expect(bobPage.getByText(onPreprod() ? /: \d+ %/ : ": 100 %").first()).toBeAttached();
+  await expect(bobPage.getByText(": 100 %")).toBeAttached();
 
   // Bob reacts with a fire; Anna sees it on her own podium.
   const fire = bobPage.getByRole("button", { name: /^Réagir : feu/ });
