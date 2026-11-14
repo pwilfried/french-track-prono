@@ -1,4 +1,5 @@
-import { parseMark, tidyMark, type MarkUnit } from "./discipline";
+import { parseMark, tidyMark, type DisciplineFamily, type MarkUnit } from "./discipline";
+import { readMark } from "./mark-range";
 
 /** How an athlete's race ended: a mark, or did not start, did not finish, disqualified. */
 export type PerformanceStatus = "ok" | "dns" | "dnf" | "dq";
@@ -60,6 +61,20 @@ export function performanceProblem(
     } else if (parseMark(line.mark, unit) === null) return "bad_mark";
   }
   return null;
+}
+
+/**
+ * The athletes whose mark reads but is not a plausible mark of the discipline (#702): the admin is
+ * warned and may confirm it, a world record stays possible.
+ */
+export function outOfRangeMarks(
+  lines: Performance[],
+  unit: MarkUnit,
+  family?: DisciplineFamily,
+): string[] {
+  return lines
+    .filter((l) => l.status === "ok" && l.mark && readMark(l.mark, unit, family) === "out_of_range")
+    .map((l) => l.athleteId);
 }
 
 /** The lined-up athletes who have no line yet, in the order given: what the admin still has to enter. */

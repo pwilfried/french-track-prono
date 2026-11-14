@@ -234,6 +234,8 @@ async function PredictionSection({
           athletes={choices}
           initial={{ draft, useJoker: mine?.useJoker ?? false, marks }}
           markUnit={event.markUnit}
+          markFamily={event.markFamily}
+          discipline={event.discipline}
           tolerance={event.tolerance}
           scale={scale}
         />
