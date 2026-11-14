@@ -168,6 +168,11 @@ body {
   color: #f8f8f8;
 }
 
+/* The signed-in home lists FrenchTrack's accounts in its podcast block: the footer leaves them out (#711). */
+body:has([data-social-links="home"]) [data-social-links="footer"] {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
