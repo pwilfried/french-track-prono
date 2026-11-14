@@ -115,3 +115,5 @@ export { createSupabaseManagerBids } from "./supabase/manager-bid-repository";
 export { createSupabaseManagerReveals } from "./supabase/manager-reveal-repository";
 export { createInMemoryManagerLineupStore } from "./in-memory/manager-lineup-repository";
 export { createSupabaseManagerLineups } from "./supabase/manager-lineup-repository";
+export { createInMemoryBadgeLevelStore } from "./in-memory/badge-level-repository";
+export { createSupabaseBadgeLevelRepository } from "./supabase/badge-level-repository";

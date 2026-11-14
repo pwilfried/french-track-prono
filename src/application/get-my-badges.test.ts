@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import type { EventDetail, EventSummary } from "@/domain/event";
 
-import { getMyBadges } from "./get-my-badges";
+import type { StoredLevels } from "@/domain/badges";
+
+import { getMyBadges, markBadgesSeen, type BadgeLevelRepository } from "./get-my-badges";
 import type { EventReader } from "./list-events";
 import type { RankingLine, RankingRepository } from "./rankings";
 import type { Prediction, PredictionRepository } from "./save-prediction";
@@ -19,6 +21,17 @@ const event = (id: string, startsAt: string): EventSummary => ({
   round: "final",
 });
 const events = [event("e1", "2026-11-23T19:00:00Z"), event("e2", "2026-11-23T20:00:00Z")];
+const disciplines = {
+  list: async () => [
+    {
+      name: "100 m",
+      family: "sprint" as const,
+      unit: "time" as const,
+      lowerIsBetter: true,
+      tolerance: 0.05,
+    },
+  ],
+};
 const reader: EventReader = {
   listByCompetition: async () => events,
   findBySlug: async (_, slug) =>
@@ -69,32 +82,103 @@ const ranking = (lines: RankingLine[]): RankingRepository => ({
   competitionLines: async () => lines,
 });
 
-const earned = (progress: { badge: string; current: number; target: number }[]) =>
-  progress.filter((p) => p.current >= p.target).map((p) => p.badge);
+// Application tests do not import the infra layer: a few lines of fake are enough here.
+function levels(start: StoredLevels = {}) {
+  let stored = { ...start };
+  const raised: unknown[] = [];
+  const repository: BadgeLevelRepository = {
+    levels: async () => ({ ...stored }),
+    async raise(_, list) {
+      raised.push(list);
+      stored = { ...stored, ...Object.fromEntries(list.map((l) => [l.badge, l.level])) };
+    },
+  };
+  return { repository, raised, stored: () => stored };
+}
+
+const levelOf = (progress: { badge: string; level: string | null }[], badge: string) =>
+  progress.find((p) => p.badge === badge)?.level;
+const earned = (progress: { badge: string; level: string | null }[]) =>
+  progress.filter((p) => p.level !== null).map((p) => p.badge);
 
 describe("getMyBadges", () => {
   it("gives Bleus for a French winner found and Fidèle for a fully predicted day", async () => {
-    const badges = await getMyBadges({
+    const { progress } = await getMyBadges({
       ranking: ranking([line("e1", [{ kind: "exact", slot: 1 }])]),
       predictions: predictions([prediction("e1", "fra"), prediction("e2", "gbr")]),
       events: reader,
-    }).execute({ userId: "me", competitionSlug: "c" });
+      disciplines,
+      levels: levels().repository,
+    }).execute({ userId: "me", competitionSlugs: ["c"] });
 
-    expect(earned(badges)).toEqual(["bleus", "fidele"]);
+    expect(earned(progress)).toEqual(["bleus", "fidele"]);
   });
 
   it("gives no Bleus when the winner found is not French", async () => {
-    const badges = await getMyBadges({
+    const { progress } = await getMyBadges({
       ranking: ranking([line("e2", [{ kind: "exact", slot: 1 }])]),
       predictions: predictions([prediction("e2", "gbr")]),
       events: reader,
-    }).execute({ userId: "me", competitionSlug: "c" });
+      disciplines,
+      levels: levels().repository,
+    }).execute({ userId: "me", competitionSlugs: ["c"] });
 
-    expect(earned(badges)).toEqual([]);
-    expect(badges.find((b) => b.badge === "chasseur")).toEqual({
+    expect(earned(progress)).toEqual([]);
+    expect(progress.find((b) => b.badge === "chasseur")).toEqual({
       badge: "chasseur",
+      level: null,
       current: 1,
       target: 3,
     });
+  });
+
+  it("adds up the season's points of a family over every competition", async () => {
+    // 3 points on e1 in each of the 2 competitions of the season: 6 sprint points.
+    const { progress } = await getMyBadges({
+      ranking: ranking([line("e1", [])]),
+      predictions: predictions([]),
+      events: reader,
+      disciplines,
+      levels: levels().repository,
+    }).execute({ userId: "me", competitionSlugs: ["c1", "c2"] });
+
+    expect(progress.find((b) => b.badge === "foudre")).toMatchObject({ current: 6, target: 50 });
+  });
+
+  it("names a new level to celebrate, and celebrates it only once it has been seen", async () => {
+    const store = levels({ fidele: "bronze" });
+    const ports = {
+      ranking: ranking([line("e1", [{ kind: "exact", slot: 1 }])]),
+      predictions: predictions([prediction("e1", "fra"), prediction("e2", "gbr")]),
+      events: reader,
+      disciplines,
+      levels: store.repository,
+    };
+    const input = { userId: "me", competitionSlugs: ["c"] };
+
+    // Given a French winner found and Fidèle already shown in bronze,
+    // when the profile is read, then Bleus bronze is the one to celebrate, and nothing is stored.
+    expect((await getMyBadges(ports).execute(input)).raised).toEqual([
+      { badge: "bleus", level: "bronze" },
+    ]);
+    expect(store.raised).toEqual([]);
+
+    // When the player has seen it, then it is stored and not celebrated again.
+    await markBadgesSeen(ports).execute(input);
+    expect(store.stored()).toEqual({ fidele: "bronze", bleus: "bronze" });
+    expect((await getMyBadges(ports).execute(input)).raised).toEqual([]);
+  });
+
+  it("keeps a level won before, even when the season does not count it yet", async () => {
+    const { progress, raised } = await getMyBadges({
+      ranking: ranking([]),
+      predictions: predictions([]),
+      events: reader,
+      disciplines,
+      levels: levels({ chasseur: "silver" }).repository,
+    }).execute({ userId: "me", competitionSlugs: ["c"] });
+
+    expect(levelOf(progress, "chasseur")).toBe("silver");
+    expect(raised).toEqual([]);
   });
 });
