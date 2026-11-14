@@ -72,7 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="fr"
       className={`${display.variable} ${inter.variable} ${mono.variable} h-full antialiased`}
     >
-      <body className="relative isolate min-h-full flex flex-col pb-16 md:pb-0">
+      <body className="relative isolate min-h-full flex flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
         <TrackBackground />
         <a
           href="#main"
