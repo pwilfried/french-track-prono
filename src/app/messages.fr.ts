@@ -17,15 +17,23 @@ const LEVEL_NAMES: Record<string, string | undefined> = {
 export const messages = {
   /** Name and place of each competition the app can show (see src/app/competition.ts). */
   competition: {
+    /**
+     * « 11 sept. 2026 », « 11–13 sept. 2026 », « 30 sept. – 2 oct. 2026 »,
+     * « 28 déc. 2026 – 3 janv. 2027 » (#707): the month and the year are written once.
+     */
     dates: (from: string, to: string) => {
-      const day = (d: string) =>
+      const day = (d: string) => String(Number(d.slice(8, 10)));
+      const month = (d: string) =>
         new Date(`${d}T12:00:00Z`).toLocaleDateString("fr-FR", {
-          day: "numeric",
           month: "short",
-          year: "numeric",
           timeZone: "UTC",
         });
-      return from === to ? day(from) : `${day(from)} – ${day(to)}`;
+      const year = (d: string) => d.slice(0, 4);
+      const full = (d: string) => `${day(d)} ${month(d)} ${year(d)}`;
+      if (from === to) return full(from);
+      if (year(from) !== year(to)) return `${full(from)} – ${full(to)}`;
+      if (from.slice(5, 7) !== to.slice(5, 7)) return `${day(from)} ${month(from)} – ${full(to)}`;
+      return `${day(from)}–${full(to)}`;
     },
   },
   app: {
@@ -215,8 +223,7 @@ export const messages = {
     locksOn: (day: string, hour: string) => `Verrouille le ${day} à ${hour}`,
     editable: "modifiable",
     perfect: "Podium parfait !",
-    noPrediction: "Pas de prono",
-    noPoints: "—",
+    notPlayed: "Pas joué",
     cardLabel: (discipline: string, gender: string, hour: string) =>
       `${discipline}, ${gender}, ${hour}`,
     empty: "Aucune épreuve pour ce filtre.",
