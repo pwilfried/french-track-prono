@@ -199,7 +199,7 @@ function Manager({ mercatoOpen }: { mercatoOpen: boolean }) {
   );
 }
 
-/** On the night blue: the podcast, then FrenchTrack's accounts, as in the footer (#478). */
+/** On the night blue: the podcast, then FrenchTrack's accounts; the footer then leaves them out (#478, #711). */
 function FrenchTrack() {
   return (
     <section
@@ -220,7 +220,11 @@ function FrenchTrack() {
         <SocialIcon name="podcast" />
         {text.frenchTrack.listen}
       </a>
-      <ul aria-label={footer.socialLabel} className="grid grid-cols-3 gap-2">
+      <ul
+        aria-label={footer.socialLabel}
+        data-social-links="home"
+        className="grid grid-cols-3 gap-2"
+      >
         {SOCIAL.map((account) => (
           <li key={account.href}>
             <a
