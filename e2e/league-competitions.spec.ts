@@ -4,7 +4,7 @@ import { sql } from "../src/infra/contract/database";
 import { comingCompetition, deleteCompetition } from "./competitions";
 import { addFriendTo, newPlayer, signUp } from "./players";
 
-test("a player picks two French competitions on the home page and his league adds up both", async ({
+test("a player picks two French competitions in the season picker and his league adds up both", async ({
   page,
 }) => {
   // Two French competitions of their own, one event each, far enough to come after the others.
@@ -23,15 +23,16 @@ test("a player picks two French competitions on the home page and his league add
   }
   const player = newPlayer("multi");
 
-  await page.goto("/ligues/creer/competitions?type=france");
-  for (const name of names) await page.getByRole("checkbox", { name: new RegExp(name) }).check();
-  await page.getByRole("button", { name: "Créer ma ligue" }).click();
-
+  await page.goto("/ligues/creer");
   await signUp(page, player);
-  await page.waitForURL(/\/ligues\/creer\?/);
-  const chosen = page.getByRole("list", { name: "Compétitions de la ligue" });
-  for (const name of names) await expect(chosen).toContainText(name);
+  await page.waitForURL(/\/ligues\/creer$/);
+  // The name typed first stays while the competitions are picked, on the same page (#721).
   await page.getByLabel("Nom de la ligue").fill(`Multi ${tag}`);
+  // Their months are closed: the search finds them.
+  await page.getByRole("searchbox", { name: "Rechercher une compétition" }).fill(tag);
+  for (const name of names) await page.getByRole("checkbox", { name: new RegExp(name) }).check();
+  await expect(page.getByText("2 compétitions cochées")).toBeVisible();
+  await expect(page.getByLabel("Nom de la ligue")).toHaveValue(`Multi ${tag}`);
   await page.getByRole("button", { name: "Créer la ligue" }).click();
   await expect(page.getByText("Ta ligue est prête")).toBeVisible();
   const leagueUrl = page.url().split("?")[0]!;
@@ -82,15 +83,13 @@ test("a league needs a competition; on one under way, only the events locked aft
   await signUp(page, player);
   await page.waitForURL(/\/ligues$/);
   await page.getByRole("link", { name: "Créer une ligue" }).click();
-  await expect(
-    page.getByText("Choisis au moins une compétition à venir ou en cours pour créer ta ligue."),
-  ).toBeVisible();
+  await expect(page.getByText("Il en faut au moins 1.")).toBeVisible();
   await page.getByLabel("Nom de la ligue").fill(`Vide ${tag}`);
   await expect(page.getByRole("button", { name: "Créer la ligue" })).toBeDisabled();
 
   // With the competition under way, it can.
   await page.goto(`/ligues/creer?competition=${tag}`);
-  await expect(page.getByRole("list", { name: "Compétitions de la ligue" })).toContainText(running);
+  await expect(page.getByRole("checkbox", { name: new RegExp(running) })).toBeChecked();
   await page.getByLabel("Nom de la ligue").fill(`En cours ${tag}`);
   await page.getByRole("button", { name: "Créer la ligue" }).click();
   await expect(page.getByText("Ta ligue est prête")).toBeVisible();
