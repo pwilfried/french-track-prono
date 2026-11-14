@@ -146,9 +146,10 @@ function Summary({
 
 /**
  * The competitions of a league (#663), Manager or predictions: quick selections built from the
- * data, a search with combinable filters, the list by month (the first two open), and a sticky bar
- * with the count (for the Manager: the players and matchdays, and how to land exactly) and the
- * submit button, disabled under the minimum. Only competitions not finished are given. The ticked
+ * data, a search with combinable filters, the list by month (the first two open), and a bar with
+ * the count (for the Manager: the players and matchdays, and how to land exactly) and the
+ * submit button, disabled under the minimum. The bar sticks above the navigation only once a
+ * competition is ticked, so that, empty, it covers nothing (#804). Only competitions not finished are given. The ticked
  * ones are sent as hidden fields named `name`, so a closed month still counts.
  */
 export function SeasonCompetitionPicker({
@@ -418,7 +419,12 @@ export function SeasonCompetitionPicker({
         })}
       </div>
 
-      <div className="sticky bottom-20 z-10 flex flex-col gap-2 rounded-2xl bg-foreground p-3 text-background shadow-lg md:bottom-3">
+      <div
+        className={cn(
+          "flex flex-col gap-2 rounded-2xl bg-foreground p-3 text-background shadow-lg",
+          ids.size > 0 && "sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-10 md:bottom-3",
+        )}
+      >
         <div role="status" aria-live="polite">
           <Summary count={ids.size} minimum={minimum} withFormat={withFormat} />
         </div>

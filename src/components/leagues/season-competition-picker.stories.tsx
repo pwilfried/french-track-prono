@@ -153,8 +153,12 @@ export const NormalLeague: Story = {
     const submit = canvas.getByRole("button", { name: messages.leagues.createSubmit });
     await expect(submit).toBeDisabled();
     await expect(canvas.getByText(text.atLeast(1))).toBeVisible();
+    // Nothing ticked: the bar stays at the end of the list and covers nothing (#804).
+    const bar = () => getComputedStyle(submit.parentElement!).position;
+    await expect(bar()).toBe("static");
     await userEvent.click(canvas.getByRole("checkbox", { name: /^Meeting 1 ·/ }));
     await expect(canvas.getByText(text.chosen(1))).toBeVisible();
+    await expect(bar()).toBe("sticky");
     await expect(canvas.queryByText(/joueurs ·/)).toBeNull();
     await expect(submit).toBeEnabled();
 

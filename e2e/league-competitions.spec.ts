@@ -33,7 +33,18 @@ test("a player picks two French competitions in the season picker and his league
   for (const name of names) await page.getByRole("checkbox", { name: new RegExp(name) }).check();
   await expect(page.getByText("2 compétitions cochées")).toBeVisible();
   await expect(page.getByLabel("Nom de la ligue")).toHaveValue(`Multi ${tag}`);
-  await page.getByRole("button", { name: "Créer la ligue" }).click();
+  // Once ticked, the bar sticks above the navigation: the button is whole, without scrolling (#804).
+  const submit = page.getByRole("button", { name: "Créer la ligue" });
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 700 });
+    await expect(submit).toBeInViewport({ ratio: 1 });
+    const button = (await submit.boundingBox())!;
+    const nav = (await page
+      .getByRole("navigation", { name: "Navigation principale" })
+      .boundingBox())!;
+    expect(button.y + button.height).toBeLessThanOrEqual(nav.y);
+  }
+  await submit.click();
   await expect(page.getByText("Ta ligue est prête")).toBeVisible();
   const leagueUrl = page.url().split("?")[0]!;
 
