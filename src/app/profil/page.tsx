@@ -11,6 +11,7 @@ import { getTrophyShowcase } from "@/application/trophies";
 import { ShareSeasonCard } from "@/components/profile/share-season-card";
 import { getMyPredictionHistory } from "@/application/list-my-predictions";
 import { getClubRanking } from "@/application/rankings";
+import { BadgeCelebration } from "@/components/profile/badge-celebration";
 import { BadgeGrid } from "@/components/profile/badge-grid";
 import { TrophyShowcase } from "@/components/profile/trophy-showcase";
 import { Bib } from "@/components/profile/bib";
@@ -39,19 +40,19 @@ import {
   createSupabaseTrophyRepository,
 } from "@/infra";
 
-import { currentCompetition, seasonCompetitionSlugs } from "../competition";
+import { seasonCompetitionSlugs } from "../competition";
 import { messages } from "../messages.fr";
 import { turnOffNotificationsAction, turnOnNotificationsAction } from "../push-actions";
 import { getCurrentUser, getSessionClient } from "../session";
+import { markBadgesSeenAction } from "./badge-actions";
+import { badgePorts } from "./badge-ports";
 import { publicEventReader, publicDisciplines } from "../public-data";
 import { readOr } from "../read-or";
 
 /**
- * The season and the club ranking over every competition, the badges of the current one, the
- * latest predictions: each read on its own, so one that fails only hides its own block (#763).
+ * The season, the badges and the club ranking over every competition, the latest predictions: each read on its own, so one that fails only hides its own block (#763).
  */
 async function loadSeason(userId: string) {
-  const competition = await currentCompetition();
   const slugs = await seasonCompetitionSlugs();
   const client = await getSessionClient();
   const events = publicEventReader();
@@ -68,11 +69,7 @@ async function loadSeason(userId: string) {
     ),
     readOr(
       "profile badges",
-      getMyBadges({
-        ranking: createSupabaseRankingRepository(client),
-        predictions: createSupabasePredictionRepository(client),
-        events,
-      }).execute({ userId, competitionSlug: competition.slug }),
+      getMyBadges(badgePorts(client)).execute({ userId, competitionSlugs: slugs }),
       null,
     ),
     readOr(
@@ -158,6 +155,7 @@ export default async function ProfilePage({
     <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-6">
       <h1 className="sr-only">{text.title}</h1>
       <ClubNotices notices={clubNotices} />
+      {badges && <BadgeCelebration raised={badges.raised} onSeen={markBadgesSeenAction} />}
       {notice ? (
         <p role="status" className="rounded-card bg-muted p-4 font-semibold">
           {notice}
@@ -265,9 +263,16 @@ export default async function ProfilePage({
           turnOn={turnOnNotificationsAction}
           turnOff={turnOffNotificationsAction}
         />
+        <Link
+          href="/profil/rappels"
+          className="flex min-h-11 items-center justify-between rounded-card border border-border bg-card px-4 font-semibold"
+        >
+          {messages.reminders.link}
+          <span aria-hidden="true">›</span>
+        </Link>
       </section>
 
-      {badges && <BadgeGrid progress={badges} />}
+      {badges && <BadgeGrid progress={badges.progress} />}
       {shelves && <TrophyShowcase shelves={shelves} />}
 
       <section aria-labelledby="account" className="flex flex-col gap-2">
