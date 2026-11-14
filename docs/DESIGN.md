@@ -66,6 +66,10 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **PodiumPicker** : trois marches (or, argent, bronze) au-dessus de la liste de départ ; on
   touche les athlètes dans l'ordre 1er, 2e, 3e, un appui sur un athlète placé le retire, un appui
   sur une marche la sélectionne (pas de glisser-déposer). Sert aussi à la saisie des résultats.
+  Sélection lisible (#698) : la marche à remplir a un anneau plein de 3 px en `--accent-text`
+  (≥ 3:1 sur la page et la carte, clair et sombre) ; un athlète placé a une bordure de 2 px
+  `--accent-text`, un fond `--primary-soft` et son numéro de marche. Le focus clavier est un
+  contour `--ring` (bleu en clair, or en sombre), distinct de la sélection.
 - **CountdownBadge** : « Verrouillage dans 12 min », neutre, puis orange dès 1 h et rouge dès
   10 min (jetons `--countdown-*` dans `globals.css`, contrastes AA), « 🔒 Verrouillé » ensuite ;
   rien ne clignote.
