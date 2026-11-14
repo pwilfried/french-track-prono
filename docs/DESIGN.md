@@ -53,6 +53,17 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   clair. Les cartes posées dessus gardent un fond presque opaque pour la lisibilité.
 - **Titre** : « FRENCH TRACK » en blanc, « PRONO » dans une étiquette rouge légèrement inclinée,
   en écho au logo.
+- **Icône de l'appli** (décision du propriétaire du 14 nov. 2026, #767) : sur l'écran d'accueil
+  du téléphone, le lièvre (blanc, contour nuit `#052B5C`, bandeau rouge `#E03020`) au-dessus de
+  « FRENCH » en bleu et « TRACK » en rouge, sur le fond crème `#fdfbf5` ; nom sous l'icône
+  « FrenchTrack » (`short_name` du manifeste, titre Apple), nom complet « French Track Prono ».
+  L'icône maskable garde le dessin dans le cercle central de 80 %. L'onglet du navigateur
+  (favicon 32 et 16 px, `favicon.ico`) montre la tête du lièvre seule, sans texte, en traits plus
+  épais. Le lièvre est un dessin original, une seule source : `src/components/brand/hare-art.ts`,
+  dessiné par le composant `Hare` (story « Brand/Hare », grand et petit format, tête seule). Les
+  PNG de `public/icons/` et `public/favicon.ico` se régénèrent par
+  `node scripts/app-icons.mjs` (lièvre + `public/brand/frenchtrack-light.png`). L'en-tête et la
+  page d'accueil gardent le logo FrenchTrack.
 - **Mascotte** (idée) : un petit sprinter-emoji qui réagit (🏃 😎 🤯 🔥).
 
 ## Écrans de la V1
