@@ -14,11 +14,14 @@ const LINKS = [
 const SMALL_LINK =
   "flex min-h-11 items-center text-muted-foreground underline underline-offset-4 hover:text-foreground";
 
-/** FrenchTrack's accounts, then the links to the legal pages and an e-mail to write to us. */
+/**
+ * FrenchTrack's accounts, then the links to the legal pages and an e-mail to write to us. The
+ * accounts are hidden where the page already lists them (`data-social-links="home"`, #711).
+ */
 export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-border px-4 py-2">
-      <nav aria-label={text.socialLabel}>
+      <nav aria-label={text.socialLabel} data-social-links="footer">
         <ul className="mx-auto flex max-w-md flex-wrap justify-center gap-x-4 text-sm font-semibold">
           {FRENCHTRACK_ACCOUNTS.map((link) => (
             <li key={link.href}>
