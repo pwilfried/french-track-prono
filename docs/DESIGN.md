@@ -76,9 +76,10 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **EventCard** (#546) : l'heure de Paris, le nom avec le genre (« 100 m femmes »), une ligne
   dessous, un statut à droite. À venir : « Verrouille dans … » (`LockLine`, rouge dès 1 h ; au-delà
   de 24 h, « Verrouille le <jour> à <heure> »), « + Prono » ou « ✓ Posé » avec « modifiable ».
-  Terminée : fond atténué, mon résultat (« 2 athlètes bien placées », « Podium parfait ! »,
-  « Pas de prono ») et mes points en pastille verte, « — » sans prono. Le lien est nommé par
-  l'épreuve puis par son statut (#517).
+  Terminée : fond atténué, mon résultat (« 2 athlètes bien placées », « Podium parfait ! ») et
+  mes points en pastille verte ; sans prono, « Pas joué » et rien à droite, jamais de tiret seul
+  (#707). Le lien est nommé par l'épreuve puis par son statut (#517). Dates d'une compétition :
+  mois et année écrits une fois (« 11–13 sept. 2026 », « 30 sept. – 2 oct. 2026 »).
 - **DayProgress** (#659) : une ligne, les épreuves à pronostiquer du jour affiché, les podiums
   posés sur toute la compétition et les points gagnés.
 - **Filtres en pastilles** (`EventFilters`) : une pastille par filtre avec son nombre, la
@@ -110,7 +111,10 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   de ce soir · <compétition>, <jour> ». En tête de liste, la carte **MyPlaceCard** « Ta place »
   (rang, points, évolution depuis la dernière compétition, « 18 pts derrière <pseudo> (3e) », et
   « Top 18 % » en Général), masquée pour un visiteur ou un joueur sans points ;
-  une barre fixe en bas « Tu es 3e · 52 pts · Autour de moi » ; avant la première compétition, un
+  une barre fixe en bas **MyRankBar** « Tu es 3e · 52 pts », avec « Autour de moi » seulement
+  quand ma ligne est hors de l'écran (#710) ; seul dans sa ligue, le joueur voit le bandeau
+  « Tu es seul pour l'instant » (inviter ses amis) au lieu d'un classement à une ligne ; avant la
+  première compétition, un
   bandeau bleu « Le classement démarre » remplace le classement vide. Le jour de compétition va de
   6 h à 6 h, heure de Paris : une finale courue à 2 h du matin compte pour « Ce soir ».
   Un visiteur voit « Général » seul, sans barre fixe, avec « Se connecter » (#573).
@@ -126,7 +130,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   (plusieurs à la fois) ; « Créer » reste inactif tant qu'aucune puce n'est cochée.
 - **FamilyBadge** (#613) : « Sprint · Haies », pastille bleu doux sur la carte et la page d'une
   ligue limitée ; rien pour une ligue sur toutes les épreuves.
-- **SeasonCompetitionPicker** (#663, Manager) : sélections rapides avec leur nombre, recherche,
+- **SeasonCompetitionPicker** (#663, Manager ; ligue de pronos depuis #721, dès 1 compétition, sous le nom et les familles de la ligue) : sélections rapides avec leur nombre, recherche,
   filtres Portée, Lieu, Niveau, liste rangée par mois avec « Tout cocher », barre fixe « 15
   compétitions cochées » ; vide : « Aucune compétition ne correspond à ces filtres » et
   « Réinitialiser les filtres ».

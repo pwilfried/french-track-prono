@@ -17,15 +17,23 @@ const LEVEL_NAMES: Record<string, string | undefined> = {
 export const messages = {
   /** Name and place of each competition the app can show (see src/app/competition.ts). */
   competition: {
+    /**
+     * « 11 sept. 2026 », « 11–13 sept. 2026 », « 30 sept. – 2 oct. 2026 »,
+     * « 28 déc. 2026 – 3 janv. 2027 » (#707): the month and the year are written once.
+     */
     dates: (from: string, to: string) => {
-      const day = (d: string) =>
+      const day = (d: string) => String(Number(d.slice(8, 10)));
+      const month = (d: string) =>
         new Date(`${d}T12:00:00Z`).toLocaleDateString("fr-FR", {
-          day: "numeric",
           month: "short",
-          year: "numeric",
           timeZone: "UTC",
         });
-      return from === to ? day(from) : `${day(from)} – ${day(to)}`;
+      const year = (d: string) => d.slice(0, 4);
+      const full = (d: string) => `${day(d)} ${month(d)} ${year(d)}`;
+      if (from === to) return full(from);
+      if (year(from) !== year(to)) return `${full(from)} – ${full(to)}`;
+      if (from.slice(5, 7) !== to.slice(5, 7)) return `${day(from)} ${month(from)} – ${full(to)}`;
+      return `${day(from)}–${full(to)}`;
     },
   },
   app: {
@@ -185,22 +193,6 @@ export const messages = {
     inDays: (days: number) => (days === 0 ? "En cours" : days === 1 ? "Demain" : `Dans ${days} j`),
     events: (count: number) => (count <= 1 ? `${count} épreuve` : `${count} épreuves`),
   },
-  choice: {
-    back: "Accueil",
-    title: { international: "Compétitions internationales", france: "Compétitions françaises" },
-    intro:
-      "Coche une ou plusieurs compétitions pour créer ta ligue. Les points de toutes les compétitions cochées s'additionnent.",
-    tabsLabel: "Type de compétition",
-    tab: { international: "Internationales", france: "Françaises" },
-    coming: "À venir",
-    noneComing: "Aucune compétition à venir de ce type pour l'instant.",
-    startsIn: (days: number) => (days === 0 ? "En cours" : `J-${days}`),
-    submit: "Créer ma ligue",
-    past: "Terminées",
-    pastHint: "Résultats et classements",
-    see: "Voir",
-    seeLabel: (name: string) => `Voir ${name}`,
-  },
   events: {
     filtersLabel: "Filtrer les épreuves",
     filters: { todo: "À faire", posed: "Posés", done: "Terminées", all: "Toutes" },
@@ -216,8 +208,7 @@ export const messages = {
     locksOn: (day: string, hour: string) => `Verrouille le ${day} à ${hour}`,
     editable: "modifiable",
     perfect: "Podium parfait !",
-    noPrediction: "Pas de prono",
-    noPoints: "—",
+    notPlayed: "Pas joué",
     cardLabel: (discipline: string, gender: string, hour: string) =>
       `${discipline}, ${gender}, ${hour}`,
     empty: "Aucune épreuve pour ce filtre.",
@@ -1019,8 +1010,8 @@ export const messages = {
     listSubtitle: "Une ligue compte une ou plusieurs compétitions.",
     createSubtitle:
       "Au moins une compétition maintenant, d'autres plus tard : leurs points s'additionnent.",
-    competitionRequired:
-      "Choisis au moins une compétition à venir ou en cours pour créer ta ligue.",
+    createNone:
+      "Aucune compétition à venir ou en cours pour l'instant : reviens quand le calendrier sera annoncé.",
     competitionsTitle: "Compétitions de la ligue",
     noCompetition: "Pas encore de compétition : le classement démarre dès que tu en ajoutes une.",
     noCompetitionMember: "Pas encore de compétition : le créateur de la ligue en ajoutera.",
@@ -1085,10 +1076,6 @@ export const messages = {
     reportLabel: (name: string) => `Signaler la ligue ${name} à l'admin`,
     reporting: "…",
     reported: "✓ Signalée à l'admin. Merci !",
-    chosen: "Compétitions de la ligue",
-    remove: (name: string) => `Retirer ${name}`,
-    addCompetition: "+ Ajouter une compétition",
-    howTitle: "Comment ça compte ?",
     how: "Le classement de la ligue additionne les points de ses compétitions, sur les épreuves qui se verrouillent après leur entrée dans la ligue. Tu inviteras tes amis avec un code juste après.",
     nameLabel: "Nom de la ligue",
     nameHint: "2 à 40 caractères. Emoji bienvenus.",
