@@ -109,6 +109,49 @@ describe("SavePrediction", () => {
     expect(saved).toEqual([]);
   });
 
+  it("refuses a 300-digit triple jump mark with MARK_OUT_OF_RANGE, saving nothing", async () => {
+    const { repo, saved } = repository();
+
+    expect(
+      await codeOf(
+        savePrediction({ predictions: repo }).execute({
+          ...input,
+          marks: { first: "15.10", second: `8${"0".repeat(297)}989`, third: "" },
+          markUnit: "distance",
+          markFamily: "horizontal_jumps",
+        }),
+      ),
+    ).toBe("MARK_OUT_OF_RANGE");
+    expect(saved).toEqual([]);
+  });
+
+  it("refuses a mark the database finds out of range with MARK_OUT_OF_RANGE", async () => {
+    const { repo } = repository("mark_out_of_range");
+
+    expect(
+      await codeOf(
+        savePrediction({ predictions: repo }).execute({
+          ...input,
+          marks: { first: "10.85", second: "", third: "" },
+          markUnit: "time",
+        }),
+      ),
+    ).toBe("MARK_OUT_OF_RANGE");
+  });
+
+  it("saves a plausible triple jump mark", async () => {
+    const { repo, saved } = repository();
+
+    await savePrediction({ predictions: repo }).execute({
+      ...input,
+      marks: { first: "15,10", second: "", third: "" },
+      markUnit: "distance",
+      markFamily: "horizontal_jumps",
+    });
+
+    expect(saved[0]?.marks).toEqual({ first: 15.1, second: null, third: null });
+  });
+
   it("saves a podium with « autre athlète » on one place", async () => {
     const { repo, saved } = repository();
 

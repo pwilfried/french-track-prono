@@ -1,4 +1,4 @@
-import type { MarkUnit } from "./discipline";
+import type { DisciplineFamily, MarkUnit } from "./discipline";
 import type { Round } from "./rounds";
 
 export type EventGender = "F" | "M" | "X";
@@ -45,8 +45,9 @@ export type EventDetail = EventSummary & {
   oddsRequired?: boolean;
   /** The competition it belongs to (event slugs are unique across competitions). */
   competitionSlug?: string;
-  /** How its discipline measures a mark, and the tolerance of a predicted mark. */
+  /** How its discipline measures a mark, its family, and the tolerance of a predicted mark. */
   markUnit?: MarkUnit;
+  markFamily?: DisciplineFamily;
   tolerance?: number;
 };
 

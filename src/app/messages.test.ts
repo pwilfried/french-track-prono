@@ -83,3 +83,16 @@ describe("points text (#706)", () => {
     expect(messages.managerPoints.athletePoints(5)).toBe("5 pts");
   });
 });
+
+describe("competition date range text", () => {
+  const { dates } = messages.competition;
+
+  it.each([
+    ["2026-09-11", "2026-09-11", "11 sept. 2026"],
+    ["2026-09-11", "2026-09-13", "11–13 sept. 2026"],
+    ["2026-09-30", "2026-10-02", "30 sept. – 2 oct. 2026"],
+    ["2026-12-28", "2027-01-03", "28 déc. 2026 – 3 janv. 2027"],
+  ])("writes the days from %s to %s as %s", (from, to, text) => {
+    expect(dates(from, to)).toBe(text);
+  });
+});

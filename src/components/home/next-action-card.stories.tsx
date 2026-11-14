@@ -93,7 +93,7 @@ export const NextCompetition: Story = {
       competition: {
         slug: "meeting-fictif-2026",
         name: "Meeting fictif de Fictiville",
-        place: "Fictiville · 3 – 4 oct. 2026",
+        place: "Fictiville · 3–4 oct. 2026",
         finals: 12,
       },
       daysLeft: 9,
@@ -103,7 +103,7 @@ export const NextCompetition: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Prochaine compétition")).toBeVisible();
     await expect(canvas.getByText("Dans 9 j")).toBeVisible();
-    await expect(canvas.getByText("Fictiville · 3 – 4 oct. 2026 · 12 finales")).toBeVisible();
+    await expect(canvas.getByText("Fictiville · 3–4 oct. 2026 · 12 finales")).toBeVisible();
     await expect(canvas.getByRole("link", { name: "Voir le programme" })).toHaveAttribute(
       "href",
       "/competitions/meeting-fictif-2026",

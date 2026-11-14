@@ -173,13 +173,17 @@ export const PerfectPodium: Story = {
   },
 };
 
-/** Finished without my podium: « Pas de prono » and a dash. */
+/** Finished without my podium: « Pas joué », nothing on the right, never a lone dash (#707). */
 export const FinishedWithoutPrediction: Story = {
   args: { event: finishedEvent, mine: { predicted: false, joker: false } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("Pas de prono")).toBeInTheDocument();
-    await expect(canvas.getByText("—")).toBeInTheDocument();
+    await expect(canvas.getByText("Pas joué")).toBeVisible();
+    await expect(canvas.queryByText("—")).toBeNull();
+    await expect(canvas.queryByText("+ Prono")).toBeNull();
+    await expect(canvas.getByRole("link")).toHaveAccessibleName(
+      /^100 m, Femmes, \d\d:\d\d Pas joué$/,
+    );
   },
 };
 
