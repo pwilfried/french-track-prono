@@ -490,6 +490,11 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   lancer la saison, équipe complétée à la fermeture), à garder en tête quand on teste une ligue
   Manager à la main.
 - **Pas de captcha ni de notifications push** en préprod (pas de clé Turnstile ni VAPID).
+- **Tests e2e contre la préprod** (#830) : la préprod n'épingle pas `COMPETITION_SLUG` et garde le
+  jeu de démo et les restes des passages précédents. Un test vise donc sa compétition par son slug
+  (ou la compétition par défaut, lue en SQL par `defaultCompetitionSlug` dans `e2e/competitions.ts`),
+  donne des noms uniques à ce qu'il crée et ne suppose pas qu'il est seul sur une épreuve. Le test
+  des notifications est sauté (pas de clé VAPID) ; un test a 2 minutes au lieu d'une.
 - **Se connecter en tant qu'un joueur démo** (#637) : back-office → « Joueurs démo », bouton
   « Se connecter en tant que » ; un bandeau rappelle le joueur incarné et propose « Revenir à mon
   compte ». N'existe que si la variable serveur `PREPROD_DEMO_LOGIN=1` est posée dans le projet
@@ -530,7 +535,7 @@ Vercel de préprod, voir plus haut ; facultatif tant que Vercel Authentication e
 e2e `SUPABASE_URL` (`https://<ref>.supabase.co`), `SUPABASE_SERVICE_ROLE_KEY` et
 `PUBLIC_CACHE_FLUSH_SECRET` (une valeur aléatoire, la même que dans le projet Vercel de préprod :
 elle ouvre `/api/public-cache` aux tests ; après chaque `sql(...)`, le test attend que le cache
-ait bien expiré, et s'arrête avec la raison si le vidage est refusé, #814). Réglages Auth de la préprod pour les tests : un SMTP
+ait bien expiré, chaque tag à son tour (#840), et s'arrête avec la raison si le vidage est refusé, #814). Réglages Auth de la préprod pour les tests : un SMTP
 personnalisé (le SMTP intégré de Supabase refuse les adresses hors équipe), une limite d'envoi
 d'e-mails relevée (la suite inscrit une soixantaine de joueurs) et un délai minimal court entre deux
 codes pour une même adresse. La limite d'envoi est relevée d'elle-même à 500 par heure avant chaque

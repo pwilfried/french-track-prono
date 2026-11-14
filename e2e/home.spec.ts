@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
+import { defaultCompetitionSlug } from "./competitions";
 import { joinLeagueFor, newPlayer, signUp } from "./players";
 
 test("a visitor sees one main action above the fold, how to play and the next competition", async ({
@@ -27,7 +28,9 @@ test("a visitor sees one main action above the fold, how to play and the next co
     page.getByRole("contentinfo").getByRole("link", { name: "Instagram (nouvel onglet)" }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Voir les épreuves" }).click();
-  await expect(page).toHaveURL(/\/competitions\?competition=ultimate-championship-2026$/);
+  await expect(page).toHaveURL(
+    new RegExp(`/competitions\\?competition=${defaultCompetitionSlug()}$`),
+  );
 });
 
 test("a visitor sees a competition, its next events and reaches the full list", async ({
@@ -65,11 +68,11 @@ test("the app can be installed: the manifest and its icons are served", async ({
   );
 });
 
-/** The open final closest to its lock (run `npm run db:open-events` first). */
-function closestFinal() {
+/** The open final of a competition closest to its lock (run `npm run db:open-events` first). */
+function closestFinal(competition: string) {
   const slug = sql(
     `select e.slug from events e join competitions c on c.id = e.competition_id
-     where c.slug = 'ultimate-championship-2026' and e.round = 'final' and e.lock_at > now()
+     where c.slug = '${competition}' and e.round = 'final' and e.lock_at > now()
      order by e.lock_at, e.starts_at, e.slug limit 1`,
   );
   expect(slug, "no open final: run npm run db:open-events").not.toBe("");
@@ -79,7 +82,7 @@ function closestFinal() {
 test("a new player without a league is asked for a first podium, then for a league", async ({
   page,
 }) => {
-  const slug = closestFinal();
+  const slug = closestFinal(defaultCompetitionSlug());
   const player = newPlayer("home");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/profil");
@@ -148,7 +151,7 @@ test("a new player without a league is asked for a first podium, then for a leag
 test("a player in a league sees their place in it and their next final after a prediction", async ({
   page,
 }) => {
-  const slug = closestFinal();
+  const slug = closestFinal("ultimate-championship-2026");
   const player = newPlayer("home-league");
   await page.goto("/profil");
   await signUp(page, player);
