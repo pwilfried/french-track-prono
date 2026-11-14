@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { badgeProgress, isEarned, nextBadge, type BadgeInput } from "./badges";
+import { BADGES, badgeProgress, isEarned, nextBadge, type BadgeInput } from "./badges";
 
 const at = (day: number) => `2026-11-2${day}T19:00:00Z`;
 const base: BadgeInput = {
@@ -127,15 +127,20 @@ describe("badgeProgress", () => {
 });
 
 describe("nextBadge", () => {
-  it("picks the locked badge with the fewest steps left, display order breaking ties", () => {
+  it("prefers the smallest share left, then the easiest badge (#768)", () => {
     expect(
       nextBadge([
         { badge: "nostradamus", current: 0, target: 1 },
         { badge: "chasseur", current: 2, target: 3 },
-        { badge: "flair", current: 1, target: 1 },
         { badge: "serie", current: 4, target: 5 },
       ]),
-    ).toEqual({ badge: "nostradamus", current: 0, target: 1, left: 1 });
+    ).toEqual({ badge: "serie", current: 4, target: 5, left: 1 });
+  });
+
+  it("offers a new player the easiest badge, not a perfect podium", () => {
+    const targets = { nostradamus: 1, chasseur: 3, flair: 1, serie: 5, bleus: 1, fidele: 4 };
+    const fresh = BADGES.map((badge) => ({ badge, current: 0, target: targets[badge] }));
+    expect(nextBadge(fresh)?.badge).toBe("fidele");
   });
 
   it("returns null once every badge is earned", () => {

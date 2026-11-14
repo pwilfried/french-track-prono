@@ -38,13 +38,13 @@ export const Default: Story = {
   },
 };
 
-/** A new player: everything locked, the first badge in display order comes next. */
+/** A new player: everything locked, the easiest badge comes next (#768). */
 export const Empty: Story = {
   args: { progress: progress({}) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getAllByText("À débloquer")).toHaveLength(6);
-    await expect(canvas.getByText("Prochain : Nostradamus (encore 1)")).toBeInTheDocument();
+    await expect(canvas.getByText("Prochain : Fidèle (encore 4)")).toBeInTheDocument();
   },
 };
 

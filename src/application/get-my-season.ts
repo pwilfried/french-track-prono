@@ -1,3 +1,10 @@
+import {
+  animalToReach,
+  bandPoints,
+  playerAnimal,
+  type Animal,
+  type BandPoints,
+} from "@/domain/band";
 import type { DisciplineFamily } from "@/domain/discipline";
 import { seasonStats, type SeasonStats } from "@/domain/player-season";
 import { rankPlayers, totalsOf } from "@/domain/ranking";
@@ -15,6 +22,12 @@ export type MySeason = {
   players: number;
   points: number;
   stats: SeasonStats;
+  /** The player's animal (#768), null before the first point in a family of the band. */
+  animal: Animal | null;
+  /** The season's points per family of the band, every animal listed. */
+  band: BandPoints[];
+  /** The next animal within reach and the points it lacks. */
+  toReach: { animal: Animal; points: number } | null;
 };
 
 export function getMySeason(ports: {
@@ -60,6 +73,9 @@ export function getMySeason(ports: {
         players: ranked.length,
         points: me?.points ?? 0,
         stats: seasonStats(mine, predictions.flat().length),
+        animal: playerAnimal(mine),
+        band: bandPoints(mine),
+        toReach: animalToReach(mine),
       };
     },
   };

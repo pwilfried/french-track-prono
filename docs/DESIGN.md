@@ -126,6 +126,20 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   épingles, « FRENCH TRACK », le numéro en gros, le pseudo dessous. Petit format (classements,
   en-tête, ligues, réactions) : pastille avec le numéro seul. Couleurs dans `BIB_PALETTE`
   (`src/components/profile/bib.tsx`), reprises par la carte de saison.
+- **La bande** (#768) : un composant `Animal` (`src/components/band/animal.tsx`) pour le lièvre,
+  mascotte, et les six animaux de famille (guépard, impala, kangourou, chat, ours, renard), plus
+  le « ? » gris de ce qui reste à gagner ; un médaillon rond aux couleurs fixes dans les deux
+  thèmes. Les dessins vivent seuls dans `animal-drawings.tsx` : les dessins définitifs y
+  remplacent les croquis sans toucher au code. L'animal du joueur est la famille où il a marqué le
+  plus de points de la saison (égalité : les points les plus récents, `src/domain/band.ts`) ; les
+  relais ne comptent pour aucun animal. Un changement s'annonce une fois en haut du profil
+  (« Tu es passé Guépard ! »), retenu sur l'appareil.
+- **Dossard** (badge, #768) : carte blanche à deux épingles, bande du niveau en haut (dégradés or,
+  argent, bronze), l'animal de la discipline en grand, le numéro et le nom en bas ; grisé avec le
+  « ? » tant qu'il est à débloquer.
+- **Statuette** (trophée, #768) : l'animal coulé en or, argent ou bronze sur un socle en bois et
+  sa plaque gravée (ligue, saison, place) ; une place vide de la vitrine montre le « ? » gris et
+  ce qu'il faut pour la gagner.
 - **Leaderboard** et **RankingRow** (#551, #661) : place, dossard, pseudo, ▲ n vert / ▼ n rouge
   (« = » sinon ; lu « gagne n places »), points (chiffre seul sous l'en-tête « Pts », lu « 12 points ») ; dans l'onglet Classement, l'évolution compare au
   classement d'avant la dernière compétition terminée de la portée, ailleurs à la veille ; ex æquo signalés, ma ligne surlignée (cible `#moi` du lien « Autour de

@@ -15,8 +15,6 @@ export type SeasonLine = {
   family: DisciplineFamily | null;
 };
 
-export type FamilyRate = { family: DisciplineFamily; rate: number; events: number };
-
 export type SeasonStats = {
   predictions: number;
   perfectPodiums: number;
@@ -30,8 +28,6 @@ export type SeasonStats = {
   curve: number[];
   /** The line that gave the most points (the earliest when tied). */
   bestShot: (SeasonLine & { perfect: boolean; odds: number | null }) | null;
-  /** Success per family, the best first, three at most. */
-  families: FamilyRate[];
 };
 
 const byDate = (a: SeasonLine, b: SeasonLine) =>
@@ -63,23 +59,6 @@ export function seasonStats(lines: readonly SeasonLine[], predictions: number): 
     return all.length ? Math.max(...all) : null;
   };
 
-  const perFamily = new Map<DisciplineFamily, { hits: number; events: number }>();
-  for (const line of ordered) {
-    if (!line.family) continue;
-    const entry = perFamily.get(line.family) ?? { hits: 0, events: 0 };
-    entry.events += 1;
-    if (line.points > 0) entry.hits += 1;
-    perFamily.set(line.family, entry);
-  }
-  const families = [...perFamily]
-    .map(([family, { hits, events }]) => ({
-      family,
-      rate: Math.round((hits / events) * 100),
-      events,
-    }))
-    .sort((a, b) => b.rate - a.rate || b.events - a.events || (a.family < b.family ? -1 : 1))
-    .slice(0, 3);
-
   const scored = ordered.filter((l) => l.points > 0).length;
   return {
     predictions,
@@ -91,6 +70,5 @@ export function seasonStats(lines: readonly SeasonLine[], predictions: number): 
     jokerPlayed: ordered.some((l) => has(l, "joker")),
     curve,
     bestShot: best ? { ...best, perfect: has(best, "perfect_podium"), odds: oddsOf(best) } : null,
-    families,
   };
 }

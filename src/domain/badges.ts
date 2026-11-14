@@ -75,12 +75,25 @@ export function isEarned(progress: BadgeProgress): boolean {
   return progress.current >= progress.target;
 }
 
-/** The locked badge with the fewest steps left (display order breaks ties); null when all earned. */
+/**
+ * From the easiest badge to the hardest, to break ties in `nextBadge`: a day fully predicted is
+ * within reach of anyone, a perfect podium is not.
+ */
+const EASIEST_FIRST: Badge[] = ["fidele", "chasseur", "serie", "bleus", "flair", "nostradamus"];
+
+/**
+ * The locked badge closest to being earned (#768): the smallest share left, then the easiest.
+ * Null when every badge is earned.
+ */
 export function nextBadge(progress: BadgeProgress[]): (BadgeProgress & { left: number }) | null {
   return (
     progress
       .filter((p) => !isEarned(p))
       .map((p) => ({ ...p, left: p.target - p.current }))
-      .sort((a, b) => a.left - b.left)[0] ?? null
+      .sort(
+        (a, b) =>
+          a.left / a.target - b.left / b.target ||
+          EASIEST_FIRST.indexOf(a.badge) - EASIEST_FIRST.indexOf(b.badge),
+      )[0] ?? null
   );
 }

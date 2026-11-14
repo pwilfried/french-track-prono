@@ -50,7 +50,10 @@ test("a player changes pseudo and club, then signs in with a new address", async
   await expect(page.getByRole("img", { name: `Dossard 7, ${pseudo}` })).toBeVisible();
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/profil\?enregistre=1$/);
-  await expect(page.getByRole("img", { name: `Dossard 7, ${pseudo}` })).toBeVisible();
+  // The profile header (#768): the animal, then the bib chip next to the pseudo.
+  await expect(
+    page.getByRole("region", { name: pseudo }).locator('[data-bib-color="gold"]'),
+  ).toHaveText("7");
   expect(
     sql(`select bib_number || ' ' || bib_color from profiles where pseudo = '${pseudo}'`),
   ).toBe("7 gold");
