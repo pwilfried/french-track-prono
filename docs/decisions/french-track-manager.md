@@ -347,8 +347,11 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   devenir champion), chacune avec un dessin en formes simples. Il s'ouvre seul à la première
   visite de `/manager` (vu, mémorisé sur l'appareil), puis à la demande par « Comment ça
   marche ? » (`/manager?tutoriel=1`) ; « Passer » à toute étape. Ses chiffres (budget, taille
-  minimum, titulaires, bonus de victoire, 4 à 10 joueurs) viennent des règles de l'admin
-  (`managerIntroFigures`), comme ceux de la présentation (#618).
+  minimum, titulaires, bonus de victoire, au moins 6 compétitions qui fixent de 4 à 10 joueurs)
+  viennent des règles de l'admin (`managerIntroFigures`), comme ceux de la présentation (#618).
+  Ses textes suivent ce document : le nombre de joueurs vient des compétitions (#644), les
+  compétitions en trop sont des journées bonus. La navigation suit le contenu, sans vide jusqu'au
+  bas de l'écran, et le tutoriel s'ouvre sans focus visible sur « Passer » (#709).
 
 ## Réponses du propriétaire (#416, 10 novembre 2026)
 

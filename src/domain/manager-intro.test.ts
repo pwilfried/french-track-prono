@@ -37,6 +37,10 @@ describe("managerIntroFigures", () => {
     expect(managerIntroFigures(rules)).toMatchObject({ leagueMin: 4, leagueMax: 10 });
   });
 
+  it("gives the fewest competitions a league needs, which set its number of players (#644)", () => {
+    expect(managerIntroFigures(rules)).toMatchObject({ minCompetitions: 6 });
+  });
+
   it("follows the rules when the admin changes them", () => {
     const changed = { ...rules, budget: 130, bonuses: { ...rules.bonuses, first: 7 } };
     expect(managerIntroFigures(changed)).toMatchObject({ budget: 130, winBonus: 7 });

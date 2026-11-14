@@ -1,4 +1,4 @@
-import { MANAGER_LEAGUE_MAX, MANAGER_LEAGUE_MIN } from "./manager-league";
+import { MANAGER_LEAGUE_MAX, MANAGER_LEAGUE_MIN, MIN_SEASON_COMPETITIONS } from "./manager-league";
 import type { ManagerRules } from "./manager-rules";
 
 /**
@@ -11,9 +11,11 @@ export type ManagerIntroFigures = {
   lineupMax: number;
   /** The bonus for a win, the first of the sporting bonuses. */
   winBonus: number;
-  /** The league sizes a creator can choose (an even number in between). */
+  /** The league sizes, an even number in between set by the competitions chosen (#644). */
   leagueMin: number;
   leagueMax: number;
+  /** The fewest competitions a creator chooses for a league (#644). */
+  minCompetitions: number;
 };
 
 export function managerIntroFigures(rules: ManagerRules): ManagerIntroFigures {
@@ -24,5 +26,6 @@ export function managerIntroFigures(rules: ManagerRules): ManagerIntroFigures {
     winBonus: rules.bonuses.first,
     leagueMin: MANAGER_LEAGUE_MIN,
     leagueMax: MANAGER_LEAGUE_MAX,
+    minCompetitions: MIN_SEASON_COMPETITIONS,
   };
 }
