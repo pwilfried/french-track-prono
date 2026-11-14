@@ -193,6 +193,44 @@ export const WithHelp: Story = {
 };
 
 /**
+ * With rules to show, « Règles » opens them over the page (#703): the podium being built stays,
+ * Escape closes the sheet and gives the focus back to the button. Still a link without JavaScript.
+ */
+export const WithRulesSheet: Story = {
+  args: {
+    helpHref: "/regles",
+    help: <p>Chaque athlète à la bonne place rapporte 3 points.</p>,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(athlete(canvasElement, "Lena Okoro"));
+    const help = canvas.getByRole("link", { name: "Comment jouer : les règles" });
+    await expect(help).toHaveAttribute("href", "/regles");
+    await expect(help).toHaveAttribute("aria-haspopup", "dialog");
+
+    await userEvent.click(help);
+    const sheet = within(document.body).getByRole("dialog", { name: "Comment jouer" });
+    await expect(sheet).toBeVisible();
+    await expect(within(sheet).getByText(/bonne place rapporte 3 points/)).toBeVisible();
+    await expect(within(sheet).getByRole("link", { name: "Toutes les règles" })).toHaveAttribute(
+      "href",
+      "/regles",
+    );
+
+    await userEvent.keyboard("{Escape}");
+    await expect(sheet).not.toBeVisible();
+    await expect(help).toHaveFocus();
+    await expect(step(canvasElement, "1re")).toHaveAccessibleName("1re place : Lena Okoro");
+
+    // The « Fermer » button closes it too.
+    await userEvent.click(help);
+    await userEvent.click(within(sheet).getByRole("button", { name: "Fermer" }));
+    await expect(sheet).not.toBeVisible();
+    await expect(help).toHaveFocus();
+  },
+};
+
+/**
  * The selected states stand out (#698): the step being filled has a solid ring, a placed athlete
  * a thick border, a tinted background and his step number; nothing relies on colour alone.
  */

@@ -7,9 +7,12 @@ import { Field } from "@/components/account/field";
 import { SubmitButton } from "@/components/account/submit-button";
 import { Bib } from "@/components/profile/bib";
 import type { Bib as BibValue } from "@/domain/bib";
+import { LEAGUE_NAME_MAX } from "@/domain/league";
 import type { LeagueFamily } from "@/domain/league-families";
+import type { PickableCompetition } from "@/domain/season-picker";
 
 import { LeagueFamilyPicker } from "./league-family-picker";
+import { SeasonCompetitionPicker } from "./season-competition-picker";
 
 import {
   addLeagueCompetitionAction,
@@ -24,14 +27,19 @@ import {
 } from "@/app/ligues/actions";
 
 /**
- * The league counts the competitions given (sent as hidden fields); without any, it cannot be
- * created (#614) and the button stays disabled.
+ * The name of the league, whether anyone may join it, its families, then its competitions (#721):
+ * the season picker of the Manager, on the same page, so the name typed is never lost. At least
+ * one, not finished (#614); the picker ends with the submit button, in its sticky bar.
  */
 export function CreateLeagueForm({
-  competitionSlugs,
+  competitions,
+  chosen,
   isPublic = false,
 }: {
-  competitionSlugs: string[];
+  /** The competitions a league can count: not finished. */
+  competitions: PickableCompetition[];
+  /** Ticked from the start (the slugs given in the address). */
+  chosen: string[];
   /** Ticks « Ligue publique » from the start (the home's « Créer une ligue publique », #369). */
   isPublic?: boolean;
 }) {
@@ -42,9 +50,6 @@ export function CreateLeagueForm({
   const [ready, setReady] = useState(true);
   return (
     <form action={action} noValidate className="flex flex-col gap-5">
-      {competitionSlugs.map((slug) => (
-        <input key={slug} type="hidden" name="competition" value={slug} />
-      ))}
       <Field
         id="name"
         name="name"
@@ -52,7 +57,7 @@ export function CreateLeagueForm({
         hint={messages.leagues.nameHint}
         error={state.error ? messages.errors[state.error] : undefined}
         defaultValue={state.value}
-        maxLength={60}
+        maxLength={LEAGUE_NAME_MAX}
         autoComplete="off"
       />
       <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-2xl border-2 border-border bg-card px-3.5 py-3 has-checked:border-primary">
@@ -76,12 +81,18 @@ export function CreateLeagueForm({
         defaultFamilies={state.families}
         onReadyChange={setReady}
       />
-      <SubmitButton
+      <SeasonCompetitionPicker
+        competitions={competitions}
+        chosen={chosen}
+        name="competition"
+        minimum={1}
+        label={messages.leagues.competitionsTitle}
+        hint={messages.leagues.how}
+        empty={messages.leagues.createNone}
+        submitLabel={messages.leagues.createSubmit}
         pendingLabel={messages.leagues.creating}
-        disabled={!ready || competitionSlugs.length === 0}
-      >
-        {messages.leagues.createSubmit}
-      </SubmitButton>
+        blocked={!ready}
+      />
     </form>
   );
 }

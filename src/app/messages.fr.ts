@@ -5,6 +5,16 @@ import type { ManagerIntroFigures } from "@/domain/manager-intro";
 
 /** « 1er », « 2e »… */
 const ordinal = (rank: number) => (rank === 1 ? "1er" : `${rank}e`);
+/**
+ * Points, written one way everywhere (docs/DESIGN.md, « Points », #706): the short unit
+ * « 1 pt / 12 pts » in tight places, the full word « 1 point / 12 points » in sentences.
+ */
+const ptsUnit = (n: number) => (Math.abs(n) <= 1 ? "pt" : "pts");
+const pts = (n: number) => `${n} ${ptsUnit(n)}`;
+/** Points won, signed when positive: « +9 pts », « 0 pt ». */
+const gain = (n: number) => (n > 0 ? `+${pts(n)}` : pts(n));
+const pointsWord = (n: number) => (Math.abs(n) <= 1 ? "point" : "points");
+const points = (n: number) => `${n} ${pointsWord(n)}`;
 const GENDER = { F: "Femmes", M: "Hommes", X: "Mixte" } as const;
 /** The contact address published on the site: written here only. */
 const CONTACT_EMAIL = "frenchtrackprono@gmail.com";
@@ -16,6 +26,8 @@ const LEVEL_NAMES: Record<string, string | undefined> = {
 };
 
 export const messages = {
+  /** The only way to write points (#706). */
+  format: { pts, ptsUnit, gain, points, pointsWord },
   /** Name and place of each competition the app can show (see src/app/competition.ts). */
   competition: {
     /**
@@ -81,6 +93,7 @@ export const messages = {
     merged: (club: string, name: string) =>
       `Ton club « ${club} » existait déjà : tu es maintenant au club « ${name} ».`,
     dismiss: "OK",
+    dismissing: "En cours…",
   },
   playerHome: {
     /** « Bienvenue » until a first prediction, then « Salut » (#526). */
@@ -107,8 +120,7 @@ export const messages = {
       create: "Créer ma ligue",
       joinPublic: "Ou rejoindre une ligue publique",
       place: (rank: number, total: number) => `${ordinal(rank)} sur ${total}`,
-      gap: (points: number, pseudo: string) =>
-        `À ${points} ${points <= 1 ? "point" : "points"} de ${pseudo}`,
+      gap: (gap: number, pseudo: string) => `À ${points(gap)} de ${pseudo}`,
       leading: "Tu es en tête",
       ranking: "Classement",
     },
@@ -122,7 +134,7 @@ export const messages = {
         if (onPodium > 0) return `${athletes(onPodium)} sur le podium`;
         return gender === "F" ? "Aucune athlète sur le podium" : "Aucun athlète sur le podium";
       },
-      points: (points: number) => `+${points} ${points <= 1 ? "pt" : "pts"}`,
+      points: (n: number) => `+${pts(n)}`,
       see: "Voir le résultat",
     },
     manager: {
@@ -186,29 +198,12 @@ export const messages = {
         text: `${exact} point${exact > 1 ? "s" : ""} par athlète à la bonne place, ${perfect} pour le podium parfait.`,
       },
     ],
-    allRules: "Toutes les règles",
     dismiss: "Masquer « Comment ça marche »",
   },
   start: {
     none: "Aucune compétition à venir pour l'instant.",
     inDays: (days: number) => (days === 0 ? "En cours" : days === 1 ? "Demain" : `Dans ${days} j`),
     events: (count: number) => (count <= 1 ? `${count} épreuve` : `${count} épreuves`),
-  },
-  choice: {
-    back: "Accueil",
-    title: { international: "Compétitions internationales", france: "Compétitions françaises" },
-    intro:
-      "Coche une ou plusieurs compétitions pour créer ta ligue. Les points de toutes les compétitions cochées s'additionnent.",
-    tabsLabel: "Type de compétition",
-    tab: { international: "Internationales", france: "Françaises" },
-    coming: "À venir",
-    noneComing: "Aucune compétition à venir de ce type pour l'instant.",
-    startsIn: (days: number) => (days === 0 ? "En cours" : `J-${days}`),
-    submit: "Créer ma ligue",
-    past: "Terminées",
-    pastHint: "Résultats et classements",
-    see: "Voir",
-    seeLabel: (name: string) => `Voir ${name}`,
   },
   events: {
     filtersLabel: "Filtrer les épreuves",
@@ -270,8 +265,8 @@ export const messages = {
       posed: (posed: number, total: number) => `${posed}/${total} posés`,
       posedLabel: (posed: number, total: number) =>
         `${posed} ${posed <= 1 ? "podium posé" : "podiums posés"} sur ${total} dans la compétition`,
-      points: (points: number) => `${points} ${points <= 1 ? "pt" : "pts"}`,
-      pointsLabel: (points: number) => `${points} ${points <= 1 ? "point" : "points"} gagnés`,
+      points: pts,
+      pointsLabel: (n: number) => `${points(n)} gagnés`,
     },
     emptyDay: "Aucune épreuve ce jour-là.",
     pending: {
@@ -285,6 +280,7 @@ export const messages = {
             : `Début dans ${days} jours`,
       notify: "Me prévenir à la publication",
       notified: "Tu seras prévenu",
+      saving: "Enregistrement en cours…",
       notifiedHint: "Touche à nouveau pour ne plus être prévenu.",
       signIn: "Connecte-toi pour être prévenu",
       deviceHint:
@@ -302,15 +298,16 @@ export const messages = {
           : "garde sa place",
     label: "Classement",
     podium: "Podium",
-    podiumPlace: (rank: number, pseudo: string, points: number) =>
-      `${ordinal(rank)} : ${pseudo}, ${points} ${points <= 1 ? "point" : "points"}`,
+    podiumPlace: (rank: number, pseudo: string, total: number) =>
+      `${ordinal(rank)} : ${pseudo}, ${points(total)}`,
     me: "Toi",
     tie: "ex æquo",
     position: (rank: number) => ordinal(rank),
-    points: (points: number) => `${points} ${points <= 1 ? "point" : "points"}`,
+    points,
     perfect: (n: number) => (n === 1 ? "1 podium parfait" : `${n} podiums parfaits`),
     winners: (n: number) => (n === 1 ? "1 vainqueur trouvé" : `${n} vainqueurs trouvés`),
-    noPoints: "Pas encore de points",
+    /** Header of the points column, so the column can show bare figures (#706). */
+    pointsColumn: "Pts",
     empty: "Pas encore de classement : il apparaît dès que les premiers résultats sont saisis.",
     loading: "Chargement du classement…",
     error: "Le classement n'est pas disponible pour le moment. Réessaie dans un instant.",
@@ -328,10 +325,8 @@ export const messages = {
   points: {
     title: "Mes points",
     total: (points: number, events: number) =>
-      events === 0
-        ? "point"
-        : `${points <= 1 ? "point" : "points"} · ${events} ${events === 1 ? "épreuve" : "épreuves"}`,
-    line: (points: number) => (points > 0 ? `+${points} pts` : `${points} pt`),
+      `${pointsWord(points)} · ${events} ${events === 1 ? "épreuve" : "épreuves"}`,
+    line: (points: number) => gain(points),
     emptyTitle: "Pas encore de points",
     emptyText: "Fais tes pronos : tes points apparaîtront ici dès que les résultats seront saisis.",
     seeEvents: "Voir les épreuves",
@@ -503,6 +498,7 @@ export const messages = {
       stepLabel: (step: number, total: number) => `Étape ${step} sur ${total}`,
       skip: "Passer",
       skipLabel: "Passer le tutoriel",
+      navLabel: "Étapes du tutoriel",
       previous: "Précédent",
       next: "Suivant",
       done: "C'est parti",
@@ -510,7 +506,7 @@ export const messages = {
       steps: (f: ManagerIntroFigures) => [
         {
           title: "Une ligue entre amis",
-          text: `Crée ta ligue ou rejoins celle d'un ami : de ${f.leagueMin} à ${f.leagueMax} joueurs, en nombre pair. Les règles sont les mêmes pour tous.`,
+          text: `Crée ta ligue ou rejoins celle d'un ami. Le créateur choisit au moins ${f.minCompetitions} compétitions : elles fixent le nombre de joueurs, de ${f.leagueMin} à ${f.leagueMax}. Les règles sont les mêmes pour tous.`,
         },
         {
           title: "Le mercato",
@@ -530,11 +526,11 @@ export const messages = {
         },
         {
           title: "Une confrontation par journée",
-          text: "À chaque compétition, tu affrontes un autre joueur : victoire 3 points, nul 1, défaite 0. Tu joues chacun deux fois, à l'aller et au retour.",
+          text: "Une compétition = une journée : tu affrontes un autre joueur, victoire 3 points, nul 1, défaite 0. Tu joues chacun deux fois, à l'aller et au retour. Les compétitions en trop, à la fin, sont des journées bonus : des points, sans confrontation.",
         },
         {
           title: "Deviens champion",
-          text: "À la fin de la saison, le premier du classement est champion. Ton palmarès reste dans ton profil.",
+          text: "Après la dernière journée, bonus comprises, le premier du classement est champion. Ton palmarès reste dans ton profil.",
         },
       ],
     },
@@ -690,9 +686,9 @@ export const messages = {
       `${name}, ${discipline}, payé ${paid} crédits`,
     /** A card of a head-to-head (#605): the athlete's points, sporting bonuses included. */
     scoredCardLabel: (name: string, discipline: string, points: number | null, bonus: number) =>
-      `${name}, ${discipline}, ${points === null ? "points à venir" : `${points} pts`}${bonus > 0 ? `, dont ${bonus} de bonus` : ""}`,
+      `${name}, ${discipline}, ${points === null ? "points à venir" : pts(points)}${bonus > 0 ? `, dont ${bonus} de bonus` : ""}`,
     bonus: (n: number) => `+${n}`,
-    points: (n: number | null) => (n === null ? "–" : `${n} pts`),
+    points: (n: number | null) => (n === null ? "–" : pts(n)),
     selected: "Sélectionné",
     absent: "Absent·e",
   },
@@ -736,12 +732,12 @@ export const messages = {
     link: "Mes points",
     summary: "Mon score de la compétition",
     total: "Total de la compétition",
-    points: (n: number) => `${n} pts`,
+    points: pts,
     hungarian: "Barème hongrois",
     bonus: "Bonus sportifs",
     predictions: "Mes pronos",
     starters: "Mes titulaires",
-    athletePoints: (n: number) => `${n}`,
+    athletePoints: pts,
     performance: (a: { discipline: string | null; mark: string | null; status: string | null }) =>
       a.status === null
         ? "Pas de performance saisie"
@@ -928,7 +924,7 @@ export const messages = {
     record: "V · N · D",
     recordValue: (wins: number, draws: number, losses: number) => `${wins} · ${draws} · ${losses}`,
     bestAthlete: "Meilleur athlète",
-    bestAthleteValue: (name: string, points: number) => `${name} · ${points} pts`,
+    bestAthleteValue: (name: string, points: number) => `${name} · ${pts(points)}`,
     noBestAthlete: "Aucun athlète aligné",
     rival: (pseudo: string) => `Face à ${pseudo}`,
     rivalValue: (wins: number, draws: number, losses: number) =>
@@ -1006,7 +1002,7 @@ export const messages = {
     players: (n: number) => `${n} ${n <= 1 ? "joueur" : "joueurs"}`,
     createdByMe: "créée par toi",
     createdBy: (pseudo: string) => `créée par ${pseudo}`,
-    noCompetitionTag: "sans compétition",
+    noCompetitionTag: "Sans compétition",
     rank: (rank: number) => ordinal(rank),
     rankLabel: (rank: number) => `Ta place : ${ordinal(rank)}`,
     noPointsYet: "Pas encore de points",
@@ -1027,8 +1023,8 @@ export const messages = {
     listSubtitle: "Une ligue compte une ou plusieurs compétitions.",
     createSubtitle:
       "Au moins une compétition maintenant, d'autres plus tard : leurs points s'additionnent.",
-    competitionRequired:
-      "Choisis au moins une compétition à venir ou en cours pour créer ta ligue.",
+    createNone:
+      "Aucune compétition à venir ou en cours pour l'instant : reviens quand le calendrier sera annoncé.",
     competitionsTitle: "Compétitions de la ligue",
     noCompetition: "Pas encore de compétition : le classement démarre dès que tu en ajoutes une.",
     noCompetitionMember: "Pas encore de compétition : le créateur de la ligue en ajoutera.",
@@ -1093,10 +1089,6 @@ export const messages = {
     reportLabel: (name: string) => `Signaler la ligue ${name} à l'admin`,
     reporting: "…",
     reported: "✓ Signalée à l'admin. Merci !",
-    chosen: "Compétitions de la ligue",
-    remove: (name: string) => `Retirer ${name}`,
-    addCompetition: "+ Ajouter une compétition",
-    howTitle: "Comment ça compte ?",
     how: "Le classement de la ligue additionne les points de ses compétitions, sur les épreuves qui se verrouillent après leur entrée dans la ligue. Tu inviteras tes amis avec un code juste après.",
     nameLabel: "Nom de la ligue",
     nameHint: "2 à 40 caractères. Emoji bienvenus.",
@@ -1245,19 +1237,18 @@ export const messages = {
     place: {
       title: "Ta place",
       rank: (rank: number) => ordinal(rank),
-      points: (points: number) => `${points} ${points <= 1 ? "pt" : "pts"}`,
+      points: pts,
       since: "depuis la dernière compétition",
       ahead: (gap: number, pseudo: string, rank: number) =>
         gap === 0
           ? `À égalité de points avec ${pseudo} (${ordinal(rank)})`
-          : `${gap} ${gap <= 1 ? "pt" : "pts"} derrière ${pseudo} (${ordinal(rank)})`,
+          : `${pts(gap)} derrière ${pseudo} (${ordinal(rank)})`,
       first: "Personne devant toi",
       top: (percent: number) => `Top ${percent} %`,
       loading: "Chargement de ta place…",
       error: "Ta place n'est pas disponible pour le moment.",
     },
-    you: (rank: number, points: number) =>
-      `Tu es ${ordinal(rank)} · ${points} ${points <= 1 ? "pt" : "pts"}`,
+    you: (rank: number, points: number) => `Tu es ${ordinal(rank)} · ${pts(points)}`,
     aroundMe: "Autour de moi",
     notRanked: "Tu n'as pas encore de points : fais tes pronos pour entrer au classement.",
     tonightEmpty:
@@ -1321,7 +1312,7 @@ export const messages = {
       total: "points donnés",
       atZero: "à 0 point",
       averageAndBest: (average: string, best: number) =>
-        `Moyenne ${average} pts · meilleur score ${best} pts`,
+        `Moyenne ${average} pts · meilleur score ${pts(best)}`,
     },
     missingRanks: (ranks: number[]) =>
       `Podium incomplet : il manque ${ranks.map((r) => (r === 1 ? "la 1re place" : `la ${r}e place`)).join(" et ")}. Corrige la feuille de résultats.`,
@@ -1558,6 +1549,7 @@ export const messages = {
     link: "Comment jouer ?",
     helpLabel: "Comment jouer : les règles",
     help: "Règles",
+    allRules: "Toutes les règles",
     podiumTitle: "Le podium",
     podium: (exact: number, wrong: number, perfect: number) =>
       `Choisis le 1er, le 2e et le 3e. Chaque athlète à la bonne place rapporte ${exact} points, un athlète sur le podium mais à une autre place ${wrong} point${wrong > 1 ? "s" : ""}. Les trois dans l'ordre : ${perfect} points de bonus.`,
@@ -1999,7 +1991,7 @@ export const messages = {
   seasonCard: {
     brand: "FRENCH TRACK PRONO",
     title: "Ma saison",
-    points: "pts",
+    points: ptsUnit,
     rank: (rank: number, players: number) =>
       `${ordinal(rank)} sur ${players} joueur${players > 1 ? "s" : ""}`,
     notRanked: "Pas encore classé",
@@ -2058,10 +2050,10 @@ export const messages = {
     allBadges: "Tous les badges sont à toi !",
     emailPrivate: "Ton e-mail reste privé : il n'apparaît jamais dans l'application.",
     signOut: "Se déconnecter",
+    signingOut: "Déconnexion en cours…",
     deleteLink: "Supprimer mon compte",
     joined: (club: string | null, date: string) =>
       `${club ? `${club} · ` : ""}joueur depuis le ${date}`,
-    pointsShort: "pts",
     rankOf: (rank: number, players: number) => `${ordinal(rank)} sur ${players}`,
     notRanked: "pas encore classé",
     myStats: "Mes stats",
@@ -2083,7 +2075,7 @@ export const messages = {
     bestPerfect: (event: string) => `Podium parfait au ${event}`,
     bestEvent: (event: string) => `${event}`,
     bestOdds: (odds: string) => `Avec une cote à ${odds}`,
-    bestPoints: (points: number) => `+${points} pts`,
+    bestPoints: (n: number) => `+${pts(n)}`,
     noBestShot: "Ton meilleur coup apparaîtra ici après ta première épreuve calculée.",
     strong: "Mes disciplines fortes",
     noStrong: "Tes disciplines fortes apparaîtront après quelques épreuves calculées.",
@@ -2254,12 +2246,12 @@ export const messages = {
   result: {
     eyebrow: (name: string) => `Résultat · ${name}`,
     winner: (name: string) => `${name} s'impose`,
-    points: (points: number) => (points > 0 ? `+${points} pts` : `${points} pt`),
+    points: (points: number) => gain(points),
     notComputed: "Les points de cette épreuve ne sont pas encore calculés.",
     vsTitle: "Ton prono vs officiel",
     outcome: { exact: "exact", on_podium: "podium", off: "hors podium" },
     total: "Total",
-    totalPoints: (points: number) => `${points} pts`,
+    totalPoints: pts,
   },
   reveal: {
     title: "Les pronos",
@@ -2372,7 +2364,7 @@ export const messages = {
     membersTitle: "Classement et membres",
     membersLoading: "Chargement des membres…",
     owner: "Créateur",
-    points: (n: number) => `${n} pts`,
+    points: pts,
     rank: (n: number) => ordinal(n),
     removeMember: (pseudo: string) => `Retirer ${pseudo}`,
     removeMemberTitle: (pseudo: string) => `Retirer ${pseudo} de la ligue ?`,
@@ -2482,7 +2474,7 @@ export const messages = {
       activity: "Dernière activité",
       joined: "Inscription",
     },
-    points: (n: number) => `${n} pts`,
+    points: pts,
     predictions: (n: number) => `${n} ${n <= 1 ? "prono" : "pronos"}`,
     blocked: "Bloqué",
     admin: "Admin",

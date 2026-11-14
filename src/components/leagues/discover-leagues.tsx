@@ -5,6 +5,7 @@ import { useState, type ReactNode } from "react";
 import { messages } from "@/app/messages.fr";
 import { PUBLIC_LEAGUE_MAX_MEMBERS } from "@/domain/league";
 import type { LeagueFamily } from "@/domain/league-families";
+import { SEARCH_MAX_LENGTH } from "@/domain/list-view";
 import {
   discoverLeagues,
   leagueFamiliesIn,
@@ -73,6 +74,7 @@ export function DiscoverLeagues({
         onChange={(e) => setQuery(e.target.value)}
         placeholder={text.searchPlaceholder}
         aria-label={text.searchLabel}
+        maxLength={SEARCH_MAX_LENGTH}
         autoComplete="off"
         className="min-h-11 rounded-full border border-border bg-background px-4 text-base"
       />

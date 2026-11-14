@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { matchesWords, normalizeSearch, viewList } from "./list-view";
+import { matchesWords, normalizeSearch, SEARCH_MAX_LENGTH, viewList } from "./list-view";
 
 type Row = { id: string; name: string; players: number };
 const rows: Row[] = [
@@ -19,6 +19,11 @@ describe("list view", () => {
     const view = viewList(rows, { ...base, query: "etoile" });
     expect(view.rows.map((r) => r.id)).toEqual(["a"]);
     expect(view.total).toBe(1);
+  });
+
+  it("reads only the first characters of a very long search", () => {
+    const view = viewList(rows, { ...base, query: `etoile${" ".repeat(SEARCH_MAX_LENGTH)}zzz` });
+    expect(view.rows.map((r) => r.id)).toEqual(["a"]);
   });
 
   it("keeps only the rows of the chosen filter", () => {

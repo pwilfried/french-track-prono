@@ -1,7 +1,7 @@
 export type EmailResult = { ok: true; email: string } | { ok: false; code: "EMAIL_INVALID" };
 export type CodeResult = { ok: true; code: string } | { ok: false; code: "CODE_INVALID" };
 
-const MAX_EMAIL_LENGTH = 254;
+export const MAX_EMAIL_LENGTH = 254;
 // Deliberately simple: the mail server is the real judge of an address.
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

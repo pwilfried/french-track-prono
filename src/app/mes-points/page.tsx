@@ -75,14 +75,8 @@ function MyPointsList({ mine, events }: { mine: MyPoints; events: EventSummary[]
 
   return (
     <>
-      <p className="flex items-baseline gap-3 rounded-card border border-border bg-card p-5">
-        <span className="font-display text-5xl font-extrabold leading-none">{mine.total}</span>
-        <span className="font-semibold text-muted-foreground">
-          {messages.points.total(mine.total, lines.length)}
-        </span>
-      </p>
-
       {lines.length === 0 ? (
+        // No « 0 point » total above: the empty notice says it once (#706).
         <>
           <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
             <strong className="block text-foreground">{messages.points.emptyTitle}</strong>
@@ -93,47 +87,55 @@ function MyPointsList({ mine, events }: { mine: MyPoints; events: EventSummary[]
           </Link>
         </>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {lines.map((line) => {
-            const event = byId.get(line.eventId);
-            const title = event ? messages.events.name(event.discipline, event.gender) : "";
-            return (
-              <li key={line.eventId}>
-                <Link
-                  href={event ? `/epreuves/${event.slug}` : "/competitions"}
-                  className="flex flex-col gap-2 rounded-card border border-border bg-card p-3.5"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="min-w-0 flex-1 break-words font-extrabold">{title}</span>
-                    <span
-                      className={
-                        line.points > 0
-                          ? "text-xl font-extrabold text-success-text"
-                          : "text-xl font-extrabold text-muted-foreground"
-                      }
-                    >
-                      {messages.points.line(line.points)}
-                    </span>
-                  </span>
-                  <span className="flex flex-wrap gap-1.5">
-                    {pointsReasonLabels(line.reasons).map((label) => (
+        <>
+          <p className="flex items-baseline gap-3 rounded-card border border-border bg-card p-5">
+            <span className="font-display text-5xl font-extrabold leading-none">{mine.total}</span>
+            <span className="font-semibold text-muted-foreground">
+              {messages.points.total(mine.total, lines.length)}
+            </span>
+          </p>
+          <ul className="flex flex-col gap-2">
+            {lines.map((line) => {
+              const event = byId.get(line.eventId);
+              const title = event ? messages.events.name(event.discipline, event.gender) : "";
+              return (
+                <li key={line.eventId}>
+                  <Link
+                    href={event ? `/epreuves/${event.slug}` : "/competitions"}
+                    className="flex flex-col gap-2 rounded-card border border-border bg-card p-3.5"
+                  >
+                    <span className="flex items-center gap-3">
+                      <span className="min-w-0 flex-1 break-words font-extrabold">{title}</span>
                       <span
-                        key={label.text}
                         className={
-                          label.joker
-                            ? "rounded-full bg-secondary/50 px-2.5 py-0.5 text-xs font-bold"
-                            : "rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold"
+                          line.points > 0
+                            ? "text-xl font-extrabold text-success-text"
+                            : "text-xl font-extrabold text-muted-foreground"
                         }
                       >
-                        {label.text}
+                        {messages.points.line(line.points)}
                       </span>
-                    ))}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+                    </span>
+                    <span className="flex flex-wrap gap-1.5">
+                      {pointsReasonLabels(line.reasons).map((label) => (
+                        <span
+                          key={label.text}
+                          className={
+                            label.joker
+                              ? "rounded-full bg-secondary/50 px-2.5 py-0.5 text-xs font-bold"
+                              : "rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold"
+                          }
+                        >
+                          {label.text}
+                        </span>
+                      ))}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </>
       )}
       <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
         {messages.points.note}

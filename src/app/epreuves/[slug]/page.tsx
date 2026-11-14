@@ -31,7 +31,9 @@ import {
 
 import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
+import { loadScale } from "../../scale";
 import { getCurrentUser, getSessionClient } from "../../session";
+import { ForgetPodium } from "./forget-podium";
 import { PredictionForm } from "./prediction-form";
 import { ResultSection } from "./result-section";
 import { RevealHidden, RevealSection } from "./reveal-section";
@@ -123,7 +125,7 @@ function LeagueSuggestion({
         {messages.prediction.leagueTitle}
       </h2>
       <p className="text-sm leading-relaxed">{messages.prediction.leagueText(competitionName)}</p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid gap-2">
         <Link href={`/ligues/creer?competition=${competitionSlug}`} className={buttonVariants()}>
           {messages.prediction.leagueCreate}
         </Link>
@@ -224,6 +226,7 @@ async function PredictionSection({
   };
 
   if (open) {
+    const scale = await loadScale();
     return (
       <div className="flex flex-col gap-5">
         <PredictionForm
@@ -235,6 +238,7 @@ async function PredictionSection({
           markFamily={event.markFamily}
           discipline={event.discipline}
           tolerance={event.tolerance}
+          scale={scale}
         />
         {suggestion}
       </div>
@@ -419,6 +423,7 @@ export default async function EventPage({
       )}
 
       <section className="mx-auto w-full max-w-md pt-6" aria-label={messages.picker.podium}>
+        {user && !open && <ForgetPodium eventId={event.id} />}
         {user && winner ? (
           <ResultSection event={event} slug={slug} user={user} />
         ) : (

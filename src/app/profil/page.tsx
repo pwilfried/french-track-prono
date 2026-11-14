@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { UseCaseError } from "@/application/errors";
 import { getClubNotices } from "@/application/club-notices";
 import { getMyBadges } from "@/application/get-my-badges";
 import { getProfile } from "@/application/get-profile";
@@ -16,6 +15,7 @@ import { Bib } from "@/components/profile/bib";
 import { InstallEntry } from "@/components/shell/install-prompt";
 import { NotificationOptIn } from "@/components/account/notification-opt-in";
 import { ClubNotices } from "@/components/account/club-notices";
+import { SubmitButton } from "@/components/account/submit-button";
 import { ClubRanking } from "@/components/profile/club-ranking";
 import { LatestPredictions } from "@/components/profile/prediction-history";
 import {
@@ -41,40 +41,55 @@ import { messages } from "../messages.fr";
 import { turnOffNotificationsAction, turnOnNotificationsAction } from "../push-actions";
 import { getCurrentUser, getSessionClient } from "../session";
 import { publicEventReader, publicDisciplines } from "../public-data";
+import { readOr } from "../read-or";
 
-/** The season and the club ranking over every competition, the badges of the current one; null when unreadable. */
+/**
+ * The season and the club ranking over every competition, the badges of the current one, the
+ * latest predictions: each read on its own, so one that fails only hides its own block (#763).
+ */
 async function loadSeason(userId: string) {
   const competition = await currentCompetition();
   const slugs = await seasonCompetitionSlugs();
-  try {
-    const client = await getSessionClient();
-    const events = publicEventReader();
-    const [season, badges, clubs, latest] = await Promise.all([
+  const client = await getSessionClient();
+  const events = publicEventReader();
+  const [season, badges, clubs, latest] = await Promise.all([
+    readOr(
+      "profile season",
       getMySeason({
         ranking: createSupabaseRankingRepository(client),
         predictions: createSupabasePredictionRepository(client),
         events,
         disciplines: publicDisciplines(),
       }).execute({ userId, competitionSlugs: slugs }),
+      null,
+    ),
+    readOr(
+      "profile badges",
       getMyBadges({
         ranking: createSupabaseRankingRepository(client),
         predictions: createSupabasePredictionRepository(client),
         events,
       }).execute({ userId, competitionSlug: competition.slug }),
+      null,
+    ),
+    readOr(
+      "profile clubs",
       getClubRanking({ ranking: createSupabaseRankingRepository(client) }).execute({
         competitionSlugs: slugs,
       }),
+      null,
+    ),
+    readOr(
+      "profile latest predictions",
       getMyPredictionHistory({
         predictions: createSupabasePredictionRepository(client),
         events,
         points: createSupabasePointsRepository(client),
       }).execute({ userId, competitionSlugs: slugs, limit: 3 }),
-    ]);
-    return { ...season, badges, clubs, latest };
-  } catch (error) {
-    if (error instanceof UseCaseError) return null;
-    throw error;
-  }
+      null,
+    ),
+  ]);
+  return { season, badges, clubs, latest };
 }
 
 /** Board 06: bib and pseudo, the season in three figures, the account. */
@@ -91,31 +106,31 @@ export default async function ProfilePage({
     profiles: createSupabaseProfileRepository(client),
   }).execute({ userId: user.userId });
   if (!profile) redirect(`/bienvenue?next=${encodeURIComponent("/profil")}`);
-  const [season, details, params, clubNotices, honours] = await Promise.all([
-    loadSeason(user.userId),
-    getPlayerDetails({ details: createSupabasePlayerDetailsRepository(client) })
-      .execute({ userId: user.userId })
-      .catch((error: unknown) => {
-        if (error instanceof UseCaseError) return null;
-        throw error;
-      }),
-    searchParams,
-    getClubNotices({ notices: createSupabaseClubNoticeRepository(client) })
-      .execute()
-      .catch((error: unknown) => {
-        if (error instanceof UseCaseError) return [];
-        throw error;
-      }),
-    getMyManagerHonours({
-      honours: createSupabaseManagerHonoursRepository(client),
-      userId: user.userId,
-    })
-      .execute()
-      .catch((error: unknown) => {
-        if (error instanceof UseCaseError) return [];
-        throw error;
-      }),
-  ]);
+  const [{ season, badges, clubs, latest }, details, params, clubNotices, honours] =
+    await Promise.all([
+      loadSeason(user.userId),
+      readOr(
+        "profile details",
+        getPlayerDetails({ details: createSupabasePlayerDetailsRepository(client) }).execute({
+          userId: user.userId,
+        }),
+        null,
+      ),
+      searchParams,
+      readOr(
+        "club notices",
+        getClubNotices({ notices: createSupabaseClubNoticeRepository(client) }).execute(),
+        [],
+      ),
+      readOr(
+        "manager honours",
+        getMyManagerHonours({
+          honours: createSupabaseManagerHonoursRepository(client),
+          userId: user.userId,
+        }).execute(),
+        [],
+      ),
+    ]);
   const notice = params.email
     ? messages.changeEmail.done
     : params.enregistre
@@ -155,7 +170,7 @@ export default async function ProfilePage({
             {season ? season.points : "–"}
           </span>
           <span className="text-sm">
-            {text.pointsShort} ·{" "}
+            {messages.format.ptsUnit(season?.points ?? 0)} ·{" "}
             <strong>
               {season?.rank ? text.rankOf(season.rank, season.players) : text.notRanked}
             </strong>
@@ -168,14 +183,17 @@ export default async function ProfilePage({
           <ShareSeasonCard />
           <SeasonTiles stats={season.stats} />
           <SeasonCurve curve={season.stats.curve} />
-          <LatestPredictions lines={season.latest} />
+        </>
+      )}
+      {latest && <LatestPredictions lines={latest} />}
+      {season && (
+        <>
           <BestShot best={season.stats.bestShot} />
           <StrongFamilies families={season.stats.families} />
-          <ClubRanking
-            clubs={season.clubs}
-            myClub={details?.club?.validated ? details.club : null}
-          />
         </>
+      )}
+      {clubs && (
+        <ClubRanking clubs={clubs} myClub={details?.club?.validated ? details.club : null} />
       )}
 
       {honours.length > 0 && (
@@ -239,7 +257,7 @@ export default async function ProfilePage({
         />
       </section>
 
-      {season && <BadgeGrid progress={season.badges} />}
+      {badges && <BadgeGrid progress={badges} />}
 
       <section aria-labelledby="account" className="flex flex-col gap-2">
         <h2
@@ -294,9 +312,9 @@ export default async function ProfilePage({
       </section>
 
       <form action="/auth/sign-out" method="post">
-        <button type="submit" className={`${buttonVariants({ variant: "outline" })} w-full`}>
+        <SubmitButton variant="outline" pendingLabel={text.signingOut} navigates>
           {text.signOut}
-        </button>
+        </SubmitButton>
       </form>
       <Link
         href="/profil/supprimer"

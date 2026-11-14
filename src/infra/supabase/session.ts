@@ -1,6 +1,8 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { limitedFetch } from "./limited-fetch";
+
 export type CookieToSet = { name: string; value: string; options: CookieOptions };
 
 /** What the session client needs from the framework: read all cookies, write some. */
@@ -18,6 +20,7 @@ export function createSessionClient(cookies: CookieAdapter): SupabaseClient {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) throw new Error("Supabase environment variables are missing (see .env.example)");
   return createServerClient(url, key, {
+    global: { fetch: limitedFetch() },
     cookies: {
       getAll: () => cookies.getAll(),
       setAll: (toSet) => {

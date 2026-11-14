@@ -6,6 +6,7 @@ import { messages } from "@/app/messages.fr";
 import { SubmitButton } from "@/components/account/submit-button";
 import { buttonVariants } from "@/components/ui/button";
 import { ChipStatus } from "@/components/ui/chip-status";
+import { MAX_BID_DIGITS } from "@/domain/manager-bid";
 
 import { managerBidAction, type BidFormState } from "./bid-actions";
 
@@ -23,12 +24,15 @@ export function BidForm({
   name,
   price,
   current,
+  credits,
 }: {
   leagueId: string;
   athleteId: string;
   name: string;
   price: number;
   current: number | null;
+  /** The most this bid can be: the credits left, with those of the current bid on the athlete. */
+  credits: number;
 }) {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState(String(current ?? price));
@@ -37,7 +41,11 @@ export function BidForm({
     if (!result.error) setOpen(false);
     return result;
   }, {});
-  const nudge = (by: number) => setAmount(String(Math.max(price, (Number(amount) || price) + by)));
+  // Never under the price; never over the credits, unless they are short of the price anyway
+  // (the server then says why).
+  const max = Math.max(price, Math.min(credits, 10 ** MAX_BID_DIGITS - 1));
+  const nudge = (by: number) =>
+    setAmount(String(Math.min(max, Math.max(price, (Number(amount) || price) + by))));
 
   if (!open) {
     return (
@@ -59,7 +67,7 @@ export function BidForm({
   }
 
   return (
-    <form action={action} className="flex flex-col gap-2 border-t border-border pt-3">
+    <form action={action} noValidate className="flex flex-col gap-2 border-t border-border pt-3">
       <input type="hidden" name="league" value={leagueId} />
       <input type="hidden" name="athlete" value={athleteId} />
       <div className="flex items-center gap-2">
@@ -73,6 +81,7 @@ export function BidForm({
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           min={price}
+          max={max}
           step={1}
           inputMode="numeric"
           required

@@ -12,6 +12,7 @@ import {
 import { ErrorNotice } from "@/components/error-notice";
 import { Leaderboard } from "@/components/leaderboard/leaderboard";
 import { MyPlaceCard } from "@/components/leaderboard/my-place-card";
+import { MyRankBar } from "@/components/leaderboard/my-rank-bar";
 import { Podium } from "@/components/leaderboard/podium";
 import {
   RANKING_VIEWS,
@@ -20,13 +21,14 @@ import {
 } from "@/components/leaderboard/ranking-href";
 import type { ScopeLeague } from "@/components/leaderboard/scope-sheet";
 import { ScopeSwitcher } from "@/components/leaderboard/scope-switcher";
+import { InviteBanner } from "@/components/leagues/invite-banner";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { buttonVariants } from "@/components/ui/button";
+import { ViewTabs } from "@/components/ui/view-tabs";
 import { rankingStart } from "@/domain/competition";
 import { seasonYears } from "@/domain/competition-search";
 import { placeOf, previousCompetitionSlugs } from "@/domain/ranking";
 import { createSupabaseLeagueRepository, createSupabaseRankingRepository } from "@/infra";
-import { cn } from "@/lib/utils";
 
 import { currentCompetitionDay, currentDay, loadCompetitions, loadMyLeagues } from "../competition";
 import { messages } from "../messages.fr";
@@ -38,7 +40,8 @@ import { getCurrentUser, getSessionClient } from "../session";
  * another one from the scope sheet), « Ce soir » (points of tonight's finals, hidden before the
  * first competition) and « Général » (the whole season, or one competition with ?competition=),
  * cut around the player. One scope button opens the sheet; « Ta place » heads the list.
- * A visitor sees « Général » alone, with a link to sign in (#573).
+ * A visitor sees « Général » alone, with a link to sign in (#573). Alone in a league, the player
+ * is asked to invite friends instead of seeing a ranking of one (#710).
  */
 export default async function RankingPage({
   searchParams,
@@ -161,29 +164,13 @@ export default async function RankingPage({
     <main id="main" className="flex flex-1 flex-col">
       <LeagueHero title={text.title} subtitle={subtitle} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
-        <div
-          role="tablist"
-          aria-label={text.viewLabel}
-          className="grid gap-1 rounded-full bg-muted p-1"
-          style={{ gridTemplateColumns: `repeat(${views.length}, minmax(0, 1fr))` }}
-        >
-          {views.map((v) => (
-            <Link
-              key={v}
-              href={rankingHref(v)}
-              role="tab"
-              aria-selected={v === view}
-              aria-controls="classement-vue"
-              id={`vue-${v}`}
-              className={cn(
-                "inline-flex min-h-11 items-center justify-center rounded-full px-2 text-sm font-semibold",
-                v === view ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
-              )}
-            >
-              {text.view[v]}
-            </Link>
-          ))}
-        </div>
+        <ViewTabs
+          label={text.viewLabel}
+          tabs={views.map((v) => ({ id: v, label: text.view[v], href: rankingHref(v) }))}
+          selected={view}
+          idPrefix="vue"
+          panelId="classement-vue"
+        />
         <div
           id="classement-vue"
           role="tabpanel"
@@ -242,6 +229,9 @@ export default async function RankingPage({
                 {messages.leagues.join}
               </Link>
             </div>
+          ) : league && league.memberCount <= 1 ? (
+            // Alone in the league: no ranking of one, bring friends in first (#710).
+            <InviteBanner code={league.inviteCode} leagueName={league.name} />
           ) : rows === "error" ? (
             <ErrorNotice retryHref={here} message={messages.errors.RANKING_UNAVAILABLE} />
           ) : rows === null ? null : start ? (
@@ -265,15 +255,7 @@ export default async function RankingPage({
                   </Link>
                 </section>
               ) : me ? (
-                <p className="sticky bottom-20 flex items-center justify-between gap-3 rounded-2xl bg-foreground py-1.5 pl-3.5 pr-1.5 font-extrabold text-background shadow-lg md:bottom-3">
-                  <span>{text.you(me.rank, me.points)}</span>
-                  <a
-                    href="#moi"
-                    className="inline-flex min-h-11 items-center rounded-xl px-3 underline underline-offset-4"
-                  >
-                    {text.aroundMe}
-                  </a>
-                </p>
+                <MyRankBar rank={me.rank} points={me.points} />
               ) : (
                 rows.length > 0 && (
                   <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">

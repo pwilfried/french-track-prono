@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal, useFormStatus } from "react-dom";
 
 import { buttonVariants } from "@/components/ui/button";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
+import { ScaleRules } from "@/components/rules/scale-rules";
 import type { DisciplineFamily, MarkUnit } from "@/domain/discipline";
 import { MARK_MAX_LENGTH, markInputMode, markRange, readMark } from "@/domain/mark-range";
 import { isComplete, OTHER_ATHLETE, type PodiumDraft } from "@/domain/podium-draft";
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { messages } from "../../messages.fr";
 import { FirstPredictionTips } from "./first-prediction-tips";
 import { savePredictionAction, type MarkTexts, type PredictionState } from "./actions";
+import { forgetPodium, keepPodium, readKeptPodium } from "./kept-podium";
 
 /** The podium of a signed-in player on an open event: compose, joker, save. */
 export function PredictionForm({
@@ -24,6 +26,7 @@ export function PredictionForm({
   markFamily,
   discipline,
   tolerance,
+  scale,
 }: {
   eventId: string;
   slug: string;
@@ -34,9 +37,41 @@ export function PredictionForm({
   markFamily?: DisciplineFamily;
   discipline: string;
   tolerance?: number;
+  /** The scale shown in the rules sheet of « Règles » (#703). */
+  scale: Record<string, number>;
 }) {
   const [state, action] = useActionState(savePredictionAction, initial);
   const [draft, setDraft] = useState(initial.draft);
+  const [joker, setJoker] = useState(initial.useJoker);
+  // Bumped when a podium kept in the tab is restored: the picker starts again from it.
+  const [restored, setRestored] = useState(0);
+  const podiumRef = useRef<HTMLDivElement>(null);
+  const keep = (next: { draft?: PodiumDraft; joker?: boolean; openedAthlete?: boolean }) =>
+    keepPodium(eventId, { draft, joker, openedAthlete: false, ...next });
+
+  // Back from an athlete's page (#699): the podium being built is still there, in view.
+  useEffect(() => {
+    const kept = readKeptPodium(
+      eventId,
+      athletes.map((a) => a.athleteId),
+    );
+    if (!kept) return;
+    // Read once the page is on screen: the server cannot see this tab's storage.
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setDraft(kept.draft);
+    setJoker(kept.joker);
+    setRestored((n) => n + 1);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    if (kept.openedAthlete) {
+      keepPodium(eventId, { ...kept, openedAthlete: false });
+      requestAnimationFrame(() => podiumRef.current?.scrollIntoView({ block: "start" }));
+    }
+    // Only when the page opens: later changes come from the player.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (state.saved || state.error === "PREDICTION_LOCKED") forgetPodium(eventId);
+  }, [state, eventId]);
   const complete = isComplete(draft);
   // Locked while saving: the podium is shown read only from then on.
   const locked = state.error === "PREDICTION_LOCKED";
@@ -88,19 +123,26 @@ export function PredictionForm({
           {messages.prediction.saved}
         </p>
       )}
-      <PodiumPicker
-        athletes={athletes}
-        initialDraft={state.draft}
-        error={error}
-        disabled={locked}
-        onChange={(next: PodiumDraft) => {
-          setDraft(next);
-          edited();
-        }}
-        helpHref="/regles"
-        athleteHref={(athlete) => `/athletes/${athlete.slug}`}
-        draftKey={`podium-draft:${eventId}`}
-      />
+      <div ref={podiumRef} id="podium" className="scroll-mt-4">
+        <PodiumPicker
+          key={restored}
+          athletes={athletes}
+          initialDraft={draft}
+          error={error}
+          disabled={locked}
+          onChange={(next: PodiumDraft) => {
+            setDraft(next);
+            keep({ draft: next });
+            edited();
+          }}
+          helpHref="/regles"
+          help={<ScaleRules scale={scale} level={3} idPrefix="rules-" />}
+          athleteHref={(athlete) =>
+            `/athletes/${athlete.slug}?from=${encodeURIComponent(`/epreuves/${slug}`)}`
+          }
+          onOpenAthlete={() => keep({ openedAthlete: true })}
+        />
+      </div>
       {markUnit && !locked && (
         <MarkFields
           draft={draft}
@@ -127,7 +169,11 @@ export function PredictionForm({
               type="checkbox"
               role="switch"
               name="joker"
-              defaultChecked={state.useJoker}
+              checked={joker}
+              onChange={(e) => {
+                setJoker(e.target.checked);
+                keep({ joker: e.target.checked });
+              }}
               className="peer sr-only"
             />
             <span

@@ -6,6 +6,7 @@ import { messages } from "@/app/messages.fr";
 import { SubmitButton } from "@/components/account/submit-button";
 import { ChipStatus } from "@/components/ui/chip-status";
 import type { CompetitionScope, CompetitionVenue } from "@/domain/competition";
+import { SEARCH_MAX_LENGTH } from "@/domain/list-view";
 import { MANAGER_LEAGUE_MAX, seasonAdvice } from "@/domain/manager-league";
 import {
   filterCompetitions,
@@ -161,6 +162,7 @@ export function SeasonCompetitionPicker({
   empty,
   submitLabel,
   pendingLabel,
+  blocked = false,
 }: {
   competitions: PickableCompetition[];
   chosen: readonly string[];
@@ -176,6 +178,8 @@ export function SeasonCompetitionPicker({
   empty: string;
   submitLabel: string;
   pendingLabel: string;
+  /** Another part of the form is not ready yet (a league's families, #613): the button waits. */
+  blocked?: boolean;
 }) {
   const [ids, setIds] = useState(() => new Set(chosen));
   const [filters, setFilters] = useState<PickerFilters>(NO_FILTERS);
@@ -275,6 +279,7 @@ export function SeasonCompetitionPicker({
               onChange={(event) => set("query", event.target.value)}
               placeholder={text.searchPlaceholder}
               aria-label={text.searchLabel}
+              maxLength={SEARCH_MAX_LENGTH}
               autoComplete="off"
               className="min-h-11 rounded-xl border-2 border-border bg-background px-3 text-base focus-visible:border-primary focus-visible:outline-none"
             />
@@ -417,7 +422,7 @@ export function SeasonCompetitionPicker({
         <div role="status" aria-live="polite">
           <Summary count={ids.size} minimum={minimum} withFormat={withFormat} />
         </div>
-        <SubmitButton pendingLabel={pendingLabel} disabled={ids.size < minimum}>
+        <SubmitButton pendingLabel={pendingLabel} disabled={blocked || ids.size < minimum}>
           {submitLabel}
         </SubmitButton>
       </div>
