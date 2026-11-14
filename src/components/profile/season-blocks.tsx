@@ -110,34 +110,3 @@ export function BestShot({ best }: { best: SeasonStats["bestShot"] }) {
     </section>
   );
 }
-
-/** « Mes disciplines fortes »: success by family, the best three. */
-export function StrongFamilies({ families }: { families: SeasonStats["families"] }) {
-  return (
-    <section aria-labelledby="strong" className="flex flex-col gap-2">
-      <h2 id="strong" className={heading}>
-        {text.strong}
-      </h2>
-      {families.length === 0 ? (
-        <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">{text.noStrong}</p>
-      ) : (
-        <ul className="flex flex-col gap-2.5 rounded-card border border-border bg-card p-4">
-          {families.map((f) => (
-            <li key={f.family} className="flex flex-col gap-1">
-              <span className="flex justify-between text-sm">
-                <span>{messages.disciplines.family[f.family]}</span>
-                <strong className="font-mono">{f.rate} %</strong>
-              </span>
-              <span aria-hidden="true" className="h-2 rounded-full bg-muted">
-                <span
-                  className="block h-2 rounded-full bg-brand dark:bg-secondary"
-                  style={{ width: `${f.rate}%` }}
-                />
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}

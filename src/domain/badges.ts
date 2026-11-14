@@ -182,9 +182,23 @@ export function raisedBadges(
 }
 
 /**
+ * From the easiest badge to the hardest, to break ties in `nextBadge` (#768): a day fully predicted
+ * is within reach of anyone, a perfect podium is not. Family badges follow, in display order.
+ */
+const EASIEST_FIRST: Badge[] = [
+  "fidele",
+  "chasseur",
+  "serie",
+  "bleus",
+  "flair",
+  "nostradamus",
+  ...FAMILY_BADGES,
+];
+
+/**
  * The badge with the smallest effort left to its next level: the share of the threshold still to
- * go, so 10 points out of 50 come before 1 winner out of 3. Display order breaks ties; null once
- * every badge is gold.
+ * go, so 10 points out of 50 come before 1 winner out of 3. The easiest badge breaks ties; null
+ * once every badge is gold.
  */
 export function nextBadge(
   progress: BadgeProgress[],
@@ -195,6 +209,10 @@ export function nextBadge(
         const next = nextLevel(p.level);
         return next ? [{ ...p, left: Math.max(p.target - p.current, 1), next }] : [];
       })
-      .sort((a, b) => a.left / a.target - b.left / b.target)[0] ?? null
+      .sort(
+        (a, b) =>
+          a.left / a.target - b.left / b.target ||
+          EASIEST_FIRST.indexOf(a.badge) - EASIEST_FIRST.indexOf(b.badge),
+      )[0] ?? null
   );
 }

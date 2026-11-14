@@ -1,79 +1,51 @@
 import { messages } from "@/app/messages.fr";
+import { Dossard } from "@/components/band/dossard";
 import {
+  BADGE_FAMILIES,
   FAMILY_BADGES,
   nextBadge,
   nextLevel,
   type Badge,
-  type BadgeLevel,
   type BadgeProgress,
+  type FamilyBadge,
 } from "@/domain/badges";
-import { cn } from "@/lib/utils";
+import { animalOf, type Animal } from "@/domain/band";
 
 const text = messages.profile;
 const levels = messages.badgeLevels;
 
-/**
- * The colours of each level, as the medals of the podium, until the bib visuals of #768: a medal
- * behind the emoji, and a label in a solid tone that keeps its text readable (AA).
- */
-const MEDAL: Record<BadgeLevel, string> = {
-  bronze: "bg-gradient-to-b from-(--medal-bronze-from) to-(--medal-bronze-to)",
-  silver: "bg-gradient-to-b from-(--medal-silver-from) to-(--medal-silver-to)",
-  gold: "bg-gradient-to-b from-(--medal-gold-from) to-(--medal-gold-to)",
-};
-const LABEL: Record<BadgeLevel, string> = {
-  bronze: "bg-(--medal-bronze-to) text-white",
-  silver: "bg-(--medal-silver-from) text-(--medal-silver-ink)",
-  gold: "bg-(--medal-gold-from) text-(--medal-gold-ink)",
-};
+const isFamily = (badge: Badge): badge is FamilyBadge =>
+  (FAMILY_BADGES as readonly Badge[]).includes(badge);
 
-const isFamily = (badge: Badge) => (FAMILY_BADGES as readonly Badge[]).includes(badge);
+/** The animal on the bib: the one of the family for a family badge, the hare (the mascot) else. */
+function animalFor(badge: Badge): Animal {
+  return (isFamily(badge) && animalOf(BADGE_FAMILIES[badge][0])) || "lievre";
+}
 
 /** What is left to the next level: a count, or points for a family badge. */
 export function badgeLeft(badge: Badge, left: number): string {
   return isFamily(badge) ? messages.format.pts(left) : String(left);
 }
 
-function BadgeTile({ p }: { p: BadgeProgress }) {
+function BadgeTile({ p, number }: { p: BadgeProgress; number: number }) {
   const b = messages.badges[p.badge];
   const next = nextLevel(p.level);
   return (
     <li
       data-earned={p.level !== null}
       data-level={p.level ?? "none"}
-      className={cn(
-        "flex min-h-28 min-w-0 flex-col items-center gap-1 rounded-card px-2 py-3 text-center",
-        p.level
-          ? "border border-border bg-card"
-          : "border border-dashed border-border bg-muted text-muted-foreground",
-      )}
+      className="flex min-w-0 flex-col items-center gap-1 text-center"
     >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "grid size-11 place-items-center rounded-full text-2xl",
-          p.level ? MEDAL[p.level] : "opacity-50 grayscale",
-        )}
-      >
-        {b.emoji}
+      <Dossard
+        animal={animalFor(p.badge)}
+        number={String(number).padStart(2, "0")}
+        name={b.name}
+        level={p.level}
+      />
+      {p.level && <span className="sr-only">{text.badgeLevel(levels.name[p.level])}</span>}
+      <span className="text-[11px] leading-tight break-words text-muted-foreground">
+        {b.counts}
       </span>
-      <span className="text-sm font-bold break-words">{b.name}</span>
-      {p.level ? (
-        <span
-          className={cn(
-            "rounded-full px-2 py-0.5 text-[11px] font-extrabold tracking-wider uppercase",
-            LABEL[p.level],
-          )}
-        >
-          <span className="sr-only">{text.badgeLevel(levels.name[p.level])}</span>
-          <span aria-hidden="true">{levels.name[p.level]}</span>
-        </span>
-      ) : (
-        <span className="text-[11px] font-extrabold tracking-wider uppercase">
-          {text.badgeLocked}
-        </span>
-      )}
-      <span className="text-[11px] leading-tight break-words">{b.counts}</span>
       <span className="text-[11px] leading-tight font-semibold break-words">
         {next ? text.badgeToNext(p.current, p.target, levels.the[next]) : text.badgeMax}
       </span>
@@ -82,8 +54,9 @@ function BadgeTile({ p }: { p: BadgeProgress }) {
 }
 
 /**
- * « Badges » (#385, #821): each badge with its level (bronze, silver, gold) or greyed until won,
- * what it counts this season, the next threshold, and the badge nearest to its next level.
+ * « Badges » as bibs (#385, #768, #821): each badge with the band of its level (bronze, silver,
+ * gold) or grey until won, the hare for the game badges and the animal of the family for the
+ * others, what it counts this season, the next threshold, and the badge nearest to its next level.
  */
 export function BadgeGrid({ progress }: { progress: BadgeProgress[] }) {
   const next = nextBadge(progress);
@@ -95,8 +68,8 @@ export function BadgeGrid({ progress }: { progress: BadgeProgress[] }) {
         {text.badges}
       </h2>
       <ul aria-labelledby="badges" className="grid grid-cols-3 gap-2">
-        {game.map((p) => (
-          <BadgeTile key={p.badge} p={p} />
+        {game.map((p, i) => (
+          <BadgeTile key={p.badge} p={p} number={i + 1} />
         ))}
       </ul>
       {family.length > 0 && (
@@ -109,8 +82,8 @@ export function BadgeGrid({ progress }: { progress: BadgeProgress[] }) {
           </h3>
           <p className="text-xs text-muted-foreground">{text.familyBadgesHint}</p>
           <ul aria-labelledby="family-badges" className="grid grid-cols-3 gap-2">
-            {family.map((p) => (
-              <BadgeTile key={p.badge} p={p} />
+            {family.map((p, i) => (
+              <BadgeTile key={p.badge} p={p} number={game.length + i + 1} />
             ))}
           </ul>
         </>

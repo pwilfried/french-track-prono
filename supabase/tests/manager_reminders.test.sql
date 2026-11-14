@@ -26,11 +26,12 @@ insert into push_subscriptions (endpoint, user_id, p256dh, auth)
 select 'https://push.example.test/manager-' || n, ('ac830000-0000-0000-0000-00000000000' || n)::uuid,
   'key', 'auth'
 from generate_series(1, 4) n;
--- No quiet hours (0 to 0), except for player 4: from the current hour in Paris to the next one.
+-- No quiet hours (0 to 0), except for player 4: from the current hour in Paris for two hours, so
+-- that they still cover the later run of the cron (now + 15 min) even near the end of an hour.
 insert into reminder_settings (user_id, manager, quiet_from, quiet_to)
 select ('ac830000-0000-0000-0000-00000000000' || n)::uuid, n <> 3,
   case when n = 4 then extract(hour from now() at time zone 'Europe/Paris')::int else 0 end,
-  case when n = 4 then (extract(hour from now() at time zone 'Europe/Paris')::int + 1) % 24 else 0 end
+  case when n = 4 then (extract(hour from now() at time zone 'Europe/Paris')::int + 2) % 24 else 0 end
 from generate_series(1, 4) n;
 
 create function pg_temp.player(p_n int) returns uuid language sql immutable as $$
