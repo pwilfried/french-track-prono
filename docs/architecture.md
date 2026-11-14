@@ -278,10 +278,10 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 |---|---|
 | Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions`, `league_families` |
 | Référentiel | `competitions`, `events` (dont `kind` et `sub_disciplines` des épreuves combinées), `athletes`, `entries` (liste de départ), `results`, `athlete_records` (PR, SB, WR, WB) |
-| Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions` |
+| Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions`, `badges`, `user_badges` (niveau de badge gagné, #821) |
 | Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
-| Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()` |
-| Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers` ; `badges` et `user_badges` restent vides : les badges sont calculés (v0.11) |
+| Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()`, `raise_my_badge_levels()` |
+| Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers` |
 
 Garanties portées par la base : pronostic impossible après `lock_at`, pronos des autres
 illisibles avant verrouillage, un seul joker par joueur et par compétition, un pronostic
@@ -355,7 +355,7 @@ Ajouts nécessaires au schéma (à faire dans la version indiquée) :
 - `profiles.age_confirmed_at` : case « 15 ans ou plus » (v0.2, fait : obligatoire en base). Le pseudo est unique sans tenir compte de la casse.
 - `profiles.is_admin` : accès au back-office, réservé à toi (v0.4).
 - Suppression de compte et export des données : fonctions SQL (v0.7).
-- Les tables de questions bonus ne sont pas utilisées avant leur version ; celles des badges ne servent pas, les badges étant calculés.
+- Les tables de questions bonus ne sont pas utilisées avant leur version. Les badges sont calculés ; `user_badges` garde seulement le niveau le plus haut gagné et montré (#821).
 
 Back-office (v0.8) : la liste de départ, le résultat et le calcul des points passent par les
 fonctions `set_start_list()`, `set_results()` et `set_event_scores()`, avec la session de l'admin.
@@ -507,7 +507,8 @@ des ligues du joueur (`competitionsForPlayer`).
 
 Profil vivant (v0.11) : tout est calculé en TypeScript à partir des pronos et des points, rien
 n'est stocké en plus. Badges et progression vers chacun (`badgeProgress`, `src/domain/badges.ts`,
-#385) ; classement des clubs (`rankClubs`, `src/domain/club-ranking.ts`, #386 : moyenne des points
+#385 ; niveaux bronze, argent, or sur la saison et badges de famille, #821, seul le niveau gagné
+est gardé, voir `docs/decisions/badges-et-trophees.md`) ; classement des clubs (`rankClubs`, `src/domain/club-ranking.ts`, #386 : moyenne des points
 des joueurs du club, 3 joueurs au moins) ; derniers pronos et historique complet sur
 `/profil/pronos` (`pickHits`, `src/domain/prediction-history.ts`, #387) ; carte « Ma saison »
 (`/profil/carte`, image 1080×1920 via `next/og`, #388) qui ne reprend que des données publiques
