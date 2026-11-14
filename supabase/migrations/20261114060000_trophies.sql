@@ -46,6 +46,7 @@ create policy read_own_or_league on trophies for select to authenticated
 revoke insert, update, delete, truncate on trophies from anon, authenticated;
 
 -- One row: the FrenchTrack account of the Témoin d'or. Read and written by the admin functions.
+-- Every update says "where id": pg_safeupdate refuses an update without a where clause.
 create table trophy_settings (
   id         boolean primary key default true check (id),
   witness_id uuid references profiles(id) on delete set null
@@ -77,14 +78,14 @@ begin
     raise exception 'only an admin sets the trophy settings' using errcode = '42501';
   end if;
   if coalesce(btrim(p_pseudo), '') = '' then
-    update trophy_settings set witness_id = null;
+    update trophy_settings set witness_id = null where id;
     return 'cleared';
   end if;
   select id into v_user from profiles where lower(pseudo) = lower(btrim(p_pseudo));
   if v_user is null then
     return 'unknown';
   end if;
-  update trophy_settings set witness_id = v_user;
+  update trophy_settings set witness_id = v_user where id;
   return 'saved';
 end $$;
 revoke execute on function admin_set_trophy_witness(text) from public, anon;
