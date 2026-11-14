@@ -36,8 +36,8 @@ async function main() {
 
   const report = await sendDue(
     {
-      due: () => query("select * from private.reminder_due()"),
-      markSent: (sent) => query(`select private.reminder_mark_sent(${literal(sent)}::jsonb)`),
+      due: () => query("select * from private.push_due()"),
+      markSent: (sent) => query(`select private.push_mark_sent(${literal(sent)}::jsonb)`),
       programDue: () => query("select * from private.program_due()"),
       markProgramSent: (sent) => query(`select private.program_mark_sent(${literal(sent)}::jsonb)`),
       forget: (endpoints) =>

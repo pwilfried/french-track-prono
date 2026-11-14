@@ -41,9 +41,9 @@ Deno.serve(async (request) => {
       if (!locked) return null;
       return sendDue(
         {
-          due: () => tx`select * from private.reminder_due()`,
+          due: () => tx`select * from private.push_due()`,
           markSent: async (sent) => {
-            await tx`select private.reminder_mark_sent(${tx.json(sent)}::jsonb)`;
+            await tx`select private.push_mark_sent(${tx.json(sent)}::jsonb)`;
           },
           programDue: () => tx`select * from private.program_due()`,
           markProgramSent: async (sent) => {

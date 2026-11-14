@@ -104,8 +104,6 @@ export { createInMemoryPushSubscriptionStore } from "./in-memory/push-subscripti
 export { createSupabasePushSubscriptionRepository } from "./supabase/push-subscription-repository";
 export { createInMemoryProgramAlertStore } from "./in-memory/program-alert-repository";
 export { createSupabaseProgramAlertRepository } from "./supabase/program-alert-repository";
-export { createInMemoryReminderSettingsStore } from "./in-memory/reminder-settings-repository";
-export { createSupabaseReminderSettingsRepository } from "./supabase/reminder-settings-repository";
 export { createInMemoryReadinessStore } from "./in-memory/readiness-reader";
 export { createSupabaseReadinessReader } from "./supabase/readiness-reader";
 export { createInMemoryManagerRuleStore } from "./in-memory/manager-rule-repository";

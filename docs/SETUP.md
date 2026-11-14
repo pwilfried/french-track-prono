@@ -589,10 +589,9 @@ de secret en plus de ceux des migrations (`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PRO
 
 ## Notifications push
 
-Les joueurs qui les ont activées depuis leur profil reçoivent des rappels groupés, réglés dans
-« Mes rappels » (#681) : « Pronos oubliés » avant le verrouillage des finales de la soirée sans
-podium, et « Résultats du soir » une fois tous leurs points calculés (règles dans
-`supabase/migrations/20261114060000_reminder_settings.sql`).
+Les joueurs qui les ont activées depuis leur profil reçoivent un rappel avant le verrouillage
+d'une finale qu'ils n'ont pas pronostiquée (dans les 20 minutes avant), et leurs points une fois
+calculés (règles dans `supabase/migrations/20261109100000_push_notifications.sql`).
 
 L'envoi tourne dans Supabase (#502) : chaque minute, `pg_cron` appelle l'Edge Function
 `push-notifications` (`supabase/functions/`), qui envoie ce qui est dû. La logique d'envoi est
