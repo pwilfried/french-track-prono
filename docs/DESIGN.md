@@ -72,9 +72,10 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **EventCard** (#546) : l'heure de Paris, le nom avec le genre (« 100 m femmes »), une ligne
   dessous, un statut à droite. À venir : « Verrouille dans … » (`LockLine`, rouge dès 1 h ; au-delà
   de 24 h, « Verrouille le <jour> à <heure> »), « + Prono » ou « ✓ Posé » avec « modifiable ».
-  Terminée : fond atténué, mon résultat (« 2 athlètes bien placées », « Podium parfait ! »,
-  « Pas de prono ») et mes points en pastille verte, « — » sans prono. Le lien est nommé par
-  l'épreuve puis par son statut (#517).
+  Terminée : fond atténué, mon résultat (« 2 athlètes bien placées », « Podium parfait ! ») et
+  mes points en pastille verte ; sans prono, « Pas joué » et rien à droite, jamais de tiret seul
+  (#707). Le lien est nommé par l'épreuve puis par son statut (#517). Dates d'une compétition :
+  mois et année écrits une fois (« 11–13 sept. 2026 », « 30 sept. – 2 oct. 2026 »).
 - **DayProgress** (#659) : une ligne, les épreuves à pronostiquer du jour affiché, les podiums
   posés sur toute la compétition et les points gagnés.
 - **Filtres en pastilles** (`EventFilters`) : une pastille par filtre avec son nombre, la
