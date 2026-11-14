@@ -7,10 +7,12 @@ import { getProfile } from "@/application/get-profile";
 import { getPlayerDetails } from "@/application/player-details";
 import { getMySeason } from "@/application/get-my-season";
 import { getMyManagerHonours } from "@/application/manager-honours";
+import { getTrophyShowcase } from "@/application/trophies";
 import { ShareSeasonCard } from "@/components/profile/share-season-card";
 import { getMyPredictionHistory } from "@/application/list-my-predictions";
 import { getClubRanking } from "@/application/rankings";
 import { BadgeGrid } from "@/components/profile/badge-grid";
+import { TrophyShowcase } from "@/components/profile/trophy-showcase";
 import { Bib } from "@/components/profile/bib";
 import { InstallEntry } from "@/components/shell/install-prompt";
 import { NotificationOptIn } from "@/components/account/notification-opt-in";
@@ -34,6 +36,7 @@ import {
   createSupabasePredictionRepository,
   createSupabaseProfileRepository,
   createSupabaseRankingRepository,
+  createSupabaseTrophyRepository,
 } from "@/infra";
 
 import { currentCompetition, seasonCompetitionSlugs } from "../competition";
@@ -106,7 +109,7 @@ export default async function ProfilePage({
     profiles: createSupabaseProfileRepository(client),
   }).execute({ userId: user.userId });
   if (!profile) redirect(`/bienvenue?next=${encodeURIComponent("/profil")}`);
-  const [{ season, badges, clubs, latest }, details, params, clubNotices, honours] =
+  const [{ season, badges, clubs, latest }, details, params, clubNotices, honours, shelves] =
     await Promise.all([
       loadSeason(user.userId),
       readOr(
@@ -129,6 +132,13 @@ export default async function ProfilePage({
           userId: user.userId,
         }).execute(),
         [],
+      ),
+      readOr(
+        "trophies",
+        getTrophyShowcase({ trophies: createSupabaseTrophyRepository(client) }).execute({
+          userId: user.userId,
+        }),
+        null,
       ),
     ]);
   const notice = params.email
@@ -258,6 +268,7 @@ export default async function ProfilePage({
       </section>
 
       {badges && <BadgeGrid progress={badges} />}
+      {shelves && <TrophyShowcase shelves={shelves} />}
 
       <section aria-labelledby="account" className="flex flex-col gap-2">
         <h2

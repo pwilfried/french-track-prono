@@ -4,7 +4,9 @@ export type PseudoResult =
   { ok: true; pseudo: string } | { ok: false; code: "PSEUDO_INVALID" | "PSEUDO_BANNED" };
 
 const MIN_LENGTH = 2;
-const MAX_LENGTH = 24;
+/** The longest pseudo, in characters. */
+export const PSEUDO_MAX_LENGTH = 24;
+const MAX_LENGTH = PSEUDO_MAX_LENGTH;
 // Letters (with accents), digits, space, underscore, hyphen and dot.
 const ALLOWED = /^[\p{L}\p{N} _.-]+$/u;
 

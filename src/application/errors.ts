@@ -131,7 +131,9 @@ export type ErrorCode =
   | "MATCHDAY_NOT_FOUND"
   | "MANAGER_SEASON_UNAVAILABLE"
   | "MANAGER_HONOURS_UNAVAILABLE"
-  | "PROGRAM_ALERT_UNAVAILABLE";
+  | "PROGRAM_ALERT_UNAVAILABLE"
+  | "TROPHY_WITNESS_UNKNOWN"
+  | "TROPHIES_UNAVAILABLE";
 
 let reportUnavailable: ((code: ErrorCode) => void) | undefined;
 

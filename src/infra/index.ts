@@ -44,6 +44,8 @@ export {
   type ManagerHonoursFixture,
 } from "./in-memory/manager-honours-repository";
 export { createSupabaseManagerHonoursRepository } from "./supabase/manager-honours-repository";
+export { createInMemoryTrophyStore, type TrophyFixture } from "./in-memory/trophy-repository";
+export { createSupabaseTrophyRepository } from "./supabase/trophy-repository";
 export { createInMemoryLeagueStore } from "./in-memory/league-repository";
 export { createSupabaseLeagueRepository } from "./supabase/league-repository";
 export { createSupabaseLeagueModerationRepository } from "./supabase/league-moderation-repository";
