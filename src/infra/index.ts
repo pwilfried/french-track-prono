@@ -6,11 +6,15 @@ export { createInMemoryAuthService } from "./in-memory/auth-service";
 export { createSupabaseAuthService } from "./supabase/auth-service";
 export { createInMemoryProfileRepository } from "./in-memory/profile-repository";
 export { createSupabaseProfileRepository } from "./supabase/profile-repository";
+export { createInMemoryDemoAccounts } from "./in-memory/demo-accounts";
+export { createServiceRoleClient, createSupabaseDemoAccounts } from "./supabase/demo-accounts";
 export {
   createSessionClient,
   readCurrentUser,
   exchangeEmailLink,
   signOutSession,
+  currentRefreshToken,
+  restoreSession,
   type CookieAdapter,
   type CookieToSet,
   type CurrentUser,

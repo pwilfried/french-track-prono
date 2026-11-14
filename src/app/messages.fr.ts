@@ -1831,6 +1831,7 @@ export const messages = {
       manager: "Manager",
       leagues: "Ligues",
       players: "Joueurs",
+      demoPlayers: "Joueurs démo",
       clubs: "Clubs",
       history: "Historique",
     },
@@ -2412,6 +2413,20 @@ export const messages = {
     validateAsIs: "Valider tel quel",
     removeOne: "Supprimer",
   },
+  demoLogin: {
+    title: "Joueurs démo",
+    intro:
+      "Préproduction seulement : connecte-toi en tant qu'un joueur démo pour voir l'application avec ses ligues, son équipe Manager et ses pronos.",
+    listLabel: "Joueurs démo",
+    empty: "Aucun joueur démo pour le moment : charge le jeu de démo de la préproduction.",
+    signInAs: "Se connecter en tant que",
+    signInAsLabel: (pseudo: string) => `Se connecter en tant que ${pseudo}`,
+    signingIn: "Connexion en cours…",
+    bannerLabel: "Session de démo",
+    banner: (pseudo: string) => `Tu joues en tant que ${pseudo}`,
+    backToMe: "Revenir à mon compte",
+    goingBack: "Retour en cours…",
+  },
   adminPlayers: {
     title: "Joueurs",
     subtitle:
@@ -2501,6 +2516,9 @@ export const messages = {
     PROFILE_EXISTS: "Tu as déjà un profil.",
     PROFILE_UNAVAILABLE: "Le profil n'est pas disponible pour le moment. Réessaie dans un instant.",
     NOT_ADMIN: "Seul un administrateur peut faire ça.",
+    DEMO_LOGIN_DISABLED: "Cette page n'existe qu'en préproduction.",
+    DEMO_PLAYER_ONLY:
+      "Seul un joueur démo (adresse en @example.test, pas un admin) peut être incarné.",
     ATHLETE_NOT_PROPOSED: "Choisis parmi les athlètes proposés ou « Autre athlète ».",
     ATHLETE_NOT_IN_EVENT: "Cet athlète ne participe pas à cette épreuve.",
     RESULT_INVALID:

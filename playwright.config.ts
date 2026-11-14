@@ -11,6 +11,12 @@ import { defineConfig, devices } from "@playwright/test";
 process.env.PUBLIC_CACHE_FLUSH_SECRET ??= "e2e-public-cache";
 
 /**
+ * The app under test plays pre-production for the demo sign-in (#637, e2e/demo-login.spec.ts);
+ * the switch is off in production, which a unit test covers (src/app/demo-login.test.ts).
+ */
+process.env.PREPROD_DEMO_LOGIN ??= "1";
+
+/**
  * E2E_BASE_URL: a deployed site to test (pre-production, #636), instead of the local build started
  * below. Signing in and SQL there need the helpers of #695.
  */

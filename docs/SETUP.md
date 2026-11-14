@@ -399,6 +399,13 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
 - **À venir** : le jeu de démo propre à la préprod (#694) et les tests e2e lancés contre la
   préprod après chaque déploiement (#695).
 - **Pas de captcha ni de notifications push** en préprod (pas de clé Turnstile ni VAPID).
+- **Se connecter en tant qu'un joueur démo** (#637) : back-office → « Joueurs démo », bouton
+  « Se connecter en tant que » ; un bandeau rappelle le joueur incarné et propose « Revenir à mon
+  compte ». N'existe que si la variable serveur `PREPROD_DEMO_LOGIN=1` est posée dans le projet
+  Vercel de préprod (jamais en prod : sans elle, la page répond « introuvable » et le menu n'a pas
+  le lien). Réservé aux admins, limité aux comptes `@example.test` qui ne sont pas admins. Le jeton
+  de connexion est fabriqué côté serveur avec `SUPABASE_SERVICE_ROLE_KEY` ; la session de l'admin
+  est gardée dans un cookie httpOnly le temps de l'incarnation.
 - **Mise en prod** : la prod suit toujours les tags, posés automatiquement quand un milestone est
   fini et `main` vert, sans feu vert humain (décision du propriétaire du 13 nov. 2026,
   `ci/agents/README.md`, étape 6). Seul garde-fou : un run « Pre-production » en échec sur le
@@ -408,7 +415,8 @@ Secrets de l'environnement GitHub `preprod` (Settings → Environments → prepr
 de préprod, jamais ceux de la prod : `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`,
 `SUPABASE_PROJECT_REF`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. Les variables de
 l'application (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-`NEXT_PUBLIC_SITE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) vivent dans le projet Vercel de préprod.
+`NEXT_PUBLIC_SITE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PREPROD_DEMO_LOGIN=1`) vivent dans le
+projet Vercel de préprod.
 
 ## Test de la prod après déploiement
 

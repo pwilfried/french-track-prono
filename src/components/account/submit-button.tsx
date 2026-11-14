@@ -13,6 +13,7 @@ export function SubmitButton({
   noValidate,
   disabled = false,
   className = "w-full",
+  ariaLabel,
 }: {
   children: React.ReactNode;
   pendingLabel: string;
@@ -23,6 +24,8 @@ export function SubmitButton({
   disabled?: boolean;
   /** Full width by default. */
   className?: string;
+  /** A name that says more than the visible text (one button per row of a list). */
+  ariaLabel?: string;
 }) {
   const { pending, data } = useFormStatus();
   // Only the pressed button shows the waiting label; the others are just disabled.
@@ -34,6 +37,7 @@ export function SubmitButton({
       value={intent}
       formNoValidate={noValidate}
       disabled={pending || disabled}
+      aria-label={mine ? undefined : ariaLabel}
       className={`${buttonVariants({ variant })} ${className}`}
     >
       {mine ? pendingLabel : children}

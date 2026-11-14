@@ -8,6 +8,7 @@ import { ServiceWorker } from "@/components/shell/service-worker";
 import { PlayerOnly } from "@/components/shell/player-only";
 import { SiteHeader } from "@/components/shell/site-header";
 
+import { DemoBanner } from "./demo-banner";
 import { robotsMeta } from "./indexing";
 import { messages } from "./messages.fr";
 import "./globals.css";
@@ -79,6 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           {messages.app.skipToContent}
         </a>
+        <DemoBanner />
         <PlayerOnly>
           <SiteHeader />
         </PlayerOnly>

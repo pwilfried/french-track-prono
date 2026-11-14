@@ -47,3 +47,15 @@ export async function exchangeEmailLink(client: SupabaseClient, tokenHash: strin
 export async function signOutSession(client: SupabaseClient): Promise<void> {
   await client.auth.signOut();
 }
+
+/** The refresh token of the session in the cookies (#637: kept to come back to it), or null. */
+export async function currentRefreshToken(client: SupabaseClient): Promise<string | null> {
+  const { data } = await client.auth.getSession();
+  return data.session?.refresh_token ?? null;
+}
+
+/** Puts a session back in the cookies from its refresh token; false if it no longer works. */
+export async function restoreSession(client: SupabaseClient, refreshToken: string): Promise<boolean> {
+  const { data, error } = await client.auth.refreshSession({ refresh_token: refreshToken });
+  return !error && !!data.session;
+}
