@@ -98,6 +98,17 @@ function sqlOnPreprod(statement: string): string {
   });
 }
 
+/** Runs a whole SQL script on the local database (psql, stopping at the first error); returns its output. */
+export function sqlScript(script: string): string {
+  const args = ["-tA", "-q", "-v", "ON_ERROR_STOP=1", "-f", "-"];
+  return hasPsql()
+    ? execFileSync("psql", [url, ...args], { encoding: "utf8", input: script })
+    : execFileSync("docker", ["exec", "-i", container, "psql", "-U", "postgres", ...args], {
+        encoding: "utf8",
+        input: script,
+      });
+}
+
 /**
  * Takes a lock shared by every test file (Vitest runs them in parallel workers), for a row that
  * only exists once, like `manager_rules`. Returns the function that frees it. A lock older than
