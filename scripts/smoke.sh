@@ -42,6 +42,7 @@ fetch() { curl -sSL --max-time 20 "${headers[@]}" "$base$1" || true; }
 first_event() { grep -o 'href="/epreuves/[a-z0-9-]*"' | head -1 | cut -d'"' -f2 || true; }
 list=$(fetch "/epreuves")
 event=$(first_event <<<"$list")
+others=""
 if [ -z "$event" ]; then
   others=$(grep -o 'href="/competitions?[^"]*"' <<<"$list" | cut -d'"' -f2 | sed 's/&amp;/\&/g' |
     sort -u | head -8 || true)
@@ -51,7 +52,11 @@ if [ -z "$event" ]; then
     if [ -n "$event" ]; then break; fi
   done <<<"$others"
 fi
-if [ -z "$event" ]; then
+if [ -z "$event" ] && [ -n "$others" ]; then
+  # Competitions read from the database, none with a programme yet (between two seasons): the
+  # database answers, which is what this check is for (#816).
+  echo "::warning::no event linked yet, but /epreuves lists competitions: the database answers"
+elif [ -z "$event" ]; then
   echo "::error::no event linked from /epreuves nor its days: the database may be unreachable (paused project?)"
   failed=1
 else
