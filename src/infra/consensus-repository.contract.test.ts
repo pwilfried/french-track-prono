@@ -51,8 +51,8 @@ if (url && key) {
     const league = (owner: string, member: string) =>
       sql(`with l as (insert into leagues (name, owner_id) values ('Consensus', '${owner}') returning id),
              m as (insert into league_members (league_id, user_id, role)
-                   select id, '${owner}', 'owner'::league_role from l
-                   union all select id, '${member}', 'member'::league_role from l)
+                   select id, '${owner}'::uuid, 'owner'::league_role from l
+                   union all select id, '${member}'::uuid, 'member'::league_role from l)
            select id from l`);
     return {
       athleteIds: locked.athleteIds,
