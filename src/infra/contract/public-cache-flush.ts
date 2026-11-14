@@ -2,9 +2,11 @@
 // and waits until the expiry has landed (#814). On Vercel, a Route Handler answers before its
 // `revalidateTag` runs (Next.js hands it to `waitUntil`), so the page loaded right after the flush
 // could still read the old list: in pre-production, a competition made by a test was missing from
-// the league form. The app exposes a probe, cached under every public tag: once it changes, the
-// tags have expired. No import, no syntax beyond erasable types: Node runs this file as it is, in
-// the child process that keeps `sql()` synchronous (src/infra/contract/database.ts).
+// the league form. The app exposes one probe per public tag, one line each: once every line has
+// changed, every tag has expired (the tags expire one after another, so a probe under all of them
+// changed with the first, and the event list could still be the old one: #844). No import, no
+// syntax beyond erasable types: Node runs this file as it is, in the child process that keeps
+// `sql()` synchronous (src/infra/contract/database.ts).
 
 export type FlushOutcome =
   { kind: "flushed" } | { kind: "absent" } | { kind: "failed"; reason: string };
@@ -35,13 +37,19 @@ export async function flushPublicCacheAndWait(
     const flush = await fetcher(target, { method: "POST", headers });
     if (flush.status !== 204) return { kind: "failed", reason: `flush: HTTP ${flush.status}` };
     for (let attempt = 0; attempt < attempts; attempt++) {
-      if ((await probe()) !== before) return { kind: "flushed" };
+      if (allChanged(before, await probe())) return { kind: "flushed" };
       await wait(250);
     }
     return { kind: "failed", reason: `the cache had not expired after ${attempts} probes` };
   } catch (error) {
     return { kind: "failed", reason: String(error) };
   }
+}
+
+/** Each line of the probe is one tag; the flush has landed once none is the same as before. */
+function allChanged(before: string, after: string): boolean {
+  const old = before.split("\n");
+  return after.split("\n").every((line, index) => line !== old[index]);
 }
 
 function isUnreachable(error: unknown): boolean {

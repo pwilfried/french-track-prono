@@ -15,17 +15,18 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * A value cached under every public tag: it changes once a flush has expired them (#814). On
- * Vercel the flush answers before its expiry runs, so the tests read this until it changes
- * (src/infra/contract/public-cache-flush.ts).
+ * One value cached under each public tag: it changes once a flush has expired that tag (#814). On
+ * Vercel the flush answers before its expiry runs, and the tags expire one after another, so the
+ * tests read these lines until every one has changed (#844, src/infra/contract/public-cache-flush.ts).
  */
-const probe = unstable_cache(async () => crypto.randomUUID(), ["public", "flush-probe"], {
-  tags: [...PUBLIC_TAGS],
-});
+const probes = PUBLIC_TAGS.map((tag) =>
+  unstable_cache(async () => crypto.randomUUID(), ["public", "flush-probe", tag], { tags: [tag] }),
+);
 
 export async function GET(request: NextRequest) {
   if (!allowed(request)) return new Response(null, { status: 404 });
-  return new Response(await probe(), { headers: { "cache-control": "no-store" } });
+  const lines = await Promise.all(probes.map((probe) => probe()));
+  return new Response(lines.join("\n"), { headers: { "cache-control": "no-store" } });
 }
 
 function allowed(request: NextRequest): boolean {
