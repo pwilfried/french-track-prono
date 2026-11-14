@@ -7,6 +7,8 @@ import { newPlayer, signUp } from "./players";
 test("an admin creates an athlete, adds a discipline with a PB and an SB, shown on the public page", async ({
   page,
 }) => {
+  // A failed run leaves its athlete behind (pre-production is never reset, #819).
+  sql(`delete from athletes where slug like 'inventee-e2e-%'`);
   const tag = `${Date.now() % 1000000}`;
   const name = `Inventée E2E ${tag}`;
   const slug = `inventee-e2e-${tag}`;

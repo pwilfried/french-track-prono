@@ -29,7 +29,7 @@ test("an admin imports a pasted start list, with fuzzy names and a new athlete",
   await expect(page.locator("main").getByRole("alert")).toContainText("Aucune colonne de noms");
 
   // A name of letters only: the matching ignores digits, so a name told apart by a number alone
-  // would match the newcomer of an earlier run, still there in pre-production (#830).
+  // would match the newcomer of an earlier run, still there in pre-production (#819, #830).
   const letters = Array.from({ length: 8 }, () =>
     String.fromCharCode(97 + Math.floor(Math.random() * 26)),
   ).join("");
@@ -53,4 +53,5 @@ test("an admin imports a pasted start list, with fuzzy names and a new athlete",
   await expect(page.locator('main:not([aria-busy="true"])')).toContainText(newcomer);
 
   sql(`delete from events where slug = '${slug}'`);
+  sql(`delete from athletes where name = '${newcomer}'`);
 });
