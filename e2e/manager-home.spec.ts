@@ -13,10 +13,8 @@ test("the Manager tab lists my leagues; a league tells my season and the action 
   await page.waitForURL(/\/manager$/);
   const playerId = sql(`select id from auth.users where email = '${player.email}'`);
 
-  // Without a league: past the tutorial and the presentation, the mode, the ways in and the steps.
-  await page.getByRole("dialog").getByRole("button", { name: "Passer le tutoriel" }).click();
-  await page.getByRole("link", { name: "Passer la présentation" }).click();
-  await page.waitForURL(/\/manager\?passer=1$/);
+  // Without a league: past the presentation, the mode, the ways in and the steps.
+  await page.getByRole("dialog").getByRole("button", { name: "Passer la présentation" }).click();
   await expect(page.getByRole("heading", { name: "Créer ou rejoindre une ligue" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Rejoindre avec un code" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Comment ça marche ?" })).toBeVisible();

@@ -1,30 +1,36 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { messages } from "@/app/messages.fr";
-import type { ManagerIntroFigures } from "@/domain/manager-intro";
 import { cn } from "@/lib/utils";
 
 const text = messages.manager.tutorial;
+const steps = text.steps;
+
+const primary =
+  "inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-6 py-2.5 text-center font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary";
+const outline =
+  "inline-flex min-h-11 items-center justify-center rounded-full border border-white/40 px-6 py-2.5 text-center font-semibold hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary disabled:opacity-40";
 
 export type ManagerTutorialProps = {
-  /** The figures the steps quote, from the rules of French Track Manager. */
-  figures: ManagerIntroFigures;
-  /** « Passer » or « C'est parti »: the tutorial is over. */
+  /** « Passer »: the presentation is over, the player stays on the page. */
   onClose: () => void;
-  /** The step shown first, from 0 (stories). */
+  /** « Créer » or « Rejoindre » on the last screen: the player leaves for it. */
+  onLeave: () => void;
+  /** The screen shown first, from 0 (stories). */
   initialStep?: number;
 };
 
 /**
- * How French Track Manager works (#616, board « 11 · Tutoriel »): seven steps on the night blue,
- * one idea each with a drawing made of simple shapes, « Précédent » / « Suivant » (the arrow keys
- * too) and « Passer » from any step.
+ * How French Track Manager works (#616, #802): three screens on the night blue, the principle,
+ * the season and the way in, each with a drawing made of simple shapes and no figure (they are in
+ * the rules of the league). « Précédent » / « Suivant » (the arrow keys too), « Passer » from any
+ * screen; the last one ends on « Créer une ligue Manager » and « Rejoindre avec un code ».
  */
-export function ManagerTutorial({ figures, onClose, initialStep = 0 }: ManagerTutorialProps) {
-  const steps = text.steps(figures);
+export function ManagerTutorial({ onClose, onLeave, initialStep = 0 }: ManagerTutorialProps) {
   const [index, setIndex] = useState(initialStep);
   const go = (to: number) => setIndex(Math.min(Math.max(to, 0), steps.length - 1));
   const step = steps[index]!;
@@ -76,55 +82,47 @@ export function ManagerTutorial({ figures, onClose, initialStep = 0 }: ManagerTu
             </li>
           ))}
         </ol>
+        {last && (
+          <div className="flex flex-col gap-2">
+            <Link href="/manager/creer" onClick={onLeave} className={primary}>
+              {messages.manager.create}
+            </Link>
+            <Link href="/manager/rejoindre" onClick={onLeave} className={outline}>
+              {messages.manager.joinWithCode}
+            </Link>
+          </div>
+        )}
         {/* Right under the content: no empty gap down to the bottom of the screen (#709). */}
-        <nav aria-label={text.navLabel} className="grid grid-cols-2 gap-2">
+        <nav
+          aria-label={text.navLabel}
+          className={cn("grid gap-2", last ? "grid-cols-1" : "grid-cols-2")}
+        >
           <button
             type="button"
             onClick={() => go(index - 1)}
             disabled={index === 0}
-            className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/40 px-6 py-2.5 font-semibold hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary disabled:opacity-40"
+            className={outline}
           >
             {text.previous}
           </button>
-          {/* One button for « Suivant » and « C'est parti », so that the focus stays on it. */}
-          <button
-            type="button"
-            onClick={last ? onClose : () => go(index + 1)}
-            className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-6 py-2.5 font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
-          >
-            {last ? text.done : text.next}
-          </button>
+          {!last && (
+            <button type="button" onClick={() => go(index + 1)} className={primary}>
+              {text.next}
+            </button>
+          )}
         </nav>
       </div>
     </section>
   );
 }
 
-/** The drawing of each step: bibs, cards, the stadium, bars, a trophy. Never a photo. */
+/** The drawing of each screen: the stadium, the cards, the bibs. Never a photo. */
 function Drawing({ step }: { step: number }) {
   const card = "h-14 w-10 rounded-lg";
   const drawings = [
-    // A league between friends: four bibs.
-    <div key="league" className="grid grid-cols-2 gap-3">
-      {["bg-brand", "bg-primary", "bg-secondary", "bg-success"].map((color) => (
-        <span key={color} className={cn("h-9 w-12 rounded-md border-2 border-white/70", color)} />
-      ))}
-    </div>,
-    // The mercato: cards face down, one turned over.
-    <div key="mercato" className="flex items-end gap-3">
-      <span className={cn(card, "border-2 border-white/40 bg-white/10")} />
-      <span className={cn(card, "-rotate-6 bg-secondary")} />
-      <span className={cn(card, "border-2 border-white/40 bg-white/10")} />
-    </div>,
-    // The team: a full set of cards.
-    <div key="team" className="grid grid-cols-4 gap-1.5">
-      {Array.from({ length: 12 }, (_, i) => (
-        <span key={i} className="h-8 w-6 rounded bg-secondary/90" />
-      ))}
-    </div>,
-    // The lineup: the stadium, a track around a field, with the starters.
+    // The principle: the stadium, a track around a field, with the starters.
     <div
-      key="lineup"
+      key="principle"
       className="flex h-28 w-48 items-center justify-center rounded-full border-[10px] border-track bg-field"
     >
       <div className="grid grid-cols-4 gap-2">
@@ -133,23 +131,23 @@ function Drawing({ step }: { step: number }) {
         ))}
       </div>
     </div>,
-    // The points: bars going up.
-    <div key="points" className="flex h-24 items-end gap-3">
-      {["h-1/3", "h-2/3", "h-full"].map((height) => (
-        <span key={height} className={cn("w-8 rounded-t-md bg-success", height)} />
-      ))}
-    </div>,
-    // A head-to-head: two bibs on each side of a line.
-    <div key="match" className="flex items-center gap-5">
-      <span className="h-10 w-14 rounded-md border-2 border-white/70 bg-brand" />
+    // The season: the mercato cards, one turned over, then a head-to-head.
+    <div key="season" className="flex items-center gap-5">
+      <div className="flex items-end gap-2">
+        <span className={cn(card, "border-2 border-white/40 bg-white/10")} />
+        <span className={cn(card, "-rotate-6 bg-secondary")} />
+      </div>
       <span className="h-16 w-0.5 bg-white/70" />
-      <span className="h-10 w-14 rounded-md border-2 border-white/70 bg-primary" />
+      <div className="flex flex-col gap-2">
+        <span className="h-7 w-12 rounded-md border-2 border-white/70 bg-brand" />
+        <span className="h-7 w-12 rounded-md border-2 border-white/70 bg-primary" />
+      </div>
     </div>,
-    // The champion: a trophy.
-    <div key="champion" className="flex flex-col items-center">
-      <span className="h-14 w-16 rounded-b-[2rem] rounded-t-md bg-secondary" />
-      <span className="h-4 w-3 bg-secondary" />
-      <span className="h-3 w-12 rounded-md bg-secondary" />
+    // The way in: a league between friends, four bibs.
+    <div key="league" className="grid grid-cols-2 gap-3">
+      {["bg-brand", "bg-primary", "bg-secondary", "bg-success"].map((color) => (
+        <span key={color} className={cn("h-9 w-12 rounded-md border-2 border-white/70", color)} />
+      ))}
     </div>,
   ];
   return (
@@ -191,17 +189,11 @@ const markSeen = () => {
 };
 
 /**
- * The tutorial over the Manager page, in a modal dialog (Escape skips it): at the first visit,
- * or when `open` (« Comment ça marche ? », `/manager?tutoriel=1`). Closing it leaves the page
- * underneath, the presentation of the mode (#618) or the player's leagues.
+ * The presentation over the Manager page, in a modal dialog (Escape skips it): at the first
+ * visit, or when `open` (« Comment ça marche ? », `/manager?tutoriel=1`). Closing it leaves the
+ * page underneath, « Créer ou rejoindre une ligue » or the player's leagues.
  */
-export function ManagerTutorialGate({
-  figures,
-  open = false,
-}: {
-  figures: ManagerIntroFigures;
-  open?: boolean;
-}) {
+export function ManagerTutorialGate({ open = false }: { open?: boolean }) {
   // Seen on the server: a returning player never gets the dialog in the first HTML.
   const seen = useSyncExternalStore(subscribe, isSeen, () => true);
   const [closed, setClosed] = useState(false);
@@ -234,7 +226,7 @@ export function ManagerTutorialGate({
       className="m-0 h-dvh max-h-none w-full max-w-none overflow-y-auto bg-nuit p-0 text-white backdrop:bg-nuit"
     >
       <div className="flex min-h-full flex-col">
-        <ManagerTutorial figures={figures} onClose={close} />
+        <ManagerTutorial onClose={close} onLeave={markSeen} />
       </div>
     </dialog>
   );
