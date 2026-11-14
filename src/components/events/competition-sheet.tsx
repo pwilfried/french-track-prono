@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 import { BottomSheet } from "../ui/bottom-sheet";
 import { ChipStatus } from "../ui/chip-status";
+import { segmentSurface, segmentedTrack } from "../ui/view-tabs";
 import { DateTile } from "./date-tile";
 import { VenueChip } from "./venue-chip";
 
@@ -75,7 +76,7 @@ export function CompetitionSheet({
           <div
             role="radiogroup"
             aria-label={text.sheet.scopeLabel}
-            className="grid grid-cols-3 gap-1 rounded-full bg-muted p-1"
+            className={cn(segmentedTrack, "grid-cols-3")}
           >
             {SCOPE_FILTERS.map((s) => (
               <button
@@ -86,7 +87,7 @@ export function CompetitionSheet({
                 onClick={() => setScope(s)}
                 className={cn(
                   "min-h-11 rounded-full text-sm font-semibold",
-                  s === scope ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
+                  segmentSurface(s === scope),
                 )}
               >
                 {text.sheet.scope[s]}
