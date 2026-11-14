@@ -21,17 +21,21 @@ const listed = JSON.stringify({
 
 // Runs the deploy script with a fake Vercel CLI (npx), a fake curl (the Vercel REST API), a fake
 // gh and a fake smoke test. `pulled` is the environment file `vercel pull` writes; `smoke` is the
-// smoke test's exit code; `apiStatus` is the HTTP status the fake API answers.
+// smoke test's exit code; `apiStatus` is the HTTP status the fake API answers on the rollback
+// endpoints. `domain` is what the domain serves (#827): the new deployment, the old one until a
+// promotion, or the old one for good.
 function deploy({
   pulled,
   smoke,
   extra,
   apiStatus = 200,
+  domain = "new",
 }: {
   pulled: string;
   smoke: number;
   extra?: string;
   apiStatus?: number;
+  domain?: "new" | "old-until-promoted" | "old";
 }) {
   const root = mkdtempSync(join(tmpdir(), "vercel-deploy-"));
   const bin = join(root, "bin");
@@ -63,6 +67,14 @@ while [ $# -gt 0 ]; do
   shift
 done
 echo "curl $method $url" >> "${calls}"
+case "$url" in
+  */v13/deployments/*) printf '{"id":"dpl_new"}' > "$out"; printf 200; exit 0 ;;
+  */v4/aliases/*)
+    serving=dpl_old
+    if [ "$DOMAIN" = new ] || { [ "$DOMAIN" = old-until-promoted ] && [ -f "${root}/promoted" ]; }; then serving=dpl_new; fi
+    printf '{"deploymentId":"%s"}' "$serving" > "$out"; printf 200; exit 0 ;;
+  */promote/*) touch "${root}/promoted"; printf '{}' > "$out"; printf 200; exit 0 ;;
+esac
 if [ "$method" = GET ]; then printf '%s' '${listed}' > "$out"; else printf '{}' > "$out"; fi
 printf '%s' "$API_STATUS"`,
   );
@@ -77,6 +89,8 @@ printf '%s' "$API_STATUS"`,
       PATH: `${bin}:${process.env.PATH}`,
       PULLED: pulled,
       API_STATUS: String(apiStatus),
+      DOMAIN: domain,
+      DOMAIN_WAIT_SECONDS: "0",
       SMOKE_TEST: join(root, "smoke.sh"),
       VERCEL_TOKEN: "token-secret-value",
       VERCEL_ORG_ID: "team_abc",
@@ -108,8 +122,12 @@ it("builds, deploys straight to the domains and smoke-tests when the environment
     "vercel pull",
     "vercel build",
     "vercel deploy",
+    "curl GET",
+    "curl GET",
     "smoke https://www.example.test",
   ]);
+  // The domain already serves the new deployment: no promotion (#827).
+  expect(run.calls).not.toContainEqual(expect.stringMatching(/promote/));
   // `vercel promote` answered "User not found" with the project token (#731).
   expect(run.calls[2]).toContain("--prod");
   expect(run.calls[2]).not.toContain("--skip-domain");
@@ -134,7 +152,7 @@ it("rolls production back through the Vercel API and opens an issue when the smo
   expect(run.status).not.toBe(0);
   // `vercel rollback` fails like `promote` with the project token (#735).
   expect(run.calls).not.toContainEqual(expect.stringMatching(/^vercel (rollback|promote)/));
-  expect(run.calls.filter((c) => c.startsWith("curl"))).toEqual([
+  expect(run.calls.filter((c) => /\/v(6|9)\//.test(c))).toEqual([
     "curl GET https://api.vercel.com/v6/deployments?projectId=prj_abc&target=production&state=READY&limit=20&teamId=team_abc",
     "curl POST https://api.vercel.com/v9/projects/prj_abc/rollback/dpl_previous?teamId=team_abc",
   ]);
@@ -164,4 +182,24 @@ it("adds the extra build variables to the pulled environment (pre-production's n
   expect(run.status).toBe(0);
   expect(run.builtEnv()).toContain("NEXT_PUBLIC_SUPABASE_ANON_KEY=");
   expect(run.builtEnv()).toMatch(/^NEXT_PUBLIC_SITE_NOINDEX=1$/m);
+});
+
+it("promotes the new deployment when a rollback keeps the domain on the old one (#827)", () => {
+  const run = deploy({ pulled: complete, smoke: 0, domain: "old-until-promoted" });
+
+  expect(run.status).toBe(0);
+  expect(run.calls).toContain(
+    "curl POST https://api.vercel.com/v10/projects/prj_abc/promote/dpl_new?teamId=team_abc",
+  );
+  expect(run.calls.at(-1)).toBe("smoke https://www.example.test");
+  expect(run.output).toContain("www.example.test serves french-track-abc.vercel.app");
+});
+
+it("fails before the smoke test when the domain never leaves the old deployment (#827)", () => {
+  const run = deploy({ pulled: complete, smoke: 0, domain: "old" });
+
+  expect(run.status).not.toBe(0);
+  expect(run.calls).not.toContainEqual(expect.stringMatching(/^smoke/));
+  expect(run.output).toContain("still serves dpl_old one minute after the promotion of dpl_new");
+  expect(run.output).not.toContain("token-secret-value");
 });
