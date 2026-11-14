@@ -64,7 +64,8 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Épreuve | Liste de départ, **podium à composer** (glisser-déposer ou taps), joker, verrou |
 | Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
 | Ligue | Classement, derniers pronos révélés, réactions emoji ; tant que le joueur y est seul, **InviteBanner** à la place du classement |
-| Accueil Manager (onglet, #606) | Titre et accroche ; bloc bleu nuit « Ma saison » (ligue et joueurs, journée N sur M, place, points V · N · D, différence, prochaine confrontation avec les dossards, l'action du moment : mercato, « Aligner mon équipe · verrouillage dans 2 j », résultats ou fin de saison) ; raccourcis (Mon équipe, Classement, Calendrier, Mes derniers points) ; « Le déroulé de la saison » en sept étapes, faites cochées, en cours en rouge ; puis mes ligues Manager et les ligues publiques. Sans ligue : la présentation (#618), puis le déroulé et « Créer ou rejoindre une ligue » |
+| Accueil Manager (onglet, #606, #774) | Titre et accroche ; « Créer une ligue Manager » et « Rejoindre avec un code » côte à côte en haut ; « Mes ligues Manager », une carte compacte par ligue (nom, phase : mercato · tour N, saison · journée N sur M ou terminée, ma place, la prochaine échéance : fin du tour ou verrou d'alignement, et une pastille rouge « Enchères à faire » ou « Alignement à valider ») ; puis « Comment ça marche ? » et les ligues publiques. Une carte ouvre la page de la ligue, même avec une seule ligue. Sans ligue : la présentation (#618), puis le mode en une ligne, « Créer ou rejoindre une ligue » et « Le déroulé de la saison » |
+| Page d'une ligue Manager (#419, #774) | En-tête : « ‹ French Track Manager » (retour à la liste), nom, phase · participants · type ; bloc bleu nuit « Ma saison » (phase, place, points V · N · D, différence, prochaine confrontation avec les dossards, l'action du moment) ; état du mercato ; liens vers ce qu'elle contient (catalogue, Mon équipe, Mon alignement, La journée, Classement, Mes derniers points) ; calendrier, participants, règles |
 | Ligues (#662) | « Créer une ligue » et « J'ai un code », puis deux onglets **Mes ligues · N** / **Découvrir** (`?onglet=decouvrir`). Mes ligues : cartes résumées (**LeagueCard**). Découvrir : tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553) ; puis les ligues publiques (**DiscoverLeagues**) : recherche par nom, puces de famille (Toutes + celles présentes), tri (places restantes par défaut, plus de joueurs, plus récentes), une **PublicLeagueRow** par ligue. Une fois membre, la ligue officielle rejoint Mes ligues avec le badge « Officielle » |
 | Classement général | Top de la communauté, ma progression |
 | Profil | Dossard (grand format, avec le pseudo), club ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager ; palmarès Manager (une ligne par saison finie, en or si champion, #434) |
@@ -186,10 +187,14 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   clavier aussi), « Passer » à toute étape, « C'est parti » à la dernière. S'ouvre seul à la
   première visite de `/manager` (mémorisé sur l'appareil), puis par « Comment ça marche ? ».
 
-- **ManagerHome** (Manager, #606) : « Ma saison » sur le bleu nuit dans les deux thèmes, raccourcis
-  et « Le déroulé de la saison » ; l'étape en cours vient de `currentSeasonStep`
+- **ManagerHome** (Manager, #606, #774) : `MySeasonCard`, « Ma saison » sur le bleu nuit dans les
+  deux thèmes (page de la ligue), et `ManagerStart`, l'onglet sans ligue avec « Le déroulé de la
+  saison » ; l'étape en cours vient de `currentSeasonStep`
   (`src/domain/manager-home.ts`), tirée de l'état de la ligue, du mercato, du prochain alignement et
   de la saison. Elle revient à « Alignement » à chaque journée.
+- **ManagerLeagueCard** (Manager, #774) : une ligue de « Mes ligues Manager », toute la carte est un
+  lien ; phase (`managerPhase`), place, prochaine échéance, pastille de ce qui attend le joueur.
+  Sans saison lisible, la carte garde le nom et les participants.
 
 ## Ton éditorial
 

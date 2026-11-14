@@ -387,9 +387,9 @@ y ajoute `NEXT_PUBLIC_SITE_NOINDEX=1` avec `VERCEL_EXTRA_ENV` :
 
 Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propriétaire du 13 nov. 2026).
 
-- **Adresse** : https://french-track-preprod.vercel.app, publique pour l'instant, cachée aux
-  moteurs de recherche (`NEXT_PUBLIC_SITE_NOINDEX=1` au build : balise `noindex` et
-  `robots.txt` qui interdit tout).
+- **Adresse** : https://french-track-preprod.vercel.app, cachée aux moteurs de recherche
+  (`NEXT_PUBLIC_SITE_NOINDEX=1` au build : balise `noindex` et `robots.txt` qui interdit tout),
+  réservée au propriétaire et aux invités (#692, voir « Ouvrir et partager la préprod » plus bas).
 - **Projets séparés** : projet Supabase `french-track-preprod`, projet Vercel
   `french-track-preprod` (équipe `frenchtrackprono`), environnement GitHub `preprod`. Aucun
   secret ni aucune donnée de prod : la base de préprod ne contient que des données fictives.
@@ -472,6 +472,24 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   le lien). Réservé aux admins, limité aux comptes `@example.test` qui ne sont pas admins. Le jeton
   de connexion est fabriqué côté serveur avec `SUPABASE_SERVICE_ROLE_KEY` ; la session de l'admin
   est gardée dans un cookie httpOnly le temps de l'incarnation.
+- **Ouvrir et partager la préprod** (#692, go du propriétaire du 14 nov. 2026) : Vercel
+  Authentication (projet Vercel `french-track-preprod` → Settings → Deployment Protection) est
+  allumée à la main par le propriétaire, jamais depuis le code. Sans être connecté à Vercel, on
+  tombe sur la page de connexion Vercel ; le propriétaire ouvre la préprod connecté à son compte
+  Vercel. Vérifier après l'activation que l'adresse `french-track-preprod.vercel.app` est bien
+  protégée (selon le plan, la protection standard peut laisser passer le domaine de production
+  du projet). Pour une personne hors de l'équipe Vercel (plan Hobby : pas de membre en plus) :
+  sur le déploiement, bouton « Share » → copier le lien partageable (`?_vercel_share=…`), qui
+  ouvre la préprod sans compte Vercel ; le révoquer au même endroit quand le test est fini. Les
+  automatismes passent par « Protection Bypass for Automation » (même page) : le secret généré
+  là va dans le secret `VERCEL_AUTOMATION_BYPASS_SECRET` de l'environnement GitHub `preprod`,
+  jamais dans le dépôt. Le test de fumée (`scripts/smoke.sh`, appelé par `ci/vercel-deploy.sh`)
+  l'envoie dans l'en-tête `x-vercel-protection-bypass` ; les tests e2e (déploiement et test
+  quotidien) l'envoient une fois au démarrage (`e2e/vercel-bypass.ts`) pour recevoir le cookie de
+  contournement de Vercel, que chaque contexte du navigateur reprend : le secret ne part jamais
+  vers Supabase. Le vidage du cache des tests (`/api/public-cache`) envoie le même en-tête. Sans le
+  secret, rien ne change (prod, CI des PR, local). « Se connecter en tant que » (#637) marche
+  derrière la protection : c'est le même site, une fois passé la page Vercel.
 - **Mise en prod** : la prod suit toujours les tags, posés automatiquement quand un milestone est
   fini et `main` vert, sans feu vert humain (décision du propriétaire du 13 nov. 2026,
   `ci/agents/README.md`, étape 6). Seul garde-fou : un run « Pre-production » en échec sur le
@@ -481,7 +499,9 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
 Secrets de l'environnement GitHub `preprod` (Settings → Environments → preprod), ceux du projet
 de préprod, jamais ceux de la prod : `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`,
 `SUPABASE_PROJECT_REF`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`,
-`PREPROD_OWNER_EMAIL` (l'e-mail du compte du propriétaire, facultatif), et pour les tests
+`PREPROD_OWNER_EMAIL` (l'e-mail du compte du propriétaire, facultatif),
+`VERCEL_AUTOMATION_BYPASS_SECRET` (le secret « Protection Bypass for Automation » du projet
+Vercel de préprod, voir plus haut ; facultatif tant que Vercel Authentication est éteinte), et pour les tests
 e2e `SUPABASE_URL` (`https://<ref>.supabase.co`), `SUPABASE_SERVICE_ROLE_KEY` et
 `PUBLIC_CACHE_FLUSH_SECRET` (une valeur aléatoire, la même que dans le projet Vercel de préprod :
 elle ouvre `/api/public-cache` aux tests). Réglages Auth de la préprod pour les tests : un SMTP

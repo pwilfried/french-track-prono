@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ManagerSeasonData, ManagerSeasonRepository } from "./manager-championship";
-import { getManagerHome } from "./manager-home";
+import { getManagerSeason, listMySeasons } from "./manager-home";
 import type { ManagerLeague, ManagerLeagueFile, ManagerLeagueRepository } from "./manager-leagues";
 import type { LineupCompetition, ManagerLineupRepository } from "./manager-lineup";
 
@@ -45,11 +45,18 @@ function world(
     memberCount: 2,
     target: 4,
     mercato: { openedAt: options.openedAt === undefined ? inDays(-3) : options.openedAt },
+    rules: { rounds: { firstHours: 48, longRounds: 1, nextHours: 24 } },
     participants: [participant("zoe", 7), participant("max", 12)],
+  } as ManagerLeagueFile;
+  const other = {
+    ...league,
+    id: "M",
+    name: "Ligue du stade",
+    mercato: { ...league.mercato, openedAt: null },
   } as ManagerLeagueFile;
   const managerLeagues: Pick<ManagerLeagueRepository, "listMine" | "find"> = {
     listMine: async () => options.leagues ?? [league],
-    find: async (id) => (id === "L" ? league : null),
+    find: async (id) => [league, other].find((l) => l.id === id) ?? null,
   };
   const data: ManagerSeasonData = {
     matchdays: [
@@ -77,23 +84,45 @@ const zoeWinsMatchday1 = [
   { competitionId: "c1", userId: "max", total: 700 },
 ];
 
-describe("getManagerHome", () => {
+describe("the seasons of my Manager leagues", () => {
   it("has no season for a player without a Manager league", async () => {
     // Given zoe is in no Manager league
     // When she opens the Manager tab
-    const home = await getManagerHome(world({ leagues: [] })).execute({ now: NOW });
+    const home = await listMySeasons(world({ leagues: [] })).execute({ now: NOW });
 
     // Then there is no season to show
-    expect(home).toBeNull();
+    expect(home).toEqual([]);
+  });
+
+  it("lists the season of every league of the player, in the order of the list", async () => {
+    // Given zoe is in « Ligue des copains » (mercato open) and « Ligue du stade » (waiting)
+    const leagues = [{ id: "L" }, { id: "M" }] as ManagerLeague[];
+    // When she opens the Manager tab
+    const seasons = await listMySeasons(world({ leagues })).execute({ now: NOW });
+
+    // Then she sees both, each with its own step
+    expect(seasons.map((s) => [s.leagueId, s.step])).toEqual([
+      ["L", "mercato"],
+      ["M", "league"],
+    ]);
+  });
+
+  it("tells the bidding round open now and when it ends while the mercato is open", async () => {
+    // Given the mercato opened 3 days ago: round 1 lasted 48 hours, round 2 ended now
+    const home = await getManagerSeason(world()).execute({ leagueId: "L", now: NOW });
+
+    // Then round 3 is open, and ends tomorrow
+    expect(home.mercato).toEqual({ round: 3, endsAt: inDays(1) });
   });
 
   it("stays on the league step while the mercato waits for its players", async () => {
-    const home = await getManagerHome(world({ openedAt: null })).execute({ now: NOW });
+    const home = await getManagerSeason(world({ openedAt: null })).execute({
+      leagueId: "L",
+      now: NOW,
+    });
 
     expect(home).toMatchObject({
       leagueId: "L",
-      leagueName: "Ligue des copains",
-      players: 2,
       step: "league",
       round: null,
       standing: null,
@@ -102,15 +131,18 @@ describe("getManagerHome", () => {
   });
 
   it("sends the player to the mercato while it is open", async () => {
-    const home = await getManagerHome(world()).execute({ now: NOW });
+    const home = await getManagerSeason(world()).execute({ leagueId: "L", now: NOW });
 
-    expect(home?.step).toBe("mercato");
+    expect(home.step).toBe("mercato");
   });
 
   it("asks to line up the team for the next competition, with its lock time", async () => {
     // Given the mercato is closed and matchday 1 is coming, no lineup yet
     // When zoe opens the Manager tab
-    const home = await getManagerHome(world({ started: true })).execute({ now: NOW });
+    const home = await getManagerSeason(world({ started: true })).execute({
+      leagueId: "L",
+      now: NOW,
+    });
 
     // Then she lines up her team before matchday 1, against max at home
     expect(home).toMatchObject({
@@ -120,7 +152,7 @@ describe("getManagerHome", () => {
       lineup: { slug: "meeting-1", lockAt: inDays(2) },
       lastPoints: null,
     });
-    expect(home?.next).toMatchObject({
+    expect(home.next).toMatchObject({
       round: 1,
       home: true,
       me: { userId: "zoe" },
@@ -129,22 +161,22 @@ describe("getManagerHome", () => {
   });
 
   it("waits for the points once the lineup is validated", async () => {
-    const home = await getManagerHome(
+    const home = await getManagerSeason(
       world({ started: true, lineups: [competition(1, 2, ["a1"]), competition(2, 9)] }),
-    ).execute({ now: NOW });
+    ).execute({ leagueId: "L", now: NOW });
 
-    expect(home?.step).toBe("points");
+    expect(home.step).toBe("points");
   });
 
   it("shows the place, the record and the last points after a scored matchday", async () => {
     // Given zoe won matchday 1, 900 – 700, and has lined up for matchday 2
-    const home = await getManagerHome(
+    const home = await getManagerSeason(
       world({
         started: true,
         scores: zoeWinsMatchday1,
         lineups: [competition(1, -5, ["a1"]), competition(2, 2, ["a1"]), competition(3, 9)],
       }),
-    ).execute({ now: NOW });
+    ).execute({ leagueId: "L", now: NOW });
 
     // Then she leads with 3 points and +200, matchday 2 away to max
     expect(home).toMatchObject({
@@ -157,7 +189,7 @@ describe("getManagerHome", () => {
   });
 
   it("crowns the season once every matchday is scored", async () => {
-    const home = await getManagerHome(
+    const home = await getManagerSeason(
       world({
         started: true,
         scores: [
@@ -168,7 +200,7 @@ describe("getManagerHome", () => {
         ],
         lineups: [competition(1, -9, ["a1"]), competition(2, -5, ["a1"]), competition(3, -2)],
       }),
-    ).execute({ now: NOW });
+    ).execute({ leagueId: "L", now: NOW });
 
     expect(home).toMatchObject({
       step: "champion",

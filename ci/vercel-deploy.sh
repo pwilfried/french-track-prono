@@ -4,7 +4,8 @@
 # Env: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (the project: production or pre-production);
 #      GH_TOKEN (issues: write), GITHUB_REPOSITORY, GITHUB_RUN_ID, AGENTS_OWNER (owners to notify);
 #      optional VERCEL_EXTRA_ENV: KEY=value lines added to the pulled environment before the build
-#      (pre-production's NEXT_PUBLIC_SITE_NOINDEX=1).
+#      (pre-production's NEXT_PUBLIC_SITE_NOINDEX=1); optional VERCEL_AUTOMATION_BYPASS_SECRET, passed
+#      on to the smoke test so it gets through Vercel Authentication (pre-production, #692).
 #   1. `vercel pull`, then the pulled environment must hold the Supabase variables (names only are
 #      printed): on 13 Nov 2026 they had vanished, the build passed and every page answered 500.
 #   2. build, then a production deploy that takes the domains at once (no `vercel promote`: with
