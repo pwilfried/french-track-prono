@@ -78,7 +78,8 @@ test("a new player predicts a perfect podium, the admin enters the results sheet
   await page.getByRole("button", { name: "Enregistrer et calculer les points" }).click();
 
   // Back on the event: the points are already computed.
-  await page.waitForURL(new RegExp(`/admin/${slug}\\?enregistre=1$`));
+  // The action redirects on the client: wait for the URL, not for a « load » event (#840).
+  await expect(page).toHaveURL(new RegExp(`/admin/${slug}\\?enregistre=1$`), { timeout: 60_000 });
   await expect(page.getByText(/✓ Points calculés pour \d+ joueurs?\./)).toBeVisible();
   await expect(page.getByRole("button", { name: "Recalculer" })).toBeVisible();
 

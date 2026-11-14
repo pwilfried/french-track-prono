@@ -5,8 +5,9 @@
 -- schedule (same order, same spacing, same days) so that it starts now:
 --   * the first event starts in 3 minutes, so its lock (5 minutes before) has just passed;
 --   * every other event is still open, over the next three days.
--- Official results are removed so the answer is not on the page. `supabase db reset` brings the
--- real schedule and results back. Running it again moves the schedule forward to the new "now".
+-- Official results and results sheets are removed so the answer is not on the page, and a sheet
+-- saved by an earlier run (pre-production is never reset, #840) does not pre-fill the next one.
+-- `supabase db reset` brings the real schedule and results back. Running it again moves the schedule forward to the new "now".
 begin;
 
 with first_start as (
@@ -23,6 +24,12 @@ set starts_at = e.starts_at + shift.by,
     status    = 'upcoming'
 from shift
 where e.competition_id = (select id from competitions where slug = 'ultimate-championship-2026');
+
+delete from event_performances
+where event_id in (
+  select id from events
+  where competition_id = (select id from competitions where slug = 'ultimate-championship-2026')
+);
 
 delete from results
 where event_id in (
