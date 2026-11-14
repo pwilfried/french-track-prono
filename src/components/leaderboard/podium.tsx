@@ -76,7 +76,9 @@ export function Podium({
             >
               {row.pseudo}
             </span>
-            <span className="font-mono text-sm font-bold tabular-nums">{row.points}</span>
+            <span className="font-mono text-sm font-bold tabular-nums">
+              {messages.format.pts(row.points)}
+            </span>
             <span
               aria-hidden
               className={cn(

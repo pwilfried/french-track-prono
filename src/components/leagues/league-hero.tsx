@@ -41,7 +41,7 @@ export function LeagueHero({
             <h1 className="break-words font-display text-3xl font-extrabold leading-none">
               {title}
             </h1>
-            <p className="mt-1 break-words font-mono text-sm text-muted-foreground">{subtitle}</p>
+            <p className="mt-1 break-words text-sm text-muted-foreground">{subtitle}</p>
           </div>
           {action && <div className="shrink-0 self-start">{action}</div>}
         </div>
