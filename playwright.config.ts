@@ -39,7 +39,9 @@ export default defineConfig({
   testDir: "e2e",
   retries: 0,
   workers: 1,
-  timeout: 60_000,
+  // Pre-production is slower (SQL through the Management API, then a wait for the public cache
+  // to expire): its longest journeys need more than a minute (#830).
+  timeout: deployed ? 120_000 : 60_000,
   // Against pre-production: Vercel's bypass cookie, the hourly e-mail cap raised
   // (e2e/preprod-auth.ts), then the events opened (e2e/preprod-events.ts).
   globalSetup: ["./e2e/vercel-bypass.ts", "./e2e/preprod-auth.ts", "./e2e/preprod-events.ts"],

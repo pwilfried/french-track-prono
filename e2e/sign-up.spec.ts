@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
 import { clearMailbox, latestCodeFromMailbox } from "../src/infra/contract/mailbox";
+import { defaultCompetitionSlug } from "./competitions";
 import { newPlayer, signUp } from "./players";
 
 // The only test that sends a real sign-in e-mail (#793): the others sign up with signUp.
@@ -10,10 +11,10 @@ test("a visitor taps « Faire mon premier prono », signs up and lands on the fi
   context,
 }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  // The first final still open of the competition (run `npm run db:open-events` first).
+  // The first final still open of the default competition (run `npm run db:open-events` first).
   const slug = sql(
     `select e.slug from events e join competitions c on c.id = e.competition_id
-     where c.slug = 'ultimate-championship-2026' and e.round = 'final' and e.lock_at > now()
+     where c.slug = '${defaultCompetitionSlug()}' and e.round = 'final' and e.lock_at > now()
      order by e.starts_at, e.slug limit 1`,
   );
   expect(slug, "no open final: run npm run db:open-events").not.toBe("");

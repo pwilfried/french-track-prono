@@ -28,7 +28,12 @@ test("an admin imports a pasted start list, with fuzzy names and a new athlete",
   await page.getByRole("button", { name: "Analyser" }).click();
   await expect(page.locator("main").getByRole("alert")).toContainText("Aucune colonne de noms");
 
-  const newcomer = `Inventée ${slug}`;
+  // A name of letters only: the matching ignores digits, so a name told apart by a number alone
+  // would match the newcomer of an earlier run, still there in pre-production (#830).
+  const letters = Array.from({ length: 8 }, () =>
+    String.fromCharCode(97 + Math.floor(Math.random() * 26)),
+  ).join("");
+  const newcomer = `Inventée ${letters.charAt(0).toUpperCase()}${letters.slice(1)}`;
   await paste.fill(`RICHARDSON Sha'carri;USA;10.71\nAlfred Julien;LCA\n${newcomer};FRA;11.20`);
   await page.getByRole("button", { name: "Analyser" }).click();
   await expect(page.locator("main").getByRole("status")).toHaveText(

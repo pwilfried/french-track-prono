@@ -31,8 +31,10 @@ test("an admin creates an athlete, adds a discipline with a PB and an SB, shown 
   await expect(page).toHaveURL(new RegExp(`/admin/athletes/${slug}\\?enregistre=1$`));
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
 
-  // She shows among the 100 m women of France, not among the men (#300).
+  // She shows among the 100 m women of France, not among the men (#300). Searched by her tag:
+  // in pre-production, the athletes of earlier runs push her off the list's first page (#830).
   await page.goto("/admin/athletes");
+  await page.getByRole("searchbox", { name: "Rechercher un athlète" }).fill(tag);
   await page.getByLabel("Par discipline").selectOption("100 m");
   await page.getByLabel("Par sexe").selectOption("M");
   await page.getByRole("button", { name: "Filtrer" }).click();
@@ -44,9 +46,6 @@ test("an admin creates an athlete, adds a discipline with a PB and an SB, shown 
   await expect(page).toHaveURL(/discipline=100\+m&sexe=F&pays=FRA/);
   await expect(page.getByRole("link", { name: new RegExp(name) })).toBeVisible();
 
-  // She shows in the list.
-  await page.getByRole("searchbox", { name: "Rechercher un athlète" }).fill(tag);
-  await page.getByRole("button", { name: "Filtrer" }).click();
   await page.getByRole("link", { name: new RegExp(name) }).click();
 
   await page.getByLabel("Ajouter une discipline").selectOption("200 m");
