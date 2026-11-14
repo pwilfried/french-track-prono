@@ -97,6 +97,21 @@ export function managerLeagueRepositoryContract(
       expect(await w.other.joinPublic(late.id)).toEqual({ outcome: "mercato_open" });
     });
 
+    it("tells an invited player whether the code still lets them in", async () => {
+      const w = await world();
+      const created = await w.creator.create("Les Sauteurs", false, w.competitionIds.slice(0, 6));
+      if (typeof created === "string") throw new Error("the league is created");
+      const code = (await w.creator.find(created.id))!.inviteCode;
+
+      expect(await w.other.inviteStatus(code)).toBe("open");
+      expect(await w.other.inviteStatus("ZZZZZZ")).toBe("unknown");
+      await w.openMercato(created.id);
+      expect(await w.other.inviteStatus(code)).toBe("mercato_open");
+      expect(await w.other.join(code)).toEqual({ outcome: "mercato_open" });
+      // A participant tapping the link again is simply taken to the league.
+      expect(await w.creator.inviteStatus(code)).toBe("open");
+    });
+
     it("offers the competitions a league can be created with, and refuses fewer than 6", async () => {
       const w = await world();
       const available = (await w.creator.availableCompetitions()).map((c) => c.id);

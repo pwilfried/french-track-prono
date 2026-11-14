@@ -96,7 +96,7 @@ const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (url && key) {
   describe("pre-production owner account", () => {
-    it("joins every prediction and Manager league as an admin, once, when it runs twice", () => {
+    it("joins every prediction league and the open Manager leagues as an admin, once", () => {
       const body = ownerSql();
       // Without the pseudo « admin » taken by someone else (local data may hold one).
       const free = `update profiles set pseudo = 'was-admin-' || left(id::text, 8)
@@ -112,9 +112,39 @@ if (url && key) {
       expect(second).toEqual(first);
       expect(first).toMatchObject({ accounts: 1, admin: true, pseudo: "admin" });
       expect(first!.memberships).toBe(first!.leagues);
-      expect(first!.managerMemberships).toBeGreaterThanOrEqual(1);
+      // The demo Manager league has its mercato open: the owner stays out of it (#781).
+      expect(first!.managerMemberships).toBeLessThan(first!.managerLeagues as number);
       // The private demo league « Club du jeudi »: its 8 players, and the owner.
       expect(first!.demoMembers).toBeGreaterThanOrEqual(9);
+    });
+
+    it("joins only the Manager leagues a player could still join (#781)", () => {
+      const body = ownerSql();
+      const player = (n: number) => `'00000000-0000-4000-9000-${String(n).padStart(12, "0")}'`;
+      const league = (n: number) => `'00000000-0000-4000-9781-${String(n).padStart(12, "0")}'`;
+      // Next to the demo league (mercato open), one with places, one full at its target of 4.
+      const leagues = `insert into manager_leagues (id, name, is_public, owner_id, rules, player_target)
+        values (${league(1)}, 'Places 781', false, ${player(1)}, (select rules from manager_rules), 4),
+               (${league(2)}, 'Pleine 781', true, ${player(1)}, (select rules from manager_rules), 4);
+        insert into manager_members (league_id, user_id)
+        values (${league(1)}, ${player(1)}),
+               (${league(2)}, ${player(1)}), (${league(2)}, ${player(2)}),
+               (${league(2)}, ${player(3)}), (${league(2)}, ${player(4)});`;
+      const check = `select json_build_object(
+        'demo', exists (select 1 from manager_members where user_id = ${owner}
+                        and league_id = '00000000-0000-4000-9b00-000000000001'),
+        'places', exists (select 1 from manager_members where user_id = ${owner}
+                          and league_id = ${league(1)}),
+        'full', (select count(*) from manager_members where league_id = ${league(2)})
+      )::text;`;
+      // An earlier run (before #781) had put the owner in the full league as a 5th player.
+      const extra = `insert into manager_members (league_id, user_id) values (${league(2)}, ${owner});`;
+      const output = sqlScript(
+        `begin;\n${strip(demo)}\n${leagues}\n${body}\n${extra}\n${body}\n${check}\nrollback;\n`,
+      );
+      const line = output.split("\n").find((l) => l.startsWith("{"))!;
+
+      expect(JSON.parse(line)).toEqual({ demo: false, places: true, full: 4 });
     });
 
     it("keeps an account that already exists and makes it admin", () => {

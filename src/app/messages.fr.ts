@@ -456,6 +456,8 @@ export const messages = {
     codeLabel: "Code d'invitation",
     codeHint: "6 caractères, par exemple K7M 2QX.",
     joinSubmit: "Rejoindre la ligue",
+    /** An invite link to a league closed to newcomers (#781): why, then where to go. */
+    joinClosedNext: "Voir les autres ligues",
     shareText: (name: string) => `Rejoins ma ligue French Track Manager « ${name} »`,
     catalogueLink: "Catalogue du mercato",
     /** The presentation of the mode, until the player has a Manager league (#618). */
@@ -2664,6 +2666,7 @@ export const messages = {
       "Ces règles ne permettent pas de jouer : vérifie que les quotas remplissent l'équipe, que l'alignement y tient et qu'un mode de clôture est coché.",
     MANAGER_RULES_UNAVAILABLE: "Les règles Manager n'ont pas pu être chargées. Réessaie.",
     MERCATO_OPEN: "Le mercato de cette ligue a commencé : les inscriptions sont closes.",
+    MANAGER_LEAGUE_FULL: "Cette ligue est complète : tous les joueurs prévus sont inscrits.",
     MANAGER_COMPETITIONS_TOO_FEW: "Choisis au moins 6 compétitions.",
     MANAGER_COMPETITIONS_REFUSED:
       "Une de ces compétitions n'est plus disponible (terminée ou retirée). Recharge la page et choisis à nouveau.",

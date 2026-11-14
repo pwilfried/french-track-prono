@@ -99,6 +99,13 @@ export function createInMemoryManagerLeagueStore(
           const league = leagues.find((l) => l.id === id && l.isPublic);
           return league ? enter(league) : { outcome: "unknown" };
         },
+        async inviteStatus(code) {
+          const league = leagues.find((l) => l.inviteCode === code);
+          if (!league) return "unknown";
+          if (league.members.some((m) => m.userId === player.userId)) return "open";
+          if (isOpen(league)) return "mercato_open";
+          return league.members.length >= league.mercato.target ? "full" : "open";
+        },
         async listPublic() {
           return leagues
             .filter(
