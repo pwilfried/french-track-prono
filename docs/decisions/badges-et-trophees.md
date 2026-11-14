@@ -53,20 +53,6 @@ Points gagnés dans la famille sur la saison : **bronze 50, argent 150, or 400**
 | Témoin d'or | Finir une compétition devant le compte FrenchTrack au classement général | Témoin de relais doré |
 | Record de ligue | Battre le record de points en une compétition de sa ligue | Plaque gravée |
 
-## Mise en œuvre (#821)
-
-- Les compteurs couvrent toutes les compétitions de la saison. Le niveau affiché est le plus haut
-  entre celui des compteurs et celui déjà gagné (`user_badges.level`) : un badge ne redescend
-  jamais, même quand une nouvelle saison repart de zéro.
-- Le niveau gagné est enregistré quand le joueur a vu la célébration du lièvre sur son profil
-  (`raise_my_badge_levels()`, qui ne fait que monter) ; c'est ce qui la rend unique.
-- Les badges gagnés avant les niveaux avaient les seuils du bronze d'aujourd'hui : ils sont bronze.
-  Les codes de la première table (`outsider-hunter`, `flamme`, `fan-des-bleus`) deviennent
-  `flair`, `serie` et `bleus`.
-- Le plus petit effort restant se mesure en part du seuil suivant qui reste à faire : 10 points
-  sur 50 (un cinquième) passent avant 1 vainqueur sur 3 (un tiers). À égalité, l'ordre d'affichage.
-- Le relais n'a pas de badge de famille.
-
 ## Réglages par défaut, révisables
 
 Le propriétaire a validé la proposition sans trancher ces points ; ils valent jusqu'à nouvel ordre :

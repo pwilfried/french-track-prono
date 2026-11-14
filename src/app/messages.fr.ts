@@ -2028,24 +2028,12 @@ export const messages = {
     backOffice: "Back-office",
   },
   badges: {
-    nostradamus: { emoji: "🔮", name: "Nostradamus", counts: "Podiums parfaits" },
-    chasseur: { emoji: "🎯", name: "Chasseur", counts: "Vainqueurs trouvés" },
-    flair: { emoji: "🦊", name: "Flair", counts: "Coups de flair" },
-    serie: { emoji: "🔥", name: "Série", counts: "Épreuves de suite avec des points" },
-    bleus: { emoji: "🇫🇷", name: "Bleus", counts: "Vainqueurs français trouvés" },
-    fidele: { emoji: "📅", name: "Fidèle", counts: "Journées pronostiquées en entier" },
-    foudre: { emoji: "🐆", name: "Foudre", counts: "Sprint" },
-    haies: { emoji: "🦌", name: "Haies hautes", counts: "Haies" },
-    train: { emoji: "🐇", name: "Train d'enfer", counts: "Demi-fond et fond" },
-    bond: { emoji: "🦘", name: "Grand bond", counts: "Longueur et triple saut" },
-    envol: { emoji: "🐈", name: "Envol", counts: "Perche et hauteur" },
-    force: { emoji: "🐻", name: "Force tranquille", counts: "Lancers" },
-    touche: { emoji: "🦊", name: "Touche-à-tout", counts: "Épreuves combinées" },
-  },
-  badgeLevels: {
-    name: { bronze: "Bronze", silver: "Argent", gold: "Or" },
-    /** « pour le bronze », « vers l'argent »… */
-    the: { bronze: "le bronze", silver: "l'argent", gold: "l'or" },
+    nostradamus: { emoji: "🔮", name: "Nostradamus", rule: "Un podium parfait" },
+    chasseur: { emoji: "🎯", name: "Chasseur", rule: "3 vainqueurs trouvés" },
+    flair: { emoji: "🦊", name: "Flair", rule: "Un coup de flair" },
+    serie: { emoji: "🔥", name: "Série", rule: "5 épreuves de suite avec des points" },
+    bleus: { emoji: "🇫🇷", name: "Bleus", rule: "Un vainqueur français trouvé" },
+    fidele: { emoji: "📅", name: "Fidèle", rule: "Un prono sur chaque épreuve d'une journée" },
   },
   seasonCard: {
     brand: "FRENCH TRACK PRONO",
@@ -2103,21 +2091,10 @@ export const messages = {
     email: "E-mail",
     private: "Privé",
     badges: "Badges",
-    familyBadges: "Badges de famille",
-    familyBadgesHint: "Points gagnés dans la famille sur la saison",
+    badgeEarned: "Gagné",
     badgeLocked: "À débloquer",
-    badgeLevel: (level: string) => `Niveau ${level}`,
-    /** « 2 / 3 pour le bronze »: what the badge counts this season, and the next threshold. */
-    badgeToNext: (current: number, target: number, level: string) =>
-      `${current} / ${target} pour ${level}`,
-    badgeMax: "Niveau maximum",
-    nextBadge: (name: string, level: string, left: string) =>
-      `Prochain : ${name}, ${level} (encore ${left})`,
-    allBadges: "Tous les badges sont en or !",
-    /** The hare celebrates a level won (#821), once. */
-    celebrationTitle: "Le lièvre a une médaille pour toi !",
-    celebrationLevel: (name: string, level: string) => `${name} : ${level}`,
-    celebrationClose: "Super !",
+    nextBadge: (name: string, left: number) => `Prochain : ${name} (encore ${left})`,
+    allBadges: "Tous les badges sont à toi !",
     emailPrivate: "Ton e-mail reste privé : il n'apparaît jamais dans l'application.",
     signOut: "Se déconnecter",
     signingOut: "Déconnexion en cours…",
@@ -2660,8 +2637,6 @@ export const messages = {
     BIB_COLOR_INVALID: "Choisis une des six couleurs de dossard.",
     PROFILE_EXISTS: "Tu as déjà un profil.",
     PROFILE_UNAVAILABLE: "Le profil n'est pas disponible pour le moment. Réessaie dans un instant.",
-    BADGES_UNAVAILABLE:
-      "Les badges ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     NOT_ADMIN: "Seul un administrateur peut faire ça.",
     DEMO_LOGIN_DISABLED: "Cette page n'existe qu'en préproduction.",
     DEMO_PLAYER_ONLY:

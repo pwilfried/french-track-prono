@@ -179,13 +179,8 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   Manager » ; sur desktop, menu du haut « Accueil, Compétitions, Classement, Ma ligue, Manager ». Le
   profil s'ouvre depuis le pseudo et le dossard de l'en-tête.
 - **Menu admin** : entrées groupées par rubrique, le tableau de bord en tête.
-- **BadgeGrid** : les 6 badges de jeu, puis les 7 badges de famille ; un badge gagné porte une
-  médaille (bronze, argent, or) derrière son emoji et son niveau en étiquette, les autres sont
-  grisés ; chacun dit ce qu'il compte et le seuil suivant (« 2 / 3 pour le bronze »). Dessous, le
-  prochain badge et ce qu'il reste (« encore 10 pts » pour une famille). Le visuel en dossard
-  viendra de #768.
-- **BadgeCelebration** (#821) : en haut du profil, le lièvre (qui sautille, sauf mouvement
-  réduit) annonce les niveaux gagnés depuis la dernière visite, une seule fois ; « Super ! » ferme.
+- **BadgeGrid** : badges gagnés en couleur, les autres grisés avec leur règle ; dessous, le
+  prochain badge et ce qu'il reste à faire pour l'obtenir.
 - **CompetitionChips** : puces d'une compétition à l'autre (classement, historique des pronos).
 - **AthleteCard** (Manager, #426) : carte or d'un athlète de l'équipe ; code de famille, prix
   payé, initiales (jamais de photo), prénom et initiale du nom ; état « Absent·e » sur le banc de
