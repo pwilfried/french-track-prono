@@ -159,7 +159,9 @@ test("joining a league that has started is refused (#780)", async ({ browser }) 
   await latePage.goto(`/rejoindre/${code}`);
   await signUp(latePage, latecomer);
   await latePage.waitForURL(new RegExp(`/rejoindre/${code}$`));
-  await expect(latePage.getByRole("alert")).toContainText("Cette ligue a déjà commencé");
+  await expect(latePage.locator("main").getByRole("alert")).toContainText(
+    "Cette ligue a déjà commencé",
+  );
   await expect(latePage.getByRole("button", { name: "Rejoindre la ligue" })).toHaveCount(0);
   await expect(latePage.getByRole("link", { name: "Rejoindre une ligue publique" })).toBeVisible();
 
