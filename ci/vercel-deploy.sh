@@ -81,7 +81,9 @@ fi
 
 vercel build --prod
 # The CLI prints the deployment URL last on stdout: the rollback skips that deployment.
-deployed=$(vercel deploy --prebuilt --prod | tail -n 1)
+# One archive instead of one upload per file: the free plan allows 5000 file uploads a day for the
+# whole account, which the pre-production deployments used up on 14 Nov 2026 (#789).
+deployed=$(vercel deploy --prebuilt --prod --archive=tgz | tail -n 1)
 echo "Deployed: $deployed"
 
 if "$smoke" "$base"; then

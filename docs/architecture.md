@@ -390,7 +390,8 @@ compétition (`manager_lineups`, chacun lit les siens) ; ensuite la RPC `manager
 donne à tout participant de la ligue tous les alignements de cette compétition (`locked` faux et
 aucun alignement avant ; 42501 hors ligue). Les points par athlète viennent de
 `manager_scores.athletes`. Port `ManagerDuelRepository`, cas d'usage `getManagerDuel` : les deux
-alignements placés comme dans le stade (`placeLineup`), l'adversaire en haut, le joueur en bas
+alignements placés comme dans le stade (`placeLineup`), le stade de l'adversaire en haut, celui
+du joueur en bas, avec les mêmes places (#775)
 (pour un membre hors confrontation : l'extérieur en haut). Page
 `/manager/[id]/confrontation/[n]/[domicile]`, ouverte depuis chaque carte de la journée.
 

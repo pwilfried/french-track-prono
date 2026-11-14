@@ -68,10 +68,11 @@ export function placeLineup(
 }
 
 /**
- * Seats an athlete on a place of the stadium, as the player drops or taps them there: whoever sat
- * there goes back to the bench, then everybody is seated again family places first, so a family
- * place never stays empty while its athlete sits on a free one. An athlete who does not fit the
- * place, or is not entered, changes nothing.
+ * Seats an athlete on a place of the stadium, as the player picks them for it: whoever sat there
+ * takes the place the athlete left when they fit it (a swap), or goes back to the bench, then
+ * everybody is seated again family places first, so a family place never stays empty while its
+ * athlete sits on a free one. An athlete who does not fit the place, or is not entered, changes
+ * nothing.
  */
 export function seatAthlete(
   places: LineupPlace[],
@@ -83,7 +84,12 @@ export function seatAthlete(
   const athlete = team.find((a) => a.athleteId === athleteId);
   const place = places[at];
   if (!athlete?.entered || place === undefined || !fitsPlace(place, athlete.family)) return placed;
+  const from = placed.indexOf(athleteId);
+  const sitting = placed[at] ? team.find((a) => a.athleteId === placed[at]) : undefined;
   const next = placed.map((id) => (id === athleteId ? null : id));
+  if (from >= 0 && sitting && fitsPlace(places[from]!, sitting.family)) {
+    next[from] = sitting.athleteId;
+  }
   next[at] = athleteId;
   return placeLineup(
     places,
