@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { joinLeagueFor, newPlayer, signUp } from "./players";
+import { addFriendTo, joinLeagueFor, newPlayer, signUp } from "./players";
 
 test("the ranking opens on my league, and the general one adds up every competition", async ({
   page,
@@ -21,6 +21,7 @@ test("the ranking opens on my league, and the general one adds up every competit
       from c`);
   }
   // Cleaned up even on failure: finished competitions left behind would leak into other tests.
+  let friend: string | null = null;
   try {
     const player = newPlayer("general");
     await page.goto("/connexion?next=/classement");
@@ -51,6 +52,18 @@ test("the ranking opens on my league, and the general one adds up every competit
     }
     await page.reload();
 
+    // Alone in the league: an invitation to bring friends in, no ranking of one (#710).
+    const invite = page.getByRole("region", { name: "Tu es seul pour l'instant" });
+    await expect(invite.getByRole("button", { name: "Inviter mes amis" })).toBeVisible();
+    await expect(page.getByRole("list", { name: "Classement" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Autour de moi" })).toHaveCount(0);
+
+    // A friend joins: the ranking shows.
+    const leagueId = sql(`select l.id from leagues l join auth.users u on u.id = l.owner_id
+       where u.email = '${player.email}'`);
+    friend = addFriendTo(leagueId, tag);
+    await page.reload();
+
     // « Ma ligue »: the league's competition only, the player's line highlighted, the bar below.
     await expect(page.getByText("Ta ligue · Ligue E2E")).toBeVisible();
     const inLeague = page
@@ -60,8 +73,7 @@ test("the ranking opens on my league, and the general one adds up every competit
     await expect(inLeague).toHaveAttribute("aria-current", "true");
     await expect(inLeague).toContainText("40");
     await expect(page.getByText("Tu es 1er · 40 pts")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Autour de moi" })).toHaveAttribute("href", "#moi");
-    // « Ta place » heads the list (#661): alone in the league, nobody ahead.
+    // « Ta place » heads the list (#661): first of the league, nobody ahead.
     const myPlace = page.getByRole("region", { name: "Ta place" });
     await expect(myPlace).toContainText("1er");
     await expect(myPlace).toContainText("Personne devant toi");
@@ -124,6 +136,7 @@ test("the ranking opens on my league, and the general one adds up every competit
     await expect(card).not.toContainText("@");
   } finally {
     sql(`delete from competitions where slug like '${tag}-%'`);
+    if (friend) sql(`delete from auth.users where email = '${friend}'`);
   }
 });
 
