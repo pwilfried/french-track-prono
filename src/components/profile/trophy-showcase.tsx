@@ -13,9 +13,11 @@ const METAL_STYLE: Record<Metal, string> = {
 /** The statuette's name (« Guépard d'or », « Chrono figé ») and what it was won in. */
 export function trophyLabel(trophy: Trophy): { emoji: string; name: string; detail: string } {
   const kind = text.kinds[trophy.kind];
-  const animal = trophy.animal ? text.animals[trophy.animal] : null;
+  const animal = trophy.animal
+    ? { emoji: text.animalEmoji[trophy.animal], name: messages.band.animals[trophy.animal] }
+    : null;
   const base = trophy.kind === "league" && animal ? animal : kind;
-  const name = trophy.metal ? `${base.name} ${text.metal[trophy.metal]}` : kind.name;
+  const name = trophy.metal ? `${base.name} ${messages.band.metals[trophy.metal]}` : kind.name;
   return {
     emoji: trophy.kind === "league" && animal ? animal.emoji : kind.emoji,
     name,

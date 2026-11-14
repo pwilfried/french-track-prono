@@ -16,7 +16,15 @@ export const ANIMALS = [
 export type Animal = (typeof ANIMALS)[number];
 
 /** The order the families are listed on the profile: sprint first, combined events last. */
-const BAND_ORDER: Animal[] = ["guepard", "impala", "lievre", "kangourou", "chat", "ours", "renard"];
+export const BAND_ORDER: readonly Animal[] = [
+  "guepard",
+  "impala",
+  "lievre",
+  "kangourou",
+  "chat",
+  "ours",
+  "renard",
+];
 
 const ANIMAL_OF: Record<DisciplineFamily, Animal | null> = {
   sprint: "guepard",

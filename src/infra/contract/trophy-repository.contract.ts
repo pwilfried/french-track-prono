@@ -30,7 +30,7 @@ export function trophyRepositoryContract(name: string, world: () => Promise<Trop
       metal: "gold",
       leagueId: w.leagueId,
       leagueName: w.leagueName,
-      animal: "cheetah",
+      animal: "guepard",
     });
     const chrono = (w: TrophyWorld): Trophy => ({
       ...gold(w),

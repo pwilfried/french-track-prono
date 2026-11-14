@@ -1,13 +1,11 @@
 import { messages } from "@/app/messages.fr";
+import type { Metal } from "@/domain/trophies";
 import { cn } from "@/lib/utils";
 
 import { Animal, type AnimalKind } from "./animal";
 
-/** The metal of a badge level or a trophy. */
-export type Metal = "gold" | "silver" | "bronze";
-
 /** The level band of each metal: the medal gradients of the theme, AA ink on top. */
-export const METAL_BAND: Record<Metal, string> = {
+const METAL_BAND: Record<Metal, string> = {
   gold: "bg-gradient-to-r from-(--medal-gold-from) to-(--medal-gold-to) text-(--medal-gold-ink)",
   silver:
     "bg-gradient-to-r from-(--medal-silver-from) to-(--medal-silver-to) text-(--medal-silver-ink)",

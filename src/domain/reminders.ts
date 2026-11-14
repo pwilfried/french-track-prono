@@ -1,7 +1,7 @@
 // Smart reminders (#681): grouped pushes the player tunes from « Mes rappels ». These rules are
 // the reference; the cron reads them in SQL (private.reminder_due(), migration
 // 20261114070000_reminder_settings.sql), tested with the same cases in pgTAP.
-import { TIME_ZONE } from "./competition";
+import { utcToParis } from "./competition";
 
 /** The families of reminders, each with its own switch. */
 export const REMINDER_FAMILIES = [
@@ -75,19 +75,8 @@ export function parseReminderSettings(
 
 /** Paris time of an instant: the hour (0–23) and the date (YYYY-MM-DD). */
 function parisClock(at: Date): { hour: number; date: string } {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat("en-US", {
-      timeZone: TIME_ZONE,
-      hourCycle: "h23",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-    })
-      .formatToParts(at)
-      .map((p) => [p.type, p.value]),
-  );
-  return { hour: Number(parts.hour), date: `${parts.year}-${parts.month}-${parts.day}` };
+  const local = utcToParis(at.toISOString());
+  return { hour: Number(local.slice(11, 13)), date: local.slice(0, 10) };
 }
 
 /** Within the quiet hours (Paris time)? The same hour twice means no quiet hours. */

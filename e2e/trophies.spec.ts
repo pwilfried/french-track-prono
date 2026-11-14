@@ -55,7 +55,7 @@ test("an admin sets the FrenchTrack account and draws the trophies; a player see
   // Two trophies of a season of their own (2099: no draw replaces them during the test).
   const userId = sql(`select id from auth.users where email = '${player.email}'`);
   sql(`insert into trophies (user_id, season, kind, metal, league_id, league_name, animal) values
-    ('${userId}', 2099, 'league', 'gold', gen_random_uuid(), 'Ligue des lanceurs', 'bear'),
+    ('${userId}', 2099, 'league', 'gold', gen_random_uuid(), 'Ligue des lanceurs', 'ours'),
     ('${userId}', 2099, 'chrono', null, gen_random_uuid(), 'Ligue des lanceurs', null)`);
   await page.goto("/profil");
   const shelf = showcase.getByRole("group", { name: /Saison 2099/ });

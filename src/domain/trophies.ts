@@ -1,3 +1,4 @@
+import { animalOf as bandAnimalOf, BAND_ORDER, type Animal } from "./band";
 import { competitionDay } from "./competition";
 import type { DisciplineFamily } from "./discipline";
 import { rankPlayers, totalsOf } from "./ranking";
@@ -23,10 +24,6 @@ export const TROPHY_KINDS = [
   "witness",
 ] as const;
 export type TrophyKind = (typeof TROPHY_KINDS)[number];
-
-/** The animals of the families (#613); the hare is the mascot. */
-export const ANIMALS = ["cheetah", "impala", "hare", "kangaroo", "cat", "bear", "fox"] as const;
-export type Animal = (typeof ANIMALS)[number];
 
 export type Trophy = {
   userId: string;
@@ -56,22 +53,9 @@ export type TrophyLine = {
 /** A competition known by its slug and its last day (YYYY-MM-DD). */
 export type SeasonCompetition = { slug: string; endsOn: string };
 
-const ANIMAL_OF: Record<DisciplineFamily, Animal> = {
-  sprint: "cheetah",
-  hurdles: "impala",
-  middle: "hare",
-  long: "hare",
-  // The relays have no animal of their own (#807): the mascot carries them.
-  relay: "hare",
-  horizontal_jumps: "kangaroo",
-  vertical_jumps: "cat",
-  throws: "bear",
-  combined: "fox",
-};
-
-/** The animal of a family of events. */
+/** The animal of a family of events: the band's (#768); the relays, which have none, go to the hare. */
 export function animalOf(family: DisciplineFamily): Animal {
-  return ANIMAL_OF[family];
+  return bandAnimalOf(family) ?? "lievre";
 }
 
 /**
@@ -86,9 +70,9 @@ export function mostPlayedAnimal(lines: Pick<TrophyLine, "eventFamily">[]): Anim
     const animal = animalOf(l.eventFamily);
     count.set(animal, (count.get(animal) ?? 0) + 1);
   }
-  let best: Animal = "hare";
+  let best: Animal = "lievre";
   let most = 0;
-  for (const animal of ANIMALS) {
+  for (const animal of BAND_ORDER) {
     const n = count.get(animal) ?? 0;
     if (n > most) [best, most] = [animal, n];
   }
@@ -240,7 +224,7 @@ export function managerTrophies(honours: FinishedManagerLeague): Trophy[] {
             metal,
             leagueId: honours.leagueId,
             leagueName: honours.leagueName,
-            animal: "hare" as const,
+            animal: "lievre" as const,
           },
         ]
       : [];
