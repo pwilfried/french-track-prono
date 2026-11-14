@@ -449,6 +449,21 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   quotidien (`.github/workflows/preprod-daily.yml`) passe par les mêmes aides et les mêmes
   secrets. Un agent ne peut pas pousser de workflow : il décrit dans sa PR le changement, que le
   propriétaire (ou une session locale) applique dans `.github/workflows/`.
+- **Compte du propriétaire** (#769) : `ci/preprod/owner.sh` (SQL dans `ci/preprod/owner.sql`)
+  crée ou retrouve le compte de l'e-mail `PREPROD_OWNER_EMAIL` (secret de l'environnement
+  `preprod`, jamais écrit dans le dépôt ni dans les journaux), pseudo `admin` (gardé si un autre
+  compte l'a déjà), rôle admin, sans mot de passe : connexion par le code reçu par e-mail. Il le
+  rend membre de chaque ligue de pronos (publique ou privée) et de chaque ligue Manager qui a
+  encore une place (12 au plus). `ci/preprod/load-sql.sh` le lance après le seed et le jeu de démo,
+  et après le nettoyage des comptes e2e (déploiement et test quotidien) : idempotent, sans
+  doublon. Les ligues créées par les tests pendant un passage le sont après lui et supprimées à la
+  fin : le compte n'entre ni dans leurs membres ni dans leurs classements. Sans le secret, l'étape
+  est sautée avec un avertissement ; un `SUPABASE_PROJECT_REF` autre que celui de la préprod est
+  refusé. Une équipe Manager appartient toujours à une ligue : en étant membre de chaque ligue
+  Manager, le compte voit chaque composition de son classement. Attention : dans une ligue Manager
+  dont le mercato n'est pas encore fermé, ce compte compte comme un participant (nombre pair pour
+  lancer la saison, équipe complétée à la fermeture), à garder en tête quand on teste une ligue
+  Manager à la main.
 - **Pas de captcha ni de notifications push** en préprod (pas de clé Turnstile ni VAPID).
 - **Se connecter en tant qu'un joueur démo** (#637) : back-office → « Joueurs démo », bouton
   « Se connecter en tant que » ; un bandeau rappelle le joueur incarné et propose « Revenir à mon
@@ -465,7 +480,8 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
 
 Secrets de l'environnement GitHub `preprod` (Settings → Environments → preprod), ceux du projet
 de préprod, jamais ceux de la prod : `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`,
-`SUPABASE_PROJECT_REF`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, et pour les tests
+`SUPABASE_PROJECT_REF`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`,
+`PREPROD_OWNER_EMAIL` (l'e-mail du compte du propriétaire, facultatif), et pour les tests
 e2e `SUPABASE_URL` (`https://<ref>.supabase.co`), `SUPABASE_SERVICE_ROLE_KEY` et
 `PUBLIC_CACHE_FLUSH_SECRET` (une valeur aléatoire, la même que dans le projet Vercel de préprod :
 elle ouvre `/api/public-cache` aux tests). Réglages Auth de la préprod pour les tests : un SMTP
