@@ -38,9 +38,7 @@ export const Default: Story = {
     await expect(canvas.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Meeting fictif de Paris",
     );
-    await expect(
-      canvas.getByText(/Paris · 25 juin 2027 – 27 juin 2027 · 12 épreuves/),
-    ).toBeVisible();
+    await expect(canvas.getByText(/Paris · 25–27 juin 2027 · 12 épreuves/)).toBeVisible();
     const change = canvas.getByRole("button", { name: /Changer de compétition/ });
     await expect(change.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
     await userEvent.click(change);
