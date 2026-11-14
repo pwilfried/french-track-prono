@@ -453,8 +453,9 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   crée ou retrouve le compte de l'e-mail `PREPROD_OWNER_EMAIL` (secret de l'environnement
   `preprod`, jamais écrit dans le dépôt ni dans les journaux), pseudo `admin` (gardé si un autre
   compte l'a déjà), rôle admin, sans mot de passe : connexion par le code reçu par e-mail. Il le
-  rend membre de la seule Ligue FrenchTrack officielle (#784) : les autres ligues, il les rejoint
-  dans l'appli, selon leurs règles d'entrée. `ci/preprod/load-sql.sh` le lance après le seed et le jeu de démo,
+  rend membre de chaque ligue qu'un joueur pourrait encore rejoindre (#784) : la Ligue
+  FrenchTrack officielle, les ligues de pronos pas encore démarrées et pas complètes, les ligues
+  Manager dont le mercato n'est pas lancé et qui ont encore une place (`player_target`). `ci/preprod/load-sql.sh` le lance après le seed et le jeu de démo,
   et après le nettoyage des comptes e2e (déploiement et test quotidien) : idempotent, sans
   doublon. Les ligues créées par les tests pendant un passage le sont après lui et supprimées à la
   fin : le compte n'entre ni dans leurs membres ni dans leurs classements. Sans le secret, l'étape
