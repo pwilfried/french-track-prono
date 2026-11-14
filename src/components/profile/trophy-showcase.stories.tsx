@@ -12,7 +12,7 @@ const trophy = (over: Partial<Trophy>): Trophy => ({
   metal: "gold",
   leagueId: "L",
   leagueName: "Les copains du stade",
-  animal: "cheetah",
+  animal: "guepard",
   ...over,
 });
 
@@ -37,13 +37,13 @@ const meta = {
             metal: "silver",
             leagueId: "M",
             leagueName: "Mercato",
-            animal: "hare",
+            animal: "lievre",
           }),
           trophy({ kind: "chrono", metal: null, animal: null }),
           trophy({ kind: "witness", metal: null, leagueId: null, leagueName: null, animal: null }),
         ],
       },
-      { season: 2025, trophies: [trophy({ season: 2025, metal: "bronze", animal: "bear" })] },
+      { season: 2025, trophies: [trophy({ season: 2025, metal: "bronze", animal: "ours" })] },
     ],
   },
   decorators: [

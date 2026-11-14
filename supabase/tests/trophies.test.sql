@@ -47,17 +47,17 @@ select is((admin_trophy_facts(2031) ->> 'witness_id')::uuid,
 select lives_ok($$select admin_replace_trophies(2031, '[
   {"user_id": "7a0f0000-0000-0000-0000-000000000002", "kind": "league", "metal": "gold",
    "league_id": "7a0f1000-0000-0000-0000-000000000001", "league_name": "Ligue Trophées",
-   "animal": "cheetah"},
+   "animal": "guepard"},
   {"user_id": "7a0f0000-0000-0000-0000-000000000003", "kind": "general", "metal": "bronze"},
   {"user_id": "7a0f0000-0000-0000-0000-000000000004", "kind": "witness"}
 ]'::jsonb)$$, 'the admin awards the trophies of a season');
 select lives_ok($$select admin_replace_trophies(2031, '[
   {"user_id": "7a0f0000-0000-0000-0000-000000000002", "kind": "league", "metal": "gold",
    "league_id": "7a0f1000-0000-0000-0000-000000000001", "league_name": "Ligue Trophées",
-   "animal": "cheetah"},
+   "animal": "guepard"},
   {"user_id": "7a0f0000-0000-0000-0000-000000000002", "kind": "league", "metal": "gold",
    "league_id": "7a0f1000-0000-0000-0000-000000000001", "league_name": "Ligue Trophées",
-   "animal": "cheetah"},
+   "animal": "guepard"},
   {"user_id": "7a0f0000-0000-0000-0000-000000000003", "kind": "general", "metal": "bronze"},
   {"user_id": "7a0f0000-0000-0000-0000-000000000004", "kind": "witness"}
 ]'::jsonb)$$, 'the admin draws the trophies again, one sent twice');

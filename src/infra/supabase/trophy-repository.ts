@@ -3,7 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { UseCaseError } from "@/application/errors";
 import type { SeasonFacts, TrophyRepository } from "@/application/trophies";
 import type { LeagueFamilyRule } from "@/domain/league-families";
-import type { Animal, Metal, Trophy, TrophyKind } from "@/domain/trophies";
+import type { Animal } from "@/domain/band";
+import type { Metal, Trophy, TrophyKind } from "@/domain/trophies";
 
 type FactsJson = {
   witness_id: string | null;

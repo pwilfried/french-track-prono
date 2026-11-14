@@ -2111,16 +2111,16 @@ export const messages = {
     count: (n: number) => `${n} trophée${n > 1 ? "s" : ""}`,
     empty:
       "Pas encore de trophée. Termine sur le podium d'une ligue d'au moins 4 joueurs pour poser ta première statuette.",
-    metal: { gold: "d'or", silver: "d'argent", bronze: "de bronze" },
     managerDetail: (league: string) => `Manager · ${league}`,
-    animals: {
-      cheetah: { emoji: "🐆", name: "Guépard" },
-      impala: { emoji: "🦌", name: "Impala" },
-      hare: { emoji: "🐇", name: "Lièvre" },
-      kangaroo: { emoji: "🦘", name: "Kangourou" },
-      cat: { emoji: "🐈", name: "Chat" },
-      bear: { emoji: "🐻", name: "Ours" },
-      fox: { emoji: "🦊", name: "Renard" },
+    /** The emoji of each animal of the band; its name is in band.animals. */
+    animalEmoji: {
+      lievre: "🐇",
+      guepard: "🐆",
+      impala: "🦌",
+      kangourou: "🦘",
+      chat: "🐈",
+      ours: "🐻",
+      renard: "🦊",
     },
     kinds: {
       general: { emoji: "🌿", name: "Laurier", detail: "Classement général" },

@@ -73,9 +73,9 @@ describe("metals", () => {
 
 describe("animals", () => {
   it("gives each family its animal, the relays to the hare", () => {
-    expect(animalOf("sprint")).toBe("cheetah");
-    expect(animalOf("vertical_jumps")).toBe("cat");
-    expect(animalOf("relay")).toBe("hare");
+    expect(animalOf("sprint")).toBe("guepard");
+    expect(animalOf("vertical_jumps")).toBe("chat");
+    expect(animalOf("relay")).toBe("lievre");
   });
 
   it("picks the animal of the family most played, adding up the two families of the hare", () => {
@@ -86,7 +86,7 @@ describe("animals", () => {
       line("bob", 1, undefined, undefined, "long"),
       line("cyd", 1, undefined, undefined, "long"),
     ];
-    expect(mostPlayedAnimal(lines)).toBe("hare");
+    expect(mostPlayedAnimal(lines)).toBe("lievre");
   });
 
   it("breaks a tie by the order of the animals and falls back on the hare without lines", () => {
@@ -96,7 +96,7 @@ describe("animals", () => {
         line("a", 1, undefined, undefined, "hurdles"),
       ]),
     ).toBe("impala");
-    expect(mostPlayedAnimal([])).toBe("hare");
+    expect(mostPlayedAnimal([])).toBe("lievre");
   });
 });
 
@@ -134,7 +134,7 @@ describe("leagueTrophies — podium", () => {
       season: 2026,
       leagueId: "L",
       leagueName: "Les copains",
-      animal: "cheetah",
+      animal: "guepard",
     });
   });
 
@@ -257,7 +257,7 @@ describe("managerTrophies", () => {
       ],
     });
     expect(of(trophies, "manager")).toEqual(["ana:gold", "bob:gold", "cyd:bronze"]);
-    expect(trophies[0]).toMatchObject({ season: 2026, animal: "hare", leagueName: "Mercato" });
+    expect(trophies[0]).toMatchObject({ season: 2026, animal: "lievre", leagueName: "Mercato" });
   });
 });
 
@@ -308,7 +308,7 @@ describe("trophyShelves", () => {
     metal: "gold",
     leagueId: "L",
     leagueName: "B",
-    animal: "cheetah",
+    animal: "guepard",
     ...over,
   });
 

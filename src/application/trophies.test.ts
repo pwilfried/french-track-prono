@@ -184,7 +184,7 @@ describe("awardSeasonTrophies", () => {
       "bob manager gold M",
       "cyd league bronze L",
     ]);
-    expect(store.all().find((t) => t.kind === "league")?.animal).toBe("bear");
+    expect(store.all().find((t) => t.kind === "league")?.animal).toBe("ours");
   });
 
   it("gives the Témoin d'or to the players ahead of the FrenchTrack account once it is set", async () => {

@@ -1,9 +1,9 @@
 import { messages } from "@/app/messages.fr";
 import type { Animal as AnimalName } from "@/domain/band";
+import type { Metal } from "@/domain/trophies";
 import { cn } from "@/lib/utils";
 
 import { Animal } from "./animal";
-import type { Metal } from "./dossard";
 
 const METAL_RING: Record<Metal, string> = {
   gold: "bg-gradient-to-b from-(--medal-gold-from) to-(--medal-gold-to)",
