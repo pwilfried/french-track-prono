@@ -7,6 +7,7 @@ import { Field } from "@/components/account/field";
 import { SubmitButton } from "@/components/account/submit-button";
 import { Bib } from "@/components/profile/bib";
 import type { Bib as BibValue } from "@/domain/bib";
+import { LEAGUE_NAME_MAX } from "@/domain/league";
 import type { LeagueFamily } from "@/domain/league-families";
 
 import { LeagueFamilyPicker } from "./league-family-picker";
@@ -52,7 +53,7 @@ export function CreateLeagueForm({
         hint={messages.leagues.nameHint}
         error={state.error ? messages.errors[state.error] : undefined}
         defaultValue={state.value}
-        maxLength={60}
+        maxLength={LEAGUE_NAME_MAX}
         autoComplete="off"
       />
       <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-2xl border-2 border-border bg-card px-3.5 py-3 has-checked:border-primary">

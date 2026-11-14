@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { matchesClub } from "@/domain/club";
+import { SEARCH_MAX_LENGTH } from "@/domain/list-view";
 
 import { searchClubs, type Club, type ClubDirectory } from "./clubs";
 
@@ -40,6 +41,21 @@ describe("a player looks for their club", () => {
   it("waits for two letters before searching", async () => {
     expect(await searchClubs({ clubs }).execute({ query: "c" })).toEqual([]);
     expect(await searchClubs({ clubs }).execute({ query: " é " })).toEqual([]);
+  });
+
+  it("searches with the first characters only of a very long query", async () => {
+    const asked: string[] = [];
+    const spy: ClubDirectory = {
+      ...clubs,
+      search: async (query, limit) => {
+        asked.push(query);
+        return clubs.search(query, limit);
+      },
+    };
+
+    await searchClubs({ clubs: spy }).execute({ query: "x".repeat(10_000) });
+
+    expect(asked).toEqual(["x".repeat(SEARCH_MAX_LENGTH)]);
   });
 
   it("finds a club by its town", async () => {

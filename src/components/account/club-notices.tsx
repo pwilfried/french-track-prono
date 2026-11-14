@@ -1,6 +1,7 @@
 import { dismissClubNoticeAction } from "@/app/club-notice-actions";
 import { messages } from "@/app/messages.fr";
 import type { ClubNotice } from "@/application/club-notices";
+import { SubmitButton } from "@/components/account/submit-button";
 
 const text = messages.clubNotices;
 
@@ -29,12 +30,13 @@ export function ClubNotices({ notices }: { notices: ClubNotice[] }) {
           </p>
           <form action={dismissClubNoticeAction}>
             <input type="hidden" name="id" value={notice.id} />
-            <button
-              type="submit"
-              className="min-h-11 rounded-full border-2 border-border px-4 text-sm font-bold"
+            <SubmitButton
+              pendingLabel={text.dismissing}
+              variant="outline"
+              className="border-2 px-4 text-sm font-bold"
             >
               {text.dismiss}
-            </button>
+            </SubmitButton>
           </form>
         </li>
       ))}

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
+import { SubmitButton } from "@/components/account/submit-button";
 import { VenueChip } from "@/components/events/venue-chip";
-import { buttonVariants } from "@/components/ui/button";
 import { daysUntil, type CompetitionScope } from "@/domain/competition";
 
 import { currentDay, loadCompetitions } from "../../../competition";
@@ -107,9 +107,13 @@ export default async function CompetitionsPage({
           ))}
         </fieldset>
         {coming.length > 0 && (
-          <button type="submit" className={buttonVariants({ size: "lg" })}>
+          <SubmitButton
+            pendingLabel={messages.choice.submitting}
+            className="px-8 py-3 text-lg"
+            navigates
+          >
             {messages.choice.submit}
-          </button>
+          </SubmitButton>
         )}
       </form>
 

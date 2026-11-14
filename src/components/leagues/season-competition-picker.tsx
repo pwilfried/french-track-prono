@@ -6,6 +6,7 @@ import { messages } from "@/app/messages.fr";
 import { SubmitButton } from "@/components/account/submit-button";
 import { ChipStatus } from "@/components/ui/chip-status";
 import type { CompetitionScope, CompetitionVenue } from "@/domain/competition";
+import { SEARCH_MAX_LENGTH } from "@/domain/list-view";
 import { MANAGER_LEAGUE_MAX, seasonAdvice } from "@/domain/manager-league";
 import {
   filterCompetitions,
@@ -275,6 +276,7 @@ export function SeasonCompetitionPicker({
               onChange={(event) => set("query", event.target.value)}
               placeholder={text.searchPlaceholder}
               aria-label={text.searchLabel}
+              maxLength={SEARCH_MAX_LENGTH}
               autoComplete="off"
               className="min-h-11 rounded-xl border-2 border-border bg-background px-3 text-base focus-visible:border-primary focus-visible:outline-none"
             />
