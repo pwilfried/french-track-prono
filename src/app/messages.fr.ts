@@ -2220,8 +2220,8 @@ export const messages = {
       streak: "meilleure série",
       joker: "joker joué",
     },
-    jokerYes: "✓",
-    jokerNo: "–",
+    jokerYes: "Oui",
+    jokerNo: "Non",
     mySeason: "Ma saison",
     curve: (events: number, total: number) =>
       `Points cumulés : de 0 à ${total} en ${events} ${events <= 1 ? "épreuve" : "épreuves"}`,
@@ -2232,6 +2232,16 @@ export const messages = {
     bestOdds: (odds: string) => `Avec une cote à ${odds}`,
     bestPoints: (n: number) => `+${pts(n)}`,
     noBestShot: "Ton meilleur coup apparaîtra ici après ta première épreuve calculée.",
+    /** A profile before the first computed event (#799): one card, not a wall of empty boxes. */
+    start: {
+      title: "Fais ton premier prono pour débloquer tes stats",
+      body: "Tes points, ta bande, tes badges et ta courbe apparaissent après ta première épreuve calculée.",
+      waitingTitle: "Tes stats arrivent bientôt",
+      waiting: (n: number) =>
+        `${n} ${n <= 1 ? "prono enregistré" : "pronos enregistrés"} : tes stats apparaissent après ta première épreuve calculée.`,
+      play: "Faire mon podium",
+      browse: "Voir les compétitions",
+    },
   },
   globalError: {
     title: "Oups, la page est tombée",

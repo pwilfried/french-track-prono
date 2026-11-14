@@ -16,6 +16,8 @@ export function SeasonTiles({ stats }: { stats: SeasonStats }) {
     [String(stats.bestStreak), text.stat.streak],
     [stats.jokerPlayed ? text.jokerYes : text.jokerNo, text.stat.joker],
   ];
+  // The fixed-width font is for figures only: the joker tile says « Oui » or « Non ».
+  const joker = text.stat.joker;
   return (
     <section aria-labelledby="my-stats" className="flex flex-col gap-2">
       <h2 id="my-stats" className={heading}>
@@ -27,7 +29,11 @@ export function SeasonTiles({ stats }: { stats: SeasonStats }) {
             key={label}
             className="flex flex-col items-center gap-0.5 rounded-card border border-border bg-card px-2 py-3 text-center"
           >
-            <dd className="font-mono text-2xl font-bold tabular-nums">{value}</dd>
+            <dd
+              className={`text-2xl font-bold ${label === joker ? "font-display" : "font-mono tabular-nums"}`}
+            >
+              {value}
+            </dd>
             <dt className="text-[11px] font-bold uppercase leading-tight tracking-wide text-muted-foreground">
               {label}
             </dt>
