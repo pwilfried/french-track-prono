@@ -1,7 +1,13 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { eventReturnPath, eventSlugOfPath, safeRedirectPath } from "./redirect";
+import {
+  athleteHref,
+  eventReturnPath,
+  eventSlugOfPath,
+  managerReturnPath,
+  safeRedirectPath,
+} from "./redirect";
 
 describe("eventSlugOfPath", () => {
   it.each([
@@ -95,6 +101,35 @@ describe("eventReturnPath", () => {
         const out = eventReturnPath(input);
         if (out !== null) expect(out).toMatch(/^\/epreuves\/[^/?#\\]+$/);
       }),
+    );
+  });
+});
+
+describe("managerReturnPath", () => {
+  it("keeps a page of a Manager league", () => {
+    expect(managerReturnPath("/manager/abc/catalogue?q=lea&page=2")).toBe(
+      "/manager/abc/catalogue?q=lea&page=2",
+    );
+    expect(managerReturnPath("/manager/abc/equipe")).toBe("/manager/abc/equipe");
+  });
+
+  it.each([
+    undefined,
+    null,
+    "",
+    "/manager",
+    "/competitions",
+    "https://evil.test/manager/x",
+    "//evil.test/manager/x",
+  ])("refuses %j", (input) => {
+    expect(managerReturnPath(input)).toBeNull();
+  });
+});
+
+describe("athleteHref", () => {
+  it("opens an athlete's page and remembers the page it was opened from", () => {
+    expect(athleteHref("lea-fictive", "/manager/abc/catalogue?q=lea")).toBe(
+      "/athletes/lea-fictive?from=%2Fmanager%2Fabc%2Fcatalogue%3Fq%3Dlea",
     );
   });
 });
