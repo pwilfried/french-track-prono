@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
 import { clearMailbox, latestCodeFromMailbox } from "../src/infra/contract/mailbox";
-import { newPlayer, signUp } from "./players";
+import { newPlayer, signUp, typeCode } from "./players";
 
 test("a visitor taps « Faire mon premier prono », signs up and lands on the first open final", async ({
   page,
@@ -114,7 +114,7 @@ test("a club missing from the list is typed and waits for validation", async ({ 
   await expect(page.getByRole("note")).toHaveCount(0);
   await page.getByLabel("Ton e-mail").fill(player.email);
   await page.getByRole("button", { name: "Recevoir mon code" }).click();
-  await page.getByLabel(/code/i).fill(await latestCodeFromMailbox(player.email));
+  await typeCode(page, player.email);
   await page.getByRole("button", { name: "Me connecter" }).click();
   await page.waitForURL(/\/bienvenue/);
   await page.getByLabel("Ton pseudo").fill(player.pseudo);

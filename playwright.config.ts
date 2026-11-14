@@ -1,14 +1,21 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * End-to-end tests: the Next.js build against a local Supabase (see docs/SETUP.md).
+ * End-to-end tests: the Next.js build against a local Supabase (see docs/SETUP.md), or a deployed
+ * site when E2E_BASE_URL is set (pre-production, after each deploy and every morning: #695, #636):
+ * no local server then, and SQL and sign-in codes go through the pre-production APIs (onPreprod).
+ * The global teardown deletes what the run made (e2e/teardown.ts).
  * No retry: a failing test is fixed or removed, never run again until it passes.
  */
+const deployed = process.env.E2E_BASE_URL;
+const baseURL = deployed ?? "http://localhost:3000";
 /**
  * Lets the tests expire the app's cache of public data after a change made in SQL (#693): the
- * server started below gets the same secret (see src/infra/contract/database.ts).
+ * server started below gets the same secret (see src/infra/contract/database.ts). In
+ * pre-production, the secret is the one of the Vercel project, given by the workflow.
  */
-process.env.PUBLIC_CACHE_FLUSH_SECRET ??= "e2e-public-cache";
+if (deployed) process.env.PUBLIC_CACHE_FLUSH_URL ??= baseURL;
+else process.env.PUBLIC_CACHE_FLUSH_SECRET ??= "e2e-public-cache";
 
 /**
  * The app under test plays pre-production for the demo sign-in (#637, e2e/demo-login.spec.ts);
@@ -16,21 +23,16 @@ process.env.PUBLIC_CACHE_FLUSH_SECRET ??= "e2e-public-cache";
  */
 process.env.PREPROD_DEMO_LOGIN ??= "1";
 
-/**
- * E2E_BASE_URL: a deployed site to test (pre-production, #636), instead of the local build started
- * below. Signing in and SQL there need the helpers of #695.
- */
-const deployed = process.env.E2E_BASE_URL;
-
 export default defineConfig({
   testDir: "e2e",
   retries: 0,
   workers: 1,
   timeout: 60_000,
+  globalTeardown: "./e2e/teardown.ts",
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
     // localhost, not 127.0.0.1: the sign-in link of the local Supabase points to localhost.
-    baseURL: deployed ?? "http://localhost:3000",
+    baseURL,
     ...devices["Pixel 7"],
     trace: "retain-on-failure",
   },

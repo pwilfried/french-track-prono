@@ -370,8 +370,14 @@ y ajoute `NEXT_PUBLIC_SITE_NOINDEX=1` avec `VERCEL_EXTRA_ENV` :
 2. **Déploiement direct** : `vercel deploy --prebuilt --prod` branche le déploiement sur les
    domaines. Pas de `vercel promote` : avec le jeton du projet, il répond « User not found »
    (#731, premier déploiement préprod du 13 novembre 2026).
-3. **Retour arrière automatique** : si le test de fumée échoue, `vercel rollback` remet le
-   déploiement précédent, le job reste rouge et une issue `bug` + `needs-human` « Déploiement
+3. **Retour arrière automatique** : si le test de fumée échoue, le script remet le déploiement
+   précédent par l'API REST de Vercel (`curl` avec `VERCEL_TOKEN`, toujours avec
+   `teamId=$VERCEL_ORG_ID`) : il prend le dernier déploiement de production `READY` autre que
+   celui qui vient d'être fait (`GET /v6/deployments?projectId=…&target=production&state=READY`),
+   puis `POST /v9/projects/<projet>/rollback/<id>`. Pas de `vercel rollback` : comme `promote`,
+   il répond « User not found » avec le jeton du projet (#735). Une erreur HTTP de l'API donne
+   une ligne `::error::` (sans le jeton) et l'issue dit « Retour au déploiement précédent : non… »
+   (à faire à la main : Deployments → Instant Rollback). Dans tous les cas, le job reste rouge et une issue `bug` + `needs-human` « Déploiement
    annulé… » mentionne les propriétaires (`AGENTS_OWNER`) avec le lien du job. Après correction,
    annuler le retour arrière dans Vercel (Deployments → « Undo Rollback ») : sinon Vercel ne
    branche plus les déploiements suivants sur les domaines. Puis relancer le workflow.
@@ -396,8 +402,22 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   (un secret de prod collé par erreur).
 - **Pas de remise à zéro** : ce que le propriétaire crée à la main en préprod reste d'un
   déploiement à l'autre.
-- **À venir** : le jeu de démo propre à la préprod (#694) et les tests e2e lancés contre la
-  préprod après chaque déploiement (#695).
+- **Tests e2e après chaque déploiement** (#695) : le job « End-to-end tests against
+  pre-production » lance toute la suite `e2e/` contre l'adresse de préprod (`E2E_BASE_URL`,
+  sans serveur local). Le SQL des tests passe par l'API de gestion Supabase, le code de
+  connexion par l'API admin (`generateLink`, clé `service_role` de la préprod), jamais par une
+  boîte mail. Les comptes admin de test sont des joueurs `e2e-…` passés admin en SQL. À la fin
+  de chaque passage, réussi ou non, `ci/preprod/cleanup-e2e.sql` supprime les comptes
+  `e2e-…@example.test` (avec leurs ligues, pronos et points, donc hors de tout classement), les
+  ligues « E2E … » et les compétitions `test-…` / `e2e-…` ; le jeu de démo et le seed n'utilisent
+  jamais ces noms. Le résultat (vert/rouge, lien du run et du rapport) est dans le résumé du run
+  et commenté dans l'issue « Valider vX.Y.Z en préprod » ouverte, s'il y en a une. Une suite
+  rouge rend le run « Pre-production » rouge, ce qui fait attendre le tag. Le changement
+  d'e-mail (`profile-edit.spec.ts`) est sauté en préprod : aucune API ne donne son code. Le test
+  quotidien (`ci/preprod/daily.yml`) passe par les mêmes aides et les mêmes secrets. Un agent ne
+  peut pas pousser de workflow : le job vit dans `ci/preprod/preprod.yml`, que le propriétaire
+  copie dans `.github/workflows/preprod.yml`.
+- **À venir** : le jeu de démo propre à la préprod (#694).
 - **Pas de captcha ni de notifications push** en préprod (pas de clé Turnstile ni VAPID).
 - **Se connecter en tant qu'un joueur démo** (#637) : back-office → « Joueurs démo », bouton
   « Se connecter en tant que » ; un bandeau rappelle le joueur incarné et propose « Revenir à mon
@@ -413,10 +433,17 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
 
 Secrets de l'environnement GitHub `preprod` (Settings → Environments → preprod), ceux du projet
 de préprod, jamais ceux de la prod : `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`,
-`SUPABASE_PROJECT_REF`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. Les variables de
+`SUPABASE_PROJECT_REF`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, et pour les tests
+e2e `SUPABASE_URL` (`https://<ref>.supabase.co`), `SUPABASE_SERVICE_ROLE_KEY` et
+`PUBLIC_CACHE_FLUSH_SECRET` (une valeur aléatoire, la même que dans le projet Vercel de préprod :
+elle ouvre `/api/public-cache` aux tests). Réglages Auth de la préprod pour les tests : un SMTP
+personnalisé (le SMTP intégré de Supabase refuse les adresses hors équipe), une limite d'envoi
+d'e-mails relevée (la suite inscrit une soixantaine de joueurs) et un délai minimal court entre deux
+codes pour une même adresse. Les variables de
 l'application (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-`NEXT_PUBLIC_SITE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PREPROD_DEMO_LOGIN=1`) vivent dans le
-projet Vercel de préprod.
+`NEXT_PUBLIC_SITE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PUBLIC_CACHE_FLUSH_SECRET`,
+`PREPROD_DEMO_LOGIN=1`) vivent dans le projet Vercel de préprod (`PUBLIC_CACHE_FLUSH_SECRET` et
+`PREPROD_DEMO_LOGIN` jamais en prod).
 
 ## Test de la prod après déploiement
 

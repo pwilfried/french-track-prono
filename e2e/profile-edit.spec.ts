@@ -1,10 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-import { sql } from "../src/infra/contract/database";
+import { onPreprod, sql } from "../src/infra/contract/database";
 import { clearMailbox, latestCodeFromMailbox } from "../src/infra/contract/mailbox";
 import { newPlayer, signIn, signUp } from "./players";
 
 test("a player changes pseudo and club, then signs in with a new address", async ({ page }) => {
+  // The code of an e-mail change is only read in the local mailbox: no admin API gives it (#695).
+  test.skip(onPreprod(), "e-mail change code not readable in pre-production");
   const player = newPlayer("edit");
   await page.goto("/profil");
   await signUp(page, player);
