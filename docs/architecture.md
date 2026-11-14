@@ -278,9 +278,10 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 |---|---|
 | Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions`, `league_families` |
 | Référentiel | `competitions`, `events` (dont `kind` et `sub_disciplines` des épreuves combinées), `athletes`, `entries` (liste de départ), `results`, `athlete_records` (PR, SB, WR, WB) |
-| Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions`, `badges`, `user_badges` (niveau de badge gagné, #821) |
+| Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions`, `badges`, `user_badges` (niveau de badge gagné, #821), `trophies` et `trophy_settings` (trophées de saison et compte FrenchTrack du Témoin d'or, #822) |
+| Notifications | `push_subscriptions`, `reminder_settings`, `reminder_log`, `program_alerts` |
 | Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
-| Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()`, `raise_my_badge_levels()` |
+| Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()`, `raise_my_badge_levels()`, `event_consensus()`, `save_reminder_settings()`, `admin_replace_trophies()` |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers` |
 
 Garanties portées par la base : pronostic impossible après `lock_at`, pronos des autres
@@ -437,6 +438,16 @@ distance en mètres, haies, steeple, marche, relais), valeur plus haute sinon. L
 avec la première course d'une nouvelle année civile. Un résultat corrigé à la baisse ne fait pas
 reculer un record déjà établi. WR et WB se saisissent à la main.
 
+Fiche athlète (v0.18, #679) : `/athletes/[slug]`, ouverte depuis le podium d'une épreuve, le
+catalogue du mercato ou une équipe Manager, montre **seulement les records** (décision du
+propriétaire : l'app n'a pas l'historique des courses, donc ni résultats récents ni face-à-face).
+En tête : initiales (jamais de photo), pays, disciplines ; chiffres clés de la discipline
+principale (PB, SB, prix Manager) ; puis un bloc par discipline avec son PB et son SB de la saison
+en cours (`disciplineRecords`, `keyRecords` dans `src/domain/athlete.ts` ; un SB daté d'une année
+passée est écarté). Une marque non vérifiée (`athlete_records.verified`, vraie pour une saisie de
+l'admin) porte un « ? ». « Retour » ramène d'où l'on vient (`?from=`, #699 : au podium en cours
+depuis une épreuve). Cas d'usage `getAthlete`, port `AthleteReader`.
+
 Disciplines (v0.9, issue #257) : la table `disciplines` porte, pour chaque discipline, sa famille,
 son unité (`time`, `distance`, `points`), le sens du classement et la tolérance du prono de
 performance, ajustable par l'admin (`/admin/disciplines`, fonction `set_discipline_tolerance()`).
@@ -508,7 +519,13 @@ des ligues du joueur (`competitionsForPlayer`).
 Profil vivant (v0.11) : tout est calculé en TypeScript à partir des pronos et des points, rien
 n'est stocké en plus. Badges et progression vers chacun (`badgeProgress`, `src/domain/badges.ts`,
 #385 ; niveaux bronze, argent, or sur la saison et badges de famille, #821, seul le niveau gagné
-est gardé, voir `docs/decisions/badges-et-trophees.md`) ; classement des clubs (`rankClubs`, `src/domain/club-ranking.ts`, #386 : moyenne des points
+est gardé, voir `docs/decisions/badges-et-trophees.md`) ; la bande (#768) : l'animal du joueur,
+famille où il a marqué le plus de points de la saison (`src/domain/band.ts`), et les badges en
+dossards ; la vitrine des trophées de saison (#822 : statuettes des classements finaux de ligue,
+de ligue Manager et du général, plus Chrono figé, Record de ligue et Témoin d'or), tirés en
+TypeScript (`src/domain/trophies.ts`, décision B) quand l'admin les attribue depuis
+`/admin/trophees` et stockés dans `trophies`, lisibles par le joueur et les membres de ses ligues
+(`getTrophyShowcase`, port `TrophyRepository`) ; classement des clubs (`rankClubs`, `src/domain/club-ranking.ts`, #386 : moyenne des points
 des joueurs du club, 3 joueurs au moins) ; derniers pronos et historique complet sur
 `/profil/pronos` (`pickHits`, `src/domain/prediction-history.ts`, #387) ; carte « Ma saison »
 (`/profil/carte`, image 1080×1920 via `next/og`, #388) qui ne reprend que des données publiques
@@ -598,6 +615,7 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 | v0.16 Manager : championnat | Calendrier aller-retour, confrontations, classement, palmarès | …une saison complète désigne un champion et garde son palmarès |
 | v0.17 Ligues thématiques | **F20**, onglets Compétitions (programme par jour), Classement (une portée, ma place, évolution depuis la dernière compétition) et Ligues (Mes ligues, Découvrir), sélecteur de compétitions de la saison, ligue créée avec au moins une compétition active, feuille de résultats unique qui calcule pronos et Manager, collage du tableau World Athletics, filtres des compétitions du back-office, cache des données publiques | …un joueur crée une ligue (privée ou publique) limitée à une ou plusieurs familles d'épreuves (sprint, haies, lancers…) ; seuls les pronos sur ces épreuves comptent dans le classement de la ligue ; le classement général et le jeu sans ligue ne changent pas |
 | v0.17.1 Préprod en ligne | Site de préprod à adresse fixe déployé à chaque fusion dans `main` (projets Supabase et Vercel séparés, jeu de démo fictif), tests e2e après chaque déploiement et chaque matin, connexion en tant qu'un joueur démo, tag posé sans feu vert humain, bloqué par une préprod rouge | …chaque PR fusionnée dans main est visible quelques minutes plus tard sur un site de préprod à adresse fixe, branché sur sa propre base Supabase avec des données fictives, sans toucher à la prod |
+| v0.18 Fiche athlète, consensus et rappels | Fiche athlète (records seulement), consensus des pronos après verrouillage, rappels groupés et « Mes rappels », rappels Manager, bande d'animaux, badges en bronze, argent, or et badges de famille, trophées de saison, icône du lièvre | …depuis une épreuve, le mercato ou une équipe Manager, un joueur ouvre la fiche d'un athlète et voit ses records par discipline ; après le verrouillage d'une épreuve, il voit ce qu'ont pronostiqué tous les joueurs et sa ligue ; il reçoit au plus un rappel groupé avant un verrou s'il lui manque des podiums, et règle ses rappels dans son profil ; il voit aussi sa bande, ses dossards et la vitrine de ses trophées |
 | Plus tard | Carte « Mon podium du 100 m », questions bonus, connexion Google / Apple | à planifier |
 
 ## Cas de test du cœur
