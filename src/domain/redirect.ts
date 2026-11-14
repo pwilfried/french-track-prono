@@ -37,17 +37,3 @@ export function eventReturnPath(from: string | null | undefined): string | null 
   const slug = path ? eventSlugOfPath(path) : null;
   return slug && /^[a-z0-9-]+$/i.test(slug) ? `/epreuves/${slug}` : null;
 }
-
-/**
- * Where the back link of an athlete's page leads when opened from a Manager league (catalogue,
- * bids, team, #679): that page, query included; null for any other page.
- */
-export function managerReturnPath(from: string | null | undefined): string | null {
-  const path = safeRedirectPath(from, "");
-  return /^\/manager\/[^/?#]+\//.test(path) ? path : null;
-}
-
-/** The address of an athlete's page opened from the page `from`, so its back link returns there. */
-export function athleteHref(slug: string, from: string): string {
-  return `/athletes/${slug}?from=${encodeURIComponent(from)}`;
-}

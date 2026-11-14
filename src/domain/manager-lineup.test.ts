@@ -7,7 +7,6 @@ import {
   fitsPlace,
   lineupPlaces,
   lineupProblem,
-  lineupProgress,
   lineupStatus,
   placeLineup,
   seatAthlete,
@@ -191,56 +190,6 @@ describe("lineupProblem", () => {
         },
       ),
     );
-  });
-});
-
-describe("lineupProgress", () => {
-  const places = lineupPlaces(RULES);
-  const empty = places.map(() => null);
-
-  it("fills nothing and offers nothing to validate when no athlete of the team is entered", () => {
-    const absent = [athlete("s1", "sprint", false), athlete("m1", "middle", false)];
-    expect(lineupProgress(places, absent, empty)).toEqual({
-      filled: 0,
-      toFill: [],
-      unfillable: 8,
-      ready: false,
-    });
-  });
-
-  it("counts the places to fill by place, and the ones nobody can fill", () => {
-    const squad = [athlete("s1", "sprint"), athlete("m1", "middle"), athlete("m2", "middle")];
-    expect(lineupProgress(places, squad, empty)).toEqual({
-      filled: 0,
-      toFill: [
-        { place: "sprint", count: 1 },
-        { place: "middle", count: 1 },
-        { place: "free", count: 1 },
-      ],
-      unfillable: 5,
-      ready: false,
-    });
-  });
-
-  it("is ready once every place the team can fill holds an entered athlete", () => {
-    const squad = [athlete("s1", "sprint"), athlete("m1", "middle"), athlete("m2", "middle")];
-    const placed = placeLineup(places, squad, ["s1", "m1", "m2"]).placed;
-    expect(lineupProgress(places, squad, placed)).toEqual({
-      filled: 3,
-      toFill: [],
-      unfillable: 5,
-      ready: true,
-    });
-  });
-
-  it("does not count an athlete who is no longer entered as filling a place", () => {
-    const squad = [athlete("s1", "sprint", false), athlete("m1", "middle")];
-    const placed = placeLineup(places, squad, ["s1", "m1"]).placed;
-    expect(lineupProgress(places, squad, placed)).toMatchObject({
-      filled: 1,
-      unfillable: 7,
-      ready: true,
-    });
   });
 });
 

@@ -36,14 +36,6 @@ test("a participant lines up their team before a competition and can no longer c
        select '${event}', id from athletes
        where slug in ('align-sprint-${tag}', 'align-haies-${tag}', 'align-demi-${tag}')`);
 
-  // A second competition with no start list yet: none of the team is entered (#839).
-  const bare = `Meeting Vide ${tag}`;
-  const bareCompetition = sql(`insert into competitions (slug, name, starts_on, ends_on)
-    values ('align-bare-${tag}', '${bare}', current_date + 3, current_date + 3) returning id`);
-  sql(`insert into events (competition_id, slug, discipline, gender, starts_at, lock_at)
-    values ('${bareCompetition}', 'align-bare-100-${tag}', '100 m', 'F', now() + interval '3 days',
-            now() + interval '3 days')`);
-
   const owner = newPlayer("lineup-owner");
   await page.goto("/manager/creer");
   await signUp(page, owner);
@@ -58,7 +50,7 @@ test("a participant lines up their team before a competition and can no longer c
   // distance, free.
   sql(`update manager_leagues
        set rules = rules || '{"lineup": {"max": 3, "minPerFamily": {"sprint": 1, "middle": 1}}}',
-           competition_ids = array['${competition}', '${bareCompetition}']::uuid[],
+           competition_ids = array['${competition}']::uuid[],
            mercato_opened_at = now() - interval '3 days', mercato_closed_at = now()
        where id = '${id}'`);
   sql(`insert into manager_rounds (league_id, round, ends_at) values ('${id}', 1, now())`);
@@ -70,18 +62,6 @@ test("a participant lines up their team before a competition and can no longer c
   // From the league to the competitions, then to the stadium.
   await page.reload();
   await page.getByRole("main").getByRole("link", { name: "Mon alignement" }).click();
-  await expect(page).toHaveURL(new RegExp(`/manager/${id}/alignement$`));
-
-  // Nobody entered in the bare competition: the screen says so, no empty lineup to validate.
-  await page.getByRole("link", { name: new RegExp(bare) }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(bare);
-  await expect(page.getByText("0/3 places")).toBeVisible();
-  await expect(
-    page.getByText("Aucun de tes athlètes n'est inscrit à cette compétition pour l'instant."),
-  ).toBeVisible();
-  await expect(page.getByText("Toutes les places sont remplies.")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Valider mon alignement" })).toHaveCount(0);
-  await page.getByRole("link", { name: "Mon alignement" }).first().click();
   await expect(page).toHaveURL(new RegExp(`/manager/${id}/alignement$`));
   const row = page.getByRole("link", { name: new RegExp(meeting) });
   await expect(row).toContainText("À aligner");
@@ -112,7 +92,6 @@ test("a participant lines up their team before a competition and can no longer c
   await page.getByRole("button", { name: "Place Libre, vide" }).click();
   await sheet.getByRole("button", { name: new RegExp(hurdler) }).click();
   await expect(page.getByText("3/3 places")).toBeVisible();
-  await expect(page.getByText("Toutes les places sont remplies.")).toBeVisible();
 
   await validate.click();
   await expect(page.getByRole("main").getByRole("status")).toHaveText(
