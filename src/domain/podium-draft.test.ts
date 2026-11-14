@@ -7,6 +7,7 @@ import {
   nextEmptyStep,
   isValidPodium,
   OTHER_ATHLETE,
+  parseKeptPodium,
   placeAthlete,
   removeStep,
   stepOf,
@@ -137,5 +138,33 @@ describe("isValidPodium", () => {
   it("accepts « autre athlète » on one place only", () => {
     expect(isValidPodium({ first: "a", second: OTHER_ATHLETE, third: "c" })).toBe(true);
     expect(isValidPodium({ first: OTHER_ATHLETE, second: OTHER_ATHLETE, third: "c" })).toBe(false);
+  });
+});
+
+describe("parseKeptPodium", () => {
+  const known = ["a", "b", "c"];
+
+  it("reads back a podium being built, its joker and where the player went", () => {
+    const kept = { draft: draft("a", null, "c"), joker: true, openedAthlete: true };
+    expect(parseKeptPodium(JSON.stringify(kept), known)).toEqual(kept);
+  });
+
+  it("drops an athlete who is no longer in the event", () => {
+    const kept = { draft: draft("a", "x", null), joker: false, openedAthlete: false };
+    expect(parseKeptPodium(JSON.stringify(kept), known)).toBeNull();
+  });
+
+  it.each([null, "", "not json", "null", "42", '{"draft":null}', '{"draft":{"first":1}}'])(
+    "ignores %j",
+    (raw) => {
+      expect(parseKeptPodium(raw, known)).toBeNull();
+    },
+  );
+
+  it("never throws, whatever is stored", () => {
+    fc.assert(fc.property(fc.string(), (raw) => void parseKeptPodium(raw, known)));
+    fc.assert(
+      fc.property(fc.jsonValue(), (value) => void parseKeptPodium(JSON.stringify(value), known)),
+    );
   });
 });

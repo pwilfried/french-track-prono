@@ -27,3 +27,13 @@ export function eventSlugOfPath(path: string): string | null {
   const match = /^\/epreuves\/([^/?#]+)\/?(?:[?#].*)?$/.exec(path);
   return match ? match[1] : null;
 }
+
+/**
+ * Where the back link of an athlete's page leads when he was opened from a podium being built
+ * (#699): the event page `from` points to, or null when `from` is anything else.
+ */
+export function eventReturnPath(from: string | null | undefined): string | null {
+  const path = safeRedirectPath(from, "");
+  const slug = path ? eventSlugOfPath(path) : null;
+  return slug && /^[a-z0-9-]+$/i.test(slug) ? `/epreuves/${slug}` : null;
+}
