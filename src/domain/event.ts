@@ -17,7 +17,11 @@ export type EventSummary = {
   status: EventStatus;
   /** Heat, quarter, semi-final or final. Players predict finals only. */
   round: Round;
+  /** The first of the official result (a tie: the first by name); null or absent before it. */
+  winner?: EventWinner | null;
 };
+
+export type EventWinner = { name: string; countryCode: string };
 
 /** Orders events by start time, then by slug so the order is stable. */
 export function compareEvents(a: EventSummary, b: EventSummary): number {
@@ -63,4 +67,10 @@ export type PreviousRound = {
 export function compareResults(a: ResultLine, b: ResultLine): number {
   if (a.rank !== b.rank) return a.rank - b.rank;
   return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+}
+
+/** The winner of an event: the first of its result, the first by name in a tie; null before it. */
+export function winnerOf(results: readonly ResultLine[]): EventWinner | null {
+  const first = [...results].sort(compareResults)[0];
+  return first ? { name: first.name, countryCode: first.countryCode } : null;
 }

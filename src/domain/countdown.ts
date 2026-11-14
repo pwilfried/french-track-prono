@@ -39,11 +39,16 @@ export type LockLabel =
 
 /**
  * How an event card says when it locks (#546): its day and hour more than 24 hours ahead, else the
- * time left, urgent from one hour before, like the countdown turning orange.
+ * time left, urgent from one hour before, like the countdown turning orange. `timeLeft` counts
+ * down days ahead too (an event card still to predict, #800).
  */
-export function lockLabel(now: Date, lockAt: string): LockLabel {
+export function lockLabel(
+  now: Date,
+  lockAt: string,
+  { timeLeft = false }: { timeLeft?: boolean } = {},
+): LockLabel {
   const left = countdown(now, lockAt);
   if (left.phase === "locked") return { kind: "locked" };
-  if (left.remainingSeconds > 86_400) return { kind: "on" };
+  if (!timeLeft && left.remainingSeconds > 86_400) return { kind: "on" };
   return { kind: "in", seconds: left.remainingSeconds, urgent: left.level !== "far" };
 }

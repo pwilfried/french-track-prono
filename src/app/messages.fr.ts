@@ -220,6 +220,11 @@ export const messages = {
     locksIn: (duration: string) => `Verrouille dans ${duration}`,
     locksOn: (day: string, hour: string) => `Verrouille le ${day} à ${hour}`,
     editable: "modifiable",
+    /** My podium on the card of an open event (#800): « Léa F. · Ana B. · autre ». */
+    myPodium: (names: string[]) => names.join(" · "),
+    otherAthlete: "autre",
+    /** The winner on the card of a finished event (#800). */
+    winner: (name: string) => `🥇 ${name}`,
     perfect: "Podium parfait !",
     notPlayed: "Pas joué",
     /** « 100 m femmes, 20:35 ». */

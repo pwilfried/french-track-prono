@@ -12,6 +12,18 @@ export function athleteReaderContract(name: string, create: () => AthleteReader,
       expect(await create().findBySlug("no-such-athlete")).toBeNull();
     });
 
+    it("gives the names and countries of the athletes asked, none for an unknown id (#800)", async () => {
+      const reader = create();
+      const athlete = (await reader.findBySlug(known))!;
+
+      expect(
+        await reader.namesOf([athlete.athleteId, "00000000-0000-0000-0000-000000000000"]),
+      ).toEqual([
+        { athleteId: athlete.athleteId, name: athlete.name, countryCode: athlete.countryCode },
+      ]);
+      expect(await reader.namesOf([])).toEqual([]);
+    });
+
     it("finds a known athlete with their main discipline and a PB", async () => {
       const athlete = await create().findBySlug(known);
 

@@ -3,13 +3,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { UseCaseError } from "@/application/errors";
 import type { DisciplineFamily, MarkUnit } from "@/domain/discipline";
 import type { EventReader } from "@/application/list-events";
-import type {
-  Entry,
-  EventGender,
-  EventStatus,
-  EventSummary,
-  PreviousRound,
-  ResultLine,
+import {
+  winnerOf,
+  type Entry,
+  type EventGender,
+  type EventStatus,
+  type EventSummary,
+  type PreviousRound,
+  type ResultLine,
 } from "@/domain/event";
 import { compareRounds, type Round } from "@/domain/rounds";
 
@@ -55,6 +56,10 @@ type RoundResultRow = {
   entries: { athletes: { id: string; slug: string; name: string; country_code: string } };
 };
 
+function resultLine({ rank, mark, entries: { athletes: a } }: RoundResultRow): ResultLine {
+  return { athleteId: a.id, slug: a.slug, name: a.name, countryCode: a.country_code, rank, mark };
+}
+
 /** The rounds leading to an event (their `parent_id` is the event), with their results. */
 async function previousRounds(client: SupabaseClient, eventId: string): Promise<PreviousRound[]> {
   const rounds = await client
@@ -81,16 +86,7 @@ async function previousRounds(client: SupabaseClient, eventId: string): Promise<
       slug: round.slug,
       round: round.round,
       status: round.status,
-      results: results.data
-        .filter((r) => r.event_id === round.id)
-        .map(({ rank, mark, entries: { athletes: a } }) => ({
-          athleteId: a.id,
-          slug: a.slug,
-          name: a.name,
-          countryCode: a.country_code,
-          rank,
-          mark,
-        })),
+      results: results.data.filter((r) => r.event_id === round.id).map(resultLine),
     }));
 }
 
@@ -103,8 +99,26 @@ export function createSupabaseEventReader(client: SupabaseClient): EventReader {
         .eq("competitions.slug", competitionSlug)
         .returns<EventRow[]>();
       if (error) throw new UseCaseError("EVENTS_UNAVAILABLE");
+      if (data.length === 0) return [];
 
-      return data.map(toSummary);
+      // The first lines of each result, the winner on the card (#800).
+      const firsts = await client
+        .from("results")
+        .select("event_id, rank, mark, entries!inner(athletes!inner(id, slug, name, country_code))")
+        .in(
+          "event_id",
+          data.map((e) => e.id),
+        )
+        .eq("rank", 1)
+        .returns<RoundResultRow[]>();
+      if (firsts.error) throw new UseCaseError("EVENTS_UNAVAILABLE");
+      const firstsOf = new Map<string, ResultLine[]>();
+      for (const row of firsts.data) {
+        const lines = firstsOf.get(row.event_id) ?? [];
+        lines.push(resultLine(row));
+        firstsOf.set(row.event_id, lines);
+      }
+      return data.map((row) => ({ ...toSummary(row), winner: winnerOf(firstsOf.get(row.id) ?? []) }));
     },
 
     async findBySlug(competitionSlug, eventSlug) {

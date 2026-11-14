@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import { UseCaseError } from "@/application/errors";
 import { listEvents } from "@/application/list-events";
-import { listMyEventMarks } from "@/application/list-my-predictions";
 import { getProgramAlert } from "@/application/program-alerts";
 import { ErrorNotice } from "@/components/error-notice";
 import { CompetitionSwitcher } from "@/components/events/competition-switcher";
@@ -17,11 +16,7 @@ import { daysUntil, nextCompetition } from "@/domain/competition";
 import type { EventSummary } from "@/domain/event";
 import { eventsProgress, filterCounts, filterEvents, type EventFilter } from "@/domain/event-list";
 import { defaultDay, eventsBySession, eventsOfDay, programDays } from "@/domain/program";
-import {
-  createSupabasePointsRepository,
-  createSupabasePredictionRepository,
-  createSupabaseProgramAlertRepository,
-} from "@/infra";
+import { createSupabaseProgramAlertRepository } from "@/infra";
 
 import {
   currentCompetition,
@@ -32,6 +27,7 @@ import {
   playerCompetitions,
   type ShownCompetition,
 } from "../competition";
+import { loadFamilies, loadMyEventStates } from "../event-cards";
 import { messages } from "../messages.fr";
 import { paramText } from "../search-params";
 import { getCurrentUser, getSessionClient } from "../session";
@@ -60,17 +56,7 @@ async function loadMine(competition: ShownCompetition): Promise<Map<string, MyEv
   const user = await getCurrentUser();
   if (!user) return null;
   try {
-    const client = await getSessionClient();
-    const marks = await listMyEventMarks({
-      predictions: createSupabasePredictionRepository(client),
-      points: createSupabasePointsRepository(client),
-    }).execute({ userId: user.userId, competitionSlug: competition.slug });
-    return new Map<string, MyEventState>(
-      marks.map((m) => [
-        m.eventId,
-        { predicted: true, joker: m.joker, points: m.points, hits: m.hits },
-      ]),
-    );
+    return await loadMyEventStates(user.userId, competition.slug);
   } catch (error) {
     if (error instanceof UseCaseError) return null;
     throw error;
@@ -112,7 +98,11 @@ export default async function CompetitionsPage({
     getCurrentUser(),
   ]);
   const competition = await currentCompetition(paramText(search.competition) ?? choices.preferred);
-  const [loaded, mine] = await Promise.all([loadEvents(competition), loadMine(competition)]);
+  const [loaded, mine, families] = await Promise.all([
+    loadEvents(competition),
+    loadMine(competition),
+    loadFamilies(),
+  ]);
   const events = loaded === "error" ? [] : loaded;
   const now = new Date();
   const today = currentCompetitionDay();
@@ -235,6 +225,7 @@ export default async function CompetitionsPage({
                     <EventCard
                       key={event.id}
                       event={event}
+                      family={families.get(event.discipline)}
                       now={now}
                       mine={
                         mine

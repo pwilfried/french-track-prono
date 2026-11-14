@@ -140,4 +140,12 @@ describe("lockLabel", () => {
   it("is locked at the lock time", () => {
     expect(lockLabel(before(0), lockAt)).toEqual({ kind: "locked" });
   });
+
+  it("counts down days ahead too when asked for the time left (#800)", () => {
+    expect(lockLabel(before(3 * 86_400), lockAt, { timeLeft: true })).toEqual({
+      kind: "in",
+      seconds: 3 * 86_400,
+      urgent: false,
+    });
+  });
 });
