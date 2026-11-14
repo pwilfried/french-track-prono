@@ -10,12 +10,10 @@
 #      printed): on 13 Nov 2026 they had vanished, the build passed and every page answered 500.
 #   2. build, then a production deploy that takes the domains at once (no `vercel promote`: with
 #      the project token it answers "User not found", #731). After a rollback, Vercel keeps new
-#      deploys off the domains until the rollback is undone in the dashboard: the issue opened
-#      below says so.
-#   3. the domain must serve the new deployment (Vercel REST API, #819): after a rollback not
-#      undone, it kept the old one, the smoke test passed against it and the e2e tests failed.
-#      If not, the job stops red and an issue asks for « Undo Rollback »; no rollback is made.
-#   4. smoke test; if it fails, the Vercel REST API puts the previous READY production deployment
+#      deploys off the domains: the script checks the domain of <base url> through the REST API and,
+#      when it still serves another deployment, promotes the new one and waits for the switch
+#      (#827). Without the switch, the job fails before the smoke test.
+#   3. smoke test; if it fails, the Vercel REST API puts the previous READY production deployment
 #      back (the CLI's `rollback` fails like `promote`, #735) and an issue tells the owners. The
 #      job stays red either way.
 set -euo pipefail
@@ -64,26 +62,33 @@ rollback() {
   api POST "/v9/projects/$project/rollback/$previous?$team"
 }
 
-# Prints the hostname of the deployment $1 (a domain, without https://) serves, as the Vercel API
-# says; nothing if the API does not answer.
-served_by() {
-  api GET "/v4/aliases/$1?teamId=${VERCEL_ORG_ID:-}" >&2 || return 0
-  node -e '
-    const { deployment } = JSON.parse(require("fs").readFileSync(0, "utf8"));
-    if (deployment?.url) console.log(deployment.url);
-  ' < "$api_response" || true
-}
-
-# Opens an issue for the owners: title $1; body: the mentions, $2 and the run link, then $3.
-tell_owners() {
-  local repo=${GITHUB_REPOSITORY:?} owners mentions run_url
-  owners=${AGENTS_OWNER:-${repo%%/*}}
-  mentions=$(sed -E 's/(^| +)/\1@/g' <<< "$owners")
-  run_url="${GITHUB_SERVER_URL:-https://github.com}/$repo/actions/runs/${GITHUB_RUN_ID:-0}"
-  gh issue create -R "$repo" --label bug --label needs-human --title "$1" \
-    --body "$mentions $2 : $run_url
-
-$3" || echo "::error::Could not open the issue for the owners."
+# Puts the deployment $1 (its URL) on the domain of $base (#827): after a rollback, Vercel keeps new
+# production deployments off the domains until one is promoted. Waits until the domain serves it.
+on_domain() {
+  local url=${1#https://} host=${base#https://} team="teamId=${VERCEL_ORG_ID:-}" id current i
+  host=${host%%/*}
+  if [ -z "${VERCEL_ORG_ID:-}" ] || [ -z "${VERCEL_PROJECT_ID:-}" ] || [ -z "$url" ]; then
+    echo "::error::VERCEL_ORG_ID, VERCEL_PROJECT_ID and the deployment URL are needed to check the domain."
+    return 1
+  fi
+  api GET "/v13/deployments/$url?$team" || return 1
+  id=$(node -e 'console.log(JSON.parse(require("fs").readFileSync(0, "utf8")).id ?? "")' < "$api_response")
+  [ -n "$id" ] || { echo "::error::Vercel API: no id for $url."; return 1; }
+  for i in $(seq 1 12); do
+    api GET "/v4/aliases/$host?$team" || return 1
+    current=$(node -e 'const a = JSON.parse(require("fs").readFileSync(0, "utf8")); console.log(a.deploymentId ?? a.deployment?.id ?? "")' < "$api_response")
+    if [ "$current" = "$id" ]; then
+      echo "$host serves $url"
+      return 0
+    fi
+    if [ "$i" = 1 ]; then
+      echo "::warning::$host still serves $current (a rollback keeps it there): promoting $id."
+      api POST "/v10/projects/$VERCEL_PROJECT_ID/promote/$id?$team" || return 1
+    fi
+    sleep "${DOMAIN_WAIT_SECONDS:-5}"
+  done
+  echo "::error::$host still serves $current one minute after the promotion of $id."
+  return 1
 }
 
 # The variables without which every page fails (src/infra/supabase).
@@ -110,23 +115,8 @@ vercel build --prod
 # whole account, which the pre-production deployments used up on 14 Nov 2026 (#789).
 deployed=$(vercel deploy --prebuilt --prod --archive=tgz | tail -n 1)
 echo "Deployed: $deployed"
-
-# Vercel moves the domains while `deploy --prod` completes; a few tries cover a late update.
-host=${base#https://}
-new=${deployed#https://}
-served=""
-for _ in 1 2 3 4 5; do
-  served=$(served_by "$host")
-  [ "$served" = "$new" ] && break
-  sleep "${ALIAS_RETRY_DELAY:-3}"
-done
-if [ -z "$served" ]; then
-  echo "::warning::The Vercel API did not say which deployment $base serves: the smoke test may check an older one."
-elif [ "$served" != "$new" ]; then
-  echo "::error::$base still serves $served, not $new: a rollback is holding the domain (Vercel → Deployments → « Undo Rollback »)."
-  tell_owners "Déploiement pas en ligne : $base sert encore un ancien déploiement" \
-    "le nouveau déploiement n'a pas pris le domaine" \
-    "Le domaine sert \`$served\` au lieu de \`$new\`. C'est l'effet d'un retour arrière pas encore annulé : dans le projet Vercel, Deployments → « Undo Rollback », puis relancer le workflow (docs/SETUP.md, « Déploiements Vercel »)."
+if ! on_domain "$deployed"; then
+  echo "::error::The new deployment is not on $base: no smoke test of the old one. Promote it in Vercel (Deployments → Promote), then run the workflow again."
   exit 1
 fi
 
@@ -138,9 +128,16 @@ echo "::error::The smoke test of $base failed: rolling back to the previous depl
 rolled_back="oui"
 rollback "$deployed" || rolled_back="non (à faire à la main : Vercel → Deployments → Instant Rollback)"
 
-tell_owners "Déploiement annulé : le test de fumée de $base a échoué" \
-  "le test de fumée a échoué juste après le déploiement" \
-  "Retour au déploiement précédent : $rolled_back.
+repo=${GITHUB_REPOSITORY:?}
+owners=${AGENTS_OWNER:-${repo%%/*}}
+mentions=$(sed -E 's/(^| +)/\1@/g' <<< "$owners")
+run_url="${GITHUB_SERVER_URL:-https://github.com}/$repo/actions/runs/${GITHUB_RUN_ID:-0}"
+gh issue create -R "$repo" --label bug --label needs-human \
+  --title "Déploiement annulé : le test de fumée de $base a échoué" \
+  --body "$mentions le test de fumée a échoué juste après le déploiement : $run_url
 
-Regarder le journal du job, corriger, annuler le retour arrière dans Vercel (Deployments → « Undo Rollback », sinon les déploiements suivants ne prennent pas les domaines), puis relancer le workflow (docs/SETUP.md, « Déploiements Vercel »)."
+Retour au déploiement précédent : $rolled_back.
+
+Regarder le journal du job, corriger, puis relancer le workflow : le déploiement suivant reprendra le domaine de lui-même (#827, docs/SETUP.md, « Déploiements Vercel »)." ||
+  echo "::error::Could not open the issue for the owners."
 exit 1

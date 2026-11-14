@@ -380,15 +380,7 @@ jour pour tout le compte, et les déploiements de la préprod (un par fusion) le
 2. **Déploiement direct** : `vercel deploy --prebuilt --prod` branche le déploiement sur les
    domaines. Pas de `vercel promote` : avec le jeton du projet, il répond « User not found »
    (#731, premier déploiement préprod du 13 novembre 2026).
-3. **Le domaine sert-il le nouveau déploiement ?** Avant le test de fumée, le script demande à
-   l'API Vercel quel déploiement sert le domaine (`GET /v4/aliases/<domaine>?teamId=…`, cinq
-   essais). Si c'est un ancien, le job s'arrête en rouge, sans test de fumée ni retour arrière,
-   et ouvre une issue `bug` + `needs-human` « Déploiement pas en ligne… » : c'est un retour
-   arrière pas encore annulé (« Undo Rollback » dans Vercel, puis relancer le workflow). Le
-   14 novembre 2026, ce cas avait laissé la préprod sur un déploiement du matin : le test de fumée
-   passait contre l'ancien site et les tests de bout en bout échouaient (#819). Si l'API ne
-   répond pas, un simple avertissement, et le test de fumée suit.
-4. **Retour arrière automatique** : si le test de fumée échoue, le script remet le déploiement
+3. **Retour arrière automatique** : si le test de fumée échoue, le script remet le déploiement
    précédent par l'API REST de Vercel (`curl` avec `VERCEL_TOKEN`, toujours avec
    `teamId=$VERCEL_ORG_ID`) : il prend le dernier déploiement de production `READY` autre que
    celui qui vient d'être fait (`GET /v6/deployments?projectId=…&target=production&state=READY`),
@@ -397,9 +389,12 @@ jour pour tout le compte, et les déploiements de la préprod (un par fusion) le
    une ligne `::error::` (sans le jeton) et l'issue dit « Retour au déploiement précédent : non… »
    (à faire à la main : Deployments → Instant Rollback). Dans tous les cas, le job reste rouge et
    une issue `bug` + `needs-human` « Déploiement annulé… » mentionne les propriétaires
-   (`AGENTS_OWNER`) avec le lien du job. Après correction,
-   annuler le retour arrière dans Vercel (Deployments → « Undo Rollback ») : sinon Vercel ne
-   branche plus les déploiements suivants sur les domaines. Puis relancer le workflow.
+   (`AGENTS_OWNER`) avec le lien du job. Après correction, relancer le workflow (ou fusionner le
+   correctif) : après un retour arrière, Vercel ne branche plus les nouveaux déploiements sur les
+   domaines, alors le script vérifie le domaine par l'API et remet lui-même le nouveau déploiement
+   en avant (#827). S'il n'y arrive pas, le job échoue avant le test de fumée ; il faut alors
+   « Promote » à la main dans Vercel. Le 14 novembre 2026, faute de cette vérification, la préprod
+   a servi pendant neuf heures la version d'avant un retour arrière.
 
 ## Préproduction
 
@@ -426,7 +421,7 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
 - **Retour arrière automatique** : si le test de fumée de la préprod échoue, le script remet le
   déploiement de préprod précédent par l'API Vercel et ouvre l'issue `bug` + `needs-human`
   « Déploiement annulé… » ; le run « Pre-production » reste rouge, ce qui fait attendre le tag.
-  Après correction : « Undo Rollback » dans le projet Vercel de préprod, puis relancer le workflow.
+  Après correction, le déploiement suivant reprend le domaine de lui-même (#827).
 - **Pas de remise à zéro** : ce que le propriétaire crée à la main en préprod reste d'un
   déploiement à l'autre.
 - **Jeu de démo** (#694) : `supabase/preprod/demo.sql`, versionné dans le dépôt, entièrement
