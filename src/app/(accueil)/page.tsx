@@ -7,18 +7,18 @@ import { VisitorHome } from "@/components/home/visitor-home";
 import { daysUntil } from "@/domain/competition";
 import { firstFinalToPredict } from "@/domain/home";
 
-import { findClubsAction } from "./club-actions";
-import { completeProfileAction, completeProfileLaterAction } from "./complete-profile-actions";
+import { findClubsAction } from "../club-actions";
+import { completeProfileAction, completeProfileLaterAction } from "../complete-profile-actions";
 import {
   currentCompetition,
   currentDay,
   loadCompetitions,
   type ShownCompetition,
-} from "./competition";
-import { loadPlayerHome } from "./home-data";
-import { loadScale } from "./scale";
-import { getCurrentUser } from "./session";
-import { publicEventReader } from "./public-data";
+} from "../competition";
+import { loadPlayerHome } from "../home-data";
+import { loadScale } from "../scale";
+import { getCurrentUser } from "../session";
+import { publicEventReader } from "../public-data";
 
 /** The points « Comment ça marche » reads from the scale. */
 function stepPoints(scale: Record<string, number>) {

@@ -282,7 +282,8 @@ reste est relu à chaque page, comme avant.
 
 **Navigation instantanée (#824).** Chaque onglet de la barre du bas et la page d'une épreuve ont
 un `loading.tsx` (squelette, `PageSkeleton` de `src/components/shell/page-skeleton.tsx`) ; celui
-de la racine sert aussi aux pages qui n'en ont pas. Le routeur du navigateur garde une page
+de l'accueil vit dans le groupe `src/app/(accueil)/`, pas à la racine : un squelette racine
+envelopperait toutes les pages, et une page introuvable répondrait 200 au lieu de 404. Le routeur du navigateur garde une page
 visitée 30 s (`experimental.staleTimes.dynamic`, `next.config.ts`) : revenir sur un onglet ne
 redemande rien au serveur. Toute action du joueur qui change des données vide ce cache du
 navigateur : `revalidatePath`, `updateTag` (`publicDataChanged`) ou `refresh()` dans son Server
