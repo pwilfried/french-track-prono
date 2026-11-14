@@ -79,7 +79,27 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   Sélection lisible (#698) : la marche à remplir a un anneau plein de 3 px en `--accent-text`
   (≥ 3:1 sur la page et la carte, clair et sombre) ; un athlète placé a une bordure de 2 px
   `--accent-text`, un fond `--primary-soft` et son numéro de marche. Le focus clavier est un
-  contour `--ring` (bleu en clair, or en sombre), distinct de la sélection.
+  contour `--ring` (bleu en clair, or en sombre), distinct de la sélection. « Règles » ouvre les
+  règles dans une feuille du bas par-dessus l'épreuve (#703), avec « Toutes les règles » vers
+  `/regles` ; le lien reste une page sans JavaScript. Le podium en cours est gardé dans l'onglet
+  (`sessionStorage`, #699) : après la fiche d'un athlète, « Retour » ramène au podium tel qu'il
+  était ; il est oublié une fois enregistré ou l'épreuve verrouillée.
+- **Bouton « Enregistrer mon podium »** (#700) : inactif tant que le podium n'est pas complet ;
+  pendant l'envoi, inactif avec une roue (masquée si `prefers-reduced-motion`) et
+  « Enregistrement… » ; une fois enregistré, fond `--success-soft`, texte `--success-ink`, anneau
+  vert et « ✓ Podium enregistré », jusqu'au prochain changement du podium, des perfs ou du joker.
+- **Notification en haut de l'écran** (#700) : après un enregistrement, une pastille fixe en haut,
+  visible quelle que soit la position dans la page (sous la zone sûre du téléphone), disparaît
+  après 5 s. Vert doux « ✓ Podium enregistré » (`role="status"`) ou rouge plein avec le message
+  d'erreur, hors ligne compris (`role="alert"`). Rendue hors de `main` : l'erreur du podium reste
+  la seule alerte du contenu.
+- **Boutons d'envoi** (`SubmitButton`, #712) : tout formulaire joueur se verrouille pendant
+  l'envoi ; le bouton touché se désactive et dit ce qu'il fait (« Enregistrement en cours… »,
+  « Déconnexion en cours… »), les autres sont seulement inactifs ; un double tap n'envoie qu'une
+  fois. Un formulaire qui mène à une autre page reste en attente jusqu'à son chargement.
+- **Boutons** (`buttonVariants`, #701) : un libellé long passe à la ligne, centré, dans un bouton
+  qui grandit (44 px au moins) ; jamais de texte qui déborde de 320 à 390 px. Deux boutons aux
+  libellés longs s'empilent plutôt que de se serrer côte à côte.
 - **CountdownBadge** : « Verrouillage dans 12 min », neutre, puis orange dès 1 h et rouge dès
   10 min (jetons `--countdown-*` dans `globals.css`, contrastes AA), « 🔒 Verrouillé » ensuite ;
   rien ne clignote.
@@ -220,3 +240,7 @@ Tout le texte en français, tutoiement.
 
 Contrastes AA minimum, cibles tactiles de 44 px, glisser-déposer toujours doublé d'une
 alternative au tap, animations réduites si `prefers-reduced-motion`.
+
+Toute saisie du joueur est bornée (#712) : longueur maximale sur chaque champ (`maxLength`),
+reprise côté serveur, et perfs plausibles pour la discipline (#702) avec le message à côté du
+champ.
