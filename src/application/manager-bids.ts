@@ -1,4 +1,9 @@
-import { availableCredits, reservedCredits, type ManagerBid } from "@/domain/manager-bid";
+import {
+  availableCredits,
+  MAX_BID_DIGITS,
+  reservedCredits,
+  type ManagerBid,
+} from "@/domain/manager-bid";
 
 import { UseCaseError, type ErrorCode } from "./errors";
 import type { ManagerCatalogueRepository } from "./manager-catalogue";
@@ -142,7 +147,7 @@ export function placeManagerBid(ports: { bids: ManagerBidRepository }) {
   return {
     async execute(input: { leagueId: string; athleteId: string; amount: string }): Promise<void> {
       const text = input.amount.trim();
-      if (!/^\d+$/.test(text) || Number(text) <= 0) {
+      if (!/^\d+$/.test(text) || text.length > MAX_BID_DIGITS || Number(text) <= 0) {
         throw new UseCaseError("MANAGER_BID_INVALID");
       }
       const outcome = await ports.bids.place(input.leagueId, input.athleteId, Number(text));

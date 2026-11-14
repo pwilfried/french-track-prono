@@ -1,4 +1,7 @@
 /** Lower case, without accents or surrounding spaces: « Étoile » is found by « etoile ». */
+/** A search box takes this many characters at most; beyond, the rest is not read (#712). */
+export const SEARCH_MAX_LENGTH = 60;
+
 export function normalizeSearch(text: string): string {
   return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 }
@@ -39,7 +42,7 @@ export type ListView<T> = {
 
 /** What a back-office list shows: search, filter, sort, then one page. */
 export function viewList<T>(items: readonly T[], options: ListViewOptions<T>): ListView<T> {
-  const query = normalizeSearch(options.query);
+  const query = normalizeSearch(options.query.slice(0, SEARCH_MAX_LENGTH));
   let kept = items.filter(
     (item) => (!options.filter || options.filter(item)) && (!query || options.matches(item, query)),
   );

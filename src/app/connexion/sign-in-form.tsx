@@ -7,6 +7,7 @@ import { Captcha } from "@/components/account/captcha";
 import { Field } from "@/components/account/field";
 import { PasteCodeButton } from "@/components/account/paste-code-button";
 import { SubmitButton } from "@/components/account/submit-button";
+import { MAX_EMAIL_LENGTH } from "@/domain/auth";
 
 import { messages } from "../messages.fr";
 import { signInAction, type SignInState } from "./actions";
@@ -63,6 +64,7 @@ export function SignInForm({
               defaultValue={current.email}
               autoComplete="email"
               inputMode="email"
+              maxLength={MAX_EMAIL_LENGTH}
               required
             />
             {linkError && !current.error ? (

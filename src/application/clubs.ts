@@ -1,4 +1,5 @@
 import { searchKey } from "@/domain/club";
+import { SEARCH_MAX_LENGTH } from "@/domain/list-view";
 
 /** An athletics club a player can pick (#339). */
 export type Club = {
@@ -29,8 +30,9 @@ export const MIN_CLUB_QUERY = 2;
 export function searchClubs(ports: { clubs: ClubDirectory }) {
   return {
     async execute(input: { query: string; limit?: number }): Promise<Club[]> {
-      if (searchKey(input.query).replaceAll(" ", "").length < MIN_CLUB_QUERY) return [];
-      return ports.clubs.search(input.query, Math.min(input.limit ?? 20, 50));
+      const query = input.query.slice(0, SEARCH_MAX_LENGTH);
+      if (searchKey(query).replaceAll(" ", "").length < MIN_CLUB_QUERY) return [];
+      return ports.clubs.search(query, Math.min(input.limit ?? 20, 50));
     },
   };
 }
