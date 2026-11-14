@@ -59,7 +59,6 @@ function BadgeTile({ p, number }: { p: BadgeProgress; number: number }) {
  * others, what it counts this season, the next threshold, and the badge nearest to its next level.
  */
 export function BadgeGrid({ progress }: { progress: BadgeProgress[] }) {
-  const next = nextBadge(progress);
   const game = progress.filter((p) => !isFamily(p.badge));
   const family = progress.filter((p) => isFamily(p.badge));
   return (
@@ -88,15 +87,19 @@ export function BadgeGrid({ progress }: { progress: BadgeProgress[] }) {
           </ul>
         </>
       )}
-      <p className="rounded-card bg-muted p-3 text-sm font-semibold">
-        {next
-          ? text.nextBadge(
-              messages.badges[next.badge].name,
-              levels.the[next.next],
-              badgeLeft(next.badge, next.left),
-            )
-          : text.allBadges}
-      </p>
+      <p className="rounded-card bg-muted p-3 text-sm font-semibold">{nextBadgeText(progress)}</p>
     </section>
   );
+}
+
+/** « Prochain : Fidèle, le bronze (encore 1) »: the badge at the smallest effort left (#768). */
+export function nextBadgeText(progress: BadgeProgress[]): string {
+  const next = nextBadge(progress);
+  return next
+    ? text.nextBadge(
+        messages.badges[next.badge].name,
+        levels.the[next.next],
+        badgeLeft(next.badge, next.left),
+      )
+    : text.allBadges;
 }
