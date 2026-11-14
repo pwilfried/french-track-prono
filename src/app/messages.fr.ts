@@ -1,7 +1,6 @@
 // Every visible UI string lives here (French only in v1, no i18n library).
 
 import { eventLabel } from "@/domain/event-label";
-import type { ManagerIntroFigures } from "@/domain/manager-intro";
 
 /** « 1er », « 2e »… */
 const ordinal = (rank: number) => (rank === 1 ? "1er" : `${rank}e`);
@@ -434,6 +433,10 @@ export const messages = {
     budget: (n: number) => `${n} crédits de budget`,
     minTeamSize: (n: number) => `Équipes d'au moins ${n} athlètes, sans maximum`,
     lineup: (n: number) => `${n} athlètes alignés au plus par compétition`,
+    /** The scale of the Manager, in the rules of the league (#802). */
+    scoring: (winBonus: number) =>
+      `Points : barème World Athletics, bonus sportifs (+${winBonus} pour une victoire) et tes pronos de la compétition`,
+    duels: "Confrontations aller-retour : victoire 3 points, nul 1, défaite 0",
     competitions: (n: number) =>
       `${n} ${n <= 1 ? "compétition éligible" : "compétitions éligibles"}`,
     /** A day in Paris time: « samedi 10 janvier ». */
@@ -460,79 +463,32 @@ export const messages = {
     joinClosedNext: "Voir les autres ligues",
     shareText: (name: string) => `Rejoins ma ligue French Track Manager « ${name} »`,
     catalogueLink: "Catalogue du mercato",
-    /** The presentation of the mode, until the player has a Manager league (#618). */
-    intro: {
-      eyebrow: "Nouveau mode de jeu",
-      tagline:
-        "Deviens manager : recrute tes athlètes, aligne-les à chaque compétition et affronte tes amis toute la saison.",
-      stepsLabel: "Le Manager en 5 étapes",
-      steps: (f: ManagerIntroFigures) => [
-        {
-          title: "Recrute au mercato",
-          text: `${f.budget} crédits pour recruter au moins ${f.minTeamSize} athlètes, par enchères secrètes.`,
-        },
-        {
-          title: "Garde ton équipe toute la saison",
-          text: "Tes athlètes restent avec toi jusqu'à la dernière compétition.",
-        },
-        {
-          title: "Aligne tes titulaires",
-          text: `Avant chaque compétition, choisis jusqu'à ${f.lineupMax} athlètes.`,
-        },
-        {
-          title: "Marque des points",
-          text: `Barème World Athletics, bonus sportifs (+${f.winBonus} pour une victoire) et tes pronos.`,
-        },
-        {
-          title: "Gagne le championnat",
-          text: "Affronte chaque participant deux fois, en confrontations aller-retour.",
-        },
-      ],
-      create: "Créer une ligue Manager",
-      haveCode: "J'ai un code d'invitation",
-      skip: "Passer",
-      skipLabel: "Passer la présentation",
-    },
-    /** The tutorial (#616): seven short steps, at the first visit then on demand. */
+    /**
+     * The presentation of the Manager (#616, #802): three screens, at the first visit then on
+     * demand. The figures (budget, players, scale) live in the rules of the league.
+     */
     tutorial: {
       label: "Comment ça marche",
       progress: (step: number, total: number) => `Comment ça marche · ${step} / ${total}`,
       stepLabel: (step: number, total: number) => `Étape ${step} sur ${total}`,
       skip: "Passer",
-      skipLabel: "Passer le tutoriel",
-      navLabel: "Étapes du tutoriel",
+      skipLabel: "Passer la présentation",
+      navLabel: "Étapes de la présentation",
       previous: "Précédent",
       next: "Suivant",
-      done: "C'est parti",
       open: "Comment ça marche ?",
-      steps: (f: ManagerIntroFigures) => [
+      steps: [
         {
-          title: "Une ligue entre amis",
-          text: `Crée ta ligue ou rejoins celle d'un ami. Le créateur choisit au moins ${f.minCompetitions} compétitions : elles fixent le nombre de joueurs, de ${f.leagueMin} à ${f.leagueMax}. Les règles sont les mêmes pour tous.`,
+          title: "Deviens manager",
+          text: "Recrute des athlètes, aligne-les à chaque compétition et affronte tes amis.",
         },
         {
-          title: "Le mercato",
-          text: `Tu as ${f.budget} crédits pour recruter. Les offres sont secrètes : à la fin de chaque tour, les cartes se retournent et les enchères sont dévoilées.`,
+          title: "Une saison en deux temps",
+          text: "D'abord le mercato : tu recrutes ton équipe aux enchères. Puis les journées : à chaque compétition, tu affrontes un ami.",
         },
         {
-          title: "Ton équipe pour la saison",
-          text: `Au moins ${f.minTeamSize} athlètes, gardés jusqu'à la dernière compétition. Pas d'achat ni de vente en cours de route.`,
-        },
-        {
-          title: "Aligne tes titulaires",
-          text: `Avant chaque compétition, place jusqu'à ${f.lineupMax} titulaires au stade, sur les places de leur famille ou les places libres. Les autres restent remplaçants.`,
-        },
-        {
-          title: "Marque des points",
-          text: `Tes titulaires marquent selon le barème World Athletics, plus les bonus sportifs (+${f.winBonus} pour une victoire). Tes pronos de la compétition comptent aussi.`,
-        },
-        {
-          title: "Une confrontation par journée",
-          text: "Une compétition = une journée : tu affrontes un autre joueur, victoire 3 points, nul 1, défaite 0. Tu joues chacun deux fois, à l'aller et au retour. Les compétitions en trop, à la fin, sont des journées bonus : des points, sans confrontation.",
-        },
-        {
-          title: "Deviens champion",
-          text: "Après la dernière journée, bonus comprises, le premier du classement est champion. Ton palmarès reste dans ton profil.",
+          title: "À toi de jouer",
+          text: "Crée ta ligue et invite tes amis, ou rejoins la leur avec un code.",
         },
       ],
     },

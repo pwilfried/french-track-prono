@@ -38,11 +38,8 @@ test("a player joins a public Manager league in one tap and a private one by its
   await joinerPage.goto("/manager");
   await signUp(joinerPage, joiner);
   await joinerPage.waitForURL(/\/manager$/);
-  // The tutorial opens at the first visit (#616).
-  await joinerPage.getByRole("button", { name: "Passer le tutoriel" }).click();
-  // Without a Manager league the presentation comes first; « Passer » shows the leagues (#618).
-  await joinerPage.getByRole("link", { name: "Passer la présentation" }).click();
-  await joinerPage.waitForURL(/\/manager\?passer=1$/);
+  // The presentation opens at the first visit; « Passer » shows the leagues (#616, #802).
+  await joinerPage.getByRole("button", { name: "Passer la présentation" }).click();
   const publics = joinerPage.getByRole("list", { name: "Ligues publiques" });
   await expect(publics.getByRole("listitem").filter({ hasText: open })).toContainText(
     "1 / 4 participants",
@@ -107,6 +104,6 @@ test("joining a Manager league whose mercato is launched is refused", async ({ b
   ).toBe("1");
 
   // Nor is the public league listed any more.
-  await latePage.goto("/manager?passer=1");
+  await latePage.goto("/manager");
   await expect(latePage.locator("main")).not.toContainText(name);
 });

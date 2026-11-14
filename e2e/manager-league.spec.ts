@@ -22,18 +22,15 @@ test("a player creates a private French Track Manager league that keeps its rule
     const bar = page.getByRole("navigation", { name: "Navigation principale" });
     await bar.getByRole("link", { name: "Manager", exact: true }).click();
     await page.waitForURL(/\/manager$/);
-    // The tutorial opens at the first visit (#616).
-    await page.getByRole("button", { name: "Passer le tutoriel" }).click();
+    // The presentation opens at the first visit (#616, #802).
+    await page.getByRole("button", { name: "Passer la présentation" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("French Track Manager");
     await expect(bar.getByRole("link", { name: "Manager", exact: true })).toHaveAttribute(
       "aria-current",
       "page",
     );
-    // Without a Manager league, the presentation of the mode, its figures from the rules (#618).
-    const steps = page.getByRole("list", { name: "Le Manager en 5 étapes" });
-    await expect(steps.getByRole("listitem")).toHaveCount(5);
-    await expect(steps).toContainText(`${budget} crédits pour recruter`);
-    await expect(page.getByRole("link", { name: "J'ai un code d'invitation" })).toHaveAttribute(
+    // Without a Manager league, the ways in.
+    await expect(page.getByRole("link", { name: "Rejoindre avec un code" })).toHaveAttribute(
       "href",
       "/manager/rejoindre",
     );
@@ -65,6 +62,10 @@ test("a player creates a private French Track Manager league that keeps its rule
 
     // The rules were copied at creation: a later change does not touch the league.
     await expect(page.getByText("130 crédits de budget")).toBeVisible();
+    // The detail of the mode lives in the rules of the league (#802).
+    const rules = page.getByRole("region", { name: "Règles de la ligue" });
+    await expect(rules).toContainText("barème World Athletics");
+    await expect(rules).toContainText("victoire 3 points, nul 1, défaite 0");
     sql(`update manager_rules set rules = jsonb_set(rules, '{budget}', '999')`);
     await page.reload();
     await expect(page.getByText("130 crédits de budget")).toBeVisible();
