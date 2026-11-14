@@ -29,14 +29,24 @@ test("a new player predicts a perfect podium, the admin enters the results sheet
   const tips = page.getByRole("region", { name: "Premier prono : astuces" });
   await expect(tips).toBeVisible();
 
-  // Compose the podium with the first three athletes, then save.
+  // Compose the podium with the first three athletes, then save from the bottom of the page:
+  // the button and a notice at the top of the screen show the save where the player is (#700).
   const athletes = page.locator("li > button[aria-pressed]");
   for (const index of [0, 1, 2]) await athletes.nth(index).click();
-  await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
-  await expect(page.getByRole("status")).toContainText("Podium enregistré");
+  const save = page.getByRole("button", { name: "Enregistrer mon podium" });
+  await save.scrollIntoViewIfNeeded();
+  await save.click();
+  await expect(page.getByRole("button", { name: "✓ Podium enregistré" })).toBeVisible();
+  const notice = page.getByRole("status");
+  await expect(notice).toContainText("Podium enregistré");
+  await expect(notice).toBeInViewport();
+  // A new change brings the button back.
+  await page.getByText("🃏 Joker : points × 2").click();
+  await expect(save).toBeVisible();
 
-  // Reopening the page shows the saved podium, without the tips (#493).
+  // Reopening the page shows the saved podium and its confirmation, without the tips (#493).
   await page.reload();
+  await expect(page.getByText("Tu peux le modifier jusqu'au verrouillage.")).toBeVisible();
   await expect(page.getByRole("button", { name: /^1re place : (?!vide)/ })).toBeVisible();
   await expect(tips).toHaveCount(0);
 

@@ -1,13 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { createPortal, useFormStatus } from "react-dom";
 
-import { SubmitButton } from "@/components/account/submit-button";
 import { buttonVariants } from "@/components/ui/button";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
 import { ScaleRules } from "@/components/rules/scale-rules";
 import type { MarkUnit } from "@/domain/discipline";
 import { isComplete, OTHER_ATHLETE, type PodiumDraft } from "@/domain/podium-draft";
+import { cn } from "@/lib/utils";
 
 import { messages } from "../../messages.fr";
 import { FirstPredictionTips } from "./first-prediction-tips";
@@ -45,24 +46,40 @@ export function PredictionForm({
     : state.error
       ? messages.errors[state.error]
       : undefined;
+  // The notice at the top of the screen, for each answer of a save (#700).
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const [answered, setAnswered] = useState(state);
+  if (answered !== state) {
+    setAnswered(state);
+    setNotice(
+      state.saved
+        ? { kind: "saved", text: messages.prediction.savedShort }
+        : state.error
+          ? { kind: "error", text: messages.errors[state.error] }
+          : null,
+    );
+  }
+  // The button shows the save until the player changes the podium, the marks or the joker.
+  const [editedAfter, setEditedAfter] = useState<PredictionState | null>(null);
+  const justSaved = state !== initial && state.saved === true && editedAfter !== state;
+  const edited = () => setEditedAfter(state);
   const submit = (data: FormData) => {
     const isOffline = !navigator.onLine;
     setOffline(isOffline);
-    if (!isOffline) action(data);
+    if (isOffline) setNotice({ kind: "error", text: messages.offline.prediction });
+    else action(data);
   };
 
   return (
-    <form action={submit} className="flex flex-col gap-4">
+    <form action={submit} onChange={edited} className="flex flex-col gap-4">
       <input type="hidden" name="eventId" value={eventId} />
       <input type="hidden" name="slug" value={slug} />
       {markUnit && <input type="hidden" name="markUnit" value={markUnit} />}
       {/* Once a podium is saved the tips only push it down (#493). */}
       {!isComplete(initial.draft) && <FirstPredictionTips />}
-      {state.saved && (
-        <p
-          role="status"
-          className="mx-4 rounded-2xl bg-success/15 px-3.5 py-3 text-sm font-semibold text-success-text"
-        >
+      {/* Stays for a player who comes back; the notice is what announces a save. */}
+      {(state.saved || isComplete(initial.draft)) && (
+        <p className="mx-4 rounded-2xl bg-success/15 px-3.5 py-3 text-sm font-semibold text-success-text">
           {messages.prediction.saved}
         </p>
       )}
@@ -71,7 +88,10 @@ export function PredictionForm({
         initialDraft={state.draft}
         error={error}
         disabled={locked}
-        onChange={(next: PodiumDraft) => setDraft(next)}
+        onChange={(next: PodiumDraft) => {
+          setDraft(next);
+          edited();
+        }}
         helpHref="/regles"
         help={<ScaleRules scale={scale} level={3} idPrefix="rules-" />}
         athleteHref={(athlete) => `/athletes/${athlete.slug}`}
@@ -108,19 +128,82 @@ export function PredictionForm({
             />
           </label>
           <div className="px-4">
-            {complete ? (
-              <SubmitButton pendingLabel={messages.prediction.saving}>
-                {messages.prediction.save}
-              </SubmitButton>
-            ) : (
-              <button type="button" disabled className={`${buttonVariants()} w-full`}>
-                {messages.prediction.save}
-              </button>
-            )}
+            <SaveButton complete={complete} saved={justSaved} />
           </div>
         </>
       )}
+      <SaveNotice notice={notice} dismiss={setNotice} />
     </form>
+  );
+}
+
+type Notice = { kind: "saved" | "error"; text: string };
+
+/** Waiting, then saved, in the button itself: it sits where the player tapped. */
+function SaveButton({ complete, saved }: { complete: boolean; saved: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={!complete || pending}
+      className={cn(
+        buttonVariants(),
+        "w-full",
+        saved &&
+          !pending &&
+          "bg-success-soft text-success-ink ring-2 ring-success ring-inset hover:bg-success-soft",
+      )}
+    >
+      {pending ? (
+        <>
+          <span
+            aria-hidden
+            className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:hidden"
+          />
+          {messages.prediction.saving}
+        </>
+      ) : saved ? (
+        messages.prediction.savedShort
+      ) : (
+        messages.prediction.save
+      )}
+    </button>
+  );
+}
+
+/**
+ * A short notice at the top of the screen, whatever the scroll position. Outside `main` (a
+ * portal), so the podium's own error stays the one alert of the page content.
+ */
+function SaveNotice({
+  notice,
+  dismiss,
+}: {
+  notice: Notice | null;
+  dismiss: (notice: null) => void;
+}) {
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => dismiss(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [notice, dismiss]);
+  if (!notice) return null;
+  const error = notice.kind === "error";
+  return createPortal(
+    <div
+      role={error ? "alert" : "status"}
+      className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)]"
+    >
+      <p
+        className={cn(
+          "max-w-md rounded-2xl px-4 py-3 font-semibold shadow-lg",
+          error ? "bg-primary text-primary-foreground" : "bg-success-soft text-success-ink",
+        )}
+      >
+        {notice.text}
+      </p>
+    </div>,
+    document.body,
   );
 }
 
