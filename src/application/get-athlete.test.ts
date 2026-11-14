@@ -3,34 +3,46 @@ import { describe, expect, it } from "vitest";
 import type { AthleteSheet } from "@/domain/athlete";
 
 import { UseCaseError } from "./errors";
-import { getAthlete, RECENT_RACES, type AthleteReader } from "./get-athlete";
+import { getAthlete, type AthleteReader } from "./get-athlete";
+
+const reader = (athletes: AthleteSheet[]): AthleteReader => ({
+  findBySlug: async (slug) => athletes.find((a) => a.slug === slug) ?? null,
+});
 
 const sheet: AthleteSheet = {
   athleteId: "a1",
-  slug: "sha-carri-richardson",
-  name: "Sha'Carri Richardson",
-  countryCode: "USA",
+  slug: "lea-fictive",
+  name: "Léa Fictive",
+  countryCode: "FRA",
   gender: "F",
-  records: [],
-  races: [],
+  disciplines: ["100 m", "200 m"],
+  managerPrice: 12,
+  records: [
+    {
+      discipline: "100 m",
+      kind: "pr",
+      mark: "10.95",
+      date: "2025-07-01",
+      meeting: "Meeting",
+      verified: false,
+    },
+  ],
 };
 
 describe("getAthlete", () => {
-  it("returns the athlete page with the latest five races", async () => {
-    const asked: number[] = [];
-    const athletes: AthleteReader = {
-      findBySlug: async (slug, races) => {
-        asked.push(races);
-        return slug === sheet.slug ? sheet : null;
-      },
-    };
+  it("gives the athlete's page with their disciplines, records and Manager price", async () => {
+    // Given an athlete with a record
+    const athletes = reader([sheet]);
 
-    expect(await getAthlete({ athletes }).execute({ slug: sheet.slug })).toEqual(sheet);
-    expect(asked).toEqual([RECENT_RACES]);
+    // When a fan opens their page
+    const page = await getAthlete({ athletes }).execute({ slug: "lea-fictive" });
+
+    // Then the page has everything the records need
+    expect(page).toEqual(sheet);
   });
 
   it("refuses an unknown athlete with ATHLETE_NOT_FOUND", async () => {
-    const athletes: AthleteReader = { findBySlug: async () => null };
+    const athletes = reader([]);
 
     await expect(getAthlete({ athletes }).execute({ slug: "nobody" })).rejects.toEqual(
       new UseCaseError("ATHLETE_NOT_FOUND"),
