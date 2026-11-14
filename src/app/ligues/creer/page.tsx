@@ -1,22 +1,17 @@
-import Link from "next/link";
-
 import { CreateLeagueForm } from "@/components/leagues/league-forms";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { isOpenToLeagues } from "@/domain/league";
+import { pickableFromDays } from "@/domain/season-picker";
 
 import { loadCompetitions } from "../../competition";
 import { paramList } from "../../search-params";
 import { messages } from "../../messages.fr";
 import { leaguePorts } from "../data";
 
-/** The query string of the page with these competitions. */
-const withCompetitions = (slugs: string[]) =>
-  new URLSearchParams(slugs.map((slug) => ["competition", slug])).toString();
-
 /**
- * League creation (board v0.9 « Créer la ligue »): its name and its competitions, the ones ticked
- * on the choice page. At least one, not finished (#614): a finished one is left out, and the form
- * stays disabled while none is chosen.
+ * League creation: its name, its families and its competitions, ticked in the season picker of the
+ * Manager (#721), the ones given in the address (`competition`) ticked from the start. Only the
+ * competitions not finished are offered (#614).
  */
 export default async function CreateLeaguePage({
   searchParams,
@@ -25,12 +20,15 @@ export default async function CreateLeaguePage({
 }) {
   const params = await searchParams;
   const asked = [...new Set(paramList(params.competition))];
-  await leaguePorts(asked.length ? `/ligues/creer?${withCompetitions(asked)}` : "/ligues/creer");
+  await leaguePorts(
+    asked.length
+      ? `/ligues/creer?${new URLSearchParams(asked.map((slug) => ["competition", slug]))}`
+      : "/ligues/creer",
+  );
   const { coming } = await loadCompetitions();
   const now = new Date().toISOString();
-  const chosen = coming.filter((c) => asked.includes(c.slug) && isOpenToLeagues(c, now));
-  const slugs = chosen.map((c) => c.slug);
-  const scope = chosen[0]?.scope ?? "international";
+  const competitions = coming.filter((c) => isOpenToLeagues(c, now)).map(pickableFromDays);
+  const chosen = competitions.filter((c) => asked.includes(c.id)).map((c) => c.id);
 
   return (
     <main id="main" className="flex flex-1 flex-col">
@@ -40,52 +38,11 @@ export default async function CreateLeaguePage({
         back={{ href: "/ligues", label: messages.leagues.back }}
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
-        <section aria-labelledby="chosen" className="flex flex-col gap-2">
-          <h2
-            id="chosen"
-            className="text-xs font-bold uppercase tracking-wide text-muted-foreground"
-          >
-            {messages.leagues.chosen}
-          </h2>
-          {chosen.length === 0 && (
-            <p className="rounded-2xl bg-muted px-3.5 py-3 text-sm text-muted-foreground">
-              {messages.leagues.competitionRequired}
-            </p>
-          )}
-          <ul aria-labelledby="chosen" className="flex flex-col gap-2">
-            {chosen.map((c) => (
-              <li
-                key={c.slug}
-                className="flex min-h-14 items-center gap-3 rounded-2xl border border-border bg-card py-1 pl-3.5 pr-1"
-              >
-                <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold">
-                  {c.scope === "france" ? "FR" : "INT"}
-                </span>
-                <span className="min-w-0 flex-1 font-semibold">{c.name}</span>
-                <Link
-                  href={`/ligues/creer?${withCompetitions(slugs.filter((s) => s !== c.slug))}`}
-                  aria-label={messages.leagues.remove(c.name)}
-                  className="inline-flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
-                >
-                  ✕
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <Link
-            href={`/ligues/creer/competitions?type=${scope}&${withCompetitions(slugs)}`}
-            className="inline-flex min-h-11 items-center self-start font-bold"
-          >
-            {messages.leagues.addCompetition}
-          </Link>
-        </section>
-
-        <div className="flex flex-col gap-1 rounded-card bg-brand-soft p-4 text-brand-ink">
-          <p className="font-bold">{messages.leagues.howTitle}</p>
-          <p className="text-sm leading-relaxed">{messages.leagues.how}</p>
-        </div>
-
-        <CreateLeagueForm competitionSlugs={slugs} isPublic={params.publique === "1"} />
+        <CreateLeagueForm
+          competitions={competitions}
+          chosen={chosen}
+          isPublic={params.publique === "1"}
+        />
       </div>
     </main>
   );
