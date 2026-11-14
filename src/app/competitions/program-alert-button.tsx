@@ -21,7 +21,7 @@ export function ProgramAlertButton({ competition, on }: { competition: string; o
         aria-pressed={state.on}
         className={buttonVariants({ variant: state.on ? "muted" : "default" })}
       >
-        {state.on ? `✓ ${text.notified}` : text.notify}
+        {pending ? text.saving : state.on ? `✓ ${text.notified}` : text.notify}
       </button>
       <p className="text-xs text-muted-foreground">
         {state.on ? text.notifiedHint : text.deviceHint}
