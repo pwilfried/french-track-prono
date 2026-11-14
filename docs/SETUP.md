@@ -432,13 +432,15 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   de chaque passage, réussi ou non, `ci/preprod/cleanup-e2e.sql` supprime les comptes
   `e2e-…@example.test` (avec leurs ligues, pronos et points, donc hors de tout classement), les
   ligues « E2E … » et les compétitions `test-…` / `e2e-…` ; le jeu de démo et le seed n'utilisent
-  jamais ces noms. Le résultat (vert/rouge, lien du run et du rapport) est dans le résumé du run
-  et commenté dans l'issue « Valider vX.Y.Z en préprod » ouverte, s'il y en a une. Une suite
-  rouge rend le run « Pre-production » rouge, ce qui fait attendre le tag. Le changement
+  jamais ces noms. Un test en échec ouvre une issue `bug` qui mentionne le propriétaire
+  (`ci/preprod/regression-report.sh`, décision du propriétaire pour #695 : une issue seulement
+  quand c'est rouge) ; rien n'est signalé quand tout passe. Une suite rouge rend le run
+  « Pre-production » rouge, ce qui fait attendre le tag. Tant que les secrets e2e ci-dessous
+  manquent, les tests sont sautés avec un avertissement, sans bloquer la chaîne (#741). Le changement
   d'e-mail (`profile-edit.spec.ts`) est sauté en préprod : aucune API ne donne son code. Le test
-  quotidien (`ci/preprod/daily.yml`) passe par les mêmes aides et les mêmes secrets. Un agent ne
-  peut pas pousser de workflow : le job vit dans `ci/preprod/preprod.yml`, que le propriétaire
-  copie dans `.github/workflows/preprod.yml`.
+  quotidien (`.github/workflows/preprod-daily.yml`) passe par les mêmes aides et les mêmes
+  secrets. Un agent ne peut pas pousser de workflow : il décrit dans sa PR le changement, que le
+  propriétaire (ou une session locale) applique dans `.github/workflows/`.
 - **Pas de captcha ni de notifications push** en préprod (pas de clé Turnstile ni VAPID).
 - **Mise en prod** : la prod suit toujours les tags, posés automatiquement quand un milestone est
   fini et `main` vert, sans feu vert humain (décision du propriétaire du 13 nov. 2026,
