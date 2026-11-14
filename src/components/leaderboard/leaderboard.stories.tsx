@@ -44,7 +44,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Me highlighted, a tie for third, a player without points. */
+/** Me highlighted, a tie for third, a player without points (#706: one « 0 », no sentence). */
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -55,7 +55,10 @@ export const Default: Story = {
     await expect(items[2]).toHaveTextContent("3e");
     await expect(items[3]).toHaveTextContent("3e");
     await expect(canvas.getAllByText("ex æquo")).toHaveLength(2);
-    await expect(items[5]).toHaveTextContent("Pas encore de points");
+    // Said once, in the points column under its header (#706).
+    await expect(canvas.getByText("Pts")).toBeInTheDocument();
+    await expect(items[5]).toHaveTextContent("0 point");
+    await expect(items[5]).not.toHaveTextContent("Pas encore de points");
   },
 };
 

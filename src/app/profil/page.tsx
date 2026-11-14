@@ -155,7 +155,7 @@ export default async function ProfilePage({
             {season ? season.points : "–"}
           </span>
           <span className="text-sm">
-            {text.pointsShort} ·{" "}
+            {messages.format.ptsUnit(season?.points ?? 0)} ·{" "}
             <strong>
               {season?.rank ? text.rankOf(season.rank, season.players) : text.notRanked}
             </strong>
