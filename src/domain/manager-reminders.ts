@@ -1,7 +1,7 @@
 // Manager reminders (#836), in the « Manager » family of « Mes rappels » (#681): the end of a
 // mercato round in 2 h, a lineup not validated before its lock, a head-to-head over. These rules
 // are the reference; the cron reads them in SQL (private.reminder_due(), migration
-// 20261114070000_manager_reminders.sql), tested with the same cases in pgTAP. Same quiet hours as
+// 20261114090000_manager_reminders.sql), tested with the same cases in pgTAP. Same quiet hours as
 // the other families; each reminder is sent once (league and round, or league and competition).
 import { isQuietTime, type ReminderSettings } from "./reminders";
 
