@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { savePrediction } from "@/application/save-prediction";
+import { DISCIPLINE_FAMILIES } from "@/domain/discipline";
 import type { PodiumDraft } from "@/domain/podium-draft";
 import { createSupabasePredictionRepository } from "@/infra";
 
@@ -39,6 +40,9 @@ export async function savePredictionAction(
   };
   const unit = formText(data, "markUnit");
   const markUnit = (["time", "distance", "points"] as const).find((u) => u === unit);
+  // Bounds the marks here for a clear message; the database checks them against the event anyway.
+  const family = formText(data, "markFamily");
+  const markFamily = DISCIPLINE_FAMILIES.find((f) => f === family);
 
   const user = await getCurrentUser();
   if (!user) redirect(`/connexion?next=${encodeURIComponent(`/epreuves/${slug}`)}`);
@@ -55,6 +59,7 @@ export async function savePredictionAction(
       useJoker: state.useJoker,
       marks: state.marks,
       markUnit,
+      markFamily,
     });
   } catch (error) {
     // Only known error codes are expected here; anything else is a bug and stays visible.
