@@ -4,7 +4,9 @@ import { useActionState, useState } from "react";
 
 import { messages } from "@/app/messages.fr";
 import { SubmitButton } from "@/components/account/submit-button";
+import type { DisciplineFamily, MarkUnit } from "@/domain/discipline";
 import { flagOf } from "@/domain/flag";
+import { readMark } from "@/domain/mark-range";
 import {
   PERFORMANCE_STATUSES,
   RECORD_FLAGS,
@@ -41,11 +43,16 @@ export function PerformanceForm({
   eventId,
   slug,
   manager,
+  unit,
+  family,
   initial,
 }: {
   eventId: string;
   slug: string;
   manager: boolean;
+  /** How the discipline measures a mark: an implausible one is flagged as soon as it is typed. */
+  unit: MarkUnit;
+  family?: DisciplineFamily;
   initial: PerformanceRow[];
 }) {
   const [state, action] = useActionState<AdminActionState, FormData>(savePerformancesAction, {});
@@ -73,6 +80,10 @@ export function PerformanceForm({
     );
     setReport({ matched: lines.length, unmatched });
   };
+
+  // Typed or pasted from World Athletics, a mark out of the usual range is flagged (#702).
+  const outOfRange = (r: PerformanceRow) =>
+    r.status === "ok" && r.mark.trim() !== "" && readMark(r.mark, unit, family) === "out_of_range";
 
   const update = (athleteId: string, change: Partial<PerformanceRow>) =>
     setRows(rows.map((r) => (r.athleteId === athleteId ? { ...r, ...change } : r)));
@@ -219,6 +230,7 @@ export function PerformanceForm({
                   {t.mark}
                   <input
                     value={r.mark}
+                    aria-invalid={outOfRange(r) ? true : undefined}
                     disabled={r.status !== "" && r.status !== "ok"}
                     onChange={(e) =>
                       update(r.athleteId, {
@@ -228,8 +240,9 @@ export function PerformanceForm({
                     }
                     inputMode="decimal"
                     maxLength={12}
-                    className="min-h-11 w-full rounded-xl border-2 border-border bg-background px-2 font-mono text-base text-foreground disabled:opacity-50"
+                    className="min-h-11 w-full rounded-xl border-2 border-border bg-background px-2 font-mono text-base text-foreground disabled:opacity-50 aria-invalid:border-accent-text"
                   />
+                  {outOfRange(r) && <span className="text-accent-text">{t.outOfRange}</span>}
                 </label>
               </div>
               {r.status === "ok" && (
@@ -275,6 +288,13 @@ export function PerformanceForm({
         <p role="alert" className="text-sm font-semibold text-accent-text">
           {messages.errors[state.error]}
         </p>
+      )}
+      {/* #702: a mark out of the usual range is a warning; the admin may confirm it. */}
+      {state.error === "MARK_OUT_OF_RANGE_CONFIRM" && (
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-semibold">
+          <input type="checkbox" name="confirmOutOfRange" className="size-5 accent-primary" />
+          {t.confirmOutOfRange}
+        </label>
       )}
       <SubmitButton pendingLabel={t.saving}>{t.save}</SubmitButton>
     </form>

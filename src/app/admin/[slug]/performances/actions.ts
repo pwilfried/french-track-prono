@@ -70,7 +70,9 @@ export async function savePerformancesAction(
       competitionSlug: event.competitionSlug ?? null,
       final: event.round === "final",
       unit: event.markUnit ?? "time",
+      family: event.markFamily,
       lines: linesOf(data),
+      confirmOutOfRange: data.get("confirmOutOfRange") === "on",
     });
   } catch (error) {
     if (error instanceof UseCaseError) return { error: error.code };

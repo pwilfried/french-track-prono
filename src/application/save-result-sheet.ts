@@ -1,6 +1,7 @@
-import type { MarkUnit } from "@/domain/discipline";
+import type { DisciplineFamily, MarkUnit } from "@/domain/discipline";
 import { isValidOfficialPodium } from "@/domain/official-result";
 import {
+  outOfRangeMarks,
   performanceProblem,
   podiumFromPerformances,
   tidyPerformances,
@@ -74,16 +75,26 @@ export function recomputeResultSheet(ports: Ports) {
  * The admin enters the one results sheet of an event (#665): places, marks and records of its
  * athletes, or DNS, DNF, DQ. The official podium of the predictions is drawn from it (places 1 to
  * 3, ties included), then the predictions and the Manager are scored at once. A corrected sheet
- * replaces the previous one and scores everything again.
+ * replaces the previous one and scores everything again. A mark outside the plausible range of the
+ * discipline (#702) is saved only once the admin confirms it.
  */
 export function saveResultSheet(ports: Ports) {
   return {
     async execute(
-      input: SheetEvent & { unit: MarkUnit; lines: Performance[] },
+      input: SheetEvent & {
+        unit: MarkUnit;
+        family?: DisciplineFamily;
+        lines: Performance[];
+        /** The admin checked the out-of-range marks and saves them anyway. */
+        confirmOutOfRange?: boolean;
+      },
     ): Promise<SheetComputation & { performances: Performance[] }> {
       const lines = tidyPerformances(input.lines, input.unit);
       const problem = performanceProblem(lines, input.unit);
       if (problem) throw new UseCaseError(PROBLEMS[problem]);
+      if (!input.confirmOutOfRange && outOfRangeMarks(lines, input.unit, input.family).length > 0) {
+        throw new UseCaseError("MARK_OUT_OF_RANGE_CONFIRM");
+      }
       if (!isValidOfficialPodium(podiumFromPerformances(lines))) {
         throw new UseCaseError("RESULT_INVALID");
       }
