@@ -48,7 +48,7 @@ test("a participant sees their team fixed for the season after the mercato, and 
 
   // From the league, to the team.
   await page.reload();
-  await page.getByRole("main").getByRole("link", { name: "Mon équipe" }).click();
+  await page.getByRole("main").getByRole("link", { name: "Mon équipe", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/manager/${id}/equipe$`));
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Mon équipe");
 

@@ -40,7 +40,8 @@ export default defineConfig({
   retries: 0,
   workers: 1,
   timeout: 60_000,
-  globalSetup: "./e2e/vercel-bypass.ts",
+  // Against pre-production: Vercel's bypass cookie, then the events opened (e2e/preprod-events.ts).
+  globalSetup: ["./e2e/vercel-bypass.ts", "./e2e/preprod-events.ts"],
   globalTeardown: "./e2e/teardown.ts",
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {

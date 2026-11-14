@@ -19,6 +19,23 @@ export function roundEndsAt(openedAt: string, rules: RoundRules, n: number): str
   return new Date(Date.parse(openedAt) + hours * 3_600_000).toISOString();
 }
 
+/**
+ * The round open at `now` in a mercato opened at `openedAt`, and when it ends (ISO): the first
+ * round that has not ended yet (#774).
+ */
+export function currentRound(
+  openedAt: string,
+  rules: RoundRules,
+  now: string,
+): { round: number; endsAt: string } {
+  const at = Date.parse(now);
+  let ends = Date.parse(openedAt);
+  for (let round = 1; ; round += 1) {
+    ends += roundHours(rules, round) * 3_600_000;
+    if (ends > at) return { round, endsAt: new Date(ends).toISOString() };
+  }
+}
+
 /** A bid of any participant of the league, as the closing of a round reads it. */
 export type LeagueBid = { userId: string; athleteId: string; amount: number; bidAt: string };
 

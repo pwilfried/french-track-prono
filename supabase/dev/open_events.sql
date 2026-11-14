@@ -1,4 +1,5 @@
--- Local testing only: never part of the migrations or of seed.sql.
+-- Test tooling only: never part of the migrations or of seed.sql. Run locally (npm run db:open-events),
+-- in the CI of each PR, and before each e2e run against pre-production (e2e/preprod-events.ts, #776).
 --
 -- The Ultimate Championship is over, so every seeded event is locked. This script moves the whole
 -- schedule (same order, same spacing, same days) so that it starts now:

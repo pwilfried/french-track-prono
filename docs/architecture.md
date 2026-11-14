@@ -406,10 +406,13 @@ Lecture par les participants (`ManagerHonoursRepository`). Page `/manager/[id]/f
 (rang final, « Ma saison », bilan face au rival : le joueur juste devant, le 2e pour le
 champion) ; le palmarès est rappelé dans le profil.
 
-Accueil et tutoriel Manager (v0.16, issues #606 et #616) : pas de table ni de port de plus. Le cas
-d'usage `getManagerHome` (`src/application/manager-home.ts`) réutilise les ports de la ligue, de la
-saison et des alignements pour « Ma saison » sur `/manager` (première ligue du joueur : journée,
-rang, prochaine confrontation, action du moment) ; l'étape du déroulé vient de
+Accueil et tutoriel Manager (v0.16, issues #606 et #616 ; liste des ligues, #774) : pas de table
+ni de port de plus. Les cas d'usage `listMySeasons` et `getManagerSeason`
+(`src/application/manager-home.ts`) réutilisent les ports de la ligue, de la saison et des
+alignements : `/manager` liste une carte par ligue (phase, tour de mercato ouvert et sa fin tirés
+de `currentRound` dans `src/domain/manager-round.ts`, rang, verrou d'alignement), `/manager/[id]`
+montre « Ma saison » de cette ligue (journée, rang, prochaine confrontation, action du moment) ;
+l'étape du déroulé vient de
 `currentSeasonStep` (`src/domain/manager-home.ts`). Le tutoriel est un composant client
 (`ManagerTutorial`) : ouvert seul à la première visite (mémorisé sur l'appareil, rien en base),
 puis par `/manager?tutoriel=1` ; ses chiffres viennent de `managerIntroFigures`. Détail :

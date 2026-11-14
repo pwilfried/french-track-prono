@@ -262,9 +262,30 @@ join athletes a on a.slug = s.athlete_slug
 on conflict do nothing;
 
 -- Invented athletics clubs, for local tests (#340). Production imports the real ones.
-insert into clubs (name, city, department, source, validated) values
-  ('Athlé Club des Tests', 'Testville', '75', 'import', true),
-  ('Foulées de Fictiville', 'Fictiville', '69', 'import', true),
-  ('Stade Imaginaire Athlétisme', 'Songeville', '13', 'import', true);
+-- Clubs have no natural key: each one is written only when missing, since pre-production loads the
+-- seed at every deploy (#776). Copies left by earlier loads are merged into the oldest one, their
+-- players with it.
+create temp table _seed_clubs (name text, city text, department text) on commit drop;
+insert into _seed_clubs values
+  ('Athlé Club des Tests', 'Testville', '75'),
+  ('Foulées de Fictiville', 'Fictiville', '69'),
+  ('Stade Imaginaire Athlétisme', 'Songeville', '13');
+
+create temp table _seed_club_copies on commit drop as
+select id, keep from (
+  select c.id, first_value(c.id) over (partition by c.name, c.city order by c.created_at, c.id) as keep
+  from clubs c
+  join _seed_clubs s on s.name = c.name and s.city = c.city
+  where c.source = 'import' and c.siren is null
+) ranked
+where id <> keep;
+
+update profiles p set club_id = k.keep from _seed_club_copies k where p.club_id = k.id;
+delete from clubs where id in (select id from _seed_club_copies);
+
+insert into clubs (name, city, department, source, validated)
+select s.name, s.city, s.department, 'import', true
+from _seed_clubs s
+where not exists (select 1 from clubs c where c.name = s.name and c.city = s.city);
 
 commit;
