@@ -162,6 +162,7 @@ export function SeasonCompetitionPicker({
   empty,
   submitLabel,
   pendingLabel,
+  blocked = false,
 }: {
   competitions: PickableCompetition[];
   chosen: readonly string[];
@@ -177,6 +178,8 @@ export function SeasonCompetitionPicker({
   empty: string;
   submitLabel: string;
   pendingLabel: string;
+  /** Another part of the form is not ready yet (a league's families, #613): the button waits. */
+  blocked?: boolean;
 }) {
   const [ids, setIds] = useState(() => new Set(chosen));
   const [filters, setFilters] = useState<PickerFilters>(NO_FILTERS);
@@ -419,7 +422,7 @@ export function SeasonCompetitionPicker({
         <div role="status" aria-live="polite">
           <Summary count={ids.size} minimum={minimum} withFormat={withFormat} />
         </div>
-        <SubmitButton pendingLabel={pendingLabel} disabled={ids.size < minimum}>
+        <SubmitButton pendingLabel={pendingLabel} disabled={blocked || ids.size < minimum}>
           {submitLabel}
         </SubmitButton>
       </div>
