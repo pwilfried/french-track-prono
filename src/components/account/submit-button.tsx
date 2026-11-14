@@ -47,8 +47,10 @@ export function SubmitButton({
   useEffect(() => {
     const form = button.current?.form;
     if (!form) return;
+    // Listened on the window, after React's own handlers (bound on the document): a form whose
+    // `onSubmit` cancels the sending (a check before sending) is already marked so here.
     const onSubmit = (event: SubmitEvent) => {
-      if (event.defaultPrevented) return;
+      if (event.target !== form || event.defaultPrevented) return;
       sending.current = true;
       if (navigates) setSent(true);
       // A form whose sending was cancelled by the page never turns pending: free it again.
@@ -58,10 +60,10 @@ export function SubmitButton({
       sending.current = false;
       setSent(false);
     };
-    form.addEventListener("submit", onSubmit);
+    window.addEventListener("submit", onSubmit);
     window.addEventListener("pageshow", onShow);
     return () => {
-      form.removeEventListener("submit", onSubmit);
+      window.removeEventListener("submit", onSubmit);
       window.removeEventListener("pageshow", onShow);
     };
   }, [navigates]);
