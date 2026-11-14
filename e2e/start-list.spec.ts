@@ -15,6 +15,9 @@ test("an admin builds the start list of a final of eight athletes in less than a
   const player = newPlayer("depart");
 
   await page.goto(`/epreuves/${slug}`);
+  // An empty start list shows one neutral line, never the old test-data notice (#803).
+  await expect(page.getByText("La liste de départ n'est pas encore connue.")).toBeVisible();
+  await expect(page.getByText(/jeu de test/)).toHaveCount(0);
   await page.locator("main").getByRole("link", { name: "Se connecter", exact: true }).click();
   await signUp(page, player);
   await page.waitForURL(new RegExp(`/epreuves/${slug}$`));
@@ -70,6 +73,7 @@ test("an admin builds the start list of a final of eight athletes in less than a
   // The loading skeleton is a second <main> for a moment: look for the name itself.
   await page.goto(`/epreuves/${slug}`);
   await expect(page.getByText("Sha'Carri Richardson").first()).toBeVisible();
+  await expect(page.getByText(/jeu de test/)).toHaveCount(0);
 
   sql(`delete from events where slug = '${slug}'`);
 });
