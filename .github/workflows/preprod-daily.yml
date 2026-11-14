@@ -40,6 +40,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       PUBLIC_CACHE_FLUSH_SECRET: ${{ secrets.PUBLIC_CACHE_FLUSH_SECRET }}
+      # The owner's account (ci/preprod/owner.sh, #769): skipped while the secret is missing.
+      PREPROD_OWNER_EMAIL: ${{ secrets.PREPROD_OWNER_EMAIL }}
     steps:
       # Until the owner has set these (docs/SETUP.md, « Préproduction »), the tests are skipped with a
       # warning instead of failing: a set-up not done yet must not hold the chain nor the tag (#741).
