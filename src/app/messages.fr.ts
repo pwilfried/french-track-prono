@@ -495,6 +495,7 @@ export const messages = {
       stepLabel: (step: number, total: number) => `Étape ${step} sur ${total}`,
       skip: "Passer",
       skipLabel: "Passer le tutoriel",
+      navLabel: "Étapes du tutoriel",
       previous: "Précédent",
       next: "Suivant",
       done: "C'est parti",
@@ -502,7 +503,7 @@ export const messages = {
       steps: (f: ManagerIntroFigures) => [
         {
           title: "Une ligue entre amis",
-          text: `Crée ta ligue ou rejoins celle d'un ami : de ${f.leagueMin} à ${f.leagueMax} joueurs, en nombre pair. Les règles sont les mêmes pour tous.`,
+          text: `Crée ta ligue ou rejoins celle d'un ami. Le créateur choisit au moins ${f.minCompetitions} compétitions : elles fixent le nombre de joueurs, de ${f.leagueMin} à ${f.leagueMax}. Les règles sont les mêmes pour tous.`,
         },
         {
           title: "Le mercato",
@@ -522,11 +523,11 @@ export const messages = {
         },
         {
           title: "Une confrontation par journée",
-          text: "À chaque compétition, tu affrontes un autre joueur : victoire 3 points, nul 1, défaite 0. Tu joues chacun deux fois, à l'aller et au retour.",
+          text: "Une compétition = une journée : tu affrontes un autre joueur, victoire 3 points, nul 1, défaite 0. Tu joues chacun deux fois, à l'aller et au retour. Les compétitions en trop, à la fin, sont des journées bonus : des points, sans confrontation.",
         },
         {
           title: "Deviens champion",
-          text: "À la fin de la saison, le premier du classement est champion. Ton palmarès reste dans ton profil.",
+          text: "Après la dernière journée, bonus comprises, le premier du classement est champion. Ton palmarès reste dans ton profil.",
         },
       ],
     },

@@ -18,6 +18,7 @@ const meta = {
       winBonus: 10,
       leagueMin: 4,
       leagueMax: 10,
+      minCompetitions: 6,
     },
     skipHref: "/manager?passer=1",
   },
@@ -84,6 +85,7 @@ export const LongText: Story = {
       winBonus: 1000,
       leagueMin: 4,
       leagueMax: 10,
+      minCompetitions: 6,
     },
   },
   play: async ({ canvasElement }) => {

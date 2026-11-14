@@ -33,13 +33,15 @@ export function ManagerTutorial({ figures, onClose, initialStep = 0 }: ManagerTu
   return (
     <section
       aria-label={text.label}
+      // Focused when the dialog opens, so that « Passer » does not open with its focus ring on.
+      tabIndex={-1}
       onKeyDown={(event) => {
         if (event.key === "ArrowRight") go(index + 1);
         if (event.key === "ArrowLeft") go(index - 1);
       }}
-      className="flex flex-1 flex-col bg-nuit px-4 pb-8 pt-4 text-white"
+      className="flex flex-1 flex-col bg-nuit px-4 pb-8 pt-4 text-white outline-none"
     >
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-6">
         <div className="flex items-center justify-between gap-2">
           <p className="font-mono text-xs font-bold uppercase tracking-wide text-secondary">
             {text.progress(index + 1, steps.length)}
@@ -74,7 +76,8 @@ export function ManagerTutorial({ figures, onClose, initialStep = 0 }: ManagerTu
             </li>
           ))}
         </ol>
-        <div className="mt-auto grid grid-cols-2 gap-2">
+        {/* Right under the content: no empty gap down to the bottom of the screen (#709). */}
+        <nav aria-label={text.navLabel} className="grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => go(index - 1)}
@@ -91,7 +94,7 @@ export function ManagerTutorial({ figures, onClose, initialStep = 0 }: ManagerTu
           >
             {last ? text.done : text.next}
           </button>
-        </div>
+        </nav>
       </div>
     </section>
   );
@@ -207,7 +210,11 @@ export function ManagerTutorialGate({
   const shown = !closed && (open || !seen);
 
   useEffect(() => {
-    if (shown && !dialog.current?.open) dialog.current?.showModal();
+    const current = dialog.current;
+    if (!shown || !current || current.open) return;
+    current.showModal();
+    // The dialog would focus « Passer », its first button, with the focus ring on (#709).
+    current.querySelector<HTMLElement>("section[tabindex]")?.focus();
   }, [shown]);
 
   if (!shown) return null;
