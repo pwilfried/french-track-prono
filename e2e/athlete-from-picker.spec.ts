@@ -27,7 +27,10 @@ test("a player opens an athlete's page from the podium picker and keeps the podi
   const [first, second, third] = [await nameOf(0), await nameOf(1), await nameOf(2)];
   await athletes.nth(0).click();
   await athletes.nth(1).click();
-  await page.getByRole("switch", { name: /Joker/ }).check();
+  // The switch input is visually hidden: the player taps its label.
+  const joker = page.getByRole("switch", { name: /Joker/ });
+  await page.locator("label").filter({ has: joker }).click();
+  await expect(joker).toBeChecked();
   const podium = page.getByRole("button", { name: `1re place : ${first}` });
   const runnerUp = page.getByRole("button", { name: `2e place : ${second}` });
   await expect(podium).toBeVisible();
