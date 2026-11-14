@@ -100,6 +100,13 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
       return outcome(await client.rpc("join_public_manager_league", { p_league: id }));
     },
 
+    async inviteStatus(code) {
+      const { data, error } = await client.rpc("manager_invite_status", { p_code: code });
+      if (error?.code === "FT012") return "unknown";
+      if (error) throw new UseCaseError("LEAGUES_UNAVAILABLE");
+      return data === "open" || data === "full" || data === "mercato_open" ? data : "unknown";
+    },
+
     async listPublic() {
       const { data, error } = await client.rpc("list_public_manager_leagues");
       if (error) throw new UseCaseError("LEAGUES_UNAVAILABLE");

@@ -70,6 +70,9 @@ export type ManagerLeagueFile = ManagerLeague & {
 /** A public league the player can still join. */
 export type PublicManagerLeague = { id: string; name: string; memberCount: number; target: number };
 
+/** Whether an invite code still lets a player in (#781): the database answers, members or not. */
+export type InviteStatus = "open" | "full" | "mercato_open" | "unknown";
+
 export type JoinOutcome =
   | { outcome: "joined"; leagueId: string }
   | { outcome: "unknown" | "full" | "too_many" | "mercato_open" };
@@ -87,6 +90,8 @@ export interface ManagerLeagueRepository {
   /** With a code; joining a league twice simply answers it. */
   join(code: string): Promise<JoinOutcome>;
   joinPublic(id: string): Promise<JoinOutcome>;
+  /** An unknown code counts as a wrong code, as when joining; a participant reads « open ». */
+  inviteStatus(code: string): Promise<InviteStatus>;
   listPublic(): Promise<PublicManagerLeague[]>;
   listMine(): Promise<ManagerLeague[]>;
   /** Null for a league the player is not in. */
@@ -175,7 +180,7 @@ export function getManagerLeague(ports: Ports) {
 
 function joined(result: JoinOutcome, unknown: "LEAGUE_CODE_UNKNOWN" | "LEAGUE_NOT_FOUND"): string {
   if (result.outcome === "joined") return result.leagueId;
-  if (result.outcome === "full") throw new UseCaseError("LEAGUE_FULL");
+  if (result.outcome === "full") throw new UseCaseError("MANAGER_LEAGUE_FULL");
   if (result.outcome === "too_many") throw new UseCaseError("LEAGUE_TOO_MANY_ATTEMPTS");
   if (result.outcome === "mercato_open") throw new UseCaseError("MERCATO_OPEN");
   throw new UseCaseError(unknown);
@@ -197,6 +202,19 @@ export function joinPublicManagerLeague(ports: Ports) {
   return {
     async execute(input: { id: string }): Promise<string> {
       return joined(await ports.managerLeagues.joinPublic(input.id), "LEAGUE_NOT_FOUND");
+    },
+  };
+}
+
+/**
+ * What the invite link says before the player taps (#781): a league whose mercato is open or that
+ * is full shows why instead of the button.
+ */
+export function checkManagerInvite(ports: Ports) {
+  return {
+    async execute(input: { code: string }): Promise<InviteStatus> {
+      const code = normalizeInviteCode(input.code);
+      return code ? ports.managerLeagues.inviteStatus(code) : "unknown";
     },
   };
 }

@@ -61,14 +61,52 @@ test("a player joins a public Manager league in one tap and a private one by its
   await joinerPage.getByRole("button", { name: "Rejoindre la ligue" }).click();
   await expect(joinerPage.getByRole("heading", { level: 1 })).toHaveText(closed);
   await expect(joinerPage.getByText("2 / 4 participants · Privée")).toBeVisible();
+});
 
-  // Once the mercato is open, nobody joins any more.
-  sql(`update manager_leagues set mercato_opened_at = now() where name = '${closed}'`);
-  sql(`delete from manager_members where user_id = (select id from profiles where pseudo = '${joiner.pseudo}')
-       and league_id = (select id from manager_leagues where name = '${closed}')`);
-  await joinerPage.goto(`/manager/rejoindre?code=${code}`);
-  await joinerPage.getByRole("button", { name: "Rejoindre la ligue" }).click();
+test("joining a Manager league whose mercato is launched is refused", async ({ browser }) => {
+  seasonReady();
+  const tag = `${Date.now() % 1000000}`;
+  const name = `Lanceurs ${tag}`;
+  const creator = newPlayer("mgr-launch");
+  const late = newPlayer("mgr-late");
+  const creatorPage = await (await browser.newContext()).newPage();
+  const latePage = await (await browser.newContext()).newPage();
+
+  await creatorPage.goto("/manager/creer");
+  await signUp(creatorPage, creator);
+  await creatorPage.waitForURL(/\/manager\/creer$/);
+  await creatorPage.getByLabel("Nom de la ligue").fill(name);
+  await creatorPage.getByText("Ligue publique").click();
+  await chooseSeason(creatorPage);
+  await creatorPage.getByRole("button", { name: "Créer la ligue" }).click();
+  await expect(creatorPage.getByRole("heading", { level: 1 })).toHaveText(name);
+  const code = sql(`select invite_code from manager_leagues where name = '${name}'`);
+  // The mercato is launched (by the creator once the league is full, or by the job at its time).
+  sql(`update manager_leagues set mercato_opened_at = now() where name = '${name}'`);
+
+  // The invite link says why instead of the button.
+  await latePage.goto(`/manager/rejoindre?code=${code}`);
+  await signUp(latePage, late);
+  await latePage.waitForURL(/\/manager\/rejoindre/);
+  await expect(latePage.locator("main").getByRole("alert")).toContainText(
+    "Le mercato de cette ligue a commencé : les inscriptions sont closes.",
+  );
+  await expect(latePage.getByRole("button", { name: "Rejoindre la ligue" })).toHaveCount(0);
+  await expect(latePage.getByRole("link", { name: "Voir les autres ligues" })).toBeVisible();
+
+  // Typed by hand, the code is refused too.
+  await latePage.goto("/manager/rejoindre");
+  await latePage.getByLabel("Code d'invitation").fill(code);
+  await latePage.getByRole("button", { name: "Rejoindre la ligue" }).click();
   await expect(
-    joinerPage.locator("main").getByText(/mercato de cette ligue a commencé/),
+    latePage.locator("main").getByText(/mercato de cette ligue a commencé/),
   ).toBeVisible();
+  expect(
+    sql(`select count(*) from manager_members m join manager_leagues l on l.id = m.league_id
+         where l.name = '${name}'`),
+  ).toBe("1");
+
+  // Nor is the public league listed any more.
+  await latePage.goto("/manager?passer=1");
+  await expect(latePage.locator("main")).not.toContainText(name);
 });
