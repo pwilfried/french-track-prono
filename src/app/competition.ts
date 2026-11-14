@@ -11,7 +11,7 @@ import { messages } from "./messages.fr";
 import { publicCompetitions } from "./public-data";
 import { getCurrentUser, getSessionClient } from "./session";
 
-/** The competition a page shows, with its French place line ("Budapest · 11 – 13 sept. 2026"). */
+/** The competition a page shows, with its French place line ("Budapest · 11–13 sept. 2026"). */
 export type ShownCompetition = CompetitionSummary & { place: string };
 
 const shown = (c: CompetitionSummary): ShownCompetition => ({

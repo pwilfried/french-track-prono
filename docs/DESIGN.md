@@ -66,15 +66,20 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **PodiumPicker** : trois marches (or, argent, bronze) au-dessus de la liste de départ ; on
   touche les athlètes dans l'ordre 1er, 2e, 3e, un appui sur un athlète placé le retire, un appui
   sur une marche la sélectionne (pas de glisser-déposer). Sert aussi à la saisie des résultats.
+  Sélection lisible (#698) : la marche à remplir a un anneau plein de 3 px en `--accent-text`
+  (≥ 3:1 sur la page et la carte, clair et sombre) ; un athlète placé a une bordure de 2 px
+  `--accent-text`, un fond `--primary-soft` et son numéro de marche. Le focus clavier est un
+  contour `--ring` (bleu en clair, or en sombre), distinct de la sélection.
 - **CountdownBadge** : « Verrouillage dans 12 min », neutre, puis orange dès 1 h et rouge dès
   10 min (jetons `--countdown-*` dans `globals.css`, contrastes AA), « 🔒 Verrouillé » ensuite ;
   rien ne clignote.
 - **EventCard** (#546) : l'heure de Paris, le nom avec le genre (« 100 m femmes »), une ligne
   dessous, un statut à droite. À venir : « Verrouille dans … » (`LockLine`, rouge dès 1 h ; au-delà
   de 24 h, « Verrouille le <jour> à <heure> »), « + Prono » ou « ✓ Posé » avec « modifiable ».
-  Terminée : fond atténué, mon résultat (« 2 athlètes bien placées », « Podium parfait ! »,
-  « Pas de prono ») et mes points en pastille verte, « — » sans prono. Le lien est nommé par
-  l'épreuve puis par son statut (#517).
+  Terminée : fond atténué, mon résultat (« 2 athlètes bien placées », « Podium parfait ! ») et
+  mes points en pastille verte ; sans prono, « Pas joué » et rien à droite, jamais de tiret seul
+  (#707). Le lien est nommé par l'épreuve puis par son statut (#517). Dates d'une compétition :
+  mois et année écrits une fois (« 11–13 sept. 2026 », « 30 sept. – 2 oct. 2026 »).
 - **DayProgress** (#659) : une ligne, les épreuves à pronostiquer du jour affiché, les podiums
   posés sur toute la compétition et les points gagnés.
 - **Filtres en pastilles** (`EventFilters`) : une pastille par filtre avec son nombre, la
