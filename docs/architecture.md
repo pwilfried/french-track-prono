@@ -322,8 +322,15 @@ compétitions confondues (#319), et l'onglet Classement donne aussi celui de cha
 précédent est celui du classement arrêté à la fin de l'avant-dernière compétition terminée de la
 portée (`previousCompetitionSlugs`, `movesSinceCompetitions` dans `src/domain/ranking.ts`) ; un
 nouveau joueur n'a pas de flèche, « Ce soir » non plus. Les autres pages (ligues, accueil)
-gardent l'évolution depuis la veille. Dans une ligue, un membre ne compte que les épreuves verrouillées après son arrivée
-(`countsInLeague`, #376) : un prono fait avant d'y entrer reste au général et à la compétition. L'accueil du joueur connecté
+gardent l'évolution depuis la veille. Une ligue de pronos est fermée aux nouveaux dès que la
+première épreuve d'une de ses compétitions est verrouillée (#780, décision du propriétaire du
+14 nov. 2026, qui remplace l'entrée en cours de route de #376) : `join_league` et
+`join_public_league` refusent (code FT032, `LEAGUE_STARTED`), un membre qui rejoint à nouveau est
+renvoyé vers la ligue, « Découvrir » ne liste plus les ligues démarrées et la page d'invitation
+le dit avant tout bouton (`league_invite_status`, qui compte un code inconnu comme un code erroné,
+#155). La Ligue FrenchTrack reste ouverte à tous : c'est la seule où l'on entre en cours de route,
+et un membre n'y compte que les épreuves verrouillées après son arrivée (`countsInLeague`, #376) ;
+un prono fait avant d'y entrer reste au général et à la compétition. L'accueil du joueur connecté
 part de sa prochaine action (#526) : `nextAction` et `leagueStanding` (`src/domain/home.ts`)
 choisissent la finale ouverte la plus proche du verrouillage, sinon la prochaine compétition, et la
 ligue où il est le mieux classé. Un profil incomplet (ni club ni discipline) y voit la carte

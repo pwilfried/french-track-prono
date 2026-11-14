@@ -15,6 +15,8 @@ export function leagueRepositoryContract(
     comingCompetitionSlug: string;
     /** A finished competition, never offered to a league (#614). */
     finishedCompetitionSlug: string;
+    /** A competition under way whose first event is locked: its leagues are closed (#780). */
+    startedCompetitionSlug: string;
   }>,
 ) {
   describe(`LeagueRepository contract: ${name}`, () => {
@@ -135,6 +137,38 @@ export function leagueRepositoryContract(
         leagueId: pub.id,
       });
       expect(await friend.leagues.joinPublic(priv.id)).toEqual({ outcome: "unknown_code" });
+    });
+
+    it("closes a league to newcomers once its first event is locked, not to its members (#780)", async () => {
+      const { newPlayer, startedCompetitionSlug } = await setup();
+      const [owner, latecomer] = [await newPlayer(), await newPlayer()];
+      const pub = await owner.leagues.create(
+        `Partie ${crypto.randomUUID().slice(0, 8)}`,
+        [startedCompetitionSlug],
+        true,
+      );
+      const priv = await owner.leagues.create("Déjà partie", [startedCompetitionSlug], false);
+
+      expect(await latecomer.leagues.inviteStatus(priv.inviteCode)).toBe("started");
+      expect(await latecomer.leagues.join(priv.inviteCode)).toEqual({ outcome: "started" });
+      expect(await latecomer.leagues.joinPublic(pub.id)).toEqual({ outcome: "started" });
+      expect((await latecomer.leagues.listPublic()).some((l) => l.id === pub.id)).toBe(false);
+      expect(await latecomer.leagues.listMine()).toEqual([]);
+
+      expect(await owner.leagues.inviteStatus(priv.inviteCode)).toBe("member");
+      expect(await owner.leagues.join(priv.inviteCode)).toEqual({
+        outcome: "already_member",
+        leagueId: priv.id,
+      });
+    });
+
+    it("tells the invite page a league not started is open, and an unknown code unknown", async () => {
+      const { newPlayer, comingCompetitionSlug } = await setup();
+      const [owner, friend] = [await newPlayer(), await newPlayer()];
+      const league = await owner.leagues.create("Pas encore", [comingCompetitionSlug], false);
+
+      expect(await friend.leagues.inviteStatus(league.inviteCode)).toBe("open");
+      expect(await friend.leagues.inviteStatus("ZZZZZZ")).toBe("unknown");
     });
 
     it("refuses a banned name for a public league", async () => {

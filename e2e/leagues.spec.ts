@@ -132,3 +132,43 @@ test("a player opens their leagues from the bottom bar", async ({ page }) => {
   await page.waitForURL(/\/ligues$/);
   await expect(bar.getByRole("link", { name: "Ligues" })).toHaveAttribute("aria-current", "page");
 });
+
+test("joining a league that has started is refused (#780)", async ({ browser }) => {
+  const owner = newPlayer("started");
+  const latecomer = newPlayer("late");
+  const ownerPage = await (await browser.newContext()).newPage();
+  const latePage = await (await browser.newContext()).newPage();
+  const competition = comingCompetition(`e2e-started-${Date.now() % 1000000}`);
+
+  await ownerPage.goto(`/ligues/creer?competition=${competition}`);
+  await signUp(ownerPage, owner);
+  await ownerPage.waitForURL(/\/ligues\/creer/);
+  await ownerPage.getByLabel("Nom de la ligue").fill("Déjà Partis E2E");
+  await ownerPage.getByRole("button", { name: "Créer la ligue" }).click();
+  await expect(ownerPage.getByText("Ta ligue est prête")).toBeVisible();
+  const code = (await ownerPage.getByText(/^[A-Z0-9]{3} ?[A-Z0-9]{3}$/).innerText()).replace(
+    /\s/g,
+    "",
+  );
+
+  // The first event of its competition locks: the league has started.
+  sql(`update events set lock_at = now() - interval '1 minute', starts_at = now() - interval '1 minute'
+    where slug = '${competition}-100m'`);
+
+  // The invite link says so instead of a « Rejoindre » button.
+  await latePage.goto(`/rejoindre/${code}`);
+  await signUp(latePage, latecomer);
+  await latePage.waitForURL(new RegExp(`/rejoindre/${code}$`));
+  await expect(latePage.getByRole("alert")).toContainText("Cette ligue a déjà commencé");
+  await expect(latePage.getByRole("button", { name: "Rejoindre la ligue" })).toHaveCount(0);
+  await expect(latePage.getByRole("link", { name: "Rejoindre une ligue publique" })).toBeVisible();
+
+  // The code typed on « Rejoindre » is refused with the same message.
+  await latePage.goto("/ligues/rejoindre");
+  await latePage.getByLabel("Code d'invitation").fill(code);
+  await latePage.getByRole("button", { name: "Rejoindre la ligue" }).click();
+  await expect(latePage.getByText("Cette ligue a déjà commencé")).toBeVisible();
+  await expect(latePage).toHaveURL(/\/ligues\/rejoindre$/);
+
+  deleteCompetition(competition);
+});
