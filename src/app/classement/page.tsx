@@ -12,6 +12,7 @@ import {
 import { ErrorNotice } from "@/components/error-notice";
 import { Leaderboard } from "@/components/leaderboard/leaderboard";
 import { MyPlaceCard } from "@/components/leaderboard/my-place-card";
+import { MyRankBar } from "@/components/leaderboard/my-rank-bar";
 import { Podium } from "@/components/leaderboard/podium";
 import {
   RANKING_VIEWS,
@@ -20,6 +21,7 @@ import {
 } from "@/components/leaderboard/ranking-href";
 import type { ScopeLeague } from "@/components/leaderboard/scope-sheet";
 import { ScopeSwitcher } from "@/components/leaderboard/scope-switcher";
+import { InviteBanner } from "@/components/leagues/invite-banner";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { buttonVariants } from "@/components/ui/button";
 import { rankingStart } from "@/domain/competition";
@@ -38,7 +40,8 @@ import { getCurrentUser, getSessionClient } from "../session";
  * another one from the scope sheet), « Ce soir » (points of tonight's finals, hidden before the
  * first competition) and « Général » (the whole season, or one competition with ?competition=),
  * cut around the player. One scope button opens the sheet; « Ta place » heads the list.
- * A visitor sees « Général » alone, with a link to sign in (#573).
+ * A visitor sees « Général » alone, with a link to sign in (#573). Alone in a league, the player
+ * is asked to invite friends instead of seeing a ranking of one (#710).
  */
 export default async function RankingPage({
   searchParams,
@@ -242,6 +245,9 @@ export default async function RankingPage({
                 {messages.leagues.join}
               </Link>
             </div>
+          ) : league && league.memberCount <= 1 ? (
+            // Alone in the league: no ranking of one, bring friends in first (#710).
+            <InviteBanner code={league.inviteCode} leagueName={league.name} />
           ) : rows === "error" ? (
             <ErrorNotice retryHref={here} message={messages.errors.RANKING_UNAVAILABLE} />
           ) : rows === null ? null : start ? (
@@ -265,15 +271,7 @@ export default async function RankingPage({
                   </Link>
                 </section>
               ) : me ? (
-                <p className="sticky bottom-20 flex items-center justify-between gap-3 rounded-2xl bg-foreground py-1.5 pl-3.5 pr-1.5 font-extrabold text-background shadow-lg md:bottom-3">
-                  <span>{text.you(me.rank, me.points)}</span>
-                  <a
-                    href="#moi"
-                    className="inline-flex min-h-11 items-center rounded-xl px-3 underline underline-offset-4"
-                  >
-                    {text.aroundMe}
-                  </a>
-                </p>
+                <MyRankBar rank={me.rank} points={me.points} />
               ) : (
                 rows.length > 0 && (
                   <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
