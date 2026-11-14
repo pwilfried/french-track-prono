@@ -13,6 +13,7 @@ import { MercatoBanner } from "@/components/manager/mercato-banner";
 import { CompetitionChips } from "@/components/events/competition-chips";
 import { buttonVariants } from "@/components/ui/button";
 import { SEARCH_MAX_LENGTH } from "@/domain/list-view";
+import { athleteHref } from "@/domain/redirect";
 import { MANAGER_FAMILIES, MANAGER_SEXES, type ManagerSex } from "@/domain/manager-rules";
 import {
   createSupabaseManagerBids,
@@ -215,7 +216,10 @@ export default async function CataloguePage({
                 {view.rows.map((athlete) => (
                   // The tile takes the whole row while its bid form is open (#503).
                   <li key={athlete.athleteId} className="has-[form]:col-span-2">
-                    <CatalogueCard athlete={athlete}>
+                    <CatalogueCard
+                      athlete={athlete}
+                      href={athleteHref(athlete.slug, pageHref(view.page))}
+                    >
                       {mine !== "error" && mine.mercatoOpen && athlete.available && (
                         <BidForm
                           leagueId={id}
