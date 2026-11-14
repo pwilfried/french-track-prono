@@ -1,12 +1,11 @@
 -- The owner's account in pre-production (#769): pseudo « admin », admin role, member of every
--- prediction league (public or private) and of every Manager league still open to players (#781:
--- mercato not open, a place left under its target), so that what the demo set and the tests leave
--- is in sight without joining each league by hand.
+-- league a player could still join (#784): the official one, the prediction leagues not started
+-- and not full, the Manager leagues whose mercato is not open and that have a place left.
 -- Run by ci/preprod/owner.sh (never by hand, never in production), which sets the e-mail first:
 --   select set_config('preprod.owner_email', '<e-mail>', false);
 -- The e-mail lives in the PREPROD_OWNER_EMAIL secret of the preprod environment, never here.
 -- Idempotent: an existing account (signed up before, or made by an earlier run) is kept and only
--- made admin again; memberships are added when missing. Run after each load of the demo set and
+-- made admin again; memberships are added when missing, never removed. Run after each load of the demo set and
 -- after each clean-up of the e2e accounts: the leagues the tests make during a run are created
 -- after it, so the account never counts in their members or rankings.
 begin;
@@ -53,9 +52,17 @@ begin
         blocked_at = null,
         inactivity_warned_at = null;
 
-  -- Every prediction league, public or private.
+  -- The prediction leagues a player could join (as enter_league, #780): the official one always;
+  -- the others before the first event of one of their competitions is locked, under their cap
+  -- (200 public, 50 private).
   insert into league_members (league_id, user_id, role)
   select l.id, v_id, 'member' from leagues l
+  where l.is_official
+     or (not exists (select 1 from league_competitions lc
+                     join events e on e.competition_id = lc.competition_id
+                     where lc.league_id = l.id and e.lock_at <= now())
+         and (select count(*) from league_members m where m.league_id = l.id)
+             < case when l.is_public then 200 else 50 end)
   on conflict do nothing;
 
   -- Every Manager league a player could still join (#781), as private.enter_manager_league: the
