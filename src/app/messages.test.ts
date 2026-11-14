@@ -62,3 +62,24 @@ describe("league period text", () => {
     );
   });
 });
+
+describe("points text (#706)", () => {
+  const { pts, gain, points } = messages.format;
+
+  it.each([
+    [0, "0 pt", "0 point", "0 pt"],
+    [1, "1 pt", "1 point", "+1 pt"],
+    [12, "12 pts", "12 points", "+12 pts"],
+  ])("writes %i points as %s, %s in a sentence and %s when won", (n, short, word, won) => {
+    expect(pts(n)).toBe(short);
+    expect(points(n)).toBe(word);
+    expect(gain(n)).toBe(won);
+  });
+
+  it("writes every points label with the same unit", () => {
+    expect(messages.points.line(1)).toBe("+1 pt");
+    expect(messages.ranking.you(1, 0)).toBe("Tu es 1er · 0 pt");
+    expect(messages.playerHome.league.gap(1, "Ana")).toBe("À 1 point de Ana");
+    expect(messages.managerPoints.athletePoints(5)).toBe("5 pts");
+  });
+});

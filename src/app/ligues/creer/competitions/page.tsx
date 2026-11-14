@@ -100,7 +100,7 @@ export default async function CompetitionsPage({
                   {[c.place, messages.start.events(c.finals)].filter(Boolean).join(" · ")}
                 </span>
               </span>
-              <span className="font-mono text-xs font-bold text-muted-foreground">
+              <span className="text-xs font-bold text-muted-foreground">
                 {messages.choice.startsIn(daysUntil(c.startsOn, today))}
               </span>
             </label>
