@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { messages } from "@/app/messages.fr";
 import type { Entry } from "@/domain/event";
@@ -17,6 +17,8 @@ import {
   type Step,
 } from "@/domain/podium-draft";
 import { cn } from "@/lib/utils";
+
+import { BottomSheet } from "../ui/bottom-sheet";
 
 const MEDAL_STYLE = {
   1: "bg-gradient-to-b from-(--medal-gold-from) to-(--medal-gold-to) text-(--medal-gold-ink) border-transparent",
@@ -50,6 +52,7 @@ export function PodiumPicker({
   onChange,
   title = messages.picker.podium,
   helpHref,
+  help,
   athleteHref,
   draftKey,
 }: {
@@ -62,6 +65,11 @@ export function PodiumPicker({
   title?: string;
   /** Where the « ? » button next to the heading leads (the rules). */
   helpHref?: string;
+  /**
+   * The rules to show over the page (#703): « Règles » then opens them in a sheet instead of
+   * leaving, so the podium being built stays; `helpHref` remains the link without JavaScript.
+   */
+  help?: ReactNode;
   /** The page of an athlete (#336): each athlete then gets a « Fiche » link. */
   athleteHref?: (athlete: PickerAthlete) => string;
   /**
@@ -88,6 +96,12 @@ export function PodiumPicker({
     // Only when the page opens: later changes come from the player.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpButton = useRef<HTMLAnchorElement>(null);
+  const closeHelp = () => {
+    setHelpOpen(false);
+    helpButton.current?.focus();
+  };
   const [selected, setSelected] = useState<Step | null>(null);
   const active = selected ?? nextEmptyStep(draft);
   const nameOf = (id: string | null) => athletes.find((a) => a.athleteId === id) ?? null;
@@ -123,8 +137,19 @@ export function PodiumPicker({
         </h2>
         {helpHref && (
           <a
+            ref={helpButton}
             href={helpHref}
             aria-label={messages.rules.helpLabel}
+            aria-haspopup={help ? "dialog" : undefined}
+            aria-expanded={help ? helpOpen : undefined}
+            onClick={
+              help
+                ? (event) => {
+                    event.preventDefault();
+                    setHelpOpen(true);
+                  }
+                : undefined
+            }
             className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-brand-soft px-4 text-sm font-extrabold text-brand-ink"
           >
             <span aria-hidden="true">?</span>
@@ -132,6 +157,19 @@ export function PodiumPicker({
           </a>
         )}
       </div>
+      {helpHref && help && (
+        <BottomSheet open={helpOpen} onClose={closeHelp} title={messages.rules.title}>
+          <div className="flex flex-col gap-5 leading-relaxed">
+            {help}
+            <Link
+              href={helpHref}
+              className="inline-flex min-h-11 items-center self-start text-sm font-bold underline underline-offset-4"
+            >
+              {messages.rules.allRules}
+            </Link>
+          </div>
+        </BottomSheet>
+      )}
       <div className="grid grid-cols-3 items-end gap-2.5 px-4">
         {DISPLAY.map((step) => {
           const athlete = nameOf(draft[KEY[step]]);
