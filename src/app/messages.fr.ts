@@ -734,6 +734,12 @@ export const messages = {
     toFill: (places: { label: string; count: number }[]) =>
       `À remplir : ${places.map((p) => (p.count > 1 ? `${p.label} ×${p.count}` : p.label)).join(", ")}`,
     full: "Toutes les places sont remplies.",
+    fullOfEntered: "Tous tes athlètes engagés sont alignés.",
+    unfillable: (count: number) =>
+      count > 1
+        ? `${count} places resteront vides : aucun autre athlète de ton équipe n'est engagé pour elles.`
+        : "1 place restera vide : aucun autre athlète de ton équipe n'est engagé pour elle.",
+    nobodyEntered: "Aucun de tes athlètes n'est inscrit à cette compétition pour l'instant.",
     validate: "Valider mon alignement",
     validated: "Alignement validé, modifiable jusqu'au verrouillage.",
     locked: "Verrouillé : la compétition a commencé.",

@@ -210,7 +210,10 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   raison (absent·e, autre famille) ; en choisir un déjà placé ailleurs échange les deux s'il le
   peut ; « Retirer de cette place ». Dessous, les remplaçants. Compteur « N/M places », barre du
   bas « À remplir : … » et « Valider mon alignement » (« Validation en cours… »). Une place que
-  l'équipe ne peut pas remplir reste grise (« Personne ») et n'empêche pas de valider. Bandeaux
+  l'équipe ne peut pas remplir reste grise (« Personne ») et n'empêche pas de valider ; la barre
+  dit combien restent vides et pourquoi (#839). Le compteur et la barre ne comptent que les places
+  tenues par un athlète engagé (`lineupProgress`, `src/domain/manager-lineup.ts`). Aucun athlète
+  engagé : la barre le dit (« Aucun de tes athlètes n'est inscrit… ») et ne propose pas de valider. Bandeaux
   « Alignement validé » et « Verrouillé ».
 - **ManagerTutorial** (Manager, #616) : sept étapes plein écran sur le bleu nuit, dans les deux
   thèmes ; une idée par étape, avec un dessin en formes simples (dossards, cartes, stade, barres,
