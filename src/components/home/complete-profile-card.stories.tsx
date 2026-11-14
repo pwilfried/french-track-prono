@@ -44,11 +44,43 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Nothing chosen yet: the club search, six families, « Préciser les épreuves ». */
-export const Empty: Story = {
+/** Opens the sheet from the compact card. */
+async function openSheet(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement);
+  await userEvent.click(canvas.getByRole("button", { name: text.open }));
+  await waitFor(() => expect(canvas.getByRole("dialog", { name: text.title })).toBeVisible());
+  return within(canvas.getByRole("dialog", { name: text.title }));
+}
+
+/** A compact card, one line and a button: the form stays closed. */
+export const Compact: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("heading", { name: text.title })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: text.open })).toBeVisible();
+    await expect(canvas.queryByRole("dialog")).toBeNull();
+    await expect(canvas.queryByRole("checkbox")).toBeNull();
+  },
+};
+
+/** Closing the sheet keeps what the player ticked, and the card is still there. */
+export const CloseKeepsDraft: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    let sheet = await openSheet(canvasElement);
+    await userEvent.click(sheet.getByText(text.family.sprint));
+    await userEvent.click(sheet.getByRole("button", { name: messages.competitions.sheet.close }));
+    await waitFor(() => expect(canvas.queryByRole("dialog")).toBeNull());
+    await expect(canvas.getByRole("heading", { name: text.title })).toBeVisible();
+    sheet = await openSheet(canvasElement);
+    await expect(sheet.getByRole("checkbox", { name: text.family.sprint })).toBeChecked();
+  },
+};
+
+/** Nothing chosen yet: the club search, six families, « Préciser les épreuves ». */
+export const Empty: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = await openSheet(canvasElement);
     await expect(canvas.getByText(text.text)).toBeVisible();
     await expect(canvas.getAllByRole("checkbox")).toHaveLength(6);
     for (const family of Object.values(text.family)) {
@@ -66,7 +98,7 @@ export const Empty: Story = {
 export const ClubChosen: Story = {
   args: { initial: { ...EMPTY_COMPLETE_PROFILE, club } },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+    const canvas = await openSheet(canvasElement);
     await expect(canvas.getByText(club.name)).toBeVisible();
     await expect(canvas.getByRole("button", { name: messages.clubPicker.change })).toBeVisible();
   },
@@ -76,7 +108,7 @@ export const ClubChosen: Story = {
 export const FamiliesChosen: Story = {
   args: { initial: { ...EMPTY_COMPLETE_PROFILE, families: ["sprint", "jumps"] } },
   play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
+    const canvas = await openSheet(canvasElement);
     await expect(canvas.getByRole("checkbox", { name: text.family.sprint })).toBeChecked();
     await expect(canvas.getByRole("checkbox", { name: text.family.jumps })).toBeChecked();
     await userEvent.click(canvas.getByText(text.family.throws));
@@ -85,7 +117,9 @@ export const FamiliesChosen: Story = {
     await waitFor(() => expect(args.save).toHaveBeenCalled());
     const sent = args.save.mock.calls[0][1];
     await expect(sent.getAll("family")).toEqual(["sprint", "jumps", "throws"]);
-    await waitFor(() => expect(canvas.queryByRole("heading", { name: text.title })).toBeNull());
+    await waitFor(() =>
+      expect(within(canvasElement).queryByRole("heading", { name: text.title })).toBeNull(),
+    );
   },
 };
 
@@ -113,7 +147,7 @@ export const SaveError: Story = {
     save: fn<Save>(async (state) => ({ ...state, error: "PROFILE_DETAILS_EMPTY" })),
   },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+    const canvas = await openSheet(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: text.save }));
     await expect(await canvas.findByRole("alert")).toHaveTextContent(
       messages.errors.PROFILE_DETAILS_EMPTY,
@@ -136,8 +170,9 @@ export const LongText: Story = {
     },
   },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const card = canvas.getByRole("region", { name: text.title });
+    const card = within(canvasElement).getByRole("region", { name: text.title });
     await expect(card.scrollWidth).toBeLessThanOrEqual(card.clientWidth + 1);
+    const sheet = await openSheet(canvasElement);
+    await expect(sheet.getByText(/Haute-Testrivière/)).toBeVisible();
   },
 };
