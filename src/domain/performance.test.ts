@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   missingPerformances,
+  outOfRangeMarks,
   performanceProblem,
   podiumFromPerformances,
   tidyPerformances,
@@ -145,5 +146,19 @@ describe("podiumFromPerformances", () => {
         line({ athleteId: "a2", place: 1 }),
       ]),
     ).toEqual([{ athleteId: "a2", rank: 1, mark: "10.62" }]);
+  });
+});
+
+describe("outOfRangeMarks", () => {
+  it("names the finishers whose mark is not plausible for the discipline", () => {
+    const lines = [
+      line({ athleteId: "a1", mark: "15.06" }),
+      line({ athleteId: "a2", mark: `8${"0".repeat(297)}989` }),
+      line({ athleteId: "a3", mark: "4.20" }),
+      line({ athleteId: "a4", status: "dnf", place: null, mark: null }),
+      line({ athleteId: "a5", mark: null }),
+    ];
+
+    expect(outOfRangeMarks(lines, "distance", "horizontal_jumps")).toEqual(["a2", "a3"]);
   });
 });
