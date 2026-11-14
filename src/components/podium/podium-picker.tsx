@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { messages } from "@/app/messages.fr";
 import type { Entry } from "@/domain/event";
@@ -45,7 +45,7 @@ export function PodiumPicker({
   title = messages.picker.podium,
   helpHref,
   athleteHref,
-  draftKey,
+  onOpenAthlete,
 }: {
   athletes: PickerAthlete[];
   initialDraft?: PodiumDraft;
@@ -58,30 +58,10 @@ export function PodiumPicker({
   helpHref?: string;
   /** The page of an athlete (#336): each athlete then gets a « Fiche » link. */
   athleteHref?: (athlete: PickerAthlete) => string;
-  /**
-   * Keeps the podium being composed in this tab (sessionStorage), so that opening an athlete's
-   * page and coming back does not lose it.
-   */
-  draftKey?: string;
+  /** Called when the player opens an athlete's page, before leaving (#699). */
+  onOpenAthlete?: () => void;
 }) {
   const [draft, setDraft] = useState(initialDraft);
-  useEffect(() => {
-    if (!draftKey || disabled) return;
-    try {
-      const kept = JSON.parse(sessionStorage.getItem(draftKey) ?? "null") as PodiumDraft | null;
-      const known = (id: string | null) => id === null || athletes.some((a) => a.athleteId === id);
-      if (kept && known(kept.first) && known(kept.second) && known(kept.third)) {
-        // Read once the page is on screen: the server cannot see this tab's storage.
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setDraft(kept);
-        onChange?.(kept);
-      }
-    } catch {
-      // No storage (private window): the podium starts from the saved one.
-    }
-    // Only when the page opens: later changes come from the player.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const [selected, setSelected] = useState<Step | null>(null);
   const active = selected ?? nextEmptyStep(draft);
   const nameOf = (id: string | null) => athletes.find((a) => a.athleteId === id) ?? null;
@@ -90,13 +70,6 @@ export function PodiumPicker({
     setDraft(next);
     setSelected(null);
     onChange?.(next);
-    if (draftKey) {
-      try {
-        sessionStorage.setItem(draftKey, JSON.stringify(next));
-      } catch {
-        // No storage: the podium is only lost if the player leaves the page.
-      }
-    }
   };
 
   const tapAthlete = (athleteId: string) => {
@@ -255,6 +228,7 @@ export function PodiumPicker({
               {athleteHref && !other ? (
                 <Link
                   href={athleteHref(athlete)}
+                  onClick={onOpenAthlete}
                   aria-label={messages.picker.profileLabel(athlete.name)}
                   className="grid w-12 shrink-0 place-items-center rounded-2xl border border-border bg-card text-brand dark:text-secondary"
                 >

@@ -9,6 +9,7 @@ import { RecentRaces } from "@/components/athletes/recent-races";
 import { RecordsRow } from "@/components/athletes/records-row";
 import { ErrorNotice } from "@/components/error-notice";
 import { recordRows } from "@/domain/athlete";
+import { eventReturnPath } from "@/domain/redirect";
 import { createPublicSupabaseClient, createSupabaseAthleteReader } from "@/infra";
 
 import { currentCompetition } from "../../competition";
@@ -37,19 +38,28 @@ export async function generateMetadata({
   return athlete === "error" ? {} : { title: messages.athlete.profileOf(athlete.name) };
 }
 
-export default async function AthletePage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function AthletePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ from?: string | string[] }>;
+}) {
   const competition = await currentCompetition();
   const { slug } = await params;
+  const { from } = await searchParams;
+  // Opened from a podium being built (#699): back to that podium, else to the events.
+  const podium = eventReturnPath(typeof from === "string" ? from : null);
   const athlete = await load(slug);
 
   return (
     <main id="main" className="flex flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-4">
         <Link
-          href="/competitions"
+          href={podium ? `${podium}#podium` : "/competitions"}
           className="inline-flex min-h-11 items-center self-start font-semibold text-brand dark:text-secondary"
         >
-          ‹ {messages.event.back}
+          ‹ {podium ? messages.picker.podium : messages.event.back}
         </Link>
         {athlete === "error" ? (
           <ErrorNotice

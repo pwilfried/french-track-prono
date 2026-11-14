@@ -77,3 +77,35 @@ export function isValidPodium(podium: Podium): boolean {
  * in the podium like an athlete id, so it can only be on one place.
  */
 export const OTHER_ATHLETE = "other";
+
+/**
+ * A podium being built, kept in the tab while the player looks at an athlete's page (#699):
+ * the steps, the joker, and whether he left the picker to open an athlete.
+ */
+export type KeptPodium = { draft: PodiumDraft; joker: boolean; openedAthlete: boolean };
+
+/** Reads a kept podium back; null when it is missing, malformed or names an unknown athlete. */
+export function parseKeptPodium(raw: string | null, knownIds: string[]): KeptPodium | null {
+  let value: unknown;
+  try {
+    value = JSON.parse(raw ?? "null");
+  } catch {
+    return null;
+  }
+  if (typeof value !== "object" || value === null) return null;
+  const { draft, joker, openedAthlete } = value as Record<string, unknown>;
+  if (typeof draft !== "object" || draft === null) return null;
+  const steps = draft as Record<string, unknown>;
+  const ids = [steps.first, steps.second, steps.third];
+  const known = (id: unknown): id is string | null =>
+    id === null || (typeof id === "string" && knownIds.includes(id));
+  if (!ids.every(known)) return null;
+  const placed = ids.filter((id) => id !== null);
+  if (new Set(placed).size !== placed.length) return null;
+  const [first, second, third] = ids as (string | null)[];
+  return {
+    draft: { first, second, third },
+    joker: joker === true,
+    openedAthlete: openedAthlete === true,
+  };
+}

@@ -32,6 +32,7 @@ import {
 import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
 import { getCurrentUser, getSessionClient } from "../../session";
+import { ForgetPodium } from "./forget-podium";
 import { PredictionForm } from "./prediction-form";
 import { ResultSection } from "./result-section";
 import { RevealHidden, RevealSection } from "./reveal-section";
@@ -417,6 +418,7 @@ export default async function EventPage({
       )}
 
       <section className="mx-auto w-full max-w-md pt-6" aria-label={messages.picker.podium}>
+        {user && !open && <ForgetPodium eventId={event.id} />}
         {user && winner ? (
           <ResultSection event={event} slug={slug} user={user} />
         ) : (
