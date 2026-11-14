@@ -592,7 +592,7 @@ de secret en plus de ceux des migrations (`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PRO
 Les joueurs qui les ont activées depuis leur profil reçoivent des rappels groupés, réglés dans
 « Mes rappels » (#681) : « Pronos oubliés » avant le verrouillage des finales de la soirée sans
 podium, et « Résultats du soir » une fois tous leurs points calculés (règles dans
-`supabase/migrations/20261114060000_reminder_settings.sql`).
+`supabase/migrations/20261114070000_reminder_settings.sql`).
 
 L'envoi tourne dans Supabase (#502) : chaque minute, `pg_cron` appelle l'Edge Function
 `push-notifications` (`supabase/functions/`), qui envoie ce qui est dû. La logique d'envoi est
