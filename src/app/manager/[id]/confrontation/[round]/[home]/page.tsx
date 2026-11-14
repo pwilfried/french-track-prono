@@ -38,7 +38,7 @@ function Player({ side, align }: { side: DuelSide; align: "start" | "end" }) {
 
 /**
  * « Une confrontation » (#605): the two players and their scores on the night blue, the result in
- * the middle, then both lineups on one stadium with each athlete's points. Every participant of
+ * the middle, then the two stadiums face to face with each athlete's points (#775). Every participant of
  * the league reads it once the competition is locked; the lineups stay secret before.
  */
 export default async function ManagerDuelPage({
@@ -128,10 +128,16 @@ export default async function ManagerDuelPage({
         {view.locked ? (
           <DuelStadium
             places={view.places}
-            top={{ pseudo: top.participant.pseudo, linedUp: top.linedUp, cards: top.cards }}
+            top={{
+              pseudo: top.participant.pseudo,
+              linedUp: top.linedUp,
+              score: top.score,
+              cards: top.cards,
+            }}
             bottom={{
               pseudo: bottom.participant.pseudo,
               linedUp: bottom.linedUp,
+              score: bottom.score,
               cards: bottom.cards,
             }}
           />

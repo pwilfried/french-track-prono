@@ -68,7 +68,7 @@ test("a participant lines up their team before a competition and can no longer c
   await row.click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(meeting);
 
-  // The thrower is not entered: greyed on the bench, never picked.
+  // The thrower is not entered: greyed on the bench.
   const bench = page.getByRole("list", { name: "Remplaçants" });
   await expect(bench.getByRole("article", { name: new RegExp(thrower) })).toContainText("Absent·e");
   await expect(bench.getByRole("button", { name: thrower })).toHaveCount(0);
@@ -77,13 +77,20 @@ test("a participant lines up their team before a competition and can no longer c
   await expect(validate).toBeDisabled();
   await expect(page.getByText("À remplir : Sprint, Demi-fond, Libre")).toBeVisible();
 
-  // Tap a card, then a place that lights up.
-  await page.getByRole("button", { name: sprinter, exact: true }).click();
+  // Tap a spot of the stadium, then pick an athlete in the sheet: the others are greyed.
+  const sheet = page.getByRole("dialog");
   await page.getByRole("button", { name: "Place Sprint, vide" }).click();
-  await page.getByRole("button", { name: runner, exact: true }).click();
+  await expect(sheet.getByRole("heading", { name: "Place Sprint" })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: new RegExp(runner) })).toBeDisabled();
+  await expect(sheet.getByRole("button", { name: new RegExp(thrower) })).toContainText("Absent·e");
+  await sheet.getByRole("button", { name: new RegExp(sprinter) }).click();
+  await expect(
+    page.getByRole("button", { name: `Place Sprint : ${sprinter}, changer` }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Place Demi-fond, vide" }).click();
-  await page.getByRole("button", { name: hurdler, exact: true }).click();
+  await sheet.getByRole("button", { name: new RegExp(runner) }).click();
   await page.getByRole("button", { name: "Place Libre, vide" }).click();
+  await sheet.getByRole("button", { name: new RegExp(hurdler) }).click();
   await expect(page.getByText("3/3 places")).toBeVisible();
 
   await validate.click();
@@ -98,9 +105,8 @@ test("a participant lines up their team before a competition and can no longer c
   // Changed until the lock: the hurdler goes back to the bench, the lineup is no longer complete.
   await page.reload();
   await expect(page.getByText("3/3 places")).toBeVisible();
-  await page
-    .getByRole("button", { name: `Place Libre : ${hurdler}, renvoyer sur le banc` })
-    .click();
+  await page.getByRole("button", { name: `Place Libre : ${hurdler}, changer` }).click();
+  await sheet.getByRole("button", { name: "Retirer de cette place" }).click();
   await expect(validate).toBeDisabled();
 
   // The competition starts: the stadium reads only.

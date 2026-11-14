@@ -91,6 +91,16 @@ describe("seatAthlete", () => {
     expect(seatAthlete(places, team, [null, "m1", null], "s1", 2)).toEqual(["s1", "m1", null]);
   });
 
+  it("swaps two athletes of the stadium: whoever sat there takes the place left", () => {
+    expect(seatAthlete(places, team, ["s1", "m1", "m2"], "m2", 1)).toEqual(["s1", "m2", "m1"]);
+  });
+
+  it("sends whoever sat there back to the bench when they do not fit the place left", () => {
+    const sprinters = [...team, athlete("s2", "sprint")];
+    expect(seatAthlete(places, sprinters, ["s1", "m1", "s2"], "m1", 0)).toEqual(["s1", "m1", "s2"]);
+    expect(seatAthlete(places, sprinters, ["s1", "m1", null], "s1", 1)).toEqual(["s1", null, null]);
+  });
+
   it("refuses a place of another family, and an athlete who is not entered", () => {
     expect(seatAthlete(places, team, [null, null, null], "m1", 0)).toEqual([null, null, null]);
     expect(seatAthlete(places, team, [null, null, null], "t1", 1)).toEqual([null, null, null]);

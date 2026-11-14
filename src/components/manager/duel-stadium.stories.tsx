@@ -44,8 +44,8 @@ const meta = {
   component: DuelStadium,
   args: {
     places: [...places],
-    top: { pseudo: "Rival Fictif", linedUp: true, cards: opponent },
-    bottom: { pseudo: "Moi", linedUp: true, cards: mine },
+    top: { pseudo: "Rival Fictif", linedUp: true, score: 6075, cards: opponent },
+    bottom: { pseudo: "Moi", linedUp: true, score: 7111, cards: mine },
   },
   decorators: [
     (Story) => (
@@ -59,10 +59,15 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** The opponent at the top on blue cards, the player at the bottom on gold ones. */
+/**
+ * The opponent's stadium at the top on blue cards, turned round to face the player's on gold ones,
+ * each side's score next to its stadium.
+ */
 export const Scored: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await expect(canvas.getByText("6075")).toBeVisible();
+    await expect(canvas.getByText("7111")).toBeVisible();
     const top = canvas.getByRole("list", { name: text.sideOf("Rival Fictif") });
     const bottom = canvas.getByRole("list", { name: text.sideOf("Moi") });
     await expect(within(top).getAllByRole("article")).toHaveLength(7);

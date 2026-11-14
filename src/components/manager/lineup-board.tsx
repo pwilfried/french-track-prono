@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type DragEvent } from "react";
+import { Fragment, useState } from "react";
 
 import { messages } from "@/app/messages.fr";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { buttonVariants } from "@/components/ui/button";
 import type { DisciplineFamily } from "@/domain/discipline";
 import {
@@ -15,7 +16,7 @@ import type { ManagerSex } from "@/domain/manager-rules";
 import { cn } from "@/lib/utils";
 
 import { AthleteCard } from "./athlete-card";
-import { EmptyPlace, STADIUM_GRID, Stadium } from "./stadium";
+import { EmptySpot, PlacedSpot, StadiumMap } from "./stadium";
 
 const text = messages.lineup;
 
@@ -29,17 +30,18 @@ export type BoardAthlete = {
   entered: boolean;
 };
 
-const DRAG_TYPE = "text/plain";
+const SPOT_BUTTON =
+  "block rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring";
 
 /**
- * The lineup of a Manager team before a competition (#427), as a stadium: a running track around a
- * field holds the places, each one of a family or free (the rules of the league). The athletes of
- * the team who are not lined up wait on the bench below; one not entered in the competition is
- * greyed « Absent·e » and cannot be lined up. Drag a card from the bench onto a place (mouse), or
- * tap a card then a place: the places it fits light up. Tap a card of the stadium to send it back
- * to the bench. Every gesture is a button, so the keyboard does it all too. « Valider mon
- * alignement » turns on once every place the team can fill is filled. Validated: a banner, still
- * editable until the lock. Locked: read only.
+ * The lineup of a Manager team before a competition (#427), on the stadium seen from above (#775):
+ * one spot per place, each of a family or free (the rules of the league), at its place on the
+ * track or the field. Tap a spot: a sheet lists the athletes of the team, the ones who cannot go
+ * there greyed with the reason (not entered, another family); pick one and the stadium changes at
+ * once (an athlete already placed elsewhere swaps with whoever sat there when they fit). The
+ * athletes not lined up wait on the bench below. « Valider mon alignement » turns on once every
+ * place the team can fill is filled. Validated: a banner, still editable until the lock. Locked:
+ * read only.
  */
 export function LineupBoard({
   places,
@@ -60,27 +62,19 @@ export function LineupBoard({
   onValidate?: (athleteIds: string[]) => Promise<boolean>;
 }) {
   const [placed, setPlaced] = useState(initial);
-  const [picked, setPicked] = useState<string | null>(null);
+  const [open, setOpen] = useState<number | null>(null);
   const [changed, setChanged] = useState(false);
   const [saving, setSaving] = useState(false);
   const editable = status !== "locked" && onValidate !== undefined;
   const byId = new Map(athletes.map((a) => [a.athleteId, a]));
-  const pickedAthlete = picked ? byId.get(picked) : undefined;
 
-  const seat = (athleteId: string, at: number) => {
-    const next = seatAthlete(places, athletes, placed, athleteId, at);
+  const update = (next: (string | null)[]) => {
     if (next !== placed) {
       setPlaced(next);
       setChanged(true);
     }
-    setPicked(null);
+    setOpen(null);
   };
-  const unseat = (at: number) => {
-    setPlaced(placed.map((id, i) => (i === at ? null : id)));
-    setChanged(true);
-  };
-  const lights = (place: LineupPlace, i: number) =>
-    pickedAthlete !== undefined && fillable[i] === true && fitsPlace(place, pickedAthlete.family);
 
   const filled = placed.filter((id) => id !== null).length;
   const missing = new Map<string, number>();
@@ -94,6 +88,72 @@ export function LineupBoard({
     .filter((a) => !placed.includes(a.athleteId))
     .sort((a, b) => Number(b.entered) - Number(a.entered));
   const lineup = placed.filter((id): id is string => id !== null);
+
+  const spots = places.map((place, i) => {
+    const athlete = placed[i] ? byId.get(placed[i]!) : undefined;
+    const label = text.place[place];
+    const visual = athlete ? (
+      <PlacedSpot
+        athlete={athlete}
+        label={
+          editable
+            ? undefined
+            : messages.team.cardLabel(athlete.name, athlete.discipline, athlete.paid)
+        }
+      />
+    ) : (
+      <EmptySpot label={label} fillable={fillable[i] === true} />
+    );
+    if (!editable) {
+      return (
+        <Fragment key={i}>
+          {visual}
+          <span className="sr-only">
+            {athlete
+              ? text.lockedPlace(label, athlete.name)
+              : fillable[i]
+                ? text.emptyPlace(label)
+                : text.unfillablePlace(label)}
+          </span>
+        </Fragment>
+      );
+    }
+    return (
+      <button
+        key={i}
+        type="button"
+        aria-label={
+          athlete
+            ? text.takenPlace(label, athlete.name)
+            : fillable[i]
+              ? text.emptyPlace(label)
+              : text.unfillablePlace(label)
+        }
+        aria-haspopup="dialog"
+        onClick={() => setOpen(i)}
+        className={SPOT_BUTTON}
+      >
+        {visual}
+      </button>
+    );
+  });
+
+  const sheetPlace = open === null ? undefined : places[open];
+  const sheetLabel = sheetPlace ? text.place[sheetPlace] : "";
+  const choices =
+    open === null || sheetPlace === undefined
+      ? []
+      : athletes
+          .map((a) => {
+            const reason = !a.entered
+              ? text.notEntered
+              : !fitsPlace(sheetPlace, a.family)
+                ? text.wrongFamily(sheetLabel)
+                : null;
+            const at = placed.indexOf(a.athleteId);
+            return { athlete: a, reason, at };
+          })
+          .sort((a, b) => Number(a.reason !== null) - Number(b.reason !== null));
 
   return (
     <div className="flex flex-col gap-4">
@@ -125,73 +185,73 @@ export function LineupBoard({
             {text.places(filled, places.length)}
           </span>
         </div>
-        {/* The track, then the field: the places sit on the grass. */}
-        <Stadium>
-          <ul aria-labelledby="stadium" className={STADIUM_GRID}>
-            {places.map((place, i) => {
-              const athlete = placed[i] ? byId.get(placed[i]!) : undefined;
-              const label = text.place[place];
-              const lit = editable && lights(place, i);
-              return (
-                <li
-                  key={i}
-                  className="relative"
-                  onDragOver={(e) => {
-                    if (lit) e.preventDefault();
-                  }}
-                  onDrop={(e: DragEvent) => {
-                    e.preventDefault();
-                    const id = e.dataTransfer.getData(DRAG_TYPE);
-                    if (id) seat(id, i);
-                  }}
-                >
-                  {athlete ? (
-                    <AthleteCard athlete={athlete} paid={athlete.paid} compact />
-                  ) : (
-                    <EmptyPlace
-                      label={label}
-                      className={cn(
-                        fillable[i]
-                          ? "border-white/70 text-field-foreground"
-                          : "border-white/30 bg-black/20 text-field-foreground/70",
-                        lit &&
-                          "border-solid border-secondary bg-secondary/30 motion-safe:animate-pulse",
-                      )}
-                    >
-                      {!fillable[i] && <span className="block font-semibold">{text.nobody}</span>}
-                    </EmptyPlace>
-                  )}
-                  {editable && (athlete || lit) && (
-                    <button
-                      type="button"
-                      aria-label={
-                        athlete ? text.takenPlace(label, athlete.name) : text.emptyPlace(label)
-                      }
-                      onClick={() => (athlete && !lit ? unseat(i) : picked && seat(picked, i))}
-                      className="absolute inset-0 rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
-                    />
-                  )}
-                  {(!editable || (!athlete && !lit)) && (
-                    <span className="sr-only">
-                      {athlete
-                        ? text.lockedPlace(label, athlete.name)
-                        : fillable[i]
-                          ? text.emptyPlace(label)
-                          : text.unfillablePlace(label)}
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </Stadium>
+        {editable && <p className="text-sm text-muted-foreground">{text.hint}</p>}
+        <StadiumMap label={text.stadium} places={places} spots={spots} />
       </section>
+
+      <BottomSheet
+        open={open !== null}
+        onClose={() => setOpen(null)}
+        title={text.sheetTitle(sheetLabel)}
+      >
+        <p className="mb-3 text-sm text-muted-foreground">{text.sheetHint(sheetLabel)}</p>
+        {open !== null && placed[open] !== null && (
+          <button
+            type="button"
+            onClick={() => update(placed.map((id, i) => (i === open ? null : id)))}
+            className={cn(buttonVariants({ variant: "outline" }), "mb-3 w-full")}
+          >
+            {text.remove}
+          </button>
+        )}
+        {choices.every((c) => c.reason !== null) && (
+          <p className="mb-3 rounded-card bg-muted p-3 text-sm">{text.noEligible}</p>
+        )}
+        <ul aria-label={text.choices} className="flex flex-col gap-2">
+          {choices.map(({ athlete: a, reason, at }) => {
+            const here = open !== null && at === open;
+            const note =
+              reason ??
+              (here ? text.onThisPlace : at >= 0 ? text.elsewhere(text.place[places[at]!]) : null);
+            return (
+              <li key={a.athleteId}>
+                <button
+                  type="button"
+                  disabled={reason !== null || here}
+                  onClick={() =>
+                    open !== null &&
+                    update(seatAthlete(places, athletes, placed, a.athleteId, open))
+                  }
+                  className={cn(
+                    "flex min-h-14 w-full items-center gap-3 rounded-2xl border border-border px-3 py-2 text-left",
+                    "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring",
+                    reason === null && !here && "hover:bg-muted",
+                    here && "border-2 border-primary",
+                    reason !== null && "opacity-60",
+                  )}
+                >
+                  <PlacedSpot
+                    athlete={a}
+                    className={cn("h-12 w-11 shrink-0", reason !== null && "grayscale")}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block break-words font-bold">{a.name}</span>
+                    <span className="block text-sm text-muted-foreground">
+                      {a.discipline} {messages.catalogue.sexShort[a.sex]}
+                    </span>
+                    {note && <span className="block text-xs font-semibold">{note}</span>}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </BottomSheet>
 
       <section aria-labelledby="bench" className="flex flex-col gap-2">
         <h2 id="bench" className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
           {text.bench}
         </h2>
-        {editable && <p className="text-sm text-muted-foreground">{text.hint}</p>}
         {bench.length === 0 ? (
           <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
             {athletes.length === 0 ? text.noTeam : text.benchEmpty}
@@ -201,36 +261,11 @@ export function LineupBoard({
             aria-labelledby="bench"
             className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6"
           >
-            {bench.map((a) => {
-              const canPick = editable && a.entered;
-              return (
-                <li
-                  key={a.athleteId}
-                  className="relative"
-                  draggable={canPick}
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData(DRAG_TYPE, a.athleteId);
-                    setPicked(a.athleteId);
-                  }}
-                  onDragEnd={() => setPicked(null)}
-                >
-                  <AthleteCard
-                    athlete={a}
-                    paid={a.paid}
-                    state={!a.entered ? "absent" : picked === a.athleteId ? "selected" : "normal"}
-                  />
-                  {canPick && (
-                    <button
-                      type="button"
-                      aria-label={a.name}
-                      aria-pressed={picked === a.athleteId}
-                      onClick={() => setPicked(picked === a.athleteId ? null : a.athleteId)}
-                      className="absolute inset-0 rounded-card focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
-                    />
-                  )}
-                </li>
-              );
-            })}
+            {bench.map((a) => (
+              <li key={a.athleteId}>
+                <AthleteCard athlete={a} paid={a.paid} state={a.entered ? "normal" : "absent"} />
+              </li>
+            ))}
           </ul>
         )}
       </section>
@@ -258,7 +293,7 @@ export function LineupBoard({
             }}
             className={cn(buttonVariants(), "w-full")}
           >
-            {text.validate}
+            {saving ? text.validating : text.validate}
           </button>
         </div>
       )}

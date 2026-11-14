@@ -689,7 +689,6 @@ export const messages = {
       `${name}, ${discipline}, ${points === null ? "points à venir" : pts(points)}${bonus > 0 ? `, dont ${bonus} de bonus` : ""}`,
     bonus: (n: number) => `+${n}`,
     points: (n: number | null) => (n === null ? "–" : pts(n)),
-    selected: "Sélectionné",
     absent: "Absent·e",
   },
   lineup: {
@@ -711,13 +710,27 @@ export const messages = {
       free: "Libre",
     },
     emptyPlace: (place: string) => `Place ${place}, vide`,
-    takenPlace: (place: string, name: string) => `Place ${place} : ${name}, renvoyer sur le banc`,
+    takenPlace: (place: string, name: string) => `Place ${place} : ${name}, changer`,
     lockedPlace: (place: string, name: string) => `Place ${place} : ${name}`,
     unfillablePlace: (place: string) => `Place ${place} : aucun athlète de ton équipe disponible`,
     nobody: "Personne",
+    add: "+",
     bench: "Remplaçants",
     benchEmpty: "Tous tes athlètes engagés sont alignés.",
-    hint: "Touche un athlète du banc puis une place qui s'allume, ou fais-le glisser. Touche un athlète du stade pour le renvoyer sur le banc.",
+    hint: "Touche une place du stade pour y mettre un athlète de ton équipe.",
+    sheetTitle: (place: string) => `Place ${place}`,
+    sheetHint: (place: string) =>
+      place === "Libre"
+        ? "Une place libre accueille un athlète de n'importe quelle famille."
+        : `Seuls les athlètes de la famille ${place} vont sur cette place.`,
+    choices: "Athlètes de ton équipe",
+    onThisPlace: "Sur cette place",
+    elsewhere: (place: string) => `Déjà sur la place ${place} : touche pour l'échanger`,
+    notEntered: "Absent·e : pas engagé·e dans cette compétition",
+    wrongFamily: (place: string) => `Ne va pas sur une place ${place}`,
+    remove: "Retirer de cette place",
+    noEligible: "Aucun athlète de ton équipe ne peut aller sur cette place.",
+    validating: "Validation en cours…",
     toFill: (places: { label: string; count: number }[]) =>
       `À remplir : ${places.map((p) => (p.count > 1 ? `${p.label} ×${p.count}` : p.label)).join(", ")}`,
     full: "Toutes les places sont remplies.",
