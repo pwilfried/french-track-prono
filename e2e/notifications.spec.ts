@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { messages } from "../src/app/messages.fr";
-import { sql } from "../src/infra/contract/database";
+import { onPreprod, sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
 
 const text = messages.notifications;
@@ -37,6 +37,12 @@ test("a player turns notifications on for this device, then off", async ({ page 
   await page.goto("/profil");
   await signUp(page, player);
   await page.waitForURL(/\/profil$/);
+  // A build without a push key shows no « Notifications » block: pre-production has none (#830).
+  const block = page.getByText(text.description);
+  test.skip(
+    onPreprod() && (await block.count()) === 0,
+    "no NEXT_PUBLIC_VAPID_PUBLIC_KEY in this pre-production build",
+  );
   const devices = () =>
     sql(`select count(*) from push_subscriptions s join auth.users u on u.id = s.user_id
          where u.email = '${player.email}'`);

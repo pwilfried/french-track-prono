@@ -95,7 +95,8 @@ test("a new player predicts a perfect podium, the admin enters the results sheet
   sql(
     `update profiles set is_admin = false where id = (select id from auth.users where email = '${player.email}')`,
   );
-  await page.goto("/mes-points");
+  // The event's competition, asked for: pre-production follows a demo one by default (#830).
+  await page.goto("/mes-points?competition=ultimate-championship-2026");
   await expect(page.locator('main:not([aria-busy="true"])')).toContainText("+12 pts");
   await expect(page.locator('main:not([aria-busy="true"])')).toContainText("Podium parfait");
 
