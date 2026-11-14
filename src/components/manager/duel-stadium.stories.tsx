@@ -16,27 +16,28 @@ const card = (
   bonus = 0,
 ): DuelCard => ({ athleteId: name, name, discipline, family, sex: "F", points, bonus });
 
-const places = ["sprint", "sprint", "middle", "long", "jumps", "throws", "free", "free"] as const;
+/** The default rules: one sprint, one middle distance, one throws place and five free ones. */
+const places = ["sprint", "middle", "throws", "free", "free", "free", "free", "free"] as const;
 
 const opponent = [
-  card("Ana Fictive", "100 m", "sprint", 1050),
-  card("Bea Démo", "200 m", "sprint", 990, 20),
-  card("Cléo Exemple", "800 m", "middle", 1010),
-  card("Dora Modèle", "5000 m", "long", 0),
-  card("Eva Fictive", "Longueur", "horizontal_jumps", 1005),
-  card("Flo Démo", "Poids", "throws", 940),
-  card("Gaby Exemple", "400 m haies", "hurdles", 1080, 50),
+  card("Dora Modèle", "100 m", "sprint", 7),
+  card("Gaby Exemple", "1500 m", "middle", null),
+  card("Bea Démo", "Javelot", "throws", 8),
+  card("Flo Démo", "400 m", "sprint", null),
+  card("Ana Fictive", "Hauteur", "vertical_jumps", 6),
+  card("Eva Fictive", "Longueur", "horizontal_jumps", 9),
+  card("Cléo Exemple", "Poids", "throws", 8, 2),
   null,
 ];
 const mine = [
-  card("Lou Fictive", "100 m", "sprint", 1100, 20),
-  card("Mia Démo", "100 m haies", "hurdles", 1020),
-  card("Noa Exemple", "1500 m", "middle", 960),
-  card("Oda Modèle", "10 000 m", "long", 1001),
-  card("Pia Fictive", "Perche", "vertical_jumps", 0),
-  card("Rose Démo", "Disque", "throws", 1040),
-  card("Sue Exemple", "Heptathlon", "combined", 990, 20),
-  card("Tia Modèle", "800 m", "middle", 970),
+  card("Sue Exemple", "100 m", "sprint", 13, 3),
+  card("Mia Démo", "1500 m", "middle", null),
+  card("Mona Modèle", "Javelot", "throws", 5),
+  card("Quia Fictive", "400 m", "sprint", null),
+  card("Hana Démo", "Hauteur", "vertical_jumps", 10),
+  card("Lou Fictive", "Longueur", "horizontal_jumps", 11),
+  card("Pia Fictive", "Poids", "throws", 7),
+  card("Tia Modèle", "200 m", "sprint", 0),
 ];
 
 const meta = {
@@ -44,8 +45,9 @@ const meta = {
   component: DuelStadium,
   args: {
     places: [...places],
-    top: { pseudo: "Rival Fictif", linedUp: true, cards: opponent },
-    bottom: { pseudo: "Moi", linedUp: true, cards: mine },
+    mine: true,
+    top: { pseudo: "Rival Fictif", linedUp: true, score: 37, cards: opponent },
+    bottom: { pseudo: "Moi", linedUp: true, score: 41, cards: mine },
   },
   decorators: [
     (Story) => (
@@ -59,20 +61,32 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** The opponent at the top on blue cards, the player at the bottom on gold ones. */
+/**
+ * The mock-up: the opponent's stadium at the top, « Mon stade » below with its score in red, the
+ * score between the two; races on gold, field events on white, « ▲ » on the card that wins its duel.
+ */
 export const Scored: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await expect(canvas.getByRole("heading", { name: /Stade de Rival Fictif/ })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: /Mon stade/ })).toHaveTextContent("41");
+    await expect(canvas.getByText(text.scoreLine("37", "41"))).toBeVisible();
     const top = canvas.getByRole("list", { name: text.sideOf("Rival Fictif") });
     const bottom = canvas.getByRole("list", { name: text.sideOf("Moi") });
     await expect(within(top).getAllByRole("article")).toHaveLength(7);
     await expect(within(bottom).getAllByRole("article")).toHaveLength(8);
     await expect(within(top).getByText(messages.lineup.emptyPlace("Libre"))).toBeInTheDocument();
+    const sprint = within(bottom).getByRole("article", {
+      name: messages.team.scoredCardLabel("Sue Exemple", "100 m", 13, 3),
+    });
+    await expect(sprint).toHaveTextContent(`13 ${text.won}`);
     await expect(
-      within(bottom).getByRole("article", {
-        name: messages.team.scoredCardLabel("Lou Fictive", "100 m", 1100, 20),
+      within(top).getByRole("article", {
+        name: messages.team.scoredCardLabel("Dora Modèle", "100 m", 7, 0),
       }),
-    ).toHaveTextContent("+20");
+    ).not.toHaveTextContent(text.won);
+    await expect(within(bottom).getAllByText(text.toCome)).toHaveLength(2);
+    await expect(canvas.getByText(text.legend)).toBeVisible();
   },
 };
 
@@ -92,7 +106,10 @@ export const NotScored: Story = {
   },
   play: async ({ canvasElement }) => {
     const articles = within(canvasElement).getAllByRole("article");
-    for (const a of articles) await expect(a).toHaveTextContent("–");
+    for (const a of articles) {
+      await expect(a).toHaveTextContent(text.toCome);
+      await expect(a).not.toHaveTextContent(text.won);
+    }
   },
 };
 
@@ -126,7 +143,7 @@ export const LongNames: Story = {
 export const Dark: Story = {
   decorators: [
     (Story) => (
-      <div className="dark w-[390px] bg-nuit p-4">
+      <div className="dark w-[390px] bg-background p-4">
         <Story />
       </div>
     ),

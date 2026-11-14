@@ -124,8 +124,10 @@ test("the admin saves one results sheet: prediction points and the Manager head-
     .click();
   const summary = page.getByRole("region", { name: "Résultat de la confrontation" });
   await expect(summary).toContainText("Victoire +3");
-  await expect(summary).toContainText(`${mine}`);
-  await expect(summary).toContainText(`${theirs}`);
+  // The scores are on the stadiums (#775): the rival's at the top, « Mon stade » at the bottom.
+  const stadium = page.getByRole("region", { name: "Le stade de la confrontation" });
+  await expect(stadium.getByText(`${theirs} - ${mine}`)).toBeVisible();
+  await expect(stadium.getByRole("heading", { name: /^Mon stade/ })).toContainText(`${mine}`);
 
   sql(`delete from manager_leagues where id = '${league}'`);
   sql(`delete from competitions where id = '${competition}'`);

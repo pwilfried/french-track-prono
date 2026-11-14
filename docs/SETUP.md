@@ -358,7 +358,10 @@ sans qu'on le voie). Les variables d'environnement de l'application restent dans
 
 Le déploiement passe par `ci/vercel-deploy.sh <adresse>` (#720), appelé par le job « Deploy to
 Vercel production » de `migrations.yml` et par le job de déploiement de `preprod.yml` (#634), qui
-y ajoute `NEXT_PUBLIC_SITE_NOINDEX=1` avec `VERCEL_EXTRA_ENV` :
+y ajoute `NEXT_PUBLIC_SITE_NOINDEX=1` avec `VERCEL_EXTRA_ENV`. Le build est envoyé en une seule
+archive (`--archive=tgz`, #789) : le plan gratuit de Vercel n'accepte que 5000 fichiers envoyés par
+jour pour tout le compte, et les déploiements de la préprod (un par fusion) les avaient épuisés le
+14 novembre 2026, ce qui bloquait aussi la prod.
 
 1. **Vérification avant le build** : après `vercel pull`, l'environnement de production du projet
    Vercel doit contenir `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_ANON_KEY`, non vides.

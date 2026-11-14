@@ -160,20 +160,35 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   prochain badge et ce qu'il reste à faire pour l'obtenir.
 - **CompetitionChips** : puces d'une compétition à l'autre (classement, historique des pronos).
 - **AthleteCard** (Manager, #426) : carte or d'un athlète de l'équipe ; code de famille, prix
-  payé, initiales (jamais de photo), prénom et initiale du nom ; états « Sélectionné » et
-  « Absent·e » ; format compact sur une place du stade. Dans une confrontation (#605) : bonus
-  (« +20 ») en haut à droite et points en bas à la place du prix, bleu clair (`--duel-blue-*`)
-  pour l'adversaire ; un athlète à 0 a un cadre rouge en pointillés.
-- **DuelStadium** (Manager, #605) : un seul stade coupé par une ligne blanche, les titulaires de
-  l'adversaire en haut (cartes bleues), ceux du joueur en bas (cartes or), sur les places de
-  l'alignement ; « … n'a pas validé d'alignement : 0 point » à la place d'une moitié vide.
-- **LineupBoard** (Manager, #427) : un stade (piste `--track` autour d'une pelouse `--field`)
-  porte les places des titulaires, une par carte, chacune d'une famille ou « Libre » (règles de la
-  ligue) ; dessous, les remplaçants. Glisser-déposer à la souris ; au toucher, une carte puis une
-  place (les places compatibles s'allument) ; toucher une carte du stade la renvoie sur le banc ;
-  tout est bouton, donc au clavier aussi. Compteur « N/M places », barre du bas « À remplir : … »
-  et « Valider mon alignement ». Une place que l'équipe ne peut pas remplir reste grise
-  (« Personne ») et n'empêche pas de valider. Bandeaux « Alignement validé » et « Verrouillé ».
+  payé, initiales (jamais de photo), prénom et initiale du nom ; état « Absent·e » sur le banc de
+  l'alignement. Sur le stade (#775), un athlète est une place (`PlacedSpot`), comme sur la maquette
+  validée « Confrontation stade contre stade » : les courses sur fond or (`--spot-race`), les
+  concours sur fond blanc (`--spot-field`), dans les deux thèmes ; la discipline en capitales
+  (bleu nuit pour une course, rouge `--spot-field-label` pour un concours), le prénom et l'initiale
+  du nom, puis dans une confrontation les points (chasse fixe) ou « à venir ».
+- **DuelStadium** (Manager, #605, #775) : stade contre stade. En haut « Stade de <pseudo> » et son
+  score (bleu nuit), son stade ; une ligne fine coupée par une pastille bleu nuit « 37 - 41 »
+  (chiffres or, chasse fixe) ; le stade du joueur, puis « Mon stade » et son score (rouge quand il
+  mène) ; la légende « Mêmes places que l'alignement. ▲ : duel gagné à cette épreuve. ». Chaque
+  titulaire est à la même place dans les deux stades ; « ▲ » après les points et un contour bleu
+  nuit épais pour la carte qui bat celle de la même place en face. « … n'a pas validé d'alignement :
+  0 point » à la place d'un stade vide. En tête de page : « ‹ <ligue> », « Journée N · en direct »
+  (ou « terminée ») et « N épreuves à venir ».
+- **LineupBoard** (Manager, #427, #775) : le stade vu du dessus (`StadiumMap` : un ovale, piste
+  `--track` avec un fin liseré clair autour d'une pelouse `--field`), une place par titulaire à son
+  endroit, les mêmes que dans une confrontation (`stadium-spots.ts`) : sur la piste, sprint et haies
+  en bas (« 100 m ») puis à gauche (« 400 m »), demi-fond et fond à droite (« 1500 m »), une
+  huitième place en haut ; sur la pelouse, sauts en haut (« hauteur ») puis à gauche
+  (« longueur »), lancers à droite (« javelot ») puis au centre (« poids »), combinées au centre ;
+  les places « Libre » prennent les endroits restants dans cet ordre. Quatre cartes tiennent côte à
+  côte sur la ligne du milieu, sans chevauchement de 320 à 390 px. Une place montre l'athlète ou un
+  « + » en pointillés. Toucher une
+  place ouvre une feuille avec les athlètes de l'équipe : ceux qui ne vont pas sont grisés avec la
+  raison (absent·e, autre famille) ; en choisir un déjà placé ailleurs échange les deux s'il le
+  peut ; « Retirer de cette place ». Dessous, les remplaçants. Compteur « N/M places », barre du
+  bas « À remplir : … » et « Valider mon alignement » (« Validation en cours… »). Une place que
+  l'équipe ne peut pas remplir reste grise (« Personne ») et n'empêche pas de valider. Bandeaux
+  « Alignement validé » et « Verrouillé ».
 - **ManagerTutorial** (Manager, #616) : sept étapes plein écran sur le bleu nuit, dans les deux
   thèmes ; une idée par étape, avec un dessin en formes simples (dossards, cartes, stade, barres,
   trophée ; jamais de photo) et les chiffres des règles ; « Précédent » / « Suivant » (flèches du

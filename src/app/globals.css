@@ -57,14 +57,16 @@
   --medal-bronze-from: #d99464;
   --medal-bronze-to: #8b4513;
   --medal-bronze-ink: #ffffff;
-  /* The opponent's cards in a Manager head-to-head (#605): light blue, navy ink (AA). */
-  --duel-blue-from: #e3edfb;
-  --duel-blue-to: #a9c4ea;
-  --duel-blue-ink: #082e66;
   /* The Manager stadium (#427): a red running track around a green field. */
   --track: #c8553d;
   --field: #3d8b4f;
   --field-foreground: #ffffff;
+  /* The cards on the stadium (#775): races on gold, field events on white, navy ink, in both
+     themes (the field label in red, AA on white). */
+  --spot-race: #ffc857;
+  --spot-field: #ffffff;
+  --spot-ink: #052b5c;
+  --spot-field-label: #c42818;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -136,6 +138,10 @@
   --color-track: var(--track);
   --color-field: var(--field);
   --color-field-foreground: var(--field-foreground);
+  --color-spot-race: var(--spot-race);
+  --color-spot-field: var(--spot-field);
+  --color-spot-ink: var(--spot-ink);
+  --color-spot-field-label: var(--spot-field-label);
   --radius-card: var(--radius);
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-bricolage), system-ui, sans-serif;
