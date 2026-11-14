@@ -47,7 +47,8 @@ test("a league counts only the points scored once the player joined", async ({ p
     .getByRole("listitem")
     .filter({ hasText: friend });
   // No points in the league yet: the points column says 0, once (#706).
-  await expect(row).toContainText(/(^|\D)0 point\b/);
+  // The visible figure is aria-hidden; its spoken twin reads « 0 point ».
+  await expect(row.getByText("0 point", { exact: true })).toHaveCount(1);
   await expect(row).not.toContainText("Pas encore de points");
   // Still counted in the general ranking.
   await page.goto(`/classement?vue=general&competition=${competition}`);
