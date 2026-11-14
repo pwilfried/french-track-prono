@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
 // Direct access to the local Supabase database, for test set-up only (making an admin, creating
 // an isolated event). The app never connects this way. Uses `psql` when it is installed, else the
@@ -21,16 +22,28 @@ function hasPsql(): boolean {
 
 /**
  * In the end-to-end tests (PUBLIC_CACHE_FLUSH_SECRET set by playwright.config.ts), a change made in
- * SQL bypasses the back-office, so the app's cache of public data is expired by hand (#693),
- * before the test goes on. Synchronous like `sql`; does nothing if the app is not up.
+ * SQL bypasses the back-office, so the app's cache of public data is expired by hand (#693), and
+ * the test goes on once the expiry has landed (#814, src/infra/contract/public-cache-flush.ts).
+ * Synchronous like `sql`; does nothing if the app is not up, throws if the cache did not expire.
  */
 function flushPublicCache(): void {
   const secret = process.env.PUBLIC_CACHE_FLUSH_SECRET;
   if (!secret) return;
   const target = `${process.env.PUBLIC_CACHE_FLUSH_URL ?? "http://localhost:3000"}/api/public-cache`;
   const headers = { "x-flush-secret": secret, ...vercelBypassHeaders() };
-  const script = `fetch(${JSON.stringify(target)}, { method: "POST", headers: ${JSON.stringify(headers)} }).catch(() => {})`;
-  execFileSync(process.execPath, ["-e", script], { stdio: "ignore", timeout: 10_000 });
+  const flusher = pathToFileURL(join(__dirname, "public-cache-flush.ts")).href;
+  const script = `
+    const { flushPublicCacheAndWait } = await import(${JSON.stringify(flusher)});
+    const outcome = await flushPublicCacheAndWait(${JSON.stringify(target)}, ${JSON.stringify(headers)});
+    if (outcome.kind === "failed") {
+      console.error("public cache not expired: " + outcome.reason);
+      process.exit(1);
+    }`;
+  // --no-warnings: Node runs the TypeScript file as it is, and says so on every call.
+  execFileSync(process.execPath, ["--no-warnings", "--input-type=module", "-e", script], {
+    stdio: ["ignore", "ignore", "inherit"],
+    timeout: 30_000,
+  });
 }
 
 /**
