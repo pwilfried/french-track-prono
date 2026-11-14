@@ -46,11 +46,11 @@ test("a player creates a public league, another finds it in Découvrir and joins
   await walkerPage.goto("/ligues");
   await signUp(walkerPage, walker);
   await walkerPage.waitForURL(/\/ligues$/);
-  await expect(walkerPage.getByRole("link", { name: "Mes ligues · 0" })).toHaveAttribute(
-    "aria-current",
-    "page",
+  await expect(walkerPage.getByRole("tab", { name: "Mes ligues · 0" })).toHaveAttribute(
+    "aria-selected",
+    "true",
   );
-  await walkerPage.getByRole("link", { name: "Découvrir" }).click();
+  await walkerPage.getByRole("tab", { name: "Découvrir" }).click();
   await walkerPage.waitForURL(/\/ligues\?onglet=decouvrir$/);
   const publics = walkerPage.getByRole("list", { name: "Autres ligues publiques" });
   await walkerPage.getByRole("searchbox", { name: "Chercher une ligue publique" }).fill(tag);
@@ -73,7 +73,7 @@ test("a player creates a public league, another finds it in Découvrir and joins
 
   // Now a member, they find it among their leagues, no longer in Découvrir.
   await walkerPage.goto("/ligues");
-  await expect(walkerPage.getByRole("link", { name: "Mes ligues · 1" })).toBeVisible();
+  await expect(walkerPage.getByRole("tab", { name: "Mes ligues · 1" })).toBeVisible();
   await expect(
     walkerPage
       .getByRole("list", { name: "Mes ligues" })

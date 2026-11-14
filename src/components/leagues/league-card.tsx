@@ -9,7 +9,7 @@ import { FamilyBadge } from "./family-badge";
 
 const text = messages.leagues;
 
-/** « 12 compétitions · déc. 2026 → avr. 2027 », or « sans compétition » (#662). */
+/** « 12 compétitions · déc. 2026 → avr. 2027 », or « Sans compétition » (#662, #708). */
 export function leagueSummaryText(summary: {
   count: number;
   start: string | null;
@@ -105,9 +105,10 @@ export function LeagueCard({
           )}
         </span>
       ) : (
-        <span className="w-20 shrink-0 text-right text-xs text-muted-foreground">
-          {text.noPointsYet}
-          <span className="block">{text.players(memberCount)}</span>
+        // Two even lines then the players (#708): balanced, never one word per line at 320 px.
+        <span className="flex w-24 shrink-0 flex-col gap-1 text-right text-xs leading-snug text-muted-foreground">
+          <span className="text-balance">{text.noPointsYet}</span>
+          <span className="whitespace-nowrap">{text.players(memberCount)}</span>
         </span>
       )}
     </Link>

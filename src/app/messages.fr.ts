@@ -1001,7 +1001,7 @@ export const messages = {
     players: (n: number) => `${n} ${n <= 1 ? "joueur" : "joueurs"}`,
     createdByMe: "créée par toi",
     createdBy: (pseudo: string) => `créée par ${pseudo}`,
-    noCompetitionTag: "sans compétition",
+    noCompetitionTag: "Sans compétition",
     rank: (rank: number) => ordinal(rank),
     rankLabel: (rank: number) => `Ta place : ${ordinal(rank)}`,
     noPointsYet: "Pas encore de points",

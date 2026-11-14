@@ -24,11 +24,11 @@ import { ScopeSwitcher } from "@/components/leaderboard/scope-switcher";
 import { InviteBanner } from "@/components/leagues/invite-banner";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { buttonVariants } from "@/components/ui/button";
+import { ViewTabs } from "@/components/ui/view-tabs";
 import { rankingStart } from "@/domain/competition";
 import { seasonYears } from "@/domain/competition-search";
 import { placeOf, previousCompetitionSlugs } from "@/domain/ranking";
 import { createSupabaseLeagueRepository, createSupabaseRankingRepository } from "@/infra";
-import { cn } from "@/lib/utils";
 
 import { currentCompetitionDay, currentDay, loadCompetitions, loadMyLeagues } from "../competition";
 import { messages } from "../messages.fr";
@@ -164,29 +164,13 @@ export default async function RankingPage({
     <main id="main" className="flex flex-1 flex-col">
       <LeagueHero title={text.title} subtitle={subtitle} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
-        <div
-          role="tablist"
-          aria-label={text.viewLabel}
-          className="grid gap-1 rounded-full bg-muted p-1"
-          style={{ gridTemplateColumns: `repeat(${views.length}, minmax(0, 1fr))` }}
-        >
-          {views.map((v) => (
-            <Link
-              key={v}
-              href={rankingHref(v)}
-              role="tab"
-              aria-selected={v === view}
-              aria-controls="classement-vue"
-              id={`vue-${v}`}
-              className={cn(
-                "inline-flex min-h-11 items-center justify-center rounded-full px-2 text-sm font-semibold",
-                v === view ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
-              )}
-            >
-              {text.view[v]}
-            </Link>
-          ))}
-        </div>
+        <ViewTabs
+          label={text.viewLabel}
+          tabs={views.map((v) => ({ id: v, label: text.view[v], href: rankingHref(v) }))}
+          selected={view}
+          idPrefix="vue"
+          panelId="classement-vue"
+        />
         <div
           id="classement-vue"
           role="tabpanel"
