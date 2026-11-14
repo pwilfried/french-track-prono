@@ -6,6 +6,7 @@ import { messages } from "@/app/messages.fr";
 import { Field } from "@/components/account/field";
 import type { SeasonCompetition } from "@/application/manager-leagues";
 import { SeasonCompetitionPicker } from "@/components/leagues/season-competition-picker";
+import { LEAGUE_NAME_MAX } from "@/domain/league";
 import { MIN_SEASON_COMPETITIONS } from "@/domain/manager-league";
 
 import { createManagerLeagueAction, type ManagerLeagueFormState } from "./actions";
@@ -37,7 +38,7 @@ export function CreateManagerLeagueForm({ competitions }: { competitions: Season
         hint={text.nameHint}
         error={state.error && !competitionError ? messages.errors[state.error] : undefined}
         defaultValue={state.value}
-        maxLength={60}
+        maxLength={LEAGUE_NAME_MAX}
         autoComplete="off"
       />
       <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-2xl border-2 border-border bg-card px-3.5 py-3 has-checked:border-primary">

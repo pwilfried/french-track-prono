@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { MAX_BID_DIGITS } from "@/domain/manager-bid";
 import type { CatalogueAthlete } from "@/domain/manager-catalogue";
 
 import { UseCaseError } from "./errors";
@@ -135,6 +136,17 @@ describe("placeManagerBid", () => {
     const { repository, placed } = bids(open);
 
     for (const amount of ["", "12.5", "-3", "douze"]) {
+      await expect(
+        placeManagerBid({ bids: repository }).execute({ leagueId: "l1", athleteId: "a1", amount }),
+      ).rejects.toEqual(new UseCaseError("MANAGER_BID_INVALID"));
+    }
+    expect(placed).toEqual([]);
+  });
+
+  it("refuses an amount with more digits than a bid can hold, without asking the database", async () => {
+    const { repository, placed } = bids(open);
+
+    for (const amount of ["1".repeat(MAX_BID_DIGITS + 1), "9".repeat(300)]) {
       await expect(
         placeManagerBid({ bids: repository }).execute({ leagueId: "l1", athleteId: "a1", amount }),
       ).rejects.toEqual(new UseCaseError("MANAGER_BID_INVALID"));

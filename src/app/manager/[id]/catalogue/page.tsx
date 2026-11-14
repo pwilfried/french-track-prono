@@ -12,6 +12,7 @@ import { CatalogueCard } from "@/components/manager/catalogue-card";
 import { MercatoBanner } from "@/components/manager/mercato-banner";
 import { CompetitionChips } from "@/components/events/competition-chips";
 import { buttonVariants } from "@/components/ui/button";
+import { SEARCH_MAX_LENGTH } from "@/domain/list-view";
 import { MANAGER_FAMILIES, MANAGER_SEXES, type ManagerSex } from "@/domain/manager-rules";
 import {
   createSupabaseManagerBids,
@@ -162,6 +163,8 @@ export default async function CataloguePage({
             aria-label={text.search}
             defaultValue={query}
             placeholder={text.searchPlaceholder}
+            maxLength={SEARCH_MAX_LENGTH}
+            autoComplete="off"
             className={field}
           />
           {sex && <input type="hidden" name="sexe" value={sex} />}
@@ -220,6 +223,7 @@ export default async function CataloguePage({
                           name={athlete.name}
                           price={athlete.price}
                           current={bidOf.get(athlete.athleteId) ?? null}
+                          credits={mine.available + (bidOf.get(athlete.athleteId) ?? 0)}
                         />
                       )}
                     </CatalogueCard>

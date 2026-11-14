@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from "react";
 
 import type { Club } from "@/application/clubs";
 import { messages } from "@/app/messages.fr";
+import { SEARCH_MAX_LENGTH } from "@/domain/list-view";
 
 import { Field } from "./field";
 
@@ -113,6 +114,7 @@ export function ClubPicker({
             hint={text.searchHint}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            maxLength={SEARCH_MAX_LENGTH}
             autoComplete="off"
             error={error}
           />

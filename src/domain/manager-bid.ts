@@ -9,6 +9,9 @@ export type ManagerBid = {
   bidAt: string;
 };
 
+/** A bid has at most this many digits (#712): a longer amount is refused before the database. */
+export const MAX_BID_DIGITS = 6;
+
 export type BidProblem = "invalid" | "below_price" | "over_budget";
 
 /** The credits the active bids reserve. */
