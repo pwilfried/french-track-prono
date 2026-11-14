@@ -6,6 +6,7 @@ import { useState, type ReactNode } from "react";
 import { messages } from "@/app/messages.fr";
 import type { CompetitionScope, CompetitionVenue } from "@/domain/competition";
 import { competitionGroups, searchCompetitions } from "@/domain/competition-search";
+import { SEARCH_MAX_LENGTH } from "@/domain/list-view";
 import { cn } from "@/lib/utils";
 
 import { BottomSheet } from "../ui/bottom-sheet";
@@ -141,6 +142,8 @@ export function SheetSearch({
       onChange={(event) => onChange(event.target.value)}
       aria-label={text.sheet.search}
       placeholder={text.sheet.search}
+      maxLength={SEARCH_MAX_LENGTH}
+      autoComplete="off"
       className="min-h-11 w-full rounded-full border border-border bg-card px-4 text-base"
     />
   );
