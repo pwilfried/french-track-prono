@@ -98,8 +98,8 @@ npm run db:open-events
 Le script (`supabase/dev/open_events.sql`) décale tout le programme à partir de maintenant, dans le
 même ordre : la première épreuve est déjà verrouillée, les 27 autres sont ouvertes sur trois
 jours, et les résultats officiels sont retirés. Relance-le pour repartir de « maintenant ».
-`supabase db reset` remet le vrai programme. Ce script ne sert qu'en local : il n'est ni dans les
-migrations ni dans `seed.sql`.
+`supabase db reset` remet le vrai programme. Ce script sert aux tests (en local, dans la CI des
+PR et avant chaque passage e2e en préprod) : il n'est ni dans les migrations ni dans `seed.sql`.
 
 Une fois démarré, `supabase start` affiche les adresses utiles :
 
@@ -436,7 +436,12 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   pre-production » lance toute la suite `e2e/` contre l'adresse de préprod (`E2E_BASE_URL`,
   sans serveur local). Le SQL des tests passe par l'API de gestion Supabase, le code de
   connexion par l'API admin (`generateLink`, clé `service_role` de la préprod), jamais par une
-  boîte mail. Les comptes admin de test sont des joueurs `e2e-…` passés admin en SQL. À la fin
+  boîte mail. Avant la suite, `e2e/preprod-events.ts` lance `supabase/dev/open_events.sql` sur la
+  préprod, comme `db:open-events` en local (#776) : l'Ultimate Championship y est déplacé à partir
+  de « maintenant », ses résultats officiels retirés. Les trois clubs inventés du seed sont écrits
+  seulement s'ils manquent (le seed est rechargé à chaque déploiement) ; les copies des anciens
+  chargements sont fusionnées dans la plus ancienne (`src/infra/seed-clubs.test.ts`).
+  Les comptes admin de test sont des joueurs `e2e-…` passés admin en SQL. À la fin
   de chaque passage, réussi ou non, `ci/preprod/cleanup-e2e.sql` supprime les comptes
   `e2e-…@example.test` (avec leurs ligues, pronos et points, donc hors de tout classement), les
   ligues « E2E … » et les compétitions `test-…` / `e2e-…` ; le jeu de démo et le seed n'utilisent
@@ -453,14 +458,16 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   crée ou retrouve le compte de l'e-mail `PREPROD_OWNER_EMAIL` (secret de l'environnement
   `preprod`, jamais écrit dans le dépôt ni dans les journaux), pseudo `admin` (gardé si un autre
   compte l'a déjà), rôle admin, sans mot de passe : connexion par le code reçu par e-mail. Il le
-  rend membre de chaque ligue de pronos (publique ou privée) et de chaque ligue Manager qui a
-  encore une place (12 au plus). `ci/preprod/load-sql.sh` le lance après le seed et le jeu de démo,
+  rend membre de chaque ligue de pronos (publique ou privée) et de chaque ligue Manager qu'un
+  joueur pourrait encore rejoindre : mercato pas ouvert, une place sous le nombre de joueurs
+  prévu par ses compétitions (#781). Il retire le compte des ligues Manager qu'un passage
+  précédent avait fait déborder. `ci/preprod/load-sql.sh` le lance après le seed et le jeu de démo,
   et après le nettoyage des comptes e2e (déploiement et test quotidien) : idempotent, sans
   doublon. Les ligues créées par les tests pendant un passage le sont après lui et supprimées à la
   fin : le compte n'entre ni dans leurs membres ni dans leurs classements. Sans le secret, l'étape
   est sautée avec un avertissement ; un `SUPABASE_PROJECT_REF` autre que celui de la préprod est
-  refusé. Une équipe Manager appartient toujours à une ligue : en étant membre de chaque ligue
-  Manager, le compte voit chaque composition de son classement. Attention : dans une ligue Manager
+  refusé. Une équipe Manager appartient toujours à une ligue : le compte ne voit les compositions
+  que des ligues Manager où il est entré avant le mercato. Attention : dans une ligue Manager
   dont le mercato n'est pas encore fermé, ce compte compte comme un participant (nombre pair pour
   lancer la saison, équipe complétée à la fermeture), à garder en tête quand on teste une ligue
   Manager à la main.
