@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
+import { getManagerSeason, type MySeason } from "@/application/manager-home";
 import {
   getManagerLeague,
   listSeasonCompetitions,
@@ -13,13 +14,17 @@ import {
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { ShareInvite } from "@/components/leagues/share-invite";
+import { MySeasonCard } from "@/components/manager/manager-home";
+import { managerPhase } from "@/components/manager/manager-league-card";
 import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
 import { utcToParis } from "@/domain/competition";
 import { PLANNED_ROUNDS, playersAwaited, seasonFormat } from "@/domain/manager-league";
 import { roundEndsAt, roundHours } from "@/domain/manager-round";
+import { createSupabaseManagerLineups, createSupabaseManagerSeasonRepository } from "@/infra";
 
 import { messages } from "../../messages.fr";
+import { getSessionClient } from "../../session";
 import { managerPorts } from "../data";
 import { CompetitionsForm, LaunchMercatoForm, MercatoSettingsForm } from "../mercato-form";
 
@@ -34,15 +39,21 @@ function competitionChoices(league: SeasonCompetition[], available: SeasonCompet
 }
 
 /**
- * A Manager league (#419): its participants « N/cible », its competitions and its mercato (set and
- * launched by its creator, #619, #644), its frozen rules.
+ * A Manager league (#419), entered from the Manager tab (#774): its phase and participants, « Ma
+ * saison » with the action of the moment (#606), its competitions and its mercato (set and
+ * launched by its creator, #619, #644), what is inside, its frozen rules.
  */
 export default async function ManagerLeaguePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const ports = await managerPorts(`/manager/${id}`);
+  const now = new Date();
   let league: ManagerLeagueFile | "error";
+  let season: MySeason | "error" = "error";
   try {
-    league = await getManagerLeague(ports).execute({ id });
+    [league, season] = await Promise.all([
+      getManagerLeague(ports).execute({ id }),
+      leagueSeason(ports, id, now),
+    ]);
   } catch (error) {
     if (!(error instanceof UseCaseError)) throw error;
     if (error.code === "LEAGUE_NOT_FOUND") notFound();
@@ -76,11 +87,23 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
     <main id="main" className="flex flex-1 flex-col">
       <LeagueHero
         title={league.name}
-        subtitle={`${text.participantsCount(count, mercato.target)} · ${league.isPublic ? text.publicBadge : text.privateBadge}`}
+        subtitle={[
+          ...(season === "error" ? [] : [managerPhase(season)]),
+          text.participantsCount(count, mercato.target),
+          league.isPublic ? text.publicBadge : text.privateBadge,
+        ].join(" · ")}
         back={{ href: "/manager", label: text.back }}
         icon="🏟️"
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
+        {season === "error" ? (
+          <ErrorNotice
+            retryHref={`/manager/${id}`}
+            message={messages.errors.MANAGER_SEASON_UNAVAILABLE}
+          />
+        ) : (
+          <MySeasonCard season={season} now={now} />
+        )}
         <div
           role="status"
           className={`flex flex-col gap-1 rounded-2xl px-3.5 py-3 text-sm font-semibold ${open || awaited === 0 ? "bg-success/15 text-success-text" : "bg-muted text-foreground"}`}
@@ -205,6 +228,14 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
             </Link>
           </>
         )}
+        {season !== "error" && season.lastPoints && (
+          <Link
+            href={`/manager/${league.id}/points/${season.lastPoints}`}
+            className={`${buttonVariants({ variant: "muted" })} w-full`}
+          >
+            {messages.managerHome.lastPoints}
+          </Link>
+        )}
 
         <section aria-labelledby="participants" className="flex flex-col gap-2">
           <h2
@@ -257,4 +288,24 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
       </div>
     </main>
   );
+}
+
+/** The season of the league (#774); its own error does not hide the league. */
+async function leagueSeason(
+  ports: Awaited<ReturnType<typeof managerPorts>>,
+  leagueId: string,
+  now: Date,
+): Promise<MySeason | "error"> {
+  try {
+    const client = await getSessionClient();
+    return await getManagerSeason({
+      ...ports,
+      season: createSupabaseManagerSeasonRepository(client),
+      lineups: createSupabaseManagerLineups(client),
+    }).execute({ leagueId, now: now.toISOString() });
+  } catch (error) {
+    if (!(error instanceof UseCaseError)) throw error;
+    // Outside the league, the league itself answers « not found ».
+    return "error";
+  }
 }

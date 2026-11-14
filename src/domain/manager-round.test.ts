@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { awardBids, roundEndsAt, roundHours, type LeagueBid } from "./manager-round";
+import { awardBids, currentRound, roundEndsAt, roundHours, type LeagueBid } from "./manager-round";
 
 const rounds = { firstHours: 48, longRounds: 2, nextHours: 24 };
 
@@ -15,6 +15,38 @@ describe("round durations", () => {
     expect(roundEndsAt(opened, rounds, 1)).toBe("2027-01-03T12:00:00.000Z");
     expect(roundEndsAt(opened, rounds, 2)).toBe("2027-01-05T12:00:00.000Z");
     expect(roundEndsAt(opened, rounds, 3)).toBe("2027-01-06T12:00:00.000Z");
+  });
+});
+
+describe("currentRound", () => {
+  const opened = "2027-01-01T12:00:00.000Z";
+
+  it("is round 1 right after the opening, until its end", () => {
+    expect(currentRound(opened, rounds, opened)).toEqual({
+      round: 1,
+      endsAt: "2027-01-03T12:00:00.000Z",
+    });
+  });
+
+  it("moves to the next round once the previous one has ended", () => {
+    expect(currentRound(opened, rounds, "2027-01-03T12:00:00.000Z")).toEqual({
+      round: 2,
+      endsAt: "2027-01-05T12:00:00.000Z",
+    });
+    expect(currentRound(opened, rounds, "2027-01-05T13:00:00.000Z")).toEqual({
+      round: 3,
+      endsAt: "2027-01-06T12:00:00.000Z",
+    });
+  });
+
+  it("always ends after now", () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 60 * 24 * 90 }), (minutes) => {
+        const now = new Date(Date.parse(opened) + minutes * 60_000).toISOString();
+        const { round, endsAt } = currentRound(opened, rounds, now);
+        return round >= 1 && endsAt > now;
+      }),
+    );
   });
 });
 

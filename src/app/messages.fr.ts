@@ -837,9 +837,6 @@ export const messages = {
   },
   managerHome: {
     mySeason: "Ma saison",
-    league: (name: string, players: number) =>
-      `${name} · ${players} ${players <= 1 ? "joueur" : "joueurs"}`,
-    round: (current: number, total: number) => `Journée ${current} sur ${total}`,
     notStarted: "Le calendrier sera tiré à la clôture du mercato.",
     place: "Place",
     rank: (rank: number) => ordinal(rank),
@@ -860,10 +857,6 @@ export const messages = {
       champion: "Voir la fin de saison",
     } as Record<"league" | "mercato" | "team" | "lineup" | "points" | "duels" | "champion", string>,
     lineupAction: (duration: string) => `Aligner mon équipe · verrouillage dans ${duration}`,
-    shortcuts: "Raccourcis",
-    team: "Mon équipe",
-    standings: "Classement",
-    calendar: "Calendrier",
     lastPoints: "Mes derniers points",
     stepsTitle: "Le déroulé de la saison",
     steps: {
@@ -883,6 +876,24 @@ export const messages = {
       string
     >,
     startTitle: "Créer ou rejoindre une ligue",
+    startText:
+      "Recrute tes athlètes aux enchères, aligne-les et affronte tes amis toute la saison.",
+  },
+  /** A card of « Mes ligues Manager » (#774). */
+  managerLeagueCard: {
+    phase: {
+      waiting: "En attente des joueurs",
+      mercato: (round: number) => `Mercato · tour ${round}`,
+      season: (current: number, total: number) => `Saison · journée ${current} sur ${total}`,
+      over: "Saison terminée",
+    },
+    place: (rank: number) => (rank === 1 ? "1re place" : `${rank}e place`),
+    roundEnds: (duration: string) => `Fin du tour dans ${duration}`,
+    lineupLocks: (duration: string) => `Verrou d'alignement dans ${duration}`,
+    cue: { mercato: "Enchères à faire", lineup: "Alignement à valider" } as Record<
+      "mercato" | "lineup",
+      string
+    >,
   },
   managerDuel: {
     title: "Confrontation",
