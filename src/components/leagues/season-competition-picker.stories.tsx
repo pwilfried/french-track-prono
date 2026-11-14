@@ -132,16 +132,21 @@ export const Filters: Story = {
   },
 };
 
-/** A predictions league: the same picker, no format, valid from one competition. */
-export const Predictions: Story = {
+/**
+ * A predictions league (#721): the same picker as the Manager, no format, valid from one
+ * competition; three out of a season of 40 in a few taps, with the search.
+ */
+export const NormalLeague: Story = {
   args: {
+    competitions: season(42),
     withFormat: false,
     minimum: 1,
     name: "competition",
-    label: messages.leagues.chosen,
+    label: messages.leagues.competitionsTitle,
     hint: messages.leagues.how,
-    empty: messages.leagues.noComingCompetition,
+    empty: messages.leagues.createNone,
     submitLabel: messages.leagues.createSubmit,
+    pendingLabel: messages.leagues.creating,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -152,6 +157,27 @@ export const Predictions: Story = {
     await expect(canvas.getByText(text.chosen(1))).toBeVisible();
     await expect(canvas.queryByText(/joueurs ·/)).toBeNull();
     await expect(submit).toBeEnabled();
+
+    // A competition of a closed month, found by its name.
+    const search = canvas.getByRole("searchbox", { name: text.searchLabel });
+    await userEvent.type(search, "Meeting 38");
+    await userEvent.click(canvas.getByRole("checkbox", { name: /^Meeting 38 ·/ }));
+    await userEvent.clear(search);
+    await expect(canvas.getByText(text.chosen(2))).toBeVisible();
+    const fields = canvasElement.querySelectorAll<HTMLInputElement>('input[name="competition"]');
+    await expect([...fields].map((f) => f.value)).toEqual(["c1", "c38"]);
+  },
+};
+
+/** Another part of the form is not ready (no family ticked): the button waits for it. */
+export const Blocked: Story = {
+  args: { ...NormalLeague.args, chosen: ["c1"], blocked: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(text.chosen(1))).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: messages.leagues.createSubmit }),
+    ).toBeDisabled();
   },
 };
 

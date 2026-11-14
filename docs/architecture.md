@@ -328,7 +328,7 @@ part de sa prochaine action (#526) : `nextAction` et `leagueStanding` (`src/doma
 choisissent la finale ouverte la plus proche du verrouillage, sinon la prochaine compétition, et la
 ligue où il est le mieux classé. Un profil incomplet (ni club ni discipline) y voit la carte
 « Complète ton profil » (#540) : la règle, les six familles et les 30 jours de « Plus tard » vivent
-dans `src/domain/profile-reminder.ts`, la date dans `player_details.reminder_hidden_until` ; les compétitions par type à cocher pour une ligue sont sur `/ligues/creer/competitions` (#659), et
+dans `src/domain/profile-reminder.ts`, la date dans `player_details.reminder_hidden_until` ; les compétitions d'une ligue se cochent sur `/ligues/creer` dans le sélecteur de saison du Manager (#721 ; l'ancienne page `/ligues/creer/competitions` y redirige), et
 les pages suivent la prochaine compétition par date (`src/app/competition.ts`). Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
 calculé en TypeScript à partir des lignes de points (pas de vue SQL).
 

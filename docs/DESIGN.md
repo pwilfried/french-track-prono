@@ -139,7 +139,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   (plusieurs à la fois) ; « Créer » reste inactif tant qu'aucune puce n'est cochée.
 - **FamilyBadge** (#613) : « Sprint · Haies », pastille bleu doux sur la carte et la page d'une
   ligue limitée ; rien pour une ligue sur toutes les épreuves.
-- **SeasonCompetitionPicker** (#663, Manager) : sélections rapides avec leur nombre, recherche,
+- **SeasonCompetitionPicker** (#663, Manager ; ligue de pronos depuis #721, dès 1 compétition, sous le nom et les familles de la ligue) : sélections rapides avec leur nombre, recherche,
   filtres Portée, Lieu, Niveau, liste rangée par mois avec « Tout cocher », barre fixe « 15
   compétitions cochées » ; vide : « Aucune compétition ne correspond à ces filtres » et
   « Réinitialiser les filtres ».
