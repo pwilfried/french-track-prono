@@ -21,16 +21,47 @@ test("a player opens an athlete's page from the podium picker and keeps the podi
   joinLeagueFor(player.email, "ultimate-championship-2026");
 
   await page.goto(`/epreuves/${slug}`);
-  const first = page.locator("li > button[aria-pressed]").first();
-  const name = (await first.locator("span.font-bold").first().textContent())!.trim();
-  await first.click();
-  await expect(page.getByRole("button", { name: `1re place : ${name}` })).toBeVisible();
+  const athletes = page.locator("li > button[aria-pressed]");
+  const nameOf = async (index: number) =>
+    (await athletes.nth(index).locator("span.font-bold").first().textContent())!.trim();
+  const [first, second, third] = [await nameOf(0), await nameOf(1), await nameOf(2)];
+  await athletes.nth(0).click();
+  await athletes.nth(1).click();
+  // The switch input is visually hidden: the player taps its label.
+  const joker = page.getByRole("switch", { name: /Joker/ });
+  await page.locator("label").filter({ has: joker }).click();
+  await expect(joker).toBeChecked();
+  const podium = page.getByRole("button", { name: `1re place : ${first}` });
+  const runnerUp = page.getByRole("button", { name: `2e place : ${second}` });
+  await expect(podium).toBeVisible();
+  await expect(runnerUp).toBeVisible();
 
-  await page.getByRole("link", { name: `Fiche de ${name}` }).click();
+  // The back link of the athlete's page leads back to the podium being built, in view.
+  await page.getByRole("link", { name: `Fiche de ${third}` }).click();
   await expect(page).toHaveURL(/\/athletes\//);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(third);
+  await page.getByRole("link", { name: "‹ Mon podium" }).click();
+  await expect(page).toHaveURL(new RegExp(`/epreuves/${slug}(#podium)?$`));
+  await expect(podium).toBeInViewport();
+  await expect(runnerUp).toBeVisible();
+  await expect(page.getByRole("switch", { name: /Joker/ })).toBeChecked();
 
+  // The browser back button does the same.
+  await page.getByRole("link", { name: `Fiche de ${third}` }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(third);
   await page.goBack();
-  await expect(page).toHaveURL(new RegExp(`/epreuves/${slug}$`));
-  await expect(page.getByRole("button", { name: `1re place : ${name}` })).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`/epreuves/${slug}(#podium)?$`));
+  await expect(podium).toBeInViewport();
+  await expect(runnerUp).toBeVisible();
+  await expect(page.getByRole("switch", { name: /Joker/ })).toBeChecked();
+});
+
+test("an athlete's page opened from elsewhere goes back to the events", async ({ page }) => {
+  for (const from of ["https://evil.test/epreuves/x", "/competitions", "//evil.test"]) {
+    await page.goto(`/athletes/sha-carri-richardson?from=${encodeURIComponent(from)}`);
+    await expect(page.getByRole("link", { name: "‹ Épreuves" })).toHaveAttribute(
+      "href",
+      "/competitions",
+    );
+  }
 });
