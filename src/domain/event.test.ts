@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { compareEvents, compareResults, type EventSummary, type ResultLine } from "./event";
+import {
+  compareEvents,
+  compareResults,
+  winnerOf,
+  type EventSummary,
+  type ResultLine,
+} from "./event";
 
 const event = (slug: string, startsAt: string): EventSummary => ({
   id: slug,
@@ -51,5 +57,27 @@ describe("compareResults", () => {
     const lines = [line("zed", 3), line("amy", 3)];
 
     expect(lines.sort(compareResults).map((l) => l.name)).toEqual(["amy", "zed"]);
+  });
+});
+
+describe("winnerOf", () => {
+  const line = (name: string, rank: number): ResultLine => ({
+    athleteId: name,
+    slug: name,
+    name,
+    countryCode: "FRA",
+    rank,
+    mark: null,
+  });
+
+  it("gives the first of the result, the first by name in a tie", () => {
+    expect(winnerOf([line("Zoé", 2), line("Lou", 1), line("Ana", 1)])).toEqual({
+      name: "Ana",
+      countryCode: "FRA",
+    });
+  });
+
+  it("gives no winner before the result", () => {
+    expect(winnerOf([])).toBeNull();
   });
 });

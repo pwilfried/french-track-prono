@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { EventReader } from "@/application/list-events";
+import { winnerOf } from "@/domain/event";
 
 /**
  * Contract of the EventReader port, run against the in-memory fake AND the real Supabase adapter.
@@ -40,6 +41,17 @@ export function eventReaderContract(
         expect(new Date(event.lockAt).toISOString()).toBe(event.lockAt);
         expect(Date.parse(event.lockAt)).toBeLessThanOrEqual(Date.parse(event.startsAt));
       }
+    });
+
+    it("gives each listed event the winner of its result, none before the result (#800)", async () => {
+      const reader = create();
+      const events = await reader.listByCompetition(knownCompetition);
+
+      for (const event of events) {
+        const detail = await reader.findBySlug(knownCompetition, event.slug);
+        expect(event.winner ?? null).toEqual(winnerOf(detail?.results ?? []));
+      }
+      expect(events.some((e) => e.winner)).toBe(true);
     });
 
     it("returns each event once", async () => {

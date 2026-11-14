@@ -26,6 +26,17 @@ type AthleteRow = {
 /** Public data: any client works, a visitor's included. */
 export function createSupabaseAthleteReader(client: SupabaseClient): AthleteReader {
   return {
+    async namesOf(athleteIds) {
+      if (athleteIds.length === 0) return [];
+      const { data, error } = await client
+        .from("athletes")
+        .select("id, name, country_code")
+        .in("id", [...new Set(athleteIds)])
+        .returns<{ id: string; name: string; country_code: string }[]>();
+      if (error) throw new UseCaseError("ATHLETES_UNAVAILABLE");
+      return data.map((a) => ({ athleteId: a.id, name: a.name, countryCode: a.country_code }));
+    },
+
     async findBySlug(slug) {
       const found = await client
         .from("athletes")

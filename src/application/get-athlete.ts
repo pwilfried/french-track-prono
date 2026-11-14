@@ -6,7 +6,11 @@ import { UseCaseError } from "./errors";
 export interface AthleteReader {
   /** The athlete with their disciplines (main first), records and Manager price; null if unknown. */
   findBySlug(slug: string): Promise<AthleteSheet | null>;
+  /** The names and countries of the athletes given, in any order; unknown ids are left out. */
+  namesOf(athleteIds: readonly string[]): Promise<AthleteName[]>;
 }
+
+export type AthleteName = { athleteId: string; name: string; countryCode: string };
 
 export function getAthlete(ports: { athletes: AthleteReader }) {
   return {
