@@ -125,7 +125,7 @@ function LeagueSuggestion({
         {messages.prediction.leagueTitle}
       </h2>
       <p className="text-sm leading-relaxed">{messages.prediction.leagueText(competitionName)}</p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid gap-2">
         <Link href={`/ligues/creer?competition=${competitionSlug}`} className={buttonVariants()}>
           {messages.prediction.leagueCreate}
         </Link>
