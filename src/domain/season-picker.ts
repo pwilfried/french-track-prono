@@ -18,6 +18,32 @@ export type PickableCompetition = {
   level: string | null;
 };
 
+/**
+ * A competition a predictions league can count (#721), known by its days only: its slug is its id,
+ * and it starts at noon UTC on its first day, the same day in Paris time.
+ */
+export function pickableFromDays(competition: {
+  slug: string;
+  name: string;
+  /** YYYY-MM-DD. */
+  startsOn: string;
+  city: string | null;
+  scope: CompetitionScope;
+  venue: CompetitionVenue;
+  level: string | null;
+}): PickableCompetition {
+  const { slug, name, startsOn, city, scope, venue, level } = competition;
+  return {
+    id: slug,
+    name,
+    firstEventAt: `${startsOn}T12:00:00.000Z`,
+    city,
+    scope,
+    venue,
+    level,
+  };
+}
+
 /** The level of championships: with an international scope, the major championships. */
 export const CHAMPIONSHIP_LEVEL = "championnat";
 

@@ -185,22 +185,6 @@ export const messages = {
     inDays: (days: number) => (days === 0 ? "En cours" : days === 1 ? "Demain" : `Dans ${days} j`),
     events: (count: number) => (count <= 1 ? `${count} épreuve` : `${count} épreuves`),
   },
-  choice: {
-    back: "Accueil",
-    title: { international: "Compétitions internationales", france: "Compétitions françaises" },
-    intro:
-      "Coche une ou plusieurs compétitions pour créer ta ligue. Les points de toutes les compétitions cochées s'additionnent.",
-    tabsLabel: "Type de compétition",
-    tab: { international: "Internationales", france: "Françaises" },
-    coming: "À venir",
-    noneComing: "Aucune compétition à venir de ce type pour l'instant.",
-    startsIn: (days: number) => (days === 0 ? "En cours" : `J-${days}`),
-    submit: "Créer ma ligue",
-    past: "Terminées",
-    pastHint: "Résultats et classements",
-    see: "Voir",
-    seeLabel: (name: string) => `Voir ${name}`,
-  },
   events: {
     filtersLabel: "Filtrer les épreuves",
     filters: { todo: "À faire", posed: "Posés", done: "Terminées", all: "Toutes" },
@@ -1019,8 +1003,8 @@ export const messages = {
     listSubtitle: "Une ligue compte une ou plusieurs compétitions.",
     createSubtitle:
       "Au moins une compétition maintenant, d'autres plus tard : leurs points s'additionnent.",
-    competitionRequired:
-      "Choisis au moins une compétition à venir ou en cours pour créer ta ligue.",
+    createNone:
+      "Aucune compétition à venir ou en cours pour l'instant : reviens quand le calendrier sera annoncé.",
     competitionsTitle: "Compétitions de la ligue",
     noCompetition: "Pas encore de compétition : le classement démarre dès que tu en ajoutes une.",
     noCompetitionMember: "Pas encore de compétition : le créateur de la ligue en ajoutera.",
@@ -1085,10 +1069,6 @@ export const messages = {
     reportLabel: (name: string) => `Signaler la ligue ${name} à l'admin`,
     reporting: "…",
     reported: "✓ Signalée à l'admin. Merci !",
-    chosen: "Compétitions de la ligue",
-    remove: (name: string) => `Retirer ${name}`,
-    addCompetition: "+ Ajouter une compétition",
-    howTitle: "Comment ça compte ?",
     how: "Le classement de la ligue additionne les points de ses compétitions, sur les épreuves qui se verrouillent après leur entrée dans la ligue. Tu inviteras tes amis avec un code juste après.",
     nameLabel: "Nom de la ligue",
     nameHint: "2 à 40 caractères. Emoji bienvenus.",
