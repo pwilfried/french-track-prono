@@ -1,6 +1,6 @@
 // Smart reminders (#681): grouped pushes the player tunes from « Mes rappels ». These rules are
 // the reference; the cron reads them in SQL (private.reminder_due(), migration
-// 20261114060000_reminder_settings.sql), tested with the same cases in pgTAP.
+// 20261114070000_reminder_settings.sql), tested with the same cases in pgTAP.
 import { TIME_ZONE } from "./competition";
 
 /** The families of reminders, each with its own switch. */

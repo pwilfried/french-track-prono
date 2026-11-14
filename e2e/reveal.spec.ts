@@ -29,6 +29,10 @@ test("a player cannot see a friend's podium before the lock, sees it after and r
   for (const index of [0, 1, 2]) await athletes.nth(index).click();
   await annaPage.getByRole("button", { name: "Enregistrer mon podium" }).click();
   await expect(annaPage.getByRole("status")).toContainText("Podium enregistré");
+  // Before the lock, no consensus: nothing may influence a prediction (#680).
+  await expect(
+    annaPage.getByRole("heading", { name: "Ce qu'ont pronostiqué les joueurs" }),
+  ).toHaveCount(0);
 
   // Before the lock, Bob sees nothing of Anna's podium.
   await bobPage.goto(`/connexion?next=/epreuves/${slug}`);
@@ -44,8 +48,22 @@ test("a player cannot see a friend's podium before the lock, sees it after and r
   await bobPage.reload();
   await expect(bobPage.getByRole("heading", { name: "Les pronos" })).toBeVisible();
   await expect(bobPage.getByText(anna.pseudo)).toBeVisible();
-  await expect(bobPage.getByRole("heading", { name: "Qui ont-ils vu gagner ?" })).toBeVisible();
-  await expect(bobPage.getByText(": 100 %")).toBeAttached();
+  await expect(
+    bobPage.getByRole("heading", { name: "Ce qu'ont pronostiqué les joueurs" }),
+  ).toBeVisible();
+  await expect(bobPage.getByText(": 100 %").first()).toBeAttached();
+
+  // Anna sees the consensus with her own choice highlighted at each place.
+  await annaPage.reload();
+  const consensus = annaPage.getByRole("heading", { name: "Ce qu'ont pronostiqué les joueurs" });
+  await expect(consensus).toBeVisible();
+  for (const place of ["1er", "2e", "3e"]) {
+    const mine = annaPage
+      .getByRole("list", { name: `Pronos pour la place de ${place}` })
+      .locator('li[aria-current="true"]');
+    await expect(mine).toHaveCount(1);
+    await expect(mine).toContainText("(ton choix)");
+  }
 
   // Bob reacts with a fire; Anna sees it on her own podium.
   const fire = bobPage.getByRole("button", { name: /^Réagir : feu/ });

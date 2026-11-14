@@ -535,7 +535,7 @@ Vercel de préprod, voir plus haut ; facultatif tant que Vercel Authentication e
 e2e `SUPABASE_URL` (`https://<ref>.supabase.co`), `SUPABASE_SERVICE_ROLE_KEY` et
 `PUBLIC_CACHE_FLUSH_SECRET` (une valeur aléatoire, la même que dans le projet Vercel de préprod :
 elle ouvre `/api/public-cache` aux tests ; après chaque `sql(...)`, le test attend que le cache
-ait bien expiré, et s'arrête avec la raison si le vidage est refusé, #814). Réglages Auth de la préprod pour les tests : un SMTP
+ait bien expiré, chaque tag à son tour (#840), et s'arrête avec la raison si le vidage est refusé, #814). Réglages Auth de la préprod pour les tests : un SMTP
 personnalisé (le SMTP intégré de Supabase refuse les adresses hors équipe), une limite d'envoi
 d'e-mails relevée (la suite inscrit une soixantaine de joueurs) et un délai minimal court entre deux
 codes pour une même adresse. La limite d'envoi est relevée d'elle-même à 500 par heure avant chaque
@@ -592,9 +592,9 @@ de secret en plus de ceux des migrations (`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PRO
 Les joueurs qui les ont activées depuis leur profil reçoivent des rappels groupés, réglés dans
 « Mes rappels » (#681) : « Pronos oubliés » avant le verrouillage des finales de la soirée sans
 podium, « Résultats du soir » une fois tous leurs points calculés (règles dans
-`supabase/migrations/20261114060000_reminder_settings.sql`), et les rappels Manager (#836) : fin
+`supabase/migrations/20261114070000_reminder_settings.sql`), et les rappels Manager (#836) : fin
 de tour de mercato, alignement non validé, duel terminé
-(`supabase/migrations/20261114070000_manager_reminders.sql`).
+(`supabase/migrations/20261114090000_manager_reminders.sql`).
 
 L'envoi tourne dans Supabase (#502) : chaque minute, `pg_cron` appelle l'Edge Function
 `push-notifications` (`supabase/functions/`), qui envoie ce qui est dû. La logique d'envoi est

@@ -32,6 +32,26 @@ describe("flushPublicCacheAndWait", () => {
     expect(calls).toEqual(["GET", "POST", "GET", "GET", "GET", "GET"]);
   });
 
+  it("waits until every tag has expired, not just the first one", async () => {
+    // Vercel runs each tag's expiry on its own: « competitions » lands at once, « events » later.
+    let reads: number | null = null;
+    const calls: string[] = [];
+    const fetcher = async (_url: string, init?: RequestInit) => {
+      calls.push(init?.method ?? "GET");
+      if (init?.method === "POST") {
+        reads = 0;
+        return new Response(null, { status: 204 });
+      }
+      const after = reads === null ? -1 : reads++;
+      return new Response(`competitions=${after >= 0 ? 1 : 0}\nevents=${after >= 2 ? 1 : 0}`);
+    };
+
+    const outcome = await flushPublicCacheAndWait(target, {}, fetcher, noWait);
+
+    expect(outcome).toEqual({ kind: "flushed" });
+    expect(calls).toEqual(["GET", "POST", "GET", "GET", "GET"]);
+  });
+
   it("fails when the cache never expires", async () => {
     const { fetcher } = app(Number.POSITIVE_INFINITY);
 
