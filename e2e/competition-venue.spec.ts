@@ -36,7 +36,8 @@ test("an admin creates an indoor competition and sees it marked « Salle »", as
   await expect(page.getByLabel("En salle")).toBeChecked();
 
   // Players see the chip on the competition card and page.
-  await page.goto("/ligues/creer/competitions?type=international");
+  await page.goto("/ligues/creer");
+  await page.getByRole("searchbox", { name: "Rechercher une compétition" }).fill(name);
   await expect(page.getByRole("checkbox", { name: new RegExp(name) })).toBeVisible();
   await expect(page.locator("label", { hasText: name })).toContainText("Salle");
   await page.goto(`/competitions/${slug}`);
