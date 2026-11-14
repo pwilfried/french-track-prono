@@ -513,15 +513,19 @@ les clés VAPID, des rappels groupés (#681, règles de référence dans `src/do
   verrou) qui verrouillent dans le délai choisi (30 min, 1 h ou 3 h ; 1 h par défaut) sans podium
   du joueur, seulement dans une compétition où il a déjà fait un prono ; au plus un par soirée ;
 - « Résultats du soir » : un récap quand toutes les finales pronostiquées de la soirée ont leurs
-  points (points de la soirée, place dans la compétition).
+  points (points de la soirée, place dans la compétition) ;
+- « Manager » (#836, règles dans `src/domain/manager-reminders.ts`) : fin du tour de mercato
+  dans 2 h (aux participants qui peuvent encore recruter) ; alignement non validé quand le verrou
+  de la journée tombe dans le délai avant verrou ; duel terminé (toutes les épreuves de la
+  compétition finies et les scores Manager calculés depuis moins de 24 h), aux deux joueurs.
 
 « Mes rappels » (`/profil/rappels`) : un interrupteur par famille (Pronos oubliés, Résultats du
 soir, Manager ; « Ma ligue » et « FrenchTrack » sont stockées mais masquées jusqu'à v0.19), le
 délai avant verrou, les heures calmes (23 h–8 h par défaut, heure de Paris). Rien ne part pendant
 les heures calmes : ce qui reste dû part à leur fin. Réglages dans `reminder_settings` (sans ligne :
 valeurs par défaut), écrite seulement par `save_reminder_settings()` ; ce qui est parti est noté
-dans `reminder_log` (joueur, type, soirée), jamais deux fois. Rien pour un joueur bloqué. Les
-notifications Manager ne sont pas encore envoyées (interrupteur déjà présent).
+dans `reminder_log` (joueur, type, soirée, et pour le Manager la ligue et son tour ou sa
+compétition), jamais deux fois. Rien pour un joueur bloqué.
 
 « Me prévenir à la publication » (#659) : sur une compétition sans programme, le joueur connecté
 s'abonne (`program_alerts`, écrite seulement par `turn_on_program_alert()` et

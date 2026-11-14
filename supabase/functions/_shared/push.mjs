@@ -1,7 +1,8 @@
 // #203, #502: the sending of the push notifications due, shared by the Edge Function
 // `push-notifications` (run every minute by pg_cron) and by `scripts/push-notifications.mjs`
 // (by hand). Rules of what is due: the grouped reminders (#681),
-// supabase/migrations/20261114060000_reminder_settings.sql, and for the programme of a
+// supabase/migrations/20261114060000_reminder_settings.sql, the Manager ones (#836),
+// supabase/migrations/20261114070000_manager_reminders.sql, and for the programme of a
 // competition (#659): supabase/migrations/20261113120000_program_alerts.sql.
 // Plain JavaScript with no import, so that Deno and Node both load it.
 
@@ -18,18 +19,73 @@ const listOf = (items) =>
 /** @param {number} n */
 const pts = (n) => (n > 1 ? `${n} pts` : `${n} pt`);
 
+/** « 45 min », « 2 h », « 1 h 30 ». @param {number} minutes */
+const durationOf = (minutes) => {
+  if (minutes < 60) return `${minutes} min`;
+  const rest = minutes % 60;
+  return `${Math.floor(minutes / 60)} h${rest ? ` ${String(rest).padStart(2, "0")}` : ""}`;
+};
+
+/** Minutes left before an instant, at least 1. @param {string} iso @param {number} now */
+const minutesUntil = (iso, now) => Math.max(1, Math.round((new Date(iso).getTime() - now) / 60_000));
+
+/**
+ * The text of a Manager reminder (#836): the end of a mercato round, a lineup not validated, a
+ * head-to-head over.
+ * @param {{ kind: string, ref: string, payload: any }} due
+ * @param {number} now
+ */
+function managerNotificationOf(due, now) {
+  const p = due.payload;
+  const tag = `${due.kind}-${due.ref}`;
+  if (due.kind === "mercato_round")
+    return {
+      title: `⏳ Le tour ${p.round} du mercato se termine dans ${durationOf(minutesUntil(p.ends_at, now))}`,
+      body: `${p.league_name} : place tes dernières enchères.`,
+      url: `/manager/${p.league_id}/catalogue`,
+      tag,
+    };
+  if (due.kind === "lineup")
+    return {
+      title: "🏟 Ton alignement n'est pas validé",
+      body: `${p.league_name}, ${p.competition_name} : verrou dans ${durationOf(minutesUntil(p.lock_at, now))}. Sans alignement, 0 point.`,
+      url: `/manager/${p.league_id}/alignement/${encodeURIComponent(p.competition_slug)}`,
+      tag,
+    };
+  const title =
+    p.my_score > p.their_score
+      ? `🏆 Victoire contre ${p.opponent}`
+      : p.my_score < p.their_score
+        ? `Défaite contre ${p.opponent}`
+        : `Match nul contre ${p.opponent}`;
+  return {
+    title,
+    body: `${p.league_name}, journée ${p.round} : ${pts(p.my_score)} à ${pts(p.their_score)}.`,
+    url: `/manager/${p.league_id}/confrontation/${p.round}/${p.home_id}`,
+    tag,
+  };
+}
+
+/** The Manager reminders, sent once per round or competition (#836). */
+const MANAGER_KINDS = ["mercato_round", "lineup", "duel_over"];
+
+/** Reminders worth nothing once their time is over: a short lifetime on the push service. */
+const SHORT_LIVED = ["forgotten", "mercato_round", "lineup"];
+
 /**
  * The text of a grouped reminder (#681): « Pronos oubliés » for every final of the evening
- * locking soon, or « Résultats du soir » once all its points are computed.
- * @param {{ kind: string, evening: string, payload: any }} due
+ * locking soon, or « Résultats du soir » once all its points are computed; or a Manager one.
+ * @param {{ kind: string, evening: string, ref?: string, payload: any }} due
  * @param {number} [now]
  */
 export function notificationOf(due, now = Date.now()) {
+  if (MANAGER_KINDS.includes(due.kind))
+    return managerNotificationOf({ kind: due.kind, ref: due.ref ?? "", payload: due.payload }, now);
   if (due.kind === "forgotten") {
     /** @type {{ slug: string, discipline: string, gender: string, lock_at: string }[]} */
     const events = due.payload.events;
     const first = events[0];
-    const minutes = Math.max(1, Math.round((new Date(first.lock_at).getTime() - now) / 60_000));
+    const minutes = minutesUntil(first.lock_at, now);
     if (events.length === 1)
       return {
         title: `⏱ ${labelOf(first)} se verrouille dans ${minutes} min`,
@@ -123,7 +179,7 @@ export async function sendDue(database, push) {
       notification.kind,
       notification.devices,
       JSON.stringify(notificationOf(notification)),
-      notification.kind === "forgotten" ? 15 * 60 : 24 * 3600,
+      SHORT_LIVED.includes(notification.kind) ? 15 * 60 : 24 * 3600,
     );
   }
   for (const program of programs) {
@@ -135,7 +191,9 @@ export async function sendDue(database, push) {
     );
   }
   if (due.length)
-    await database.markSent(due.map(({ user_id, kind, evening }) => ({ user_id, kind, evening })));
+    await database.markSent(
+      due.map(({ user_id, kind, evening, ref }) => ({ user_id, kind, evening, ref: ref ?? "" })),
+    );
   if (programs.length)
     await database.markProgramSent(
       programs.map(({ user_id, competition_slug }) => ({ user_id, competition_slug })),
