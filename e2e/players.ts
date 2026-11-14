@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import { sql } from "../src/infra/contract/database";
-import { clearMailbox, latestCodeFromMailbox } from "../src/infra/contract/mailbox";
 
 /** A new invented player: e-mail on example.test, short pseudo. */
 export function newPlayer(tag: string) {
@@ -10,15 +10,19 @@ export function newPlayer(tag: string) {
 }
 
 /**
- * Signs a new player up from the sign-in page (already open, e.g. after a redirect): e-mail code
- * read in the local mailbox (or from the admin API in pre-production), then the profile. Ends on
- * the page the sign-in was asked from.
+ * Signs a new player up from the sign-in page (already open, e.g. after a redirect), without any
+ * e-mail (#793): the account is made confirmed by the Auth admin API, then signed in through the
+ * e-mail link (see openSignInLink). Then the profile. Ends on the page the sign-in was asked from.
+ * Only « a visitor taps « Faire mon premier prono »… » (sign-up.spec.ts) goes through « Recevoir
+ * mon code ».
  */
 export async function signUp(page: Page, player: { email: string; pseudo: string }) {
-  await page.getByLabel("Ton e-mail").fill(player.email);
-  await page.getByRole("button", { name: "Recevoir mon code" }).click();
-  await typeCode(page, player.email);
-  await page.getByRole("button", { name: "Me connecter" }).click();
+  const { error } = await adminClient().auth.admin.createUser({
+    email: player.email,
+    email_confirm: true,
+  });
+  if (error) throw new Error(`could not create ${player.email}: ${error.message}`);
+  await openSignInLink(page, player.email);
   await page.waitForURL(/\/bienvenue/);
   await page.getByLabel("Ton pseudo").fill(player.pseudo);
   // The bib drawn at random by the welcome page is kept as is.
@@ -28,23 +32,43 @@ export async function signUp(page: Page, player: { email: string; pseudo: string
   await page.waitForURL((url) => !url.pathname.startsWith("/bienvenue"));
 }
 
-/** Signs an existing player in again from the sign-in page (already open), with a fresh code. */
+/** Signs an existing player in again from the sign-in page (already open), without any e-mail. */
 export async function signIn(page: Page, email: string) {
-  await clearMailbox(email);
-  await page.getByLabel("Ton e-mail").fill(email);
-  await page.getByRole("button", { name: "Recevoir mon code" }).click();
-  await typeCode(page, email);
-  await page.getByRole("button", { name: "Me connecter" }).click();
+  await openSignInLink(page, email);
 }
 
 /**
- * Types the code sent to an address, read once the code field is shown: the app has sent it by
- * then (against pre-production, the code asked from the admin API must come after that one).
+ * Opens the link the sign-in e-mail would carry (/auth/callback, the `next` of the sign-in page
+ * kept), made by the Auth admin API: generateLink sends nothing. The app turns it into a session
+ * as for a real player; a player without profile is then sent to /bienvenue.
  */
-export async function typeCode(page: Page, email: string) {
-  const field = page.getByLabel(/code/i);
-  await field.waitFor();
-  await field.fill(await latestCodeFromMailbox(email));
+async function openSignInLink(page: Page, email: string) {
+  // The sign-in page may still be on its way (a click, or a redirect from a guarded page): its
+  // `next` is only known once its form is shown.
+  await page.waitForURL(/\/connexion/);
+  await page.getByLabel("Ton e-mail").waitFor();
+  const next = new URL(page.url()).searchParams.get("next") ?? "/";
+  const { data, error } = await adminClient().auth.admin.generateLink({ type: "magiclink", email });
+  const tokenHash = data.properties?.hashed_token;
+  if (error || !tokenHash) throw new Error(`no sign-in link for ${email}: ${error?.message}`);
+  const query = new URLSearchParams({ token_hash: tokenHash, next });
+  await page.goto(`/auth/callback?${query}`);
+}
+
+let admin: SupabaseClient | undefined;
+
+/**
+ * Auth admin client of the test runner (local Supabase, or pre-production in its workflows). The
+ * service_role key stays in the runner's environment: it never reaches the browser under test.
+ */
+function adminClient(): SupabaseClient {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are needed (#793)");
+  }
+  admin ??= createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  return admin;
 }
 
 /**

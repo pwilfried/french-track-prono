@@ -1,7 +1,8 @@
 // Pre-production only (#787): each e2e pass signs up about sixty players, and every one of them
-// gets a real sign-in e-mail from the app. Supabase caps those e-mails per hour (30 by default with
-// a custom SMTP); a deploy run followed by another within the hour hit the cap, and every sign-up
-// then failed with AUTH_UNAVAILABLE until the hour was over. The e2e set-up raises the cap first.
+// used to get a real sign-in e-mail from the app. Supabase caps those e-mails per hour (30 by
+// default with a custom SMTP); a deploy run followed by another within the hour hit the cap, and
+// every sign-up then failed with AUTH_UNAVAILABLE until the hour was over. Test accounts now sign
+// in without any e-mail (#793, e2e/players.ts); the e2e set-up still raises the cap, as a safety net.
 
 /** Room for a few passes an hour (deploys plus the daily run), each signing up ~60 players. */
 export const PREPROD_EMAIL_RATE_LIMIT = 500;
