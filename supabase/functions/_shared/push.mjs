@@ -1,7 +1,7 @@
 // #203, #502: the sending of the push notifications due, shared by the Edge Function
 // `push-notifications` (run every minute by pg_cron) and by `scripts/push-notifications.mjs`
 // (by hand). Rules of what is due: the grouped reminders (#681),
-// supabase/migrations/20261114060000_reminder_settings.sql, and for the programme of a
+// supabase/migrations/20261114060100_reminder_settings.sql, and for the programme of a
 // competition (#659): supabase/migrations/20261113120000_program_alerts.sql.
 // Plain JavaScript with no import, so that Deno and Node both load it.
 
