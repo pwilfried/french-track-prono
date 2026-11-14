@@ -269,9 +269,13 @@ même ligue voient le même classement », « accueil → compétitions françai
 compétitions », le prono avec cotes et « Autre athlète », les perfs, et les écrans d'admin.
 En CI, `COMPETITION_SLUG=ultimate-championship-2026` épingle les pages sur la compétition du seed :
 les tests créent leurs propres compétitions et les suppriment ensuite.
-Ils tournent sur le build de production, contre Supabase local. Ils lisent le code de connexion
-dans la boîte de test (Mailpit) et préparent la base avec `psql` (verrouillage, droit admin,
-points).
+Ils tournent sur le build de production, contre Supabase local. Les comptes de test sont créés
+et connectés sans e-mail (#793, `e2e/players.ts`) : compte déjà confirmé par l'API admin, puis
+lien de connexion fabriqué par `generateLink` (qui n'envoie rien) et ouvert sur `/auth/callback`,
+comme le lien de l'e-mail. La clé `service_role` reste dans l'environnement du lanceur de tests,
+jamais dans le navigateur. Un seul test passe vraiment par « Recevoir mon code » (le premier de
+`e2e/sign-up.spec.ts`) et lit son code dans la boîte de test (Mailpit). Les tests préparent la
+base avec `psql` (verrouillage, droit admin, points).
 
 ```
 supabase start
@@ -437,9 +441,11 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   `docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/preprod/demo.sql`.
 - **Tests e2e après chaque déploiement** (#695) : le job « End-to-end tests against
   pre-production » lance toute la suite `e2e/` contre l'adresse de préprod (`E2E_BASE_URL`,
-  sans serveur local). Le SQL des tests passe par l'API de gestion Supabase, le code de
-  connexion par l'API admin (`generateLink`, clé `service_role` de la préprod), jamais par une
-  boîte mail. Avant la suite, `e2e/preprod-events.ts` lance `supabase/dev/open_events.sql` sur la
+  sans serveur local). Le SQL des tests passe par l'API de gestion Supabase, la connexion des
+  comptes de test par l'API admin (création déjà confirmée et `generateLink`, clé `service_role`
+  de la préprod, #793) : aucun e-mail envoyé, sauf pour le seul test qui passe par « Recevoir mon
+  code », dont le code vient aussi de `generateLink`. Un passage complet n'envoie donc plus qu'un
+  e-mail (à vérifier dans les journaux Auth : pas de `user_confirmation_requested` en série). Avant la suite, `e2e/preprod-events.ts` lance `supabase/dev/open_events.sql` sur la
   préprod, comme `db:open-events` en local (#776) : l'Ultimate Championship y est déplacé à partir
   de « maintenant », ses résultats officiels retirés. Les trois clubs inventés du seed sont écrits
   seulement s'ils manquent (le seed est rechargé à chaque déploiement) ; les copies des anciens
@@ -523,7 +529,9 @@ d'e-mails relevée (la suite inscrit une soixantaine de joueurs) et un délai mi
 codes pour une même adresse. La limite d'envoi est relevée d'elle-même à 500 par heure avant chaque
 passage (`e2e/preprod-auth.ts`, API de gestion Supabase, projet de préprod seulement, #787) : à
 30 par heure (valeur par défaut avec un SMTP personnalisé), deux passages dans l'heure
-l'épuisaient et toutes les inscriptions tombaient en `AUTH_UNAVAILABLE` jusqu'à l'heure suivante.
+l'épuisaient quand chaque inscription de test envoyait un e-mail, et toutes les inscriptions
+tombaient en `AUTH_UNAVAILABLE` jusqu'à l'heure suivante. Depuis #793 les comptes de test
+n'envoient plus d'e-mail ; ce relèvement reste en filet de sécurité.
 Si le changement est refusé, le journal du test le dit par un avertissement. Les variables de
 l'application (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
 `NEXT_PUBLIC_SITE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PUBLIC_CACHE_FLUSH_SECRET`,
