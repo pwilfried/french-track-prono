@@ -447,7 +447,8 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   Les comptes admin de test sont des joueurs `e2e-…` passés admin en SQL. À la fin
   de chaque passage, réussi ou non, `ci/preprod/cleanup-e2e.sql` supprime les comptes
   `e2e-…@example.test` (avec leurs ligues, pronos et points, donc hors de tout classement), les
-  ligues « E2E … » et les compétitions `test-…` / `e2e-…` ; le jeu de démo et le seed n'utilisent
+  ligues « E2E … », les compétitions `test-…` / `e2e-…` et celles des tests Manager et feuille de
+  résultats (`mduel-…`, `align-…`, `sheet-…`… suivies du numéro du passage, #788) ; le jeu de démo et le seed n'utilisent
   jamais ces noms. Un test en échec ouvre une issue `bug` qui mentionne le propriétaire
   (`ci/preprod/regression-report.sh`, décision du propriétaire pour #695 : une issue seulement
   quand c'est rouge) ; rien n'est signalé quand tout passe. Une suite rouge rend le run
@@ -532,7 +533,8 @@ l'application (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
 ## Test de la prod après déploiement
 
 Le workflow « Production smoke test » (`.github/workflows/smoke.yml`, script `scripts/smoke.sh`)
-ouvre l'accueil, les épreuves, une page d'épreuve, « Comment jouer », la connexion et les mentions
+ouvre l'accueil, les épreuves, une page d'épreuve (la première liée par `/epreuves` ; s'il n'y en a
+pas ce jour-là, il suit quelques liens de jours et de compétitions de la page, #788), « Comment jouer », la connexion et les mentions
 légales de www.frenchtrackprono.com : après chaque déploiement de production (lancé aussi en fin
 de workflow de déploiement, #405), chaque jour à 6 h 17 (heure de Paris en hiver, ce qui repère aussi un projet Supabase en pause) et à la
 demande (onglet Actions → Run workflow). Pas de relance : un échec est signalé par e-mail.

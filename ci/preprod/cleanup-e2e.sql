@@ -12,3 +12,8 @@ delete from leagues where name like 'E2E %' or name = 'Ligue E2E';
 
 -- Competitions made by the tests (test-…, e2e-…): their events, entries and results go with them.
 delete from competitions where slug like 'test-%' or slug like 'e2e-%';
+
+-- Competitions made by the Manager and result-sheet tests (#788), left behind when a test fails
+-- before its own cleanup: same prefix, then the run's number (mduel-1-123456, align-123456…).
+delete from competitions
+where slug ~ '^(align|mduel|mend|mchamp|mhome|mpts|sheet|paste|manager|manager-soon)-([0-9]+-)?[0-9]+$';
