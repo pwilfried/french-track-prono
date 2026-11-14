@@ -37,7 +37,16 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 
 - **Mode sombre** dès le départ (les soirs de meeting) : fond nuit `#052B5C`.
 - **Typo** : titre sportif en capitales, Bricolage Grotesque (variable, hébergée dans le projet),
-  Inter pour le texte. Chiffres tabulaires pour les chronos et classements.
+  Inter pour le texte. Chiffres tabulaires pour les chronos et classements. La police à chasse
+  fixe est réservée aux chiffres (chronos, marques, scores, comptes à rebours) ; les sous-titres
+  de page et toute phrase restent dans la police du texte (#706).
+- **Points** (#706) : une seule écriture, par les fonctions de `messages.format`
+  (`src/app/messages.fr.ts`). « 1 pt / 12 pts » dans les endroits serrés (pastilles, lignes,
+  barre « Tu es 1er · 0 pt »), « 1 point / 12 points » dans les phrases (« À 3 points de… »),
+  « +9 pts » pour des points gagnés. Jamais de chiffre seul sans unité, sauf dans la colonne des
+  points du classement, sous son en-tête « Pts ». Un joueur sans points le voit une seule fois par
+  écran : la ligne du classement dit « 0 », sans « Pas encore de points » en plus ; « Mes points »
+  vide n'affiche que son message.
 - **Formes** : coins très arrondis, ombres douces, motif de couloirs de piste sur le dégradé bleu.
 - **Fond piste** (accueil, v0.10, #346) : un virage de piste en traits fins, 8 couloirs numérotés
   (`TrackBackground`), décoratif (`aria-hidden`), sans animation ; opacité 0,14 en sombre, 0,08 en
@@ -94,7 +103,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   en-tête, ligues, réactions) : pastille avec le numéro seul. Couleurs dans `BIB_PALETTE`
   (`src/components/profile/bib.tsx`), reprises par la carte de saison.
 - **Leaderboard** et **RankingRow** (#551, #661) : place, dossard, pseudo, ▲ n vert / ▼ n rouge
-  (« = » sinon ; lu « gagne n places »), points ; dans l'onglet Classement, l'évolution compare au
+  (« = » sinon ; lu « gagne n places »), points (chiffre seul sous l'en-tête « Pts », lu « 12 points ») ; dans l'onglet Classement, l'évolution compare au
   classement d'avant la dernière compétition terminée de la portée, ailleurs à la veille ; ex æquo signalés, ma ligne surlignée (cible `#moi` du lien « Autour de
   moi »), raison du départage sous le pseudo, pas de badge de série. Un classement long montre les
   10 premiers, « ··· », puis le joueur et deux voisins de chaque côté.

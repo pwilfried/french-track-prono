@@ -141,7 +141,7 @@ function MyLeague({
                 <Bib bib={row.bib} />
                 <span className="min-w-0 flex-1 truncate">{row.pseudo}</span>
                 <span className="font-mono text-sm tabular-nums">
-                  {messages.leaderboard.points(row.points)}
+                  {messages.format.pts(row.points)}
                 </span>
               </li>
             ))}

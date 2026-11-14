@@ -34,8 +34,8 @@ export function Change({ change, className }: { change: number; className?: stri
 /** What decided a player's place, shown under the pseudo. */
 function detailOf(row: LeaderboardRow, me: boolean): string {
   const parts: string[] = me ? [messages.leaderboard.me] : [];
-  if (row.points === 0) parts.push(messages.leaderboard.noPoints);
-  else if (row.perfectPodiums > 0) parts.push(messages.leaderboard.perfect(row.perfectPodiums));
+  // No « Pas encore de points » here: the points column already says 0 (#706).
+  if (row.perfectPodiums > 0) parts.push(messages.leaderboard.perfect(row.perfectPodiums));
   else if (row.winnersFound > 0) parts.push(messages.leaderboard.winners(row.winnersFound));
   return parts.join(" · ");
 }
