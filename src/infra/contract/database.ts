@@ -28,8 +28,20 @@ function flushPublicCache(): void {
   const secret = process.env.PUBLIC_CACHE_FLUSH_SECRET;
   if (!secret) return;
   const target = `${process.env.PUBLIC_CACHE_FLUSH_URL ?? "http://localhost:3000"}/api/public-cache`;
-  const script = `fetch(${JSON.stringify(target)}, { method: "POST", headers: { "x-flush-secret": ${JSON.stringify(secret)} } }).catch(() => {})`;
+  const headers = { "x-flush-secret": secret, ...vercelBypassHeaders() };
+  const script = `fetch(${JSON.stringify(target)}, { method: "POST", headers: ${JSON.stringify(headers)} }).catch(() => {})`;
   execFileSync(process.execPath, ["-e", script], { stdio: "ignore", timeout: 10_000 });
+}
+
+/**
+ * The header that gets a request through Vercel Authentication on pre-production (#692), when the
+ * VERCEL_AUTOMATION_BYPASS_SECRET is set (pre-production runs only); none otherwise.
+ */
+export function vercelBypassHeaders(
+  env: Record<string, string | undefined> = process.env,
+): Record<string, string> {
+  const secret = env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  return secret ? { "x-vercel-protection-bypass": secret } : {};
 }
 
 /**

@@ -1,3 +1,6 @@
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { defineConfig, devices } from "@playwright/test";
 
 /**
@@ -23,11 +26,21 @@ else process.env.PUBLIC_CACHE_FLUSH_SECRET ??= "e2e-public-cache";
  */
 process.env.PREPROD_DEMO_LOGIN ??= "1";
 
+/**
+ * Pre-production behind Vercel Authentication (#692): with VERCEL_AUTOMATION_BYPASS_SECRET, the
+ * global set-up saves Vercel's bypass cookie here and every context starts with it
+ * (e2e/vercel-bypass.ts). Without the secret, nothing changes.
+ */
+const bypassState = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+  ? join(tmpdir(), "french-track-e2e-vercel-bypass.json")
+  : undefined;
+
 export default defineConfig({
   testDir: "e2e",
   retries: 0,
   workers: 1,
   timeout: 60_000,
+  globalSetup: "./e2e/vercel-bypass.ts",
   globalTeardown: "./e2e/teardown.ts",
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
@@ -35,6 +48,7 @@ export default defineConfig({
     baseURL,
     ...devices["Pixel 7"],
     trace: "retain-on-failure",
+    storageState: bypassState,
   },
   webServer: deployed
     ? undefined
