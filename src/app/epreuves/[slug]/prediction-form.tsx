@@ -5,6 +5,7 @@ import { createPortal, useFormStatus } from "react-dom";
 
 import { buttonVariants } from "@/components/ui/button";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
+import { ScaleRules } from "@/components/rules/scale-rules";
 import type { DisciplineFamily, MarkUnit } from "@/domain/discipline";
 import { MARK_MAX_LENGTH, markInputMode, markRange, readMark } from "@/domain/mark-range";
 import { isComplete, OTHER_ATHLETE, type PodiumDraft } from "@/domain/podium-draft";
@@ -24,6 +25,7 @@ export function PredictionForm({
   markFamily,
   discipline,
   tolerance,
+  scale,
 }: {
   eventId: string;
   slug: string;
@@ -34,6 +36,8 @@ export function PredictionForm({
   markFamily?: DisciplineFamily;
   discipline: string;
   tolerance?: number;
+  /** The scale shown in the rules sheet of « Règles » (#703). */
+  scale: Record<string, number>;
 }) {
   const [state, action] = useActionState(savePredictionAction, initial);
   const [draft, setDraft] = useState(initial.draft);
@@ -98,6 +102,7 @@ export function PredictionForm({
           edited();
         }}
         helpHref="/regles"
+        help={<ScaleRules scale={scale} level={3} idPrefix="rules-" />}
         athleteHref={(athlete) => `/athletes/${athlete.slug}`}
         draftKey={`podium-draft:${eventId}`}
       />

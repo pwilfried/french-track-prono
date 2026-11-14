@@ -62,7 +62,7 @@ export function HowItWorks({ exactPoints, perfectPoints, compact, action }: HowI
         href="/regles"
         className="inline-flex min-h-11 items-center self-start text-sm font-bold underline underline-offset-4"
       >
-        {text.allRules}
+        {messages.rules.allRules}
       </Link>
     </section>
   );
