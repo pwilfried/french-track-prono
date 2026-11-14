@@ -3,13 +3,13 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import manifest from "./manifest";
-import { messages } from "./messages.fr";
 
 describe("web app manifest", () => {
   it("uses the app name and opens on the home page as a standalone app", () => {
     const m = manifest();
 
-    expect(m.name).toBe(messages.app.name);
+    expect(m.name).toBe("French Track Prono");
+    expect(m.short_name).toBe("FrenchTrack");
     expect(m.start_url).toBe("/");
     expect(m.display).toBe("standalone");
     expect(m.lang).toBe("fr");
@@ -30,6 +30,12 @@ describe("web app manifest", () => {
     expect(icons.some((icon) => icon.purpose === "maskable")).toBe(true);
     for (const icon of icons) {
       expect(existsSync(join(process.cwd(), "public", icon.src))).toBe(true);
+    }
+  });
+
+  it("ships the hare's head as the browser tab favicon", () => {
+    for (const file of ["favicon.ico", "icons/favicon-32.png", "icons/favicon-16.png"]) {
+      expect(existsSync(join(process.cwd(), "public", file))).toBe(true);
     }
   });
 });
