@@ -20,7 +20,7 @@ const green: Check = {
 };
 
 /** Runs ci/agents/merge-sweep.sh on one Claude PR against a fake gh; nothing is written. */
-function sweep(mergeable: string, checks: Check[]) {
+function sweep(mergeable: string, checks: Check[], event = "workflow_run") {
   const dir = mkdtempSync(join(tmpdir(), "agents-sweep-"));
   for (const f of ["merge-sweep.sh", "lib.sh"]) copyFileSync(`ci/agents/${f}`, join(dir, f));
   for (const f of ["release.sh", "next.sh"]) {
@@ -47,6 +47,8 @@ function sweep(mergeable: string, checks: Check[]) {
 case "$*" in
   *"pr list"*) cat "${dir}/prs.json" ;;
   *compare*) echo 0 ;;
+  *"labels=agent:waiting-quota"*) echo 694 ;;
+  *"issues/694 "*) echo false ;;
 esac
 `,
   );
@@ -60,7 +62,7 @@ esac
       DRY_RUN: "1",
       BOT_TOKEN: "bot",
       PAT_TOKEN: "pat",
-      EVENT: "workflow_run",
+      EVENT: event,
     },
   });
   expect(run.status).toBe(0);
@@ -85,4 +87,10 @@ it("looks again at a PR whose mergeability is not computed yet (#713)", () => {
   const out = sweep("UNKNOWN", [green]);
   expect(out).not.toContain("agents:conflict");
   expect(out).not.toContain("Merging #70");
+});
+
+it("retries the issues waiting for quota on a manual run, the hourly cron being unreliable (#736)", () => {
+  expect(sweep("MERGEABLE", [], "workflow_dispatch")).toContain("Retrying #694");
+  expect(sweep("MERGEABLE", [], "schedule")).toContain("Retrying #694");
+  expect(sweep("MERGEABLE", [])).not.toContain("Retrying #694");
 });
