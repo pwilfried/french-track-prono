@@ -11,6 +11,7 @@ import {
   levelOf,
   nextBadge,
   nextLevel,
+  progressOf,
   raisedBadges,
   type BadgeInput,
   type BadgeProgress,
@@ -272,11 +273,11 @@ describe("nextBadge", () => {
     });
   });
 
-  it("aims at the next level of an earned badge, display order breaking ties", () => {
+  it("aims at the next level of an earned badge", () => {
     expect(
       nextBadge([
         { badge: "nostradamus", level: "bronze", current: 1, target: 3 },
-        { badge: "chasseur", level: null, current: 1, target: 3 },
+        { badge: "flair", level: null, current: 0, target: 1 },
       ]),
     ).toEqual({
       badge: "nostradamus",
@@ -286,6 +287,11 @@ describe("nextBadge", () => {
       left: 2,
       next: "silver",
     });
+  });
+
+  it("offers a new player the easiest badge, not a perfect podium (#768)", () => {
+    const fresh = BADGES.map((badge) => progressOf(badge, 0));
+    expect(nextBadge(fresh)?.badge).toBe("fidele");
   });
 
   it("returns null once every badge is gold", () => {

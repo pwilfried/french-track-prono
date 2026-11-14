@@ -140,6 +140,8 @@ test("a new player predicts a perfect podium, the admin enters the results sheet
     "data-level",
     "bronze",
   );
+  // The band (#768): the seven families of the season with their points.
+  await expect(page.getByRole("region", { name: "Ma bande" }).getByRole("listitem")).toHaveCount(7);
   // The badges grid (#385): locked badges stay listed, and the next one is named.
   await expect(badges).toContainText("Prochain :");
   // Once seen, the level is stored: the next visit does not celebrate it again.

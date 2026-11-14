@@ -78,7 +78,10 @@ describe("my season on the profile", () => {
       discipline: "100 m",
       perfect: true,
     });
-    expect(season.stats.families.map((f) => f.family).sort()).toEqual(["sprint", "throws"]);
+    // and my animal is the Guépard of the sprint, the Ours of the throws next to reach
+    expect(season.animal).toBe("guepard");
+    expect(season.band.find((b) => b.animal === "ours")?.points).toBe(3);
+    expect(season.toReach).toEqual({ animal: "ours", points: 9 });
   });
 
   it("has no rank before the first point", async () => {
@@ -96,6 +99,6 @@ describe("my season on the profile", () => {
         create: async () => "created",
       },
     }).execute({ userId: "me", competitionSlugs: ["uc"] });
-    expect(season).toMatchObject({ rank: null, players: 0, points: 0 });
+    expect(season).toMatchObject({ rank: null, players: 0, points: 0, animal: null });
   });
 });

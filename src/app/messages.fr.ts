@@ -2027,6 +2027,40 @@ export const messages = {
     myProfile: "Mon profil",
     backOffice: "Back-office",
   },
+  band: {
+    title: "Ma bande",
+    animals: {
+      lievre: "Lièvre",
+      guepard: "Guépard",
+      impala: "Impala",
+      kangourou: "Kangourou",
+      chat: "Chat",
+      ours: "Ours",
+      renard: "Renard",
+    },
+    families: {
+      lievre: "Demi-fond et fond",
+      guepard: "Sprint",
+      impala: "Haies",
+      kangourou: "Longueur et triple",
+      chat: "Perche et hauteur",
+      ours: "Lancers",
+      renard: "Épreuves combinées",
+    },
+    locked: "À gagner",
+    noAnimal: "Pas encore d'animal",
+    noAnimalHint:
+      "Marque tes premiers points : la famille où tu en gagnes le plus te donne ton animal.",
+    became: (animal: string, first: boolean) =>
+      first ? `Te voilà ${animal} !` : `Tu es passé ${animal} !`,
+    becameHint: "La famille où tu as marqué le plus de points cette saison.",
+    close: "Fermer",
+    toReach: (points: number, family: string, animal: string) =>
+      `Encore ${pts(points)} en ${family.toLowerCase()} pour passer ${animal}`,
+    metals: { gold: "d'or", silver: "d'argent", bronze: "de bronze" },
+    statuette: (animal: string, metal: string) => `${animal} ${metal}`,
+    toWin: "À gagner cette saison",
+  },
   badges: {
     nostradamus: { emoji: "🔮", name: "Nostradamus", counts: "Podiums parfaits" },
     chasseur: { emoji: "🎯", name: "Chasseur", counts: "Vainqueurs trouvés" },
@@ -2147,8 +2181,6 @@ export const messages = {
     bestOdds: (odds: string) => `Avec une cote à ${odds}`,
     bestPoints: (n: number) => `+${pts(n)}`,
     noBestShot: "Ton meilleur coup apparaîtra ici après ta première épreuve calculée.",
-    strong: "Mes disciplines fortes",
-    noStrong: "Tes disciplines fortes apparaîtront après quelques épreuves calculées.",
   },
   globalError: {
     title: "Oups, la page est tombée",

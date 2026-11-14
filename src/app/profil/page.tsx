@@ -19,12 +19,10 @@ import { ClubNotices } from "@/components/account/club-notices";
 import { SubmitButton } from "@/components/account/submit-button";
 import { ClubRanking } from "@/components/profile/club-ranking";
 import { LatestPredictions } from "@/components/profile/prediction-history";
-import {
-  BestShot,
-  SeasonCurve,
-  SeasonTiles,
-  StrongFamilies,
-} from "@/components/profile/season-blocks";
+import { BestShot, SeasonCurve, SeasonTiles } from "@/components/profile/season-blocks";
+import { Animal } from "@/components/band/animal";
+import { AnimalChange } from "@/components/band/animal-change";
+import { BandPoints } from "@/components/band/band-points";
 import { buttonVariants } from "@/components/ui/button";
 import { TIME_ZONE } from "@/domain/competition";
 import {
@@ -89,7 +87,10 @@ async function loadSeason(userId: string) {
   return { season, badges, clubs, latest };
 }
 
-/** Board 06: bib and pseudo, the season in three figures, the account. */
+/**
+ * The Profile tab (#768): the player's animal, pseudo and season at the top, the band, the
+ * figures, the badges as bibs, the trophies, the account.
+ */
 export default async function ProfilePage({
   searchParams,
 }: {
@@ -141,6 +142,7 @@ export default async function ProfilePage({
     timeZone: TIME_ZONE,
   }).format(profile.ageConfirmedAt);
   const text = messages.profile;
+  const animal = season?.animal ?? null;
   return (
     <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-6">
       <h1 className="sr-only">{text.title}</h1>
@@ -151,48 +153,48 @@ export default async function ProfilePage({
           {notice}
         </p>
       ) : null}
+      <AnimalChange animal={season?.animal ?? null} />
       <section
         aria-labelledby="me"
-        className="flex flex-col items-center gap-1 rounded-card bg-brand-ink px-4 py-6 text-center text-brand-foreground dark:bg-card dark:text-foreground"
+        className="flex items-center gap-4 rounded-card bg-brand-ink px-4 py-5 text-brand-foreground dark:bg-card dark:text-foreground"
       >
-        <Bib bib={profile.bib} size="large" pseudo={profile.pseudo} className="max-w-52" />
-        {/* The bib prints the pseudo; this one names the section for screen readers. */}
-        <p id="me" className="sr-only">
-          {profile.pseudo}
-        </p>
-        <p className="text-sm opacity-80">
-          {text.joined(details?.club?.validated ? details.club.name : null, since)}
-        </p>
-        <p className="mt-2 flex items-baseline gap-2">
-          <span className="font-mono text-4xl font-bold text-secondary">
-            {season ? season.points : "–"}
-          </span>
-          <span className="text-sm">
-            {messages.format.ptsUnit(season?.points ?? 0)} ·{" "}
-            <strong>
-              {season?.rank ? text.rankOf(season.rank, season.players) : text.notRanked}
-            </strong>
-          </span>
-        </p>
+        <Animal kind={animal ?? "locked"} size="large" label className="size-24" />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <p id="me" className="flex min-w-0 items-center gap-2">
+            <Bib bib={profile.bib} />
+            <span className="min-w-0 break-words font-display text-xl font-extrabold">
+              {profile.pseudo}
+            </span>
+          </p>
+          <p className="font-semibold text-secondary">
+            {animal
+              ? `${messages.band.animals[animal]} · ${messages.band.families[animal]}`
+              : messages.band.noAnimal}
+          </p>
+          <p className="flex flex-wrap items-baseline gap-x-2">
+            <span className="font-mono text-3xl font-bold">{season ? season.points : 0}</span>
+            <span className="text-sm">
+              {messages.format.ptsUnit(season?.points ?? 0)} ·{" "}
+              <strong>
+                {season?.rank ? text.rankOf(season.rank, season.players) : text.notRanked}
+              </strong>
+            </span>
+          </p>
+          <p className="text-xs opacity-80">
+            {text.joined(details?.club?.validated ? details.club.name : null, since)}
+          </p>
+        </div>
       </section>
 
       {season && (
         <>
-          <ShareSeasonCard />
+          <BandPoints band={season.band} animal={season.animal} toReach={season.toReach} />
           <SeasonTiles stats={season.stats} />
           <SeasonCurve curve={season.stats.curve} />
-        </>
-      )}
-      {latest && <LatestPredictions lines={latest} />}
-      {season && (
-        <>
           <BestShot best={season.stats.bestShot} />
-          <StrongFamilies families={season.stats.families} />
         </>
       )}
-      {clubs && (
-        <ClubRanking clubs={clubs} myClub={details?.club?.validated ? details.club : null} />
-      )}
+      {badges && <BadgeGrid progress={badges.progress} />}
 
       {honours.length > 0 && (
         <section aria-labelledby="honours" className="flex flex-col gap-2">
@@ -218,6 +220,12 @@ export default async function ProfilePage({
             ))}
           </ul>
         </section>
+      )}
+
+      {season && <ShareSeasonCard />}
+      {latest && <LatestPredictions lines={latest} />}
+      {clubs && (
+        <ClubRanking clubs={clubs} myClub={details?.club?.validated ? details.club : null} />
       )}
 
       <section aria-labelledby="season" className="flex flex-col gap-2">
@@ -261,8 +269,6 @@ export default async function ProfilePage({
           <span aria-hidden="true">›</span>
         </Link>
       </section>
-
-      {badges && <BadgeGrid progress={badges.progress} />}
 
       <section aria-labelledby="account" className="flex flex-col gap-2">
         <h2

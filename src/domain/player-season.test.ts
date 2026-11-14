@@ -52,14 +52,6 @@ describe("season stats of the profile", () => {
     expect(withOdds).toMatchObject({ eventId: "d", odds: 6 });
   });
 
-  it("ranks the families by success, three at most", () => {
-    expect(seasonStats(lines, 4).families).toEqual([
-      { family: "sprint", rate: 100, events: 1 },
-      { family: "throws", rate: 100, events: 1 },
-      { family: "middle", rate: 50, events: 2 },
-    ]);
-  });
-
   it("gives empty stats before the first computed event", () => {
     expect(seasonStats([], 2)).toEqual({
       predictions: 2,
@@ -70,7 +62,6 @@ describe("season stats of the profile", () => {
       jokerPlayed: false,
       curve: [],
       bestShot: null,
-      families: [],
     });
   });
 
