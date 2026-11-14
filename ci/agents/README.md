@@ -45,8 +45,9 @@ sans relance d'un test qui échoue. Il attend un déploiement en cours (même fi
   ce test, elle reçoit un commentaire au lieu d'une nouvelle issue.
 - **Vert** : aucune issue ; une issue ouverte dont les tests repassent reçoit une seule fois
   « De nouveau vert ». Le propriétaire décide de la fermer.
-- Les comptes `e2e-…@example.test` du passage sont supprimés à la fin, même en échec
-  (`ci/preprod/cleanup-e2e.sql`).
+- Les comptes `e2e-…@example.test`, ligues « E2E … » et compétitions de test du passage sont
+  supprimés à la fin, même en échec (`ci/preprod/cleanup-e2e.sql`, aussi lancé après chaque
+  déploiement, #695).
 
 Une issue n'est jamais prise si elle a `needs-human`, `agent:blocked`, `after-ui` ou `agent:local`,
 si elle est assignée à quelqu'un (une personne la traite : Yannis s'assigne ses issues), ou si une
