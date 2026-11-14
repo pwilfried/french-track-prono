@@ -4,6 +4,16 @@ import { describe, it } from "vitest";
 import { athleteReaderContract } from "./contract/athlete-reader.contract";
 import { createInMemoryAthleteReader, createSupabaseAthleteReader } from "./index";
 
+const race = (startsAt: string, rank: number) => ({
+  competitionSlug: "c",
+  eventSlug: "f-100m",
+  discipline: "100 m",
+  startsAt,
+  meeting: "Meeting",
+  rank,
+  mark: "10.80",
+});
+
 athleteReaderContract(
   "in-memory fake",
   () =>
@@ -14,18 +24,8 @@ athleteReaderContract(
         name: "Sha'Carri Richardson",
         countryCode: "USA",
         gender: "F",
-        disciplines: ["100 m", "200 m"],
-        managerPrice: null,
-        records: [
-          {
-            discipline: "100 m",
-            kind: "pr",
-            mark: "10.65",
-            date: null,
-            meeting: null,
-            verified: false,
-          },
-        ],
+        records: [{ discipline: "100 m", kind: "pr", mark: "10.65", date: null, meeting: null }],
+        races: [race("2026-06-01T18:00:00.000Z", 2), race("2026-09-12T18:00:00.000Z", 3)],
       },
     ]),
   "sha-carri-richardson",
@@ -36,7 +36,7 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (url && key) {
-  // A podium athlete of the seed: the records trigger gave her a PB in her main discipline.
+  // A podium athlete of the seed: the records trigger gave her a PR.
   athleteReaderContract(
     "Supabase (local)",
     () => createSupabaseAthleteReader(createClient(url, key)),

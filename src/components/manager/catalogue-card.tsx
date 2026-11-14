@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { messages } from "@/app/messages.fr";
 import { ChipStatus } from "@/components/ui/chip-status";
 import { flagOf } from "@/domain/flag";
@@ -11,16 +9,13 @@ const text = messages.catalogue;
 /**
  * One athlete of the mercato catalogue, a tile of the catalogue grid (#503): flag and price (or
  * « Recruté »), who, which event, PB and SB. `children` goes at the bottom: the
- * player's bid while the mercato is open (#422). With `href`, the name opens the athlete's page
- * (#679).
+ * player's bid while the mercato is open (#422).
  */
 export function CatalogueCard({
   athlete,
-  href,
   children,
 }: {
   athlete: CatalogueAthlete;
-  href?: string;
   children?: React.ReactNode;
 }) {
   const { name, countryCode, discipline, sex, pb, sb, price, available } = athlete;
@@ -49,18 +44,7 @@ export function CatalogueCard({
         )}
       </div>
       <div className="min-w-0">
-        <h3 className="break-words font-extrabold leading-tight">
-          {href ? (
-            <Link
-              href={href}
-              className="inline-flex min-h-11 items-center underline underline-offset-2"
-            >
-              {name}
-            </Link>
-          ) : (
-            name
-          )}
-        </h3>
+        <h3 className="break-words font-extrabold leading-tight">{name}</h3>
         <p className="text-xs text-muted-foreground">
           {countryCode} · {discipline} {text.sexShort[sex]}
         </p>

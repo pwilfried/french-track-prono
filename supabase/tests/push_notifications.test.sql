@@ -1,6 +1,6 @@
--- pgTAP: push notifications (#203), the devices. What is due: reminders.test.sql (#681).
+-- pgTAP: push notifications (#203), who gets what and when.
 begin;
-select plan(7);
+select plan(12);
 
 -- Two finals of the same competition with a start list, locking in 10 minutes.
 create temp table finals as
@@ -43,12 +43,40 @@ select is((select count(*)::int from push_subscriptions), 1, 'a player only sees
 select lives_ok($$select delete_push_subscription('https://push.example.test/a')$$, 'deleting another player''s device does nothing');
 select throws_ok($$insert into push_subscriptions values ('https://x.test', auth.uid(), 'k', 'a')$$,
   '42501', null, 'the table is not written directly');
-select throws_ok($$select * from private.reminder_due()$$, '42501', null, 'the app cannot read what is due');
+select throws_ok($$select * from private.push_due()$$, '42501', null, 'the app cannot read what is due');
 reset role;
 select is((select user_id from push_subscriptions where endpoint = 'https://push.example.test/a'),
   'cdcdcdcd-0000-0000-0000-00000000000a'::uuid, 'the device is still there');
 insert into push_subscriptions (endpoint, user_id, p256dh, auth) values
   ('https://push.example.test/d', 'cdcdcdcd-0000-0000-0000-00000000000d', 'key-d', 'auth-d');
+
+-- Only A is reminded, of the final not predicted yet.
+select is((select array_agg(kind || ':' || event_slug) from private.push_due()
+           where user_id::text like 'cdcdcdcd-%'),
+  array['reminder:' || (select slug from finals order by slug limit 1)],
+  'a reminder for the unpredicted final, only to a player of the competition');
+select is((select jsonb_array_length(devices) from private.push_due()
+           where user_id = 'cdcdcdcd-0000-0000-0000-00000000000a'), 1, 'with the player''s devices');
+
+-- Sent: not twice, and nothing else within the hour.
+select private.push_mark_sent(jsonb_build_array(jsonb_build_object(
+  'user_id', 'cdcdcdcd-0000-0000-0000-00000000000a',
+  'event_slug', (select slug from finals order by slug limit 1), 'kind', 'reminder')));
+insert into score_events (user_id, competition_id, event_id, source, points, reason)
+select 'cdcdcdcd-0000-0000-0000-00000000000a', competition_id, id, 'prediction', 9, 'test'
+from finals order by slug offset 1 limit 1;
+select is((select count(*)::int from private.push_due() where user_id = 'cdcdcdcd-0000-0000-0000-00000000000a'),
+  0, 'one notification an hour at most');
+
+-- Points computed: D hears about them, unless blocked.
+insert into score_events (user_id, competition_id, event_id, source, points, reason)
+select 'cdcdcdcd-0000-0000-0000-00000000000d', competition_id, id, 'prediction', 11, 'test'
+from finals order by slug offset 1 limit 1;
+select is((select kind || ':' || points from private.push_due()
+           where user_id = 'cdcdcdcd-0000-0000-0000-00000000000d'), 'result:11', 'the points once computed');
+update profiles set blocked_at = now() where id = 'cdcdcdcd-0000-0000-0000-00000000000d';
+select is((select count(*)::int from private.push_due() where user_id = 'cdcdcdcd-0000-0000-0000-00000000000d'),
+  0, 'a blocked player gets nothing');
 
 -- A device the push service forgot is removed.
 select private.push_forget(array['https://push.example.test/d']);

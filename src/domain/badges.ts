@@ -1,107 +1,39 @@
-import type { DisciplineFamily } from "./discipline";
 import type { ScoreReason } from "./scoring";
 
-/**
- * Badges and their levels: rules in docs/decisions/badges-et-trophees.md (#807, #821). Game badges
- * (the hare's) count a way of playing; family badges count the points won in a family of events.
- */
-export const GAME_BADGES = [
-  "nostradamus",
-  "chasseur",
-  "flair",
-  "serie",
-  "bleus",
-  "fidele",
-] as const;
-export const FAMILY_BADGES = [
-  "foudre",
-  "haies",
-  "train",
-  "bond",
-  "envol",
-  "force",
-  "touche",
-] as const;
-/** Every badge, in display order. */
-export const BADGES = [...GAME_BADGES, ...FAMILY_BADGES] as const;
+/** Profile badges (owner's decision, v0.8), in display order. */
+export const BADGES = ["nostradamus", "chasseur", "flair", "serie", "bleus", "fidele"] as const;
 export type Badge = (typeof BADGES)[number];
-export type FamilyBadge = (typeof FAMILY_BADGES)[number];
-
-/** A badge is won in bronze, then silver, then gold, over the season. */
-export const BADGE_LEVELS = ["bronze", "silver", "gold"] as const;
-export type BadgeLevel = (typeof BADGE_LEVELS)[number];
-
-/** The families of each family badge; relays have none. */
-export const BADGE_FAMILIES: Record<FamilyBadge, DisciplineFamily[]> = {
-  foudre: ["sprint"],
-  haies: ["hurdles"],
-  train: ["middle", "long"],
-  bond: ["horizontal_jumps"],
-  envol: ["vertical_jumps"],
-  force: ["throws"],
-  touche: ["combined"],
-};
-
-/** Points won in the family over the season, for bronze, silver and gold. */
-const FAMILY_THRESHOLDS = [50, 150, 400] as const;
-
-/** What a badge needs for bronze, silver and gold. */
-export const BADGE_THRESHOLDS: Record<Badge, readonly [number, number, number]> = {
-  nostradamus: [1, 3, 10],
-  chasseur: [3, 10, 30],
-  flair: [1, 3, 10],
-  serie: [5, 10, 20],
-  bleus: [1, 5, 15],
-  fidele: [1, 5, 15],
-  ...(Object.fromEntries(FAMILY_BADGES.map((b) => [b, FAMILY_THRESHOLDS])) as Record<
-    FamilyBadge,
-    readonly [number, number, number]
-  >),
-};
 
 export type BadgeInput = {
-  /** The player's own score lines over the season; `family` is null for a bonus line. */
-  myLines: {
-    eventId: string;
-    eventStartsAt: string;
-    points: number;
-    reasons: ScoreReason[];
-    family: DisciplineFamily | null;
-  }[];
-  /** Every computed event of the season (any player has points on it). */
+  /** The player's own score lines. */
+  myLines: { eventId: string; eventStartsAt: string; points: number; reasons: ScoreReason[] }[];
+  /** Every computed event of the competition (any player has points on it). */
   computedEvents: { eventId: string; startsAt: string }[];
   /** Events where the player's winner pick was right and is French. */
   frenchWinnerEvents: Set<string>;
-  /** The season's events grouped by competition day. */
+  /** The competition's events grouped by day. */
   days: string[][];
   /** Events the player predicted. */
   predictedEventIds: Set<string>;
 };
 
-/** The levels already won (and shown) by a player; a badge missing has none. */
-export type StoredLevels = Partial<Record<Badge, BadgeLevel>>;
+const STREAK = 5;
+const HUNTER = 3;
+
+/** How far a player is from a badge: earned when `current` reaches `target`. */
+export type BadgeProgress = { badge: Badge; current: number; target: number };
 
 /**
- * Where a player stands on a badge: their level (null before bronze), what they count this season,
- * and the threshold of the next level (the gold one once gold).
+ * Nostradamus: a perfect podium. Chasseur: 3 winners found. Flair: a coup de flair. Série: 5
+ * computed events in a row with at least 1 point, at any time. Bleus: a French winner found.
+ * Fidèle: a prediction on every event of a competition day.
  */
-export type BadgeProgress = {
-  badge: Badge;
-  level: BadgeLevel | null;
-  current: number;
-  target: number;
-};
-
-const rank = (level: BadgeLevel | null | undefined) => (level ? BADGE_LEVELS.indexOf(level) : -1);
-
-/**
- * Nostradamus: perfect podiums. Chasseur: winners found. Flair: coups de flair. Série: the best run
- * of computed events in a row with at least 1 point. Bleus: French winners found. Fidèle: days with
- * a prediction on every event. Family badges: points won in the family.
- */
-export function badgeCounts(input: BadgeInput): Record<Badge, number> {
-  const count = (has: (r: ScoreReason) => boolean) =>
-    input.myLines.filter((l) => l.reasons.some(has)).length;
+export function badgeProgress(input: BadgeInput): BadgeProgress[] {
+  const count = (kind: ScoreReason["kind"]) =>
+    input.myLines.filter((l) => l.reasons.some((r) => r.kind === kind)).length;
+  const winners = input.myLines.filter((l) =>
+    l.reasons.some((r) => r.kind === "exact" && r.slot === 1),
+  ).length;
 
   const scored = new Set(input.myLines.filter((l) => l.points > 0).map((l) => l.eventId));
   const order = [...input.computedEvents].sort(
@@ -114,87 +46,41 @@ export function badgeCounts(input: BadgeInput): Record<Badge, number> {
     best = Math.max(best, run);
   }
 
-  const familyPoints = (families: DisciplineFamily[]) =>
-    input.myLines
-      .filter((l) => l.family !== null && families.includes(l.family))
-      .reduce((sum, l) => sum + l.points, 0);
+  // Fidèle: the day closest to being fully predicted.
+  const days = input.days.filter((day) => day.length > 0);
+  const day = days
+    .map((d) => ({
+      current: d.filter((id) => input.predictedEventIds.has(id)).length,
+      target: d.length,
+    }))
+    .sort((a, b) => a.target - a.current - (b.target - b.current))[0] ?? { current: 0, target: 1 };
 
-  return {
-    nostradamus: count((r) => r.kind === "perfect_podium"),
-    chasseur: count((r) => r.kind === "exact" && r.slot === 1),
-    flair: count((r) => r.kind === "flair"),
-    serie: best,
-    bleus: input.frenchWinnerEvents.size,
-    fidele: input.days.filter(
-      (day) => day.length > 0 && day.every((id) => input.predictedEventIds.has(id)),
-    ).length,
-    ...(Object.fromEntries(
-      FAMILY_BADGES.map((b) => [b, familyPoints(BADGE_FAMILIES[b])]),
-    ) as Record<FamilyBadge, number>),
+  const raw: Record<Badge, [number, number]> = {
+    nostradamus: [count("perfect_podium"), 1],
+    chasseur: [winners, HUNTER],
+    flair: [count("flair"), 1],
+    // Once earned it stays; until then only the ongoing run brings it closer.
+    serie: [best >= STREAK ? STREAK : run, STREAK],
+    bleus: [input.frenchWinnerEvents.size, 1],
+    fidele: [day.current, day.target],
   };
+  return BADGES.map((badge) => {
+    const [current, target] = raw[badge];
+    return { badge, current: Math.min(current, target), target };
+  });
 }
 
-/** The level a count reaches on a badge; null below bronze. */
-export function levelOf(badge: Badge, count: number): BadgeLevel | null {
-  const reached = BADGE_THRESHOLDS[badge].filter((threshold) => count >= threshold).length;
-  return reached === 0 ? null : BADGE_LEVELS[reached - 1];
-}
-
-/**
- * Every badge in display order. A badge is never lost: its level is the higher of the one counted
- * this season and the one already stored.
- */
-export function badgeProgress(input: BadgeInput, stored: StoredLevels = {}): BadgeProgress[] {
-  const counts = badgeCounts(input);
-  return BADGES.map((badge) => progressOf(badge, counts[badge], stored[badge]));
-}
-
-/** Where a count puts a badge, never below the level already stored. */
-export function progressOf(badge: Badge, count: number, stored?: BadgeLevel): BadgeProgress {
-  const counted = levelOf(badge, count);
-  const level = rank(stored) > rank(counted) ? stored! : counted;
-  return {
-    badge,
-    level,
-    current: count,
-    target: BADGE_THRESHOLDS[badge][Math.min(rank(level) + 1, 2)],
-  };
-}
-
-/** The level after this one: bronze before any, null after gold. */
-export function nextLevel(level: BadgeLevel | null): BadgeLevel | null {
-  return level === "gold" ? null : BADGE_LEVELS[rank(level) + 1];
-}
-
-/** A badge is earned from bronze on. */
+/** A badge is earned once its progress reaches its target. */
 export function isEarned(progress: BadgeProgress): boolean {
-  return progress.level !== null;
+  return progress.current >= progress.target;
 }
 
-/** The badges whose level is above the one stored: the level just won, to celebrate once. */
-export function raisedBadges(
-  progress: BadgeProgress[],
-  stored: StoredLevels,
-): { badge: Badge; level: BadgeLevel }[] {
-  return progress.flatMap((p) =>
-    p.level && rank(p.level) > rank(stored[p.badge]) ? [{ badge: p.badge, level: p.level }] : [],
-  );
-}
-
-/**
- * The badge with the smallest effort left to its next level: the share of the threshold still to
- * go, so 10 points out of 50 come before 1 winner out of 3. Display order breaks ties; null once
- * every badge is gold.
- */
-export function nextBadge(
-  progress: BadgeProgress[],
-): (BadgeProgress & { left: number; next: BadgeLevel }) | null {
+/** The locked badge with the fewest steps left (display order breaks ties); null when all earned. */
+export function nextBadge(progress: BadgeProgress[]): (BadgeProgress & { left: number }) | null {
   return (
     progress
-      .flatMap((p) => {
-        const next = nextLevel(p.level);
-        return next ? [{ ...p, left: Math.max(p.target - p.current, 1), next }] : [];
-      })
-      .sort((a, b) => a.left / a.target - b.left / b.target)[0] ?? null
+      .filter((p) => !isEarned(p))
+      .map((p) => ({ ...p, left: p.target - p.current }))
+      .sort((a, b) => a.left - b.left)[0] ?? null
   );
 }

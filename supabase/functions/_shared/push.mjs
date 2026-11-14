@@ -1,56 +1,35 @@
 // #203, #502: the sending of the push notifications due, shared by the Edge Function
 // `push-notifications` (run every minute by pg_cron) and by `scripts/push-notifications.mjs`
-// (by hand). Rules of what is due: the grouped reminders (#681),
-// supabase/migrations/20261114060100_reminder_settings.sql, and for the programme of a
-// competition (#659): supabase/migrations/20261113120000_program_alerts.sql.
+// (by hand). Rules of what is due: supabase/migrations/20261109100000_push_notifications.sql, and
+// for the programme of a competition (#659): supabase/migrations/20261113120000_program_alerts.sql.
 // Plain JavaScript with no import, so that Deno and Node both load it.
 
 const GENDER = { F: "femmes", M: "hommes", X: "mixte" };
 
-/** « 100 m femmes », as on the site. @param {{ discipline: string, gender: string }} event */
-const labelOf = (event) =>
-  `${event.discipline} ${GENDER[/** @type {"F" | "M" | "X"} */ (event.gender)]}`;
-
-/** « a, b et c ». @param {string[]} items */
-const listOf = (items) =>
-  items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} et ${items.at(-1)}`;
-
-/** @param {number} n */
-const pts = (n) => (n > 1 ? `${n} pts` : `${n} pt`);
-
 /**
- * The text of a grouped reminder (#681): « Pronos oubliés » for every final of the evening
- * locking soon, or « Résultats du soir » once all its points are computed.
- * @param {{ kind: string, evening: string, payload: any }} due
+ * The text of a notification, as on the site (« 100 m femmes »).
+ * @param {{ kind: string, event_slug: string, discipline: string, gender: string,
+ *           lock_at: string, points: number | null }} due
  * @param {number} [now]
  */
 export function notificationOf(due, now = Date.now()) {
-  if (due.kind === "forgotten") {
-    /** @type {{ slug: string, discipline: string, gender: string, lock_at: string }[]} */
-    const events = due.payload.events;
-    const first = events[0];
-    const minutes = Math.max(1, Math.round((new Date(first.lock_at).getTime() - now) / 60_000));
-    if (events.length === 1)
-      return {
-        title: `⏱ ${labelOf(first)} se verrouille dans ${minutes} min`,
-        body: "Ton podium n'est pas encore fait.",
-        url: `/epreuves/${first.slug}`,
-        tag: `forgotten-${due.evening}`,
-      };
+  const event = `${due.discipline} ${GENDER[/** @type {"F" | "M" | "X"} */ (due.gender)]}`;
+  const url = `/epreuves/${due.event_slug}`;
+  if (due.kind === "reminder") {
+    const minutes = Math.max(1, Math.round((new Date(due.lock_at).getTime() - now) / 60_000));
     return {
-      title: `⏱ ${events.length} podiums à poser`,
-      body: `${listOf(events.map(labelOf))} : premier verrou dans ${minutes} min.`,
-      url: `/epreuves/${first.slug}`,
-      tag: `forgotten-${due.evening}`,
+      title: `⏱ ${event} se verrouille dans ${minutes} min`,
+      body: "Ton podium n'est pas encore fait.",
+      url,
+      tag: `reminder-${due.event_slug}`,
     };
   }
-  const { points, finals, rank, players, competition_slug } = due.payload;
-  const place = rank ? ` Tu es ${rank === 1 ? "1er" : `${rank}e`} sur ${players}.` : "";
+  const points = due.points ?? 0;
   return {
-    title: points > 0 ? `🎯 +${pts(points)} ce soir` : "0 point ce soir",
-    body: `${finals > 1 ? `Tes ${finals} finales sont calculées.` : "Ta finale est calculée."}${place}`,
-    url: `/mes-points?competition=${encodeURIComponent(competition_slug)}`,
-    tag: `recap-${due.evening}`,
+    title: points > 0 ? `🎯 +${points} pts au ${event}` : `0 point au ${event}`,
+    body: points > 0 ? "Tes points sont tombés." : "Le chrono ne ment pas.",
+    url,
+    tag: `result-${due.event_slug}`,
   };
 }
 
@@ -123,7 +102,7 @@ export async function sendDue(database, push) {
       notification.kind,
       notification.devices,
       JSON.stringify(notificationOf(notification)),
-      notification.kind === "forgotten" ? 15 * 60 : 24 * 3600,
+      notification.kind === "reminder" ? 15 * 60 : 24 * 3600,
     );
   }
   for (const program of programs) {
@@ -135,7 +114,7 @@ export async function sendDue(database, push) {
     );
   }
   if (due.length)
-    await database.markSent(due.map(({ user_id, kind, evening }) => ({ user_id, kind, evening })));
+    await database.markSent(due.map(({ user_id, event_slug, kind }) => ({ user_id, event_slug, kind })));
   if (programs.length)
     await database.markProgramSent(
       programs.map(({ user_id, competition_slug }) => ({ user_id, competition_slug })),

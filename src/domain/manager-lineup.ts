@@ -111,43 +111,6 @@ export function fillablePlaces(places: LineupPlace[], team: LineupAthlete[]): bo
   return placed.map((id) => id !== null);
 }
 
-/**
- * Where a lineup stands (#839): the places held by an athlete entered in the competition, the
- * places the team can still fill (by place, in stadium order), and the ones none of its entered
- * athletes can fill. It is ready to validate once every place it can fill is filled, and at least
- * one is: with no athlete entered, there is no lineup to validate.
- */
-export type LineupProgress = {
-  filled: number;
-  toFill: { place: LineupPlace; count: number }[];
-  unfillable: number;
-  ready: boolean;
-};
-
-export function lineupProgress(
-  places: LineupPlace[],
-  team: LineupAthlete[],
-  placed: (string | null)[],
-): LineupProgress {
-  const entered = new Set(team.filter((a) => a.entered).map((a) => a.athleteId));
-  const fillable = fillablePlaces(places, team);
-  const toFill = new Map<LineupPlace, number>();
-  let filled = 0;
-  let unfillable = 0;
-  places.forEach((place, i) => {
-    const id = placed[i];
-    if (id && entered.has(id)) filled++;
-    else if (fillable[i]) toFill.set(place, (toFill.get(place) ?? 0) + 1);
-    else unfillable++;
-  });
-  return {
-    filled,
-    toFill: [...toFill].map(([place, count]) => ({ place, count })),
-    unfillable,
-    ready: filled > 0 && toFill.size === 0,
-  };
-}
-
 /** Why the chosen athletes are not a lineup, or null when they are one. */
 export function lineupProblem(
   rules: LineupRules,
