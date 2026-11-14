@@ -485,9 +485,6 @@ export default async function EventPage({
               ))}
             </ul>
           )}
-          <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
-            {messages.event.seedNote}
-          </p>
         </div>
       )}
     </main>
