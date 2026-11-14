@@ -18,6 +18,7 @@ const meta = {
       winBonus: 10,
       leagueMin: 4,
       leagueMax: 10,
+      minCompetitions: 6,
     },
     onClose: fn(),
   },
@@ -33,13 +34,16 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** The first step: « 1 / 7 », the league sizes from the rules, nothing before it. */
+/** The first step: « 1 / 7 », the players set by the competitions (#644), nothing before it. */
 export const FirstStep: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText(text.progress(1, 7))).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Une ligue entre amis" })).toBeVisible();
-    await expect(canvas.getByText(/de 4 à 10 joueurs/)).toBeVisible();
+    await expect(
+      canvas.getByText(/au moins 6 compétitions : elles fixent le nombre de joueurs, de 4 à 10/),
+    ).toBeVisible();
+    await expect(canvas.queryByText(/en nombre pair/)).toBeNull();
     await expect(canvas.getByRole("button", { name: text.previous })).toBeDisabled();
 
     await userEvent.click(canvas.getByRole("button", { name: text.next }));
@@ -61,6 +65,27 @@ export const Keyboard: Story = {
     await expect(canvas.getByText(/Au moins 12 athlètes/)).toBeVisible();
     await userEvent.keyboard("{ArrowLeft}");
     await expect(canvas.getByText(text.progress(2, 7))).toBeVisible();
+  },
+};
+
+/** The navigation sits right under the content, not at the bottom of a tall screen (#709). */
+export const NavigationUnderContent: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const dots = canvas.getByRole("list").getBoundingClientRect();
+    const navigation = canvas.getByRole("navigation", { name: text.navLabel });
+    const gap = navigation.getBoundingClientRect().top - dots.bottom;
+    await expect(gap).toBeLessThanOrEqual(32);
+  },
+};
+
+/** The head-to-heads, and the bonus matchdays at the end (#644). */
+export const Matchdays: Story = {
+  args: { initialStep: 5 },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(/victoire 3 points, nul 1, défaite 0/)).toBeVisible();
+    await expect(canvas.getByText(/journées bonus : des points, sans confrontation/)).toBeVisible();
   },
 };
 
@@ -113,6 +138,7 @@ export const LongText: Story = {
       winBonus: 100000,
       leagueMin: 4,
       leagueMax: 10,
+      minCompetitions: 6,
     },
   },
   play: async ({ canvasElement }) => {

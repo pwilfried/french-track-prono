@@ -14,6 +14,14 @@ test("the Manager tutorial opens at the first visit only, then on demand (#616)"
   // First visit: the tutorial over the page, its figures from the rules, the arrow keys too.
   const tutorial = page.getByRole("dialog", { name: "Comment ça marche" });
   await expect(tutorial).toContainText("Comment ça marche · 1 / 7");
+  // « Passer » does not open focused, with its focus ring on (#709).
+  await expect(tutorial.getByRole("button", { name: "Passer le tutoriel" })).not.toBeFocused();
+  // The navigation right under the content, without an empty gap (#709).
+  const dots = await tutorial.getByRole("list").boundingBox();
+  const navigation = await tutorial
+    .getByRole("navigation", { name: "Étapes du tutoriel" })
+    .boundingBox();
+  expect(navigation!.y - (dots!.y + dots!.height)).toBeLessThanOrEqual(32);
   await tutorial.getByRole("button", { name: "Suivant" }).click();
   await expect(tutorial).toContainText(`Tu as ${budget} crédits`);
   await page.keyboard.press("ArrowRight");
