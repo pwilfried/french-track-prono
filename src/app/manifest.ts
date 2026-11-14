@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 import { messages } from "./messages.fr";
 
-// Icons in public/icons come from the FrenchTrack logo on the cream page colour; the maskable one
-// keeps the logo inside the 80 % safe zone.
+// Icons in public/icons show the hare above the FrenchTrack wordmark on the cream page colour
+// (scripts/app-icons.mjs); the maskable one keeps them inside the 80 % safe zone.
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",

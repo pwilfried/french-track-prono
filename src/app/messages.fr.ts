@@ -51,7 +51,7 @@ export const messages = {
   },
   app: {
     name: "French Track Prono",
-    short: "FTP",
+    short: "FrenchTrack",
     home: "French Track Prono, accueil",
     skipToContent: "Aller au contenu",
     tagline: "Pronostique les podiums d'athlétisme, chambre tes amis, grimpe au classement.",

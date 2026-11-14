@@ -33,6 +33,12 @@ const result = {
   devices: [{ endpoint: "https://push.example.test/3", p256dh: "k3", auth: "a3" }],
 };
 
+const manager = {
+  user_id: "u3",
+  evening: "2026-11-11",
+  devices: [{ endpoint: "https://push.example.test/4", p256dh: "k4", auth: "a4" }],
+};
+
 const program = {
   user_id: "u1",
   competition_slug: "meeting-paris-2027",
@@ -106,6 +112,100 @@ describe("push notifications", () => {
     );
   });
 
+  it("words the end of a mercato round in hours and minutes", () => {
+    const now = new Date("2026-11-11T18:00:00Z").getTime();
+    const due = {
+      ...manager,
+      kind: "mercato_round",
+      ref: "l1:2",
+      payload: { league_id: "l1", league_name: "Les Lièvres", round: 2, ends_at: "2026-11-11T19:30:00Z" },
+    };
+    expect(notificationOf(due, now)).toEqual({
+      title: "⏳ Le tour 2 du mercato se termine dans 1 h 30",
+      body: "Les Lièvres : place tes dernières enchères.",
+      url: "/manager/l1/catalogue",
+      tag: "mercato_round-l1:2",
+    });
+    const sharp = { ...due, payload: { ...due.payload, ends_at: "2026-11-11T20:00:00Z" } };
+    expect(notificationOf(sharp, now).title).toBe("⏳ Le tour 2 du mercato se termine dans 2 h");
+  });
+
+  it("words a lineup not validated with the time left before its lock", () => {
+    const now = new Date("2026-11-11T18:00:00Z").getTime();
+    const due = {
+      ...manager,
+      kind: "lineup",
+      ref: "l1:c1",
+      payload: {
+        league_id: "l1",
+        league_name: "Les Lièvres",
+        competition_slug: "meeting-paris",
+        competition_name: "Meeting de Paris",
+        lock_at: "2026-11-11T18:45:00Z",
+      },
+    };
+    expect(notificationOf(due, now)).toEqual({
+      title: "🏟 Ton alignement n'est pas validé",
+      body: "Les Lièvres, Meeting de Paris : verrou dans 45 min. Sans alignement, 0 point.",
+      url: "/manager/l1/alignement/meeting-paris",
+      tag: "lineup-l1:c1",
+    });
+  });
+
+  it("words a head-to-head over as a win, a defeat or a draw", () => {
+    const due = {
+      ...manager,
+      kind: "duel_over",
+      ref: "l1:3",
+      payload: {
+        league_id: "l1",
+        league_name: "Les Lièvres",
+        round: 3,
+        home_id: "u9",
+        my_score: 2310,
+        their_score: 1980,
+        opponent: "Gazelle",
+      },
+    };
+    expect(notificationOf(due)).toEqual({
+      title: "🏆 Victoire contre Gazelle",
+      body: "Les Lièvres, journée 3 : 2310 pts à 1980 pts.",
+      url: "/manager/l1/confrontation/3/u9",
+      tag: "duel_over-l1:3",
+    });
+    const lost = { ...due, payload: { ...due.payload, my_score: 1, their_score: 1980 } };
+    expect(notificationOf(lost)).toMatchObject({
+      title: "Défaite contre Gazelle",
+      body: "Les Lièvres, journée 3 : 1 pt à 1980 pts.",
+    });
+    const draw = { ...due, payload: { ...due.payload, my_score: 1980 } };
+    expect(notificationOf(draw).title).toBe("Match nul contre Gazelle");
+  });
+
+  it("marks a Manager reminder sent with what it is about, short-lived when it expires", async () => {
+    const due = {
+      ...manager,
+      kind: "lineup",
+      ref: "l1:c1",
+      payload: {
+        league_id: "l1",
+        league_name: "Les Lièvres",
+        competition_slug: "meeting-paris",
+        competition_name: "Meeting de Paris",
+        lock_at: "2026-11-11T18:45:00Z",
+      },
+    };
+    const database = fakeDatabase([due]);
+    const ttls: number[] = [];
+    await sendDue(database, async (_device: unknown, _payload: string, options: { TTL: number }) => {
+      ttls.push(options.TTL);
+    });
+    expect(ttls).toEqual([900]);
+    expect(database.calls.marked).toEqual([
+      { user_id: "u3", kind: "lineup", evening: "2026-11-11", ref: "l1:c1" },
+    ]);
+  });
+
   it("sends each due notification to every device and marks it sent", async () => {
     const database = fakeDatabase([reminder, result]);
     const pushed: string[] = [];
@@ -118,8 +218,8 @@ describe("push notifications", () => {
       "https://push.example.test/3",
     ]);
     expect(database.calls.marked).toEqual([
-      { user_id: "u1", kind: "forgotten", evening: "2026-11-11" },
-      { user_id: "u2", kind: "recap", evening: "2026-11-11" },
+      { user_id: "u1", kind: "forgotten", evening: "2026-11-11", ref: "" },
+      { user_id: "u2", kind: "recap", evening: "2026-11-11", ref: "" },
     ]);
     expect(report).toEqual({ sent: 2, forgotten: 0, failed: 0, failures: [] });
   });
