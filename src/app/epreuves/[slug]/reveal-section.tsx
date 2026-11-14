@@ -1,17 +1,19 @@
 import Link from "next/link";
 
+import { getEventConsensus, type EventConsensus } from "@/application/consensus";
 import { UseCaseError } from "@/application/errors";
 import { listMyLeagues, type League } from "@/application/leagues";
 import { listEventPredictions, type EventReveal } from "@/application/reveal";
 import { buttonVariants } from "@/components/ui/button";
 import { ErrorNotice } from "@/components/error-notice";
 import { ReactionBar, ReactionSummary } from "@/components/reveal/reaction-bar";
-import { PickDistribution } from "@/components/reveal/pick-distribution";
+import { ConsensusBlock } from "@/components/reveal/consensus-block";
 import { RevealedPredictionCard } from "@/components/reveal/revealed-prediction-card";
 import type { EventDetail } from "@/domain/event";
 import { OTHER_ATHLETE } from "@/domain/podium-draft";
 import { reactionCounts, type Reaction } from "@/domain/reveal";
 import {
+  createSupabaseConsensusRepository,
   createSupabaseLeagueRepository,
   createSupabaseRevealRepository,
   type CurrentUser,
@@ -21,9 +23,9 @@ import { messages } from "../../messages.fr";
 import { getSessionClient } from "../../session";
 
 async function load(
-  eventId: string,
+  event: EventDetail,
   leagueId: string | undefined,
-): Promise<(EventReveal & { leagues: League[] }) | "error"> {
+): Promise<(EventReveal & EventConsensus & { leagues: League[] }) | "error"> {
   try {
     const client = await getSessionClient();
     const leagueRepository = createSupabaseLeagueRepository(client);
@@ -31,17 +33,28 @@ async function load(
       listEventPredictions({
         reveal: createSupabaseRevealRepository(client),
         leagues: leagueRepository,
-      }).execute({ eventId, leagueId }),
+      }).execute({ eventId: event.id, leagueId }),
       listMyLeagues({ leagues: leagueRepository }).execute(),
     ]);
-    return { ...reveal, leagues };
+    const consensus = await getEventConsensus({
+      consensus: createSupabaseConsensusRepository(client),
+    }).execute({
+      eventId: event.id,
+      leagueId,
+      leagueIds: leagues.map((league) => league.id),
+      official: event.results,
+    });
+    return { ...reveal, ...consensus, leagues };
   } catch (error) {
     if (error instanceof UseCaseError) return "error";
     throw error;
   }
 }
 
-/** Everyone's podium once the event is locked, with a filter on each of my leagues. */
+/**
+ * Once the event is locked: what the players predicted (#680), then everyone's podium, with a
+ * filter on each of my leagues that applies to both.
+ */
 export async function RevealSection({
   event,
   slug,
@@ -54,7 +67,7 @@ export async function RevealSection({
   leagueId?: string;
 }) {
   const base = `/epreuves/${slug}`;
-  const loaded = await load(event.id, leagueId);
+  const loaded = await load(event, leagueId);
   if (loaded === "error") {
     return (
       <div className="mx-4">
@@ -66,16 +79,16 @@ export async function RevealSection({
     );
   }
 
-  const { predictions, winnerPicks, leagues } = loaded;
-  const winners = new Set(event.results.filter((r) => r.rank === 1).map((r) => r.athleteId));
+  const { predictions, consensus, counts, leagues } = loaded;
   const names = new Map(event.entries.map((entry) => [entry.athleteId, entry.name]));
   names.set(OTHER_ATHLETE, messages.picker.other);
   const nameOf = (athleteId: string) => names.get(athleteId) ?? "?";
   const tabs = [
-    { href: base, label: messages.reveal.all, current: !leagueId },
+    { href: base, label: messages.reveal.all, count: counts.all, current: !leagueId },
     ...leagues.map((league) => ({
       href: `${base}?ligue=${league.id}`,
       label: league.name,
+      count: counts.leagues[league.id] ?? 0,
       current: league.id === leagueId,
     })),
   ];
@@ -106,14 +119,17 @@ export async function RevealSection({
                   }`}
                 >
                   <span className="truncate">{tab.label}</span>
+                  <span className="shrink-0 whitespace-pre font-mono tabular-nums">
+                    {messages.reveal.tabCount(tab.count)}
+                  </span>
                 </Link>
               </li>
             ))}
           </ul>
         </nav>
       )}
-      {winnerPicks.length > 0 && (
-        <PickDistribution picks={winnerPicks} nameOf={nameOf} winners={winners} />
+      {consensus.total > 0 && (
+        <ConsensusBlock consensus={consensus} nameOf={nameOf} official={event.results} />
       )}
       {predictions.length === 0 ? (
         <div className="mx-4 flex flex-col items-center gap-2 rounded-card bg-muted p-6 text-center">
