@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
@@ -7,7 +6,6 @@ import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { AthleteCard } from "@/components/manager/athlete-card";
 import { CARD_GROUPS, cardGroupOf } from "@/domain/manager-team";
-import { athleteHref } from "@/domain/redirect";
 import { createSupabaseManagerBids, createSupabaseManagerCatalogue } from "@/infra";
 
 import { messages } from "../../../messages.fr";
@@ -116,14 +114,7 @@ export default async function MyTeamPage({ params }: { params: Promise<{ id: str
                     >
                       {athletes.map((a) => (
                         <li key={a.athleteId}>
-                          {/* A card opens the athlete's page, which comes back here (#679). */}
-                          <Link
-                            href={athleteHref(a.slug, `/manager/${id}/equipe`)}
-                            aria-label={messages.athlete.profileOf(a.name)}
-                            className="block rounded-card focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
-                          >
-                            <AthleteCard athlete={a} paid={a.paid} />
-                          </Link>
+                          <AthleteCard athlete={a} paid={a.paid} />
                         </li>
                       ))}
                     </ul>

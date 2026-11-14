@@ -1,111 +1,49 @@
 import { describe, expect, it } from "vitest";
 
-import { disciplineRecords, keyRecords, type SheetRecord } from "./athlete";
+import { recordRows, type AthleteRecord } from "./athlete";
 
 const record = (
   discipline: string,
-  kind: SheetRecord["kind"],
+  kind: AthleteRecord["kind"],
   mark: string,
   date: string | null,
-  verified = true,
-): SheetRecord => ({ discipline, kind, mark, date, meeting: null, verified });
+): AthleteRecord => ({ discipline, kind, mark, date, meeting: null });
 
-describe("disciplineRecords", () => {
-  it("puts the PB and the SB of the current season of a discipline together", () => {
-    const blocks = disciplineRecords(
-      {
-        disciplines: ["100 m"],
-        records: [
-          record("100 m", "pr", "10.58", "2025-08-01"),
-          record("100 m", "sb", "10.62", "2026-09-12"),
-        ],
-      },
-      2026,
-    );
+describe("recordRows", () => {
+  it("puts the PR and the SB of a discipline side by side", () => {
+    const rows = recordRows([
+      record("100 m", "pr", "10.58", "2026-10-01"),
+      record("100 m", "sb", "10.62", "2026-09-12"),
+    ]);
 
-    expect(blocks).toEqual([
+    expect(rows).toEqual([
       {
         discipline: "100 m",
-        main: true,
-        pb: expect.objectContaining({ mark: "10.58" }),
+        pr: expect.objectContaining({ mark: "10.58" }),
         sb: expect.objectContaining({ mark: "10.62" }),
       },
     ]);
   });
 
-  it("leaves out a season best of an earlier season", () => {
-    const blocks = disciplineRecords(
-      {
-        disciplines: ["100 m"],
-        records: [
-          record("100 m", "pr", "10.58", "2025-08-01"),
-          record("100 m", "sb", "10.58", "2025-08-01"),
-        ],
-      },
-      2026,
-    );
+  it("shows the discipline with the most recent record first, and leaves out world records", () => {
+    const rows = recordRows([
+      record("200 m", "pr", "21.60", "2025-07-01"),
+      record("100 m", "sb", "10.62", "2026-09-12"),
+      record("100 m", "wr", "10.49", "1988-07-16"),
+    ]);
 
-    expect(blocks[0]?.sb).toBeNull();
-    expect(blocks[0]?.pb?.mark).toBe("10.58");
-  });
-
-  it("shows the main discipline first, then the others, and leaves out world records", () => {
-    const blocks = disciplineRecords(
-      {
-        disciplines: ["200 m", "100 m"],
-        records: [
-          record("100 m", "pr", "10.65", "2023-08-21"),
-          record("400 m", "pr", "50.10", "2026-05-01"),
-          record("200 m", "pr", "21.92", "2023-08-25"),
-          record("200 m", "wr", "21.34", "1988-09-29"),
-        ],
-      },
-      2026,
-    );
-
-    expect(blocks.map((b) => [b.discipline, b.main])).toEqual([
-      ["200 m", true],
-      ["100 m", false],
-      ["400 m", false],
+    expect(rows.map((r) => [r.discipline, r.pr?.mark ?? null, r.sb?.mark ?? null])).toEqual([
+      ["100 m", null, "10.62"],
+      ["200 m", "21.60", null],
     ]);
   });
 
-  it("orders disciplines outside the athlete's list by their latest record", () => {
-    const blocks = disciplineRecords(
-      {
-        disciplines: [],
-        records: [
-          record("800 m", "pr", "1:58.00", "2024-06-01"),
-          record("1500 m", "sb", "4:01.00", "2026-06-01"),
-        ],
-      },
-      2026,
+  it("keeps at most four disciplines", () => {
+    const many = ["100 m", "200 m", "400 m", "800 m", "1500 m"].map((d, i) =>
+      record(d, "pr", "1", `2026-0${i + 1}-01`),
     );
 
-    expect(blocks.map((b) => b.discipline)).toEqual(["1500 m", "800 m"]);
-  });
-
-  it("gives nothing for an athlete without a record, even with disciplines", () => {
-    expect(disciplineRecords({ disciplines: ["100 m"], records: [] }, 2026)).toEqual([]);
-  });
-
-  it("keeps a season best without a date: it cannot be told stale", () => {
-    const blocks = disciplineRecords(
-      { disciplines: ["100 m"], records: [record("100 m", "sb", "10.90", null)] },
-      2026,
-    );
-
-    expect(blocks[0]?.sb?.mark).toBe("10.90");
-  });
-});
-
-describe("keyRecords", () => {
-  it("is the block of the main discipline, else the first one, else null", () => {
-    const main = { discipline: "200 m", main: true, pb: null, sb: null };
-    const other = { discipline: "100 m", main: false, pb: null, sb: null };
-
-    expect(keyRecords([main, other])).toBe(main);
-    expect(keyRecords([other])).toBe(other);
-    expect(keyRecords([])).toBeNull();
+    expect(recordRows(many)).toHaveLength(4);
+    expect(recordRows([])).toEqual([]);
   });
 });
