@@ -25,7 +25,8 @@ export type MyEventState = {
 /**
  * One event of the list (#546): the hour in mono, the name and a line under it, one status on the
  * right. An event to run says when it locks (« modifiable » once posed) with « + Prono » or
- * « ✓ Posé »; a finished one sits on a muted background with my result and my points.
+ * « ✓ Posé »; a finished one sits on a muted background with my result and my points, or
+ * « Pas joué » and nothing on the right when I had no podium (#707).
  * A green edge marks a podium already in, a red edge an imminent lock.
  * `now` fixes the state for a first render or a story; the lock line itself ticks on the client.
  */
@@ -54,12 +55,13 @@ export function EventCard({
   const points = mine?.points ?? null;
   const id = useId();
 
-  let status: React.ReactNode;
-  if (finished)
+  // The right side: my points once computed, the cue while open, nothing for an event not played.
+  const notPlayed = finished && mine !== undefined && !predicted;
+  let status: React.ReactNode = null;
+  if (notPlayed) status = null;
+  else if (finished)
     status =
-      mine && !predicted ? (
-        <ChipStatus tone="neutral">{messages.events.noPoints}</ChipStatus>
-      ) : points === null ? (
+      points === null ? (
         <ChipStatus tone="neutral">{messages.events.status.finished}</ChipStatus>
       ) : (
         <ChipStatus tone={points > 0 ? "ok" : "neutral"}>{messages.points.line(points)}</ChipStatus>
@@ -74,7 +76,7 @@ export function EventCard({
   const hits = mine?.hits;
   let line: React.ReactNode = null;
   if (finished) {
-    if (mine && !predicted) line = messages.events.noPrediction;
+    if (notPlayed) line = messages.events.notPlayed;
     else if (hits)
       line = hits.perfect
         ? messages.events.perfect
@@ -97,8 +99,8 @@ export function EventCard({
           predicted && !finished && "border-l-4 border-l-success",
           !predicted && imminent && "border-l-4 border-l-primary",
         )}
-        // Named by the event, then by the status shown on the right (#517).
-        aria-labelledby={`${id}-name ${id}-status`}
+        // Named by the event, then by the status shown on the right (#517), or « Pas joué ».
+        aria-labelledby={`${id}-name ${status ? `${id}-status` : `${id}-line`}`}
       >
         <span id={`${id}-name`} hidden>
           {messages.events.cardLabel(messages.events.name(event.discipline, event.gender), hour)}
@@ -109,7 +111,7 @@ export function EventCard({
             {messages.events.name(event.discipline, event.gender)}
           </p>
           <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
-            {line && <span>{line}</span>}
+            {line && <span id={`${id}-line`}>{line}</span>}
             {event.isFeatured && (
               <span className="font-bold text-accent-text">★ {messages.events.featured}</span>
             )}
@@ -120,9 +122,13 @@ export function EventCard({
             )}
           </p>
         </div>
-        <div id={`${id}-status`} className="flex justify-end">
-          {status}
-        </div>
+        {status ? (
+          <div id={`${id}-status`} className="flex justify-end">
+            {status}
+          </div>
+        ) : (
+          <span aria-hidden />
+        )}
       </Link>
     </li>
   );
