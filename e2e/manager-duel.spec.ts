@@ -82,7 +82,8 @@ test("a participant opens their head-to-head from the matchday and sees both lin
     .getByRole("listitem", { name: "Ma confrontation" })
     .getByRole("link", { name: /Voir la confrontation/ })
     .click();
-  await page.waitForURL(/\/confrontation\//);
+  // A client-side navigation: no « load » event to wait for (#840).
+  await expect(page).toHaveURL(/\/confrontation\//, { timeout: 30_000 });
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Confrontation");
   await expect(page.getByText("Journée 1 · terminée")).toBeVisible();
 
