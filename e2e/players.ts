@@ -43,6 +43,10 @@ export async function signIn(page: Page, email: string) {
  * as for a real player; a player without profile is then sent to /bienvenue.
  */
 async function openSignInLink(page: Page, email: string) {
+  // The sign-in page may still be on its way (a click, or a redirect from a guarded page): its
+  // `next` is only known once its form is shown.
+  await page.waitForURL(/\/connexion/);
+  await page.getByLabel("Ton e-mail").waitFor();
   const next = new URL(page.url()).searchParams.get("next") ?? "/";
   const { data, error } = await adminClient().auth.admin.generateLink({ type: "magiclink", email });
   const tokenHash = data.properties?.hashed_token;
