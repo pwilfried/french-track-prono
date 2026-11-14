@@ -30,7 +30,10 @@ test("an admin imports a pasted start list, with fuzzy names and a new athlete",
 
   // Letters, not digits: the import matches names loosely, and pre-production keeps the athletes
   // of earlier runs (#819).
-  const newcomer = `Inventée ${Math.random().toString(36).replace(/[^a-z]/g, "").slice(0, 8)}`;
+  const newcomer = `Inventée ${Math.random()
+    .toString(36)
+    .replace(/[^a-z]/g, "")
+    .slice(0, 8)}`;
   await paste.fill(`RICHARDSON Sha'carri;USA;10.71\nAlfred Julien;LCA\n${newcomer};FRA;11.20`);
   await page.getByRole("button", { name: "Analyser" }).click();
   await expect(page.locator("main").getByRole("status")).toHaveText(
