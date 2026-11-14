@@ -5,6 +5,7 @@ import {
   filterCompetitions,
   groupByMonth,
   levelsOf,
+  pickableFromDays,
   NO_FILTERS,
   quickSelections,
   type PickableCompetition,
@@ -140,5 +141,29 @@ describe("groupByMonth", () => {
 
   it("has no month without competitions", () => {
     expect(groupByMonth([])).toEqual([]);
+  });
+});
+
+describe("pickableFromDays", () => {
+  it("picks a competition by its slug, on the day it starts in Paris time", () => {
+    const picked = pickableFromDays({
+      slug: "meeting-de-paris-2027",
+      name: "Meeting de Paris",
+      startsOn: "2027-06-01",
+      city: "Paris",
+      scope: "international",
+      venue: "outdoor",
+      level: "diamond-league",
+    });
+    expect(picked).toEqual({
+      id: "meeting-de-paris-2027",
+      name: "Meeting de Paris",
+      firstEventAt: "2027-06-01T12:00:00.000Z",
+      city: "Paris",
+      scope: "international",
+      venue: "outdoor",
+      level: "diamond-league",
+    });
+    expect(groupByMonth([picked])[0]!.month).toBe("2027-06");
   });
 });
