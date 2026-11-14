@@ -505,13 +505,23 @@ et se partage par le partage natif du téléphone, ou se télécharge à défaut
 
 Notifications push (#203) : le joueur les active par appareil depuis son profil (opt-in
 explicite, désactivation en un geste). Les abonnements (`push_subscriptions`) ne s'écrivent que
-par `save_push_subscription()` et `delete_push_subscription()`. Toutes les 5 minutes, le workflow
-« Push notifications » lit `private.push_due()` et envoie, avec la bibliothèque `web-push` et les
-clés VAPID : un rappel jusqu'à 20 minutes avant le verrouillage d'une finale non pronostiquée,
-seulement dans une compétition où le joueur a déjà fait un prono, puis ses points une fois
-calculés. Une notification par heure au plus, jamais deux fois la même (`push_log`), rien pour un
-joueur bloqué. Pas de clé service_role : le workflow passe par l'API Management de Supabase,
-comme « Inactive accounts ».
+par `save_push_subscription()` et `delete_push_subscription()`. Chaque minute, l'Edge Function
+`push-notifications` lit `private.reminder_due()` et envoie, avec la bibliothèque `web-push` et
+les clés VAPID, des rappels groupés (#681, règles de référence dans `src/domain/reminders.ts`) :
+
+- « Pronos oubliés » : un seul message pour toutes les finales de la soirée (date de Paris du
+  verrou) qui verrouillent dans le délai choisi (30 min, 1 h ou 3 h ; 1 h par défaut) sans podium
+  du joueur, seulement dans une compétition où il a déjà fait un prono ; au plus un par soirée ;
+- « Résultats du soir » : un récap quand toutes les finales pronostiquées de la soirée ont leurs
+  points (points de la soirée, place dans la compétition).
+
+« Mes rappels » (`/profil/rappels`) : un interrupteur par famille (Pronos oubliés, Résultats du
+soir, Manager ; « Ma ligue » et « FrenchTrack » sont stockées mais masquées jusqu'à v0.19), le
+délai avant verrou, les heures calmes (23 h–8 h par défaut, heure de Paris). Rien ne part pendant
+les heures calmes : ce qui reste dû part à leur fin. Réglages dans `reminder_settings` (sans ligne :
+valeurs par défaut), écrite seulement par `save_reminder_settings()` ; ce qui est parti est noté
+dans `reminder_log` (joueur, type, soirée), jamais deux fois. Rien pour un joueur bloqué. Les
+notifications Manager ne sont pas encore envoyées (interrupteur déjà présent).
 
 « Me prévenir à la publication » (#659) : sur une compétition sans programme, le joueur connecté
 s'abonne (`program_alerts`, écrite seulement par `turn_on_program_alert()` et
