@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import { Field } from "@/components/account/field";
 import { SubmitButton } from "@/components/account/submit-button";
+import { MAX_EMAIL_LENGTH } from "@/domain/auth";
 
 import { messages } from "../../messages.fr";
 import { changeEmailAction, type EmailChangeState } from "./actions";
@@ -47,6 +48,8 @@ export function EmailForm() {
         error={error}
         defaultValue={state.email}
         autoComplete="email"
+        inputMode="email"
+        maxLength={MAX_EMAIL_LENGTH}
       />
       <SubmitButton pendingLabel={text.sending}>{text.send}</SubmitButton>
     </form>

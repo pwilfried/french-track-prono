@@ -15,6 +15,7 @@ import { Bib } from "@/components/profile/bib";
 import { InstallEntry } from "@/components/shell/install-prompt";
 import { NotificationOptIn } from "@/components/account/notification-opt-in";
 import { ClubNotices } from "@/components/account/club-notices";
+import { SubmitButton } from "@/components/account/submit-button";
 import { ClubRanking } from "@/components/profile/club-ranking";
 import { LatestPredictions } from "@/components/profile/prediction-history";
 import {
@@ -311,9 +312,9 @@ export default async function ProfilePage({
       </section>
 
       <form action="/auth/sign-out" method="post">
-        <button type="submit" className={`${buttonVariants({ variant: "outline" })} w-full`}>
+        <SubmitButton variant="outline" pendingLabel={text.signingOut} navigates>
           {text.signOut}
-        </button>
+        </SubmitButton>
       </form>
       <Link
         href="/profil/supprimer"

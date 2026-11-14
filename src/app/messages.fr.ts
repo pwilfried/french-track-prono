@@ -92,6 +92,7 @@ export const messages = {
     merged: (club: string, name: string) =>
       `Ton club « ${club} » existait déjà : tu es maintenant au club « ${name} ».`,
     dismiss: "OK",
+    dismissing: "En cours…",
   },
   playerHome: {
     /** « Bienvenue » until a first prediction, then « Salut » (#526). */
@@ -278,6 +279,7 @@ export const messages = {
             : `Début dans ${days} jours`,
       notify: "Me prévenir à la publication",
       notified: "Tu seras prévenu",
+      saving: "Enregistrement en cours…",
       notifiedHint: "Touche à nouveau pour ne plus être prévenu.",
       signIn: "Connecte-toi pour être prévenu",
       deviceHint:
@@ -2046,6 +2048,7 @@ export const messages = {
     allBadges: "Tous les badges sont à toi !",
     emailPrivate: "Ton e-mail reste privé : il n'apparaît jamais dans l'application.",
     signOut: "Se déconnecter",
+    signingOut: "Déconnexion en cours…",
     deleteLink: "Supprimer mon compte",
     joined: (club: string | null, date: string) =>
       `${club ? `${club} · ` : ""}joueur depuis le ${date}`,
