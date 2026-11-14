@@ -516,7 +516,11 @@ e2e `SUPABASE_URL` (`https://<ref>.supabase.co`), `SUPABASE_SERVICE_ROLE_KEY` et
 elle ouvre `/api/public-cache` aux tests). Réglages Auth de la préprod pour les tests : un SMTP
 personnalisé (le SMTP intégré de Supabase refuse les adresses hors équipe), une limite d'envoi
 d'e-mails relevée (la suite inscrit une soixantaine de joueurs) et un délai minimal court entre deux
-codes pour une même adresse. Les variables de
+codes pour une même adresse. La limite d'envoi est relevée d'elle-même à 500 par heure avant chaque
+passage (`e2e/preprod-auth.ts`, API de gestion Supabase, projet de préprod seulement, #787) : à
+30 par heure (valeur par défaut avec un SMTP personnalisé), deux passages dans l'heure
+l'épuisaient et toutes les inscriptions tombaient en `AUTH_UNAVAILABLE` jusqu'à l'heure suivante.
+Si le changement est refusé, le journal du test le dit par un avertissement. Les variables de
 l'application (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
 `NEXT_PUBLIC_SITE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PUBLIC_CACHE_FLUSH_SECRET`,
 `PREPROD_DEMO_LOGIN=1`) vivent dans le projet Vercel de préprod (`PUBLIC_CACHE_FLUSH_SECRET` et
