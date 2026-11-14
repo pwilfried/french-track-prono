@@ -18,11 +18,13 @@ test("an event of a French competition opens from its competition page", async (
 
   await page.goto(`/competitions/${tag}`);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Test France ${tag}`);
-  await page.getByRole("link", { name: /^100 m, Femmes/ }).click();
+  await page.getByRole("link", { name: /^100 m femmes,/ }).click();
 
   await expect(page).toHaveURL(new RegExp(`/epreuves/${tag}-f-100m$`));
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("100 m — Finale");
-  await expect(page.locator("main").getByRole("link", { name: /^‹ Épreuves$/ })).toHaveAttribute(
+  await expect(
+    page.locator("main").getByRole("link", { name: /^‹ Compétitions$/ }),
+  ).toHaveAttribute(
     "href",
     new RegExp(`^/competitions\\?competition=${tag}&jour=\\d{4}-\\d{2}-\\d{2}$`),
   );

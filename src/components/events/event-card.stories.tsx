@@ -55,7 +55,7 @@ export const ToDo: Story = {
     await expect(canvas.getByText("Verrouille dans 3 h")).toBeInTheDocument();
     await expect(canvas.queryByText("Finale")).toBeNull();
     await expect(canvas.getByRole("link")).toHaveAccessibleName(
-      /^100 m, Femmes, \d\d:\d\d \+ Prono$/,
+      /^100 m femmes, \d\d:\d\d \+ Prono$/,
     );
   },
 };
@@ -93,9 +93,7 @@ export const AlreadyPredicted: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByText(/· modifiable/)).toBeInTheDocument();
     // A screen reader hears the status too, not only « 100 m, femmes, hour » (#517).
-    await expect(canvas.getByRole("link")).toHaveAccessibleName(
-      /^100 m, Femmes, \d\d:\d\d ✓ Posé$/,
-    );
+    await expect(canvas.getByRole("link")).toHaveAccessibleName(/^100 m femmes, \d\d:\d\d ✓ Posé$/);
   },
 };
 
@@ -150,7 +148,7 @@ export const FinishedWithPoints: Story = {
     await expect(canvas.getByText("2 athlètes bien placées")).toBeInTheDocument();
     await expect(canvas.queryByText(/Posé/)).toBeNull();
     await expect(canvas.getByRole("link")).toHaveAccessibleName(
-      /^100 m, Femmes, \d\d:\d\d \+6 pts$/,
+      /^100 m femmes, \d\d:\d\d \+6 pts$/,
     );
   },
 };
@@ -182,7 +180,7 @@ export const FinishedWithoutPrediction: Story = {
     await expect(canvas.queryByText("—")).toBeNull();
     await expect(canvas.queryByText("+ Prono")).toBeNull();
     await expect(canvas.getByRole("link")).toHaveAccessibleName(
-      /^100 m, Femmes, \d\d:\d\d Pas joué$/,
+      /^100 m femmes, \d\d:\d\d Pas joué$/,
     );
   },
 };
