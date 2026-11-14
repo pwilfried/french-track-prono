@@ -18,10 +18,15 @@ test("an event of a French competition opens from its competition page", async (
 
   await page.goto(`/competitions/${tag}`);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Test France ${tag}`);
-  await page.getByRole("link", { name: /^100 m femmes,/ }).click();
+  // The card counts down to its lock and wears the animal of its family (#800).
+  const card = page.getByRole("link", { name: /^100 m femmes,/ });
+  await expect(card).toContainText(/Verrouille dans \d j/);
+  await expect(card.locator('[data-animal="guepard"]')).toBeVisible();
+  await card.click();
 
   await expect(page).toHaveURL(new RegExp(`/epreuves/${tag}-f-100m$`));
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("100 m — Finale");
+  await expect(page.locator('main header [data-animal="guepard"]')).toBeVisible();
   await expect(
     page.locator("main").getByRole("link", { name: /^‹ Compétitions$/ }),
   ).toHaveAttribute(

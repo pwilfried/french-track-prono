@@ -3,19 +3,18 @@ import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
 import { listEvents } from "@/application/list-events";
-import { listMyPredictions } from "@/application/list-my-predictions";
 import { getGeneralRanking } from "@/application/rankings";
-import { EventCard, type MyEventState } from "@/components/events/event-card";
+import { EventCard } from "@/components/events/event-card";
 import { VenueChip } from "@/components/events/venue-chip";
 import { LockCountdown } from "@/components/home/lock-countdown";
 import { buttonVariants } from "@/components/ui/button";
 import type { EventSummary } from "@/domain/event";
 import { openEvents } from "@/domain/event-list";
-import { createSupabasePredictionRepository } from "@/infra";
 
 import { loadCompetitions, type ShownCompetition } from "../../competition";
+import { loadFamilies, loadMyEventStates } from "../../event-cards";
 import { messages } from "../../messages.fr";
-import { getCurrentUser, getSessionClient } from "../../session";
+import { getCurrentUser } from "../../session";
 import { publicEventReader, publicRanking } from "../../public-data";
 
 async function loadEvents(competitionSlug: string): Promise<EventSummary[]> {
@@ -31,23 +30,17 @@ async function loadEvents(competitionSlug: string): Promise<EventSummary[]> {
 /** The player's rank and predictions; null for a visitor or when they cannot be read. */
 async function loadPlayer(userId: string, competitionSlug: string) {
   try {
-    const client = await getSessionClient();
     const [ranking, mine] = await Promise.all([
       getGeneralRanking({ ranking: publicRanking() }).execute({
         competitionSlugs: [competitionSlug],
       }),
-      listMyPredictions({ predictions: createSupabasePredictionRepository(client) }).execute({
-        userId,
-        competitionSlug,
-      }),
+      loadMyEventStates(userId, competitionSlug),
     ]);
     const me = ranking.find((p) => p.userId === userId);
     return {
       rank: me?.rank ?? null,
       players: ranking.length,
-      mine: new Map<string, MyEventState>(
-        mine.map((p) => [p.eventId, { predicted: true, joker: p.useJoker }]),
-      ),
+      mine,
     };
   } catch (error) {
     if (error instanceof UseCaseError) return null;
@@ -66,10 +59,11 @@ async function findCompetition(slug: string): Promise<ShownCompetition> {
 export default async function CompetitionPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const now = new Date();
-  const [competition, events, user] = await Promise.all([
+  const [competition, events, user, families] = await Promise.all([
     findCompetition(slug),
     loadEvents(slug),
     getCurrentUser(),
+    loadFamilies(),
   ]);
   const player = user ? await loadPlayer(user.userId, slug) : null;
   const eventsHref = `/competitions?competition=${slug}`;
@@ -154,6 +148,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ sl
               <EventCard
                 key={event.id}
                 event={event}
+                family={families.get(event.discipline)}
                 now={now}
                 mine={
                   player

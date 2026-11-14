@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { EventDetail, EventSummary } from "@/domain/event";
+import { OTHER_ATHLETE } from "@/domain/podium-draft";
 
 import type { EventReader } from "./list-events";
 import {
@@ -45,6 +46,8 @@ describe("listMyPredictions", () => {
   });
 });
 
+const noNames = { namesOf: async () => [] };
+
 describe("listMyEventMarks", () => {
   it("gives each of my predicted events its joker and its points once they are computed", async () => {
     // Given two predictions of mine, the points computed for the first event only
@@ -53,6 +56,7 @@ describe("listMyEventMarks", () => {
       points: {
         listMine: async () => [{ userId: "me", eventId: "e1", points: 12, reasons: [] }],
       },
+      athletes: noNames,
     });
 
     // When the events list asks for my marks
@@ -60,8 +64,14 @@ describe("listMyEventMarks", () => {
 
     // Then the first event shows its points, the second none yet
     expect(marks).toEqual([
-      { eventId: "e1", joker: true, points: 12, hits: { exact: 0, onPodium: 0, perfect: false } },
-      { eventId: "e2", joker: false, points: null, hits: null },
+      {
+        eventId: "e1",
+        joker: true,
+        points: 12,
+        hits: { exact: 0, onPodium: 0, perfect: false },
+        podium: [null, null, null],
+      },
+      { eventId: "e2", joker: false, points: null, hits: null, podium: [null, null, null] },
     ]);
   });
 
@@ -84,6 +94,7 @@ describe("listMyEventMarks", () => {
           },
         ],
       },
+      athletes: noNames,
     });
 
     // When the events list asks for my marks
@@ -91,6 +102,42 @@ describe("listMyEventMarks", () => {
 
     // Then the card knows the three athletes are well placed and the podium perfect
     expect(mark?.hits).toEqual({ exact: 3, onPodium: 0, perfect: true });
+  });
+
+  it("names the athletes of my podium for the card of an event still open (#800)", async () => {
+    // Given my podium: two known athletes and « autre athlète » in third
+    const asked: string[][] = [];
+    const useCase = listMyEventMarks({
+      predictions: repositoryWith([
+        {
+          userId: "me",
+          eventId: "e1",
+          podium: { first: "a", second: "b", third: OTHER_ATHLETE },
+          useJoker: false,
+        },
+      ]),
+      points: { listMine: async () => [] },
+      athletes: {
+        namesOf: async (ids) => {
+          asked.push([...ids]);
+          return [
+            { athleteId: "b", name: "Bea Bolt", countryCode: "JAM" },
+            { athleteId: "a", name: "Ana Fast", countryCode: "USA" },
+          ];
+        },
+      },
+    });
+
+    // When the events list asks for my marks
+    const [mark] = await useCase.execute({ userId: "me", competitionSlug: "c" });
+
+    // Then the names come in podium order, read in one go, « autre athlète » left unnamed
+    expect(mark?.podium).toEqual([
+      { athleteId: "a", name: "Ana Fast", countryCode: "USA" },
+      { athleteId: "b", name: "Bea Bolt", countryCode: "JAM" },
+      null,
+    ]);
+    expect(asked).toEqual([["a", "b"]]);
   });
 });
 

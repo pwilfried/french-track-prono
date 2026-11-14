@@ -1,7 +1,9 @@
 import type { EventGender } from "@/domain/event";
+import { OTHER_ATHLETE } from "@/domain/podium-draft";
 import { pickHits, type PickHit } from "@/domain/prediction-history";
 
 import type { PointsRepository } from "./compute-event-points";
+import type { AthleteName, AthleteReader } from "./get-athlete";
 import type { EventReader } from "./list-events";
 import type { Prediction, PredictionRepository } from "./save-prediction";
 
@@ -17,20 +19,23 @@ export function listMyPredictions(ports: { predictions: PredictionRepository }) 
 export type PodiumHits = { exact: number; onPodium: number; perfect: boolean };
 
 /**
- * My mark on one event of the list: predicted, with or without the joker, and the points won with
- * what the podium got right, null until computed.
+ * My mark on one event of the list: predicted, with or without the joker, the points won with
+ * what the podium got right, null until computed, and my podium, 1st to 3rd (#800); null for
+ * « autre athlète » or an athlete no longer listed.
  */
 export type MyEventMark = {
   eventId: string;
   joker: boolean;
   points: number | null;
   hits: PodiumHits | null;
+  podium: (AthleteName | null)[];
 };
 
 /** My predictions in a competition with their points, null until computed (#488). */
 export function listMyEventMarks(ports: {
   predictions: PredictionRepository;
   points: Pick<PointsRepository, "listMine">;
+  athletes: Pick<AthleteReader, "namesOf">;
 }) {
   return {
     async execute(input: { userId: string; competitionSlug: string }): Promise<MyEventMark[]> {
@@ -39,6 +44,14 @@ export function listMyEventMarks(ports: {
         ports.points.listMine(input.userId, input.competitionSlug),
       ]);
       const lineOf = new Map(scores.map((l) => [l.eventId, l]));
+      // Every athlete of my podiums, read in one go.
+      const ids = new Set(
+        mine.flatMap(({ podium }) => [podium.first, podium.second, podium.third]),
+      );
+      ids.delete(OTHER_ATHLETE);
+      const nameOf = new Map(
+        (ids.size > 0 ? await ports.athletes.namesOf([...ids]) : []).map((a) => [a.athleteId, a]),
+      );
       return mine.map((p) => {
         const line = lineOf.get(p.eventId);
         const count = (kind: string) => line?.reasons.filter((r) => r.kind === kind).length ?? 0;
@@ -53,6 +66,9 @@ export function listMyEventMarks(ports: {
                 perfect: count("perfect_podium") > 0,
               }
             : null,
+          podium: [p.podium.first, p.podium.second, p.podium.third].map(
+            (id) => nameOf.get(id) ?? null,
+          ),
         };
       });
     },

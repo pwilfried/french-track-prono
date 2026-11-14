@@ -7,6 +7,7 @@ import { getAthlete, type AthleteReader } from "./get-athlete";
 
 const reader = (athletes: AthleteSheet[]): AthleteReader => ({
   findBySlug: async (slug) => athletes.find((a) => a.slug === slug) ?? null,
+  namesOf: async () => [],
 });
 
 const sheet: AthleteSheet = {

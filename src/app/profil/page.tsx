@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getClubNotices } from "@/application/club-notices";
 import { getMyBadges } from "@/application/get-my-badges";
 import { getProfile } from "@/application/get-profile";
+import { listEvents } from "@/application/list-events";
 import { getPlayerDetails } from "@/application/player-details";
 import { getMySeason } from "@/application/get-my-season";
 import { getMyManagerHonours } from "@/application/manager-honours";
@@ -13,6 +14,7 @@ import { getMyPredictionHistory } from "@/application/list-my-predictions";
 import { getClubRanking } from "@/application/rankings";
 import { BadgeCelebration } from "@/components/profile/badge-celebration";
 import { BadgeGrid } from "@/components/profile/badge-grid";
+import { ProfileStart } from "@/components/profile/profile-start";
 import { TrophyShowcase } from "@/components/profile/trophy-showcase";
 import { Bib } from "@/components/profile/bib";
 import { InstallEntry } from "@/components/shell/install-prompt";
@@ -27,6 +29,7 @@ import { AnimalChange } from "@/components/band/animal-change";
 import { BandPoints } from "@/components/band/band-points";
 import { buttonVariants } from "@/components/ui/button";
 import { TIME_ZONE } from "@/domain/competition";
+import { firstFinalToPredict } from "@/domain/home";
 import {
   createSupabaseClubNoticeRepository,
   createSupabaseManagerHonoursRepository,
@@ -36,7 +39,7 @@ import {
   createSupabaseTrophyRepository,
 } from "@/infra";
 
-import { seasonCompetitionSlugs } from "../competition";
+import { currentCompetition, seasonCompetitionSlugs } from "../competition";
 import { messages } from "../messages.fr";
 import { turnOffNotificationsAction, turnOnNotificationsAction } from "../push-actions";
 import { getCurrentUser, getSessionClient, getSessionProfiles } from "../session";
@@ -86,6 +89,17 @@ async function loadSeason(userId: string) {
     ),
   ]);
   return { season, badges, clubs, latest };
+}
+
+/** The next open final of the current competition, for the card of a new profile (#799). */
+async function nextOpenFinal(): Promise<string | null> {
+  const competition = await currentCompetition();
+  const events = await readOr(
+    "profile next final",
+    listEvents({ events: publicEventReader() }).execute({ competitionSlug: competition.slug }),
+    [],
+  );
+  return firstFinalToPredict(events, new Date());
 }
 
 /**
@@ -151,6 +165,10 @@ export default async function ProfilePage({
   }).format(profile.ageConfirmedAt);
   const text = messages.profile;
   const animal = season?.animal ?? null;
+  // Before the first computed event, one card instead of a wall of empty boxes (#799).
+  const starting = season !== null && season.stats.curve.length === 0;
+  const finalSlug = starting ? await nextOpenFinal() : null;
+  const hasTrophies = shelves !== null && shelves.length > 0;
   return (
     <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-6">
       <h1 className="sr-only">{text.title}</h1>
@@ -179,22 +197,31 @@ export default async function ProfilePage({
               ? `${messages.band.animals[animal]} · ${messages.band.families[animal]}`
               : messages.band.noAnimal}
           </p>
-          <p className="flex flex-wrap items-baseline gap-x-2">
-            <span className="font-mono text-3xl font-bold">{season ? season.points : 0}</span>
-            <span className="text-sm">
-              {messages.format.ptsUnit(season?.points ?? 0)} ·{" "}
-              <strong>
-                {season?.rank ? text.rankOf(season.rank, season.players) : text.notRanked}
-              </strong>
-            </span>
-          </p>
+          {season && !starting && (
+            <p className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-mono text-3xl font-bold">{season.points}</span>
+              <span className="text-sm">
+                {messages.format.ptsUnit(season.points)} ·{" "}
+                <strong>
+                  {season.rank ? text.rankOf(season.rank, season.players) : text.notRanked}
+                </strong>
+              </span>
+            </p>
+          )}
           <p className="text-xs opacity-80">
             {text.joined(details?.club?.validated ? details.club.name : null, since)}
           </p>
         </div>
       </section>
 
-      {season && (
+      {season && starting && (
+        <ProfileStart
+          predictions={season.stats.predictions}
+          finalSlug={finalSlug}
+          progress={badges?.progress ?? null}
+        />
+      )}
+      {season && !starting && (
         <>
           <BandPoints band={season.band} animal={season.animal} toReach={season.toReach} />
           <SeasonTiles stats={season.stats} />
@@ -202,8 +229,8 @@ export default async function ProfilePage({
           <BestShot best={season.stats.bestShot} />
         </>
       )}
-      {badges && <BadgeGrid progress={badges.progress} />}
-      {shelves && <TrophyShowcase shelves={shelves} />}
+      {badges && !starting && <BadgeGrid progress={badges.progress} />}
+      {shelves && (!starting || hasTrophies) && <TrophyShowcase shelves={shelves} />}
 
       {honours.length > 0 && (
         <section aria-labelledby="honours" className="flex flex-col gap-2">
@@ -231,9 +258,9 @@ export default async function ProfilePage({
         </section>
       )}
 
-      {season && <ShareSeasonCard />}
-      {latest && <LatestPredictions lines={latest} />}
-      {clubs && (
+      {season && !starting && <ShareSeasonCard />}
+      {latest && latest.length > 0 && <LatestPredictions lines={latest} />}
+      {clubs && !starting && (
         <ClubRanking clubs={clubs} myClub={details?.club?.validated ? details.club : null} />
       )}
 

@@ -15,6 +15,7 @@ Issue #807, validée par le propriétaire le 14 novembre 2026, avec la direction
   animal et son badge de famille (familles de #613).
 - **Les badges gagnés avant ces règles** deviennent bronze : rien ne se perd.
 - **Le prochain badge** proposé au joueur est celui au plus petit effort restant (#768).
+- **Avant la première épreuve calculée**, le profil ne montre pas la grille : un seul encart avec le prochain badge et un bouton vers la prochaine finale ouverte (#799).
 - **Saison** : l'année des compétitions, comme le classement général.
 
 ## Badges de jeu (lièvre)

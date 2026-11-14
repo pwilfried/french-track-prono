@@ -14,10 +14,10 @@ test("an admin sets the FrenchTrack account and draws the trophies; a player see
   await signUp(page, player);
   await page.waitForURL(/\/profil$/);
 
-  // No trophy yet: the showcase says how to win the first one. Exact name: the pseudo
-  // of the player ("E2E vitrine…") also names a region of the page.
+  // No trophy and no computed event yet: no empty showcase on a new profile (#799). Exact name:
+  // the pseudo of the player ("E2E vitrine…") also names a region of the page.
   const showcase = page.getByRole("region", { name: "Vitrine", exact: true });
-  await expect(showcase).toContainText("Pas encore de trophée");
+  await expect(showcase).toHaveCount(0);
 
   sql(
     `update profiles set is_admin = true where id = (select id from auth.users where email = '${player.email}')`,
