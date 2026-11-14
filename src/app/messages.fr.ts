@@ -2120,7 +2120,7 @@ export const messages = {
   notifications: {
     title: "Notifications",
     description:
-      "Un rappel avant le verrouillage d'une finale pas encore pronostiquée, et tes points dès qu'ils tombent. Une par heure au plus.",
+      "Un rappel groupé avant le verrouillage des finales pas encore pronostiquées, et le récap de ta soirée. Règle-les dans « Mes rappels ».",
     turnOn: "Activer sur cet appareil",
     turnOff: "Désactiver sur cet appareil",
     on: "Activées sur cet appareil.",
@@ -2128,6 +2128,41 @@ export const messages = {
     unsupported:
       "Ton navigateur ne gère pas les notifications. Sur iPhone, ajoute d'abord l'appli à l'écran d'accueil.",
     failed: "Les notifications n'ont pas pu être activées. Réessaie dans un instant.",
+  },
+  reminders: {
+    link: "Mes rappels",
+    title: "Mes rappels",
+    subtitle: "Ce que tu reçois, quand, et quand on te laisse tranquille.",
+    families: "Ce que je reçois",
+    family: {
+      forgotten: {
+        label: "Pronos oubliés",
+        hint: "Un seul message pour les finales de la soirée encore sans podium.",
+      },
+      eveningResults: {
+        label: "Résultats du soir",
+        hint: "Un récap quand tous les résultats de ta soirée sont tombés.",
+      },
+      manager: {
+        label: "Manager",
+        hint: "Fin de tour du mercato, alignement à valider, duel terminé.",
+      },
+      league: { label: "Ma ligue", hint: "Ce qui se passe dans tes ligues." },
+      frenchtrack: { label: "FrenchTrack", hint: "Les nouveautés de FrenchTrack." },
+    },
+    lead: "Prévenir avant le verrou",
+    leadHint: "Pour « Pronos oubliés ». Au plus un message par soirée.",
+    leadOption: (minutes: number) => (minutes < 60 ? `${minutes} min` : `${minutes / 60} h`),
+    quiet: "Heures calmes",
+    quietHint:
+      "Heure de Paris. Rien n'arrive pendant ce créneau : ce qui reste à dire arrive à la fin.",
+    quietFrom: "Début",
+    quietTo: "Fin",
+    hour: (h: number) => `${h} h`,
+    save: "Enregistrer mes rappels",
+    saving: "Enregistrement…",
+    saved: "Tes rappels sont enregistrés.",
+    back: "Retour au profil",
   },
   editProfile: {
     title: "Modifier mon profil",
@@ -2546,6 +2581,9 @@ export const messages = {
     EVENTS_UNAVAILABLE: "Impossible de charger les épreuves pour le moment.",
     EVENT_NOT_FOUND: "Cette épreuve n'existe pas.",
     PROGRAM_ALERT_UNAVAILABLE: "L'alerte n'a pas pu être enregistrée. Réessaie.",
+    REMINDER_SETTINGS_INVALID: "Choisis un délai et des heures calmes parmi ceux proposés.",
+    REMINDER_SETTINGS_UNAVAILABLE:
+      "Tes rappels n'ont pas pu être enregistrés. Réessaie dans un instant.",
     EMAIL_INVALID: "Cette adresse e-mail n'a pas l'air valide.",
     CODE_INVALID: "Code incorrect ou expiré. Vérifie-le ou demande-en un nouveau.",
     AUTH_UNAVAILABLE: "La connexion ne marche pas pour le moment. Réessaie dans un instant.",
