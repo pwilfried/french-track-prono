@@ -1,10 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useSyncExternalStore } from "react";
-import { useFormStatus } from "react-dom";
+import { useState, useSyncExternalStore } from "react";
 
-import { returnToMyAccountAction } from "./demo-login-actions";
 import { demoPseudoFrom } from "./demo-login";
 import { messages } from "./messages.fr";
 
@@ -30,25 +28,28 @@ export function DemoBanner() {
       className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 bg-secondary px-4 py-1 text-secondary-foreground"
     >
       <p className="min-w-0 break-words text-sm font-bold">{text.banner(pseudo)}</p>
-      <form action={returnToMyAccountAction}>
-        <BackButton />
-      </form>
+      <BackForm />
     </section>
   );
 }
 
 const noSubscription = () => () => {};
 
-/** Disabled and saying so while the admin's session comes back. */
-function BackButton() {
-  const { pending } = useFormStatus();
+/**
+ * A plain form to a route (`/auth/demo-return`), so the page after it is loaded with the admin's
+ * cookies. Disabled and saying so while the admin's session comes back.
+ */
+function BackForm() {
+  const [pending, setPending] = useState(false);
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="inline-flex min-h-11 items-center rounded-full border-2 border-secondary-foreground px-4 text-sm font-bold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary-foreground disabled:opacity-60"
-    >
-      {pending ? text.goingBack : text.backToMe}
-    </button>
+    <form action="/auth/demo-return" method="post" onSubmit={() => setPending(true)}>
+      <button
+        type="submit"
+        disabled={pending}
+        className="inline-flex min-h-11 items-center rounded-full border-2 border-secondary-foreground px-4 text-sm font-bold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary-foreground disabled:opacity-60"
+      >
+        {pending ? text.goingBack : text.backToMe}
+      </button>
+    </form>
   );
 }

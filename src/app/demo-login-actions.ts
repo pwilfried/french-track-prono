@@ -11,8 +11,6 @@ import {
   createSupabaseProfileRepository,
   currentRefreshToken,
   exchangeEmailLink,
-  restoreSession,
-  signOutSession,
 } from "@/infra";
 
 import { DEMO_AS_COOKIE, DEMO_RETURN_COOKIE, demoLoginEnabled } from "./demo-login";
@@ -56,17 +54,4 @@ export async function signInAsDemoAction(formData: FormData): Promise<void> {
   // Next encodes the value itself: encoding it here too would show « E2E%20demo » in the banner.
   store.set(DEMO_AS_COOKIE, signIn.pseudo, cookieOptions);
   redirect("/");
-}
-
-/** « Revenir à mon compte »: the admin's own session comes back; else, signed out. */
-export async function returnToMyAccountAction(): Promise<void> {
-  if (!demoLoginEnabled()) notFound();
-  const store = await cookies();
-  const adminToken = store.get(DEMO_RETURN_COOKIE)?.value;
-  store.delete(DEMO_RETURN_COOKIE);
-  store.delete(DEMO_AS_COOKIE);
-  const client = await getSessionClient();
-  if (adminToken && (await restoreSession(client, adminToken))) redirect(PAGE);
-  await signOutSession(client);
-  redirect("/connexion");
 }
