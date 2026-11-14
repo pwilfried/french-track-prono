@@ -57,7 +57,12 @@ test("the app can be installed: the manifest and its icons are served", async ({
   expect(href).toBeTruthy();
 
   const manifest = await (await request.get(href!)).json();
-  expect(manifest).toMatchObject({ display: "standalone", start_url: "/", scope: "/" });
+  expect(manifest).toMatchObject({
+    display: "standalone",
+    start_url: "/",
+    scope: "/",
+    short_name: "FrenchTrack",
+  });
   for (const icon of manifest.icons as { src: string }[]) {
     const response = await request.get(icon.src);
     expect(response.headers()["content-type"]).toContain("image/png");
@@ -66,6 +71,15 @@ test("the app can be installed: the manifest and its icons are served", async ({
     "href",
     /apple-touch-icon\.png/,
   );
+  await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute(
+    "content",
+    "FrenchTrack",
+  );
+  await expect(page.locator('link[rel="icon"][sizes="32x32"]')).toHaveAttribute(
+    "href",
+    /favicon-32\.png/,
+  );
+  expect((await request.get("/favicon.ico")).ok()).toBe(true);
 });
 
 /** The open final of a competition closest to its lock (run `npm run db:open-events` first). */
