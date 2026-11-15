@@ -7,7 +7,13 @@ import { buttonVariants } from "@/components/ui/button";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
 import { ScaleRules } from "@/components/rules/scale-rules";
 import type { DisciplineFamily, MarkUnit } from "@/domain/discipline";
-import { MARK_MAX_LENGTH, markInputMode, markRange, readMark } from "@/domain/mark-range";
+import {
+  MARK_MAX_LENGTH,
+  markExample,
+  markInputMode,
+  markRange,
+  readMark,
+} from "@/domain/mark-range";
 import { isComplete, OTHER_ATHLETE, type PodiumDraft } from "@/domain/podium-draft";
 import { athleteHref } from "@/domain/redirect";
 import { cn } from "@/lib/utils";
@@ -357,7 +363,7 @@ function MarkFields({
                 onBlur={() => setChecked((c) => ({ ...c, [id]: true }))}
                 aria-invalid={problem ? true : undefined}
                 aria-describedby={problem ? errorId : undefined}
-                placeholder={messages.picker.markPlaceholder[unit]}
+                placeholder={markExample(unit, family)}
                 className="min-h-11 w-28 rounded-xl border-2 border-border bg-background px-3 text-right font-mono font-bold aria-invalid:border-accent-text"
               />
             </label>

@@ -2702,7 +2702,6 @@ export const messages = {
     marksHint: (tolerance: string) =>
       `Une perf est juste à ${tolerance} près de la marque officielle. Laisse vide pour ne pas parier.`,
     markLabel: (name: string) => `Perf de ${name}`,
-    markPlaceholder: { time: "10.85", distance: "8.15", points: "8250" },
     /** « Entre 5,00 m et 20,00 m pour le triple saut. » */
     markOutOfRange: (min: string, max: string, discipline: string) => {
       const name = discipline.charAt(0).toLowerCase() + discipline.slice(1);
