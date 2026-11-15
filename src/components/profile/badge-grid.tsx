@@ -9,7 +9,7 @@ import {
   type BadgeProgress,
   type FamilyBadge,
 } from "@/domain/badges";
-import { animalOf, type Animal } from "@/domain/band";
+import { animalOrHare, type Animal } from "@/domain/band";
 
 const text = messages.profile;
 const levels = messages.badgeLevels;
@@ -19,7 +19,7 @@ const isFamily = (badge: Badge): badge is FamilyBadge =>
 
 /** The animal on the bib: the one of the family for a family badge, the hare (the mascot) else. */
 function animalFor(badge: Badge): Animal {
-  return (isFamily(badge) && animalOf(BADGE_FAMILIES[badge][0])) || "lievre";
+  return animalOrHare(isFamily(badge) ? BADGE_FAMILIES[badge][0] : null);
 }
 
 /** What is left to the next level: a count, or points for a family badge. */

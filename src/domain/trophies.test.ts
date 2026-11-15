@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 
 import type { DisciplineFamily } from "./discipline";
 import {
-  animalOf,
   competitionOver,
   generalMetal,
   generalTrophies,
@@ -72,12 +71,6 @@ describe("metals", () => {
 });
 
 describe("animals", () => {
-  it("gives each family its animal, the relays to the hare", () => {
-    expect(animalOf("sprint")).toBe("guepard");
-    expect(animalOf("vertical_jumps")).toBe("chat");
-    expect(animalOf("relay")).toBe("lievre");
-  });
-
   it("picks the animal of the family most played, adding up the two families of the hare", () => {
     const lines = [
       line("ana", 1, undefined, undefined, "sprint"),

@@ -45,10 +45,10 @@ export function animalOf(family: DisciplineFamily): Animal | null {
 }
 
 /**
- * The animal an event card and an event page wear (#800): the one of its family, else the hare,
- * the mascot (relays, or a discipline of unknown family).
+ * The animal an event card, an event page, a bib or a statuette wears (#800): the one of its
+ * family, else the hare, the mascot (relays, or a discipline of unknown family).
  */
-export function eventAnimal(family: DisciplineFamily | null | undefined): Animal {
+export function animalOrHare(family: DisciplineFamily | null | undefined): Animal {
   return (family && animalOf(family)) || "lievre";
 }
 

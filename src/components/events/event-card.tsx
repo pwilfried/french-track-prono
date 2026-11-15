@@ -5,7 +5,7 @@ import type { AthleteName } from "@/application/get-athlete";
 import type { PodiumHits } from "@/application/list-my-predictions";
 import { Animal } from "@/components/band/animal";
 import { LockLine } from "@/components/countdown/lock-line";
-import { eventAnimal } from "@/domain/band";
+import { animalOrHare } from "@/domain/band";
 import { TIME_ZONE } from "@/domain/competition";
 import { countdown, eventPhase } from "@/domain/countdown";
 import type { DisciplineFamily } from "@/domain/discipline";
@@ -119,7 +119,7 @@ export function EventCard({
         </span>
         <span className="flex flex-col items-center gap-1.5">
           <span className="font-mono text-base font-bold leading-none tabular-nums">{hour}</span>
-          <Animal kind={eventAnimal(family)} className="size-7" />
+          <Animal kind={animalOrHare(family)} className="size-7" />
         </span>
         <div className="min-w-0">
           <p className="break-words font-display text-base font-bold leading-tight">

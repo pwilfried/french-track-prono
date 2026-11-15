@@ -14,7 +14,7 @@ import { ErrorNotice } from "@/components/error-notice";
 import { AddToMyLeagueForm } from "@/components/leagues/league-forms";
 import { PodiumMedals } from "@/components/podium/podium-medals";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
-import { eventAnimal } from "@/domain/band";
+import { animalOrHare } from "@/domain/band";
 import { competitionDay, TIME_ZONE } from "@/domain/competition";
 import { eventPhase } from "@/domain/countdown";
 import type { EventDetail } from "@/domain/event";
@@ -330,7 +330,7 @@ export default async function EventPage({
           </Link>
           <div className="flex items-start gap-3">
             {/* The animal of its family (#800), the hare for a relay; decorative. */}
-            <Animal kind={eventAnimal(event.markFamily)} className="mt-1" />
+            <Animal kind={animalOrHare(event.markFamily)} className="mt-1" />
             <div className="min-w-0">
               {winner && (
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
