@@ -46,11 +46,20 @@ test("a participant sees their team fixed for the season after the mercato, and 
             (values ('equipe-sprint-${tag}', 25), ('equipe-haies-${tag}', 15)) p(slug, amount)
        where a.slug = p.slug and l.id = '${id}'`);
 
-  // From the league, to the team.
+  // From the « Saison » page, its screens are links (#926): to the team, and back.
   await page.reload();
-  await page.getByRole("main").getByRole("link", { name: "Mon équipe", exact: true }).click();
+  const screens = page.getByRole("navigation", { name: "Écrans de la ligue" });
+  for (const name of ["Catalogue du mercato", "Mon équipe", "Mon alignement"]) {
+    await expect(screens.getByRole("link", { name, exact: true })).toBeVisible();
+  }
+  await screens.getByRole("link", { name: "Mon équipe", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/manager/${id}/equipe$`));
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Mon équipe");
+  await page.getByRole("link", { name: "‹ French Track Manager" }).click();
+  await expect(page).toHaveURL(new RegExp(`/manager/${id}$`));
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(league);
+  await screens.getByRole("link", { name: "Mon équipe", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/manager/${id}/equipe$`));
 
   const summary = page.getByRole("region", { name: "Résumé de mon équipe" });
   await expect(summary).toContainText("Effectif2 athlètes");
