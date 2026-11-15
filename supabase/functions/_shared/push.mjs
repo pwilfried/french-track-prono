@@ -143,6 +143,31 @@ export function programNotificationOf(due) {
 }
 
 /**
+ * Sends one notification to one device: "sent"; "gone" when the device unsubscribed (404, 410);
+ * otherwise the failed HTTP status, or "network", logged.
+ * @param {(device: any, payload: string, options: any) => Promise<unknown>} push
+ * @param {{ endpoint: string, p256dh: string, auth: string }} device
+ * @param {string} payload
+ * @param {number} ttl in seconds
+ * @returns {Promise<"sent" | "gone" | number | "network">}
+ */
+async function sendOne(push, device, payload, ttl) {
+  try {
+    await push(
+      { endpoint: device.endpoint, keys: { p256dh: device.p256dh, auth: device.auth } },
+      payload,
+      { TTL: ttl, urgency: "high" },
+    );
+    return "sent";
+  } catch (error) {
+    const { statusCode, body } = /** @type {{ statusCode?: number, body?: string }} */ (error);
+    if (statusCode === 404 || statusCode === 410) return "gone";
+    console.error(`push failed (${statusCode ?? "network"}): ${body ?? error}`);
+    return statusCode ?? "network";
+  }
+}
+
+/**
  * Sends what is due to every device of each player, then records it.
  * `push(device, payload, options)` sends one notification (web-push's sendNotification); it throws
  * an error with `statusCode` 404 or 410 when the device unsubscribed.
@@ -170,26 +195,17 @@ export async function sendDue(database, push) {
    */
   async function sendToDevices(kind, devices, payload, ttl) {
     for (const device of devices) {
-      try {
-        await push(
-          { endpoint: device.endpoint, keys: { p256dh: device.p256dh, auth: device.auth } },
-          payload,
-          { TTL: ttl, urgency: "high" },
-        );
-      } catch (error) {
-        // 404 and 410: the device unsubscribed. Anything else is logged and counted.
-        const { statusCode, body } = /** @type {{ statusCode?: number, body?: string }} */ (error);
-        if (statusCode === 404 || statusCode === 410) forgotten.push(device.endpoint);
-        else {
-          failed += 1;
-          const status = statusCode ?? "network";
-          const key = `${kind}:${status}`;
-          const failure = failures.get(key) ?? { kind, status, count: 0 };
-          failure.count += 1;
-          failures.set(key, failure);
-          console.error(`push failed (${statusCode ?? "network"}): ${body ?? error}`);
-        }
+      const status = await sendOne(push, device, payload, ttl);
+      if (status === "sent") continue;
+      if (status === "gone") {
+        forgotten.push(device.endpoint);
+        continue;
       }
+      failed += 1;
+      const key = `${kind}:${status}`;
+      const failure = failures.get(key) ?? { kind, status, count: 0 };
+      failure.count += 1;
+      failures.set(key, failure);
     }
   }
 
@@ -244,21 +260,10 @@ export async function sendTest(devices, push) {
   let sent = 0;
   let failed = 0;
   for (const device of devices) {
-    try {
-      await push(
-        { endpoint: device.endpoint, keys: { p256dh: device.p256dh, auth: device.auth } },
-        payload,
-        { TTL: 15 * 60, urgency: "high" },
-      );
-      sent += 1;
-    } catch (error) {
-      const { statusCode, body } = /** @type {{ statusCode?: number, body?: string }} */ (error);
-      if (statusCode === 404 || statusCode === 410) forgotten.push(device.endpoint);
-      else {
-        failed += 1;
-        console.error(`push failed (${statusCode ?? "network"}): ${body ?? error}`);
-      }
-    }
+    const status = await sendOne(push, device, payload, 15 * 60);
+    if (status === "sent") sent += 1;
+    else if (status === "gone") forgotten.push(device.endpoint);
+    else failed += 1;
   }
   return { sent, forgotten, failed };
 }
