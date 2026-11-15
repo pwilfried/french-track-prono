@@ -71,6 +71,14 @@ export const Default: Story = {
     await expect(canvas.getByText("Lièvre d'argent")).toBeInTheDocument();
     await expect(canvas.getByText("Témoin d'or")).toBeInTheDocument();
     await expect(canvas.getByText("Ours de bronze")).toBeInTheDocument();
+    // Each statuette is drawn, no emoji; the feat not won yet keeps its dashed slot.
+    await expect(shelves[0].querySelector('[data-shape="guepard"]')).not.toBeNull();
+    await expect(shelves[0].querySelector('[data-shape="laurel"]')).toHaveTextContent("Top 10");
+    const record = shelves[0].querySelector('li[data-kind="record"]');
+    await expect(record).toHaveAttribute("data-metal", "empty");
+    await expect(record).toHaveTextContent(/Record de ligue\s*À gagner/);
+    // A past season shows what was won, nothing to win.
+    await expect(shelves[1].querySelectorAll('[data-metal="empty"]')).toHaveLength(0);
   },
 };
 
@@ -106,4 +114,15 @@ export const LongText: Story = {
     const shelf = within(canvasElement).getByRole("group");
     await expect(shelf.scrollWidth).toBeLessThanOrEqual(shelf.clientWidth);
   },
+};
+
+/** The night background of the dark theme. */
+export const Dark: Story = {
+  decorators: [
+    (Story) => (
+      <div className="dark max-w-[390px] bg-background p-4 text-foreground">
+        <Story />
+      </div>
+    ),
+  ],
 };
