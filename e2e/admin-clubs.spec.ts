@@ -18,7 +18,9 @@ test("the admin validates a club typed by a player, then renames it", async ({ p
   await page.goto("/admin/clubs");
   // The menu counts the clubs waiting for the admin.
   await adminMenu(page).locator("summary").click();
-  await expect(adminMenu(page).getByRole("link", { name: /^Clubs \d+ à traiter$/ })).toBeVisible();
+  // The link keeps the name of its page; the counter is its description (#950).
+  const clubs = adminMenu(page).getByRole("link", { name: "Clubs", exact: true });
+  await expect(clubs).toHaveAccessibleDescription(/^\d+ à traiter$/);
   await adminMenu(page).locator("summary").click();
 
   // The search finds a club from its words in any order, not only its exact name (#412).

@@ -60,7 +60,19 @@ const COUNTED: Partial<Record<AdminSection, keyof AdminTodo>> = {
   leagues: "leagues",
 };
 
-function Links({ section, todo }: { section: AdminSection; todo: AdminTodo | null }) {
+/**
+ * The sections, each link named after its page (#950). The counter is its description, not part
+ * of its name; `menu` keeps the ids apart, as the menu is drawn twice (computer and phone).
+ */
+function Links({
+  menu,
+  section,
+  todo,
+}: {
+  menu: string;
+  section: AdminSection;
+  todo: AdminTodo | null;
+}) {
   return GROUPS.map((group) => (
     <div
       key={group.key ?? group.items[0]![1]}
@@ -80,20 +92,24 @@ function Links({ section, todo }: { section: AdminSection; todo: AdminTodo | nul
           const field = COUNTED[key];
           const count = field && todo ? todo[field] : null;
           const current = key === section;
+          const todoId = `${menu}-${key}-todo`;
           return (
             <Link
               key={key}
               href={href}
               aria-current={current ? "page" : undefined}
+              aria-describedby={count ? todoId : undefined}
               className={cn(
                 "flex min-h-11 items-center justify-between gap-2 rounded-xl px-3 font-semibold",
                 current ? "bg-brand text-brand-foreground" : "text-foreground hover:bg-brand-soft",
               )}
             >
-              <span>
-                {text.section[key]}
-                {count ? <span className="sr-only">{text.todo(count)}</span> : null}
-              </span>
+              <span>{text.section[key]}</span>
+              {count ? (
+                <span id={todoId} aria-hidden="true" className="sr-only">
+                  {text.todo(count)}
+                </span>
+              ) : null}
               {count ? (
                 <span
                   aria-hidden="true"
@@ -120,7 +136,7 @@ function AdminMenu({ section, todo }: { section: AdminSection; todo: AdminTodo |
         aria-label={text.sections}
         className="hidden w-60 shrink-0 flex-col border-r border-border px-3 py-6 lg:flex"
       >
-        <Links section={section} todo={todo} />
+        <Links menu="side" section={section} todo={todo} />
       </nav>
       <nav aria-label={text.sections} className="px-4 pt-4 lg:hidden">
         {/* A new key on each section closes the drop-down after a navigation. */}
@@ -142,7 +158,7 @@ function AdminMenu({ section, todo }: { section: AdminSection; todo: AdminTodo |
             </svg>
           </summary>
           <div className="flex flex-col gap-1 px-2 pb-3">
-            <Links section={section} todo={todo} />
+            <Links menu="drop" section={section} todo={todo} />
           </div>
         </details>
       </nav>
