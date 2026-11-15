@@ -30,12 +30,14 @@ function deploy({
   extra,
   apiStatus = 200,
   domain = "new",
+  unset,
 }: {
   pulled: string;
   smoke: number;
   extra?: string;
   apiStatus?: number;
   domain?: "new" | "old-until-promoted" | "old";
+  unset?: string;
 }) {
   const root = mkdtempSync(join(tmpdir(), "vercel-deploy-"));
   const bin = join(root, "bin");
@@ -100,6 +102,7 @@ printf '%s' "$API_STATUS"`,
       GITHUB_RUN_ID: "99",
       AGENTS_OWNER: "alice bob",
       ...(extra ? { VERCEL_EXTRA_ENV: extra } : {}),
+      ...(unset ? { [unset]: "" } : {}),
     },
   });
   return {
@@ -202,4 +205,12 @@ it("fails before the smoke test when the domain never leaves the old deployment 
   expect(run.calls).not.toContainEqual(expect.stringMatching(/^smoke/));
   expect(run.output).toContain("still serves dpl_old one minute after the promotion of dpl_new");
   expect(run.output).not.toContain("token-secret-value");
+});
+
+it("stops before anything when a Vercel secret is missing, naming the three (#743)", () => {
+  const run = deploy({ pulled: complete, smoke: 0, unset: "VERCEL_PROJECT_ID" });
+
+  expect(run.status).not.toBe(0);
+  expect(run.calls).toEqual([""]);
+  expect(run.output).toContain("VERCEL_TOKEN, VERCEL_ORG_ID and VERCEL_PROJECT_ID are needed");
 });

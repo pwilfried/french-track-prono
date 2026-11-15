@@ -32,8 +32,9 @@ function load(...files: string[]): string[] {
 
 const firstLine = (file: string) => readFileSync(file, "utf8").split("\n")[0];
 
-it("loads the pre-production demo set right after the seed", () => {
-  expect(load("supabase/seed.sql")).toEqual([
+it("loads exactly the files it is given, in order: no demo set added behind the seed (#743)", () => {
+  expect(load("supabase/seed.sql")).toEqual([firstLine("supabase/seed.sql")]);
+  expect(load("supabase/seed.sql", "supabase/preprod/demo.sql")).toEqual([
     firstLine("supabase/seed.sql"),
     firstLine("supabase/preprod/demo.sql"),
   ]);

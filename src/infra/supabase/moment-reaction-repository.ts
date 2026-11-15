@@ -91,6 +91,7 @@ export function createSupabaseMomentReactionRepository(
       const { error } = await client.rpc("report_moment_reaction", { p_reaction: reactionId });
       if (!error) return "done";
       if (error.code === "P0002" || error.code === "22P02") return "unknown";
+      if (error.code === "FT035") return "too_many";
       return fail();
     },
 

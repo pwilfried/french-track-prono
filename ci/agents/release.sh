@@ -3,10 +3,13 @@
 # The version is the open milestone right after the latest tag: `vX.Y …` is tagged vX.Y.0, a patch
 # milestone `vX.Y.Z …` is tagged vX.Y.Z (owner's decision, 12 Nov 2026). It is tagged when:
 #   - the milestone has closed issues and no open one;
-#   - every push run on main's last commit (CI, pre-production deploy, …) is completed and green.
-# Every merge into main is already deployed to pre-production (preprod.yml). No human go before
-# the tag (owner's decision, 13 Nov 2026): the only automatic guard is that a failed pre-production
-# deploy of that commit makes the tag wait for the next sweep.
+#   - every push run on main's last commit (CI, pre-production deploy, …) is completed and green;
+#   - the full e2e suite has passed against pre-production on that commit (#743).
+# Every merge into main is deployed to pre-production with a smoke test only (preprod.yml); the
+# full e2e suite runs once per version, started here when the rest is green (preprod.yml with
+# e2e=true), and every morning (preprod-daily.yml): running it at every merge wore the free
+# pre-production database out (owner's decision, 15 Nov 2026). No human go before the tag (owner's
+# decision, 13 Nov 2026): a failed pre-production deploy or e2e pass of that commit makes it wait.
 # The tag is made with AGENTS_PAT: a tag made with github.token would start no workflow.
 # Then a GitHub release lists the PRs (its notification tells the owners), a needs-human issue
 # « Vérifier vX.Y.Z en prod » lists the screens to look at, and the milestone closes.
@@ -71,6 +74,33 @@ if grep -qv '|completed|\(success\|skipped\|neutral\)$' <<< "$runs"; then
   fi
   echo "$runs"
   exit 0
+fi
+
+# The full e2e suite against pre-production, once per version (#743): started on main's commit
+# when everything else is green, never again after a failure (no automatic retry, AGENTS.md):
+# the fix merged into main makes a new commit, hence a new pass.
+if grep -q '^Pre-production|' <<< "$runs"; then
+  e2e=$(as_bot gh api \
+    "repos/$repo/actions/workflows/preprod.yml/runs?head_sha=$sha&event=workflow_dispatch&per_page=20" \
+    --jq '[.workflow_runs[] | select(.display_title | startswith("Pre-production e2e"))][0]
+      | select(.) | "\(.status)|\(.conclusion)"')
+  case "$e2e" in
+    "")
+      echo "$version is finished: starting the full e2e suite against pre-production on ${sha:0:7}."
+      as_owner gh api -X POST "repos/$repo/actions/workflows/preprod.yml/dispatches" \
+        -f ref=main -f "inputs[e2e]=true" >/dev/null
+      exit 0
+      ;;
+    completed\|success) ;;
+    completed\|*)
+      echo "::warning::$version is finished, but the full e2e suite against pre-production failed on ${sha:0:7}: no tag."
+      exit 0
+      ;;
+    *)
+      echo "$version is finished, the full e2e suite against pre-production is running on ${sha:0:7}."
+      exit 0
+      ;;
+  esac
 fi
 
 echo "Tagging $tag on ${sha:0:7}"
