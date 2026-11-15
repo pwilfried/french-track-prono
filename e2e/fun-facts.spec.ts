@@ -20,6 +20,11 @@ test("a player sees one fact, sees another, closes it and does not see it again 
   await page.goto("/");
   const card = page.getByRole("region", { name: "Le saviez-vous ?" });
   await expect(card).toBeVisible();
+  // Right under the next action, the first block of the home (#932).
+  const blocks = await page
+    .locator("main section[aria-labelledby]")
+    .evaluateAll((sections) => sections.map((s) => s.getAttribute("aria-labelledby")));
+  expect(blocks.slice(0, 2)).toEqual(["next-action-label", "fun-fact-heading"]);
   const title = card.getByRole("heading", { level: 3 });
   const first = await title.textContent();
   await card.getByRole("button", { name: "Un autre" }).click();
