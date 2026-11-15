@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import type { ChallengeView } from "@/application/frenchtrack";
 import { messages } from "@/app/messages.fr";
-import { flagOf } from "@/domain/flag";
+import { CountryFlag } from "@/components/athletes/country-flag";
 import type { Podium } from "@/domain/podium-draft";
 import { cn } from "@/lib/utils";
 
@@ -55,7 +55,9 @@ function PodiumColumn({
             return (
               <li key={place} className="flex min-w-0 items-center gap-1.5 text-[13px]">
                 <span className="font-mono text-xs font-bold">{index + 1}</span>
-                <span aria-hidden="true">{athlete ? flagOf(athlete.countryCode) : null}</span>
+                <span aria-hidden="true">
+                  {athlete && <CountryFlag code={athlete.countryCode} />}
+                </span>
                 <span className="min-w-0 break-words font-semibold leading-tight">
                   {athlete?.name ?? "?"}
                 </span>
