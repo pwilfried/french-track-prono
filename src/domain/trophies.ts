@@ -1,4 +1,4 @@
-import { animalOf as bandAnimalOf, BAND_ORDER, type Animal } from "./band";
+import { animalOrHare, BAND_ORDER, type Animal } from "./band";
 import { competitionDay } from "./competition";
 import type { DisciplineFamily } from "./discipline";
 import { rankPlayers, totalsOf } from "./ranking";
@@ -53,11 +53,6 @@ export type TrophyLine = {
 /** A competition known by its slug and its last day (YYYY-MM-DD). */
 export type SeasonCompetition = { slug: string; endsOn: string };
 
-/** The animal of a family of events: the band's (#768); the relays, which have none, go to the hare. */
-export function animalOf(family: DisciplineFamily): Animal {
-  return bandAnimalOf(family) ?? "lievre";
-}
-
 /**
  * The animal of the family most played in a league: the one with the most score lines (an
  * animal carrying two families adds them up); a tie goes to the first animal of the list, no
@@ -67,7 +62,7 @@ export function mostPlayedAnimal(lines: Pick<TrophyLine, "eventFamily">[]): Anim
   const count = new Map<Animal, number>();
   for (const l of lines) {
     if (!l.eventFamily) continue;
-    const animal = animalOf(l.eventFamily);
+    const animal = animalOrHare(l.eventFamily);
     count.set(animal, (count.get(animal) ?? 0) + 1);
   }
   let best: Animal = "lievre";
