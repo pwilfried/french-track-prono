@@ -42,6 +42,8 @@ export type PlayerHomeProps = {
   /** The last event the player scored, with what earned the points. */
   lastResult: { event: EventSummary; points: number; exact: number; onPodium: number } | null;
   mercatoOpen: boolean;
+  /** « Le saviez-vous ? » (#766), right under the greeting, above the next action. */
+  funFact?: React.ReactNode;
   /** « Complète ton profil » (#540), under the next action; left out when the profile is complete. */
   completeProfile?: React.ReactNode;
   /** « Battez FrenchTrack » (#674): the open challenge that locks first, else the last one. */
@@ -58,6 +60,7 @@ export function PlayerHome(props: PlayerHomeProps) {
   return (
     <>
       <h1 className="text-lg font-bold text-muted-foreground">{text.hello(pseudo, isNew)}</h1>
+      {props.funFact}
       {action ? (
         <NextActionCard
           action={action}

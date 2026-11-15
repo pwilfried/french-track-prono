@@ -2,6 +2,7 @@ import { UseCaseError } from "@/application/errors";
 import { listEvents } from "@/application/list-events";
 import { ClubNotices } from "@/components/account/club-notices";
 import { CompleteProfileCard } from "@/components/home/complete-profile-card";
+import { FunFactCard } from "@/components/home/fun-fact-card";
 import { PlayerHome } from "@/components/home/player-home";
 import { VisitorHome } from "@/components/home/visitor-home";
 import { daysUntil } from "@/domain/competition";
@@ -90,7 +91,7 @@ export default async function Home() {
     );
   }
 
-  const { clubNotices, completeProfile, ...home } = player;
+  const { clubNotices, completeProfile, funFacts, ...home } = player;
   return (
     <main id="main" className="flex flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
@@ -100,6 +101,7 @@ export default async function Home() {
           now={now}
           {...stepPoints(scale)}
           {...home}
+          funFact={<FunFactCard facts={funFacts} />}
           completeProfile={
             completeProfile ? (
               <CompleteProfileCard
