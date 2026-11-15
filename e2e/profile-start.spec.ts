@@ -34,7 +34,7 @@ test("a new player sees one card on the profile, then the full profile after a f
     await expect(page.getByRole("region", { name, exact: true })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Vitrine", exact: true })).toHaveCount(0);
   await expect(page.locator("main")).not.toContainText("pas encore classé");
-  await expect(page.locator("main")).not.toContainText(/\b0 pt/);
+  await expect(page.locator("main")).not.toContainText(/\b0\spt/);
 
   // « C'est quoi ? » explains the animal and the badges in a sheet, over the profile (#940).
   await page.getByRole("button", { name: "C'est quoi, l'animal et les badges ?" }).click();

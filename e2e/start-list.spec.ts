@@ -75,5 +75,14 @@ test("an admin builds the start list of a final of eight athletes in less than a
   await expect(page.getByText("Sha'Carri Richardson").first()).toBeVisible();
   await expect(page.getByText(/jeu de test/)).toHaveCount(0);
 
+  // A visitor sees the start list ordered by season best, and says so (#939): Richardson, the
+  // only one with a mark, comes first.
+  await page.context().clearCookies();
+  await page.goto(`/epreuves/${slug}`);
+  await expect(page.getByText("Par meilleure marque de la saison")).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: "Liste de départ" }).getByRole("listitem").first(),
+  ).toContainText("Sha'Carri Richardson");
+
   sql(`delete from events where slug = '${slug}'`);
 });

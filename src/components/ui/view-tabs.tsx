@@ -16,7 +16,8 @@ export const segmentSurface = (selected: boolean) =>
  * The segmented view switch (#551, #708): « Ma ligue / Ce soir / Général » on the rankings tab,
  * « Mes ligues / Découvrir » on the leagues tab. Each view is a link (it lives in the URL); the
  * selected one is raised, bold and outlined, so it reads without colour. The panel it controls
- * carries `id={panelId}` and `aria-labelledby={`${idPrefix}-${selected}`}`.
+ * carries `id={panelId}` and `aria-labelledby={`${idPrefix}-${selected}`}` (see `tabPanelProps`).
+ * A single view is no choice: nothing shows (#939).
  */
 export function ViewTabs({
   label,
@@ -31,6 +32,7 @@ export function ViewTabs({
   idPrefix: string;
   panelId: string;
 }) {
+  if (tabs.length < 2) return null;
   return (
     <div
       role="tablist"
@@ -57,4 +59,13 @@ export function ViewTabs({
       ))}
     </div>
   );
+}
+
+/** The props of the panel a `ViewTabs` controls: a plain region when the switch is hidden. */
+export function tabPanelProps(
+  tabCount: number,
+  idPrefix: string,
+  selected: string,
+): { role?: "tabpanel"; "aria-labelledby"?: string } {
+  return tabCount < 2 ? {} : { role: "tabpanel", "aria-labelledby": `${idPrefix}-${selected}` };
 }

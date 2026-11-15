@@ -2,7 +2,8 @@
  * A running track bend behind every page (#346, #365, board A): eight numbered lanes in thin
  * lines. Fixed to the screen and framed on the centre column, so a computer shows it like a phone;
  * the lanes run on to the edge of a wide screen.
- * Decorative only, no animation; quieter in light mode.
+ * Decorative only, no animation; quieter in light mode. The lane numbers sit under the text of
+ * the pages, so they are fainter still than the lines (#939).
  */
 export function TrackBackground() {
   const lanes = [0, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -23,7 +24,13 @@ export function TrackBackground() {
               />
             ))}
           </g>
-          <g fill="currentColor" className="font-display" fontWeight="800" fontSize="22">
+          <g
+            fill="currentColor"
+            fillOpacity="0.4"
+            className="font-display"
+            fontWeight="800"
+            fontSize="22"
+          >
             {lanes.slice(1).map((lane) => (
               <text key={lane} x="338" y={98 + 42 * lane}>
                 {lane}

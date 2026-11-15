@@ -60,7 +60,7 @@ test("a sprint league counts the 100 m and not the javelin, until its creator ad
     .filter({ hasText: player.pseudo });
   await expect(me).toContainText("5 points");
   await expect(page.getByRole("link", { name: /Javelot femmes/ })).toContainText("Hors ligue");
-  await expect(page.getByRole("link", { name: /100 m femmes/ })).not.toContainText("Hors ligue");
+  await expect(page.getByRole("link", { name: /100\sm femmes/ })).not.toContainText("Hors ligue");
 
   // The general ranking of the competition still counts both.
   await page.goto(`/classement?vue=general&competition=${tag}`);
