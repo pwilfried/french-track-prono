@@ -2516,6 +2516,19 @@ export const messages = {
     nextBadge: (name: string, level: string, left: string) =>
       `Prochain : ${name}, ${level} (encore ${left})`,
     allBadges: "Tous les badges sont en or !",
+    /** « C'est quoi ? » under the animal: a sheet that explains the animal and the badges (#940). */
+    help: {
+      open: "C'est quoi ?",
+      openLabel: "C'est quoi, l'animal et les badges ?",
+      title: "L'animal et les badges",
+      animalTitle: "Ton animal",
+      animal:
+        "Chaque famille d'épreuves a son animal. La famille où tu marques le plus de points sur la saison te donne le tien, et il change si une autre famille passe devant.",
+      badgesTitle: "Les badges",
+      badges:
+        "Un badge récompense une façon de jouer (podiums parfaits, vainqueurs trouvés, journées pronostiquées en entier…) ou les points gagnés dans une famille. Chacun se gagne en bronze, puis en argent, puis en or, sur la saison.",
+      next: "« Prochain » te montre le badge le plus proche et ce qu'il te reste à faire pour l'avoir.",
+    },
     /** The hare celebrates a level won (#821), once. */
     celebrationTitle: "Le lièvre a une médaille pour toi !",
     celebrationLevel: (name: string, level: string) => `${name} : ${level}`,
