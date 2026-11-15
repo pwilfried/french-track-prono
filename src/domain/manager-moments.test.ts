@@ -30,17 +30,35 @@ const duel = (round: number, home: [string, number], away: [string, number]): Du
 });
 
 describe("manager moments: mercato win", () => {
-  it("tells each athlete won at the reveal of a round, with the price", () => {
-    expect(mercatoMoments([win(1, "x1", "ana", 35)])).toEqual([
+  it("tells the athletes a player won at the reveal of a round in one moment, with the total", () => {
+    expect(mercatoMoments([win(1, "x1", "ana", 35), win(1, "x2", "ana", 5)])).toEqual([
       {
-        key: "mercato_win:1:x1",
+        key: "mercato_win:1:ana",
         kind: "mercato_win",
         happenedAt: "2026-11-01T10:00:00.000Z",
         pseudo: "ana",
-        athlete: "Athlète x1",
-        price: 35,
+        round: 1,
+        price: 40,
+        athletes: [
+          { name: "Athlète x1", price: 35 },
+          { name: "Athlète x2", price: 5 },
+        ],
       },
     ]);
+  });
+
+  it("tells one moment per round and player", () => {
+    const moments = mercatoMoments([win(1, "x1", "ana"), win(1, "x2", "bob"), win(2, "x3", "ana")]);
+    expect(moments.map((m) => m.key)).toEqual([
+      "mercato_win:1:ana",
+      "mercato_win:1:bob",
+      "mercato_win:2:ana",
+    ]);
+  });
+
+  it("counts an athlete told twice once", () => {
+    const [moment] = mercatoMoments([win(1, "x1", "ana", 35), win(1, "x1", "ana", 35)]);
+    expect(moment).toMatchObject({ price: 35, athletes: [{ name: "Athlète x1", price: 35 }] });
   });
 });
 

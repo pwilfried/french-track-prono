@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   feedGroups,
+  firstMoments,
   leagueMoments,
   unpublished,
   type FeedMoment,
@@ -166,5 +167,22 @@ describe("feed groups", () => {
 
   it("gives no group for an empty feed", () => {
     expect(feedGroups([], "2026-11-15T22:00:00.000Z")).toEqual([]);
+  });
+
+  it("keeps the latest moments of the feed, in their groups", () => {
+    const groups = feedGroups(
+      [
+        moment("a", "2026-11-15T21:00:00.000Z", "Meeting B"),
+        moment("b", "2026-11-15T20:00:00.000Z", "Meeting B"),
+        moment("c", "2026-11-14T20:00:00.000Z"),
+        moment("d", "2026-11-13T20:00:00.000Z"),
+      ],
+      "2026-11-15T22:00:00.000Z",
+    );
+    expect(firstMoments(groups, 3).map((g) => g.moments.map((m) => m.key))).toEqual([
+      ["a", "b"],
+      ["c"],
+    ]);
+    expect(firstMoments(groups, 10)).toEqual(groups);
   });
 });

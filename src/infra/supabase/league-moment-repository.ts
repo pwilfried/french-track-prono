@@ -29,7 +29,6 @@ export type FeedRow = {
   data: {
     length?: number;
     price?: number;
-    athlete?: string;
     badge?: string;
     level?: string;
     scores?: [number, number];
@@ -70,7 +69,7 @@ const isLevel = (level: unknown): level is BadgeLevel => BADGE_LEVELS.includes(l
 /** A moment of a feed; a kind, a badge or a level the app no longer knows is left out. */
 export function momentOf(row: FeedRow): FeedMoment | null {
   if (!isMomentKind(row.kind)) return null;
-  const { length, price, athlete, badge, level, scores } = row.data ?? {};
+  const { length, price, badge, level, scores } = row.data ?? {};
   return {
     key: row.key,
     kind: row.kind,
@@ -84,7 +83,6 @@ export function momentOf(row: FeedRow): FeedMoment | null {
       : {}),
     ...(typeof length === "number" ? { length } : {}),
     ...(typeof price === "number" ? { price } : {}),
-    ...(athlete ? { athlete } : {}),
     ...(isBadge(badge) ? { badge } : {}),
     ...(isLevel(level) ? { level } : {}),
     ...(scores ? { scores } : {}),

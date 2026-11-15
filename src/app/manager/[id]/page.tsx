@@ -46,6 +46,8 @@ const text = messages.manager;
 
 /** « Saison », the league itself, then « Fil », its moments (#875). */
 const TABS = ["saison", "fil"] as const;
+/** The feed shows its 10 latest cards, then « Voir plus » (#979). */
+const FEED_PAGE = 10;
 
 /** The league's competitions, then those still available it does not have, first one first. */
 function competitionChoices(league: SeasonCompetition[], available: SeasonCompetition[]) {
@@ -148,6 +150,7 @@ export default async function ManagerLeaguePage({
           ) : (
             <LeagueFeed
               groups={feed ?? []}
+              pageSize={FEED_PAGE}
               empty={{
                 text: text.feed.empty,
                 href: `/manager/${id}/catalogue`,

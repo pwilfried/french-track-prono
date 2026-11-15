@@ -33,7 +33,12 @@ function momentText(moment: FeedMoment): string {
         moment.scores ?? null,
       );
     case "mercato_win":
-      return text.text.mercato_win(moment.pseudo, moment.athlete ?? null, moment.price ?? null);
+      return text.text.mercato_win(
+        moment.pseudo,
+        moment.athletes?.length ?? 0,
+        moment.round ?? null,
+        moment.price ?? 0,
+      );
     case "badge":
       return text.text.badge(
         moment.pseudo,
@@ -43,6 +48,36 @@ function momentText(moment: FeedMoment): string {
     case "streak":
       return text.text.streak(moment.pseudo, moment.length ?? null);
   }
+}
+
+/** The athletes won in a mercato round, folded under the sentence: names and prices (#979). */
+function MercatoAthletes({ athletes }: { athletes: { name: string; price: number }[] }) {
+  return (
+    <details className="group">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-primary [&::-webkit-details-marker]:hidden">
+        {text.athletes}
+        <span
+          aria-hidden="true"
+          className="transition-transform group-open:rotate-90 motion-reduce:transition-none"
+        >
+          ›
+        </span>
+      </summary>
+      <ul className="flex flex-col gap-1 pt-1">
+        {athletes.map((athlete, i) => (
+          <li
+            key={`${athlete.name}:${i}`}
+            className="flex min-w-0 items-baseline justify-between gap-3 text-sm"
+          >
+            <span className="min-w-0 break-words">{athlete.name}</span>
+            <span className="shrink-0 tabular-nums text-muted-foreground">
+              {text.credits(athlete.price)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
 }
 
 /** The emoji of a moment, in its round badge: the same on every card of a feed. */
@@ -88,6 +123,9 @@ export function MomentCard({
             {moment.bib && <Bib bib={moment.bib} />}
             <span className="min-w-0 break-words">{momentText(moment)}</span>
           </p>
+          {moment.athletes && moment.athletes.length > 0 && (
+            <MercatoAthletes athletes={moment.athletes} />
+          )}
         </div>
       </div>
       {children}
