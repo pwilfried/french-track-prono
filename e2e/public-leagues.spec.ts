@@ -43,7 +43,7 @@ test("a player creates a public league, another finds it in Découvrir and joins
     insert into league_families (league_id, family) select id, 'sprint' from l`);
 
   // Another player opens « Découvrir », searches by name, then filters by family.
-  await walkerPage.goto("/ligues");
+  await walkerPage.goto("/connexion?next=/ligues");
   await signUp(walkerPage, walker);
   await walkerPage.waitForURL(/\/ligues$/);
   await expect(walkerPage.getByRole("tab", { name: "Mes ligues · 0" })).toHaveAttribute(

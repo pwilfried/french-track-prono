@@ -40,7 +40,7 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await createLeague(ownerPage);
     await expect(ownerPage.getByRole("heading", { level: 1 })).toHaveText(league);
     const code = sql(`select invite_code from manager_leagues where name = '${league}'`);
-    await rivalPage.goto("/manager");
+    await rivalPage.goto("/connexion?next=/manager");
     await signUp(rivalPage, rival);
     await rivalPage.waitForURL(/\/manager$/);
     await rivalPage.goto(`/manager/rejoindre?code=${code}`);

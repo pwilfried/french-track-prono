@@ -37,10 +37,11 @@ const SPOT_BUTTON =
 /**
  * The lineup of a Manager team before a competition (#427), on the stadium seen from above (#775):
  * one spot per place, each of a family or free (the rules of the league), at its place on the
- * track or the field. Tap a spot: a sheet lists the athletes of the team, the ones who cannot go
- * there greyed with the reason (not entered, another family); pick one and the stadium changes at
+ * track or the field. Tap a spot: a sheet lists only the athletes of the team who can go there
+ * (entered, of its family; #937), or says none can; pick one and the stadium changes at
  * once (an athlete already placed elsewhere swaps with whoever sat there when they fit). The
- * athletes not lined up wait on the bench below. « Valider mon alignement » turns on once every
+ * athletes not lined up wait on the bench below. Right under the stadium, never over it (#929),
+ * the bar and « Valider mon alignement », which turns on once every
  * place the team can fill is filled (#839: the bar says how many stay empty and why; with no
  * athlete entered, it says so and offers nothing to validate; with no athlete at all, the bench
  * says so). Validated: a banner, still editable until the lock. Locked:
@@ -141,20 +142,13 @@ export function LineupBoard({
 
   const sheetPlace = open === null ? undefined : places[open];
   const sheetLabel = sheetPlace ? text.place[sheetPlace] : "";
+  // Only the athletes who can take the place are listed (#937): entered and of its family.
   const choices =
     open === null || sheetPlace === undefined
       ? []
       : athletes
-          .map((a) => {
-            const reason = !a.entered
-              ? text.notEntered
-              : !fitsPlace(sheetPlace, a.family)
-                ? text.wrongFamily(sheetLabel)
-                : null;
-            const at = placed.indexOf(a.athleteId);
-            return { athlete: a, reason, at };
-          })
-          .sort((a, b) => Number(a.reason !== null) - Number(b.reason !== null));
+          .filter((a) => a.entered && fitsPlace(sheetPlace, a.family))
+          .map((a) => ({ athlete: a, at: placed.indexOf(a.athleteId) }));
 
   return (
     <div className="flex flex-col gap-4">
@@ -190,86 +184,8 @@ export function LineupBoard({
         <StadiumMap label={text.stadium} places={places} spots={spots} />
       </section>
 
-      <BottomSheet
-        open={open !== null}
-        onClose={() => setOpen(null)}
-        title={text.sheetTitle(sheetLabel)}
-      >
-        <p className="mb-3 text-sm text-muted-foreground">{text.sheetHint(sheetLabel)}</p>
-        {open !== null && placed[open] !== null && (
-          <button
-            type="button"
-            onClick={() => update(placed.map((id, i) => (i === open ? null : id)))}
-            className={cn(buttonVariants({ variant: "outline" }), "mb-3 w-full")}
-          >
-            {text.remove}
-          </button>
-        )}
-        {choices.every((c) => c.reason !== null) && (
-          <p className="mb-3 rounded-card bg-muted p-3 text-sm">{text.noEligible}</p>
-        )}
-        <ul aria-label={text.choices} className="flex flex-col gap-2">
-          {choices.map(({ athlete: a, reason, at }) => {
-            const here = open !== null && at === open;
-            const note =
-              reason ??
-              (here ? text.onThisPlace : at >= 0 ? text.elsewhere(text.place[places[at]!]) : null);
-            return (
-              <li key={a.athleteId}>
-                <button
-                  type="button"
-                  disabled={reason !== null || here}
-                  onClick={() =>
-                    open !== null &&
-                    update(seatAthlete(places, athletes, placed, a.athleteId, open))
-                  }
-                  className={cn(
-                    "flex min-h-14 w-full items-center gap-3 rounded-2xl border border-border px-3 py-2 text-left",
-                    "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring",
-                    reason === null && !here && "hover:bg-muted",
-                    here && "border-2 border-primary",
-                    reason !== null && "opacity-60",
-                  )}
-                >
-                  <SpotSwatch family={a.family} muted={reason !== null} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block break-words font-bold">{a.name}</span>
-                    <span className="block text-sm text-muted-foreground">
-                      {a.discipline} {messages.catalogue.sexShort[a.sex]}
-                    </span>
-                    {note && <span className="block text-xs font-semibold">{note}</span>}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </BottomSheet>
-
-      <section aria-labelledby="bench" className="flex flex-col gap-2">
-        <h2 id="bench" className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          {text.bench}
-        </h2>
-        {bench.length === 0 ? (
-          <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
-            {athletes.length === 0 ? text.noTeam : text.benchEmpty}
-          </p>
-        ) : (
-          <ul
-            aria-labelledby="bench"
-            className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6"
-          >
-            {bench.map((a) => (
-              <li key={a.athleteId}>
-                <AthleteCard athlete={a} paid={a.paid} state={a.entered ? "normal" : "absent"} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
       {editable && athletes.length > 0 && (
-        <div className="sticky bottom-20 flex flex-col gap-2 rounded-2xl bg-foreground p-3 text-background shadow-lg md:bottom-3">
+        <div className="flex flex-col gap-2 rounded-2xl bg-foreground p-3 text-background shadow-lg">
           {nobodyEntered ? (
             <p className="text-sm font-semibold" aria-live="polite">
               {text.nobodyEntered}
@@ -318,6 +234,86 @@ export function LineupBoard({
           )}
         </div>
       )}
+
+      <BottomSheet
+        open={open !== null}
+        onClose={() => setOpen(null)}
+        title={text.sheetTitle(sheetLabel)}
+      >
+        <p className="mb-3 text-sm text-muted-foreground">{text.sheetHint(sheetLabel)}</p>
+        {open !== null && placed[open] !== null && (
+          <button
+            type="button"
+            onClick={() => update(placed.map((id, i) => (i === open ? null : id)))}
+            className={cn(buttonVariants({ variant: "outline" }), "mb-3 w-full")}
+          >
+            {text.remove}
+          </button>
+        )}
+        {choices.length === 0 ? (
+          <p className="rounded-card bg-muted p-3 text-sm">{text.noEligible}</p>
+        ) : (
+          <ul aria-label={text.choices} className="flex flex-col gap-2">
+            {choices.map(({ athlete: a, at }) => {
+              const here = open !== null && at === open;
+              const note = here
+                ? text.onThisPlace
+                : at >= 0
+                  ? text.elsewhere(text.place[places[at]!])
+                  : null;
+              return (
+                <li key={a.athleteId}>
+                  <button
+                    type="button"
+                    disabled={here}
+                    onClick={() =>
+                      open !== null &&
+                      update(seatAthlete(places, athletes, placed, a.athleteId, open))
+                    }
+                    className={cn(
+                      "flex min-h-14 w-full items-center gap-3 rounded-2xl border border-border px-3 py-2 text-left",
+                      "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring",
+                      !here && "hover:bg-muted",
+                      here && "border-2 border-primary",
+                    )}
+                  >
+                    <SpotSwatch family={a.family} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block break-words font-bold">{a.name}</span>
+                      <span className="block text-sm text-muted-foreground">
+                        {a.discipline} {messages.catalogue.sexShort[a.sex]}
+                      </span>
+                      {note && <span className="block text-xs font-semibold">{note}</span>}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </BottomSheet>
+
+      <section aria-labelledby="bench" className="flex flex-col gap-2">
+        <h2 id="bench" className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          {text.bench}
+        </h2>
+        {bench.length === 0 ? (
+          <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
+            {athletes.length === 0 ? text.noTeam : text.benchEmpty}
+          </p>
+        ) : (
+          <ul
+            aria-labelledby="bench"
+            className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6"
+          >
+            {bench.map((a) => (
+              <li key={a.athleteId}>
+                <AthleteCard athlete={a} paid={a.paid} state={a.entered ? "normal" : "absent"} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

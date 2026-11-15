@@ -23,18 +23,19 @@ export function leagueSummary(
   return { count: slugs.length, start: start.slice(0, 7), end: end.slice(0, 7) };
 }
 
-/** The competition of a league under way or coming first (YYYY-MM-DD today); none once all are over. */
+/**
+ * The competition of a league under way or coming first (YYYY-MM-DD today), and whether it is
+ * under way (#928); none once all are over.
+ */
 export function nextLeagueCompetition<T extends Dated>(
   slugs: string[],
   competitions: T[],
   today: string,
-): T | null {
-  return (
-    competitions
-      .filter((c) => slugs.includes(c.slug) && c.endsOn >= today)
-      .sort((a, b) => a.startsOn.localeCompare(b.startsOn) || a.slug.localeCompare(b.slug))[0] ??
-    null
-  );
+): (T & { live: boolean }) | null {
+  const next = competitions
+    .filter((c) => slugs.includes(c.slug) && c.endsOn >= today)
+    .sort((a, b) => a.startsOn.localeCompare(b.startsOn) || a.slug.localeCompare(b.slug))[0];
+  return next ? { ...next, live: next.startsOn <= today } : null;
 }
 
 /** The orders of « Découvrir » (#662), the first one by default. */

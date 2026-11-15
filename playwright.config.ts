@@ -46,8 +46,14 @@ export default defineConfig({
   // default 5 s of an assertion (#871, #874, #880): assertions wait 20 s there, 5 s locally.
   expect: { timeout: deployed ? 20_000 : 5_000 },
   // Against pre-production: Vercel's bypass cookie, the hourly e-mail cap raised
-  // (e2e/preprod-auth.ts), then the events opened (e2e/preprod-events.ts).
-  globalSetup: ["./e2e/vercel-bypass.ts", "./e2e/preprod-auth.ts", "./e2e/preprod-events.ts"],
+  // (e2e/preprod-auth.ts), then the events opened (e2e/preprod-events.ts). Locally and in the CI
+  // of a PR, what the database holds is noted, for the teardown to check nothing is left (#947).
+  globalSetup: [
+    "./e2e/vercel-bypass.ts",
+    "./e2e/preprod-auth.ts",
+    "./e2e/preprod-events.ts",
+    "./e2e/leftovers.ts",
+  ],
   globalTeardown: "./e2e/teardown.ts",
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {

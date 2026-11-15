@@ -32,12 +32,59 @@ const counts = `select json_build_object(
                     where l.owner_id::text like ${demoPlayer})
 )::text;`;
 
-type Counts = Record<string, number>;
+// The states of the test accounts (#944): demo-21 Nouveau, demo-22 Mercato, demo-23 Direct,
+// demo-24 Joker.
+const tester = (n: number) => `'00000000-0000-4000-9000-${String(n).padStart(12, "0")}'::uuid`;
+const states = `select json_build_object(
+  'nouveauProfile', exists (select 1 from profiles where id = ${tester(21)} and pseudo = 'Démo Nouveau'
+                            and club_id is null and not is_admin),
+  'nouveauPredictions', (select count(*) from predictions where user_id = ${tester(21)}),
+  'nouveauLeagues', (select count(*) from league_members where user_id = ${tester(21)})
+                    + (select count(*) from manager_members where user_id = ${tester(21)}),
+  'mercatoRoundUnderWay', exists (
+    select 1 from manager_members m
+    join manager_leagues l on l.id = m.league_id
+    cross join lateral private.manager_open_round(l.id) o
+    where m.user_id = ${tester(22)} and l.mercato_opened_at <= now() and l.mercato_closed_at is null
+      and o.ends_at > now()),
+  'directDuelUnderWay', exists (
+    select 1 from manager_fixtures f
+    join manager_matchdays d using (league_id, round)
+    join manager_scores s on s.league_id = f.league_id and s.competition_id = d.competition_id
+                         and s.user_id = ${tester(23)}
+    where ${tester(23)} in (f.home_id, f.away_id) and s.total > 0
+      and exists (select 1 from events e join results r on r.event_id = e.id
+                  where e.competition_id = d.competition_id)
+      and exists (select 1 from events e where e.competition_id = d.competition_id
+                  and e.starts_at > now())),
+  'directLockedWithFriends', exists (
+    select 1 from predictions p
+    join events e on e.id = p.event_id
+    where p.user_id = ${tester(23)} and e.lock_at <= now()
+      and not exists (select 1 from results r where r.event_id = e.id)
+      and exists (select 1 from predictions f
+                  join league_members a on a.user_id = f.user_id
+                  join league_members b on b.league_id = a.league_id and b.user_id = ${tester(23)}
+                  where f.event_id = e.id and f.user_id <> ${tester(23)})),
+  'jokerPoints', (select coalesce(sum(points), 0) from score_events where user_id = ${tester(24)}),
+  'jokerBadges', (select count(*) from user_badges where user_id = ${tester(24)}),
+  'jokerOnLive', exists (select 1 from predictions p join competitions c on c.id = p.competition_id
+                         where p.user_id = ${tester(24)} and p.use_joker and c.status = 'live'),
+  'testerAdmins', (select count(*) from profiles
+                   where id in (${[21, 22, 23, 24].map(tester).join(", ")}) and is_admin)
+)::text;`;
 
-function loadTwice(): [Counts, Counts] {
-  const output = sqlScript(`begin;\n${body}\n${counts}\n${body}\n${counts}\nrollback;\n`);
-  const lines = output.split("\n").filter((line) => line.startsWith("{"));
-  return [JSON.parse(lines[0]!) as Counts, JSON.parse(lines[1]!) as Counts];
+type Counts = Record<string, number | boolean>;
+
+function loadTwice(): [Counts, Counts, Counts, Counts] {
+  const output = sqlScript(
+    `begin;\n${body}\n${counts}\n${states}\n${body}\n${counts}\n${states}\nrollback;\n`,
+  );
+  const [first, firstStates, second, secondStates] = output
+    .split("\n")
+    .filter((line) => line.startsWith("{"))
+    .map((line) => JSON.parse(line) as Counts);
+  return [first!, second!, firstStates!, secondStates!];
 }
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -50,19 +97,39 @@ if (url && key) {
 
       expect(second).toEqual(first);
       expect(first).toMatchObject({
-        players: 20,
+        players: 24,
         leagues: 3,
         competitions: 6,
         athletes: 60,
         records: 120,
-        managerLeagues: 1,
-        managerAwards: 48,
-        matchdays: 6,
-        managerScores: 4,
+        managerLeagues: 3,
+        managerAwards: 96,
+        matchdays: 11,
+        managerScores: 8,
       });
       expect(first.predictions).toBeGreaterThan(500);
       expect(first.points).toBeGreaterThan(0);
       expect(first.results).toBeGreaterThan(0);
+    });
+
+    it("keeps each test account in the state it is named after, load after load", () => {
+      const [, , first, second] = loadTwice();
+
+      for (const states of [first, second]) {
+        expect(states).toEqual({
+          nouveauProfile: true,
+          nouveauPredictions: 0,
+          nouveauLeagues: 0,
+          mercatoRoundUnderWay: true,
+          directDuelUnderWay: true,
+          directLockedWithFriends: true,
+          jokerPoints: expect.any(Number) as number,
+          jokerBadges: 1,
+          jokerOnLive: true,
+          testerAdmins: 0,
+        });
+        expect(states.jokerPoints).toBeGreaterThan(0);
+      }
     });
   });
 } else {

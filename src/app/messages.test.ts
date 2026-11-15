@@ -44,7 +44,7 @@ describe("incomplete Manager team text", () => {
 });
 
 describe("league period text", () => {
-  const { period, competitionCount, nextCompetition } = messages.leagues;
+  const { period, competitionCount, nextCompetition, liveCompetition } = messages.leagues;
 
   it.each([
     ["2027-06", "2027-06", "juin 2027"],
@@ -60,6 +60,7 @@ describe("league period text", () => {
     expect(nextCompetition("Meeting de Testville", "2027-06-12")).toBe(
       "Prochaine : Meeting de Testville, 12 juin",
     );
+    expect(liveCompetition("Meeting de Testville")).toBe("En cours : Meeting de Testville");
   });
 });
 
@@ -118,5 +119,21 @@ describe("competition programme text (#936)", () => {
     [12, "12 épreuves"],
   ])("writes %i finals as %s", (finals, text) => {
     expect(messages.start.program(finals)).toBe(text);
+  });
+});
+
+describe("season label of the general ranking", () => {
+  const season = messages.ranking.scope.season;
+
+  it("writes one year when the season is within a year", () => {
+    expect(season({ from: 2026, to: 2026 })).toBe("Toute la saison 2026");
+  });
+
+  it("writes both years when the season spans two years", () => {
+    expect(season({ from: 2026, to: 2027 })).toBe("Toute la saison 2026-27");
+  });
+
+  it("writes the season alone without competition", () => {
+    expect(season(null)).toBe("Toute la saison");
   });
 });

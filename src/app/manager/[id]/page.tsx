@@ -23,8 +23,14 @@ import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
 import { utcToParis } from "@/domain/competition";
 import type { FeedGroup } from "@/domain/league-moments";
-import { PLANNED_ROUNDS, playersAwaited, seasonFormat } from "@/domain/manager-league";
-import { roundEndsAt, roundHours } from "@/domain/manager-round";
+import {
+  PLANNED_ROUNDS,
+  mercatoCalendar,
+  mercatoStatus,
+  playersAwaited,
+  seasonFormat,
+} from "@/domain/manager-league";
+import { roundHours } from "@/domain/manager-round";
 import {
   createSupabaseManagerFeedRepository,
   createSupabaseManagerLineups,
@@ -95,6 +101,10 @@ export default async function ManagerLeaguePage({
   const isOwner = league.ownerId === ports.userId;
   const open = mercato.openedAt !== null;
   const calendarStart = mercato.openedAt ?? mercato.startsAt;
+  const status = mercatoStatus(mercato.openedAt, rules.rounds, now.toISOString());
+  const calendar = calendarStart
+    ? mercatoCalendar(calendarStart, rules.rounds, now.toISOString(), open)
+    : null;
   const format = seasonFormat(league.competitions.length);
   // The creator may add competitions still available until the mercato opens.
   const available =
@@ -159,8 +169,10 @@ export default async function ManagerLeaguePage({
               role="status"
               className={`flex flex-col gap-1 rounded-2xl px-3.5 py-3 text-sm font-semibold ${open || awaited === 0 ? "bg-success/15 text-success-text" : "bg-muted text-foreground"}`}
             >
-              {open ? (
-                <p>{text.mercatoOpened(text.when(mercato.openedAt!))}</p>
+              {status.phase === "round" ? (
+                <p>{text.mercatoRound(status.round, text.when(status.endsAt))}</p>
+              ) : status.phase === "over" ? (
+                <p>{text.mercatoOver}</p>
               ) : (
                 <>
                   <p>{awaited === 0 ? text.ready : text.awaited(awaited)}</p>
@@ -215,19 +227,33 @@ export default async function ManagerLeaguePage({
                 aria-labelledby="calendar"
                 className="flex flex-col gap-1 rounded-card bg-muted p-4 text-sm"
               >
-                {Array.from({ length: PLANNED_ROUNDS }, (_, i) => i + 1).map((n) => (
-                  <li key={n}>
-                    <span className="font-semibold">
-                      {text.calendarRound(n, roundHours(rules.rounds, n))}
-                    </span>
-                    {calendarStart && (
-                      <span className="text-muted-foreground">
-                        {" "}
-                        {text.calendarEnds(text.when(roundEndsAt(calendarStart, rules.rounds, n)))}
-                      </span>
-                    )}
-                  </li>
-                ))}
+                {calendar
+                  ? calendar.map((r) => (
+                      <li
+                        key={r.round}
+                        aria-current={r.state === "current" ? "step" : undefined}
+                        className={`flex flex-wrap items-baseline gap-x-1.5 ${r.state === "past" ? "text-muted-foreground" : ""}`}
+                      >
+                        <span className="font-semibold">
+                          {text.calendarRound(r.round, r.hours)}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {text.calendarEnds(text.when(r.endsAt))}
+                        </span>
+                        {r.state !== "upcoming" && (
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs font-bold ${r.state === "current" ? "bg-success/15 text-success-text" : "bg-background text-muted-foreground"}`}
+                          >
+                            {r.state === "current" ? text.calendarCurrent : text.calendarPast}
+                          </span>
+                        )}
+                      </li>
+                    ))
+                  : Array.from({ length: PLANNED_ROUNDS }, (_, i) => i + 1).map((n) => (
+                      <li key={n} className="font-semibold">
+                        {text.calendarRound(n, roundHours(rules.rounds, n))}
+                      </li>
+                    ))}
               </ol>
             </section>
 
@@ -248,45 +274,22 @@ export default async function ManagerLeaguePage({
               </section>
             )}
 
-            <Link href={`/manager/${league.id}/catalogue`} className={`${buttonVariants()} w-full`}>
-              {text.catalogueLink}
-            </Link>
-            <Link
-              href={`/manager/${league.id}/equipe`}
-              className={`${buttonVariants({ variant: "muted" })} w-full`}
-            >
-              {messages.team.link}
-            </Link>
-            <Link
-              href={`/manager/${league.id}/alignement`}
-              className={`${buttonVariants({ variant: "muted" })} w-full`}
-            >
-              {messages.lineup.link}
-            </Link>
-            {open && (
-              <>
-                <Link
-                  href={`/manager/${league.id}/journee`}
-                  className={`${buttonVariants({ variant: "muted" })} w-full`}
-                >
-                  {messages.managerChampionship.matchdayLink}
-                </Link>
-                <Link
-                  href={`/manager/${league.id}/classement`}
-                  className={`${buttonVariants({ variant: "muted" })} w-full`}
-                >
-                  {messages.managerChampionship.standingsLink}
-                </Link>
-              </>
-            )}
-            {season !== "error" && season.lastPoints && (
-              <Link
-                href={`/manager/${league.id}/points/${season.lastPoints}`}
-                className={`${buttonVariants({ variant: "muted" })} w-full`}
-              >
-                {messages.managerHome.lastPoints}
-              </Link>
-            )}
+            <nav aria-label={text.screens}>
+              <ul className="flex flex-col gap-2">
+                {leagueScreens(league.id, open, season === "error" ? null : season.lastPoints).map(
+                  (screen, i) => (
+                    <li key={screen.href}>
+                      <Link
+                        href={screen.href}
+                        className={`${buttonVariants(i === 0 ? {} : { variant: "muted" })} w-full`}
+                      >
+                        {screen.label}
+                      </Link>
+                    </li>
+                  ),
+                )}
+              </ul>
+            </nav>
 
             <section aria-labelledby="participants" className="flex flex-col gap-2">
               <h2
@@ -343,6 +346,32 @@ export default async function ManagerLeaguePage({
       </div>
     </main>
   );
+}
+
+/**
+ * The screens of the league, each one a link (#926): the mercato catalogue first, the matchday
+ * and the standings once the mercato opened, the last points once there are some.
+ */
+function leagueScreens(
+  leagueId: string,
+  open: boolean,
+  lastPoints: string | null,
+): { href: string; label: string }[] {
+  const base = `/manager/${leagueId}`;
+  return [
+    { href: `${base}/catalogue`, label: text.catalogueLink },
+    { href: `${base}/equipe`, label: messages.team.link },
+    { href: `${base}/alignement`, label: messages.lineup.link },
+    ...(open
+      ? [
+          { href: `${base}/journee`, label: messages.managerChampionship.matchdayLink },
+          { href: `${base}/classement`, label: messages.managerChampionship.standingsLink },
+        ]
+      : []),
+    ...(lastPoints
+      ? [{ href: `${base}/points/${lastPoints}`, label: messages.managerHome.lastPoints }]
+      : []),
+  ];
 }
 
 /** The feed of the league (#875); its own error does not hide the league. */

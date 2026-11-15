@@ -97,12 +97,12 @@ test("a participant lines up their team before a competition and can no longer c
   await expect(validate).toBeDisabled();
   await expect(page.getByText("À remplir : Sprint, Demi-fond, Libre")).toBeVisible();
 
-  // Tap a spot of the stadium, then pick an athlete in the sheet: the others are greyed.
+  // Tap a spot of the stadium, then pick an athlete in the sheet: only those who fit are listed.
   const sheet = page.getByRole("dialog");
   await page.getByRole("button", { name: "Place Sprint, vide" }).click();
   await expect(sheet.getByRole("heading", { name: "Place Sprint" })).toBeVisible();
-  await expect(sheet.getByRole("button", { name: new RegExp(runner) })).toBeDisabled();
-  await expect(sheet.getByRole("button", { name: new RegExp(thrower) })).toContainText("Absent·e");
+  await expect(sheet.getByRole("button", { name: new RegExp(runner) })).toHaveCount(0);
+  await expect(sheet.getByRole("button", { name: new RegExp(thrower) })).toHaveCount(0);
   await sheet.getByRole("button", { name: new RegExp(sprinter) }).click();
   await expect(
     page.getByRole("button", { name: `Place Sprint : ${sprinter}, changer` }),
