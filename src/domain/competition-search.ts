@@ -79,9 +79,18 @@ export function rankingScopeGroups<T extends Searchable>(
   };
 }
 
-/** The years a season spans (« 2026-27 »), from its first to its last competition; null if none. */
-export function seasonYears(competitions: Searchable[]): { from: number; to: number } | null {
+/**
+ * The years a season spans (« 2026-27 »), from its first competition to the last one held by
+ * `today` (YYYY-MM-DD): the coming ones are left aside, so a test competition far ahead (« 2099 »)
+ * never stretches the label (#924). Before the first competition, its year alone; null if none.
+ */
+export function seasonYears(
+  competitions: Searchable[],
+  today: string,
+): { from: number; to: number } | null {
   if (competitions.length === 0) return null;
-  const years = competitions.map((c) => Number(c.startsOn.slice(0, 4)));
+  const yearOf = (c: Searchable) => Number(c.startsOn.slice(0, 4));
+  const held = competitions.filter((c) => c.startsOn <= today).map(yearOf);
+  const years = held.length > 0 ? held : [Math.min(...competitions.map(yearOf))];
   return { from: Math.min(...years), to: Math.max(...years) };
 }
