@@ -316,7 +316,7 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 |---|---|
 | Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions`, `league_families` |
 | Référentiel | `competitions`, `events` (dont `kind` et `sub_disciplines` des épreuves combinées), `athletes`, `entries` (liste de départ), `results`, `athlete_records` (PR, SB, WR, WB) |
-| Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions`, `badges`, `user_badges` (niveau de badge gagné, #821), `trophies` et `trophy_settings` (trophées de saison et compte FrenchTrack du Témoin d'or, #822) |
+| Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions`, `badges`, `user_badges` (niveau de badge gagné, #821), `trophies` et `trophy_settings` (trophées de saison et compte FrenchTrack du Témoin d'or, #822), `fun_facts` et `fun_fact_settings` (« Le saviez-vous ? », #766) |
 | Notifications | `push_subscriptions`, `reminder_settings`, `reminder_log`, `program_alerts` |
 | Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
 | Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()`, `raise_my_badge_levels()`, `event_consensus()`, `save_reminder_settings()`, `admin_replace_trophies()` |
@@ -570,6 +570,17 @@ des joueurs du club, 3 joueurs au moins) ; derniers pronos et historique complet
 (`/profil/carte`, image 1080×1920 via `next/og`, #388) qui ne reprend que des données publiques
 (`seasonCardOf`, `src/domain/season-card.ts` : pseudo, dossard, chiffres de la saison, club validé)
 et se partage par le partage natif du téléphone, ou se télécharge à défaut.
+
+« Le saviez-vous ? » (v0.19, #766) : une carte en haut de l'accueil du joueur, un fait d'athlé,
+son étiquette (« Pour tes pronos », « Insolite », « Pour briller au bar »), « Un autre » et × qui la
+ferme jusqu'au lendemain (jour de Paris, retenu sur l'appareil). La banque vit dans `fun_facts`
+(48 faits de départ chargés par la migration, chacun avec sa source, lue par l'admin seul) ;
+l'admin ajoute, modifie, désactive, supprime les faits et affiche ou masque la carte depuis
+`/admin/le-saviez-vous`, sans déploiement. Un fait lié à une compétition, une discipline ou des
+dates passe en premier ces jours-là, puis la banque tourne d'un fait par jour (`factsOfTheDay`,
+`src/domain/fun-facts.ts`). Les faits sur le jeu (podium parfait, joker, perf) ne sont pas dans
+la banque : leurs chiffres viennent de `scorePrediction` appliqué au barème en cours
+(`gameFigures`), jamais tapés à la main.
 
 Fil de ligue (v0.19, #671) : l'app raconte les moments de chaque ligue de pronos, personne n'y
 écrit (pas de texte libre, non-objectif 6). Les moments se déduisent en TypeScript des lignes de

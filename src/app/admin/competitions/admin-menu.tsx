@@ -47,6 +47,7 @@ const GROUPS: { key: keyof typeof text.groups | null; items: [string, AdminSecti
       ["/admin/joueurs", "players"],
       ["/admin/joueurs-demo", "demoPlayers"],
       ["/admin/ligues", "leagues"],
+      ["/admin/le-saviez-vous", "funFacts"],
     ],
   },
   { key: null, items: [["/admin/historique", "history"]] },
