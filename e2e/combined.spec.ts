@@ -6,6 +6,8 @@ test("a combined event lists its disciplines and offers the same podium predicti
   page,
 }) => {
   // A heptathlon of the competition, open, with the start list of an existing women's event.
+  // A failed run leaves its heptathlon behind: the next run removes it (#953).
+  sql(`delete from events where slug like 'e2e-heptathlon-%'`);
   const slug = `e2e-heptathlon-${Date.now() % 1000000}`;
   sql(`with e as (
       insert into events (competition_id, slug, discipline, gender, starts_at, lock_at, kind, sub_disciplines)
@@ -18,15 +20,17 @@ test("a combined event lists its disciplines and offers the same podium predicti
     select e.id, en.athlete_id from e, entries en
     where en.event_id = (select id from events where slug = 'f-100m' limit 1)`);
 
-  await page.goto(`/epreuves/${slug}`);
+  try {
+    await page.goto(`/epreuves/${slug}`);
 
-  const disciplines = page.getByRole("region", { name: "Épreuve combinée · 7 disciplines" });
-  await expect(disciplines.getByRole("listitem")).toHaveCount(7);
-  await expect(disciplines.getByRole("listitem").last()).toContainText("800 m");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Heptathlon");
-  await expect(
-    page.locator("main").getByRole("link", { name: "Se connecter", exact: true }),
-  ).toBeVisible();
-
-  sql(`delete from events where slug = '${slug}'`);
+    const disciplines = page.getByRole("region", { name: "Épreuve combinée · 7 disciplines" });
+    await expect(disciplines.getByRole("listitem")).toHaveCount(7);
+    await expect(disciplines.getByRole("listitem").last()).toContainText("800 m");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Heptathlon");
+    await expect(
+      page.locator("main").getByRole("link", { name: "Se connecter", exact: true }),
+    ).toBeVisible();
+  } finally {
+    sql(`delete from events where slug = '${slug}'`);
+  }
 });
