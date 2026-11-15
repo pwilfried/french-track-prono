@@ -490,7 +490,10 @@ export const messages = {
     awaited: (n: number) => (n <= 1 ? "Encore 1 joueur attendu." : `Encore ${n} joueurs attendus.`),
     opensAt: (when: string) =>
       `Le mercato s'ouvrira le ${when} (heure de Paris) si tous les joueurs sont là ; sinon il attendra.`,
-    mercatoOpened: (when: string) => `Mercato ouvert depuis le ${when} (heure de Paris).`,
+    /** The status of an open mercato, from its planned rounds (#925). */
+    mercatoRound: (round: number, when: string) =>
+      `Tour ${round} en cours jusqu'au ${when} (heure de Paris).`,
+    mercatoOver: "Mercato terminé.",
     /** An instant in Paris time: « samedi 10 janvier à 20:00 ». */
     when: (iso: string) =>
       new Date(iso).toLocaleString("fr-FR", {
@@ -541,6 +544,8 @@ export const messages = {
     calendarTitle: "Calendrier des tours",
     calendarRound: (n: number, hours: number) => `Tour ${n} · ${hours} h`,
     calendarEnds: (when: string) => `jusqu'au ${when}`,
+    calendarPast: "terminé",
+    calendarCurrent: "en cours",
     saveMercato: "Enregistrer les réglages",
     savingMercato: "Enregistrement…",
     mercatoSaved: "Réglages enregistrés.",
