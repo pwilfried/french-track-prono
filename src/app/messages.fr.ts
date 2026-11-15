@@ -2581,6 +2581,11 @@ export const messages = {
       browse: "Voir les compétitions",
     },
   },
+  notFound: {
+    title: "Page introuvable",
+    body: "Cette adresse ne mène nulle part. Le lien est peut-être ancien ou mal recopié.",
+    home: "Retour à l'accueil",
+  },
   globalError: {
     title: "Oups, la page est tombée",
     body: "Une erreur nous empêche de l'afficher. On est prévenus ; réessaie dans un instant.",
