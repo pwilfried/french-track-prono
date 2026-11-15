@@ -17,7 +17,7 @@ const TONE: Record<MomentKind, ChipTone> = {
 };
 
 /** The sentence of a moment, written from its facts: no text is ever stored (#671). */
-export function momentText(moment: FeedMoment): string {
+function momentText(moment: FeedMoment): string {
   switch (moment.kind) {
     case "perfect_podium":
       return text.text.perfect_podium(
@@ -45,6 +45,18 @@ export function momentText(moment: FeedMoment): string {
   }
 }
 
+/** The emoji of a moment, in its round badge: the same on every card of a feed. */
+export function MomentIcon({ emoji }: { emoji: string }) {
+  return (
+    <span
+      aria-hidden
+      className="grid size-11 shrink-0 place-items-center rounded-full bg-muted text-xl"
+    >
+      {emoji}
+    </span>
+  );
+}
+
 /**
  * One moment of the feed of a league: its label, the player's bib, the sentence; under it,
  * `children` (the reactions, #672). Outside the league (the community block of the home, #673),
@@ -62,12 +74,7 @@ export function MomentCard({
   return (
     <article className="flex flex-col gap-3 rounded-2xl border border-border bg-card px-3.5 py-3">
       <div className="flex items-start gap-3">
-        <span
-          aria-hidden
-          className="grid size-11 shrink-0 place-items-center rounded-full bg-muted text-xl"
-        >
-          {text.emoji[moment.kind]}
-        </span>
+        <MomentIcon emoji={text.emoji[moment.kind]} />
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <ChipStatus tone={TONE[moment.kind]}>{text.label[moment.kind]}</ChipStatus>
