@@ -14,6 +14,7 @@ import { getMyPredictionHistory } from "@/application/list-my-predictions";
 import { getClubRanking } from "@/application/rankings";
 import { BadgeCelebration } from "@/components/profile/badge-celebration";
 import { BadgeGrid } from "@/components/profile/badge-grid";
+import { ProfileHelp } from "@/components/profile/profile-help";
 import { ProfileStart } from "@/components/profile/profile-start";
 import { TrophyShowcase } from "@/components/profile/trophy-showcase";
 import { Bib } from "@/components/profile/bib";
@@ -197,6 +198,7 @@ export default async function ProfilePage({
               ? `${messages.band.animals[animal]} · ${messages.band.families[animal]}`
               : messages.band.noAnimal}
           </p>
+          <ProfileHelp className="-my-2" />
           {season && !starting && (
             <p className="flex flex-wrap items-baseline gap-x-2">
               <span className="font-mono text-3xl font-bold">{season.points}</span>
