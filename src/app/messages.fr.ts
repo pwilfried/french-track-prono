@@ -1159,7 +1159,54 @@ export const messages = {
     copied: "✓ Copié",
     shareText: (name: string) => `Rejoins ma ligue « ${name} » sur French Track Prono`,
     linkNote: "Le lien ouvre la ligue directement après connexion.",
-    tabs: { ranking: "Classement", members: "Membres" },
+    tabs: { ranking: "Classement", members: "Membres", feed: "Fil" },
+    /** The feed of a league (#671): the app tells the moments, nobody writes in it. */
+    feed: {
+      title: "Les moments de la ligue",
+      empty:
+        "Rien encore. Le fil raconte les podiums parfaits, les changements de leader et les séries dès les premiers résultats.",
+      tonight: (competition: string | null) =>
+        competition ? `Ce soir · ${competition}` : "Ce soir",
+      yesterday: "Hier",
+      day: (day: string) =>
+        new Date(`${day}T12:00:00Z`).toLocaleDateString("fr-FR", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          timeZone: "Europe/Paris",
+        }),
+      label: {
+        perfect_podium: "Podium parfait",
+        new_leader: "Nouveau leader",
+        duel_result: "Duel",
+        mercato_win: "Mercato",
+        badge: "Badge",
+        streak: "Série",
+      },
+      emoji: {
+        perfect_podium: "🎯",
+        new_leader: "👑",
+        duel_result: "⚔️",
+        mercato_win: "🤝",
+        badge: "🏅",
+        streak: "🔥",
+      },
+      text: {
+        perfect_podium: (pseudo: string, event: string | null) =>
+          event
+            ? `${pseudo} trouve le podium parfait du ${event}.`
+            : `${pseudo} trouve un podium parfait.`,
+        new_leader: (pseudo: string) => `${pseudo} prend la tête de la ligue.`,
+        duel_result: (pseudo: string, other: string | null, scores: [number, number] | null) =>
+          `${pseudo} bat ${other ?? "son adversaire"}${scores ? ` ${scores[0]} à ${scores[1]}` : ""}.`,
+        mercato_win: (pseudo: string, athlete: string | null, price: number | null) =>
+          `${pseudo} remporte ${athlete ?? "un athlète"} au mercato${price !== null ? ` pour ${price} crédits` : ""}.`,
+        badge: (pseudo: string, badge: string | null) =>
+          badge ? `${pseudo} gagne le badge « ${badge} ».` : `${pseudo} gagne un nouveau badge.`,
+        streak: (pseudo: string, length: number | null) =>
+          `${pseudo} enchaîne ${length ?? 5} pronos qui rapportent d'affilée.`,
+      },
+    },
     owner: "Créateur",
     tieRule: "Égalité : podiums parfaits, puis vainqueurs trouvés. Toujours égaux : même place.",
     handOver: "Confier la ligue à un membre",

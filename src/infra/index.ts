@@ -125,3 +125,8 @@ export { createInMemoryBadgeLevelStore } from "./in-memory/badge-level-repositor
 export { createSupabaseBadgeLevelRepository } from "./supabase/badge-level-repository";
 export { createInMemoryFunFactStore } from "./in-memory/fun-fact-repository";
 export { createSupabaseFunFactRepository } from "./supabase/fun-fact-repository";
+export {
+  createInMemoryLeagueMomentStore,
+  type MomentEventFixture,
+} from "./in-memory/league-moment-repository";
+export { createSupabaseLeagueMomentRepository } from "./supabase/league-moment-repository";

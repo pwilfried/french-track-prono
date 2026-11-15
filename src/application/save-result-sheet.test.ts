@@ -15,11 +15,13 @@ import { worldAthleticsPoints } from "@/domain/world-athletics-points";
 import type { PointsRepository, ScoreLine } from "./compute-event-points";
 import { getPerformanceSheet, type PerformanceRepository } from "./enter-performances";
 import { UseCaseError } from "./errors";
+import type { LeagueMomentRepository } from "./league-moments";
 import type {
   ManagerScoreLine,
   ManagerScoreRepository,
   ScoringParticipant,
 } from "./manager-scores";
+import type { RankingRepository } from "./rankings";
 import { recomputeResultSheet, saveResultSheet } from "./save-result-sheet";
 
 const NOW = () => new Date("2026-07-10T20:00:00Z");
@@ -119,7 +121,18 @@ function world(options: { predictions?: Pick[]; participants?: ScoringParticipan
       },
       mine: async () => null,
     };
-    return { performances, points, scores, now: NOW };
+    // The leagues' moments are published from the prediction points stored (#671).
+    const moments: LeagueMomentRepository = {
+      leaguesOf: async () => {
+        if (!isAdmin) return "not_admin";
+        calls.push("moments");
+        return [];
+      },
+      publish: async () => 0,
+      feed: async () => [],
+    };
+    const ranking: RankingRepository = { competitionLines: async () => [] };
+    return { performances, points, scores, moments, ranking, now: NOW };
   };
 
   return {
@@ -180,8 +193,9 @@ describe("saveResultSheet", () => {
       { athleteId: "a4", status: "dnf", place: null, mark: null, records: [] },
     ]);
 
-    // Then the prediction points come first, then the Manager scores that add them
-    expect(w.calls).toEqual(["sheet", "predictions", "manager"]);
+    // Then the prediction points come first, then the Manager scores that add them, then the
+    // moments of the leagues
+    expect(w.calls).toEqual(["sheet", "predictions", "manager", "moments"]);
     expect(w.eventPoints("zoe")).toBe(12);
     expect(w.eventPoints("max")).toBe(0);
     const winner = worldAthleticsPoints("100 m", "F", 10.9)!;
@@ -224,7 +238,7 @@ describe("saveResultSheet", () => {
     // Then the predictions are scored and no Manager score is stored
     expect(w.eventPoints("zoe")).toBe(24);
     expect(saved.manager).toEqual([]);
-    expect(w.calls).toEqual(["sheet", "predictions"]);
+    expect(w.calls).toEqual(["sheet", "predictions", "moments"]);
   });
 
   it("tells the sheet a Manager league plays the competition, and who is lined up", async () => {
