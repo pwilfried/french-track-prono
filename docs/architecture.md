@@ -32,7 +32,8 @@ septembre 2026 (déjà terminée, rejouée dans une base de test).
 3. Pas d'import automatique des listes de départ ni des résultats : l'admin les saisit.
 4. Pas de pronostics sur les temps ou les marques : uniquement les podiums.
 5. Pas de résultats en direct : les points sont calculés quand les résultats officiels sont validés.
-6. Pas de messagerie libre : réactions emoji seulement, pour éviter la modération.
+6. Pas de messagerie libre : emojis d'une liste fixe et messages prédéfinis seulement, pour éviter
+   la modération (confirmé en v0.19 pour le fil de ligue, `docs/decisions/communaute.md`).
 7. Pas de photos d'athlètes (droits) : drapeau, initiales et couleurs à la place.
 8. Pas de mode hors ligne ni de langue d'interface autre que le français en v1.
 
@@ -77,6 +78,7 @@ Numérotées pour la planification. F11 et F12, d'abord repoussées, arrivent av
 | F18 | Gestion des profils : pseudo, dossard, e-mail, club, disciplines ; fiche minimale ; admin chercher, bloquer, supprimer (v0.10, `docs/decisions/profils.md`) | Un compte que le joueur maîtrise |
 | F19 | French Track Manager : équipe recrutée aux enchères secrètes, alignement avant chaque compétition, barème hongrois, bonus et pronos, championnat aller-retour (v0.12 à v0.16, `docs/decisions/french-track-manager.md`) | Jouer toute la saison en manager |
 | F20 | Ligues thématiques : une ligue limitée à une ou plusieurs familles d'épreuves (sprint, haies, lancers…), seul son classement change (v0.17, #613) | Jouer entre spécialistes d'une famille |
+| F21 | Communauté : fil de ligue écrit par l'app, réactions par emojis et messages prédéfinis, « Battez FrenchTrack », annonces et sondages de l'admin, « Le saviez-vous ? » (v0.19, `docs/decisions/communaute.md`) | Faire vivre les ligues sans texte libre |
 
 Barème (modifiable en base) : 3 points par athlète à la bonne place, 1 point pour un athlète sur
 le podium mais à la mauvaise place, +3 pour un podium parfait, +2 de bonus coup de flair
@@ -240,7 +242,8 @@ par le premier calcul (`frenchtrack_picks.scored_at`) : recalculer garde la date
 par épreuve.
 Données : table `frenchtrack_picks`, lue et écrite seulement par les fonctions de #674 ;
 `admin_set_frenchtrack_pick` et `admin_remove_frenchtrack_pick` (admin, refusées après le
-verrouillage, FT034), `frenchtrack_challenge(événement)` (podium caché avant le verrouillage sauf
+verrouillage, FT034), `admin_set_frenchtrack_points()` (appelée par le calcul des points de
+l'épreuve), `frenchtrack_challenge(événement)` (podium caché avant le verrouillage sauf
 pour l'admin, puis mes points et ceux de tous sans nom), `frenchtrack_challenges(année)` et
 `frenchtrack_season(année)` (pseudo et dossard seulement).
 
@@ -321,6 +324,7 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 | Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions`, `league_families` |
 | Référentiel | `competitions`, `events` (dont `kind` et `sub_disciplines` des épreuves combinées), `athletes`, `entries` (liste de départ), `results`, `athlete_records` (PR, SB, WR, WB) |
 | Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions`, `badges`, `user_badges` (niveau de badge gagné, #821), `trophies` et `trophy_settings` (trophées de saison et compte FrenchTrack du Témoin d'or, #822), `fun_facts` et `fun_fact_settings` (« Le saviez-vous ? », #766) |
+| Communauté (v0.19) | `league_moments`, `manager_moments`, `moment_reactions`, `moment_reaction_reports`, `frenchtrack_picks`, `announcements`, `polls`, `poll_votes` |
 | Notifications | `push_subscriptions`, `reminder_settings`, `reminder_log`, `program_alerts` |
 | Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
 | Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()`, `raise_my_badge_levels()`, `event_consensus()`, `save_reminder_settings()`, `admin_replace_trophies()` |
@@ -625,8 +629,8 @@ sont dans `messages.fr.ts`. Table `moment_reactions` : écritures par `add_momen
 l'admin voit les « Signalements du fil » en tête de la page « Ligues » du back-office, masque
 l'élément (`admin_hide_moment_reaction()`, il disparaît pour tous, noté dans l'historique) ou classe
 le signalement. Le joueur concerné par un moment reçoit une notification push regroupée quand
-d'autres y réagissent (`private.moment_reaction_due()`, famille « Ligues » de « Mes rappels », au
-plus une par heure, mêmes heures calmes).
+d'autres y réagissent (`private.moment_reaction_due()`, famille `league` de `reminder_settings`,
+encore masquée dans « Mes rappels », #903 ; au plus une par heure, mêmes heures calmes).
 
 Fil d'une ligue Manager et badges (v0.19, #875) : l'onglet « Fil » de la page d'une ligue Manager
 (`?onglet=fil`, à côté de « Saison ») raconte les athlètes gagnés à la révélation de chaque tour
@@ -657,7 +661,8 @@ les clés VAPID, des rappels groupés (#681, règles de référence dans `src/do
   compétition finies et les scores Manager calculés depuis moins de 24 h), aux deux joueurs.
 
 « Mes rappels » (`/profil/rappels`) : un interrupteur par famille (Pronos oubliés, Résultats du
-soir, Manager ; « Ma ligue » et « FrenchTrack » sont stockées mais masquées jusqu'à v0.19), le
+soir, Manager ; « Ma ligue » et « FrenchTrack » sont stockées mais masquées : « Ma ligue » commande
+déjà les notifications de réactions au fil depuis v0.19, son interrupteur arrive avec #903), le
 délai avant verrou, les heures calmes (23 h–8 h par défaut, heure de Paris). Rien ne part pendant
 les heures calmes : ce qui reste dû part à leur fin. Réglages dans `reminder_settings` (sans ligne :
 valeurs par défaut), écrite seulement par `save_reminder_settings()` ; ce qui est parti est noté
@@ -725,6 +730,7 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 | v0.17.1 Préprod en ligne | Site de préprod à adresse fixe déployé à chaque fusion dans `main` (projets Supabase et Vercel séparés, jeu de démo fictif), tests e2e après chaque déploiement et chaque matin, connexion en tant qu'un joueur démo, tag posé sans feu vert humain, bloqué par une préprod rouge | …chaque PR fusionnée dans main est visible quelques minutes plus tard sur un site de préprod à adresse fixe, branché sur sa propre base Supabase avec des données fictives, sans toucher à la prod |
 | v0.18 Fiche athlète, consensus et rappels | Fiche athlète (records seulement), consensus des pronos après verrouillage, rappels groupés et « Mes rappels », rappels Manager, bande d'animaux, badges en bronze, argent, or et badges de famille, trophées de saison, icône du lièvre | …depuis une épreuve, le mercato ou une équipe Manager, un joueur ouvre la fiche d'un athlète et voit ses records par discipline ; après le verrouillage d'une épreuve, il voit ce qu'ont pronostiqué tous les joueurs et sa ligue ; il reçoit au plus un rappel groupé avant un verrou s'il lui manque des podiums, et règle ses rappels dans son profil ; il voit aussi sa bande, ses dossards et la vitrine de ses trophées |
 | v0.18.1 Premiers pas du joueur | Profil sans épreuve calculée réduit à un encart (prochain badge, prochaine finale), cartes d'épreuve avec l'animal de la famille, le temps restant, mon podium et le vainqueur, « Complète ton profil » en carte compacte qui ouvre une feuille, présentation du Manager en trois écrans, squelettes de chargement, cache du navigateur et lignes de classement en cache | …un nouveau joueur, sur son téléphone, voit d'abord sa prochaine épreuve à pronostiquer, comprend la liste des épreuves d'un coup d'œil (à faire, terminée et ce qu'elle lui a rapporté), trouve un profil qui ne montre pas de cases vides mais lui dit quoi faire pour le remplir, et découvre le Manager en trois écrans |
+| v0.19 Communauté | **F21** : fil de ligue (pronos et Manager : podium parfait, nouveau leader, série, enchère gagnée, confrontation, badge), réactions par emojis et messages prédéfinis avec signalement et masquage par l'admin, « Battez FrenchTrack » et son classement de saison, bloc « Dans ma communauté » et page `/communaute` (moments, annonces, sondages), dernier épisode dans la carte du podcast, « Le saviez-vous ? », « Complète ton profil » en deux étapes, carte de saison aux couleurs de l'animal | …dans chaque ligue, un fil raconte tout seul les moments marquants (pronos et Manager) et les joueurs y réagissent par emojis et messages prédéfinis, sans texte libre ; sur les grandes finales, chacun voit s'il a battu le prono de FrenchTrack et un classement de saison le suit ; l'accueil rassemble ces moments, les annonces et les sondages FrenchTrack |
 | Plus tard | Carte « Mon podium du 100 m », questions bonus, connexion Google / Apple | à planifier |
 
 ## Cas de test du cœur
