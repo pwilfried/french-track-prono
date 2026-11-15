@@ -833,8 +833,6 @@ export const messages = {
     choices: "Athlètes de ton équipe",
     onThisPlace: "Sur cette place",
     elsewhere: (place: string) => `Déjà sur la place ${place} : touche pour l'échanger`,
-    notEntered: "Absent·e : pas engagé·e dans cette compétition",
-    wrongFamily: (place: string) => `Ne va pas sur une place ${place}`,
     remove: "Retirer de cette place",
     noEligible: "Aucun athlète de ton équipe ne peut aller sur cette place.",
     validating: "Validation en cours…",
