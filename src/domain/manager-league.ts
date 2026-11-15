@@ -1,4 +1,4 @@
-import { roundEndsAt, type RoundRules } from "./manager-round";
+import { roundEndsAt, roundHours, type RoundRules } from "./manager-round";
 
 /**
  * A French Track Manager league plays a home-and-away championship (#644): with N players, each
@@ -45,6 +45,52 @@ const SEASON_MARGIN_MS = 3_600_000;
 /** When a mercato opening at `start` ends, after its planned rounds (ISO). */
 export const plannedMercatoEnd = (start: string, rounds: RoundRules) =>
   roundEndsAt(start, rounds, PLANNED_ROUNDS);
+
+/** Where a mercato stands at `now` (#925): not open yet, in round N until `endsAt`, or over. */
+export type MercatoStatus =
+  { phase: "waiting" } | { phase: "round"; round: number; endsAt: string } | { phase: "over" };
+
+/** The status of a mercato opened at `openedAt` (null: not yet), after its planned rounds. */
+export function mercatoStatus(
+  openedAt: string | null,
+  rounds: RoundRules,
+  now: string,
+): MercatoStatus {
+  if (openedAt === null) return { phase: "waiting" };
+  const current = mercatoCalendar(openedAt, rounds, now, true).find((r) => r.state === "current");
+  return current
+    ? { phase: "round", round: current.round, endsAt: current.endsAt }
+    : { phase: "over" };
+}
+
+export type CalendarRound = {
+  round: number;
+  hours: number;
+  endsAt: string;
+  state: "past" | "current" | "upcoming";
+};
+
+/**
+ * The planned rounds of a mercato starting at `start`, each passed, under way or upcoming at
+ * `now` (#925). Before the mercato is `open`, every round is upcoming.
+ */
+export function mercatoCalendar(
+  start: string,
+  rounds: RoundRules,
+  now: string,
+  open: boolean,
+): CalendarRound[] {
+  const at = Date.parse(now);
+  let begins = Date.parse(start);
+  return Array.from({ length: PLANNED_ROUNDS }, (_, i) => {
+    const round = i + 1;
+    const endsAt = roundEndsAt(start, rounds, round);
+    const ends = Date.parse(endsAt);
+    const state = !open || at < begins ? "upcoming" : at < ends ? "current" : "past";
+    begins = ends;
+    return { round, hours: roundHours(rounds, round), endsAt, state };
+  });
+}
 
 /** The competitions the season counts for a mercato ending at `mercatoEndsAt`, first one first. */
 export function seasonCompetitions<C extends { firstEventAt: string }>(
