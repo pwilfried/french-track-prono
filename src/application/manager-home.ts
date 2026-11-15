@@ -20,6 +20,7 @@ export type MySeason = {
   mercato: { round: number; endsAt: string } | null;
   /** Matchday N of M, from the draw of the schedule (the mercato close). */
   round: { current: number; total: number } | null;
+  /** The player's place, once a matchday is scored. */
   standing: {
     rank: number;
     points: number;
@@ -121,16 +122,18 @@ async function seasonOf(ports: Ports, leagueId: string, now: string): Promise<My
     ...base,
     step,
     round: { current: current.round, total: matchdays.length },
-    standing: row
-      ? {
-          rank: row.rank,
-          points: row.points,
-          wins: row.wins,
-          draws: row.draws,
-          losses: row.losses,
-          difference: row.difference,
-        }
-      : null,
+    // No place before matchday 1 is scored: everybody would be « 1re place » (#936).
+    standing:
+      row && scored.size > 0
+        ? {
+            rank: row.rank,
+            points: row.points,
+            wins: row.wins,
+            draws: row.draws,
+            losses: row.losses,
+            difference: row.difference,
+          }
+        : null,
     next: next && {
       round: next.round,
       home: next.home,

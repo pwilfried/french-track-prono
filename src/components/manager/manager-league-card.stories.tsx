@@ -96,6 +96,18 @@ export const LineupToDo: Story = {
     await expect(card).toHaveAccessibleDescription(/Saison · journée 3 sur 12 · 2e place/);
     await expect(card).toHaveAccessibleDescription(/Verrou d'alignement dans 2 j/);
     await expect(card).toHaveAccessibleDescription(/Alignement à valider/);
+    // Once per card (#936): the badge is the only « Alignement à valider ».
+    await expect(within(card).getAllByText(text.cue.lineup)).toHaveLength(1);
+  },
+};
+
+/** Before matchday 1 is scored: no place yet, everybody would be first (#936). */
+export const BeforeMatchdayOne: Story = {
+  args: { season: { ...lineup, round: { current: 1, total: 12 }, standing: null } },
+  play: async ({ canvasElement }) => {
+    const card = within(canvasElement).getByRole("link", { name: "Ligue des copains" });
+    await expect(card).toHaveAccessibleDescription(/Saison · journée 1 sur 12/);
+    await expect(card).not.toHaveAccessibleDescription(/place/);
   },
 };
 

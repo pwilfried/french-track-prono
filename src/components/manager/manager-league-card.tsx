@@ -43,17 +43,21 @@ export function ManagerLeagueCard({ league, season, now }: ManagerLeagueCardProp
     season?.step === "mercato" || season?.step === "lineup" ? text.cue[season.step] : null;
   const due = season && deadline(season, now);
   const metaId = `league-${league.id}-meta`;
+  const cueId = `league-${league.id}-cue`;
   return (
     <Link
       href={`/manager/${league.id}`}
       aria-label={league.name}
-      aria-describedby={metaId}
+      aria-describedby={cue ? `${metaId} ${cueId}` : metaId}
       className="flex min-h-16 flex-col gap-1 rounded-card border border-border bg-card p-3.5"
     >
       <span className="flex items-start gap-2">
         <span className="min-w-0 flex-1 break-words font-extrabold">{league.name}</span>
         {cue && (
-          <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
+          <span
+            id={cueId}
+            className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground"
+          >
             {cue}
           </span>
         )}
@@ -72,7 +76,6 @@ export function ManagerLeagueCard({ league, season, now }: ManagerLeagueCardProp
           {league.isPublic ? messages.manager.publicBadge : messages.manager.privateBadge}
         </span>
         {due && <span className="break-words">{due}</span>}
-        {cue && <span className="sr-only">{cue}</span>}
       </span>
     </Link>
   );
