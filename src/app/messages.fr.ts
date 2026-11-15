@@ -88,7 +88,7 @@ export const messages = {
     nextEvents: "Prochaines épreuves",
     noneOpen: "Plus aucune épreuve ouverte aux pronos.",
   },
-  /** « Le saviez-vous ? » (#766), at the top of the player's home. */
+  /** « Le saviez-vous ? » (#766), right under the next action on the player's home (#932). */
   funFacts: {
     heading: "Le saviez-vous ?",
     tag: {
