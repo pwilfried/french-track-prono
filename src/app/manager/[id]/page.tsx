@@ -248,45 +248,22 @@ export default async function ManagerLeaguePage({
               </section>
             )}
 
-            <Link href={`/manager/${league.id}/catalogue`} className={`${buttonVariants()} w-full`}>
-              {text.catalogueLink}
-            </Link>
-            <Link
-              href={`/manager/${league.id}/equipe`}
-              className={`${buttonVariants({ variant: "muted" })} w-full`}
-            >
-              {messages.team.link}
-            </Link>
-            <Link
-              href={`/manager/${league.id}/alignement`}
-              className={`${buttonVariants({ variant: "muted" })} w-full`}
-            >
-              {messages.lineup.link}
-            </Link>
-            {open && (
-              <>
-                <Link
-                  href={`/manager/${league.id}/journee`}
-                  className={`${buttonVariants({ variant: "muted" })} w-full`}
-                >
-                  {messages.managerChampionship.matchdayLink}
-                </Link>
-                <Link
-                  href={`/manager/${league.id}/classement`}
-                  className={`${buttonVariants({ variant: "muted" })} w-full`}
-                >
-                  {messages.managerChampionship.standingsLink}
-                </Link>
-              </>
-            )}
-            {season !== "error" && season.lastPoints && (
-              <Link
-                href={`/manager/${league.id}/points/${season.lastPoints}`}
-                className={`${buttonVariants({ variant: "muted" })} w-full`}
-              >
-                {messages.managerHome.lastPoints}
-              </Link>
-            )}
+            <nav aria-label={text.screens}>
+              <ul className="flex flex-col gap-2">
+                {leagueScreens(league.id, open, season === "error" ? null : season.lastPoints).map(
+                  (screen, i) => (
+                    <li key={screen.href}>
+                      <Link
+                        href={screen.href}
+                        className={`${buttonVariants(i === 0 ? {} : { variant: "muted" })} w-full`}
+                      >
+                        {screen.label}
+                      </Link>
+                    </li>
+                  ),
+                )}
+              </ul>
+            </nav>
 
             <section aria-labelledby="participants" className="flex flex-col gap-2">
               <h2
@@ -343,6 +320,32 @@ export default async function ManagerLeaguePage({
       </div>
     </main>
   );
+}
+
+/**
+ * The screens of the league, each one a link (#926): the mercato catalogue first, the matchday
+ * and the standings once the mercato opened, the last points once there are some.
+ */
+function leagueScreens(
+  leagueId: string,
+  open: boolean,
+  lastPoints: string | null,
+): { href: string; label: string }[] {
+  const base = `/manager/${leagueId}`;
+  return [
+    { href: `${base}/catalogue`, label: text.catalogueLink },
+    { href: `${base}/equipe`, label: messages.team.link },
+    { href: `${base}/alignement`, label: messages.lineup.link },
+    ...(open
+      ? [
+          { href: `${base}/journee`, label: messages.managerChampionship.matchdayLink },
+          { href: `${base}/classement`, label: messages.managerChampionship.standingsLink },
+        ]
+      : []),
+    ...(lastPoints
+      ? [{ href: `${base}/points/${lastPoints}`, label: messages.managerHome.lastPoints }]
+      : []),
+  ];
 }
 
 /** The feed of the league (#875); its own error does not hide the league. */
