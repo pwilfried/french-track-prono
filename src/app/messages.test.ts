@@ -98,6 +98,30 @@ describe("competition date range text", () => {
   });
 });
 
+describe("odds rule example (#936)", () => {
+  it("shows the exact product before the rounded points", () => {
+    expect(messages.rules.oddsExample("2,50", 3, 7.5, 8)).toBe(
+      "Exemple : une athlète à 2,50 à la bonne place rapporte 2,50 × 3 = 7,5, arrondi à 8 points en plus.",
+    );
+  });
+
+  it("gives the points alone when the product is whole", () => {
+    expect(messages.rules.oddsExample("2,00", 3, 6, 6)).toBe(
+      "Exemple : une athlète à 2,00 à la bonne place rapporte 2,00 × 3 = 6 points en plus.",
+    );
+  });
+});
+
+describe("competition programme text (#936)", () => {
+  it.each([
+    [0, "programme à venir"],
+    [1, "1 épreuve"],
+    [12, "12 épreuves"],
+  ])("writes %i finals as %s", (finals, text) => {
+    expect(messages.start.program(finals)).toBe(text);
+  });
+});
+
 describe("season label of the general ranking", () => {
   const season = messages.ranking.scope.season;
 
