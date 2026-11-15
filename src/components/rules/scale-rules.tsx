@@ -69,6 +69,7 @@ export function ScaleRules({
           {t.oddsExample(
             ODDS_EXAMPLE.toFixed(2).replace(".", ","),
             r("odds_exact"),
+            ODDS_EXAMPLE * r("odds_exact"),
             Math.round(ODDS_EXAMPLE * r("odds_exact")),
           )}
         </p>
