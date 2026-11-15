@@ -271,6 +271,15 @@ export default async function RankingPage({
               )}
             </>
           )}
+          {/* « Battez FrenchTrack » (#674): its own season ranking. */}
+          {user && view === "general" && (
+            <Link
+              href="/classement/frenchtrack"
+              className="inline-flex min-h-11 items-center self-center text-sm font-bold underline underline-offset-4"
+            >
+              {messages.challenge.seasonLink}
+            </Link>
+          )}
         </div>
       </div>
     </main>
