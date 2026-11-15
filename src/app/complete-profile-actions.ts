@@ -53,6 +53,7 @@ export async function completeProfileAction(
     if (error instanceof UseCaseError) return { ...state, error: error.code };
     throw error;
   }
+  // The home re-renders with `ask: false`; the card stays mounted and keeps its confirmation (#889).
   revalidatePath("/");
   revalidatePath("/profil");
   // The club shows on the player's line in the cached rankings (#824).

@@ -115,14 +115,15 @@ export default async function Home() {
           episode={latestEpisode(community?.announcements ?? [])}
           funFact={<FunFactCard facts={funFacts} />}
           completeProfile={
-            completeProfile ? (
-              <CompleteProfileCard
-                firstPodium={completeProfile.firstPodium}
-                search={findClubsAction}
-                save={completeProfileAction}
-                later={completeProfileLaterAction}
-              />
-            ) : null
+            <CompleteProfileCard
+              ask={completeProfile.ask}
+              firstPodium={completeProfile.firstPodium}
+              bib={completeProfile.bib}
+              pseudo={completeProfile.pseudo}
+              search={findClubsAction}
+              save={completeProfileAction}
+              later={completeProfileLaterAction}
+            />
           }
         />
       </div>

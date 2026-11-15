@@ -196,10 +196,18 @@ export const messages = {
       firstPodium: "Ton premier podium est posé !",
       title: "Complète ton profil",
       open: "Compléter",
-      text: "Ton club apparaît à côté de ton pseudo. Tes disciplines restent visibles par toi seul.",
       later: "Plus tard",
       laterLabel: "Plus tard : masquer pendant 30 jours",
-      familiesLabel: "Tes disciplines",
+      /** « Étape 1 sur 2 » above the title of each step (#889). */
+      step: (n: number) => `Étape ${n} sur 2`,
+      clubTitle: "Mon club",
+      clubText: "Ton club s'imprime sur ton dossard, à côté de ton pseudo.",
+      next: "Suivant",
+      familiesTitle: "Mes épreuves",
+      familiesText:
+        "Choisis ta bande : touche un animal pour l'allumer, plusieurs si tu veux. Tes épreuves restent visibles par toi seul.",
+      back: "Retour",
+      done: "C'est enregistré : ton profil est complet.",
       family: {
         sprint: "Sprint",
         hurdles: "Haies",

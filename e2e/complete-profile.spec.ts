@@ -25,11 +25,21 @@ test("a player without a club is asked to complete their profile, puts it off, t
   await expect(sheet).toBeHidden();
   await card.getByRole("button", { name: "Compléter" }).click();
   await expect(sheet).toBeVisible();
+  // Step 1, « Mon club »: the player's bib, the club search; the animals wait for step 2.
+  await expect(sheet.getByRole("heading", { name: /Mon club/ })).toBeVisible();
+  await expect(sheet.getByRole("img", { name: /^Dossard \d+, / })).toBeVisible();
+  await expect(sheet.getByRole("checkbox")).toHaveCount(0);
+  await sheet.getByRole("button", { name: "Suivant" }).click();
+  // Step 2, « Mes épreuves »: one animal per family, named under it.
+  await expect(sheet.getByRole("heading", { name: /Mes épreuves/ })).toBeVisible();
   await expect(sheet.getByRole("checkbox")).toHaveCount(6);
+  await expect(sheet.getByRole("checkbox", { name: /Guépard\s*Sprint/ })).toBeVisible();
   await expect(sheet.getByRole("link", { name: "Préciser les épreuves" })).toHaveAttribute(
     "href",
     "/profil/modifier",
   );
+  await sheet.getByRole("button", { name: "Retour" }).click();
+  await expect(sheet.getByRole("heading", { name: /Mon club/ })).toBeVisible();
 
   // Closing the sheet brings the player back to the home, the card still there.
   await sheet.getByRole("button", { name: "Fermer" }).click();
@@ -64,9 +74,20 @@ test("a player without a club is asked to complete their profile, puts it off, t
   await card.getByRole("button", { name: "Compléter" }).click();
   await sheet.getByLabel("Cherche ton club").fill("songeville");
   await sheet.getByRole("button", { name: /Stade Imaginaire Athlétisme/ }).click();
+  // The club prints at once on the bib.
+  await expect(sheet.getByRole("img", { name: /Stade Imaginaire Athlétisme/ })).toBeVisible();
+  await sheet.getByRole("button", { name: "Suivant" }).click();
   await sheet.getByText("Sprint", { exact: true }).click();
+  await expect(sheet.getByRole("checkbox", { name: /Guépard\s*Sprint/ })).toBeChecked();
+  // « Retour » keeps the club chosen.
+  await sheet.getByRole("button", { name: "Retour" }).click();
+  await expect(sheet.getByRole("img", { name: /Stade Imaginaire Athlétisme/ })).toBeVisible();
+  await sheet.getByRole("button", { name: "Suivant" }).click();
   await sheet.getByRole("button", { name: "Enregistrer" }).click();
+  // The confirmation shows in the sheet; the card is gone behind it.
+  await expect(sheet.getByRole("status")).toHaveText("C'est enregistré : ton profil est complet.");
   await expect(card).toHaveCount(0);
+  await sheet.getByRole("button", { name: "Fermer" }).click();
   await expect(sheet).toHaveCount(0);
   expect(
     sql(`select disciplines @> '{100 m,200 m}'::text[] from player_details
