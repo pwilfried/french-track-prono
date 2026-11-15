@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 import { messages } from "@/app/messages.fr";
+import { CountryFlag } from "@/components/athletes/country-flag";
 import { ChipStatus } from "@/components/ui/chip-status";
-import { flagOf } from "@/domain/flag";
 import type { CatalogueAthlete } from "@/domain/manager-catalogue";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +37,7 @@ export function CatalogueCard({
           aria-hidden
           className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-soft text-xl"
         >
-          {flagOf(countryCode) ?? <span className="text-xs font-bold">{countryCode}</span>}
+          <CountryFlag code={countryCode} />
         </span>
         {available ? (
           <ChipStatus tone="gold" className="font-mono text-sm">
