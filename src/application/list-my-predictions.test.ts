@@ -6,6 +6,7 @@ import { OTHER_ATHLETE } from "@/domain/podium-draft";
 import type { EventReader } from "./list-events";
 import {
   countPredictions,
+  findMyJokerElsewhere,
   getMyPredictionHistory,
   listMyEventMarks,
   listMyPredictions,
@@ -262,5 +263,67 @@ describe("getMyPredictionHistory", () => {
 
     expect(lines.map((l) => l.eventSlug)).toEqual(["e3-slug"]);
     expect(reads).toEqual(["e3-slug"]);
+  });
+});
+
+describe("findMyJokerElsewhere", () => {
+  const event = (id: string, lockAt: string): EventSummary => ({
+    id,
+    slug: `${id}-slug`,
+    discipline: "200 m",
+    gender: "M",
+    startsAt: lockAt,
+    lockAt,
+    isFeatured: false,
+    status: "upcoming",
+    round: "final",
+  });
+  const events = (list: EventSummary[]) => ({ listByCompetition: async () => list });
+  const now = new Date("2026-11-15T12:00:00Z");
+
+  it("names the other event of the competition where the joker is played, still movable before its lock", async () => {
+    // Given my joker on e1, still open, and a prediction without joker on e2
+    const useCase = findMyJokerElsewhere({
+      predictions: repositoryWith([prediction("me", "e1", true), prediction("me", "e2")]),
+      events: events([event("e1", "2026-11-16T10:00:00Z"), event("e2", "2026-11-16T12:00:00Z")]),
+    });
+
+    // When I open e2
+    const found = await useCase.execute({ userId: "me", competitionSlug: "c", eventId: "e2", now });
+
+    // Then the joker is said to be on e1, and it can be moved
+    expect(found).toEqual({
+      eventSlug: "e1-slug",
+      discipline: "200 m",
+      gender: "M",
+      movable: true,
+    });
+  });
+
+  it("says the joker can no longer move once its event is locked", async () => {
+    const useCase = findMyJokerElsewhere({
+      predictions: repositoryWith([prediction("me", "e1", true)]),
+      events: events([event("e1", "2026-11-14T10:00:00Z")]),
+    });
+
+    const found = await useCase.execute({ userId: "me", competitionSlug: "c", eventId: "e2", now });
+
+    expect(found?.movable).toBe(false);
+  });
+
+  it("finds nothing when the joker is on this event or not played", async () => {
+    const list = events([event("e1", "2026-11-16T10:00:00Z")]);
+    const onThisOne = findMyJokerElsewhere({
+      predictions: repositoryWith([prediction("me", "e1", true)]),
+      events: list,
+    });
+    const notPlayed = findMyJokerElsewhere({
+      predictions: repositoryWith([prediction("me", "e1")]),
+      events: list,
+    });
+
+    const input = { userId: "me", competitionSlug: "c", eventId: "e1", now };
+    expect(await onThisOne.execute(input)).toBeNull();
+    expect(await notPlayed.execute(input)).toBeNull();
   });
 });
