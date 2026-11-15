@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
@@ -6,7 +6,9 @@ import { newPlayer, signUp } from "./players";
 test("a player joins the Ligue FrenchTrack from my leagues and finds it among them", async ({
   page,
 }) => {
-  // The official league belongs to the admin account (#553): one is made when there is none yet.
+  // The official league belongs to the admin account (#553): one is made when there is none yet,
+  // and deleted at the end so the run leaves nothing behind (#947); in pre-production it exists.
+  const made = sql(`select count(*) from leagues where is_official`) === "0";
   const tag = `${Date.now() % 1000000}`;
   sql(`with u as (
       insert into auth.users (id, email)
@@ -18,7 +20,14 @@ test("a player joins the Ligue FrenchTrack from my leagues and finds it among th
     select id, 'E2E patronne ${tag}', now(), true from u`);
   sql(`select private.create_official_league()`);
   sql(`update leagues set name = 'Ligue FrenchTrack' where is_official`);
+  try {
+    await joinTheOfficialLeague(page);
+  } finally {
+    if (made) sql(`delete from leagues where is_official`);
+  }
+});
 
+async function joinTheOfficialLeague(page: Page): Promise<void> {
   const player = newPlayer("official");
   await page.goto("/ligues");
   await signUp(page, player);
@@ -39,4 +48,4 @@ test("a player joins the Ligue FrenchTrack from my leagues and finds it among th
   await expect(mine).toContainText("Officielle");
   await page.goto("/ligues?onglet=decouvrir");
   await expect(page.getByRole("region", { name: "Ligue FrenchTrack" })).toHaveCount(0);
-});
+}

@@ -483,8 +483,14 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   de chaque passage, réussi ou non, `ci/preprod/cleanup-e2e.sql` supprime les comptes
   `e2e-…@example.test` (avec leurs ligues, pronos et points, donc hors de tout classement), les
   ligues « E2E … », les compétitions `test-…` / `e2e-…` et celles des tests Manager et feuille de
-  résultats (`mduel-…`, `align-…`, `sheet-…`… suivies du numéro du passage, #788) ; le jeu de démo et le seed n'utilisent
-  jamais ces noms. Un test en échec ouvre une issue `bug` qui mentionne le propriétaire
+  résultats (`mduel-…`, `align-…`, `align-bare-…` « Meeting Vide », `feed-…`, `sheet-…`… suivies
+  du numéro du passage, #788, #947), les ligues Manager des comptes de test (« Sprinteurs … »), les
+  athlètes, clubs, disciplines, sondages, épisodes et faits inventés par les tests (#947) ; le jeu
+  de démo et le seed n'utilisent jamais ces noms. En local et dans la CI de chaque PR, le teardown
+  vérifie ensuite qu'aucun compte, compétition, ligue, ligue Manager, athlète, club, discipline,
+  sondage, épisode ou fait créé pendant le passage ne reste (`e2e/leftovers.ts`) : un test qui
+  invente un nouveau nom l'ajoute au script, sinon la CI est rouge. Pendant un passage (40 min
+  environ), ces objets restent visibles des joueurs de préprod. Un test en échec ouvre une issue `bug` qui mentionne le propriétaire
   (`ci/preprod/regression-report.sh`, décision du propriétaire pour #695 : une issue seulement
   quand c'est rouge) ; rien n'est signalé quand tout passe. Une suite d'avant tag rouge fait
   attendre le tag jusqu'au commit suivant. Tant que les secrets e2e ci-dessous
