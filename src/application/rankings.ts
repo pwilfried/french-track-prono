@@ -76,14 +76,26 @@ const rank = (lines: RankingLine[], moves: MovesInput = {}): RankingRow[] => {
   }));
 };
 
-export const linesOf = async (ranking: RankingRepository, competitionSlugs: string[]) =>
-  (
-    await Promise.all(
-      competitionSlugs.map(async (slug) =>
+/** How many competitions are read together: dozens of reads at once fail now and then (#691). */
+const READ_BATCH = 4;
+
+/** The score lines of the competitions given, each tagged with its competition, read in batches. */
+export async function linesOf(
+  ranking: RankingRepository,
+  competitionSlugs: string[],
+): Promise<RankingLine[]> {
+  const lines: RankingLine[] = [];
+  for (let i = 0; i < competitionSlugs.length; i += READ_BATCH) {
+    const batch = competitionSlugs.slice(i, i + READ_BATCH);
+    const read = await Promise.all(
+      batch.map(async (slug) =>
         (await ranking.competitionLines(slug)).map((l) => ({ ...l, competitionSlug: slug })),
       ),
-    )
-  ).flat();
+    );
+    lines.push(...read.flat());
+  }
+  return lines;
+}
 
 /**
  * All the players who scored in the competitions given, their points added up: every competition

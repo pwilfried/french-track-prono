@@ -106,6 +106,29 @@ describe("getGeneralRanking over several competitions", () => {
       [2, "ANA", 12],
     ]);
   });
+
+  it("reads the competitions in small batches, never all of them at once (#691)", async () => {
+    // given twenty competitions, one point for Ana in each, counting the reads in flight
+    let inFlight = 0;
+    let most = 0;
+    const slugs = Array.from({ length: 20 }, (_, i) => `c${i}`);
+    const counting: RankingRepository = {
+      competitionLines: async () => {
+        inFlight += 1;
+        most = Math.max(most, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        inFlight -= 1;
+        return [line("ana", 1)];
+      },
+    };
+    // when the general ranking is read
+    const result = await getGeneralRanking({ ranking: counting }).execute({
+      competitionSlugs: slugs,
+    });
+    // then a few reads at most ran together, and every competition still counts
+    expect(most).toBeLessThanOrEqual(4);
+    expect(result.map((p) => [p.pseudo, p.points])).toEqual([["ANA", 20]]);
+  });
 });
 
 describe("rank movement since the last finished competition (#661)", () => {
