@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { messages } from "@/app/messages.fr";
+import { MomentIcon } from "@/components/leagues/moment-card";
 import { ChipStatus } from "@/components/ui/chip-status";
 import type { Announcement } from "@/domain/community";
 import { cn } from "@/lib/utils";
@@ -11,7 +12,7 @@ const pill =
   "inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-full px-5 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary";
 
 /** The link of an announcement: an https address opens a new tab, a page of the app stays here. */
-function AnnouncementLink({
+export function AnnouncementLink({
   link,
   label,
   className,
@@ -67,12 +68,7 @@ export function AnnouncementCard({ announcement }: { announcement: Announcement 
   }
   return (
     <article className="flex items-start gap-3 rounded-2xl border border-border bg-card px-3.5 py-3">
-      <span
-        aria-hidden
-        className="grid size-11 shrink-0 place-items-center rounded-full bg-muted text-xl"
-      >
-        {text.emoji[kind]}
-      </span>
+      <MomentIcon emoji={text.emoji[kind]} />
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <ChipStatus tone="brand" className="self-start">
           {text.label[kind]}

@@ -15,6 +15,9 @@ export const MOMENT_KINDS = [
 ] as const;
 export type MomentKind = (typeof MOMENT_KINDS)[number];
 
+export const isMomentKind = (kind: string): kind is MomentKind =>
+  (MOMENT_KINDS as readonly string[]).includes(kind);
+
 /** A run of scoring predictions is told when it reaches one of these lengths. */
 export const STREAK_STEPS = [5, 7, 10] as const;
 

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
  * Background, text and border of each bib colour (#537). Fixed colours, the same in both themes:
  * a bib is a physical object. Every background/text pair passes AA (blue/white 9.1:1,
  * red/white 4.55:1, gold/night 9:1, green/night 5.3:1, white/night 13:1, night/gold 9:1).
- * Exported for the season card image, which cannot use CSS classes.
+ * Exported for the bib picker, which paints its swatches inline.
  */
 export const BIB_PALETTE: Record<BibColor, { background: string; text: string; border: string }> = {
   blue: { background: "#084595", text: "#FFFFFF", border: "#084595" },

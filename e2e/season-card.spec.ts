@@ -33,7 +33,10 @@ test("a player shares the season card: native share on mobile, a download otherw
   const card = await page.request.get("/profil/carte");
   expect(card.status()).toBe(200);
   expect(card.headers()["content-type"]).toBe("image/png");
-  expect((await card.body()).byteLength).toBeGreaterThan(10_000);
+  const png = await card.body();
+  expect(png.byteLength).toBeGreaterThan(10_000);
+  // Story-sized: 1080 × 1920, read from the PNG header.
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1920]);
 
   // A device that cannot share files downloads the image.
   await page.reload();

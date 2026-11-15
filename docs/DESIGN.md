@@ -146,7 +146,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   `#052B5C` (texte or, bordure or). Grand format (profil, choix) : coins arrondis, quatre
   épingles, « FRENCH TRACK », le numéro en gros, le pseudo dessous. Petit format (classements,
   en-tête, ligues, réactions) : pastille avec le numéro seul. Couleurs dans `BIB_PALETTE`
-  (`src/components/profile/bib.tsx`), reprises par la carte de saison.
+  (`src/components/profile/bib.tsx`).
 - **La bande** (#768) : un composant `Animal` (`src/components/band/animal.tsx`) pour le lièvre,
   mascotte, et les six animaux de famille (guépard, impala, kangourou, chat, ours, renard), plus
   le « ? » gris de ce qui reste à gagner ; un médaillon rond aux couleurs fixes dans les deux
@@ -155,6 +155,13 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   plus de points de la saison (égalité : les points les plus récents, `src/domain/band.ts`) ; les
   relais ne comptent pour aucun animal. Un changement s'annonce une fois en haut du profil
   (« Tu es passé Guépard ! »), retenu sur l'appareil.
+- **Carte de saison** (image à partager, `/profil/carte`, #900) : 1080 × 1920, sans dossard, aux
+  couleurs de l'animal du joueur (le lièvre, mascotte, tant qu'il n'en a pas) ; de haut en bas :
+  marque et saison, l'animal en grand dans son médaillon cerclé de blanc avec sa famille
+  (« GUÉPARD · SPRINT »), le pseudo, les points en très grand et le rang, le meilleur coup, la
+  phrase d'appel, une bande de piste. Fonds dans `SEASON_CARD_PALETTE`
+  (`src/components/band/season-card-palette.ts`) : texte bleu `#084595` sur les fonds clairs,
+  crème `#F3E3C7` sur le brun de l'ours, contraste AA testé pour chaque animal.
 - **Dossard** (badge, #768) : carte blanche à deux épingles, bande du niveau en haut (dégradés or,
   argent, bronze), l'animal de la discipline en grand, le numéro et le nom en bas ; grisé avec le
   « ? » tant qu'il est à débloquer.

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { messages } from "@/app/messages.fr";
+import { MomentIcon } from "@/components/leagues/moment-card";
 import { ChipStatus } from "@/components/ui/chip-status";
 import type { ChallengeMoment } from "@/domain/frenchtrack";
 
@@ -18,12 +19,7 @@ export function ChallengeMomentCard({ moment }: { moment: ChallengeMoment }) {
       href={`/epreuves/${moment.slug}`}
       className="flex items-start gap-3 rounded-2xl border border-border bg-card px-3.5 py-3 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
     >
-      <span
-        aria-hidden
-        className="grid size-11 shrink-0 place-items-center rounded-full bg-muted text-xl"
-      >
-        {messages.community.challenge.emoji}
-      </span>
+      <MomentIcon emoji={messages.community.challenge.emoji} />
       <span className="flex min-w-0 flex-1 flex-col gap-1.5">
         <ChipStatus tone="brand" className="self-start">
           {text.title}

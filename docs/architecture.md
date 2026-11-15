@@ -572,7 +572,8 @@ TypeScript (`src/domain/trophies.ts`, décision B) quand l'admin les attribue de
 des joueurs du club, 3 joueurs au moins) ; derniers pronos et historique complet sur
 `/profil/pronos` (`pickHits`, `src/domain/prediction-history.ts`, #387) ; carte « Ma saison »
 (`/profil/carte`, image 1080×1920 via `next/og`, #388) qui ne reprend que des données publiques
-(`seasonCardOf`, `src/domain/season-card.ts` : pseudo, dossard, chiffres de la saison, club validé)
+(`seasonCardOf`, `src/domain/season-card.ts` : pseudo, animal, chiffres de la saison, club validé ;
+aux couleurs de l'animal, sans dossard depuis #900)
 et se partage par le partage natif du téléphone, ou se télécharge à défaut.
 
 « Le saviez-vous ? » (v0.19, #766) : une carte en haut de l'accueil du joueur, un fait d'athlé,
