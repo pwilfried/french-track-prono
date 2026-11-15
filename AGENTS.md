@@ -56,8 +56,8 @@ titres de PR en anglais. Dialogue avec le propriétaire en français.
    Le tag met la version en prod : migrations, puis déploiement Vercel (`docs/SETUP.md`). Tout
    est automatique, sans feu vert humain (décision du propriétaire du 13 nov. 2026). Seul
    garde-fou : `release.sh` lance alors la suite e2e complète contre la préprod sur ce commit et
-   ne pose le tag qu'une fois verte ; si le déploiement ou cette suite échoue, le tag attend un
-   nouveau commit (pas de relance automatique). Le propriétaire vérifie le critère « It works when… » en production ; un correctif
+   pose le tag sur le commit de ce passage vert, même si `main` a avancé depuis (#967) ; si le
+   déploiement ou cette suite échoue, le tag attend un nouveau commit (pas de relance automatique). Le propriétaire vérifie le critère « It works when… » en production ; un correctif
    sans milestone reste tagué à la main.
 
 ## Screenshots in PRs
