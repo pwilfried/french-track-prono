@@ -12,7 +12,7 @@ const pill =
   "inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-full px-5 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary";
 
 /** The link of an announcement: an https address opens a new tab, a page of the app stays here. */
-function AnnouncementLink({
+export function AnnouncementLink({
   link,
   label,
   className,

@@ -6,6 +6,7 @@ import { CompleteProfileCard } from "@/components/home/complete-profile-card";
 import { FunFactCard } from "@/components/home/fun-fact-card";
 import { PlayerHome } from "@/components/home/player-home";
 import { VisitorHome } from "@/components/home/visitor-home";
+import { latestEpisode } from "@/domain/community";
 import { daysUntil } from "@/domain/competition";
 import { firstFinalToPredict } from "@/domain/home";
 
@@ -111,6 +112,7 @@ export default async function Home() {
           community={
             <CommunityBlock community={community} now={now} vote={votePollAction} compact />
           }
+          episode={latestEpisode(community?.announcements ?? [])}
           funFact={<FunFactCard facts={funFacts} />}
           completeProfile={
             completeProfile ? (

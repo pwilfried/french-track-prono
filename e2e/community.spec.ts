@@ -46,3 +46,49 @@ test("a player votes in a poll of the home, then sees the results", async ({ pag
 
   sql(`delete from polls where question = '${question}'`);
 });
+
+test("an episode published by the admin shows in the podcast card, not in the block", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const title = `E2E Épisode ${Date.now() % 1000000}`;
+  const link = "https://example.test/e2e-episode";
+
+  const player = newPlayer("episode");
+  await page.goto("/connexion");
+  await signUp(page, player);
+  const playerId = sql(`select id from auth.users where email = '${player.email}'`);
+
+  try {
+    // The admin announces the episode from the back-office.
+    sql(`update profiles set is_admin = true where id = '${playerId}'`);
+    await page.goto("/admin/communaute");
+    await page.getByLabel("Type").selectOption("episode");
+    await page.getByLabel(/^Titre/).fill(title);
+    await page.getByLabel(/^Lien/).fill(link);
+    await page.getByRole("button", { name: "Publier l'annonce" }).click();
+    await expect(page.getByText("Annonce publiée.")).toBeVisible();
+    sql(`update profiles set is_admin = false where id = '${playerId}'`);
+
+    // On the home, the podcast card shows it, with the one « Écouter » button of the page.
+    await page.goto("/");
+    const podcast = page.getByRole("region", { name: "Le podcast FrenchTrack" });
+    await expect(podcast.getByText("Nouvel épisode")).toBeVisible();
+    await expect(podcast.getByRole("heading", { name: title })).toBeVisible();
+    await expect(
+      podcast.getByRole("link", { name: "Écouter l'épisode (nouvel onglet)" }),
+    ).toHaveAttribute("href", link);
+    await expect(podcast.getByRole("link", { name: "Instagram (nouvel onglet)" })).toBeVisible();
+    await expect(page.locator("main").getByRole("link", { name: /Écouter/ })).toHaveCount(1);
+    const block = page.getByRole("region", { name: "Dans ma communauté" });
+    await expect(block).toBeVisible();
+    await expect(block.getByText(title)).toHaveCount(0);
+
+    // « Tout voir » keeps every announcement, the episode with it.
+    await block.getByRole("link", { name: "Tout voir" }).click();
+    await expect(page).toHaveURL(/\/communaute$/);
+    await expect(page.getByRole("heading", { name: title })).toBeVisible();
+  } finally {
+    sql(`delete from announcements where title = '${title}'`);
+  }
+});
