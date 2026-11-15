@@ -44,7 +44,7 @@ describe("incomplete Manager team text", () => {
 });
 
 describe("league period text", () => {
-  const { period, competitionCount, nextCompetition } = messages.leagues;
+  const { period, competitionCount, nextCompetition, liveCompetition } = messages.leagues;
 
   it.each([
     ["2027-06", "2027-06", "juin 2027"],
@@ -60,6 +60,7 @@ describe("league period text", () => {
     expect(nextCompetition("Meeting de Testville", "2027-06-12")).toBe(
       "Prochaine : Meeting de Testville, 12 juin",
     );
+    expect(liveCompetition("Meeting de Testville")).toBe("En cours : Meeting de Testville");
   });
 });
 
