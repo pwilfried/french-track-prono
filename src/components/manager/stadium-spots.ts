@@ -15,16 +15,17 @@ export type StadiumSpot = { x: number; y: number };
 /** The height of the stadium for a width of 1: an oval a little wider than high. */
 export const STADIUM_RATIO = 0.92;
 
-/** The width of a card, in percent of the stadium: four fit side by side on the middle row. */
-export const CARD_WIDTH = 23.5;
+/** The width of a card, in percent of the stadium: four fit side by side on the middle row,
+ * inside the oval (#929). */
+export const CARD_WIDTH = 21.5;
 
-const BOTTOM_STRAIGHT: StadiumSpot = { x: 50, y: 91 };
-const LEFT_BEND: StadiumSpot = { x: 12, y: 50 };
-const RIGHT_BEND: StadiumSpot = { x: 88, y: 50 };
-const BACK_STRAIGHT: StadiumSpot = { x: 50, y: 9 };
+const BOTTOM_STRAIGHT: StadiumSpot = { x: 50, y: 89 };
+const LEFT_BEND: StadiumSpot = { x: 15, y: 50 };
+const RIGHT_BEND: StadiumSpot = { x: 85, y: 50 };
+const BACK_STRAIGHT: StadiumSpot = { x: 50, y: 11 };
 const HIGH_JUMP: StadiumSpot = { x: 50, y: 29 };
-const LONG_JUMP: StadiumSpot = { x: 37, y: 50 };
-const JAVELIN: StadiumSpot = { x: 63, y: 50 };
+const LONG_JUMP: StadiumSpot = { x: 38.5, y: 50 };
+const JAVELIN: StadiumSpot = { x: 61.5, y: 50 };
 const SHOT_PUT: StadiumSpot = { x: 50, y: 71 };
 
 const ZONES: Record<LineupPlace, StadiumSpot[]> = {
