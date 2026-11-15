@@ -136,20 +136,13 @@ export function PlacedSpot({
 }
 
 /** A small square of an athlete's colour and family code, next to their name in a list. */
-export function SpotSwatch({
-  family,
-  muted = false,
-}: {
-  family: DisciplineFamily;
-  muted?: boolean;
-}) {
+export function SpotSwatch({ family }: { family: DisciplineFamily }) {
   return (
     <span
       aria-hidden
       className={cn(
         "grid size-11 shrink-0 place-items-center rounded-lg text-[10px] font-extrabold text-spot-ink shadow-sm ring-1 ring-border",
         isRace(family) ? "bg-spot-race" : "bg-spot-field",
-        muted && "grayscale",
       )}
     >
       {messages.team.codes[cardGroupOf(family)]}
