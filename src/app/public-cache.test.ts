@@ -1,11 +1,16 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import type { EventReader } from "@/application/list-events";
 import { listEvents } from "@/application/list-events";
+import { getGeneralRanking, type RankingLine } from "@/application/rankings";
 import type { EventDetail } from "@/domain/event";
+import { createInMemoryRankingRepository } from "@/infra";
 
 import {
   cachedEventReader,
+  cachedRanking,
   PUBLIC_TAGS,
   STALE_AFTER,
   type Memo,
@@ -122,8 +127,104 @@ describe("public data cache", () => {
     expect(STALE_AFTER.scale).toContain("scale");
   });
 
+  it("makes the rankings stale once points are computed or a player's line changes", () => {
+    expect(STALE_AFTER.result).toContain("rankings");
+    expect(STALE_AFTER.player).toContain("rankings");
+  });
+
   it("only knows public tags", () => {
     for (const tags of Object.values(STALE_AFTER))
       for (const tag of tags) expect(PUBLIC_TAGS).toContain(tag);
+  });
+});
+
+const line = (userId: string, pseudo: string, points: number): RankingLine => ({
+  userId,
+  pseudo,
+  bib: { number: 7, color: "blue" },
+  points,
+  reasons: [],
+  eventId: "e1",
+  eventStartsAt: "2026-09-11T18:00:00.000Z",
+});
+
+describe("cached rankings", () => {
+  it("reads the score lines of a competition once for every player while the cache is fresh", async () => {
+    let reads = 0;
+    const db = createInMemoryRankingRepository({ "uc-2026": [line("ana", "Ana", 24)] });
+    const counted = {
+      competitionLines: (slug: string) => ((reads += 1), db.competitionLines(slug)),
+    };
+    const cache = fakeCache();
+
+    // Given Ana opens the ranking, when Bob opens it too
+    const general = () =>
+      getGeneralRanking({ ranking: cachedRanking(counted, cache.memo) }).execute({
+        competitionSlugs: ["uc-2026"],
+      });
+    await general();
+    const [first] = await general();
+
+    // Then the database was read once, and both see Ana first
+    expect(reads).toBe(1);
+    expect(first?.pseudo).toBe("Ana");
+  });
+
+  it("shows the new points on the next page load once the points are computed", async () => {
+    const lines: Record<string, RankingLine[]> = { "uc-2026": [line("ana", "Ana", 3)] };
+    const reader = { competitionLines: async (slug: string) => lines[slug] ?? [] };
+    const cache = fakeCache();
+    const ranked = cachedRanking(reader, cache.memo);
+    await ranked.competitionLines("uc-2026");
+
+    // When the admin computes the points of a final
+    lines["uc-2026"] = [line("ana", "Ana", 27)];
+    cache.invalidate("result");
+
+    // Then the ranking shows them
+    expect((await ranked.competitionLines("uc-2026"))[0]?.points).toBe(27);
+  });
+});
+
+/**
+ * #824: the shared cache holds the same thing for everyone. Every cached read is built on the
+ * anonymous client, never on the player's session (cookies, their id, their own rows).
+ */
+describe("no player data in the shared cache", () => {
+  const source = readFileSync("src/app/public-data.ts", "utf8");
+
+  it("builds every cached read on the anonymous Supabase client", () => {
+    const factories = source.match(/^export const public\w+ = \(\) =>[\s\S]*?;$/gm) ?? [];
+    expect(factories.length).toBeGreaterThanOrEqual(5);
+    for (const factory of factories) expect(factory).toContain("createPublicSupabaseClient()");
+  });
+
+  it("never reads the session, the cookies or the current player", () => {
+    for (const forbidden of [
+      "./session",
+      "next/headers",
+      "cookies",
+      "createSessionClient",
+      "getSessionClient",
+      "getCurrentUser",
+      "createServiceRoleClient",
+      "userId",
+    ])
+      expect(source).not.toContain(forbidden);
+  });
+
+  it("keys a cached ranking on the competition only, so two players share one entry", async () => {
+    const keys: string[] = [];
+    const memo: Memo =
+      (read, key) =>
+      (...args) => {
+        keys.push(JSON.stringify([key, ...args]));
+        return read(...args);
+      };
+    const ranked = cachedRanking(createInMemoryRankingRepository({}), memo);
+
+    await ranked.competitionLines("uc-2026");
+
+    expect(keys).toEqual([JSON.stringify(["ranking-lines", "uc-2026"])]);
   });
 });

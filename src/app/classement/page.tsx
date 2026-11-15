@@ -28,12 +28,13 @@ import { ViewTabs } from "@/components/ui/view-tabs";
 import { rankingStart } from "@/domain/competition";
 import { seasonYears } from "@/domain/competition-search";
 import { placeOf, previousCompetitionSlugs } from "@/domain/ranking";
-import { createSupabaseLeagueRepository, createSupabaseRankingRepository } from "@/infra";
+import { createSupabaseLeagueRepository } from "@/infra";
 
 import { currentCompetitionDay, currentDay, loadCompetitions, loadMyLeagues } from "../competition";
 import { messages } from "../messages.fr";
 import { paramText } from "../search-params";
 import { getCurrentUser, getSessionClient } from "../session";
+import { publicRanking } from "../public-data";
 
 /**
  * The rankings tab (#551, #661): the views as tabs, « Ma ligue » first (the player's first league,
@@ -74,7 +75,7 @@ export default async function RankingPage({
   const today = currentCompetitionDay();
   const day = currentDay();
   const client = await getSessionClient();
-  const ranking = createSupabaseRankingRepository(client);
+  const ranking = publicRanking();
   const leagueRanking = getLeagueRanking({
     ranking,
     leagues: createSupabaseLeagueRepository(client),

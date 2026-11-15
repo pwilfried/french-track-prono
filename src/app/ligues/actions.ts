@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { UseCaseError, type ErrorCode } from "@/application/errors";
@@ -31,6 +31,9 @@ export type LeagueFormState = {
   /** The families ticked, given back with an error (#613). */
   families?: LeagueFamily[];
 };
+
+// After a change, `refresh()` (or `revalidatePath`) drops the pages the browser keeps (#824): the
+// leagues, the rankings and the home show the new league at once.
 
 async function leagues(back: string) {
   const user = await getCurrentUser();
@@ -73,6 +76,7 @@ export async function createLeagueAction(
     }
     throw error;
   }
+  refresh();
   redirect(`/ligues/${id}?onglet=inviter&nouvelle=1`);
 }
 
@@ -96,6 +100,7 @@ export async function joinLeagueAction(
     if (!league) return { value, error: error.code };
     id = league.id;
   }
+  refresh();
   redirect(`/ligues/${id}`);
 }
 
@@ -111,6 +116,7 @@ export async function leaveLeagueAction(
     if (error instanceof UseCaseError) return { value: leagueId, error: error.code };
     throw error;
   }
+  refresh();
   redirect("/ligues");
 }
 
@@ -127,6 +133,7 @@ export async function handOverLeagueAction(
     if (error instanceof UseCaseError) return { value: newOwnerId, error: error.code };
     throw error;
   }
+  refresh();
   redirect(`/ligues/${leagueId}?onglet=membres`);
 }
 
@@ -181,6 +188,7 @@ export async function joinPublicLeagueAction(
     if (error instanceof UseCaseError) return { value: leagueId, error: error.code };
     throw error;
   }
+  refresh();
   redirect(`/ligues/${leagueId}`);
 }
 

@@ -249,26 +249,47 @@ reste est relu à chaque page, comme avant.
   | Épreuves d'une compétition (`EventReader.listByCompetition` : horaires, verrouillage, tours, statut) | `events` | accueil, compétitions, épreuve, profil, mes points, ligues |
   | Disciplines (`DisciplineRepository.list`) | `disciplines` | règles, profil, ligues |
   | Barème (`loadScale`) | `scale` | accueil, règles |
+  | Lignes de score d'une compétition (`RankingRepository.competitionLines`, #824) : pseudo, dossard, club, points ; les mêmes pour tous, déjà publiques (#573) | `rankings` | accueil, classement (général, ce soir, ligue), compétition, ligue, profil (saison, clubs), carte |
 
 - Durée : 120 s (`PUBLIC_CACHE_SECONDS`) ; une invalidation manquée se répare d'elle-même dans ce
-  délai. React `cache()` reste en plus pour dédoublonner au sein d'une requête.
+  délai. Au sein d'un rendu, une même lecture demandée deux fois (deux ligues sur une même
+  compétition) n'est faite qu'une fois (#824).
 - Invalidation : chaque action du back-office appelle `publicDataChanged(<changement>)`, qui
   expire à l'instant (`updateTag`) les tags de `STALE_AFTER` : compétition (créer, modifier,
   supprimer, engagés) → `competitions`, `events` ; épreuve (créer, modifier, supprimer), liste de
   départ (saisie, import, qualifiés), cotes, feuille de résultats (qui passe aussi l'épreuve à
   « terminée ») → `events`, `competitions` (une compétition compte ses épreuves et ses engagés) ;
-  discipline → `disciplines`, `events` ; barème → `scale`. Un changement fait en SQL directement
-  (scripts `db:*`) attend au plus 120 s.
+  discipline → `disciplines`, `events` ; barème → `scale`. La feuille de résultats (points
+  calculés) expire aussi `rankings`, comme un changement de ce qu'une ligne montre d'un joueur
+  (`player` : profil modifié, club choisi, compte supprimé, joueur bloqué ou supprimé par
+  l'admin). Un changement fait en SQL directement (scripts `db:*`) attend au plus 120 s.
 - Jamais en cache : une épreuve seule (`findBySlug` : sa liste de départ, ses résultats, son
-  verrouillage), les pronos, les points, les classements, les ligues, le profil, le Manager, et
-  tout ce qui dépend du joueur. Le refus d'un prono après le verrouillage reste décidé par la base.
-  Le back-office lit la base directement.
+  verrouillage), les pronos, les points du joueur, les ligues et leurs membres, le profil, le
+  Manager, et tout ce qui dépend du joueur. Le refus d'un prono après le verrouillage reste décidé
+  par la base. Le back-office lit la base directement (les trophées de fin de saison comptent sur
+  les lignes fraîches). Lues sans session, les lignes d'un joueur bloqué ne lui sont plus montrées,
+  à lui non plus. Un test vérifie que `public-data.ts` ne bâtit ses lectures que sur le client
+  anonyme et ne lit ni cookie, ni session, ni joueur (`src/app/public-cache.test.ts`).
+- Par requête (#824) : `getSessionClient`, `getCurrentUser` et le profil du joueur
+  (`getSessionProfiles`) sont lus une fois par rendu (React `cache`) ; l'en-tête et la page ne
+  redemandent plus l'utilisateur à l'auth ni le profil à la base.
 - Tests de bout en bout : ils écrivent souvent en SQL. `playwright.config.ts` donne au serveur un
   secret `PUBLIC_CACHE_FLUSH_SECRET` ; avec lui, `POST /api/public-cache` expire tous les tags, et
   `sql()` (`src/infra/contract/database.ts`) l'appelle après chaque écriture (sauf
   `keepCache: true`), puis attend, par `GET /api/public-cache` (une sonde par tag), que chaque tag
   ait expiré : sur Vercel, chacun expire à son tour (#814, #840). Sans ce secret (production), la
   route répond 404.
+
+**Navigation instantanée (#824).** Chaque onglet de la barre du bas et la page d'une épreuve ont
+un `loading.tsx` (squelette, `PageSkeleton` de `src/components/shell/page-skeleton.tsx`) ; celui
+de l'accueil vit dans le groupe `src/app/(accueil)/`, pas à la racine : un squelette racine
+envelopperait toutes les pages, et une page introuvable répondrait 200 au lieu de 404. Le routeur du navigateur garde une page
+visitée 30 s (`experimental.staleTimes.dynamic`, `next.config.ts`) : revenir sur un onglet ne
+redemande rien au serveur. Toute action du joueur qui change des données vide ce cache du
+navigateur : `revalidatePath`, `updateTag` (`publicDataChanged`) ou `refresh()` dans son Server
+Action (pronos, réactions, ligues, Manager, profil, rappels, e-mail) ; une connexion ou une
+déconnexion le vide aussi (cookies changés). Exception assumée : « badges vus » ne rafraîchit
+pas, pour ne pas couper la fête du lièvre.
 
 ## Modèle de données
 

@@ -11,6 +11,7 @@ import {
 } from "@/application/player-moderation";
 import { createSupabasePlayerModerationRepository } from "@/infra";
 
+import { publicDataChanged } from "../../public-data";
 import { adminOnly } from "../guard";
 
 export type PlayerListResult = { error?: ErrorCode; count?: number };
@@ -24,6 +25,8 @@ async function run(work: () => Promise<number>): Promise<PlayerListResult> {
   try {
     const count = await work();
     revalidatePath("/admin/joueurs");
+    // A blocked or deleted player leaves the cached rankings (#824).
+    publicDataChanged("player");
     return { count };
   } catch (error) {
     if (error instanceof UseCaseError) return { error: error.code };

@@ -1,5 +1,7 @@
 "use server";
 
+import { refresh } from "next/cache";
+
 import type { ErrorCode } from "@/application/errors";
 import { UseCaseError } from "@/application/errors";
 import { saveReminderSettings } from "@/application/reminder-settings";
@@ -29,6 +31,7 @@ export async function saveReminderSettingsAction(
       quietFrom: formText(data, "quietFrom"),
       quietTo: formText(data, "quietTo"),
     });
+    refresh();
     return { settings, saved: true, error: null };
   } catch (error) {
     if (error instanceof UseCaseError) return { ...state, saved: false, error: error.code };

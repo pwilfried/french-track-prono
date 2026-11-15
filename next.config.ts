@@ -50,6 +50,9 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   allowedDevOrigins: devOrigins,
   poweredByHeader: false,
+  // #824: the browser keeps a visited page 30 s, so coming back to a tab is instant. A player's
+  // action drops them (revalidatePath, updateTag or refresh in its Server Action).
+  experimental: { staleTimes: { dynamic: 30 } },
   // #659: the events tab became « Compétitions »; old links keep their ?competition= and ?filtre=.
   async redirects() {
     return [{ source: "/epreuves", destination: "/competitions", permanent: true }];

@@ -12,6 +12,7 @@ import {
   createSupabaseProfileRepository,
 } from "@/infra";
 
+import { publicDataChanged } from "../../public-data";
 import { readPlayerDetails, type PlayerDetailsFields } from "../../player-details-form";
 import { formText } from "../../form-data";
 import { getCurrentUser, getSessionClient } from "../../session";
@@ -59,5 +60,7 @@ export async function editProfileAction(
     if (error instanceof UseCaseError) return { ...state, error: error.code };
     throw error;
   }
+  // The pseudo, bib and club show in the cached rankings and in the pages kept by the browser.
+  publicDataChanged("player");
   redirect("/profil?enregistre=1");
 }

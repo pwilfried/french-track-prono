@@ -36,18 +36,16 @@ import {
   createSupabasePlayerDetailsRepository,
   createSupabasePointsRepository,
   createSupabasePredictionRepository,
-  createSupabaseProfileRepository,
-  createSupabaseRankingRepository,
   createSupabaseTrophyRepository,
 } from "@/infra";
 
 import { currentCompetition, seasonCompetitionSlugs } from "../competition";
 import { messages } from "../messages.fr";
 import { turnOffNotificationsAction, turnOnNotificationsAction } from "../push-actions";
-import { getCurrentUser, getSessionClient } from "../session";
+import { getCurrentUser, getSessionClient, getSessionProfiles } from "../session";
 import { markBadgesSeenAction } from "./badge-actions";
 import { badgePorts } from "./badge-ports";
-import { publicEventReader, publicDisciplines } from "../public-data";
+import { publicEventReader, publicDisciplines, publicRanking } from "../public-data";
 import { readOr } from "../read-or";
 
 /**
@@ -61,7 +59,7 @@ async function loadSeason(userId: string) {
     readOr(
       "profile season",
       getMySeason({
-        ranking: createSupabaseRankingRepository(client),
+        ranking: publicRanking(),
         predictions: createSupabasePredictionRepository(client),
         events,
         disciplines: publicDisciplines(),
@@ -75,7 +73,7 @@ async function loadSeason(userId: string) {
     ),
     readOr(
       "profile clubs",
-      getClubRanking({ ranking: createSupabaseRankingRepository(client) }).execute({
+      getClubRanking({ ranking: publicRanking() }).execute({
         competitionSlugs: slugs,
       }),
       null,
@@ -117,9 +115,9 @@ export default async function ProfilePage({
   if (!user) redirect(`/connexion?next=${encodeURIComponent("/profil")}`);
 
   const client = await getSessionClient();
-  const profile = await getProfile({
-    profiles: createSupabaseProfileRepository(client),
-  }).execute({ userId: user.userId });
+  const profile = await getProfile({ profiles: await getSessionProfiles() }).execute({
+    userId: user.userId,
+  });
   if (!profile) redirect(`/bienvenue?next=${encodeURIComponent("/profil")}`);
   const [{ season, badges, clubs, latest }, details, params, clubNotices, honours, shelves] =
     await Promise.all([

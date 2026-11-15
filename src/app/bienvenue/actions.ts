@@ -1,5 +1,6 @@
 "use server";
 
+import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createProfile } from "@/application/create-profile";
@@ -42,6 +43,8 @@ export async function createProfileAction(_: WelcomeState, data: FormData): Prom
     // Someone who already has a profile has nothing to fill in: carry on.
     if (error.code !== "PROFILE_EXISTS") return { ...state, error: error.code };
   }
+  // The header now shows the pseudo: the pages kept by the browser are dropped (#824).
+  refresh();
   // Straight to the event the player came from, for their first prediction; else the home.
   redirect(safeRedirectPath(formText(data, "next")));
 }

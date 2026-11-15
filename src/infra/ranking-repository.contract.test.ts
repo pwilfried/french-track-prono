@@ -1,11 +1,19 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, it } from "vitest";
 
-import type { RankingLine } from "@/application/rankings";
+import type { RankingLine, RankingRepository } from "@/application/rankings";
 
 import { createTestEvent, sql } from "./contract/database";
-import { rankingRepositoryContract } from "./contract/ranking-repository.contract";
+import {
+  rankingRepositoryContract,
+  type RankingWorld,
+} from "./contract/ranking-repository.contract";
 import { signedInPlayer } from "./contract/test-player";
-import { createInMemoryRankingRepository, createSupabaseRankingRepository } from "./index";
+import {
+  createInMemoryRankingRepository,
+  createPublicSupabaseClient,
+  createSupabaseRankingRepository,
+} from "./index";
 
 const lines = (
   ana: string,
@@ -64,7 +72,10 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (url && key) {
-  rankingRepositoryContract("Supabase (local)", async () => {
+  /** Ana and Bob scored in a competition of their own; `readerOf` picks who reads the lines. */
+  const supabaseWorld = async (
+    readerOf: (bob: SupabaseClient) => RankingRepository,
+  ): Promise<RankingWorld> => {
     const [ana, bob] = await Promise.all([signedInPlayer(url, key), signedInPlayer(url, key)]);
     const pseudoOf = (id: string) => sql(`select pseudo from profiles where id = '${id}'`);
     const { competitionSlug, eventId } = createTestEvent();
@@ -97,8 +108,16 @@ if (url && key) {
                '${JSON.stringify({ reasons: l.reasons })}'::jsonb
         from events where id = '${eventId}'`);
     }
-    return { competitionSlug, expected, reader: createSupabaseRankingRepository(bob.client) };
-  });
+    return { competitionSlug, expected, reader: readerOf(bob.client) };
+  };
+
+  rankingRepositoryContract("Supabase (local)", () =>
+    supabaseWorld((bob) => createSupabaseRankingRepository(bob)),
+  );
+  // The shared cache of the rankings reads without a session (#824): the same lines for all.
+  rankingRepositoryContract("Supabase (local, anonymous reader of the cache)", () =>
+    supabaseWorld(() => createSupabaseRankingRepository(createPublicSupabaseClient())),
+  );
 } else {
   describe("Supabase ranking repository", () => {
     const message = "NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are not set";

@@ -2,11 +2,10 @@ import Link from "next/link";
 
 import { messages } from "@/app/messages.fr";
 import { isAdmin } from "@/app/landing";
-import { getCurrentUser, getSessionClient } from "@/app/session";
+import { getCurrentUser, getSessionClient, getSessionProfiles } from "@/app/session";
 import { lookUpProfile } from "@/application/get-profile";
 import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
-import { createSupabaseProfileRepository } from "@/infra";
 
 /** Right side of the top bar: sign-in link for a visitor, pseudo and bib for a player, plus a way
  * back to the back-office for an admin. */
@@ -25,7 +24,7 @@ export async function AccountMenu({ returnTo }: { returnTo: string }) {
 
   const client = await getSessionClient();
   const [profile, admin] = await Promise.all([
-    lookUpProfile({ profiles: createSupabaseProfileRepository(client) }).execute({
+    lookUpProfile({ profiles: await getSessionProfiles() }).execute({
       userId: user.userId,
     }),
     isAdmin(client, user.userId),
