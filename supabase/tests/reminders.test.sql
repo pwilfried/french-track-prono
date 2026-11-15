@@ -2,19 +2,16 @@
 begin;
 select plan(16);
 
--- The clock of the test: now, or just after midnight in Paris when the next 50 minutes would
--- straddle two evenings (the locks below must fall on one Paris date).
+-- The clock of the test: the next 18:00 in Paris, so that the evening never spans midnight
+-- whatever the hour the suite runs at. Locks stay in the future, points scored now are recent.
 create temp table clock as
-  select case
-    when ((now() + interval '50 minutes') at time zone 'Europe/Paris')::date
-         > (now() at time zone 'Europe/Paris')::date
-    then (((now() + interval '50 minutes') at time zone 'Europe/Paris')::date + time '00:01')
-         at time zone 'Europe/Paris'
-    else now() end as t0;
+  select case when t >= now() then t else t + interval '1 day' end as t0
+  from (select (date_trunc('day', now() at time zone 'Europe/Paris') + interval '18 hours')
+                 at time zone 'Europe/Paris' as t) x;
 grant select on clock to authenticated;
 
--- Three finals of one competition with a start list: locking in 10, 40 and 50 minutes, starting
--- together in two hours (one evening).
+-- Three finals of one competition with a start list: locking at 18:10, 18:40 and 18:50, starting
+-- together at 20:00 (one evening).
 create temp table finals as
   select e.id, e.slug, e.competition_id, row_number() over (order by e.slug) as n from events e
   where e.round = 'final' and (select count(*) from entries x where x.event_id = e.id) >= 3
@@ -78,7 +75,7 @@ select is((select count(*)::int from reminder_settings), 1, 'a player only reads
 select set_config('request.jwt.claims', '{"sub":"abab0000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
 select save_reminder_settings(false, true, true, true, true, 60, 0, 0);
 select set_config('request.jwt.claims', '{"sub":"abab0000-0000-0000-0000-00000000000d","role":"authenticated"}', true);
--- Quiet from the hour of the clock in Paris to the next one.
+-- Quiet from the hour of the test clock in Paris to the next one.
 select save_reminder_settings(true, true, true, true, true, 60,
   extract(hour from (select t0 from clock) at time zone 'Europe/Paris')::int,
   (extract(hour from (select t0 from clock) at time zone 'Europe/Paris')::int + 1) % 24);

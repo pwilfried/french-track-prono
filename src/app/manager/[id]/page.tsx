@@ -273,6 +273,8 @@ export default async function ManagerLeaguePage({ params }: { params: Promise<{ 
             <li>{text.budget(rules.budget)}</li>
             <li>{text.minTeamSize(rules.minTeamSize)}</li>
             <li>{text.lineup(rules.lineup.max)}</li>
+            <li>{text.scoring(rules.bonuses.first)}</li>
+            <li>{text.duels}</li>
             <li>
               {format
                 ? text.seasonFormat(

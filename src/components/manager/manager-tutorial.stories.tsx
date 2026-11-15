@@ -10,18 +10,7 @@ const text = messages.manager.tutorial;
 const meta = {
   title: "Manager/ManagerTutorial",
   component: ManagerTutorial,
-  args: {
-    figures: {
-      budget: 250,
-      minTeamSize: 12,
-      lineupMax: 8,
-      winBonus: 10,
-      leagueMin: 4,
-      leagueMax: 10,
-      minCompetitions: 6,
-    },
-    onClose: fn(),
-  },
+  args: { onClose: fn(), onLeave: fn() },
   decorators: [
     (Story) => (
       <div className="flex min-h-[760px] w-[390px] flex-col bg-background">
@@ -34,37 +23,34 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** The first step: « 1 / 7 », the players set by the competitions (#644), nothing before it. */
+/** The first screen: « 1 / 3 », the principle, no figure, nothing before it (#802). */
 export const FirstStep: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText(text.progress(1, 7))).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Une ligue entre amis" })).toBeVisible();
-    await expect(
-      canvas.getByText(/au moins 6 compétitions : elles fixent le nombre de joueurs, de 4 à 10/),
-    ).toBeVisible();
-    await expect(canvas.queryByText(/en nombre pair/)).toBeNull();
+    await expect(canvas.getByText(text.progress(1, 3))).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Deviens manager" })).toBeVisible();
+    await expect(canvas.getByText(/Recrute des athlètes, aligne-les/)).toBeVisible();
+    await expect(canvas.getByRole("region", { name: text.label })).not.toHaveTextContent(/\d{2}/);
     await expect(canvas.getByRole("button", { name: text.previous })).toBeDisabled();
 
     await userEvent.click(canvas.getByRole("button", { name: text.next }));
-    await expect(canvas.getByText(text.progress(2, 7))).toBeVisible();
-    await expect(canvas.getByText(/Tu as 250 crédits/)).toBeVisible();
+    await expect(canvas.getByText(text.progress(2, 3))).toBeVisible();
+    await expect(canvas.getByText(/D'abord le mercato/)).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: text.previous }));
-    await expect(canvas.getByText(text.progress(1, 7))).toBeVisible();
+    await expect(canvas.getByText(text.progress(1, 3))).toBeVisible();
     await expect(args.onClose).not.toHaveBeenCalled();
   },
 };
 
-/** The arrow keys move between the steps too. */
+/** The arrow keys move between the screens too. */
 export const Keyboard: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     canvas.getByRole("button", { name: text.next }).focus();
-    await userEvent.keyboard("{ArrowRight}{ArrowRight}");
-    await expect(canvas.getByText(text.progress(3, 7))).toBeVisible();
-    await expect(canvas.getByText(/Au moins 12 athlètes/)).toBeVisible();
+    await userEvent.keyboard("{ArrowRight}");
+    await expect(canvas.getByText(text.progress(2, 3))).toBeVisible();
     await userEvent.keyboard("{ArrowLeft}");
-    await expect(canvas.getByText(text.progress(2, 7))).toBeVisible();
+    await expect(canvas.getByText(text.progress(1, 3))).toBeVisible();
   },
 };
 
@@ -79,41 +65,38 @@ export const NavigationUnderContent: Story = {
   },
 };
 
-/** The head-to-heads, and the bonus matchdays at the end (#644). */
-export const Matchdays: Story = {
-  args: { initialStep: 5 },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(canvas.getByText(/victoire 3 points, nul 1, défaite 0/)).toBeVisible();
-    await expect(canvas.getByText(/journées bonus : des points, sans confrontation/)).toBeVisible();
-  },
-};
-
-/** The last step ends on « C'est parti », which closes the tutorial. */
+/** The last screen is the way in: « Créer » or « Rejoindre », no « Suivant » (#802). */
 export const LastStep: Story = {
-  args: { initialStep: 6 },
+  args: { initialStep: 2 },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText(text.progress(7, 7))).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Deviens champion" })).toBeVisible();
+    await expect(canvas.getByText(text.progress(3, 3))).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "À toi de jouer" })).toBeVisible();
     await expect(canvas.queryByRole("button", { name: text.next })).toBeNull();
-    await userEvent.click(canvas.getByRole("button", { name: text.done }));
-    await expect(args.onClose).toHaveBeenCalledOnce();
+    await expect(canvas.getByRole("link", { name: messages.manager.create })).toHaveAttribute(
+      "href",
+      "/manager/creer",
+    );
+    const join = canvas.getByRole("link", { name: messages.manager.joinWithCode });
+    await expect(join).toHaveAttribute("href", "/manager/rejoindre");
+    join.addEventListener("click", (event) => event.preventDefault(), { once: true });
+    await userEvent.click(join);
+    await expect(args.onLeave).toHaveBeenCalledOnce();
+    await expect(args.onClose).not.toHaveBeenCalled();
   },
 };
 
-/** « Passer » closes it from any step. */
+/** « Passer » closes it from any screen. */
 export const Skip: Story = {
-  args: { initialStep: 3 },
+  args: { initialStep: 1 },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText(/jusqu'à 8 titulaires/)).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: text.skipLabel }));
     await expect(args.onClose).toHaveBeenCalledOnce();
   },
 };
 
-/** Dark theme: the tutorial is night blue in both themes. */
+/** Dark theme: the presentation is night blue in both themes. */
 export const Dark: Story = {
   decorators: [
     (Story) => (
@@ -123,28 +106,22 @@ export const Dark: Story = {
     ),
   ],
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText(text.progress(1, 7))).toBeVisible();
+    await expect(within(canvasElement).getByText(text.progress(1, 3))).toBeVisible();
   },
 };
 
-/** Large figures still wrap inside the 390 px screen. */
+/** The narrowest screen, 320 px: the last screen and its buttons still fit. */
 export const LongText: Story = {
-  args: {
-    initialStep: 4,
-    figures: {
-      budget: 1234567,
-      minTeamSize: 123,
-      lineupMax: 99,
-      winBonus: 100000,
-      leagueMin: 4,
-      leagueMax: 10,
-      minCompetitions: 6,
-    },
-  },
+  args: { initialStep: 2 },
+  decorators: [
+    (Story) => (
+      <div className="flex min-h-[760px] w-[320px] flex-col bg-background">
+        <Story />
+      </div>
+    ),
+  ],
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(canvas.getByText(/\+100000 pour une victoire/)).toBeVisible();
-    const step = canvas.getByRole("region", { name: text.label });
+    const step = within(canvasElement).getByRole("region", { name: text.label });
     await expect(step.scrollWidth).toBeLessThanOrEqual(step.clientWidth);
   },
 };

@@ -75,7 +75,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Épreuve | Liste de départ, **podium à composer** (glisser-déposer ou taps), joker, verrou |
 | Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
 | Ligue | Classement, derniers pronos révélés, réactions emoji ; tant que le joueur y est seul, **InviteBanner** à la place du classement |
-| Accueil Manager (onglet, #606, #774) | Titre et accroche ; « Créer une ligue Manager » et « Rejoindre avec un code » côte à côte en haut ; « Mes ligues Manager », une carte compacte par ligue (nom, phase : mercato · tour N, saison · journée N sur M ou terminée, ma place, la prochaine échéance : fin du tour ou verrou d'alignement, et une pastille rouge « Enchères à faire » ou « Alignement à valider ») ; puis « Comment ça marche ? » et les ligues publiques. Une carte ouvre la page de la ligue, même avec une seule ligue. Sans ligue : la présentation (#618), puis le mode en une ligne, « Créer ou rejoindre une ligue » et « Le déroulé de la saison » |
+| Accueil Manager (onglet, #606, #774) | Titre et accroche ; « Créer une ligue Manager » et « Rejoindre avec un code » côte à côte en haut ; « Mes ligues Manager », une carte compacte par ligue (nom, phase : mercato · tour N, saison · journée N sur M ou terminée, ma place, la prochaine échéance : fin du tour ou verrou d'alignement, et une pastille rouge « Enchères à faire » ou « Alignement à valider ») ; puis « Comment ça marche ? » et les ligues publiques. Une carte ouvre la page de la ligue, même avec une seule ligue. Sans ligue : la présentation en trois écrans par-dessus à la première visite (#802), puis le mode en une ligne, « Créer ou rejoindre une ligue » et « Le déroulé de la saison » |
 | Page d'une ligue Manager (#419, #774) | En-tête : « ‹ French Track Manager » (retour à la liste), nom, phase · participants · type ; bloc bleu nuit « Ma saison » (phase, place, points V · N · D, différence, prochaine confrontation avec les dossards, l'action du moment) ; état du mercato ; liens vers ce qu'elle contient (catalogue, Mon équipe, Mon alignement, La journée, Classement, Mes derniers points) ; calendrier, participants, règles |
 | Ligues (#662) | « Créer une ligue » et « J'ai un code », puis deux onglets **Mes ligues · N** / **Découvrir** (`?onglet=decouvrir`). Mes ligues : cartes résumées (**LeagueCard**). Découvrir : tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553) ; puis les ligues publiques (**DiscoverLeagues**) : recherche par nom, puces de famille (Toutes + celles présentes), tri (places restantes par défaut, plus de joueurs, plus récentes), une **PublicLeagueRow** par ligue. Une fois membre, la ligue officielle rejoint Mes ligues avec le badge « Officielle » |
 | Classement général | Top de la communauté, ma progression |
@@ -256,11 +256,13 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   tenues par un athlète engagé (`lineupProgress`, `src/domain/manager-lineup.ts`). Aucun athlète
   engagé : la barre le dit (« Aucun de tes athlètes n'est inscrit… ») et ne propose pas de valider. Bandeaux
   « Alignement validé » et « Verrouillé ».
-- **ManagerTutorial** (Manager, #616) : sept étapes plein écran sur le bleu nuit, dans les deux
-  thèmes ; une idée par étape, avec un dessin en formes simples (dossards, cartes, stade, barres,
-  trophée ; jamais de photo) et les chiffres des règles ; « Précédent » / « Suivant » (flèches du
-  clavier aussi), « Passer » à toute étape, « C'est parti » à la dernière. S'ouvre seul à la
-  première visite de `/manager` (mémorisé sur l'appareil), puis par « Comment ça marche ? ».
+- **ManagerTutorial** (Manager, #616, #802) : trois écrans plein écran sur le bleu nuit, dans
+  les deux thèmes : le principe, la saison (mercato puis journées), l'action. Une idée par écran,
+  avec un dessin en formes simples (stade, cartes, dossards ; jamais de photo), sans chiffre (ils
+  sont dans « Règles de la ligue »). « Précédent » / « Suivant » (flèches du clavier aussi),
+  « Passer » à tout écran ; le dernier propose « Créer une ligue Manager » et « Rejoindre avec un
+  code ». S'ouvre seul à la première visite de `/manager` (mémorisé sur l'appareil), puis par
+  « Comment ça marche ? ».
 
 - **ManagerHome** (Manager, #606, #774) : `MySeasonCard`, « Ma saison » sur le bleu nuit dans les
   deux thèmes (page de la ligue), et `ManagerStart`, l'onglet sans ligue avec « Le déroulé de la

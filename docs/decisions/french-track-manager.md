@@ -62,10 +62,13 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   FT028 pas assez de compétitions après la fin prévue du mercato. Les ligues créées avant gardent
   leurs compétitions et leur cible. Règles pures : `seasonFormat`, `seasonCompetitions`,
   `hasEnoughCompetitions`, `src/domain/manager-league.ts`.
-- **Présentation du mode** (#618) : un joueur sans ligue Manager voit sur `/manager` une courte
-  présentation (qu'il peut passer) avant de créer ou rejoindre une ligue. Ses chiffres (budget, taille minimum
-  d'équipe, titulaires, bonus de victoire) sont lus dans les règles de l'admin
-  (`managerIntroFigures`, `src/domain/manager-intro.ts`), jamais écrits dans le texte.
+- **Présentation du mode** (#618, #616, puis #802) : à sa première visite de `/manager`, le
+  joueur voit trois écrans par-dessus la page, qu'il peut passer à tout moment : le principe
+  (recrute, aligne, affronte tes amis), la saison (mercato puis journées) et l'action (créer ou
+  rejoindre une ligue). Elle n'est montrée qu'une fois (mémorisée sur l'appareil), puis à la
+  demande (« Comment ça marche ? »). Aucun chiffre dans ces écrans : budget, taille d'équipe,
+  titulaires, compétitions, joueurs et barème sont dans « Règles de la ligue », sur la page de la
+  ligue, lus dans ses règles figées.
 - **Catalogue avant le mercato** (#620) : le catalogue s'ouvre dès l'inscription, avec SB, PB et
   prix ; un bandeau de nuit donne le temps avant l'ouverture (« Date d'ouverture à venir » sans
   date), les participants par leur dossard, le dernier arrivé (`newestArrival`) et rappelle que
