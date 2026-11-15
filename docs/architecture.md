@@ -285,6 +285,9 @@ reste est relu à chaque page, comme avant.
 - Durée : 120 s (`PUBLIC_CACHE_SECONDS`) ; une invalidation manquée se répare d'elle-même dans ce
   délai. Au sein d'un rendu, une même lecture demandée deux fois (deux ligues sur une même
   compétition) n'est faite qu'une fois (#824).
+- Jamais au build : chaque lecture gardée commence par `connection()` (`next/server`). Pendant
+  `next build`, le prérendu s'arrête là, avant Supabase ; la page est rendue à la demande. Une
+  base lente ou en panne au moment d'un déploiement ne fait donc plus échouer le build (#919).
 - Invalidation : chaque action du back-office appelle `publicDataChanged(<changement>)`, qui
   expire à l'instant (`updateTag`) les tags de `STALE_AFTER` : compétition (créer, modifier,
   supprimer, engagés) → `competitions`, `events` ; épreuve (créer, modifier, supprimer), liste de
