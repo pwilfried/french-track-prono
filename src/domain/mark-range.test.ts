@@ -2,7 +2,14 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import { DISCIPLINE_FAMILIES, MARK_UNITS } from "./discipline";
-import { isInRange, markFormat, markInputMode, markRange, readMark } from "./mark-range";
+import {
+  isInRange,
+  markExample,
+  markFormat,
+  markInputMode,
+  markRange,
+  readMark,
+} from "./mark-range";
 
 describe("markRange", () => {
   it("accepts a triple jump from 5 m to 20 m", () => {
@@ -138,5 +145,68 @@ describe("markFormat", () => {
     ["a heptathlon", "points", "combined", "Heptathlon", "points"],
   ] as const)("writes %s as %s", (_, unit, family, discipline, format) => {
     expect(markFormat(unit, markRange(unit, family, discipline))).toBe(format);
+  });
+});
+
+describe("markExample", () => {
+  it.each([
+    ["time", "sprint", "10.85"],
+    ["time", "middle", "4:01.20"],
+    ["distance", "horizontal_jumps", "7.45"],
+    ["distance", "vertical_jumps", "1.95"],
+    ["distance", "throws", "62.40"],
+    ["points", "combined", "8250"],
+  ] as const)("shows a %s mark of the %s family as %s", (unit, family, example) => {
+    expect(markExample(unit, family)).toBe(example);
+  });
+
+  it("falls back on a mark of the unit when the family is unknown or uses another unit", () => {
+    expect(markExample("time")).toBe("10.85");
+    expect(markExample("distance", "sprint")).toBe("8.15");
+  });
+
+  it.each([
+    ["time", "long", "Marathon", "2:06:30.00"],
+    ["time", "relay", "Relais 4x400 m", "3:00.50"],
+    ["distance", "horizontal_jumps", "Triple saut", "17.20"],
+  ] as const)("shows a %s mark of the %s %s as %s", (unit, family, discipline, example) => {
+    expect(markExample(unit, family, discipline)).toBe(example);
+  });
+
+  it("gives every known discipline an example inside its own range", () => {
+    const known = [
+      ["time", "sprint", ["100 m", "200 m", "400 m"]],
+      ["time", "hurdles", ["100 m haies", "110 m haies", "400 m haies"]],
+      ["time", "middle", ["800 m", "1500 m", "3000 m steeple"]],
+      ["time", "long", ["5000 m", "10 000 m", "Marathon"]],
+      [
+        "time",
+        "relay",
+        ["Relais 4x100 m", "Relais 4x400 m", "Relais mixte 4x100 m", "Relais mixte 4x400 m"],
+      ],
+      ["distance", "horizontal_jumps", ["Saut en longueur", "Triple saut"]],
+      ["distance", "vertical_jumps", ["Saut en hauteur", "Saut à la perche"]],
+      [
+        "distance",
+        "throws",
+        ["Lancer du poids", "Lancer du disque", "Lancer du marteau", "Javelot"],
+      ],
+      ["points", "combined", ["Heptathlon", "Décathlon"]],
+    ] as const;
+    for (const [unit, family, disciplines] of known) {
+      for (const discipline of disciplines) {
+        const read = readMark(markExample(unit, family, discipline), unit, family, discipline);
+        expect(typeof read, discipline).toBe("number");
+      }
+    }
+  });
+
+  it("gives every family and unit an example that reads and lies in its range", () => {
+    for (const unit of MARK_UNITS) {
+      for (const family of [undefined, ...DISCIPLINE_FAMILIES]) {
+        const read = readMark(markExample(unit, family), unit, family);
+        expect(typeof read, `${unit} ${family}`).toBe("number");
+      }
+    }
   });
 });

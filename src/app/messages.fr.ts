@@ -294,6 +294,24 @@ export const messages = {
       "Crée une ligue, partage le code, et regarde le classement bouger après chaque finale.",
     createLeague: "Créer une ligue",
   },
+  /** The Leagues and Manager tabs for a visitor (#934): what it is, an example, « Se connecter ». */
+  visitorTeaser: {
+    demo: "Exemple",
+    leagues: {
+      text: "Crée une ligue entre amis, partage son code et suivez votre classement après chaque finale.",
+      demoTitle: "Les copains du stade",
+      demoRows: [
+        { pseudo: "Léa", points: 42 },
+        { pseudo: "Toi", points: 37, me: true },
+        { pseudo: "Max", points: 30 },
+      ],
+    },
+    manager: {
+      text: "Recrute tes athlètes, aligne ton équipe et affronte un autre manager de ta ligue à chaque journée.",
+      demoHome: { name: "Ton équipe", points: 54 },
+      demoAway: { name: "Les Fusées", points: 48 },
+    },
+  },
   /** The three steps, on the visitor's home and on the player's until a first prediction. */
   howItWorks: {
     title: "Comment ça marche",
@@ -587,6 +605,8 @@ export const messages = {
     joinClosedNext: "Voir les autres ligues",
     shareText: (name: string) => `Rejoins ma ligue French Track Manager « ${name} »`,
     catalogueLink: "Catalogue du mercato",
+    /** The links to the screens of a Manager league, on its « Saison » tab (#926). */
+    screens: "Écrans de la ligue",
     /** The « Fil » tab of a Manager league (#875); its label is messages.leagues.tabs.feed. */
     feed: {
       season: "Saison",
@@ -813,8 +833,6 @@ export const messages = {
     choices: "Athlètes de ton équipe",
     onThisPlace: "Sur cette place",
     elsewhere: (place: string) => `Déjà sur la place ${place} : touche pour l'échanger`,
-    notEntered: "Absent·e : pas engagé·e dans cette compétition",
-    wrongFamily: (place: string) => `Ne va pas sur une place ${place}`,
     remove: "Retirer de cette place",
     noEligible: "Aucun athlète de ton équipe ne peut aller sur cette place.",
     validating: "Validation en cours…",
@@ -1184,6 +1202,7 @@ export const messages = {
         month: "short",
         timeZone: "UTC",
       })}`,
+    liveCompetition: (name: string) => `En cours : ${name}`,
     listTabs: { mine: (n: number) => `Mes ligues · ${n}`, discover: "Découvrir" },
     listTabsLabel: "Mes ligues ou découvrir",
     searchLabel: "Chercher une ligue publique",
@@ -2707,14 +2726,6 @@ export const messages = {
     marksHint: (tolerance: string) =>
       `Une perf est juste à ${tolerance} près de la marque officielle. Laisse vide pour ne pas parier.`,
     markLabel: (name: string) => `Perf de ${name}`,
-    /** An example of a mark, by the way it is written (see markFormat). */
-    markPlaceholder: {
-      seconds: "10.85",
-      minutes: "3:35.20",
-      hours: "2:06:30",
-      metres: "8.15",
-      points: "8250",
-    },
     /** Shown under a mark field: how to write it (#935). */
     markFormat: {
       seconds: "Format ss.cc",

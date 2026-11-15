@@ -41,6 +41,22 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Richardson")).toBeInTheDocument();
     await expect(canvas.getByText("10.78")).toBeInTheDocument();
+    // the country shows as a flag, like on the start list (#948)
+    await expect(canvas.getByText("🇺🇸")).toBeInTheDocument();
+  },
+};
+
+export const CountryWithoutFlag: Story = {
+  args: {
+    results: [
+      line("Richardson", 1, "10.78", "USA"),
+      line("Alfred", 2, "10.85", "XYZ"),
+      line("Ta Lou", 3, "10.91", "CIV"),
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getAllByText("XYZ").length).toBeGreaterThan(0);
   },
 };
 

@@ -434,16 +434,34 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
     Manager ;
   - 20 joueurs fictifs `demo-1…20@example.test` (Démo Gazelle, Démo Perche…), sans mot de passe,
     leurs pronos et leurs points sur les épreuves terminées ;
-  - 3 ligues de pronos (dont une publique et une limitée aux sauts et lancers) et une ligue Manager
-    complète : 4 joueurs, mercato fermé, équipes de 12, 6 journées tirées, compositions, scores de
-    la 1re journée, donc un classement.
+  - 3 ligues de pronos (dont une publique et une limitée aux sauts et lancers) et 3 ligues
+    Manager : « Démo Manager » (4 joueurs, mercato fermé, équipes de 12, 6 journées tirées,
+    compositions, scores de la 1re journée, donc un classement), « Démo Direct » et « Démo
+    Mercato » (ci-dessous) ;
+  - dans la compétition en cours, une épreuve (1500 m hommes) partie 20 minutes avant le
+    chargement : verrouillée, sans résultat ;
+  - 4 comptes de recette (#944), à incarner par « Se connecter en tant que » (#637, plus bas),
+    jamais admins, chacun gardé dans son état à chaque chargement :
+
+    | Compte | État | Ce qu'il permet de tester |
+    |---|---|---|
+    | Démo Nouveau (`demo-21@example.test`) | profil seul : aucun prono, aucune ligue, ni club | premier passage : accueil, écrans vides et leur action suivante, premier prono, rejoindre ou créer une ligue |
+    | Démo Mercato (`demo-22@example.test`) | dans la ligue Manager « Démo Mercato » (4 joueurs), mercato ouvert : le tour en cours finit un jour après le chargement, le suivant est à venir | catalogue, enchères, budget, tour en cours et compte à rebours |
+    | Démo Direct (`demo-23@example.test`) | dans « Démo Direct » (saison commencée sur la compétition en cours : 1re journée en cours, points d'hier déjà tombés, épreuves à venir) et dans « Démo Club du jeudi », pronos sur toute la compétition en cours | confrontation Manager en direct ; épreuve verrouillée en cours avec les pronos des amis de la ligue |
+    | Démo Joker (`demo-24@example.test`) | pronos sur la compétition finie et la compétition en cours, des points, le badge « Chasseur », son joker déjà joué sur la compétition en cours | points et classements, badges, joker déjà utilisé (plus de joker sur cette compétition) |
+
+    Pour garder ces états : les épreuves des compétitions finie et en cours sont rouvertes le
+    temps du chargement (pronos et compositions de ces comptes), puis reprennent leurs dates ; le
+    mercato de « Démo Mercato » est rouvert s'il a été fermé à la main (son calendrier retiré) et
+    son tour en cours, quel qu'il soit, est recalé pour finir un jour après le chargement.
 
   Les dates sont relatives au jour du chargement (heure de Paris) et recalées à chaque
   déploiement : il y a toujours une compétition finie, une en cours et des compétitions à venir.
   Relancé, il ne crée aucun doublon (clés fixes, écrit seulement ce qui manque) et ne supprime rien
   de ce que le propriétaire a créé à la main ; seuls les dates des lignes de démo et les points des
   joueurs de démo sont réécrits. Vérifié en CI : deux chargements de suite sur Supabase local
-  donnent les mêmes comptes (`src/infra/preprod-demo.test.ts`). À la main en local :
+  donnent les mêmes comptes et gardent les quatre comptes de recette dans leur état
+  (`src/infra/preprod-demo.test.ts`). À la main en local :
   `docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/preprod/demo.sql`.
 - **Tests e2e contre la préprod** (#695, #743) : pas à chaque fusion (la suite épuisait la base
   gratuite de préprod, décision du propriétaire du 15 nov. 2026) mais une fois par version, avant
@@ -465,8 +483,14 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   de chaque passage, réussi ou non, `ci/preprod/cleanup-e2e.sql` supprime les comptes
   `e2e-…@example.test` (avec leurs ligues, pronos et points, donc hors de tout classement), les
   ligues « E2E … », les compétitions `test-…` / `e2e-…` et celles des tests Manager et feuille de
-  résultats (`mduel-…`, `align-…`, `sheet-…`… suivies du numéro du passage, #788) ; le jeu de démo et le seed n'utilisent
-  jamais ces noms. Un test en échec ouvre une issue `bug` qui mentionne le propriétaire
+  résultats (`mduel-…`, `align-…`, `align-bare-…` « Meeting Vide », `feed-…`, `sheet-…`… suivies
+  du numéro du passage, #788, #947), les ligues Manager des comptes de test (« Sprinteurs … »), les
+  athlètes, clubs, disciplines, sondages, épisodes et faits inventés par les tests (#947) ; le jeu
+  de démo et le seed n'utilisent jamais ces noms. En local et dans la CI de chaque PR, le teardown
+  vérifie ensuite qu'aucun compte, compétition, ligue, ligue Manager, athlète, club, discipline,
+  sondage, épisode ou fait créé pendant le passage ne reste (`e2e/leftovers.ts`) : un test qui
+  invente un nouveau nom l'ajoute au script, sinon la CI est rouge. Pendant un passage (40 min
+  environ), ces objets restent visibles des joueurs de préprod. Un test en échec ouvre une issue `bug` qui mentionne le propriétaire
   (`ci/preprod/regression-report.sh`, décision du propriétaire pour #695 : une issue seulement
   quand c'est rouge) ; rien n'est signalé quand tout passe. Une suite d'avant tag rouge fait
   attendre le tag jusqu'au commit suivant. Tant que les secrets e2e ci-dessous

@@ -43,6 +43,16 @@ export const Rank: Story = {
   },
 };
 
+/** A competition under way (#928): « En cours », without its first day. */
+export const Live: Story = {
+  args: { next: { name: "Meeting de Testville", startsOn: "2027-06-12", live: true } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("En cours : Meeting de Testville")).toBeVisible();
+    await expect(canvas.queryByText(/Prochaine/)).toBeNull();
+  },
+};
+
 /** Two places won since yesterday; a lost place shows ▼. */
 export const Movement: Story = {
   args: { standing: { rank: 1, change: 2 } },

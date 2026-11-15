@@ -1,9 +1,9 @@
 import { UseCaseError } from "@/application/errors";
 import { getMyPoints, type MyEventPoints } from "@/application/get-my-points";
 import { getMyPrediction, type Prediction } from "@/application/save-prediction";
+import { CountryFlag } from "@/components/athletes/country-flag";
 import { ErrorNotice } from "@/components/error-notice";
 import type { EventDetail } from "@/domain/event";
-import { flagOf } from "@/domain/flag";
 import { predictionVsOfficial } from "@/domain/podium";
 import {
   createSupabasePointsRepository,
@@ -99,7 +99,9 @@ export async function ResultSection({
                 <span className="grid size-6 shrink-0 place-items-center rounded-full bg-gold-soft text-xs font-bold text-gold-ink">
                   {row.slot}
                 </span>
-                <span aria-hidden="true">{athlete ? flagOf(athlete.countryCode) : null}</span>
+                <span aria-hidden="true">
+                  {athlete && <CountryFlag code={athlete.countryCode} />}
+                </span>
                 <span className="min-w-0 flex-1 truncate font-semibold">
                   {athlete?.name ?? "?"}
                 </span>

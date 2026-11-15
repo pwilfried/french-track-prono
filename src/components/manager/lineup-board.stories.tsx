@@ -55,6 +55,17 @@ export const EmptyStadium: Story = {
     await expect(canvas.getByRole("button", { name: text.validate })).toBeDisabled();
     await expect(canvas.getByText("À remplir : Sprint, Demi-fond, Libre")).toBeVisible();
     await expect(canvas.getByText(text.unfillable(1))).toBeVisible();
+    // The bar sits right under the stadium, never over it (#929): not stuck to the screen's bottom.
+    const validate = canvas.getByRole("button", { name: text.validate });
+    await expect(getComputedStyle(validate.parentElement!).position).not.toBe("sticky");
+    const stadium = canvas.getByRole("list", { name: text.stadium });
+    const bench = canvas.getByRole("heading", { name: text.bench });
+    await expect(
+      stadium.compareDocumentPosition(validate) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    await expect(
+      validate.compareDocumentPosition(bench) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   },
 };
 
@@ -66,13 +77,12 @@ export const Editing: Story = {
     const sheet = () => within(page.getByRole("dialog"));
     const validate = canvas.getByRole("button", { name: text.validate });
 
-    // The sprint spot: the sprinter fits, the others are greyed with the reason.
+    // The sprint spot: only the sprinter is listed, not the others nor the absent thrower (#937).
     await userEvent.click(canvas.getByRole("button", { name: text.emptyPlace("Sprint") }));
     await expect(page.getByRole("dialog", { name: text.sheetTitle("Sprint") })).toBeVisible();
-    await expect(sheet().getByRole("button", { name: /Inès Démo/ })).toBeDisabled();
-    await expect(sheet().getAllByText(text.wrongFamily("Sprint"))).toHaveLength(2);
-    await expect(sheet().getByRole("button", { name: /Anna Modèle/ })).toBeDisabled();
-    await expect(sheet().getByText(text.notEntered)).toBeVisible();
+    await expect(sheet().getAllByRole("listitem")).toHaveLength(1);
+    await expect(sheet().queryByRole("button", { name: /Inès Démo/ })).toBeNull();
+    await expect(sheet().queryByRole("button", { name: /Anna Modèle/ })).toBeNull();
     await userEvent.click(sheet().getByRole("button", { name: /Léa Fictive/ }));
     await expect(
       canvas.getByRole("button", { name: text.takenPlace("Sprint", "Léa Fictive") }),
@@ -165,6 +175,18 @@ export const AllAbsent: Story = {
     await expect(canvas.queryByText(text.hint)).toBeNull();
     await expect(canvas.queryByRole("button", { name: text.validate })).toBeNull();
     await expect(canvas.getAllByText(messages.team.absent)).toHaveLength(4);
+  },
+};
+
+/** A place nobody of the team can take: the sheet says so and lists nobody (#937). */
+export const NobodyFits: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(canvas.getByRole("button", { name: text.unfillablePlace("Lancers") }));
+    const sheet = within(page.getByRole("dialog", { name: text.sheetTitle("Lancers") }));
+    await expect(sheet.getByText(text.noEligible)).toBeVisible();
+    await expect(sheet.queryByRole("list", { name: text.choices })).toBeNull();
   },
 };
 
