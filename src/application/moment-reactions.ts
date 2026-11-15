@@ -43,7 +43,7 @@ export interface MomentReactionRepository {
   /** Sends my preset message under the moment; it replaces the one I sent before. */
   sendMessage(leagueId: string, momentKey: string, message: PresetMessage): Promise<Outcome>;
   /** Reports a reaction or a message; twice changes nothing. */
-  report(reactionId: string): Promise<"done" | "unknown">;
+  report(reactionId: string): Promise<"done" | "unknown" | "too_many">;
   /** The reported items still shown, the most reported first. Admin only. */
   reports(): Promise<MomentReport[] | "not_admin">;
   /** Hides an item for everyone. Admin only. */
@@ -98,12 +98,13 @@ export function sendPresetMessage(ports: Ports) {
   };
 }
 
-/** Reports a reaction or a message to the admin. */
+/** Reports a reaction or a message to the admin; 20 reports a day at most (#913). */
 export function reportMomentReaction(ports: Ports) {
   return {
     async execute(input: { reactionId: string }): Promise<void> {
-      if ((await ports.reactions.report(input.reactionId)) === "unknown")
-        throw new UseCaseError("REACTION_UNKNOWN");
+      const outcome = await ports.reactions.report(input.reactionId);
+      if (outcome === "unknown") throw new UseCaseError("REACTION_UNKNOWN");
+      if (outcome === "too_many") throw new UseCaseError("REPORT_LIMIT");
     },
   };
 }

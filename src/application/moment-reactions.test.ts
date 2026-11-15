@@ -223,4 +223,14 @@ describe("moderating the reactions of the feed", () => {
       new UseCaseError("REACTION_UNKNOWN"),
     );
   });
+
+  it("refuses a report beyond 20 in a day with REPORT_LIMIT", async () => {
+    const { as } = world();
+    const ports = {
+      reactions: { ...as("ana").reactions, report: async () => "too_many" as const },
+    };
+    await expect(reportMomentReaction(ports).execute({ reactionId: "any" })).rejects.toEqual(
+      new UseCaseError("REPORT_LIMIT"),
+    );
+  });
 });

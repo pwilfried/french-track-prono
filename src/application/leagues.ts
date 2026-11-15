@@ -107,7 +107,7 @@ export interface LeagueRepository {
   /** What the invite code leads to; an unknown code counts as a wrong one, like `join`. */
   inviteStatus(code: string): Promise<InviteStatus>;
   /** Reports a public league to the admin (once per player). */
-  report(leagueId: string): Promise<"reported" | "unknown">;
+  report(leagueId: string): Promise<"reported" | "unknown" | "too_many">;
 }
 
 type Ports = { leagues: LeagueRepository };
@@ -270,12 +270,13 @@ export function joinPublicLeague(ports: Ports) {
   };
 }
 
-/** Reports a public league to the admin (#321); reporting twice changes nothing. */
+/** Reports a public league to the admin (#321); reporting twice changes nothing; 20 a day (#913). */
 export function reportLeague(ports: Ports) {
   return {
     async execute(input: { leagueId: string }): Promise<void> {
       const outcome = await ports.leagues.report(input.leagueId);
       if (outcome === "unknown") throw new UseCaseError("LEAGUE_NOT_FOUND");
+      if (outcome === "too_many") throw new UseCaseError("REPORT_LIMIT");
     },
   };
 }

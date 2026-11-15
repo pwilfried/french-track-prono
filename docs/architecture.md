@@ -628,7 +628,8 @@ sont dans `messages.fr.ts`. Table `moment_reactions` : écritures par `add_momen
 « Signaler » un message (un signalement par joueur et par élément, `moment_reaction_reports`) ;
 l'admin voit les « Signalements du fil » en tête de la page « Ligues » du back-office, masque
 l'élément (`admin_hide_moment_reaction()`, il disparaît pour tous, noté dans l'historique) ou classe
-le signalement. Le joueur concerné par un moment reçoit une notification push regroupée quand
+le signalement. Plafond (#913) : 20 signalements (ligues et fil confondus) par joueur et par
+24 h, au-delà `FT035` (`REPORT_LIMIT`) ; resignaler le même élément ne compte pas. Le joueur concerné par un moment reçoit une notification push regroupée quand
 d'autres y réagissent (`private.moment_reaction_due()`, famille `league` de `reminder_settings`,
 encore masquée dans « Mes rappels », #903 ; au plus une par heure, mêmes heures calmes).
 
@@ -646,7 +647,8 @@ dans chacune de ses ligues de pronos (`league_moments`) et Manager (table jumell
 
 Notifications push (#203) : le joueur les active par appareil depuis son profil (opt-in
 explicite, désactivation en un geste). Les abonnements (`push_subscriptions`) ne s'écrivent que
-par `save_push_subscription()` et `delete_push_subscription()`. Chaque minute, l'Edge Function
+par `save_push_subscription()` et `delete_push_subscription()` ; au plus 10 appareils par joueur,
+le plus ancien est remplacé (#913). Chaque minute, l'Edge Function
 `push-notifications` lit `private.reminder_due()` et envoie, avec la bibliothèque `web-push` et
 les clés VAPID, des rappels groupés (#681, règles de référence dans `src/domain/reminders.ts`) :
 

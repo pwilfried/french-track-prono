@@ -3127,6 +3127,8 @@ export const messages = {
     REACTION_NOT_ALLOWED: "Tu peux réagir aux pronos des autres une fois l’épreuve verrouillée.",
     MOMENT_REACTION_REFUSED: "Seuls les membres de la ligue réagissent à ses moments.",
     REACTION_UNKNOWN: "Cette réaction n’est plus là.",
+    REPORT_LIMIT:
+      "Tu as déjà envoyé 20 signalements en 24 heures : l’équipe les examine. Réessaie demain.",
     REVEAL_UNAVAILABLE:
       "Les pronos des autres ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     PODIUM_INVALID: "Choisis trois athlètes différents pour ton podium.",
