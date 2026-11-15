@@ -131,7 +131,11 @@ test("a league needs a competition; on one under way, only the events locked aft
     .getByLabel("Ajouter une compétition à venir ou en cours")
     .selectOption({ label: `Test ${coming}` });
   await page.getByRole("button", { name: "Ajouter", exact: true }).click();
-  await expect(page.locator("main").getByRole("status")).toContainText("Compétition ajoutée");
+  // On pre-production the action and its redirect can take more than 5 s (#871).
+  await expect(page).toHaveURL(/\?ajoutee=1$/, { timeout: 30_000 });
+  await expect(page.locator('main:not([aria-busy="true"])').getByRole("status")).toContainText(
+    "Compétition ajoutée",
+  );
   score(`${coming}-100m`, 7);
   await page.reload();
   await expect(rows.first()).toContainText("11 points");
