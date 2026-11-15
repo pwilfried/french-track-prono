@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { notificationOf, programNotificationOf, sendDue } from "./push.mjs";
+import { notificationOf, programNotificationOf, sendDue, sendTest } from "./push.mjs";
 
 const devices12 = [
   { endpoint: "https://push.example.test/1", p256dh: "k1", auth: "a1" },
@@ -317,5 +317,27 @@ describe("push notifications", () => {
     expect(database.calls.marked).toEqual([]);
     expect(database.calls.programsMarked).toEqual([]);
     expect(report).toEqual({ sent: 0, forgotten: 0, failed: 0, failures: [] });
+  });
+});
+
+describe("sendTest", () => {
+  it("sends one test notification to every device of the account and counts them", async () => {
+    const sent: { endpoint: string; payload: { title: string; url: string } }[] = [];
+    const report = await sendTest(devices12, async (device, payload) => {
+      sent.push({ endpoint: device.endpoint, payload: JSON.parse(payload) });
+    });
+    expect(report).toEqual({ sent: 2, forgotten: [], failed: 0 });
+    expect(sent.map((s) => s.endpoint)).toEqual(devices12.map((d) => d.endpoint));
+    expect(sent[0].payload.title).toContain("test");
+    expect(sent[0].payload.url).toBe("/");
+  });
+
+  it("lists the devices that unsubscribed and counts the other failures", async () => {
+    const report = await sendTest(devices12, async (device) => {
+      throw Object.assign(new Error("gone"), {
+        statusCode: device.endpoint.endsWith("1") ? 410 : 500,
+      });
+    });
+    expect(report).toEqual({ sent: 0, forgotten: ["https://push.example.test/1"], failed: 1 });
   });
 });

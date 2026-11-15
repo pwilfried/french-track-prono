@@ -5,26 +5,39 @@ name: Push notifications
 # minute (#502): a GitHub schedule runs late or not at all when GitHub is busy.
 # Secrets (environment "production"): SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF (as for the
 # migrations), VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY.
+# A test (#977): `test` sends one notification to every device of the owner's account, on the
+# chosen site (secret PUSH_TEST_EMAIL of that environment; in preprod, PREPROD_OWNER_EMAIL works).
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: Site
+        type: choice
+        options: [production, preprod]
+        default: production
+      test:
+        description: Only send a test notification to the owner's devices
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: push-notifications
+  group: push-notifications-${{ inputs.target || 'production' }}
 
 jobs:
   push:
     name: Send the push notifications due
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    environment: production
+    environment: ${{ inputs.target || 'production' }}
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
       VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
       VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+      PUSH_TEST_EMAIL: ${{ inputs.test && (secrets.PUSH_TEST_EMAIL || secrets.PREPROD_OWNER_EMAIL) || '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
