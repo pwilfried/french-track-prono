@@ -600,7 +600,7 @@ des joueurs du club, 3 joueurs au moins) ; derniers pronos et historique complet
 aux couleurs de l'animal, sans dossard depuis #900)
 et se partage par le partage natif du téléphone, ou se télécharge à défaut.
 
-« Le saviez-vous ? » (v0.19, #766) : une carte en haut de l'accueil du joueur, un fait d'athlé,
+« Le saviez-vous ? » (v0.19, #766) : une carte sur l'accueil du joueur, juste sous « Ta prochaine action » (#932), un fait d'athlé,
 son étiquette (« Pour tes pronos », « Insolite », « Pour briller au bar »), « Un autre » et × qui la
 ferme jusqu'au lendemain (jour de Paris, retenu sur l'appareil). La banque vit dans `fun_facts`
 (48 faits de départ chargés par la migration, chacun avec sa source, lue par l'admin seul) ;
