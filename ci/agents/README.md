@@ -23,10 +23,12 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
 5. Chaque fusion dans `main` part en préprod (`preprod.yml`), correctifs `vX.Y.Z` compris :
    migrations sur la base de préprod, seed et jeu de démo, puis déploiement sur
    https://french-track-preprod.vercel.app (test de fumée, retour arrière automatique s'il
-   échoue), puis tests e2e (`docs/SETUP.md`, « Préproduction »). Une PR fusionnée
+   échoue), sans la suite e2e complète (#743, `docs/SETUP.md`, « Préproduction »). Une PR fusionnée
    n'ouvre pas d'issue de vérification : c'est la version qui en ouvre une (étape 6).
 6. Quand le milestone qui suit le dernier tag n'a plus d'issue ouverte et que tous les
-   runs du dernier commit de `main` sont verts (CI et préprod), `release.sh` pose le tag annoté :
+   runs du dernier commit de `main` sont verts (CI et préprod), `release.sh` lance la suite e2e
+   complète contre la préprod sur ce commit (`preprod.yml` avec `e2e=true`, run « Pre-production
+   e2e », une seule fois, #743) ; quand elle est verte, il pose le tag annoté :
    `vX.Y.0` pour un milestone `vX.Y …`, `vX.Y.Z` pour un milestone correctif `vX.Y.Z …`. Il le pose
    avec `AGENTS_PAT`, ce qui lance la mise en prod (`migrations.yml`). Aucun feu vert humain
    (décision du propriétaire du 13 nov. 2026). Une release GitHub liste les PR (sa notification
@@ -34,12 +36,15 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
    et une case par PR qui touche l'interface, et le milestone est fermé. Seul garde-fou : si le
    déploiement en préprod de ce commit a échoué, pas de tag, un avertissement dans le run, nouvel
    essai à la vérification suivante (au plus une heure). « Échoué » couvre tout le run
-   « Pre-production » : migrations, déploiement, test de fumée ou tests e2e. Même chose si la CI de `main` est rouge.
+   « Pre-production » : migrations, déploiement, test de fumée, ou la suite e2e d'avant tag. Une
+   suite rouge n'est pas relancée : le correctif fusionné fait un nouveau commit, donc un nouveau
+   passage. Même chose si la CI de `main` est rouge.
 
 ### Test quotidien de la préprod (#636)
 
 Chaque matin (04 h 23 UTC, 5 h 23 ou 6 h 23 à Paris), et à la main par « Run workflow »,
-`.github/workflows/preprod-daily.yml` lance la suite `e2e/` contre la préprod,
+`.github/workflows/preprod-daily.yml` lance la suite `e2e/` contre la préprod (le même job que
+avant un tag, `.github/workflows/preprod-e2e.yml`, #743),
 sans relance d'un test qui échoue. Il attend un déploiement en cours (même file que `preprod.yml`).
 
 - **Rouge** : `ci/preprod/regression-report.sh` ouvre une issue `bug` dans le milestone en cours,

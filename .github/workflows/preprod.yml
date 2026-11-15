@@ -5,7 +5,8 @@ name: Pre-production
 # (https://french-track-preprod.vercel.app, kept out of search engines). Production is untouched:
 # it still follows the vX.Y.Z tags (migrations.yml), set automatically by ci/agents/release.sh once
 # a milestone is finished; a failed run of this workflow on main's commit makes the tag wait.
-# After the deploy, the e2e suite runs against pre-production; a failing test opens an issue.
+# Each merge: migrations, demo set, deploy and smoke test only. The full e2e suite runs once per
+# version (e2e=true, started by ci/agents/release.sh before the tag) and every morning (#743).
 # Secrets (GitHub > Settings > Environments > preprod, never the production ones):
 #   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, SUPABASE_PROJECT_REF,
 #   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (docs/SETUP.md, « Préproduction »).
@@ -15,6 +16,13 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      e2e:
+        description: Run only the full e2e suite against what is deployed (before a tag)
+        type: boolean
+        default: false
+
+run-name: ${{ inputs.e2e && 'Pre-production e2e' || 'Pre-production' }}
 
 permissions:
   contents: read
@@ -32,6 +40,7 @@ env:
 jobs:
   database:
     name: Migrations and seed of pre-production
+    if: ${{ !inputs.e2e }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: preprod
@@ -71,12 +80,14 @@ jobs:
       - name: Apply the migrations
         run: supabase db push --remote --yes --password "$SUPABASE_DB_PASSWORD"
 
-      # Public data only, idempotent (on conflict do nothing): what the owner adds by hand stays.
-      - name: Load the seed
-        run: ci/preprod/load-sql.sh supabase/seed.sql
+      # Public data, then the invented demo set (#694); idempotent (on conflict do nothing): what the
+      # owner adds by hand stays. The owner's account follows (ci/preprod/owner.sh, #769).
+      - name: Load the seed and the demo set
+        run: ci/preprod/load-sql.sh supabase/seed.sql supabase/preprod/demo.sql
 
   deploy:
     name: Deploy to Vercel pre-production
+    if: ${{ !inputs.e2e }}
     needs: database
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -90,14 +101,9 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      # Through Vercel Authentication once it is on (#692); empty until the owner sets it.
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
     steps:
-      - name: Check the Vercel secrets
-        run: |
-          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
-            echo "::error::VERCEL_TOKEN, VERCEL_ORG_ID and VERCEL_PROJECT_ID are needed in the preprod environment."
-            exit 1
-          fi
-
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
@@ -114,97 +120,14 @@ jobs:
           VERCEL_EXTRA_ENV: NEXT_PUBLIC_SITE_NOINDEX=1
         run: ci/vercel-deploy.sh "$PREPROD_URL"
 
-  # The e2e suite against the deployed commit, on the demo set (#695).
+  # The full e2e suite, once per version: ci/agents/release.sh starts it (e2e=true) when a
+  # finished milestone is green on main, and tags only after it passed (#743). Not at every merge:
+  # it wore the free pre-production database out (owner's decision, 15 Nov 2026).
   e2e:
     name: End-to-end tests against pre-production
-    needs: deploy
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    environment: preprod
+    if: ${{ inputs.e2e }}
     permissions:
       contents: read
       issues: write
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-      # SQL and sign-in codes of the tests in pre-production (#695, docs/SETUP.md).
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      PUBLIC_CACHE_FLUSH_SECRET: ${{ secrets.PUBLIC_CACHE_FLUSH_SECRET }}
-      # The owner's account (ci/preprod/owner.sh, #769): skipped while the secret is missing.
-      PREPROD_OWNER_EMAIL: ${{ secrets.PREPROD_OWNER_EMAIL }}
-    steps:
-      # Until the owner has set these (docs/SETUP.md, « Préproduction »), the tests are skipped with a
-      # warning instead of failing: a set-up not done yet must not hold the chain nor the tag (#741).
-      - name: Check the e2e secrets
-        id: check
-        run: |
-          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] || [ -z "$PUBLIC_CACHE_FLUSH_SECRET" ]; then
-            echo "::warning::SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and PUBLIC_CACHE_FLUSH_SECRET are not all in the preprod environment: e2e tests skipped (docs/SETUP.md)."
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          if [ "$SUPABASE_PROJECT_REF" != "$PREPROD_PROJECT_REF" ] || [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
-            echo "::error::SUPABASE_ACCESS_TOKEN and the pre-production SUPABASE_PROJECT_REF are needed in the preprod environment."
-            exit 1
-          fi
-          if [ "$NEXT_PUBLIC_SUPABASE_URL" != "https://$PREPROD_PROJECT_REF.supabase.co" ]; then
-            echo "::error::SUPABASE_URL must be https://$PREPROD_PROJECT_REF.supabase.co: no test run."
-            exit 1
-          fi
-          echo "ready=true" >> "$GITHUB_OUTPUT"
-
-      - uses: actions/checkout@v4
-        if: steps.check.outputs.ready == 'true'
-
-      - uses: actions/setup-node@v4
-        if: steps.check.outputs.ready == 'true'
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-
-      - run: npm ci
-        if: steps.check.outputs.ready == 'true'
-
-      - name: Install Chromium for Playwright
-        if: steps.check.outputs.ready == 'true'
-        run: npx playwright install chromium
-
-      # No retry (AGENTS.md). The outcome is kept for the report; the job fails at the end, after
-      # the clean-up.
-      - name: End-to-end test against pre-production
-        id: e2e
-        if: steps.check.outputs.ready == 'true'
-        continue-on-error: true
-        env:
-          E2E_BASE_URL: ${{ env.PREPROD_URL }}
-          PLAYWRIGHT_JSON_OUTPUT_NAME: results.json
-        run: npx playwright test --reporter=list,json,html
-
-      - name: Delete the e2e accounts of this pass
-        if: always() && steps.check.outputs.ready == 'true'
-        run: ci/preprod/load-sql.sh ci/preprod/cleanup-e2e.sql
-
-      - name: Keep the Playwright report
-        id: report
-        if: always() && steps.check.outputs.ready == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report-preprod
-          path: |
-            playwright-report/
-            test-results/
-          retention-days: 14
-
-      # An issue only when a test fails (owner's decision for #695), « de nouveau vert » after.
-      - name: Report to the issues
-        if: always() && steps.check.outputs.ready == 'true'
-        env:
-          BOT_TOKEN: ${{ github.token }}
-          AGENTS_OWNER: ${{ vars.AGENTS_OWNER }}
-          REPORT_URL: ${{ steps.report.outputs.artifact-url }}
-        run: ci/preprod/regression-report.sh results.json
-
-      - name: Fail when a test failed
-        if: steps.check.outputs.ready == 'true' && steps.e2e.outcome != 'success'
-        run: exit 1
+    uses: ./.github/workflows/preprod-e2e.yml
+    secrets: inherit

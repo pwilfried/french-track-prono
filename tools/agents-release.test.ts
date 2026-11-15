@@ -12,7 +12,7 @@ const sha = "abcdef1234567890";
  * (through the same --jq filters); writes are only printed (DRY_RUN). v0.17 is finished.
  * A run name ending with "!" failed, one ending with "…" is still going.
  */
-function release({ runs }: { runs?: string[] } = {}) {
+function release({ runs, e2e }: { runs?: string[]; e2e?: string[] } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "agents-release-"));
   const api: Record<string, unknown> = {
     "repos/owner/repo/tags?per_page=100": [{ name: "v0.16.0" }],
@@ -27,6 +27,15 @@ function release({ runs }: { runs?: string[] } = {}) {
         conclusion: run.endsWith("!") ? "failure" : run.endsWith("…") ? null : "success",
       })),
     },
+    // Full e2e passes against pre-production on main's commit, newest first (#743).
+    [`repos/owner/repo/actions/workflows/preprod.yml/runs?head_sha=${sha}&event=workflow_dispatch&per_page=20`]:
+      {
+        workflow_runs: (e2e ?? ["Pre-production e2e"]).map((run) => ({
+          display_title: run.replace(/[!…]$/, ""),
+          status: run.endsWith("…") ? "in_progress" : "completed",
+          conclusion: run.endsWith("!") ? "failure" : run.endsWith("…") ? null : "success",
+        })),
+      },
     [`repos/owner/repo/compare/v0.16.0...${sha}`]: {
       commits: [
         { commit: { message: "feat: add a screen (#41)" } },
@@ -105,5 +114,25 @@ it("tags a finished version when there is no pre-production run on main's commit
 it("does not tag while main's CI is red", () => {
   const out = release({ runs: ["CI!", "Pre-production"] });
   expect(out).toContain("main is red");
+  expect(out).not.toContain("Tagging");
+});
+
+it("starts the full e2e suite against pre-production once, before the tag (#743)", () => {
+  const out = release({ e2e: ["Pre-production"] });
+  expect(out).toContain("actions/workflows/preprod.yml/dispatches -f ref=main -f inputs[e2e]=true");
+  expect(out).not.toContain("Tagging");
+});
+
+it("waits while the full e2e suite runs against pre-production", () => {
+  const out = release({ e2e: ["Pre-production e2e…"] });
+  expect(out).toContain("full e2e suite against pre-production is running");
+  expect(out).not.toContain("dispatches");
+  expect(out).not.toContain("Tagging");
+});
+
+it("does not tag nor start the suite again when the full e2e suite failed on main's commit", () => {
+  const out = release({ e2e: ["Pre-production e2e!"] });
+  expect(out).toContain("the full e2e suite against pre-production failed on abcdef1: no tag");
+  expect(out).not.toContain("dispatches");
   expect(out).not.toContain("Tagging");
 });

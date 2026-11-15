@@ -163,13 +163,6 @@ jobs:
       SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
     steps:
       # Unlike the migrations, a missing secret fails: production would silently stop moving.
-      - name: Check the Vercel secrets
-        run: |
-          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
-            echo "::error::VERCEL_TOKEN, VERCEL_ORG_ID and VERCEL_PROJECT_ID are needed (docs/SETUP.md)."
-            exit 1
-          fi
-
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4

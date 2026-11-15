@@ -7,7 +7,8 @@ name: agents-merge
 # Stop everything: disable this workflow (Actions, agents-merge, "…", Disable workflow).
 on:
   workflow_run:
-    workflows: [CI, agents]
+    # Pre-production: the tag follows its deploy and its full e2e pass at once (#743).
+    workflows: [CI, agents, Pre-production]
     types: [completed]
   schedule:
     - cron: "17 * * * *"
@@ -27,6 +28,7 @@ jobs:
     if: >-
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.name == 'agents' ||
+      github.event.workflow_run.name == 'Pre-production' ||
       github.event.workflow_run.event == 'pull_request' ||
       (github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest

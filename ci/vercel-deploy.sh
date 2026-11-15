@@ -18,6 +18,11 @@
 #      job stays red either way.
 set -euo pipefail
 base="${1:?usage: ci/vercel-deploy.sh <base url>}"
+# Checked here once for production and pre-production (#743), before any call.
+if [ -z "${VERCEL_TOKEN:-}" ] || [ -z "${VERCEL_ORG_ID:-}" ] || [ -z "${VERCEL_PROJECT_ID:-}" ]; then
+  echo "::error::VERCEL_TOKEN, VERCEL_ORG_ID and VERCEL_PROJECT_ID are needed (docs/SETUP.md)."
+  exit 1
+fi
 here=$(cd "$(dirname "$0")" && pwd)
 smoke="${SMOKE_TEST:-$here/../scripts/smoke.sh}"
 vercel() { npx --yes vercel@latest "$@" --token="$VERCEL_TOKEN"; }
