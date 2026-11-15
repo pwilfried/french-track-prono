@@ -2417,6 +2417,10 @@ export const messages = {
     rank: (rank: number, players: number) =>
       `${ordinal(rank)} sur ${players} joueur${players > 1 ? "s" : ""}`,
     notRanked: "Pas encore classé",
+    /** « GUÉPARD · SPRINT » under the medallion. */
+    animal: (animal: string, family: string) => `${animal} · ${family}`.toLocaleUpperCase("fr"),
+    /** The family line of the hare worn before any animal is won. */
+    mascot: "Mascotte",
     bestShot: "MON MEILLEUR COUP",
     noBestShot: "À venir…",
     footer: "Pronostique les podiums d'athlé avec FrenchTrack",

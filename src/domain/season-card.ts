@@ -1,9 +1,10 @@
-import type { Bib } from "./bib";
+import type { Animal } from "./band";
 
 /** What the shared season card shows (#388): public figures only, never e-mail, sex or disciplines. */
 export type SeasonCard = {
   pseudo: string;
-  bib: Bib;
+  /** The player's animal (#768), whose colours the card wears (#900); null before it is won. */
+  animal: Animal | null;
   /** The club when validated by the admin (public on the player card), else null. */
   club: string | null;
   points: number;
@@ -18,19 +19,20 @@ export type SeasonCard = {
  * fields are copied, so anything private passed along never reaches the image.
  */
 export function seasonCardOf(input: {
-  profile: { pseudo: string; bib: Bib };
+  profile: { pseudo: string };
   club: { name: string; validated: boolean } | null;
   season: {
     points: number;
     rank: number | null;
     players: number;
     bestShot: SeasonCard["best"] | null;
+    animal: Animal | null;
   };
 }): SeasonCard {
   const best = input.season.bestShot;
   return {
     pseudo: input.profile.pseudo,
-    bib: { number: input.profile.bib.number, color: input.profile.bib.color },
+    animal: input.season.animal,
     club: input.club?.validated ? input.club.name : null,
     points: input.season.points,
     rank: input.season.rank,
