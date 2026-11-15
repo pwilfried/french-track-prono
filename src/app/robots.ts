@@ -15,6 +15,7 @@ export default function robots(): MetadataRoute.Robots {
         "/profil",
         "/bienvenue",
         "/mes-points",
+        "/communaute",
         "/ligues",
         "/au-revoir",
       ],

@@ -47,9 +47,18 @@ export function momentText(moment: FeedMoment): string {
 
 /**
  * One moment of the feed of a league: its label, the player's bib, the sentence; under it,
- * `children` (the reactions, #672).
+ * `children` (the reactions, #672). Outside the league (the community block of the home, #673),
+ * `leagueName` says which league it is from.
  */
-export function MomentCard({ moment, children }: { moment: FeedMoment; children?: ReactNode }) {
+export function MomentCard({
+  moment,
+  leagueName,
+  children,
+}: {
+  moment: FeedMoment;
+  leagueName?: string;
+  children?: ReactNode;
+}) {
   return (
     <article className="flex flex-col gap-3 rounded-2xl border border-border bg-card px-3.5 py-3">
       <div className="flex items-start gap-3">
@@ -60,9 +69,14 @@ export function MomentCard({ moment, children }: { moment: FeedMoment; children?
           {text.emoji[moment.kind]}
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <ChipStatus tone={TONE[moment.kind]} className="self-start">
-            {text.label[moment.kind]}
-          </ChipStatus>
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <ChipStatus tone={TONE[moment.kind]}>{text.label[moment.kind]}</ChipStatus>
+            {leagueName && (
+              <span className="min-w-0 break-words text-xs font-semibold text-muted-foreground">
+                {leagueName}
+              </span>
+            )}
+          </div>
           <p className="flex min-w-0 items-start gap-2 text-sm">
             {moment.bib && <Bib bib={moment.bib} />}
             <span className="min-w-0 break-words">{momentText(moment)}</span>

@@ -17,3 +17,6 @@ delete from competitions where slug like 'test-%' or slug like 'e2e-%';
 -- before its own cleanup: same prefix, then the run's number (mduel-1-123456, align-123456…).
 delete from competitions
 where slug ~ '^(align|mduel|mend|mchamp|mhome|mpts|sheet|paste|manager|manager-soon)-([0-9]+-)?[0-9]+$';
+
+-- Polls launched by the community test (#673): their question starts with « E2E ».
+delete from polls where question like 'E2E %';
