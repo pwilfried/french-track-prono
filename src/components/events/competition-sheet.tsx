@@ -218,7 +218,7 @@ export function SheetLine({
               {text.sheet.france}
             </ChipStatus>
           )}
-          <span>{c.finals > 0 ? messages.start.events(c.finals) : text.noProgram}</span>
+          <span>{messages.start.program(c.finals)}</span>
         </span>
       </span>
     </SheetLink>
