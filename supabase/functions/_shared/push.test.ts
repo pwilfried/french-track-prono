@@ -182,6 +182,26 @@ describe("push notifications", () => {
     expect(notificationOf(draw).title).toBe("Match nul contre Gazelle");
   });
 
+  it("words the reactions to my league moments in one notification (#672)", () => {
+    const due = {
+      user_id: "u1",
+      kind: "moment_reaction",
+      evening: "2026-11-15",
+      ref: "2026-11-15T20:01:02.000000",
+      payload: { count: 3, pseudo: "Gazelle", league_id: "l1", league_name: "Les Lièvres" },
+    };
+    expect(notificationOf(due)).toEqual({
+      title: "Gazelle et 2 autres ont réagi à ton moment",
+      body: "Les Lièvres : va voir le fil.",
+      url: "/ligues/l1?onglet=fil",
+      tag: "moment_reaction",
+    });
+    const one = { ...due, payload: { ...due.payload, count: 1 } };
+    expect(notificationOf(one).title).toBe("Gazelle a réagi à ton moment");
+    const two = { ...due, payload: { ...due.payload, count: 2 } };
+    expect(notificationOf(two).title).toBe("Gazelle et 1 autre ont réagi à ton moment");
+  });
+
   it("marks a Manager reminder sent with what it is about, short-lived when it expires", async () => {
     const due = {
       ...manager,

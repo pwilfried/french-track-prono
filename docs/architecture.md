@@ -608,6 +608,33 @@ clôture à venir. Les joueurs n'écrivent aucun texte : ils votent une fois par
 joueur ou la clôture (l'admin les voit toujours). Les parts s'affichent en pourcentages entiers
 qui font 100 (`pollResults`, plus fort reste).
 
+Réactions au fil (v0.19, #672) : les membres d'une ligue réagissent à ses moments sans texte libre.
+Quatre emojis (🔥 👏 😮 😂, une réaction de chaque sorte par joueur, retirable, avec compteurs) et
+cinq messages prédéfinis (« Bien joué ! », « Quel flair ! », « Revanche ? », « Pas de chance »,
+« Je te rattrape » ; un par joueur et par moment, le second remplace le premier), stockés comme des
+codes (`src/domain/moment-reactions.ts`, même liste vérifiée en base) ; les emojis et les phrases
+sont dans `messages.fr.ts`. Table `moment_reactions` : écritures par `add_moment_reaction()`,
+`remove_moment_reaction()`, `send_moment_message()` (membre seulement, en son nom), lecture par
+`league_feed_reactions()` sous la sécurité par ligne. Modération (décision du 14 nov. 2026) :
+« Signaler » un message (un signalement par joueur et par élément, `moment_reaction_reports`) ;
+l'admin voit les « Signalements du fil » en tête de la page « Ligues » du back-office, masque
+l'élément (`admin_hide_moment_reaction()`, il disparaît pour tous, noté dans l'historique) ou classe
+le signalement. Le joueur concerné par un moment reçoit une notification push regroupée quand
+d'autres y réagissent (`private.moment_reaction_due()`, famille « Ligues » de « Mes rappels », au
+plus une par heure, mêmes heures calmes).
+
+Fil d'une ligue Manager et badges (v0.19, #875) : l'onglet « Fil » de la page d'une ligue Manager
+(`?onglet=fil`, à côté de « Saison ») raconte les athlètes gagnés à la révélation de chaque tour
+du mercato (`mercato_win`, depuis `manager_round_bids`) et le résultat de chaque confrontation
+dès que sa journée a ses scores Manager (`duel_result`, vainqueur d'abord, score manquant = 0 ;
+pas de duel les journées bonus). Ces faits sont déjà stockés : `manager_feed()` les lit (sécurité
+par ligne, un non-participant ne lit rien) et `managerMoments` (`src/domain/manager-moments.ts`)
+les raconte avec une clé stable (`mercato_win:<tour>:<athlète>`, `duel_result:<journée>:<domicile>`).
+Un niveau de badge, lui, n'a pas de trace datée : quand le joueur a vu la célébration
+(`markBadgesSeen`), `publish_my_badge_moments()` le publie une fois (`badge:<joueur>:<badge>:<niveau>`)
+dans chacune de ses ligues de pronos (`league_moments`) et Manager (table jumelle
+`manager_moments`), seulement s'il détient ce niveau.
+
 Notifications push (#203) : le joueur les active par appareil depuis son profil (opt-in
 explicite, désactivation en un geste). Les abonnements (`push_subscriptions`) ne s'écrivent que
 par `save_push_subscription()` et `delete_push_subscription()`. Chaque minute, l'Edge Function

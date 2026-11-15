@@ -86,14 +86,20 @@ const ranking = (lines: RankingLine[]): RankingRepository => ({
 function levels(start: StoredLevels = {}) {
   let stored = { ...start };
   const raised: unknown[] = [];
+  const told: string[] = [];
   const repository: BadgeLevelRepository = {
     levels: async () => ({ ...stored }),
     async raise(_, list) {
       raised.push(list);
       stored = { ...stored, ...Object.fromEntries(list.map((l) => [l.badge, l.level])) };
     },
+    async publishMoments(moments) {
+      const fresh = moments.filter((m) => !told.includes(m.key));
+      told.push(...fresh.map((m) => m.key));
+      return fresh.length;
+    },
   };
-  return { repository, raised, stored: () => stored };
+  return { repository, raised, told, stored: () => stored };
 }
 
 const levelOf = (progress: { badge: string; level: string | null }[], badge: string) =>
@@ -167,6 +173,30 @@ describe("getMyBadges", () => {
     await markBadgesSeen(ports).execute(input);
     expect(store.stored()).toEqual({ fidele: "bronze", bleus: "bronze" });
     expect((await getMyBadges(ports).execute(input)).raised).toEqual([]);
+  });
+
+  it("tells a level in the feeds of the player's leagues once seen, and only once", async () => {
+    // Given a French winner found, nothing told yet,
+    const store = levels();
+    const ports = {
+      ranking: ranking([line("e1", [{ kind: "exact", slot: 1 }])]),
+      predictions: predictions([prediction("e1", "fra")]),
+      events: reader,
+      disciplines,
+      levels: store.repository,
+    };
+    const input = { userId: "me", competitionSlugs: ["c"] };
+
+    // when the profile is read, then nothing is told;
+    await getMyBadges(ports).execute(input);
+    expect(store.told).toEqual([]);
+
+    // when the player has seen the celebration, then each new level is told, then never again.
+    await markBadgesSeen(ports).execute(input);
+    const told = [...store.told];
+    expect(told).toContain("badge:me:bleus:bronze");
+    await markBadgesSeen(ports).execute(input);
+    expect(store.told).toEqual(told);
   });
 
   it("keeps a level won before, even when the season does not count it yet", async () => {

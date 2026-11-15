@@ -572,6 +572,13 @@ export const messages = {
     joinClosedNext: "Voir les autres ligues",
     shareText: (name: string) => `Rejoins ma ligue French Track Manager « ${name} »`,
     catalogueLink: "Catalogue du mercato",
+    /** The « Fil » tab of a Manager league (#875); its label is messages.leagues.tabs.feed. */
+    feed: {
+      season: "Saison",
+      empty:
+        "Rien encore. Le fil raconte les athlètes gagnés à chaque tour du mercato, les duels et les badges.",
+      toMercato: "Voir le mercato",
+    },
     /**
      * The presentation of the Manager (#616, #802): three screens, at the first visit then on
      * demand. The figures (budget, players, scale) live in the rules of the league.
@@ -1250,13 +1257,46 @@ export const messages = {
             : `${pseudo} trouve un podium parfait.`,
         new_leader: (pseudo: string) => `${pseudo} prend la tête de la ligue.`,
         duel_result: (pseudo: string, other: string | null, scores: [number, number] | null) =>
-          `${pseudo} bat ${other ?? "son adversaire"}${scores ? ` ${scores[0]} à ${scores[1]}` : ""}.`,
+          scores && scores[0] === scores[1]
+            ? `${pseudo} et ${other ?? "son adversaire"} font match nul ${scores[0]} à ${scores[1]}.`
+            : `${pseudo} bat ${other ?? "son adversaire"}${scores ? ` ${scores[0]} à ${scores[1]}` : ""}.`,
         mercato_win: (pseudo: string, athlete: string | null, price: number | null) =>
           `${pseudo} remporte ${athlete ?? "un athlète"} au mercato${price !== null ? ` pour ${price} crédits` : ""}.`,
-        badge: (pseudo: string, badge: string | null) =>
-          badge ? `${pseudo} gagne le badge « ${badge} ».` : `${pseudo} gagne un nouveau badge.`,
+        badge: (pseudo: string, badge: string | null, level: string | null) =>
+          badge
+            ? `${pseudo} gagne le badge « ${badge} »${level ? ` ${level}` : ""}.`
+            : `${pseudo} gagne un nouveau badge.`,
         streak: (pseudo: string, length: number | null) =>
           `${pseudo} enchaîne ${length ?? 5} pronos qui rapportent d'affilée.`,
+      },
+      reactions: {
+        group: "Réagir à ce moment",
+        emoji: { fire: "🔥", clap: "👏", wow: "😮", laugh: "😂" },
+        names: { fire: "feu", clap: "bravo", wow: "surpris", laugh: "mort de rire" },
+        label: (name: string, count: number, mine: boolean) =>
+          mine
+            ? `Retirer ma réaction ${name} (${count})`
+            : count === 0
+              ? `Réagir : ${name}`
+              : `Réagir : ${name} (${count})`,
+        pending: "Envoi en cours…",
+        message: "Message",
+        messageLabel: "Envoyer un message sous ce moment",
+        sheetTitle: "Envoyer un message",
+        sheetHint: "Il s'affiche sous le moment avec ton pseudo. Un nouveau remplace le précédent.",
+        current: "Ton message",
+        messages: {
+          well_played: "Bien joué !",
+          what_flair: "Quel flair !",
+          rematch: "Revanche ?",
+          bad_luck: "Pas de chance",
+          catching_up: "Je te rattrape",
+        },
+        sent: "Message envoyé.",
+        list: "Messages",
+        report: "Signaler",
+        reportLabel: (pseudo: string) => `Signaler le message de ${pseudo}`,
+        reported: "Signalé",
       },
     },
     owner: "Créateur",
@@ -2338,6 +2378,8 @@ export const messages = {
     name: { bronze: "Bronze", silver: "Argent", gold: "Or" },
     /** « pour le bronze », « vers l'argent »… */
     the: { bronze: "le bronze", silver: "l'argent", gold: "l'or" },
+    /** « gagne le badge Foudre en argent » (#875). */
+    in: { bronze: "en bronze", silver: "en argent", gold: "en or" },
   },
   /** The showcase of the season trophies (#822), one shelf per season. */
   trophies: {
@@ -2760,6 +2802,22 @@ export const messages = {
     leagueAdd: (name: string) => `Ajouter à ma ligue « ${name} »`,
   },
   adminLeagues: {
+    feedReports: {
+      title: "Signalements du fil",
+      hint: "Réactions et messages signalés par les joueurs. Masquer les retire pour tous.",
+      empty: "Aucun signalement dans les fils.",
+      item: (pseudo: string, what: string) => `${what} de ${pseudo}`,
+      context: (league: string, moment: string, reports: number) =>
+        `${league} · ${moment} · ${reports} ${reports <= 1 ? "signalement" : "signalements"}`,
+      hide: "Masquer",
+      hideLabel: (what: string, pseudo: string) => `Masquer ${what} de ${pseudo}`,
+      dismiss: "Classer",
+      dismissLabel: (what: string, pseudo: string) =>
+        `Classer le signalement de ${what} de ${pseudo}`,
+      pending: "En cours…",
+      hidden: "Masqué pour tous.",
+      dismissed: "Signalement classé.",
+    },
     title: "Ligues",
     subtitle: "Toutes les ligues ; chaque action est notée dans l'historique.",
     summary: (total: number, publicCount: number, reported: number) =>
@@ -3055,6 +3113,8 @@ export const messages = {
       "Les points ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     INVALID_REACTION: "Cette réaction n’existe pas.",
     REACTION_NOT_ALLOWED: "Tu peux réagir aux pronos des autres une fois l’épreuve verrouillée.",
+    MOMENT_REACTION_REFUSED: "Seuls les membres de la ligue réagissent à ses moments.",
+    REACTION_UNKNOWN: "Cette réaction n’est plus là.",
     REVEAL_UNAVAILABLE:
       "Les pronos des autres ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     PODIUM_INVALID: "Choisis trois athlètes différents pour ton podium.",

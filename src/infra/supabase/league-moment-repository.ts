@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { UseCaseError } from "@/application/errors";
 import type { LeagueMomentRepository, MomentLeague } from "@/application/league-moments";
+import { BADGE_LEVELS, BADGES, type Badge, type BadgeLevel } from "@/domain/badges";
 import { bibOf } from "@/domain/bib";
 import { inScreenOrder, type LeagueFamily } from "@/domain/league-families";
 import { MOMENT_KINDS, type FeedMoment, type MomentKind } from "@/domain/league-moments";
@@ -13,22 +14,30 @@ type LeagueRow = {
   members: { user_id: string; joined_at: string | null }[] | null;
 };
 
-type FeedRow = {
+/** A moment as the database gives it; the Manager feed (#875) gives no event, nor other player. */
+export type FeedRow = {
   key: string;
   kind: string;
   happened_at: string;
   pseudo: string;
   bib_number: number;
   bib_color: string;
-  other_pseudo: string | null;
-  competition_name: string | null;
-  discipline: string | null;
-  gender: string | null;
-  data: { length?: number; price?: number; athlete?: string; badge?: string; scores?: [number, number] };
+  other_pseudo?: string | null;
+  competition_name?: string | null;
+  discipline?: string | null;
+  gender?: string | null;
+  data: {
+    length?: number;
+    price?: number;
+    athlete?: string;
+    badge?: string;
+    level?: string;
+    scores?: [number, number];
+  };
 };
 
 const iso = (value: string) => new Date(value).toISOString();
-const isGender = (gender: string | null): gender is "F" | "M" | "X" =>
+const isGender = (gender: string | null | undefined): gender is "F" | "M" | "X" =>
   gender === "F" || gender === "M" || gender === "X";
 const isKind = (kind: string): kind is MomentKind => (MOMENT_KINDS as readonly string[]).includes(kind);
 
@@ -56,9 +65,13 @@ function leagueOf(row: LeagueRow): MomentLeague {
   };
 }
 
-function momentOf(row: FeedRow): FeedMoment | null {
+const isBadge = (badge: unknown): badge is Badge => BADGES.includes(badge as Badge);
+const isLevel = (level: unknown): level is BadgeLevel => BADGE_LEVELS.includes(level as BadgeLevel);
+
+/** A moment of a feed; a kind, a badge or a level the app no longer knows is left out. */
+export function momentOf(row: FeedRow): FeedMoment | null {
   if (!isKind(row.kind)) return null;
-  const { length, price, athlete, badge, scores } = row.data ?? {};
+  const { length, price, athlete, badge, level, scores } = row.data ?? {};
   return {
     key: row.key,
     kind: row.kind,
@@ -73,7 +86,8 @@ function momentOf(row: FeedRow): FeedMoment | null {
     ...(typeof length === "number" ? { length } : {}),
     ...(typeof price === "number" ? { price } : {}),
     ...(athlete ? { athlete } : {}),
-    ...(badge ? { badge } : {}),
+    ...(isBadge(badge) ? { badge } : {}),
+    ...(isLevel(level) ? { level } : {}),
     ...(scores ? { scores } : {}),
   };
 }
