@@ -92,6 +92,16 @@ test("the admin posts FrenchTrack's podium, a player predicts, the result is in 
     await expect(card).toContainText("100 % des joueurs ont battu FrenchTrack");
     await expect(card.getByRole("button", { name: "Partager" })).toBeVisible();
 
+    // The community block tells the challenge, and leads to its event (#877).
+    await playerPage.goto("/communaute");
+    const moment = playerPage.locator(`a[href="/epreuves/${slug}"]`, {
+      hasText: "Battez FrenchTrack",
+    });
+    await expect(moment).toContainText("100 % des joueurs ont battu FrenchTrack");
+    await expect(moment).toContainText("Tu as battu FrenchTrack");
+    await moment.click();
+    await playerPage.waitForURL(new RegExp(`/epreuves/${slug}$`));
+
     // The season ranking counts the win.
     await card.getByRole("link", { name: "Qui bat FrenchTrack le plus souvent ?" }).click();
     await expect(playerPage.locator("[data-my-challenge-place]")).toContainText(

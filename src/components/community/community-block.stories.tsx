@@ -5,7 +5,7 @@ import { messages } from "@/app/messages.fr";
 import type { CommunityMoment } from "@/domain/community";
 
 import { CommunityBlock } from "./community-block";
-import { competitionOpen, episode, NOW, poll } from "./fixtures";
+import { challenge, competitionOpen, episode, NOW, poll } from "./fixtures";
 
 const text = messages.community;
 
@@ -29,6 +29,7 @@ const meta = {
       announcements: [episode, competitionOpen],
       polls: [poll],
       moments: [moment("a", "Les amis du stade"), moment("b", "Le bureau")],
+      challenges: [challenge],
     },
     now: NOW,
     vote: fn(async () => ({})),
@@ -58,6 +59,7 @@ export const Home: Story = {
     await expect(canvas.queryByText(competitionOpen.title)).toBeNull();
     await expect(canvas.getByText("Les amis du stade")).toBeVisible();
     await expect(canvas.getByText(poll.question)).toBeVisible();
+    await expect(canvas.getByText(messages.challenge.beaten(42))).toBeVisible();
   },
 };
 
@@ -71,9 +73,21 @@ export const Page: Story = {
   },
 };
 
+/** Only a computed challenge: it shows under « FrenchTrack » and leads to its event. */
+export const ChallengeOnly: Story = {
+  args: { community: { announcements: [], polls: [], moments: [], challenges: [challenge] } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.queryByText(text.empty)).toBeNull();
+    await expect(
+      canvas.getByRole("link", { name: new RegExp(messages.challenge.verdict.won) }),
+    ).toHaveAttribute("href", `/epreuves/${challenge.slug}`);
+  },
+};
+
 /** Nothing yet: what will come, and the next thing to do. */
 export const Empty: Story = {
-  args: { community: { announcements: [], polls: [], moments: [] } },
+  args: { community: { announcements: [], polls: [], moments: [], challenges: [] } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText(text.empty)).toBeVisible();
@@ -98,6 +112,7 @@ export const LongText: Story = {
       announcements: [],
       polls: [],
       moments: [moment("a", "La ligue des fans de demi-fond du club de la vallée")],
+      challenges: [],
     },
   },
   play: async ({ canvasElement }) => {

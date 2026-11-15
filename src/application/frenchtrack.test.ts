@@ -131,6 +131,8 @@ describe("getHomeChallenge", () => {
       lockAt,
       points,
       mine,
+      scoredAt: null,
+      scores: [],
     }) satisfies ChallengeSummary;
 
   it("shows the last challenge run with my verdict when none is open", async () => {

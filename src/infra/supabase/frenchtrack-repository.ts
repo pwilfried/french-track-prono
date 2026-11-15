@@ -23,6 +23,8 @@ type SummaryRow = {
   lock_at: string;
   points: number | null;
   mine: number | null;
+  scored_at: string | null;
+  scores: number[] | null;
 };
 type SeasonRow = {
   event_id: string;
@@ -73,6 +75,8 @@ export function createSupabaseFrenchTrackRepository(client: SupabaseClient): Fre
         lockAt: iso(row.lock_at),
         points: row.points,
         mine: row.mine,
+        scoredAt: row.scored_at ? iso(row.scored_at) : null,
+        scores: row.scores ?? [],
       }));
     },
 

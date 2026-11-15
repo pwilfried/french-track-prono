@@ -4,20 +4,27 @@ import { challengeSeasonOf } from "@/domain/frenchtrack";
 import type { Podium } from "@/domain/podium-draft";
 
 /** An event the fake knows: its start list, and whether it is locked. */
-export type FrenchTrackEventFixture = Omit<ChallengeSummary, "points" | "mine"> & {
+export type FrenchTrackEventFixture = Omit<
+  ChallengeSummary,
+  "points" | "mine" | "scoredAt" | "scores"
+> & {
   startList: string[];
   locked: boolean;
 };
 
 /**
  * Test double of the FrenchTrackRepository port: one store, a session per player. `score` stands
- * for the points of the players computed by the admin.
+ * for the points of the players computed by the admin; `now` dates the first computation.
  */
 export function createInMemoryFrenchTrackStore(
   events: FrenchTrackEventFixture[],
   players: Record<string, { pseudo: string; bib: Bib }> = {},
+  now: () => Date = () => new Date(),
 ) {
-  const picks = new Map<string, { podium: Podium; points: number | null }>();
+  const picks = new Map<
+    string,
+    { podium: Podium; points: number | null; scoredAt: string | null }
+  >();
   const scores = new Map<string, Map<string, number>>();
   const eventOf = (eventId: string) => events.find((e) => e.eventId === eventId);
   const yearOf = challengeSeasonOf;
@@ -36,6 +43,10 @@ export function createInMemoryFrenchTrackStore(
       };
       const mineOn = (eventId: string) =>
         computed(eventId) === null ? null : (scores.get(eventId)?.get(options.userId) ?? null);
+      const scoresOn = (eventId: string) =>
+        computed(eventId) === null
+          ? []
+          : [...(scores.get(eventId)?.values() ?? [])].sort((a, b) => a - b);
 
       return {
         async challenge(eventId) {
@@ -48,10 +59,7 @@ export function createInMemoryFrenchTrackStore(
             podium: event.locked || options.isAdmin ? { ...pick.podium } : null,
             points,
             mine: mineOn(eventId),
-            scores:
-              points === null
-                ? []
-                : [...(scores.get(eventId)?.values() ?? [])].sort((a, b) => a - b),
+            scores: scoresOn(eventId),
           };
         },
         async challenges(year) {
@@ -67,6 +75,8 @@ export function createInMemoryFrenchTrackStore(
               lockAt: e.lockAt,
               points: computed(e.eventId),
               mine: mineOn(e.eventId),
+              scoredAt: computed(e.eventId) === null ? null : picks.get(e.eventId)!.scoredAt,
+              scores: scoresOn(e.eventId),
             }));
         },
         async season(year) {
@@ -95,7 +105,7 @@ export function createInMemoryFrenchTrackStore(
             return "invalid";
           }
           if (event.locked) return "locked";
-          picks.set(eventId, { podium: { ...podium }, points: null });
+          picks.set(eventId, { podium: { ...podium }, points: null, scoredAt: null });
           return "saved";
         },
         async removePick(eventId) {
@@ -107,7 +117,10 @@ export function createInMemoryFrenchTrackStore(
         async saveScore(eventId, points) {
           if (!options.isAdmin) return "not_admin";
           const pick = picks.get(eventId);
-          if (pick) pick.points = points;
+          if (pick) {
+            pick.points = points;
+            pick.scoredAt ??= now().toISOString();
+          }
           return "saved";
         },
       };

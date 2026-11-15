@@ -1,4 +1,5 @@
 import { utcToParis } from "./competition";
+import type { EventGender } from "./event";
 import type { Podium } from "./podium-draft";
 import {
   scorePrediction,
@@ -124,6 +125,57 @@ export function featuredChallenge<T extends { eventId: string; lockAt: string; s
   if (open[0]) return open[0];
   const past = [...challenges].sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt));
   return past[0] ?? null;
+}
+
+/**
+ * « FrenchTrack battu par 42 % des joueurs sur le 100 m F » (#877): the moment of the community
+ * block, once a challenge is computed. One per event, whatever the number of computations.
+ */
+export type ChallengeMoment = {
+  key: string;
+  eventId: string;
+  slug: string;
+  discipline: string;
+  gender: EventGender;
+  /** ISO 8601: when its points were first computed. */
+  happenedAt: string;
+  beaten: { count: number; percent: number };
+  verdict: ChallengeVerdict;
+};
+
+/** The moments of the computed challenges, latest computed first; at most `limit`. */
+export function challengeMoments(
+  challenges: readonly {
+    eventId: string;
+    slug: string;
+    discipline: string;
+    gender: EventGender;
+    scoredAt: string | null;
+    points: number | null;
+    mine: number | null;
+    scores: readonly number[];
+  }[],
+  limit: number,
+): ChallengeMoment[] {
+  return challenges
+    .flatMap((c) =>
+      c.points === null || c.scoredAt === null
+        ? []
+        : [
+            {
+              key: `frenchtrack:${c.eventId}`,
+              eventId: c.eventId,
+              slug: c.slug,
+              discipline: c.discipline,
+              gender: c.gender,
+              happenedAt: c.scoredAt,
+              beaten: beatShare(c.scores, c.points),
+              verdict: challengeVerdict(c.mine, c.points),
+            },
+          ],
+    )
+    .sort((a, b) => b.happenedAt.localeCompare(a.happenedAt) || a.eventId.localeCompare(b.eventId))
+    .slice(0, Math.max(0, limit));
 }
 
 /** The season of an instant: its calendar year, Paris time. */

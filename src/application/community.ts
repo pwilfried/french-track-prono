@@ -8,8 +8,10 @@ import {
   type Poll,
   type PollInput,
 } from "@/domain/community";
+import { challengeMoments, type ChallengeMoment } from "@/domain/frenchtrack";
 
 import { UseCaseError } from "./errors";
+import type { FrenchTrackRepository } from "./frenchtrack";
 import type { LeagueMomentRepository } from "./league-moments";
 
 /** Why a vote is refused; anything else is « voted ». */
@@ -35,34 +37,46 @@ export interface CommunityRepository {
 
 export type Community = {
   moments: CommunityMoment[];
+  /** « Battez FrenchTrack »: the computed challenges of the season, latest computed first. */
+  challenges: ChallengeMoment[];
   announcements: Announcement[];
   polls: Poll[];
 };
 
 /**
  * The « Dans ma communauté » block: the latest moments of all my leagues in one list, latest
- * first, each with the name of its league; the announcements and the polls.
+ * first, each with the name of its league; the « Battez FrenchTrack » challenges of the season
+ * once computed (#877); the announcements and the polls.
  */
 export function getCommunity(ports: {
   moments: Pick<LeagueMomentRepository, "feed">;
   community: CommunityRepository;
+  frenchTrack: Pick<FrenchTrackRepository, "challenges">;
 }) {
   return {
     async execute(input: {
       leagues: { id: string; name: string }[];
       momentLimit: number;
+      /** The season of the challenges (calendar year, Paris time). */
+      year: number;
     }): Promise<Community> {
-      const [feeds, announcements, polls] = await Promise.all([
+      const [feeds, challenges, announcements, polls] = await Promise.all([
         Promise.all(
           input.leagues.map(async (league) => ({
             league,
             moments: await ports.moments.feed(league.id),
           })),
         ),
+        ports.frenchTrack.challenges(input.year),
         ports.community.announcements(),
         ports.community.polls(),
       ]);
-      return { moments: communityMoments(feeds, input.momentLimit), announcements, polls };
+      return {
+        moments: communityMoments(feeds, input.momentLimit),
+        challenges: challengeMoments(challenges, input.momentLimit),
+        announcements,
+        polls,
+      };
     },
   };
 }

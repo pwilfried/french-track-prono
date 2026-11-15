@@ -233,7 +233,11 @@ des joueurs qui l'ont battu et « Partager ». Les points de FrenchTrack sont ca
 joueurs (même barème, même champ pour le coup de flair, jamais de joker ni de marque :
 `frenchTrackScore()` dans `src/domain/frenchtrack.ts`) ; le verdict compare les points du joueur
 sur l'épreuve, joker compris. `/classement/frenchtrack` classe la saison (année civile, heure de
-Paris) : victoires sur défis joués, puis points cumulés sur ces défis, ex æquo à la même place.
+Paris) : victoires sur défis joués, puis points cumulés sur ces défis, ex æquo à la même place. Une fois les points calculés, le
+défi devient un moment de « Dans ma communauté », sous « FrenchTrack » (#877) : l'épreuve, la part
+des joueurs qui ont battu FrenchTrack et mon verdict, la carte mène à l'épreuve. Le moment est daté
+par le premier calcul (`frenchtrack_picks.scored_at`) : recalculer garde la date, un seul moment
+par épreuve.
 Données : table `frenchtrack_picks`, lue et écrite seulement par les fonctions de #674 ;
 `admin_set_frenchtrack_pick` et `admin_remove_frenchtrack_pick` (admin, refusées après le
 verrouillage, FT034), `frenchtrack_challenge(événement)` (podium caché avant le verrouillage sauf
