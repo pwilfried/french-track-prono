@@ -1,5 +1,6 @@
 import { getClubNotices, type ClubNotice } from "@/application/club-notices";
 import { UseCaseError } from "@/application/errors";
+import { getFunFacts } from "@/application/fun-facts";
 import { getMyPoints } from "@/application/get-my-points";
 import { getProfile } from "@/application/get-profile";
 import { listEvents } from "@/application/list-events";
@@ -8,9 +9,12 @@ import { isMercatoOpenForMe } from "@/application/manager-bids";
 import { askToCompleteProfile } from "@/application/profile-reminder";
 import { getLeagueRanking } from "@/application/rankings";
 import type { PlayerHomeProps } from "@/components/home/player-home";
+import { competitionDay } from "@/domain/competition";
+import type { FunFact } from "@/domain/fun-facts";
 import { leagueStanding, nextAction } from "@/domain/home";
 import {
   createSupabaseClubNoticeRepository,
+  createSupabaseFunFactRepository,
   createSupabaseLeagueRepository,
   createSupabaseManagerBids,
   createSupabaseManagerLeagueRepository,
@@ -26,15 +30,19 @@ import {
   loadMyLeagues,
   playerCompetitions,
 } from "./competition";
+import { gameFunFacts } from "./fun-facts";
+import { loadScale } from "./scale";
 import { getSessionClient, getSessionProfiles } from "./session";
 import { publicEventReader, publicRanking } from "./public-data";
 
 /** Everything the signed-in player's home shows (#526); each part empty when it cannot be read. */
 export type PlayerHome = Omit<
   PlayerHomeProps,
-  "userId" | "now" | "exactPoints" | "perfectPoints" | "completeProfile"
+  "userId" | "now" | "exactPoints" | "perfectPoints" | "completeProfile" | "funFact"
 > & {
   clubNotices: ClubNotice[];
+  /** « Le saviez-vous ? » (#766), in the order of the day; empty when off or unreadable. */
+  funFacts: FunFact[];
   /** Null unless the profile is incomplete and « Plus tard » does not hide the card (#540). */
   completeProfile: { firstPodium: boolean } | null;
 };
@@ -65,58 +73,80 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
   const leagueRepository = createSupabaseLeagueRepository(client);
   const listed = [...lists.coming, ...lists.past].map((c) => c.slug);
 
-  const [events, mine, myPoints, rankings, clubNotices, predictionCount, mercatoOpen, askProfile] =
-    await Promise.all([
-      safely(() =>
-        listEvents({ events: publicEventReader() }).execute({
-          competitionSlug: competition.slug,
-        }),
-      ),
-      safely(() =>
-        listMyPredictions({ predictions }).execute({ userId, competitionSlug: competition.slug }),
-      ),
-      safely(() =>
-        getMyPoints({ points: createSupabasePointsRepository(client) }).execute({
-          userId,
-          competitionSlug: competition.slug,
-        }),
-      ),
-      Promise.all(
-        leagues.map(async (league) => ({
-          id: league.id,
-          rows:
-            (await safely(() =>
-              getLeagueRanking({ ranking, leagues: leagueRepository }).execute({
-                leagueId: league.id,
-                competitionSlugs: league.competitionSlugs,
-                families: league.families,
-                competitionAddedAt: league.competitionAddedAt,
-              }),
-            )) ?? [],
-        })),
-      ),
-      safely(() =>
-        getClubNotices({ notices: createSupabaseClubNoticeRepository(client) }).execute(),
-      ),
-      safely(() =>
-        countPredictions({ predictions }).execute({
-          userId,
-          competitionSlugs: [...new Set([competition.slug, ...listed])],
-        }),
-      ),
-      safely(() =>
-        isMercatoOpenForMe({
-          managerLeagues: createSupabaseManagerLeagueRepository(client),
-          bids: createSupabaseManagerBids(client),
-        }).execute(),
-      ),
-      safely(() =>
-        askToCompleteProfile({
-          details: createSupabasePlayerDetailsRepository(client),
-          reminders: createSupabaseProfileReminderRepository(client),
-        }).execute({ userId, now }),
-      ),
-    ]);
+  const [
+    events,
+    mine,
+    myPoints,
+    rankings,
+    clubNotices,
+    predictionCount,
+    mercatoOpen,
+    askProfile,
+    scale,
+  ] = await Promise.all([
+    safely(() =>
+      listEvents({ events: publicEventReader() }).execute({
+        competitionSlug: competition.slug,
+      }),
+    ),
+    safely(() =>
+      listMyPredictions({ predictions }).execute({ userId, competitionSlug: competition.slug }),
+    ),
+    safely(() =>
+      getMyPoints({ points: createSupabasePointsRepository(client) }).execute({
+        userId,
+        competitionSlug: competition.slug,
+      }),
+    ),
+    Promise.all(
+      leagues.map(async (league) => ({
+        id: league.id,
+        rows:
+          (await safely(() =>
+            getLeagueRanking({ ranking, leagues: leagueRepository }).execute({
+              leagueId: league.id,
+              competitionSlugs: league.competitionSlugs,
+              families: league.families,
+              competitionAddedAt: league.competitionAddedAt,
+            }),
+          )) ?? [],
+      })),
+    ),
+    safely(() => getClubNotices({ notices: createSupabaseClubNoticeRepository(client) }).execute()),
+    safely(() =>
+      countPredictions({ predictions }).execute({
+        userId,
+        competitionSlugs: [...new Set([competition.slug, ...listed])],
+      }),
+    ),
+    safely(() =>
+      isMercatoOpenForMe({
+        managerLeagues: createSupabaseManagerLeagueRepository(client),
+        bids: createSupabaseManagerBids(client),
+      }).execute(),
+    ),
+    safely(() =>
+      askToCompleteProfile({
+        details: createSupabasePlayerDetailsRepository(client),
+        reminders: createSupabaseProfileReminderRepository(client),
+      }).execute({ userId, now }),
+    ),
+    loadScale(),
+  ]);
+
+  const day = competitionDay(now.toISOString());
+  const funFacts = await safely(() =>
+    getFunFacts({ facts: createSupabaseFunFactRepository(client) }).execute({
+      today: {
+        day,
+        competitions: [...lists.coming, ...lists.past],
+        disciplines: (events ?? [])
+          .filter((e) => competitionDay(e.startsAt) === day)
+          .map((e) => e.discipline),
+      },
+      gameFacts: gameFunFacts(scale),
+    }),
+  );
 
   const standing = leagueStanding(rankings, userId);
   const shownLeague = leagues.find((l) => l.id === standing?.leagueId) ?? leagues[0];
@@ -128,6 +158,7 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
 
   return {
     clubNotices: clubNotices ?? [],
+    funFacts: funFacts ?? [],
     pseudo: profile.pseudo,
     // When it cannot be read, the steps stay hidden rather than shown to a seasoned player.
     isNew: predictionCount === 0,

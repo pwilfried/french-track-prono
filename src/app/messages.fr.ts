@@ -88,6 +88,51 @@ export const messages = {
     nextEvents: "Prochaines épreuves",
     noneOpen: "Plus aucune épreuve ouverte aux pronos.",
   },
+  /** « Le saviez-vous ? » (#766), at the top of the player's home. */
+  funFacts: {
+    heading: "Le saviez-vous ?",
+    tag: {
+      predictions: "Pour tes pronos",
+      oddity: "Insolite",
+      bar: "Pour briller au bar",
+    },
+    another: "Un autre",
+    close: "Fermer jusqu'à demain",
+    /**
+     * The facts about the game, written from the points the real scale gives (decision B): they
+     * follow the admin's scale, no figure is typed here.
+     */
+    game: (f: {
+      exactSlot: number;
+      wrongPlace: number;
+      perfectPodium: number;
+      perfectWithJoker: number;
+      jokerMultiplier: number;
+      markExact: number;
+    }) =>
+      [
+        {
+          id: "game-perfect-podium",
+          title: "Le podium parfait",
+          body: `Les trois athlètes à la bonne place : ${points(f.perfectPodium)} pour une seule épreuve, bonus du podium parfait compris.`,
+        },
+        {
+          id: "game-joker",
+          title: "Le joker au bon moment",
+          body: `Une fois par compétition, le joker multiplie par ${f.jokerMultiplier} les points d'une épreuve : un podium parfait joué avec lui rapporte ${points(f.perfectWithJoker)}.`,
+        },
+        {
+          id: "game-wrong-place",
+          title: "Sur le podium, mais pas à sa place",
+          body: `Un athlète bien placé rapporte ${points(f.exactSlot)} ; sur le podium à une autre place, il rapporte quand même ${points(f.wrongPlace)}.`,
+        },
+        {
+          id: "game-mark",
+          title: "La perf juste",
+          body: `Pronostiquer la perf de tes athlètes est facultatif, mais chaque perf dans la tolérance de la discipline rapporte ${points(f.markExact)} de plus.`,
+        },
+      ] as const,
+  },
   clubNotices: {
     validated: (club: string) =>
       `Ton club « ${club} » est validé : les autres joueurs le voient sur ta fiche.`,
@@ -1444,6 +1489,46 @@ export const messages = {
     witnessSaved: "Compte FrenchTrack enregistré.",
     witnessCleared: "Aucun compte FrenchTrack : le Témoin d'or n'est pas proposé.",
   },
+  adminFunFacts: {
+    heading: "Le saviez-vous ?",
+    subtitle:
+      "Un fait d'athlé en haut de l'accueil des joueurs. Un fait lié à une compétition, une discipline ou des dates passe en premier ces jours-là. La source reste ici, les joueurs ne la voient pas.",
+    switchTitle: "La carte",
+    on: "La carte est affichée sur l'accueil.",
+    off: "La carte est masquée pour tous les joueurs.",
+    switchOff: "Masquer la carte",
+    switchOn: "Afficher la carte",
+    switched: "C'est fait : l'accueil suit dès sa prochaine ouverture.",
+    addTitle: "Ajouter un fait",
+    bank: (count: number) => `La banque · ${count} fait${count > 1 ? "s" : ""}`,
+    empty: "Aucun fait pour l'instant : ajoute le premier.",
+    disabled: "Désactivé",
+    title: "Titre (60 caractères au plus)",
+    body: "Texte (280 caractères au plus)",
+    tag: "Étiquette",
+    source: "Source (pour l'admin seulement)",
+    tie: "En premier ces jours-là (facultatif)",
+    tieHelp:
+      "Une compétition : pendant ses dates. Une discipline : un jour où elle est au programme. Des dates : entre ces deux jours.",
+    competition: "Compétition",
+    discipline: "Discipline",
+    none: "Aucune",
+    startsOn: "Du",
+    endsOn: "Au",
+    active: "Actif : les joueurs le voient",
+    add: "Ajouter le fait",
+    added: "Fait ajouté.",
+    save: "Enregistrer",
+    saved: "Fait enregistré.",
+    saving: "Enregistrement en cours…",
+    delete: "Supprimer…",
+    confirmDelete:
+      "Le fait disparaît de la banque. Pour le garder sans l'afficher, décoche « Actif ».",
+    confirm: "Supprimer définitivement",
+    deleteOne: (title: string) => `Supprimer définitivement « ${title} »`,
+    deleting: "Suppression en cours…",
+    deleted: "Fait supprimé.",
+  },
   adminLog: {
     title: "Historique",
     subtitle: "Les 50 dernières actions du back-office.",
@@ -1875,6 +1960,7 @@ export const messages = {
       demoPlayers: "Joueurs démo",
       clubs: "Clubs",
       trophies: "Trophées",
+      funFacts: "Le saviez-vous ?",
       history: "Historique",
     },
     create: "+ Nouvelle compétition",
@@ -2697,6 +2783,12 @@ export const messages = {
     EVENT_NOT_FOUND: "Cette épreuve n'existe pas.",
     PROGRAM_ALERT_UNAVAILABLE: "L'alerte n'a pas pu être enregistrée. Réessaie.",
     TROPHY_WITNESS_UNKNOWN: "Aucun joueur ne porte ce pseudo.",
+    FUN_FACT_TEXT_INVALID:
+      "Le titre (60 caractères au plus) et le texte (280 au plus) sont obligatoires.",
+    FUN_FACT_TAG_INVALID: "Choisis une étiquette.",
+    FUN_FACT_DATES_INVALID: "La date de fin doit suivre la date de début.",
+    FUN_FACT_TIE_INVALID: "Cette compétition ou cette discipline n'existe pas.",
+    FUN_FACTS_UNAVAILABLE: "Les faits n'ont pas pu être chargés. Réessaie.",
     TROPHIES_UNAVAILABLE: "Les trophées n'ont pas pu être chargés. Réessaie.",
     REMINDER_SETTINGS_INVALID: "Choisis un délai et des heures calmes parmi ceux proposés.",
     REMINDER_SETTINGS_UNAVAILABLE:

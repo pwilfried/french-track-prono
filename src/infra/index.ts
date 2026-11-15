@@ -123,3 +123,5 @@ export { createInMemoryManagerLineupStore } from "./in-memory/manager-lineup-rep
 export { createSupabaseManagerLineups } from "./supabase/manager-lineup-repository";
 export { createInMemoryBadgeLevelStore } from "./in-memory/badge-level-repository";
 export { createSupabaseBadgeLevelRepository } from "./supabase/badge-level-repository";
+export { createInMemoryFunFactStore } from "./in-memory/fun-fact-repository";
+export { createSupabaseFunFactRepository } from "./supabase/fun-fact-repository";
