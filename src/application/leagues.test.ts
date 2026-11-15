@@ -405,6 +405,15 @@ describe("reportLeague", () => {
   });
 });
 
+describe("reporting leagues, beyond 20 reports in a day", () => {
+  it("refuses with REPORT_LIMIT", async () => {
+    const leagues = repository({ report: async () => "too_many" });
+    expect(await codeOf(reportLeague({ leagues }).execute({ leagueId: "pub" }))).toBe(
+      "REPORT_LIMIT",
+    );
+  });
+});
+
 describe("joining with a code, too many wrong codes", () => {
   it("refuses with LEAGUE_TOO_MANY_ATTEMPTS", async () => {
     const leagues = repository({ join: async () => ({ outcome: "too_many" }) });
