@@ -60,10 +60,18 @@ test("an admin sets the FrenchTrack account and draws the trophies; a player see
   await page.goto("/profil");
   const shelf = showcase.getByRole("group", { name: /Saison 2099/ });
   await expect(shelf).toContainText("2 trophées");
+  // Drawn statuettes (#856): the bear of the league, the stopwatch; the feats not won yet keep
+  // their dashed slot on the latest shelf, with what it takes.
   await expect(shelf.getByRole("listitem")).toHaveText([
-    /Ours d'or\s*Ligue des lanceurs/,
+    /Ours d'or\s*Ligue des lanceurs\s*Saison 2099/,
     /Chrono figé\s*Ligue des lanceurs/,
+    /Laurier\s*À gagner\s*Finis dans le top 10/,
+    /Record de ligue\s*À gagner/,
+    /Témoin d'or\s*À gagner/,
   ]);
+  await expect(shelf.locator('[data-shape="ours"][data-metal="gold"]')).toBeVisible();
+  await expect(shelf.locator('[data-shape="chrono"][data-metal="gold"]')).toBeVisible();
+  await expect(shelf.locator('li[data-metal="empty"]')).toHaveCount(3);
   // The shelf fits the phone screen: nothing wider than the page.
   const width = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(width).toBeLessThanOrEqual(page.viewportSize()!.width);

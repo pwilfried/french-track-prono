@@ -1,26 +1,27 @@
 import { messages } from "@/app/messages.fr";
-import type { Metal, Trophy, TrophyShelf } from "@/domain/trophies";
-import { cn } from "@/lib/utils";
+import { Statuette, type StatuetteShape } from "@/components/band/statuette";
+import type { Trophy, TrophyKind, TrophyShelf } from "@/domain/trophies";
 
 const text = messages.trophies;
 
-const METAL_STYLE: Record<Metal, string> = {
-  gold: "bg-gradient-to-b from-(--medal-gold-from) to-(--medal-gold-to)",
-  silver: "bg-gradient-to-b from-(--medal-silver-from) to-(--medal-silver-to)",
-  bronze: "bg-gradient-to-b from-(--medal-bronze-from) to-(--medal-bronze-to)",
+/** The form of each kind: the animal of its league, or the drawing of the feat (#856). */
+const FORM: Record<Exclude<TrophyKind, "league" | "manager">, StatuetteShape> = {
+  general: "laurel",
+  chrono: "chrono",
+  record: "record",
+  witness: "witness",
 };
 
+/** The forms the latest shelf keeps a slot for, won or still to win (#856). */
+const FEATS = Object.keys(FORM) as (keyof typeof FORM)[];
+
 /** The statuette's name (« Guépard d'or », « Chrono figé ») and what it was won in. */
-export function trophyLabel(trophy: Trophy): { emoji: string; name: string; detail: string } {
+export function trophyLabel(trophy: Trophy): { name: string; detail: string } {
   const kind = text.kinds[trophy.kind];
-  const animal = trophy.animal
-    ? { emoji: text.animalEmoji[trophy.animal], name: messages.band.animals[trophy.animal] }
-    : null;
-  const base = trophy.kind === "league" && animal ? animal : kind;
-  const name = trophy.metal ? `${base.name} ${messages.band.metals[trophy.metal]}` : kind.name;
+  const base =
+    trophy.kind === "league" && trophy.animal ? messages.band.animals[trophy.animal] : kind.name;
   return {
-    emoji: trophy.kind === "league" && animal ? animal.emoji : kind.emoji,
-    name,
+    name: trophy.metal ? `${base} ${messages.band.metals[trophy.metal]}` : kind.name,
     detail: !trophy.leagueName
       ? kind.detail
       : trophy.kind === "manager"
@@ -29,27 +30,36 @@ export function trophyLabel(trophy: Trophy): { emoji: string; name: string; deta
   };
 }
 
-function Statuette({ trophy }: { trophy: Trophy }) {
+function TrophyStatuette({ trophy }: { trophy: Trophy }) {
   const label = trophyLabel(trophy);
+  // A feat has no metal of its own: it is cast in gold.
+  const metal = trophy.metal ?? "gold";
+  const shape =
+    trophy.kind === "league" || trophy.kind === "manager"
+      ? (trophy.animal ?? "lievre")
+      : FORM[trophy.kind];
   return (
-    <li
-      data-kind={trophy.kind}
-      data-metal={trophy.metal ?? "none"}
-      className="flex min-w-0 flex-col items-center gap-1 px-1 pb-2 text-center"
-    >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "grid size-14 place-items-center rounded-full text-2xl shadow-sm ring-1 ring-black/10",
-          trophy.metal ? METAL_STYLE[trophy.metal] : "bg-brand-soft",
-        )}
-      >
-        {label.emoji}
-      </span>
-      <span className="w-full break-words text-sm font-bold leading-tight">{label.name}</span>
-      <span className="w-full break-words text-[11px] leading-tight text-muted-foreground">
-        {label.detail}
-      </span>
+    <li data-kind={trophy.kind} data-metal={trophy.metal ?? "none"} className="min-w-0">
+      <Statuette
+        shape={shape}
+        metal={metal}
+        title={label.name}
+        plaque={[label.detail, text.season(trophy.season)]}
+        center={trophy.kind === "general" ? text.laurelPlace[metal] : undefined}
+      />
+    </li>
+  );
+}
+
+function EmptySlot({ kind }: { kind: keyof typeof FORM }) {
+  return (
+    <li data-kind={kind} data-metal="empty" className="min-w-0">
+      <Statuette
+        shape={FORM[kind]}
+        metal={null}
+        title={text.kinds[kind].name}
+        plaque={[text.toWin, text.conditions[kind]]}
+      />
     </li>
   );
 }
@@ -69,7 +79,7 @@ export function TrophyShowcase({ shelves }: { shelves: TrophyShelf[] }) {
           {text.empty}
         </p>
       ) : (
-        shelves.map((shelf) => (
+        shelves.map((shelf, i) => (
           <div
             key={shelf.season}
             role="group"
@@ -85,11 +95,16 @@ export function TrophyShowcase({ shelves }: { shelves: TrophyShelf[] }) {
                 {text.count(shelf.trophies.length)}
               </span>
             </p>
-            {/* The shelf itself: the statuettes stand on a thick board. */}
-            <ul className="-mx-3 grid grid-cols-3 gap-y-2 border-b-[6px] border-gold-ink/40 px-2">
+            {/* The shelf itself: the statuettes stand on a thick board. On the latest one, each
+                feat not won yet keeps its slot, dashed, with what it takes. */}
+            <ul className="-mx-3 grid grid-cols-3 gap-x-1.5 gap-y-3 border-b-[6px] border-gold-ink/40 px-2 pb-3">
               {shelf.trophies.map((t) => (
-                <Statuette key={`${t.kind}-${t.leagueId ?? ""}`} trophy={t} />
+                <TrophyStatuette key={`${t.kind}-${t.leagueId ?? ""}`} trophy={t} />
               ))}
+              {i === 0 &&
+                FEATS.filter((k) => !shelf.trophies.some((t) => t.kind === k)).map((k) => (
+                  <EmptySlot key={k} kind={k} />
+                ))}
             </ul>
           </div>
         ))

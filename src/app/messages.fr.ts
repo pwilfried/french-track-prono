@@ -2366,8 +2366,6 @@ export const messages = {
     toReach: (points: number, family: string, animal: string) =>
       `Encore ${pts(points)} en ${family.toLowerCase()} pour passer ${animal}`,
     metals: { gold: "d'or", silver: "d'argent", bronze: "de bronze" },
-    statuette: (animal: string, metal: string) => `${animal} ${metal}`,
-    toWin: "À gagner cette saison",
   },
   badges: {
     nostradamus: { emoji: "🔮", name: "Nostradamus", counts: "Podiums parfaits" },
@@ -2399,23 +2397,23 @@ export const messages = {
     empty:
       "Pas encore de trophée. Termine sur le podium d'une ligue d'au moins 4 joueurs pour poser ta première statuette.",
     managerDetail: (league: string) => `Manager · ${league}`,
-    /** The emoji of each animal of the band; its name is in band.animals. */
-    animalEmoji: {
-      lievre: "🐇",
-      guepard: "🐆",
-      impala: "🦌",
-      kangourou: "🦘",
-      chat: "🐈",
-      ours: "🐻",
-      renard: "🦊",
-    },
     kinds: {
-      general: { emoji: "🌿", name: "Laurier", detail: "Classement général" },
-      league: { emoji: "🏆", name: "Ligue", detail: "Ligue de pronos" },
-      manager: { emoji: "🐇", name: "Lièvre", detail: "Ligue Manager" },
-      chrono: { emoji: "⏱️", name: "Chrono figé", detail: "Meilleure soirée" },
-      record: { emoji: "🎖️", name: "Record de ligue", detail: "Record battu" },
-      witness: { emoji: "🏃", name: "Témoin d'or", detail: "Devant le compte FrenchTrack" },
+      general: { name: "Laurier", detail: "Classement général" },
+      league: { name: "Ligue", detail: "Ligue de pronos" },
+      manager: { name: "Lièvre", detail: "Ligue Manager" },
+      chrono: { name: "Chrono figé", detail: "Meilleure soirée" },
+      record: { name: "Record de ligue", detail: "Record battu" },
+      witness: { name: "Témoin d'or", detail: "Devant le compte FrenchTrack" },
+    },
+    /** The place at the centre of the laurel (#856): 1st, top 3, top 10 of the general ranking. */
+    laurelPlace: { gold: "1er", silver: "Top 3", bronze: "Top 10" },
+    /** An empty slot of the latest shelf: its name, then what it takes (#856). */
+    toWin: "À gagner",
+    conditions: {
+      general: "Finis dans le top 10 du classement général",
+      chrono: "Marque le plus de points en une soirée d'une ligue",
+      record: "Bats le record de points d'une ligue sur une compétition",
+      witness: "Finis une compétition devant le compte FrenchTrack",
     },
   },
   seasonCard: {
