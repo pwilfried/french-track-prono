@@ -7,13 +7,16 @@ test("the admin posts FrenchTrack's podium, a player predicts, the result is in 
   browser,
 }) => {
   // An open final nobody predicted yet, the last one of the competition: the other tests take
-  // the first ones (run `npm run db:open-events` first).
+  // the first ones (run `npm run db:open-events` first). It starts this season, Paris time: the
+  // community block tells the challenges of the season only (#953).
   const slug = sql(
     `select e.slug from events e join competitions c on c.id = e.competition_id
      where c.slug = 'ultimate-championship-2026' and e.round = 'final'
        and e.lock_at > now() + interval '5 minutes'
        and not exists (select 1 from predictions p where p.event_id = e.id)
        and (select count(*) from entries en where en.event_id = e.id) >= 3
+       and extract(year from e.starts_at at time zone 'Europe/Paris')
+         = extract(year from now() at time zone 'Europe/Paris')
      order by e.starts_at desc limit 1`,
   );
   expect(slug, "no open event: run npm run db:open-events").not.toBe("");
