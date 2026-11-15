@@ -7,6 +7,10 @@ import { CARD_WIDTH, STADIUM_RATIO, STADIUM_SPOTS, stadiumSpots } from "./stadiu
 /** The narrowest stadium (a 320 px screen less its margins) and the height of a card. */
 const NARROWEST = 288;
 const CARD_HEIGHT = 46;
+/** The stadium on a 375 px and a 390 px screen, less their margins. */
+const WIDTHS = [NARROWEST, 343, 358];
+/** The outer edge of the track, in percent of the stadium (`StadiumDrawing`): rx 47, ry 50. */
+const insideOval = (x: number, y: number) => ((x - 50) / 47) ** 2 + ((y - 50) / 50) ** 2 <= 1;
 
 const where = (spot: { x: number; y: number } | null) => {
   if (!spot) return "outside";
@@ -68,6 +72,17 @@ describe("stadium spots", () => {
       for (const b of spots)
         if (a !== b)
           expect(Math.abs(a.x - b.x) >= CARD_WIDTH || Math.abs(a.y - b.y) >= height).toBe(true);
+    }
+  });
+
+  it.each(WIDTHS)("keeps every card inside the oval on a %i px wide stadium", (width) => {
+    const half = ((CARD_HEIGHT / (width * STADIUM_RATIO)) * 100) / 2;
+    const places: LineupPlace[] = Array.from({ length: STADIUM_SPOTS }, () => "free");
+    for (const s of stadiumSpots(places).filter((s) => s !== null)) {
+      const corners = [-1, 1].flatMap((dx) =>
+        [-1, 1].map((dy) => [s.x + (dx * CARD_WIDTH) / 2, s.y + dy * half] as const),
+      );
+      for (const [x, y] of corners) expect(insideOval(x, y), `${s.x},${s.y}`).toBe(true);
     }
   });
 });

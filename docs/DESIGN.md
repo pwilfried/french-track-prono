@@ -259,12 +259,12 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   huitième place en haut ; sur la pelouse, sauts en haut (« hauteur ») puis à gauche
   (« longueur »), lancers à droite (« javelot ») puis au centre (« poids »), combinées au centre ;
   les places « Libre » prennent les endroits restants dans cet ordre. Quatre cartes tiennent côte à
-  côte sur la ligne du milieu, sans chevauchement de 320 à 390 px. Une place montre l'athlète ou un
+  côte sur la ligne du milieu, sans chevauchement et dans l'ovale de 320 à 390 px (#929). Une place montre l'athlète ou un
   « + » en pointillés. Toucher une
   place ouvre une feuille avec les athlètes de l'équipe : ceux qui ne vont pas sont grisés avec la
   raison (absent·e, autre famille) ; en choisir un déjà placé ailleurs échange les deux s'il le
-  peut ; « Retirer de cette place ». Dessous, les remplaçants. Compteur « N/M places », barre du
-  bas « À remplir : … » et « Valider mon alignement » (« Validation en cours… »). Une place que
+  peut ; « Retirer de cette place ». Dessous, les remplaçants. Compteur « N/M places » ; juste
+  sous le stade, jamais par-dessus (#929), la barre « À remplir : … » et « Valider mon alignement » (« Validation en cours… »). Une place que
   l'équipe ne peut pas remplir reste grise (« Personne ») et n'empêche pas de valider ; la barre
   dit combien restent vides et pourquoi (#839). Le compteur et la barre ne comptent que les places
   tenues par un athlète engagé (`lineupProgress`, `src/domain/manager-lineup.ts`). Aucun athlète
