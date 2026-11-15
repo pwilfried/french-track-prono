@@ -566,6 +566,21 @@ celles de ses ligues, aucune écriture hors des fonctions ; aucun texte stocké,
 étiquettes sont dans `messages.fr.ts`. Onglet « Fil » de la page d'une ligue, groupé « Ce soir ·
 <compétition> », « Hier », puis par jour (`feedGroups`, heure de Paris).
 
+Réactions au fil (v0.19, #672) : les membres d'une ligue réagissent à ses moments sans texte libre.
+Quatre emojis (🔥 👏 😮 😂, une réaction de chaque sorte par joueur, retirable, avec compteurs) et
+cinq messages prédéfinis (« Bien joué ! », « Quel flair ! », « Revanche ? », « Pas de chance »,
+« Je te rattrape » ; un par joueur et par moment, le second remplace le premier), stockés comme des
+codes (`src/domain/moment-reactions.ts`, même liste vérifiée en base) ; les emojis et les phrases
+sont dans `messages.fr.ts`. Table `moment_reactions` : écritures par `add_moment_reaction()`,
+`remove_moment_reaction()`, `send_moment_message()` (membre seulement, en son nom), lecture par
+`league_feed_reactions()` sous la sécurité par ligne. Modération (décision du 14 nov. 2026) :
+« Signaler » un message (un signalement par joueur et par élément, `moment_reaction_reports`) ;
+l'admin voit les « Signalements du fil » en tête de la page « Ligues » du back-office, masque
+l'élément (`admin_hide_moment_reaction()`, il disparaît pour tous, noté dans l'historique) ou classe
+le signalement. Le joueur concerné par un moment reçoit une notification push regroupée quand
+d'autres y réagissent (`private.moment_reaction_due()`, famille « Ligues » de « Mes rappels », au
+plus une par heure, mêmes heures calmes).
+
 Notifications push (#203) : le joueur les active par appareil depuis son profil (opt-in
 explicite, désactivation en un geste). Les abonnements (`push_subscriptions`) ne s'écrivent que
 par `save_push_subscription()` et `delete_push_subscription()`. Chaque minute, l'Edge Function

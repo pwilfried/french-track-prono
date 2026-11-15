@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { UseCaseError } from "@/application/errors";
 import { getLeagueFeed } from "@/application/league-moments";
 import { getLeague } from "@/application/leagues";
+import { getMomentReactions } from "@/application/moment-reactions";
 import { getLeagueRanking } from "@/application/rankings";
 import { ErrorNotice } from "@/components/error-notice";
 import { Leaderboard } from "@/components/leaderboard/leaderboard";
@@ -28,6 +29,11 @@ import { cn } from "@/lib/utils";
 import { currentCompetitionDay, loadCompetitions } from "../../competition";
 import { messages } from "../../messages.fr";
 import { leaguePorts, loadLeagueEvents } from "../data";
+import {
+  reactToMomentAction,
+  reportMomentReactionAction,
+  sendMomentMessageAction,
+} from "./reaction-actions";
 
 const TABS = ["classement", "fil", "membres", "inviter"] as const;
 type Tab = (typeof TABS)[number];
@@ -80,11 +86,12 @@ export default async function LeaguePage({
   const [loaded, competitions, feed] = await Promise.all([
     load(id, ports),
     loadCompetitions(),
-    // The feed is read only on its tab (#671).
+    // The feed and its reactions are read only on its tab (#671, #672).
     tab === "fil"
-      ? getLeagueFeed(ports)
-          .execute({ leagueId: id })
-          .catch(() => "error" as const)
+      ? Promise.all([
+          getLeagueFeed(ports).execute({ leagueId: id }),
+          getMomentReactions(ports).execute({ leagueId: id }),
+        ]).catch(() => "error" as const)
       : null,
   ]);
 
@@ -225,7 +232,22 @@ export default async function LeaguePage({
               message={messages.errors.LEAGUES_UNAVAILABLE}
             />
           ) : (
-            <LeagueFeed groups={feed ?? []} />
+            <LeagueFeed
+              groups={feed?.[0] ?? []}
+              reactions={
+                feed
+                  ? {
+                      leagueId: id,
+                      byMoment: feed[1],
+                      actions: {
+                        react: reactToMomentAction,
+                        send: sendMomentMessageAction,
+                        report: reportMomentReactionAction,
+                      },
+                    }
+                  : undefined
+              }
+            />
           ))}
 
         {tab === "membres" && (

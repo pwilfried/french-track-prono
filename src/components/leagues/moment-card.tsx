@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { messages } from "@/app/messages.fr";
 import { Bib } from "@/components/profile/bib";
 import { ChipStatus, type ChipTone } from "@/components/ui/chip-status";
@@ -39,25 +41,31 @@ export function momentText(moment: FeedMoment): string {
   }
 }
 
-/** One moment of the feed of a league: its label, the player's bib, the sentence. */
-export function MomentCard({ moment }: { moment: FeedMoment }) {
+/**
+ * One moment of the feed of a league: its label, the player's bib, the sentence; under it,
+ * `children` (the reactions, #672).
+ */
+export function MomentCard({ moment, children }: { moment: FeedMoment; children?: ReactNode }) {
   return (
-    <article className="flex items-start gap-3 rounded-2xl border border-border bg-card px-3.5 py-3">
-      <span
-        aria-hidden
-        className="grid size-11 shrink-0 place-items-center rounded-full bg-muted text-xl"
-      >
-        {text.emoji[moment.kind]}
-      </span>
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <ChipStatus tone={TONE[moment.kind]} className="self-start">
-          {text.label[moment.kind]}
-        </ChipStatus>
-        <p className="flex min-w-0 items-start gap-2 text-sm">
-          {moment.bib && <Bib bib={moment.bib} />}
-          <span className="min-w-0 break-words">{momentText(moment)}</span>
-        </p>
+    <article className="flex flex-col gap-3 rounded-2xl border border-border bg-card px-3.5 py-3">
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden
+          className="grid size-11 shrink-0 place-items-center rounded-full bg-muted text-xl"
+        >
+          {text.emoji[moment.kind]}
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <ChipStatus tone={TONE[moment.kind]} className="self-start">
+            {text.label[moment.kind]}
+          </ChipStatus>
+          <p className="flex min-w-0 items-start gap-2 text-sm">
+            {moment.bib && <Bib bib={moment.bib} />}
+            <span className="min-w-0 break-words">{momentText(moment)}</span>
+          </p>
+        </div>
       </div>
+      {children}
     </article>
   );
 }

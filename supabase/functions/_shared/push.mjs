@@ -2,7 +2,8 @@
 // `push-notifications` (run every minute by pg_cron) and by `scripts/push-notifications.mjs`
 // (by hand). Rules of what is due: the grouped reminders (#681),
 // supabase/migrations/20261114060000_reminder_settings.sql, the Manager ones (#836),
-// supabase/migrations/20261114070000_manager_reminders.sql, and for the programme of a
+// supabase/migrations/20261114070000_manager_reminders.sql, the reactions to a league moment
+// (#672): supabase/migrations/20261115010000_moment_reactions.sql, and for the programme of a
 // competition (#659): supabase/migrations/20261113120000_program_alerts.sql.
 // Plain JavaScript with no import, so that Deno and Node both load it.
 
@@ -73,12 +74,30 @@ const MANAGER_KINDS = ["mercato_round", "lineup", "duel_over"];
 const SHORT_LIVED = ["forgotten", "mercato_round", "lineup"];
 
 /**
+ * The text of the reactions to my league moments (#672), grouped: one an hour at most.
+ * @param {{ count: number, pseudo: string, league_id: string, league_name: string }} p
+ */
+function momentReactionNotificationOf(p) {
+  const others = p.count - 1;
+  return {
+    title:
+      others > 0
+        ? `${p.pseudo} et ${others} ${others > 1 ? "autres" : "autre"} ont réagi à ton moment`
+        : `${p.pseudo} a réagi à ton moment`,
+    body: `${p.league_name} : va voir le fil.`,
+    url: `/ligues/${p.league_id}?onglet=fil`,
+    tag: "moment_reaction",
+  };
+}
+
+/**
  * The text of a grouped reminder (#681): « Pronos oubliés » for every final of the evening
  * locking soon, or « Résultats du soir » once all its points are computed; or a Manager one.
  * @param {{ kind: string, evening: string, ref?: string, payload: any }} due
  * @param {number} [now]
  */
 export function notificationOf(due, now = Date.now()) {
+  if (due.kind === "moment_reaction") return momentReactionNotificationOf(due.payload);
   if (MANAGER_KINDS.includes(due.kind))
     return managerNotificationOf({ kind: due.kind, ref: due.ref ?? "", payload: due.payload }, now);
   if (due.kind === "forgotten") {
