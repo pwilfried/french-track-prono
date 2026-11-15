@@ -605,6 +605,8 @@ export const messages = {
     joinClosedNext: "Voir les autres ligues",
     shareText: (name: string) => `Rejoins ma ligue French Track Manager « ${name} »`,
     catalogueLink: "Catalogue du mercato",
+    /** The links to the screens of a Manager league, on its « Saison » tab (#926). */
+    screens: "Écrans de la ligue",
     /** The « Fil » tab of a Manager league (#875); its label is messages.leagues.tabs.feed. */
     feed: {
       season: "Saison",
