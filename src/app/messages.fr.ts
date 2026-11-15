@@ -1202,6 +1202,7 @@ export const messages = {
         month: "short",
         timeZone: "UTC",
       })}`,
+    liveCompetition: (name: string) => `En cours : ${name}`,
     listTabs: { mine: (n: number) => `Mes ligues · ${n}`, discover: "Découvrir" },
     listTabsLabel: "Mes ligues ou découvrir",
     searchLabel: "Chercher une ligue publique",

@@ -71,6 +71,22 @@ describe("nextLeagueCompetition", () => {
   it("is none once every competition of the league is over", () => {
     expect(nextLeagueCompetition(["past"], all, "2026-11-13")).toBeNull();
   });
+
+  it.each([
+    ["2026-11-11", "live", false],
+    ["2026-11-12", "live", true],
+    ["2026-11-14", "live", true],
+    ["2026-11-15", "other", false],
+    ["2026-11-21", "later", false],
+  ])("on %s is %s, under way: %s (#928)", (today, slug, live) => {
+    const next = nextLeagueCompetition(["later", "live", "past", "other"], all, today);
+    expect(next?.slug).toBe(slug);
+    expect(next?.live).toBe(live);
+  });
+
+  it("is none the day after the last competition of the league ends (#928)", () => {
+    expect(nextLeagueCompetition(["past", "live"], all, "2026-11-15")).toBeNull();
+  });
 });
 
 const league = (

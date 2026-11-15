@@ -63,8 +63,8 @@ export function LeagueCard({
   name: string;
   memberCount: number;
   summary: { count: number; start: string | null; end: string | null };
-  /** The competition under way or coming first, with its first day (YYYY-MM-DD). */
-  next?: { name: string; startsOn: string } | null;
+  /** The competition under way (live) or coming first, with its first day (YYYY-MM-DD). */
+  next?: { name: string; startsOn: string; live?: boolean } | null;
   isPublic?: boolean;
   isOfficial?: boolean;
   /** The families it is limited to (#613); none: all events, no badge. */
@@ -89,7 +89,9 @@ export function LeagueCard({
         <span className="block text-sm text-muted-foreground">{leagueSummaryText(summary)}</span>
         {next && (
           <span className="block break-words text-xs font-semibold text-foreground">
-            {text.nextCompetition(next.name, next.startsOn)}
+            {next.live
+              ? text.liveCompetition(next.name)
+              : text.nextCompetition(next.name, next.startsOn)}
           </span>
         )}
       </span>
