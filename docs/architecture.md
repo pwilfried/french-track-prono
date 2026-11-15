@@ -189,6 +189,9 @@ Conséquences :
 glisser-déposer) ; le compte à rebours passe à l'orange à 1 h et au rouge à 10 min du
 verrouillage. La base refuse un prono après `lock_at`, un athlète hors liste de départ, un
 deuxième joker dans la compétition, et la suppression d'un prono après le verrouillage.
+Un joueur n'écrit que `p1`, `p2`, `p3`, `use_joker`, `m1`, `m2` et `m3` de ses pronos (droits
+colonne par colonne, #911) : l'épreuve, les points et les dates restent écrits par le serveur, et
+le verrouillage couvre aussi un changement d'épreuve.
 
 **Résultats et points (v0.4, puis #665).** L'admin saisit une seule feuille de résultats par
 épreuve (`/admin/<épreuve>/performances`) : le podium officiel des pronos en est tiré (places 1

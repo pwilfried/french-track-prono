@@ -58,20 +58,34 @@ export function createSupabasePredictionRepository(client: SupabaseClient): Pred
     },
 
     async save(prediction) {
-      const { error } = await client.from("predictions").upsert(
-        {
-          user_id: prediction.userId,
-          event_id: prediction.eventId,
-          p1: slotToRow(prediction.podium.first),
-          p2: slotToRow(prediction.podium.second),
-          p3: slotToRow(prediction.podium.third),
-          use_joker: prediction.useJoker,
-          m1: prediction.marks?.first ?? null,
-          m2: prediction.marks?.second ?? null,
-          m3: prediction.marks?.third ?? null,
-        },
-        { onConflict: "user_id,event_id" },
-      );
+      // A player may only update the podium, the joker and the marks (#911): an upsert would also
+      // rewrite user_id and event_id, so the row is updated first, and created when it is missing.
+      const picks = {
+        p1: slotToRow(prediction.podium.first),
+        p2: slotToRow(prediction.podium.second),
+        p3: slotToRow(prediction.podium.third),
+        use_joker: prediction.useJoker,
+        m1: prediction.marks?.first ?? null,
+        m2: prediction.marks?.second ?? null,
+        m3: prediction.marks?.third ?? null,
+      };
+      const update = () =>
+        client
+          .from("predictions")
+          .update(picks)
+          .eq("user_id", prediction.userId)
+          .eq("event_id", prediction.eventId)
+          .select("event_id");
+      let { data: updated, error } = await update();
+      if (!error && updated!.length === 0) {
+        ({ error } = await client
+          .from("predictions")
+          .insert({ user_id: prediction.userId, event_id: prediction.eventId, ...picks }));
+        // 23505 on (user_id, event_id): a save sent at the same time created the row first.
+        if (error?.code === "23505" && `${error.message} ${error.details ?? ""}`.includes("user_id_event_id")) {
+          ({ data: updated, error } = await update());
+        }
+      }
       if (!error) return "saved";
 
       const where = `${error.message} ${error.details ?? ""}`;
