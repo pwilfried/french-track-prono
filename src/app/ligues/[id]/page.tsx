@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
+import { getLeagueFeed } from "@/application/league-moments";
 import { getLeague } from "@/application/leagues";
 import { getLeagueRanking } from "@/application/rankings";
 import { ErrorNotice } from "@/components/error-notice";
@@ -14,6 +15,7 @@ import {
 import { FamilyBadge } from "@/components/leagues/family-badge";
 import { LeagueCompetitions } from "@/components/leagues/league-competitions";
 import { LeagueEventList } from "@/components/leagues/league-event-list";
+import { LeagueFeed } from "@/components/leagues/league-feed";
 import { InviteBanner } from "@/components/leagues/invite-banner";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { ShareInvite } from "@/components/leagues/share-invite";
@@ -27,11 +29,12 @@ import { currentCompetitionDay, loadCompetitions } from "../../competition";
 import { messages } from "../../messages.fr";
 import { leaguePorts, loadLeagueEvents } from "../data";
 
-const TABS = ["classement", "membres", "inviter"] as const;
+const TABS = ["classement", "fil", "membres", "inviter"] as const;
 type Tab = (typeof TABS)[number];
 /** The tabs in the bar; « inviter » opens from the « Inviter » button of the header (#552). */
 const BAR: { tab: Tab; label: string }[] = [
   { tab: "classement", label: messages.leagues.tabs.ranking },
+  { tab: "fil", label: messages.leagues.tabs.feed },
   { tab: "membres", label: messages.leagues.tabs.members },
 ];
 
@@ -74,7 +77,16 @@ export default async function LeaguePage({
   const query = await searchParams;
   const tab = TABS.find((t) => t === query.onglet) ?? "classement";
   const ports = await leaguePorts(`/ligues/${id}`);
-  const [loaded, competitions] = await Promise.all([load(id, ports), loadCompetitions()]);
+  const [loaded, competitions, feed] = await Promise.all([
+    load(id, ports),
+    loadCompetitions(),
+    // The feed is read only on its tab (#671).
+    tab === "fil"
+      ? getLeagueFeed(ports)
+          .execute({ leagueId: id })
+          .catch(() => "error" as const)
+      : null,
+  ]);
 
   if (loaded === "error") {
     return (
@@ -205,6 +217,16 @@ export default async function LeaguePage({
             )}
           </>
         )}
+
+        {tab === "fil" &&
+          (feed === "error" ? (
+            <ErrorNotice
+              retryHref={`/ligues/${id}?onglet=fil`}
+              message={messages.errors.LEAGUES_UNAVAILABLE}
+            />
+          ) : (
+            <LeagueFeed groups={feed ?? []} />
+          ))}
 
         {tab === "membres" && (
           <>

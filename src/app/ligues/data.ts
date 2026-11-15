@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { listLeagueEvents } from "@/application/league-events";
 import type { LeagueFamily, LeagueFamilyRule } from "@/domain/league-families";
-import { createSupabaseLeagueRepository } from "@/infra";
+import { createSupabaseLeagueMomentRepository, createSupabaseLeagueRepository } from "@/infra";
 
 import { messages } from "../messages.fr";
 
@@ -18,6 +18,7 @@ export async function leaguePorts(back: string) {
     userId: user.userId,
     leagues: createSupabaseLeagueRepository(client),
     ranking: publicRanking(),
+    moments: createSupabaseLeagueMomentRepository(client),
   };
 }
 
