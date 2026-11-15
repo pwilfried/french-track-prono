@@ -172,3 +172,11 @@ it("starts a new pass on main's newer commit after a failed one on an older comm
   expect(out).toContain("dispatches -f ref=main -f inputs[e2e]=true");
   expect(out).not.toContain("Tagging");
 });
+
+it("tags the first green pass of the version, not a later one still running (#969)", () => {
+  const out = release({
+    runs: ["CI", "Pre-production"],
+    e2e: [{ state: "running", at: "2026-11-15T20:00:00Z" }, { sha: "0ld5ha0000000000" }],
+  });
+  expect(out).toContain("Tagging v0.17.0 on 0ld5ha0");
+});

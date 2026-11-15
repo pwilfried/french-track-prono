@@ -79,16 +79,19 @@ export function VisitorHome({
               {competition.name}
             </h3>
             <p className="text-sm text-[#d9e4f5]">
-              {[competition.place, messages.start.events(competition.finals)]
+              {[competition.place, messages.start.program(competition.finals)]
                 .filter(Boolean)
                 .join(" · ")}
             </p>
-            <Link
-              href={`/competitions?competition=${competition.slug}`}
-              className={`${outline} border-white/70 text-white hover:bg-white/10`}
-            >
-              {text.seeEvents}
-            </Link>
+            {/* No button towards an empty list before the programme is out (#936). */}
+            {competition.finals > 0 && (
+              <Link
+                href={`/competitions?competition=${competition.slug}`}
+                className={`${outline} border-white/70 text-white hover:bg-white/10`}
+              >
+                {text.seeEvents}
+              </Link>
+            )}
           </article>
         ) : (
           <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
