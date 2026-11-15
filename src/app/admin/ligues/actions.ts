@@ -11,7 +11,11 @@ import {
   renameReportedLeague,
   type AdminLeagueMember,
 } from "@/application/league-moderation";
-import { createSupabaseLeagueModerationRepository } from "@/infra";
+import { dismissMomentReports, hideMomentReaction } from "@/application/moment-reactions";
+import {
+  createSupabaseLeagueModerationRepository,
+  createSupabaseMomentReactionRepository,
+} from "@/infra";
 
 import { adminOnly } from "../guard";
 
@@ -86,4 +90,26 @@ export async function leagueMembersAction(
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
   }
+}
+
+/** The admin hides a reported reaction or message of a feed: gone for everyone (#672). */
+export async function hideMomentReactionAction(reactionId: string): Promise<LeagueListResult> {
+  const { client } = await adminOnly();
+  return run(async () => {
+    await hideMomentReaction({
+      reactions: createSupabaseMomentReactionRepository(client),
+    }).execute({ reactionId });
+    return 1;
+  });
+}
+
+/** The reports were unfounded: the reaction stays (#672). */
+export async function dismissMomentReportsAction(reactionId: string): Promise<LeagueListResult> {
+  const { client } = await adminOnly();
+  return run(async () => {
+    await dismissMomentReports({
+      reactions: createSupabaseMomentReactionRepository(client),
+    }).execute({ reactionId });
+    return 1;
+  });
 }

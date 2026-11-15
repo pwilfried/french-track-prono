@@ -135,5 +135,7 @@ export {
   type MomentEventFixture,
 } from "./in-memory/league-moment-repository";
 export { createSupabaseLeagueMomentRepository } from "./supabase/league-moment-repository";
+export { createInMemoryMomentReactionStore } from "./in-memory/moment-reaction-repository";
+export { createSupabaseMomentReactionRepository } from "./supabase/moment-reaction-repository";
 export { createInMemoryManagerFeedStore } from "./in-memory/manager-feed-repository";
 export { createSupabaseManagerFeedRepository } from "./supabase/manager-feed-repository";

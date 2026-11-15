@@ -3,8 +3,10 @@ import Link from "next/link";
 import { messages } from "@/app/messages.fr";
 import { buttonVariants } from "@/components/ui/button";
 import type { FeedGroup, FeedGroupTitle } from "@/domain/league-moments";
+import { NO_REACTIONS, type MomentReactions as Reactions } from "@/domain/moment-reactions";
 
 import { MomentCard } from "./moment-card";
+import { MomentReactions, type MomentReactionActions } from "./moment-reactions";
 
 const text = messages.leagues.feed;
 
@@ -16,15 +18,22 @@ const titleOf = (title: FeedGroupTitle) =>
       : text.day(title.day);
 
 /**
- * The « Fil » tab of a league (#671), prediction or Manager (#875): the moments the app tells, latest first, grouped « Ce soir ·
- * <compétition> », « Hier », then by day. Nobody writes in it. Empty: what it will tell, and the
- * next thing to do.
+ * The « Fil » tab of a league (#671), prediction or Manager (#875): the moments the app tells,
+ * latest first, grouped « Ce soir · <compétition> », « Hier », then by day. Nobody writes in it:
+ * the members react with emojis and preset messages (#672), when `reactions` are given. Empty:
+ * what it will tell, and the next thing to do.
  */
 export function LeagueFeed({
   groups,
+  reactions,
   empty = { text: text.empty, href: "/competitions", action: messages.ranking.predict },
 }: {
   groups: FeedGroup[];
+  reactions?: {
+    leagueId: string;
+    byMoment: Record<string, Reactions>;
+    actions: MomentReactionActions;
+  };
   /** What an empty feed says, and its next action: a Manager league points to its mercato. */
   empty?: { text: string; href: string; action: string };
 }) {
@@ -55,7 +64,16 @@ export function LeagueFeed({
           <ul className="flex flex-col gap-2">
             {group.moments.map((moment) => (
               <li key={moment.key}>
-                <MomentCard moment={moment} />
+                <MomentCard moment={moment}>
+                  {reactions && (
+                    <MomentReactions
+                      leagueId={reactions.leagueId}
+                      momentKey={moment.key}
+                      reactions={reactions.byMoment[moment.key] ?? NO_REACTIONS}
+                      actions={reactions.actions}
+                    />
+                  )}
+                </MomentCard>
               </li>
             ))}
           </ul>
