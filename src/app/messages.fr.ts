@@ -520,6 +520,13 @@ export const messages = {
     joinClosedNext: "Voir les autres ligues",
     shareText: (name: string) => `Rejoins ma ligue French Track Manager « ${name} »`,
     catalogueLink: "Catalogue du mercato",
+    /** The « Fil » tab of a Manager league (#875); its label is messages.leagues.tabs.feed. */
+    feed: {
+      season: "Saison",
+      empty:
+        "Rien encore. Le fil raconte les athlètes gagnés à chaque tour du mercato, les duels et les badges.",
+      toMercato: "Voir le mercato",
+    },
     /**
      * The presentation of the Manager (#616, #802): three screens, at the first visit then on
      * demand. The figures (budget, players, scale) live in the rules of the league.
@@ -1198,11 +1205,15 @@ export const messages = {
             : `${pseudo} trouve un podium parfait.`,
         new_leader: (pseudo: string) => `${pseudo} prend la tête de la ligue.`,
         duel_result: (pseudo: string, other: string | null, scores: [number, number] | null) =>
-          `${pseudo} bat ${other ?? "son adversaire"}${scores ? ` ${scores[0]} à ${scores[1]}` : ""}.`,
+          scores && scores[0] === scores[1]
+            ? `${pseudo} et ${other ?? "son adversaire"} font match nul ${scores[0]} à ${scores[1]}.`
+            : `${pseudo} bat ${other ?? "son adversaire"}${scores ? ` ${scores[0]} à ${scores[1]}` : ""}.`,
         mercato_win: (pseudo: string, athlete: string | null, price: number | null) =>
           `${pseudo} remporte ${athlete ?? "un athlète"} au mercato${price !== null ? ` pour ${price} crédits` : ""}.`,
-        badge: (pseudo: string, badge: string | null) =>
-          badge ? `${pseudo} gagne le badge « ${badge} ».` : `${pseudo} gagne un nouveau badge.`,
+        badge: (pseudo: string, badge: string | null, level: string | null) =>
+          badge
+            ? `${pseudo} gagne le badge « ${badge} »${level ? ` ${level}` : ""}.`
+            : `${pseudo} gagne un nouveau badge.`,
         streak: (pseudo: string, length: number | null) =>
           `${pseudo} enchaîne ${length ?? 5} pronos qui rapportent d'affilée.`,
       },
@@ -2258,6 +2269,8 @@ export const messages = {
     name: { bronze: "Bronze", silver: "Argent", gold: "Or" },
     /** « pour le bronze », « vers l'argent »… */
     the: { bronze: "le bronze", silver: "l'argent", gold: "l'or" },
+    /** « gagne le badge Foudre en argent » (#875). */
+    in: { bronze: "en bronze", silver: "en argent", gold: "en or" },
   },
   /** The showcase of the season trophies (#822), one shelf per season. */
   trophies: {

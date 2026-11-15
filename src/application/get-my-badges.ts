@@ -8,6 +8,7 @@ import {
 } from "@/domain/badges";
 import type { DisciplineFamily } from "@/domain/discipline";
 import { groupEventsByDay } from "@/domain/event-list";
+import { badgeMoments, type BadgeMoment } from "@/domain/manager-moments";
 
 import type { DisciplineRepository } from "./disciplines";
 import type { EventReader } from "./list-events";
@@ -22,6 +23,12 @@ export interface BadgeLevelRepository {
   levels(userId: string): Promise<StoredLevels>;
   /** Raises each badge to the level given; a lower level than the stored one is ignored. */
   raise(userId: string, levels: { badge: Badge; level: BadgeLevel }[]): Promise<void>;
+  /**
+   * Tells the levels the signed-in player holds in the feed of each of their leagues, prediction
+   * and Manager (#875); a fact already told, or a level not held, is left out. Returns how many
+   * moments are new.
+   */
+  publishMoments(moments: BadgeMoment[]): Promise<number>;
 }
 
 type Ports = {
@@ -109,13 +116,16 @@ export function getMyBadges(ports: Ports) {
 
 /**
  * The player has seen the celebration: the levels won are stored, so it is shown once and never
- * lost. The levels are counted again here, never taken from the browser.
+ * lost, then told in the feeds of their leagues (#875). The levels are counted again here, never
+ * taken from the browser.
  */
 export function markBadgesSeen(ports: Ports) {
   return {
     async execute(input: Input): Promise<void> {
       const { raised } = await readBadges(ports, input);
-      if (raised.length > 0) await ports.levels.raise(input.userId, raised);
+      if (raised.length === 0) return;
+      await ports.levels.raise(input.userId, raised);
+      await ports.levels.publishMoments(badgeMoments(input.userId, raised));
     },
   };
 }
