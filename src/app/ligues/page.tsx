@@ -14,6 +14,7 @@ import { JoinPublicLeagueForm, ReportLeagueForm } from "@/components/leagues/lea
 import { LeagueCard } from "@/components/leagues/league-card";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { OfficialLeague } from "@/components/leagues/official-league";
+import { LeaguesDemo, VisitorTeaser } from "@/components/shell/visitor-teaser";
 import { buttonVariants } from "@/components/ui/button";
 import { ViewTabs } from "@/components/ui/view-tabs";
 import { publicLeaguesNotice } from "@/domain/league";
@@ -22,6 +23,7 @@ import { leagueSummary, nextLeagueCompetition } from "@/domain/league-list";
 import { currentCompetitionDay, currentDay, loadCompetitions } from "../competition";
 import { messages } from "../messages.fr";
 import { paramText } from "../search-params";
+import { getCurrentUser } from "../session";
 import { leaguePorts } from "./data";
 
 const text = messages.leagues;
@@ -31,7 +33,8 @@ type Row = { league: League; standing: ReturnType<typeof standingIn> };
 /**
  * The « Ligues » tab (#662): « Créer une ligue » and « J'ai un code », then « Mes ligues · N »
  * (summed-up cards with my place) or « Découvrir » (the official league, then the public leagues
- * to search, filter by family and sort). The tab lives in the URL (`?onglet=decouvrir`).
+ * to search, filter by family and sort). The tab lives in the URL (`?onglet=decouvrir`). A visitor
+ * sees what a league is, an example and « Se connecter » (#934).
  */
 export default async function LeaguesPage({
   searchParams,
@@ -40,7 +43,19 @@ export default async function LeaguesPage({
 }) {
   const tab: Tab =
     paramText((await searchParams).onglet) === "decouvrir" ? "decouvrir" : "mes-ligues";
-  const ports = await leaguePorts(tab === "decouvrir" ? "/ligues?onglet=decouvrir" : "/ligues");
+  const back = tab === "decouvrir" ? "/ligues?onglet=decouvrir" : "/ligues";
+  if (!(await getCurrentUser())) {
+    return (
+      <VisitorTeaser
+        title={messages.nav.leagues}
+        intro={messages.visitorTeaser.leagues.text}
+        back={back}
+      >
+        <LeaguesDemo />
+      </VisitorTeaser>
+    );
+  }
+  const ports = await leaguePorts(back);
   let mine: League[] = [];
   let rows: Row[] = [];
   let publics: PublicLeague[] = [];

@@ -46,7 +46,7 @@ test("the creator of a league of 6 competitions launches the mercato once 3 frie
   const code = sql(`select invite_code from manager_leagues where name = '${league}'`);
   for (const tag of ["mgr-friend-a", "mgr-friend-b", "mgr-friend-c"]) {
     const page = await (await browser.newContext()).newPage();
-    await page.goto("/manager");
+    await page.goto("/connexion?next=/manager");
     await signUp(page, newPlayer(tag));
     await page.waitForURL(/\/manager$/);
     await page.goto(`/manager/rejoindre?code=${code}`);

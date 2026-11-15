@@ -35,7 +35,7 @@ test("a player joins a public Manager league in one tap and a private one by its
   const code = sql(`select invite_code from manager_leagues where name = '${closed}'`);
 
   // Another player sees the public league with its free places and joins it in one tap.
-  await joinerPage.goto("/manager");
+  await joinerPage.goto("/connexion?next=/manager");
   await signUp(joinerPage, joiner);
   await joinerPage.waitForURL(/\/manager$/);
   // The presentation opens at the first visit; « Passer » shows the leagues (#616, #802).
