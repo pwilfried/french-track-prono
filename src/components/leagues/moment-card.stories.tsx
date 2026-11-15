@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 
 import { messages } from "@/app/messages.fr";
 import type { FeedMoment } from "@/domain/league-moments";
@@ -77,19 +77,52 @@ export const DuelResult: Story = {
   },
 };
 
-/** A winning bid at the reveal of a mercato round. */
+/** The athletes a player won in a mercato round: one card, folded names and prices (#979). */
 export const MercatoWin: Story = {
   args: {
     moment: {
       ...base,
-      key: "mercato",
+      key: "mercato_win:1:u1",
       kind: "mercato_win",
-      athlete: "Athlète Inventée",
-      price: 42,
+      round: 1,
+      price: 40,
+      athletes: [
+        { name: "Athlète Inventée", price: 22 },
+        { name: "Coureuse Imaginaire", price: 12 },
+        { name: "Sauteur Fictif", price: 5 },
+        { name: "Lanceuse Rêvée", price: 1 },
+      ],
     },
   },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText(text.label.mercato_win)).toBeVisible();
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(text.label.mercato_win)).toBeVisible();
+    await expect(canvas.getByText(text.text.mercato_win("Flèche du Nord", 4, 1, 40))).toBeVisible();
+    // Folded: the names show once the card is opened.
+    await expect(canvas.getByText("Athlète Inventée")).not.toBeVisible();
+    await userEvent.click(canvas.getByText(text.athletes));
+    await expect(canvas.getByText("Athlète Inventée")).toBeVisible();
+    await expect(canvas.getByText(text.credits(1))).toBeVisible();
+  },
+};
+
+/** A very long athlete name wraps inside the opened card. */
+export const MercatoLongName: Story = {
+  args: {
+    moment: {
+      ...base,
+      key: "mercato_win:2:u1",
+      kind: "mercato_win",
+      round: 2,
+      price: 120,
+      athletes: [
+        { name: "Marie-Charlotte Bernadette Inventée de la Fontaine-Imaginaire", price: 120 },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByText(text.athletes));
+    await expect(canvasElement.scrollWidth).toBeLessThanOrEqual(canvasElement.clientWidth + 1);
   },
 };
 

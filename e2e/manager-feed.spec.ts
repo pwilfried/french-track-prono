@@ -51,11 +51,13 @@ test("the reveal of a mercato round tells « Mercato » in the feed of the Manag
   sql(`select private.close_manager_rounds()`);
 
   await page.goto(`/manager/${leagueId}?onglet=fil`);
-  const moment = page.getByRole("article").filter({ hasText: athlete });
+  // One card per round and player, its athletes folded under it (#979).
+  const sentence = `${owner.pseudo} remporte 1 athlète au tour 1 · 35 crédits`;
+  const moment = page.getByRole("article").filter({ hasText: sentence });
   await expect(moment).toContainText("Mercato");
-  await expect(moment).toContainText(
-    `${owner.pseudo} remporte ${athlete} au mercato pour 35 crédits.`,
-  );
+  await expect(moment.getByText(athlete)).toBeHidden();
+  await moment.getByText("Voir les athlètes").click();
+  await expect(moment.getByText(athlete)).toBeVisible();
 
   // « Saison » brings the league back.
   await page.getByRole("link", { name: "Saison", exact: true }).click();

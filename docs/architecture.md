@@ -666,7 +666,10 @@ du mercato (`mercato_win`, depuis `manager_round_bids`) et le résultat de chaqu
 dès que sa journée a ses scores Manager (`duel_result`, vainqueur d'abord, score manquant = 0 ;
 pas de duel les journées bonus). Ces faits sont déjà stockés : `manager_feed()` les lit (sécurité
 par ligne, un non-participant ne lit rien) et `managerMoments` (`src/domain/manager-moments.ts`)
-les raconte avec une clé stable (`mercato_win:<tour>:<athlète>`, `duel_result:<journée>:<domicile>`).
+les raconte avec une clé stable (`mercato_win:<tour>:<joueur>`, `duel_result:<journée>:<domicile>`).
+Les gains d'un tour sont regroupés par joueur (#979) : une carte « X remporte 4 athlètes au tour 1 ·
+40 crédits », dépliable pour les noms et les prix ; duels et badges restent à part. Le fil montre
+ses 10 dernières cartes, puis « Voir plus » en ajoute 10.
 Un niveau de badge, lui, n'a pas de trace datée : quand le joueur a vu la célébration
 (`markBadgesSeen`), `publish_my_badge_moments()` le publie une fois (`badge:<joueur>:<badge>:<niveau>`)
 dans chacune de ses ligues de pronos (`league_moments`) et Manager (table jumelle
