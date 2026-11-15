@@ -14,7 +14,7 @@ insert into profiles (id, pseudo, age_confirmed_at) values
   ('f7f70000-0000-0000-0000-000000000003', 'Cleo', now());
 update profiles set is_admin = true where id = 'f7f70000-0000-0000-0000-000000000001';
 
--- An open event with the athletes of the seed's women's 100 m.
+-- An open event with the three athletes of the seed's women's 100 m.
 insert into events (id, competition_id, slug, discipline, gender, starts_at, lock_at)
 select 'f7f70000-0000-0000-0000-0000000000e1', c.id, 'test-frenchtrack', '100 m', 'F',
        now() + interval '1 day', now() + interval '1 hour'
@@ -68,7 +68,7 @@ select is((select count(*)::int from frenchtrack_challenges(
 reset role;
 insert into predictions (user_id, event_id, p1, p2, p3) values
   ('f7f70000-0000-0000-0000-000000000002', 'f7f70000-0000-0000-0000-0000000000e1', athlete(1), athlete(2), athlete(3)),
-  ('f7f70000-0000-0000-0000-000000000003', 'f7f70000-0000-0000-0000-0000000000e1', athlete(4), athlete(5), athlete(6));
+  ('f7f70000-0000-0000-0000-000000000003', 'f7f70000-0000-0000-0000-0000000000e1', athlete(3), athlete(1), athlete(2));
 update events set lock_at = now() - interval '1 minute' where id = 'f7f70000-0000-0000-0000-0000000000e1';
 set local role authenticated;
 
