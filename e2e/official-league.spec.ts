@@ -20,7 +20,7 @@ test("a player joins the Ligue FrenchTrack from my leagues and finds it among th
   sql(`update leagues set name = 'Ligue FrenchTrack' where is_official`);
 
   const player = newPlayer("official");
-  await page.goto("/ligues");
+  await page.goto("/connexion?next=/ligues");
   await signUp(page, player);
   await page.waitForURL(/\/ligues$/);
   // The official league waits in « Découvrir » (#662).

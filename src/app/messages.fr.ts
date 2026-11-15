@@ -294,6 +294,24 @@ export const messages = {
       "Crée une ligue, partage le code, et regarde le classement bouger après chaque finale.",
     createLeague: "Créer une ligue",
   },
+  /** The Leagues and Manager tabs for a visitor (#934): what it is, an example, « Se connecter ». */
+  visitorTeaser: {
+    demo: "Exemple",
+    leagues: {
+      text: "Crée une ligue entre amis, partage son code et suivez votre classement après chaque finale.",
+      demoTitle: "Les copains du stade",
+      demoRows: [
+        { pseudo: "Léa", points: 42 },
+        { pseudo: "Toi", points: 37, me: true },
+        { pseudo: "Max", points: 30 },
+      ],
+    },
+    manager: {
+      text: "Recrute tes athlètes, aligne ton équipe et affronte un autre manager de ta ligue à chaque journée.",
+      demoHome: { name: "Ton équipe", points: 54 },
+      demoAway: { name: "Les Fusées", points: 48 },
+    },
+  },
   /** The three steps, on the visitor's home and on the player's until a first prediction. */
   howItWorks: {
     title: "Comment ça marche",
