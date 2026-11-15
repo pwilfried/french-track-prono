@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import type { ChallengeSummary } from "@/application/frenchtrack";
 import type { RankingRow } from "@/application/rankings";
 import { messages } from "@/app/messages.fr";
 import { FRENCHTRACK_ACCOUNTS, SocialIcon } from "@/components/legal/social-icons";
@@ -7,6 +8,7 @@ import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
 import { ChipStatus } from "@/components/ui/chip-status";
 import type { EventSummary } from "@/domain/event";
+import type { ChallengeVerdict } from "@/domain/frenchtrack";
 import type { LeagueStanding, NextAction } from "@/domain/home";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +46,8 @@ export type PlayerHomeProps = {
   community?: React.ReactNode;
   /** « Complète ton profil » (#540), under the next action; left out when the profile is complete. */
   completeProfile?: React.ReactNode;
+  /** « Battez FrenchTrack » (#674): the open challenge that locks first, else the last one. */
+  challenge?: (ChallengeSummary & { verdict: ChallengeVerdict | null }) | null;
 };
 
 /**
@@ -72,6 +76,7 @@ export function PlayerHome(props: PlayerHomeProps) {
         />
       ) : null}
       {league ? <MyLeague userId={props.userId} {...league} /> : <NoLeague />}
+      {props.challenge ? <Challenge {...props.challenge} now={now} /> : null}
       {lastResult ? <LastResult {...lastResult} /> : null}
       {props.community}
       <Manager mercatoOpen={props.mercatoOpen} />
@@ -181,6 +186,56 @@ function LastResult({
       </div>
       <Link href={`/epreuves/${event.slug}`} className={cn(link, "self-start")}>
         {text.lastResult.see}
+      </Link>
+    </section>
+  );
+}
+
+function Challenge({
+  slug,
+  discipline,
+  gender,
+  lockAt,
+  points,
+  mine,
+  verdict,
+  now,
+}: NonNullable<PlayerHomeProps["challenge"]> & { now: Date }) {
+  const challenge = messages.challenge;
+  const open = Date.parse(lockAt) > now.getTime();
+  return (
+    <section
+      aria-labelledby="home-challenge"
+      data-home-challenge
+      className="flex flex-col gap-2 rounded-card border border-white/15 bg-nuit p-4 text-white"
+    >
+      <h2 id="home-challenge" className="text-xs font-bold uppercase tracking-wide text-[#d9e4f5]">
+        {challenge.title}
+      </h2>
+      <p className="font-display text-xl font-extrabold break-words">
+        {messages.events.name(discipline, gender)}
+      </p>
+      {verdict ? (
+        <p className="font-bold">
+          {challenge.verdict[verdict]}
+          {mine !== null && points !== null ? (
+            <span className="block font-mono text-sm font-semibold tabular-nums text-[#d9e4f5]">
+              {challenge.you} {challenge.points(mine)} · {challenge.frenchTrack}{" "}
+              {challenge.points(points)}
+            </span>
+          ) : null}
+        </p>
+      ) : (
+        <p className="text-sm text-[#d9e4f5]">{open ? challenge.hidden : challenge.waiting}</p>
+      )}
+      <Link
+        href={`/epreuves/${slug}`}
+        className="inline-flex min-h-11 items-center justify-center self-start rounded-full bg-white px-5 font-bold text-nuit hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
+      >
+        {open ? challenge.predict : challenge.see}
+      </Link>
+      <Link href="/classement/frenchtrack" className={cn(link, "self-start")}>
+        {challenge.seasonLink}
       </Link>
     </section>
   );

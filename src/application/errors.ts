@@ -142,7 +142,10 @@ export type ErrorCode =
   | "POLL_NOT_FOUND"
   | "POLL_CLOSED"
   | "POLL_ALREADY_VOTED"
-  | "COMMUNITY_UNAVAILABLE";
+  | "COMMUNITY_UNAVAILABLE"
+  | "FRENCHTRACK_UNAVAILABLE"
+  | "FRENCHTRACK_LOCKED"
+  | "FRENCHTRACK_PICK_INVALID";
 
 let reportUnavailable: ((code: ErrorCode) => void) | undefined;
 

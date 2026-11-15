@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { removeFrenchTrackPick, setFrenchTrackPick } from "@/application/frenchtrack";
 import { getEvent } from "@/application/get-event";
 import { promoteToNextRound } from "@/application/promote-to-next-round";
 import { setEventOdds } from "@/application/set-event-odds";
@@ -14,6 +15,7 @@ import { setStartList, type StartListEntry } from "@/application/set-start-list"
 import {
   createPublicSupabaseClient,
   createSupabaseEventReader,
+  createSupabaseFrenchTrackRepository,
   createSupabaseOddsRepository,
   createSupabaseStartListRepository,
 } from "@/infra";
@@ -201,4 +203,38 @@ export async function saveOddsAction(
   publicDataChanged("odds");
   revalidatePath(`/epreuves/${slug}`);
   redirect(`/admin/${slug}/cotes?enregistre=1`);
+}
+
+/** « Battez FrenchTrack » (#674): the admin posts FrenchTrack's podium, or removes the challenge. */
+export async function saveFrenchTrackPickAction(
+  _: AdminActionState,
+  data: FormData,
+): Promise<AdminActionState> {
+  const { client } = await adminOnly();
+  const slug = formText(data, "slug");
+  const eventId = formText(data, "eventId");
+  const frenchTrack = createSupabaseFrenchTrackRepository(client);
+  try {
+    if (formText(data, "intent") === "remove") {
+      await removeFrenchTrackPick({ frenchTrack }).execute({ eventId });
+    } else {
+      const event = await getEvent({
+        events: createSupabaseEventReader(createPublicSupabaseClient()),
+      }).execute({ competitionSlug: null, eventSlug: slug });
+      await setFrenchTrackPick({ frenchTrack }).execute({
+        eventId: event.id,
+        startList: event.entries.map((e) => e.athleteId),
+        podium: {
+          first: formText(data, "first"),
+          second: formText(data, "second"),
+          third: formText(data, "third"),
+        },
+      });
+    }
+  } catch (error) {
+    if (error instanceof UseCaseError) return { error: error.code };
+    throw error;
+  }
+  revalidatePath(`/epreuves/${slug}`);
+  redirect(`/admin/${slug}/frenchtrack?enregistre=1`);
 }

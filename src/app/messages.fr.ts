@@ -2093,6 +2093,60 @@ export const messages = {
     invalid: (name: string) => `La cote de « ${name} » doit être un nombre positif (ex. 1,80).`,
     save: "Enregistrer les cotes",
   },
+  challenge: {
+    title: "Battez FrenchTrack",
+    seasonTitle: "Qui bat FrenchTrack le plus souvent ?",
+    hidden: "Le prono de FrenchTrack est posé, dévoilé au verrouillage.",
+    open: "FrenchTrack a posé son prono sur cette finale. Fais mieux que lui !",
+    predict: "Faire mon prono",
+    see: "Voir le défi",
+    waiting: "Le prono de FrenchTrack est dévoilé. Verdict au résultat.",
+    you: "Toi",
+    frenchTrack: "FrenchTrack",
+    yourPodium: "Ton podium",
+    frenchTrackPodium: "Podium de FrenchTrack",
+    points: pts,
+    noPodium: "Pas de prono",
+    verdict: {
+      won: "Tu as battu FrenchTrack",
+      lost: "FrenchTrack gagne",
+      tie: "Égalité",
+      no_prediction: "Tu n'avais pas de prono sur ce défi",
+    },
+    beaten: (percent: number) => `${percent} % des joueurs ont battu FrenchTrack`,
+    share: "Partager",
+    copied: "✓ Lien copié",
+    shareText: (verdict: "won" | "lost" | "tie", event: string) =>
+      verdict === "won"
+        ? `J'ai battu FrenchTrack (${event}) ! Et toi ?`
+        : verdict === "tie"
+          ? `Égalité avec FrenchTrack (${event}). Et toi ?`
+          : `FrenchTrack m'a battu (${event}). Et toi ?`,
+    seasonLink: "Qui bat FrenchTrack le plus souvent ?",
+    seasonIntro:
+      "Une victoire quand tes points dépassent ceux de FrenchTrack sur un défi. À égalité de victoires, les points cumulés sur les défis départagent.",
+    seasonEmpty: "Aucun défi calculé cette saison : rendez-vous sur la prochaine grande finale.",
+    seasonBack: "Classement",
+    wins: (wins: number, played: number) =>
+      `${wins} ${wins <= 1 ? "victoire" : "victoires"} sur ${played} ${played <= 1 ? "défi" : "défis"}`,
+    myPlace: (rank: number) => `Ta place : ${ordinal(rank)}`,
+    notPlayed: "Tu n'as joué aucun défi cette saison.",
+    admin: {
+      link: "Battez FrenchTrack",
+      title: (event: string) => `Battez FrenchTrack · ${event}`,
+      intro:
+        "Pose le podium de FrenchTrack sur une grande finale : l'épreuve devient un défi. Les joueurs le voient au verrouillage, et le comparent au leur au résultat.",
+      place: (place: 1 | 2 | 3) => `${place}${place === 1 ? "re" : "e"} place`,
+      choose: "Choisir un athlète",
+      save: "Enregistrer le prono FrenchTrack",
+      saving: "Enregistrement en cours…",
+      remove: "Retirer le défi",
+      removing: "Retrait en cours…",
+      locked: "L'épreuve est verrouillée : le prono de FrenchTrack ne change plus.",
+      none: "Pas de défi sur cette épreuve.",
+      emptyStartList: "Saisis d'abord la liste de départ.",
+    },
+  },
   myPredictions: {
     joker: "🃏 Joker",
   },
@@ -2939,6 +2993,9 @@ export const messages = {
     ODDS_INVALID:
       "Propose au moins un athlète de la liste de départ, chacun avec une cote positive, plus la cote « autre athlète ».",
     ODDS_LOCKED: "L'épreuve est verrouillée : les cotes ne changent plus.",
+    FRENCHTRACK_UNAVAILABLE: "Le défi FrenchTrack n'a pas pu être chargé. Réessaie.",
+    FRENCHTRACK_LOCKED: "L'épreuve est verrouillée : le prono de FrenchTrack ne change plus.",
+    FRENCHTRACK_PICK_INVALID: "Choisis trois athlètes différents de la liste de départ.",
     ODDS_UNAVAILABLE: "Les cotes n'ont pas pu être chargées. Réessaie.",
     COMPETITION_INVALID:
       "Il faut un nom, un type, des dates dans l'ordre, un fuseau horaire valide et un code pays à trois lettres (facultatif).",
