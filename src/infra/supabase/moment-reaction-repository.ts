@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { UseCaseError } from "@/application/errors";
 import type { MomentReactionRepository, MomentReport } from "@/application/moment-reactions";
 import { bibOf } from "@/domain/bib";
-import { MOMENT_KINDS, type MomentKind } from "@/domain/league-moments";
+import { isMomentKind } from "@/domain/league-moments";
 import type { MomentResponse } from "@/domain/moment-reactions";
 
 type ReactionRow = {
@@ -37,7 +37,6 @@ const fail = (): never => {
   throw new UseCaseError("LEAGUES_UNAVAILABLE");
 };
 
-const isKind = (kind: string): kind is MomentKind => (MOMENT_KINDS as readonly string[]).includes(kind);
 
 /**
  * The client carries the player's session: the database functions check the member, the lists
@@ -102,7 +101,7 @@ export function createSupabaseMomentReactionRepository(
         return fail();
       }
       return ((data ?? []) as ReportRow[]).flatMap((row): MomentReport[] =>
-        isKind(row.moment_kind)
+        isMomentKind(row.moment_kind)
           ? [
               {
                 id: row.reaction_id,
