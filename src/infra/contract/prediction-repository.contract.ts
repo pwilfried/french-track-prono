@@ -61,7 +61,7 @@ export function predictionRepositoryContract(name: string, world: () => Promise<
       const player = await w.newPlayer();
       const wanted: Prediction = {
         ...prediction(player, w.openEvents[0]!),
-        marks: { first: 10.85, second: null, third: 61.2 },
+        marks: { first: 10.85, second: null, third: 11.2 },
       };
 
       expect(await player.predictions.save(wanted)).toBe("saved");
@@ -69,12 +69,12 @@ export function predictionRepositoryContract(name: string, world: () => Promise<
       expect(await player.predictions.find(player.userId, wanted.eventId)).toEqual(wanted);
     });
 
-    it("refuses a mark outside the plausible range of the discipline (#702)", async () => {
+    it("refuses a mark outside the plausible range of the discipline (#702, #935)", async () => {
       const w = await world();
       const player = await w.newPlayer();
       const absurd: Prediction = {
         ...prediction(player, w.openEvents[0]!),
-        marks: { first: 10.85, second: 500, third: null },
+        marks: { first: 10.85, second: 15, third: null },
       };
 
       expect(await player.predictions.save(absurd)).toBe("mark_out_of_range");

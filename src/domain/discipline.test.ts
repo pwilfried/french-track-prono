@@ -9,6 +9,15 @@ describe("parseMark", () => {
     expect(parseMark("2:05:30", "time")).toBe(7530);
   });
 
+  it("reads times written the French way, with apostrophes for minutes and quotes for hundredths", () => {
+    expect(parseMark("4'02", "time")).toBe(242);
+    expect(parseMark("3'35\"20", "time")).toBeCloseTo(215.2);
+    expect(parseMark("3’35’’20", "time")).toBeCloseTo(215.2);
+    expect(parseMark("1′56″70", "time")).toBeCloseTo(116.7);
+    expect(parseMark('10"85', "time")).toBe(10.85);
+    expect(parseMark("10,85", "time")).toBe(10.85);
+  });
+
   it("reads distances and heights in metres, with or without a unit or a comma", () => {
     expect(parseMark("2.04", "distance")).toBe(2.04);
     expect(parseMark("8,12 m", "distance")).toBe(8.12);

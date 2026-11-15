@@ -1,6 +1,6 @@
--- pgTAP: predicted marks (#261) are stored with the podium, plausible (#702) and locked like it. Rolled back at the end.
+-- pgTAP: predicted marks (#261) are stored with the podium, plausible (#702, #935) and locked like it. Rolled back at the end.
 begin;
-select plan(8);
+select plan(11);
 
 insert into auth.users (id, email) values ('cdcdcdcd-0000-0000-0000-000000000001', 'player@example.test');
 insert into profiles (id, pseudo, age_confirmed_at) values ('cdcdcdcd-0000-0000-0000-000000000001', 'Joueur', now());
@@ -32,13 +32,20 @@ select set_config('request.jwt.claims',
 select lives_ok($$insert into predictions (user_id, event_id, p1, p2, p3, m1, m3)
   select 'cdcdcdcd-0000-0000-0000-000000000001', event_id, athletes[1], athletes[2], athletes[3], 10.85, 11.02
   from fixture$$, 'a player predicts marks for some of his athletes');
--- #702: a mark must be plausible for the discipline of the event (a 100 m: 5 to 90 s).
+-- #702: a mark must be plausible for the discipline of the event (a 100 m: 9 to 14 s).
 select throws_ok($$update predictions set m2 = 500 where event_id = (select event_id from fixture)$$,
   'FT031', null, 'a 100 m mark of 500 s is refused');
 select throws_ok($$update predictions set m2 = repeat('9', 300)::numeric where event_id = (select event_id from fixture)$$,
   '22003', null, 'an absurd 300-digit mark is refused');
 select is((select lo || '-' || hi from mark_range('horizontal_jumps', 'distance')), '5-20',
-  'a triple jump is plausible from 5 m to 20 m');
+  'a horizontal jump is plausible from 5 m to 20 m');
+-- #935: the range of the discipline itself, around its records.
+select throws_ok($$update predictions set m2 = 15 where event_id = (select event_id from fixture)$$,
+  'FT031', null, 'a 100 m mark of 15 s is refused');
+select is((select lo || '-' || hi from discipline_mark_range('1500 m', 'middle', 'time')), '200-330',
+  'a 1500 m is plausible from 3:20 to 5:30');
+select is((select lo || '-' || hi from discipline_mark_range('Mile', 'middle', 'time')), '90-900',
+  'a discipline without its own range keeps the range of its family');
 
 -- The stored marks are bounded even without the range check (rolled back with the rest).
 reset role;
