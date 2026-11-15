@@ -39,7 +39,7 @@ test("a new player sees one card on the profile, then the full profile after a f
   // « C'est quoi ? » explains the animal and the badges in a sheet, over the profile (#940).
   await page.getByRole("button", { name: "C'est quoi, l'animal et les badges ?" }).click();
   const help = page.getByRole("dialog", { name: "L'animal et les badges" });
-  await expect(help.getByRole("heading", { name: "Les badges" })).toBeVisible();
+  await expect(help.getByRole("heading", { name: "Les badges", exact: true })).toBeVisible();
   await help.getByRole("button", { name: "Fermer" }).click();
   await expect(help).toBeHidden();
 
