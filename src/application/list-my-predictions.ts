@@ -1,3 +1,4 @@
+import { eventPhase } from "@/domain/countdown";
 import type { EventGender } from "@/domain/event";
 import { OTHER_ATHLETE } from "@/domain/podium-draft";
 import { pickHits, type PickHit } from "@/domain/prediction-history";
@@ -11,6 +12,43 @@ export function listMyPredictions(ports: { predictions: PredictionRepository }) 
   return {
     async execute(input: { userId: string; competitionSlug: string }): Promise<Prediction[]> {
       return ports.predictions.listForCompetition(input.userId, input.competitionSlug);
+    },
+  };
+}
+
+/** The other event of the competition where my joker is played (#981). */
+export type JokerElsewhere = {
+  eventSlug: string;
+  discipline: string;
+  gender: EventGender;
+  /** Its event is still open: removing the joker there frees it for another event. */
+  movable: boolean;
+};
+
+/** Where my joker of the competition is played, when it is on another event than this one. */
+export function findMyJokerElsewhere(ports: {
+  predictions: PredictionRepository;
+  events: Pick<EventReader, "listByCompetition">;
+}) {
+  return {
+    async execute(input: {
+      userId: string;
+      competitionSlug: string;
+      eventId: string;
+      now: Date;
+    }): Promise<JokerElsewhere | null> {
+      const mine = await ports.predictions.listForCompetition(input.userId, input.competitionSlug);
+      const joker = mine.find((p) => p.useJoker && p.eventId !== input.eventId);
+      if (!joker) return null;
+      const events = await ports.events.listByCompetition(input.competitionSlug);
+      const event = events.find((e) => e.id === joker.eventId);
+      if (!event) return null;
+      return {
+        eventSlug: event.slug,
+        discipline: event.discipline,
+        gender: event.gender,
+        movable: eventPhase(input.now, event.lockAt) === "open",
+      };
     },
   };
 }

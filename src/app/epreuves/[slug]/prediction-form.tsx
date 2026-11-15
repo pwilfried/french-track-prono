@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal, useFormStatus } from "react-dom";
 
@@ -24,6 +25,9 @@ import { FirstPredictionTips } from "./first-prediction-tips";
 import { savePredictionAction, type MarkTexts, type PredictionState } from "./actions";
 import { forgetPodium, keepPodium, readKeptPodium } from "./kept-podium";
 
+/** The other event of the competition where the player's joker is played (#981). */
+export type JokerSpot = { name: string; href: string; movable: boolean };
+
 /** The podium of a signed-in player on an open event: compose, joker, save. */
 export function PredictionForm({
   eventId,
@@ -35,6 +39,7 @@ export function PredictionForm({
   discipline,
   tolerance,
   scale,
+  jokerElsewhere,
 }: {
   eventId: string;
   slug: string;
@@ -47,6 +52,8 @@ export function PredictionForm({
   tolerance?: number;
   /** The scale shown in the rules sheet of « Règles » (#703). */
   scale: Record<string, number>;
+  /** The joker is played on another event: the switch is off and says where. */
+  jokerElsewhere?: JokerSpot | null;
 }) {
   const [state, action] = useActionState(savePredictionAction, initial);
   const [draft, setDraft] = useState(initial.draft);
@@ -127,7 +134,8 @@ export function PredictionForm({
       {/* Once a podium is saved the tips only push it down (#493). */}
       {!isComplete(initial.draft) && <FirstPredictionTips />}
       {/* Stays for a player who comes back; the notice is what announces a save. */}
-      {(state.saved || isComplete(initial.draft)) && (
+      {/* A refused save hides it: the podium shown is not the one saved (#981). */}
+      {!state.error && (state.saved || isComplete(initial.draft)) && (
         <p className="mx-4 rounded-2xl bg-success/15 px-3.5 py-3 text-sm font-semibold text-success-text">
           {messages.prediction.saved}
         </p>
@@ -165,33 +173,14 @@ export function PredictionForm({
       )}
       {!locked && (
         <>
-          <label className="mx-4 flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border-2 border-transparent bg-gold-soft px-3.5 py-2 text-gold-ink has-checked:border-secondary">
-            <span className="min-w-0 flex-1">
-              <span id="joker-label" className="block font-extrabold">
-                {messages.prediction.joker}
-              </span>
-              <span id="joker-hint" className="block text-sm text-muted-foreground">
-                {messages.prediction.jokerHint}
-              </span>
-            </span>
-            <input
-              type="checkbox"
-              role="switch"
-              name="joker"
-              aria-labelledby="joker-label"
-              aria-describedby="joker-hint"
-              checked={joker}
-              onChange={(e) => {
-                setJoker(e.target.checked);
-                keep({ joker: e.target.checked });
-              }}
-              className="peer sr-only"
-            />
-            <span
-              aria-hidden
-              className="relative h-7 w-12 shrink-0 rounded-full bg-border transition-colors peer-checked:bg-primary peer-focus-visible:ring-4 peer-focus-visible:ring-ring after:absolute after:top-1 after:left-1 after:size-5 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5 motion-reduce:transition-none motion-reduce:after:transition-none"
-            />
-          </label>
+          <JokerSwitch
+            checked={joker && !jokerElsewhere}
+            elsewhere={jokerElsewhere ?? undefined}
+            onChange={(checked) => {
+              setJoker(checked);
+              keep({ joker: checked });
+            }}
+          />
           <div className="px-4">
             <SaveButton complete={complete} saved={justSaved} />
           </div>
@@ -199,6 +188,69 @@ export function PredictionForm({
       )}
       <SaveNotice notice={notice} dismiss={setNotice} />
     </form>
+  );
+}
+
+/** The joker of the event; off and saying where when it is played on another event. */
+function JokerSwitch({
+  checked,
+  elsewhere,
+  onChange,
+}: {
+  checked: boolean;
+  elsewhere?: JokerSpot;
+  onChange: (checked: boolean) => void;
+}) {
+  const blocked = !!elsewhere;
+  return (
+    <div className="mx-4 flex flex-col gap-1 rounded-2xl border-2 border-transparent bg-gold-soft px-3.5 py-2 text-gold-ink has-checked:border-secondary">
+      <label
+        className={cn(
+          "flex min-h-12 items-center gap-3",
+          blocked ? "cursor-not-allowed" : "cursor-pointer",
+        )}
+      >
+        <span className="min-w-0 flex-1">
+          <span id="joker-label" className="block font-extrabold">
+            {messages.prediction.joker}
+          </span>
+          {!blocked && (
+            <span id="joker-hint" className="block text-sm text-muted-foreground">
+              {messages.prediction.jokerHint}
+            </span>
+          )}
+        </span>
+        <input
+          type="checkbox"
+          role="switch"
+          name="joker"
+          aria-labelledby="joker-label"
+          aria-describedby="joker-hint"
+          checked={checked}
+          disabled={blocked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="peer sr-only"
+        />
+        <span
+          aria-hidden
+          className="relative h-7 w-12 shrink-0 rounded-full bg-border transition-colors peer-checked:bg-primary peer-focus-visible:ring-4 peer-focus-visible:ring-ring peer-disabled:opacity-50 after:absolute after:top-1 after:left-1 after:size-5 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5 motion-reduce:transition-none motion-reduce:after:transition-none"
+        />
+      </label>
+      {elsewhere && (
+        <p id="joker-hint" className="pb-1 text-sm">
+          {messages.prediction.jokerPlayedOn}{" "}
+          <Link
+            href={elsewhere.href}
+            className="inline-flex min-h-11 items-center font-bold break-words underline underline-offset-2"
+          >
+            {elsewhere.name}
+          </Link>
+          <span className="block text-muted-foreground">
+            {elsewhere.movable ? messages.prediction.jokerMovable : messages.prediction.jokerFixed}
+          </span>
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -238,7 +290,8 @@ function SaveButton({ complete, saved }: { complete: boolean; saved: boolean }) 
 
 /**
  * A short notice at the top of the screen, whatever the scroll position. Outside `main` (a
- * portal), so the podium's own error stays the one alert of the page content.
+ * portal). An error is only shown here: the form says it as an alert next to the podium or the
+ * marks, so it is announced once (#981).
  */
 function SaveNotice({
   notice,
@@ -256,7 +309,8 @@ function SaveNotice({
   const error = notice.kind === "error";
   return createPortal(
     <div
-      role={error ? "alert" : "status"}
+      role={error ? undefined : "status"}
+      aria-hidden={error || undefined}
       className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)]"
     >
       <p

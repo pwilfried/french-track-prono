@@ -6,6 +6,7 @@ import { UseCaseError } from "@/application/errors";
 import { getEvent } from "@/application/get-event";
 import { getEventOdds } from "@/application/set-event-odds";
 import { listMyLeagues, type League } from "@/application/leagues";
+import { findMyJokerElsewhere } from "@/application/list-my-predictions";
 import { getMyPrediction, type Prediction } from "@/application/save-prediction";
 import { Animal } from "@/components/band/animal";
 import { CountryFlag } from "@/components/athletes/country-flag";
@@ -39,7 +40,7 @@ import { loadScale } from "../../scale";
 import { getCurrentUser, getSessionClient } from "../../session";
 import { ChallengeSection } from "./challenge-section";
 import { ForgetPodium } from "./forget-podium";
-import { PredictionForm } from "./prediction-form";
+import { PredictionForm, type JokerSpot } from "./prediction-form";
 import { ResultSection } from "./result-section";
 import { RevealHidden, RevealSection } from "./reveal-section";
 import { publicEventReader } from "../../public-data";
@@ -90,6 +91,36 @@ async function loadMyPrediction(
     return await getMyPrediction({ predictions }).execute({ userId, eventId });
   } catch (error) {
     if (error instanceof UseCaseError) return "error";
+    throw error;
+  }
+}
+
+/**
+ * Where the player's joker of the competition is played when on another event (#981); null when
+ * it is not, or cannot be read (the save still refuses a second joker).
+ */
+async function loadJokerElsewhere(
+  userId: string,
+  competitionSlug: string,
+  eventId: string,
+): Promise<JokerSpot | null> {
+  try {
+    const predictions = createSupabasePredictionRepository(await getSessionClient());
+    const found = await findMyJokerElsewhere({ predictions, events: publicEventReader() }).execute({
+      userId,
+      competitionSlug,
+      eventId,
+      now: new Date(),
+    });
+    return found
+      ? {
+          name: messages.events.name(found.discipline, found.gender),
+          href: `/epreuves/${found.eventSlug}`,
+          movable: found.movable,
+        }
+      : null;
+  } catch (error) {
+    if (error instanceof UseCaseError) return null;
     throw error;
   }
 }
@@ -231,7 +262,10 @@ async function PredictionSection({
   };
 
   if (open) {
-    const scale = await loadScale();
+    const [scale, jokerElsewhere] = await Promise.all([
+      loadScale(),
+      mine?.useJoker ? null : loadJokerElsewhere(user.userId, competitionSlug, event.id),
+    ]);
     return (
       <div className="flex flex-col gap-5">
         <PredictionForm
@@ -244,6 +278,7 @@ async function PredictionSection({
           discipline={event.discipline}
           tolerance={event.tolerance}
           scale={scale}
+          jokerElsewhere={jokerElsewhere}
         />
         {suggestion}
       </div>

@@ -2848,6 +2848,10 @@ export const messages = {
   prediction: {
     joker: "🃏 Joker : points × 2",
     jokerHint: "Un seul par compétition.",
+    /** Followed by a link to the event where the joker is played (#981). */
+    jokerPlayedOn: "Joker joué sur",
+    jokerMovable: "Pour le jouer ici, retire-le d'abord de là-bas.",
+    jokerFixed: "Cette épreuve est verrouillée : il y reste.",
     save: "Enregistrer mon podium",
     saving: "Enregistrement…",
     saved: "✓ Podium enregistré. Tu peux le modifier jusqu'au verrouillage.",
