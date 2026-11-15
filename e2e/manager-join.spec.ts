@@ -105,5 +105,6 @@ test("joining a Manager league whose mercato is launched is refused", async ({ b
 
   // Nor is the public league listed any more.
   await latePage.goto("/manager");
-  await expect(latePage.locator("main")).not.toContainText(name);
+  // The loading skeleton (`aria-busy`) can still sit next to the streamed page for a moment (#871).
+  await expect(latePage.locator('main:not([aria-busy="true"])')).not.toContainText(name);
 });

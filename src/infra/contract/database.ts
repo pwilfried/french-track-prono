@@ -93,19 +93,27 @@ function sqlOnPreprod(statement: string): string {
   const token = process.env.SUPABASE_ACCESS_TOKEN;
   const ref = process.env.SUPABASE_PROJECT_REF;
   if (!token || !ref) throw new Error("SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF are needed");
+  // A gateway error (502, 503, 504) means the API did not reach the database: the request is sent
+  // again, up to 4 times in all (#871). Any other error stops at once.
   const script = `
-    const response = await fetch(
-      "https://api.supabase.com/v1/projects/" + process.env.SUPABASE_PROJECT_REF + "/database/query",
-      {
-        method: "POST",
-        headers: {
-          authorization: "Bearer " + process.env.SUPABASE_ACCESS_TOKEN,
-          "content-type": "application/json",
+    let response;
+    let text;
+    for (let attempt = 1; ; attempt++) {
+      response = await fetch(
+        "https://api.supabase.com/v1/projects/" + process.env.SUPABASE_PROJECT_REF + "/database/query",
+        {
+          method: "POST",
+          headers: {
+            authorization: "Bearer " + process.env.SUPABASE_ACCESS_TOKEN,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ query: process.env.E2E_SQL }),
         },
-        body: JSON.stringify({ query: process.env.E2E_SQL }),
-      },
-    );
-    const text = await response.text();
+      );
+      text = await response.text();
+      if (![502, 503, 504].includes(response.status) || attempt === 4) break;
+      await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
+    }
     if (!response.ok) {
       console.error(response.status + " " + text);
       process.exit(1);
