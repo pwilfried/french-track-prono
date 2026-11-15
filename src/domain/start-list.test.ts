@@ -6,6 +6,7 @@ import {
   MAX_START_LIST,
   searchAthletes,
   sortByDiscipline,
+  sortStartList,
 } from "./start-list";
 
 const athletes = [
@@ -82,5 +83,38 @@ describe("filterAthletes", () => {
       "Carl",
     ]);
     expect(filterAthletes(athletes, {})).toHaveLength(3);
+  });
+});
+
+describe("sortStartList", () => {
+  const entry = (name: string, seasonBest: string | null) => ({ name, seasonBest });
+  const names = (list: { name: string }[]) => list.map((e) => e.name);
+  it("puts the fastest season best first in a race", () => {
+    const list = [entry("A", "11.02"), entry("B", "10.71"), entry("C", "10.90")];
+    expect(names(sortStartList(list, "time"))).toEqual(["B", "C", "A"]);
+  });
+
+  it("reads minutes in a long race", () => {
+    const list = [entry("A", "4:01.20"), entry("B", "3:59.80")];
+    expect(names(sortStartList(list, "time"))).toEqual(["B", "A"]);
+  });
+
+  it("puts the longest season best first in a jump or a throw, and the most points first", () => {
+    const jumps = [entry("A", "6.80"), entry("B", "7,05"), entry("C", "6.95")];
+    expect(names(sortStartList(jumps, "distance"))).toEqual(["B", "C", "A"]);
+    const combined = [entry("A", "8125"), entry("B", "8600")];
+    expect(names(sortStartList(combined, "points"))).toEqual(["B", "A"]);
+  });
+
+  it("puts athletes without a readable season best last, in their listed order", () => {
+    const list = [entry("A", null), entry("B", "10.95"), entry("C", "?"), entry("D", "10.80")];
+    expect(names(sortStartList(list, "time"))).toEqual(["D", "B", "A", "C"]);
+  });
+
+  it("keeps the listed order when the unit is unknown, without changing the list given", () => {
+    const list = [entry("A", "11.02"), entry("B", "10.71")];
+    expect(names(sortStartList(list, undefined))).toEqual(["A", "B"]);
+    sortStartList(list, "time");
+    expect(names(list)).toEqual(["A", "B"]);
   });
 });

@@ -45,13 +45,13 @@ test("an admin creates a French competition, an event and its entered athletes, 
   await page.getByLabel("Horaire (heure de Paris)").fill("2099-06-27T18:00");
   await page.getByRole("button", { name: "Ajouter l'épreuve" }).click();
   await expect(
-    page.getByRole("list", { name: "épreuves" }).getByRole("link", { name: /200 m femmes/ }),
+    page.getByRole("list", { name: "épreuves" }).getByRole("link", { name: /200\sm femmes/ }),
   ).toContainText("Pas de prono : ajoute la finale");
 
   // The heat was a mistake: the admin makes it a final at another time, then deletes it (#293).
   await page
     .getByRole("list", { name: "épreuves" })
-    .getByRole("link", { name: /200 m femmes/ })
+    .getByRole("link", { name: /200\sm femmes/ })
     .click();
   await page.getByText("Modifier l'épreuve").click();
   await page.getByLabel("Tour").selectOption("final");

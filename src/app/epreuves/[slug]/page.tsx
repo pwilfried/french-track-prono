@@ -21,6 +21,7 @@ import { eventPhase } from "@/domain/countdown";
 import type { EventDetail } from "@/domain/event";
 import { formatMark, tidyMark } from "@/domain/discipline";
 import { pickChoices } from "@/domain/odds";
+import { sortStartList } from "@/domain/start-list";
 import { canPredictRound } from "@/domain/rounds";
 import { draftFromPodium, emptyDraft } from "@/domain/podium-draft";
 import { athleteHref } from "@/domain/redirect";
@@ -318,6 +319,8 @@ export default async function EventPage({
   }).format(new Date(event.startsAt));
   const winner = event.results.find((result) => result.rank === 1);
   const markOf = new Map(event.results.map((result) => [result.athleteId, result.mark]));
+  const startList = sortStartList(event.entries, event.markUnit);
+  const bySeasonBest = !!event.markUnit && startList.some((entry) => entry.seasonBest);
 
   return (
     <main id="main" className="flex flex-1 flex-col">
@@ -468,14 +471,19 @@ export default async function EventPage({
 
       {showStartList && (
         <div className="mx-auto flex w-full max-w-md flex-col gap-3 px-4 py-6">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            {messages.event.startList}
-          </h2>
-          {event.entries.length === 0 ? (
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              {messages.event.startList}
+            </h2>
+            {bySeasonBest && (
+              <p className="text-xs text-muted-foreground">{messages.event.startListOrder}</p>
+            )}
+          </div>
+          {startList.length === 0 ? (
             <p className="rounded-card bg-muted p-4">{messages.event.startListEmpty}</p>
           ) : (
-            <ul className="flex flex-col gap-2">
-              {event.entries.map((entry) => (
+            <ul aria-label={messages.event.startList} className="flex flex-col gap-2">
+              {startList.map((entry) => (
                 <li
                   key={entry.athleteId}
                   className="flex min-h-14 items-center gap-3 rounded-2xl border border-border bg-card px-3.5 py-2"

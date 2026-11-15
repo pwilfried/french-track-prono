@@ -170,8 +170,8 @@ test("a visitor sees the general ranking alone, and signs in to play", async ({ 
 
   await page.goto(`/classement?vue=general&competition=${tag}`);
   await expect(page).toHaveURL(/\/classement\?/);
-  const views = page.getByRole("tablist", { name: "Vue du classement" });
-  await expect(views.getByRole("tab")).toHaveText(["Général"]);
+  // « Général » alone is no choice: no view switch (#939).
+  await expect(page.getByRole("tablist", { name: "Vue du classement" })).toHaveCount(0);
   const ranking = page.getByRole("list", { name: "Classement" });
   await expect(ranking.getByText(shown.pseudo)).toBeVisible();
   await expect(page.getByText(blocked.pseudo)).toHaveCount(0);

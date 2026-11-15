@@ -7,6 +7,8 @@ import type { FeedMoment } from "@/domain/league-moments";
 import { MomentCard } from "./moment-card";
 
 const text = messages.leagues.feed;
+/** Testing Library reads no-break spaces (« 100 m ») as plain spaces. */
+const plain = (value: string) => value.replace(/\u00a0/g, " ");
 
 const base: FeedMoment = {
   key: "perfect_podium:e1:u1",
@@ -41,7 +43,7 @@ export const PerfectPodium: Story = {
     await expect(canvas.getByText(text.label.perfect_podium)).toBeVisible();
     await expect(
       canvas.getByText(
-        text.text.perfect_podium("Flèche du Nord", messages.events.name("100 m", "F")),
+        plain(text.text.perfect_podium("Flèche du Nord", messages.events.name("100 m", "F"))),
       ),
     ).toBeVisible();
   },

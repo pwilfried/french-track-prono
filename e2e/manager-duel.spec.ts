@@ -116,7 +116,7 @@ test("a participant opens their head-to-head from the matchday and sees both lin
   await expect(myCards).toHaveCount(8);
   // Each card reads its points, bonus included; the rival wins the duel of the first place.
   const myList = stadium.getByRole("list", { name: `Alignement de ${player.pseudo}` });
-  await expect(myList.getByRole("article", { name: /, 0 pt$/ })).toHaveCount(1);
+  await expect(myList.getByRole("article", { name: /, 0\spt$/ })).toHaveCount(1);
   await expect(myList.getByRole("article", { name: /dont 20 de bonus$/ })).toHaveCount(1);
   await expect(
     stadium

@@ -500,11 +500,12 @@ reculer un record déjà établi. WR et WB se saisissent à la main.
 Fiche athlète (v0.18, #679) : `/athletes/[slug]`, ouverte depuis le podium d'une épreuve, le
 catalogue du mercato ou une équipe Manager, montre **seulement les records** (décision du
 propriétaire : l'app n'a pas l'historique des courses, donc ni résultats récents ni face-à-face).
-En tête : initiales (jamais de photo), pays, disciplines ; chiffres clés de la discipline
-principale (PB, SB, prix Manager) ; puis un bloc par discipline avec son PB et son SB de la saison
-en cours (`disciplineRecords`, `keyRecords` dans `src/domain/athlete.ts` ; un SB daté d'une année
-passée est écarté). Une marque non vérifiée (`athlete_records.verified`, vraie pour une saisie de
-l'admin) porte un « ? ». « Retour » ramène d'où l'on vient (`?from=`, #699 : au podium en cours
+En tête : initiales (jamais de photo), pays, disciplines ; prix Manager ; puis un bloc par
+discipline avec son PB et son SB de la saison en cours (`disciplineRecords` dans
+`src/domain/athlete.ts` ; un SB daté d'une année passée est écarté, un SB égal au PB n'est pas
+répété). Chaque marque s'affiche une seule fois (#938). Une marque non vérifiée
+(`athlete_records.verified`, vraie pour une saisie de l'admin) porte un « ? », expliqué par une
+seule légende sous les records. « Retour » ramène d'où l'on vient (`?from=`, #699 : au podium en cours
 depuis une épreuve). Cas d'usage `getAthlete`, port `AthleteReader`. Enrichissement depuis
 Wikidata (identité, date de naissance, lien Wikipédia, PB quand Wikidata les connaît, jamais les
 médailles) : étudié en v0.20 (#895), décision et découpage dans

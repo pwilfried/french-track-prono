@@ -1,15 +1,16 @@
 // Every visible UI string lives here (French only in v1, no i18n library).
 
-import { eventLabel } from "@/domain/event-label";
+import { eventLabel, keepUnits } from "@/domain/event-label";
 
 /** « 1er », « 2e »… */
 const ordinal = (rank: number) => (rank === 1 ? "1er" : `${rank}e`);
 /**
  * Points, written one way everywhere (docs/DESIGN.md, « Points », #706): the short unit
- * « 1 pt / 12 pts » in tight places, the full word « 1 point / 12 points » in sentences.
+ * « 1 pt / 12 pts » in tight places, the full word « 1 point / 12 points » in sentences. The short
+ * unit never wraps away from its number (#939).
  */
 const ptsUnit = (n: number) => (Math.abs(n) <= 1 ? "pt" : "pts");
-const pts = (n: number) => `${n} ${ptsUnit(n)}`;
+const pts = (n: number) => keepUnits(`${n} ${ptsUnit(n)}`);
 /** Points won, signed when positive: « +9 pts », « 0 pt ». */
 const gain = (n: number) => (n > 0 ? `+${pts(n)}` : pts(n));
 const pointsWord = (n: number) => (Math.abs(n) <= 1 ? "point" : "points");
@@ -1839,8 +1840,6 @@ export const messages = {
     sb: "SB",
     disciplines: "Disciplines",
     keyFigures: "Chiffres clés",
-    keyPb: (discipline: string) => `Record · ${discipline}`,
-    keySbOf: (season: number) => `Meilleure marque ${season}`,
     managerPrice: "Cote Manager",
     records: "Records",
     pbLong: "Record personnel",
@@ -2322,6 +2321,8 @@ export const messages = {
     combinedNote: "Tu pronostiques le podium final, au total des points.",
     startList: "Liste de départ",
     startListEmpty: "La liste de départ n'est pas encore connue.",
+    /** Says how the start list is ordered (#939). */
+    startListOrder: "Par meilleure marque de la saison",
     podium: "Podium officiel",
     podiumEmpty: "Le résultat n'est pas encore connu.",
     podiumStep: (rank: number) => `Place ${rank}`,
@@ -2759,9 +2760,9 @@ export const messages = {
     },
     /** A bound of a range: « 20,00 m », « 9,00 s », « 15:00 », « 6:00:00 », « 10000 pts ». */
     rangeMark: (value: number, unit: "time" | "distance" | "points") => {
-      if (unit === "points") return `${Math.round(value)} pts`;
-      if (unit === "distance") return `${value.toFixed(2).replace(".", ",")} m`;
-      if (value < 60) return `${value.toFixed(2).replace(".", ",")} s`;
+      if (unit === "points") return keepUnits(`${Math.round(value)} pts`);
+      if (unit === "distance") return keepUnits(`${value.toFixed(2).replace(".", ",")} m`);
+      if (value < 60) return keepUnits(`${value.toFixed(2).replace(".", ",")} s`);
       const hours = Math.floor(value / 3600);
       const minutes = Math.floor(value / 60) % 60;
       const seconds = Math.round(value % 60);
@@ -2804,6 +2805,9 @@ export const messages = {
     emptyAll: "Personne n'a pronostiqué cette épreuve.",
     emptyLeague: "Personne dans cette ligue n'a pronostiqué cette épreuve.",
     emptyText: "Même Duplantis commence à 5 m. Rendez-vous à la prochaine.",
+    /** Unfolds the podiums of the players outside my leagues (#949); `n`: how many are folded. */
+    seeAll: (n: number) => `Voir tous les pronos (${n})`,
+    hideOthers: "Masquer les autres pronos",
     seeEvents: "Voir les autres épreuves",
     places: { first: "1er", second: "2e", third: "3e" },
   },

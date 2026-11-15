@@ -24,7 +24,7 @@ import { ScopeSwitcher } from "@/components/leaderboard/scope-switcher";
 import { InviteBanner } from "@/components/leagues/invite-banner";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { buttonVariants } from "@/components/ui/button";
-import { ViewTabs } from "@/components/ui/view-tabs";
+import { ViewTabs, tabPanelProps } from "@/components/ui/view-tabs";
 import { rankingStart } from "@/domain/competition";
 import { seasonYears } from "@/domain/competition-search";
 import { placeOf, previousCompetitionSlugs } from "@/domain/ranking";
@@ -174,8 +174,7 @@ export default async function RankingPage({
         />
         <div
           id="classement-vue"
-          role="tabpanel"
-          aria-labelledby={`vue-${view}`}
+          {...tabPanelProps(views.length, "vue", view)}
           className="flex flex-col gap-4"
         >
           {view === "soir" ? (

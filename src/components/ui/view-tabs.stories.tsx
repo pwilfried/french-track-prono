@@ -69,6 +69,17 @@ export const Two: Story = {
   },
 };
 
+/** A switch with a single view is no switch: nothing shows (« Général » alone for a visitor). */
+export const Single: Story = {
+  args: {
+    selected: "general",
+    tabs: [{ id: "general", label: "Général", href: "/classement?vue=general" }],
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).queryByRole("tablist")).toBeNull();
+  },
+};
+
 /** A long label stays on one line, cut with an ellipsis rather than overflowing at 320 px. */
 export const LongText: Story = {
   args: {

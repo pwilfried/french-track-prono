@@ -7,6 +7,8 @@ import { ChallengeMomentCard } from "./challenge-moment-card";
 import { challenge } from "./fixtures";
 
 const text = messages.challenge;
+/** Testing Library reads no-break spaces (« 100 m ») as plain spaces. */
+const plain = (value: string) => value.replace(/\u00a0/g, " ");
 
 const meta = {
   title: "Community/ChallengeMomentCard",
@@ -30,7 +32,7 @@ export const Won: Story = {
     const canvas = within(canvasElement);
     const card = canvas.getByRole("link");
     await expect(card).toHaveAttribute("href", `/epreuves/${challenge.slug}`);
-    await expect(card).toHaveTextContent(messages.events.name("100 m", "F"));
+    await expect(card).toHaveTextContent(plain(messages.events.name("100 m", "F")));
     await expect(card).toHaveTextContent(text.beaten(42));
     await expect(card).toHaveTextContent(text.verdict.won);
   },
