@@ -53,7 +53,8 @@ export async function completeProfileAction(
     if (error instanceof UseCaseError) return { ...state, error: error.code };
     throw error;
   }
-  revalidatePath("/");
+  // Not "/": re-rendering the home now would drop the card and its confirmation; the card
+  // refreshes the home itself when the player closes the sheet (#889).
   revalidatePath("/profil");
   // The club shows on the player's line in the cached rankings (#824).
   publicDataChanged("player");

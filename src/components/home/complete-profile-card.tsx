@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActionState, useState, useTransition } from "react";
 
 import type { Club } from "@/application/clubs";
@@ -71,6 +72,7 @@ export function CompleteProfileCard({
   const [clubName, setClubName] = useState(clubNameOf(initial));
   const [answered, setAnswered] = useState(state);
   const [, startTransition] = useTransition();
+  const router = useRouter();
 
   const error = state.error ? messages.errors[state.error] : undefined;
   const clubError = state.error && CLUB_ERRORS.includes(state.error) ? error : undefined;
@@ -84,6 +86,11 @@ export function CompleteProfileCard({
     setHidden(true);
     setOpen(false);
     startTransition(() => later());
+  };
+  // Once saved, closing the confirmation refreshes the home, which no longer asks (#889).
+  const close = () => {
+    setOpen(false);
+    if (state.done) router.refresh();
   };
   if (hidden || (state.done && !open)) return null;
 
@@ -139,7 +146,7 @@ export function CompleteProfileCard({
           </button>
         </section>
       )}
-      <BottomSheet open={open} onClose={() => setOpen(false)} title={text.title}>
+      <BottomSheet open={open} onClose={close} title={text.title}>
         {state.done ? (
           <div className="flex flex-col items-center gap-4 pb-2">
             <Bib bib={bib} size="large" pseudo={pseudo} club={clubName || undefined} />
