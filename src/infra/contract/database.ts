@@ -85,6 +85,20 @@ export function onPreprod(): boolean {
 }
 
 /**
+ * An answer of the Supabase Management API worth sending the query again: a gateway error (502,
+ * 503, 504: the API did not reach the database, #871), or the API failing for a while to check a
+ * valid token (500 « Failed to check user auth status », then 401 « Invalid access token », #888).
+ * Self-contained: its source is run as it is by sqlOnPreprod.
+ */
+export function isTransientPreprodError(status: number, body: string): boolean {
+  if ([502, 503, 504].includes(status)) return true;
+  return (
+    (status === 500 && body.includes("Failed to check user auth status")) ||
+    (status === 401 && body.includes("Invalid access token"))
+  );
+}
+
+/**
  * Runs SQL on the pre-production database through the Supabase Management API (no database
  * address nor IPv6 needed on the runner, as ci/preprod/load-sql.sh), synchronously like psql.
  * Prints the first column of the first row the way psql -tA does (t/f for booleans).
@@ -93,9 +107,10 @@ function sqlOnPreprod(statement: string): string {
   const token = process.env.SUPABASE_ACCESS_TOKEN;
   const ref = process.env.SUPABASE_PROJECT_REF;
   if (!token || !ref) throw new Error("SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF are needed");
-  // A gateway error (502, 503, 504) means the API did not reach the database: the request is sent
-  // again, up to 4 times in all (#871). Any other error stops at once.
+  // A passing error of the API (see isTransientPreprodError) sends the request again, up to 6 times
+  // in all, about 30 s (#871, #888). Any other error stops at once.
   const script = `
+    const isTransient = ${isTransientPreprodError.toString()};
     let response;
     let text;
     for (let attempt = 1; ; attempt++) {
@@ -111,7 +126,7 @@ function sqlOnPreprod(statement: string): string {
         },
       );
       text = await response.text();
-      if (![502, 503, 504].includes(response.status) || attempt === 4) break;
+      if (!isTransient(response.status, text) || attempt === 6) break;
       await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
     }
     if (!response.ok) {
