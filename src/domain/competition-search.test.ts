@@ -93,15 +93,27 @@ describe("rankingScopeGroups", () => {
 });
 
 describe("seasonYears", () => {
-  it("spans the years of the competitions", () => {
-    expect(seasonYears([competition("b", "2027-06-10"), competition("a", "2026-09-11")])).toEqual({
-      from: 2026,
-      to: 2027,
-    });
+  it("spans the years of the competitions held so far, across two years", () => {
+    const season = [competition("b", "2027-06-10"), competition("a", "2026-09-11")];
+    expect(seasonYears(season, "2027-07-01")).toEqual({ from: 2026, to: 2027 });
   });
 
-  it("is one year when they all start the same year, null without competition", () => {
-    expect(seasonYears([competition("a", "2026-09-11")])).toEqual({ from: 2026, to: 2026 });
-    expect(seasonYears([])).toBeNull();
+  it("is one year in the middle of the year, the coming competitions aside", () => {
+    const season = [competition("a", "2026-09-11"), competition("b", "2027-06-10")];
+    expect(seasonYears(season, "2026-11-15")).toEqual({ from: 2026, to: 2026 });
+  });
+
+  it("ignores a competition far in the future", () => {
+    const season = [competition("a", "2026-09-11"), competition("test-2099", "2099-03-05")];
+    expect(seasonYears(season, "2026-11-15")).toEqual({ from: 2026, to: 2026 });
+  });
+
+  it("is the year of the first coming competition before the season starts", () => {
+    const season = [competition("b", "2027-06-10"), competition("a", "2026-09-11")];
+    expect(seasonYears(season, "2026-08-01")).toEqual({ from: 2026, to: 2026 });
+  });
+
+  it("is null without competition", () => {
+    expect(seasonYears([], "2026-11-15")).toBeNull();
   });
 });
