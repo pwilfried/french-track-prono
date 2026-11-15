@@ -219,7 +219,10 @@ rappelle que les pronos se dévoilent au verrouillage, et la base ne laisse lire
 prono. Sous le podium d'un autre joueur : six réactions fixes (🔥 😂 😮 👏 🤡 🎯, pas de texte
 libre), une par joueur et par prono, qu'on retire en la touchant à nouveau ; pas de réaction sur
 son propre prono (décisions du propriétaire, issue #16). Le badge « Coup de flair » est lu dans les points
-calculés (`score_events`, raison `flair`) : il suit toujours le barème de la base.
+calculés (`score_events`, raison `flair`) : il suit toujours le barème de la base. Sur l'onglet « Tous les
+joueurs », un joueur membre d'au moins une ligue voit d'abord les podiums des membres de ses
+ligues ; ceux des autres sont repliés sous « Voir tous les pronos (N) » (#949 :
+`listEventPredictions` rend `predictions` et `others`, `src/application/reveal.ts`).
 
 **Consensus (v0.18, #680).** Au-dessus des podiums, le bloc « Ce qu'ont pronostiqué les joueurs »
 remplace l'ancienne répartition « Qui ont-ils vu gagner ? » : pour chaque place, les athlètes
@@ -482,7 +485,10 @@ ni de port de plus. Les cas d'usage `listMySeasons` et `getManagerSeason`
 (`src/application/manager-home.ts`) réutilisent les ports de la ligue, de la saison et des
 alignements : `/manager` liste une carte par ligue (phase, tour de mercato ouvert et sa fin tirés
 de `currentRound` dans `src/domain/manager-round.ts`, rang, verrou d'alignement), `/manager/[id]`
-montre « Ma saison » de cette ligue (journée, rang, prochaine confrontation, action du moment) ;
+montre « Ma saison » de cette ligue (journée, rang, prochaine confrontation, action du moment ;
+pas de rang avant la 1re journée notée, #936) et l'état du mercato tiré de son calendrier prévu
+(`mercatoStatus` et `mercatoCalendar`, `src/domain/manager-league.ts`, #925 : tour N en cours,
+puis « Mercato terminé » après le dernier tour) ;
 l'étape du déroulé vient de
 `currentSeasonStep` (`src/domain/manager-home.ts`). Le tutoriel est un composant client
 (`ManagerTutorial`) : ouvert seul à la première visite (mémorisé sur l'appareil, rien en base),
@@ -755,6 +761,7 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 | v0.18.1 Premiers pas du joueur | Profil sans épreuve calculée réduit à un encart (prochain badge, prochaine finale), cartes d'épreuve avec l'animal de la famille, le temps restant, mon podium et le vainqueur, « Complète ton profil » en carte compacte qui ouvre une feuille, présentation du Manager en trois écrans, squelettes de chargement, cache du navigateur et lignes de classement en cache | …un nouveau joueur, sur son téléphone, voit d'abord sa prochaine épreuve à pronostiquer, comprend la liste des épreuves d'un coup d'œil (à faire, terminée et ce qu'elle lui a rapporté), trouve un profil qui ne montre pas de cases vides mais lui dit quoi faire pour le remplir, et découvre le Manager en trois écrans |
 | v0.19 Communauté | **F21** : fil de ligue (pronos et Manager : podium parfait, nouveau leader, série, enchère gagnée, confrontation, badge), réactions par emojis et messages prédéfinis avec signalement et masquage par l'admin, « Battez FrenchTrack » et son classement de saison, bloc « Dans ma communauté » et page `/communaute` (moments, annonces, sondages), dernier épisode dans la carte du podcast, « Le saviez-vous ? », « Complète ton profil » en deux étapes, carte de saison aux couleurs de l'animal | …dans chaque ligue, un fil raconte tout seul les moments marquants (pronos et Manager) et les joueurs y réagissent par emojis et messages prédéfinis, sans texte libre ; sur les grandes finales, chacun voit s'il a battu le prono de FrenchTrack et un classement de saison le suit ; l'accueil rassemble ces moments, les annonces et les sondages FrenchTrack |
 | v0.20 Finitions | Statuettes dessinées dans la vitrine des trophées (animal de la ligue, laurier du général, formes des exploits), classement général lu par lots de quatre compétitions, e2e du profil stabilisés, un seul job e2e de préprod (avant le tag et chaque matin), étude Wikidata pour les fiches athlètes (`docs/decisions/athletes-wikidata.md`), correctifs des audits du 15 nov. 2026 (colonnes d'un prono modifiables par le joueur, colonnes publiques des profils, plafonds de signalements et d'appareils, aucune lecture Supabase au build) | …la vitrine du profil montre les statuettes dessinées de la bande, la feuille « Compléter mon profil » imprime le club sur le dossard puis allume les animaux choisis, le classement général se calcule sans multiplier les lectures en parallèle, les tests de bout en bout du profil ne sont plus instables, et la préprod n'a plus qu'un seul job de tests de bout en bout partagé par le déploiement et le test quotidien |
+| v0.20.1 Recette du 15 nov. | Correctifs de la recette utilisateur en préprod : prochaine action avant « Le saviez-vous ? », perfs au format affiché, écritures françaises et bornes par discipline, exemple de marque de la discipline, noms accessibles (perfs, joker, menu du back-office), drapeau de chaque pays CIO, mercato et tour en cours, écrans Manager en liens, stade d'alignement dans l'ovale et feuille réduite aux athlètes possibles, aperçu des onglets Ligues et Manager pour un visiteur, pronos hors de mes ligues repliés, fiche athlète sans doublon, aide « L'animal et les badges », libellés clarifiés, comptes de recette en préprod, restes e2e supprimés, notification de test | …un joueur qui découvre l'app en préprod comprend chaque écran sans explication : il voit d'abord sa prochaine action, saisit une perf dans le format affiché, lit l'état du mercato juste, trouve sur la page de résultat les pronos de ses amis d'abord, et le testeur dispose d'un compte dans chaque état utile |
 | Plus tard | Carte « Mon podium du 100 m », questions bonus, connexion Google / Apple | à planifier |
 
 ## Cas de test du cœur
