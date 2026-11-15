@@ -141,7 +141,7 @@ export default async function RankingPage({
   const place = Array.isArray(rows) && !start ? placeOf(rows, meId) : null;
   const text = messages.ranking;
   const live = all.find((c) => c.startsOn <= today && c.endsOn >= today);
-  const seasonLabel = text.scope.season(seasonYears(all));
+  const seasonLabel = text.scope.season(seasonYears(all, day));
   const sheet = {
     competitions: all,
     competition: view === "general" ? (chosen?.slug ?? null) : undefined,

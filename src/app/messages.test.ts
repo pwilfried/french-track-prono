@@ -96,3 +96,19 @@ describe("competition date range text", () => {
     expect(dates(from, to)).toBe(text);
   });
 });
+
+describe("season label of the general ranking", () => {
+  const season = messages.ranking.scope.season;
+
+  it("writes one year when the season is within a year", () => {
+    expect(season({ from: 2026, to: 2026 })).toBe("Toute la saison 2026");
+  });
+
+  it("writes both years when the season spans two years", () => {
+    expect(season({ from: 2026, to: 2027 })).toBe("Toute la saison 2026-27");
+  });
+
+  it("writes the season alone without competition", () => {
+    expect(season(null)).toBe("Toute la saison");
+  });
+});
