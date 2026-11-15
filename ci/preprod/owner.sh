@@ -2,7 +2,7 @@
 # The owner's account in pre-production (#769): admin, member of every prediction and Manager
 # league there (ci/preprod/owner.sql). Run by ci/preprod/load-sql.sh after the seed and demo set,
 # and after the clean-up of the e2e accounts: the deploy (preprod.yml) and the daily test
-# (preprod-daily.yml) both pass through it, an agent cannot edit those workflow files.
+# and the e2e passes (preprod-e2e.yml) both pass through it.
 # Skipped with a warning when PREPROD_OWNER_EMAIL is not set; refused outside pre-production.
 # The e-mail is never written in the repository nor in the logs.
 # Env: PREPROD_OWNER_EMAIL, SUPABASE_PROJECT_REF, SUPABASE_ACCESS_TOKEN.

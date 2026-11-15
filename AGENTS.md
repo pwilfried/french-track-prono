@@ -46,15 +46,18 @@ titres de PR en anglais. Dialogue avec le propriétaire en français.
 3. Avant de dire « terminé » : voir « Before saying it is done ».
 4. PR → CI verte → fusion (automatique pour les PR d'agents). Chaque fusion dans `main` part en
    préprod (https://french-track-preprod.vercel.app), quelle que soit la version, correctifs
-   `vX.Y.Z` compris : migrations sur la base de préprod, puis déploiement, puis tests e2e
-   (`preprod.yml`, `docs/SETUP.md`, « Préproduction »).
+   `vX.Y.Z` compris : migrations sur la base de préprod, jeu de démo, puis déploiement et test de
+   fumée (`preprod.yml`, `docs/SETUP.md`, « Préproduction »). La suite e2e complète ne tourne pas
+   à chaque fusion : une fois par version avant le tag, et chaque matin (décision du propriétaire
+   du 15 nov. 2026, #743 : elle épuisait la base gratuite de préprod).
 5. Quand toutes les issues d'un milestone sont fermées (`refactor-check` et `docs-check` comprises)
    et que `main` est vert, `agents-merge` pose le tag `vX.Y.0` (décision du propriétaire du
    11 nov. 2026), ou `vX.Y.Z` pour un milestone correctif `vX.Y.Z …` (décision du 12 nov. 2026).
    Le tag met la version en prod : migrations, puis déploiement Vercel (`docs/SETUP.md`). Tout
-   est automatique, sans feu vert humain (décision du propriétaire du 13 nov. 2026) : seul
-   garde-fou, si le run préprod de ce commit a échoué (déploiement ou tests e2e), le tag attend
-   le passage suivant. Le propriétaire vérifie le critère « It works when… » en production ; un correctif
+   est automatique, sans feu vert humain (décision du propriétaire du 13 nov. 2026). Seul
+   garde-fou : `release.sh` lance alors la suite e2e complète contre la préprod sur ce commit et
+   ne pose le tag qu'une fois verte ; si le déploiement ou cette suite échoue, le tag attend un
+   nouveau commit (pas de relance automatique). Le propriétaire vérifie le critère « It works when… » en production ; un correctif
    sans milestone reste tagué à la main.
 
 ## Screenshots in PRs

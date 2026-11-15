@@ -425,8 +425,8 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
 - **Pas de remise à zéro** : ce que le propriétaire crée à la main en préprod reste d'un
   déploiement à l'autre.
 - **Jeu de démo** (#694) : `supabase/preprod/demo.sql`, versionné dans le dépôt, entièrement
-  inventé, sans aucune lecture de la prod. `ci/preprod/load-sql.sh` le charge juste après
-  `seed.sql` à chaque déploiement (un agent ne peut pas modifier `preprod.yml`). Il contient :
+  inventé, sans aucune lecture de la prod. `preprod.yml` le charge juste après
+  `seed.sql` à chaque déploiement (`ci/preprod/load-sql.sh supabase/seed.sql supabase/preprod/demo.sql`, #743). Il contient :
   - 6 compétitions, « démo » dans le nom : une terminée avec résultats (Diamond League, il y a
     10 jours), une en cours (championnat international : les épreuves d'hier ont leurs résultats),
     quatre à venir (championnats de France, un meeting en salle, deux Diamond League) ;
@@ -445,8 +445,11 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   joueurs de démo sont réécrits. Vérifié en CI : deux chargements de suite sur Supabase local
   donnent les mêmes comptes (`src/infra/preprod-demo.test.ts`). À la main en local :
   `docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/preprod/demo.sql`.
-- **Tests e2e après chaque déploiement** (#695) : le job « End-to-end tests against
-  pre-production » lance toute la suite `e2e/` contre l'adresse de préprod (`E2E_BASE_URL`,
+- **Tests e2e contre la préprod** (#695, #743) : pas à chaque fusion (la suite épuisait la base
+  gratuite de préprod, décision du propriétaire du 15 nov. 2026) mais une fois par version, avant
+  le tag (`release.sh` lance `preprod.yml` avec `e2e=true` : run « Pre-production e2e », sans
+  migrations ni déploiement), et chaque matin (`preprod-daily.yml`). Les deux appellent le même
+  job, `.github/workflows/preprod-e2e.yml`, qui lance toute la suite `e2e/` contre l'adresse de préprod (`E2E_BASE_URL`,
   sans serveur local). Le SQL des tests passe par l'API de gestion Supabase (renvoyé jusqu'à 6 fois, une trentaine de secondes, sur une erreur de
   passerelle 502, 503 ou 504, #871, ou quand l'API n'arrive plus un moment à vérifier le jeton :
   500 « Failed to check user auth status », 401 « Invalid access token », #888), la connexion des
@@ -465,8 +468,8 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   résultats (`mduel-…`, `align-…`, `sheet-…`… suivies du numéro du passage, #788) ; le jeu de démo et le seed n'utilisent
   jamais ces noms. Un test en échec ouvre une issue `bug` qui mentionne le propriétaire
   (`ci/preprod/regression-report.sh`, décision du propriétaire pour #695 : une issue seulement
-  quand c'est rouge) ; rien n'est signalé quand tout passe. Une suite rouge rend le run
-  « Pre-production » rouge, ce qui fait attendre le tag. Tant que les secrets e2e ci-dessous
+  quand c'est rouge) ; rien n'est signalé quand tout passe. Une suite d'avant tag rouge fait
+  attendre le tag jusqu'au commit suivant. Tant que les secrets e2e ci-dessous
   manquent, les tests sont sautés avec un avertissement, sans bloquer la chaîne (#741). Le changement
   d'e-mail (`profile-edit.spec.ts`) est sauté en préprod : aucune API ne donne son code. Le test
   quotidien (`.github/workflows/preprod-daily.yml`) passe par les mêmes aides et les mêmes
@@ -526,8 +529,8 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
 - **Mise en prod** : la prod suit toujours les tags, posés automatiquement quand un milestone est
   fini et `main` vert, sans feu vert humain (décision du propriétaire du 13 nov. 2026,
   `ci/agents/README.md`, étape 6). Seul garde-fou : un run « Pre-production » en échec sur le
-  commit de `main` (migrations, déploiement, test de fumée ou tests e2e) fait attendre le tag
-  jusqu'au passage suivant.
+  commit de `main` (migrations, déploiement, test de fumée, ou la suite e2e lancée avant le tag)
+  fait attendre le tag.
 
 Secrets de l'environnement GitHub `preprod` (Settings → Environments → preprod), ceux du projet
 de préprod, jamais ceux de la prod : `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`,
