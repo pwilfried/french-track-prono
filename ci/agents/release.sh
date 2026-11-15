@@ -64,10 +64,14 @@ passed=false
 # version, and waiting for a green pass on main's newest commit could last forever.
 last_close=$(as_bot gh api --paginate "repos/$repo/issues?milestone=$number&state=closed&per_page=100" \
   --jq '.[].closed_at' | sort | tail -1)
-e2e=$(as_bot gh api "repos/$repo/actions/workflows/preprod.yml/runs?event=workflow_dispatch&branch=main&per_page=20" \
+passes=$(as_bot gh api "repos/$repo/actions/workflows/preprod.yml/runs?event=workflow_dispatch&branch=main&per_page=20" \
   --jq '.workflow_runs[] | select(.display_title | startswith("Pre-production e2e"))
     | "\(.created_at)|\(.status)|\(.conclusion)|\(.head_sha)"' |
-  awk -F'|' -v after="$last_close" '$1 > after' | head -1)
+  awk -F'|' -v after="$last_close" '$1 > after')
+# The FIRST green pass wins: its commit is the closest to the version, with the least of the next
+# version merged since (#969). Without one, the newest pass says whether to wait or start again.
+e2e=$(grep '|completed|success|' <<< "$passes" | sort | head -1 || true)
+[ -n "$e2e" ] || e2e=$(head -1 <<< "$passes")
 IFS='|' read -r _ e2e_status e2e_conclusion e2e_sha <<< "$e2e"
 if [ -n "$e2e" ]; then
   if [ "$e2e_status" != completed ]; then
