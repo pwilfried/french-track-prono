@@ -45,15 +45,16 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Header with initials, key figures and the block of the main discipline. */
+/** Header with initials, the Manager price and the block of the main discipline. */
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("heading", { level: 1 })).toHaveTextContent("Léa Fictive");
     await expect(canvas.getByText("LF")).toBeVisible();
     const key = canvas.getByRole("region", { name: "Chiffres clés" });
-    await expect(within(key).getByText("Record · 100 m")).toBeVisible();
     await expect(within(key).getByText("18 cr.")).toBeVisible();
+    // Each record shows once, in its discipline block (#938).
+    await expect(canvas.getAllByText("10.95")).toHaveLength(1);
     await expect(canvas.getByText("Source : World Athletics")).toBeVisible();
     await expect(canvas.queryByText("? : marque à vérifier")).toBeNull();
   },
@@ -77,7 +78,6 @@ export const SeveralDisciplines: Story = {
     const canvas = within(canvasElement);
     const blocks = canvas.getAllByRole("heading", { level: 3 });
     await expect(blocks.map((b) => b.textContent)).toEqual(["200 m", "100 m", "400 m"]);
-    await expect(canvas.getByText("Record · 200 m")).toBeVisible();
   },
 };
 
@@ -95,7 +95,27 @@ export const Unverified: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("? : marque à vérifier")).toBeVisible();
-    await expect(canvas.getAllByText("(marque à vérifier)", { exact: false }).length).toBe(2);
+    await expect(canvas.getAllByText("(marque à vérifier)", { exact: false }).length).toBe(1);
+  },
+};
+
+/** A personal best set this season: one mark, one « ? », one legend (#938). */
+export const PersonalBestThisSeason: Story = {
+  args: {
+    sheet: {
+      ...sheet,
+      records: [
+        record("100 m", "pr", "10.95", "2026-07-14", "Meeting de démo", false),
+        record("100 m", "sb", "10.95", "2026-07-14", "Meeting de démo", false),
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getAllByText("10.95")).toHaveLength(1);
+    await expect(canvas.getAllByText("?")).toHaveLength(1);
+    await expect(canvas.getAllByText("? : marque à vérifier")).toHaveLength(1);
+    await expect(canvas.queryByText("Saison 2026")).toBeNull();
   },
 };
 

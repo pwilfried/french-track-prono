@@ -41,7 +41,8 @@ export type DisciplineRecords = {
 /**
  * The blocks of the athlete page (#679): one per discipline with a PB or an SB of `season` (an SB
  * dated an earlier year is stale; one without a date is kept). The athlete's disciplines come
- * first in their order (the main one at the top), then any other by its latest record.
+ * first in their order (the main one at the top), then any other by its latest record. A season
+ * best equal to the personal best is the same mark: it is not repeated (#938).
  */
 export function disciplineRecords(
   sheet: Pick<AthleteSheet, "disciplines" | "records">,
@@ -73,10 +74,10 @@ export function disciplineRecords(
         b.latest.localeCompare(a.latest) ||
         a.discipline.localeCompare(b.discipline),
     )
-    .map(({ discipline, main, pb, sb }) => ({ discipline, main, pb, sb }));
-}
-
-/** The block the key figures of the page come from: the main discipline, else the first one. */
-export function keyRecords(blocks: DisciplineRecords[]): DisciplineRecords | null {
-  return blocks.find((b) => b.main) ?? blocks[0] ?? null;
+    .map(({ discipline, main, pb, sb }) => ({
+      discipline,
+      main,
+      pb,
+      sb: sb && pb && sb.mark === pb.mark ? null : sb,
+    }));
 }
