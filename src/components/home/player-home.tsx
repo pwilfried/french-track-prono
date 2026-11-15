@@ -43,7 +43,7 @@ export type PlayerHomeProps = {
   community?: React.ReactNode;
   /** The latest episode announced (#896): the podcast card shows it; null, the podcast's page. */
   episode?: Announcement | null;
-  /** « Le saviez-vous ? » (#766), right under the greeting, above the next action. */
+  /** « Le saviez-vous ? » (#766), right under the next action (#932). */
   funFact?: React.ReactNode;
   /** « Complète ton profil » (#540), under the next action; left out when the profile is complete. */
   completeProfile?: React.ReactNode;
@@ -52,16 +52,15 @@ export type PlayerHomeProps = {
 };
 
 /**
- * The signed-in player's home (#526, « Ta prochaine action »): a greeting, the one thing to do now,
- * then the league, the last result, the community (#673), the Manager and FrenchTrack. A block with
- * nothing to show is left out.
+ * The signed-in player's home (#526, « Ta prochaine action »): a greeting, the one thing to do now
+ * first (#932), the fact of the day, then the league, the last result, the community (#673), the
+ * Manager and FrenchTrack. A block with nothing to show is left out.
  */
 export function PlayerHome(props: PlayerHomeProps) {
   const { pseudo, isNew, now, action, competitionSlug, league, lastResult } = props;
   return (
     <>
       <h1 className="text-lg font-bold text-muted-foreground">{text.hello(pseudo, isNew)}</h1>
-      {props.funFact}
       {action ? (
         <NextActionCard
           action={action}
@@ -70,6 +69,7 @@ export function PlayerHome(props: PlayerHomeProps) {
           now={now}
         />
       ) : null}
+      {props.funFact}
       {props.completeProfile}
       {isNew ? (
         <DismissibleHowItWorks
