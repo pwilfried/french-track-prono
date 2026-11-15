@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { disciplineRecords, keyRecords, type SheetRecord } from "./athlete";
+import { disciplineRecords, type SheetRecord } from "./athlete";
 
 const record = (
   discipline: string,
@@ -97,15 +97,26 @@ describe("disciplineRecords", () => {
 
     expect(blocks[0]?.sb?.mark).toBe("10.90");
   });
-});
 
-describe("keyRecords", () => {
-  it("is the block of the main discipline, else the first one, else null", () => {
-    const main = { discipline: "200 m", main: true, pb: null, sb: null };
-    const other = { discipline: "100 m", main: false, pb: null, sb: null };
+  it("does not repeat a season best equal to the personal best (#938)", () => {
+    const blocks = disciplineRecords(
+      {
+        disciplines: ["100 m"],
+        records: [
+          record("100 m", "pr", "10.95", "2026-07-14", false),
+          record("100 m", "sb", "10.95", "2026-07-14", false),
+        ],
+      },
+      2026,
+    );
 
-    expect(keyRecords([main, other])).toBe(main);
-    expect(keyRecords([other])).toBe(other);
-    expect(keyRecords([])).toBeNull();
+    expect(blocks).toEqual([
+      {
+        discipline: "100 m",
+        main: true,
+        pb: expect.objectContaining({ mark: "10.95" }),
+        sb: null,
+      },
+    ]);
   });
 });

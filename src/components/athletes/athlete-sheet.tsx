@@ -1,12 +1,7 @@
 import { messages } from "@/app/messages.fr";
 import { ErrorNotice } from "@/components/error-notice";
 import { ChipStatus } from "@/components/ui/chip-status";
-import {
-  disciplineRecords,
-  keyRecords,
-  type AthleteSheet,
-  type SheetRecord,
-} from "@/domain/athlete";
+import { disciplineRecords, type AthleteSheet, type SheetRecord } from "@/domain/athlete";
 import { flagOf } from "@/domain/flag";
 import { athleteInitials } from "@/domain/manager-team";
 
@@ -93,8 +88,8 @@ function Where({ record }: { record: SheetRecord }) {
 
 /**
  * The athlete page (#679): records only, no results nor head-to-head (the app does not have the
- * race history). Header, key figures (PB and SB of the main discipline, Manager price), then a
- * block per discipline with the PB and the SB of the current `season`.
+ * race history). Header, the Manager price, then a block per discipline with the PB and the SB of
+ * the current `season`: each record shows once, with one legend for « ? » (#938).
  */
 export function AthleteSheetView({
   sheet,
@@ -120,29 +115,16 @@ export function AthleteSheetView({
     return <ErrorNotice retryHref={retryHref} message={messages.errors.ATHLETES_UNAVAILABLE} />;
   }
   const blocks = disciplineRecords(sheet, season);
-  const key = keyRecords(blocks);
   const unverified = blocks.some((b) => b.pb?.verified === false || b.sb?.verified === false);
   return (
     <div className="flex flex-col gap-6">
       <Hero sheet={sheet} />
-      {(key || sheet.managerPrice !== null) && (
+      {sheet.managerPrice !== null && (
         <section aria-label={text.keyFigures}>
           <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {key?.pb && (
-              <Figure title={text.keyPb(key.discipline)}>
-                <Mark record={key.pb} />
-              </Figure>
-            )}
-            {key?.sb && (
-              <Figure title={text.keySbOf(season)}>
-                <Mark record={key.sb} />
-              </Figure>
-            )}
-            {sheet.managerPrice !== null && (
-              <Figure title={text.managerPrice}>
-                {messages.catalogue.price(sheet.managerPrice)}
-              </Figure>
-            )}
+            <Figure title={text.managerPrice}>
+              {messages.catalogue.price(sheet.managerPrice)}
+            </Figure>
           </dl>
         </section>
       )}

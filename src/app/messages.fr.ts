@@ -1837,8 +1837,6 @@ export const messages = {
     sb: "SB",
     disciplines: "Disciplines",
     keyFigures: "Chiffres clés",
-    keyPb: (discipline: string) => `Record · ${discipline}`,
-    keySbOf: (season: number) => `Meilleure marque ${season}`,
     managerPrice: "Cote Manager",
     records: "Records",
     pbLong: "Record personnel",
