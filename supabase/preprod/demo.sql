@@ -6,10 +6,16 @@
 --     under way (international championship: yesterday's events have results), four to come
 --     (French championship, an indoor meeting, two Diamond League meetings);
 --   * 60 athletes on 7 disciplines per sex, each with a personal best (pr) and a season best (sb);
---   * 20 players demo-1..20@example.test (no password: the owner never signs in as them), their
---     predictions and points on the finished events;
---   * 3 prediction leagues, and one complete Manager league: 4 players, mercato closed, teams,
---     matchdays drawn, lineups and scores of the first matchday, so the standings show.
+--   * 20 players demo-1..20@example.test (no password), their predictions and points on the
+--     finished events;
+--   * 4 test accounts demo-21..24@example.test, each in the state a user test needs (#944), signed
+--     in from the back-office with « Se connecter en tant que » (#637), never admins:
+--     Démo Nouveau (nothing yet), Démo Mercato (a mercato round under way), Démo Direct (a Manager
+--     head-to-head and a locked prediction event under way), Démo Joker (points, a badge, a joker
+--     spent on the ongoing competition);
+--   * 3 prediction leagues, and 3 Manager leagues: « Démo Manager » (mercato closed 12 days ago,
+--     first matchday scored, so the standings show), « Démo Direct » (season started on the
+--     ongoing competition, its first points in) and « Démo Mercato » (mercato open).
 --
 -- Dates are relative to the day of the load (Paris time) and moved again at each load, so the
 -- pre-production always has a finished, an ongoing and coming competitions.
@@ -20,7 +26,9 @@
 --
 -- The prediction and lineup locks refuse a row once its competition has started: new events are
 -- first written open (a year ahead), the demo predictions and lineups go in, then the events get
--- their real dates, all in this one transaction. A later load only adds what is still open.
+-- their real dates, all in this one transaction. A later load only adds what is still open for
+-- the 20 players; the test accounts get their rows on the finished and ongoing competitions too
+-- (their events are opened for the time of the load, see « Test accounts »).
 begin;
 
 -- Temporary tables and helpers of an earlier load in the same session (the CI check loads it twice
@@ -38,6 +46,14 @@ insert into demo_players values
   (13, 'Démo Steeple', 300, 'blue'), (14, 'Démo Témoin', 14, 'red'),    (15, 'Démo Starter', 1, 'gold'),
   (16, 'Démo Chrono', 60, 'green'),  (17, 'Démo Foulée', 517, 'white'), (18, 'Démo Élan', 88, 'night'),
   (19, 'Démo Virage', 200, 'blue'),  (20, 'Démo Finish', 777, 'red');
+
+-- The test accounts of #944, same ids and e-mails as the players (21 to 24), but none of the
+-- players' predictions: each gets exactly the state it is named after (« Test accounts » below).
+create temp table demo_testers (n int primary key, pseudo text, bib_number smallint, bib_color text)
+  on commit drop;
+insert into demo_testers values
+  (21, 'Démo Nouveau', 21, 'white'), (22, 'Démo Mercato', 22, 'gold'),
+  (23, 'Démo Direct', 23, 'red'),    (24, 'Démo Joker', 24, 'night');
 
 -- The competitions: start day relative to today, number of days.
 create temp table demo_competitions (
@@ -118,7 +134,9 @@ insert into demo_athletes values
   ('M', 'javelin', 1, 'Jonas Lehtonen', 'FIN'),    ('M', 'javelin', 2, 'Rohan Mehta', 'IND'),
   ('M', 'javelin', 3, 'Erwan Le Gall', 'FRA'),     ('M', 'javelin', 4, 'Kristaps Ozols', 'LAT');
 
--- The events: competition, sex, discipline, day of the competition (0 = first), Paris time.
+-- The events: competition, sex, discipline, day of the competition (0 = first), Paris time. No day
+-- and no time: started 20 minutes before the load, locked and without result (#944: the
+-- predictions of the friends show, the event is under way).
 create temp table demo_events (
   k int, gender char(1), key text, day int, at time, featured boolean,
   primary key (k, gender, key)
@@ -131,10 +149,10 @@ insert into demo_events values
   (1, 'F', 'long-jump', 0, '19:30', false), (1, 'M', 'long-jump', 0, '20:00', false),
   (1, 'F', 'pole-vault', 0, '19:00', false), (1, 'M', 'pole-vault', 0, '19:15', false),
   (1, 'F', 'javelin', 0, '20:10', false),   (1, 'M', 'javelin', 0, '20:15', false),
-  -- 2. Under way: yesterday's events are finished, today's and tomorrow's to come.
+  -- 2. Under way: yesterday's events are finished, one is running, today's and tomorrow's to come.
   (2, 'F', '100m', 0, '21:30', true),       (2, 'M', '100m', 0, '21:45', true),
   (2, 'M', 'javelin', 0, '19:30', false),   (2, 'F', 'pole-vault', 0, '19:00', false),
-  (2, 'F', '1500m', 1, '20:40', false),     (2, 'M', '1500m', 1, '21:00', false),
+  (2, 'F', '1500m', 1, '20:40', false),     (2, 'M', '1500m', null, null, false),
   (2, 'F', 'hurdles', 1, '21:20', false),   (2, 'M', 'hurdles', 1, '21:40', true),
   (2, 'F', '5000m', 2, '20:00', false),     (2, 'M', '5000m', 2, '20:30', true),
   (2, 'F', 'long-jump', 2, '19:00', false), (2, 'M', 'pole-vault', 2, '19:15', false),
@@ -223,8 +241,8 @@ on conflict do nothing;
 
 create temp table demo_event_ids on commit drop as
 select ev.id, e.k, e.gender, e.key, ev.competition_id, ev.lock_at,
-       -- Planned as finished: its day is before today.
-       k.start_offset + e.day < 0 as past,
+       -- Planned as finished: its day is before today (the running event is not).
+       coalesce(k.start_offset + e.day < 0, false) as past,
        row_number() over (partition by e.k order by e.day, e.at, e.gender, e.key) as ord,
        count(*) over (partition by e.k) as of_count
 from demo_events e
@@ -239,6 +257,12 @@ from demo_event_ids e
 join demo_athlete_ids a using (gender, key)
 on conflict do nothing;
 
+-- The start list of each event, strongest first: the podium letters a, b, c, d of the predictions.
+create temp table demo_starts on commit drop as
+select e.id as event_id, array_agg(a.id order by a.r) as s
+from demo_event_ids e join demo_athlete_ids a using (gender, key)
+group by e.id;
+
 -- ---------- Players and prediction leagues ----------
 -- The columns GoTrue reads as non-null are all set (see supabase/dev/demo_state.sql).
 insert into auth.users (
@@ -250,27 +274,32 @@ select '00000000-0000-0000-0000-000000000000'::uuid,
        ('00000000-0000-4000-9000-' || lpad(n::text, 12, '0'))::uuid,
        'demo-' || n || '@example.test', 'authenticated', 'authenticated', now(), now(), now(),
        '', '', '', '', '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb
-from demo_players
+from (select n from demo_players union all select n from demo_testers) x
 on conflict (id) do nothing;
 
 insert into profiles (id, pseudo, bib_number, bib_color, age_confirmed_at)
 select ('00000000-0000-4000-9000-' || lpad(n::text, 12, '0'))::uuid, pseudo, bib_number, bib_color, now()
-from demo_players
+from (select * from demo_players union all select * from demo_testers) x
 on conflict (id) do nothing;
 
+-- Every demo account (players and test accounts), and the 20 players only.
+create temp table demo_account_ids on commit drop as
+select n, ('00000000-0000-4000-9000-' || lpad(n::text, 12, '0'))::uuid as id
+from (select n from demo_players union all select n from demo_testers) x;
 create temp table demo_player_ids on commit drop as
-select n, ('00000000-0000-4000-9000-' || lpad(n::text, 12, '0'))::uuid as id from demo_players;
+select * from demo_account_ids where n in (select n from demo_players);
 
 -- Three leagues (fixed ids 00000000-0000-4000-9a00-00000000000N): owner, players, competitions,
--- families (none: every event counts).
+-- families (none: every event counts). Démo Joker (24) plays in the first, Démo Direct (23) in the
+-- second, with friends who predicted the ongoing competition.
 create temp table demo_leagues (
   n int primary key, name text, emoji text, is_public boolean, owner int, players int[],
   competitions int[], families text[]
 ) on commit drop;
 insert into demo_leagues values
-  (1, 'Démo Les Sprinteurs', '🏃', true, 1, array[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+  (1, 'Démo Les Sprinteurs', '🏃', true, 1, array[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 24],
    array[1, 2, 3, 5, 6], '{}'),
-  (2, 'Démo Club du jeudi', '🍻', false, 3, array[2, 3, 5, 7, 9, 15, 16, 17], array[2, 3], '{}'),
+  (2, 'Démo Club du jeudi', '🍻', false, 3, array[2, 3, 5, 7, 9, 15, 16, 17, 23], array[2, 3], '{}'),
   (3, 'Démo Sauts et lancers', '🎯', false, 10,
    array[10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], array[1, 2, 4], array['jumps', 'throws']);
 
@@ -287,7 +316,7 @@ select ('00000000-0000-4000-9a00-' || lpad(l.n::text, 12, '0'))::uuid, p.id,
        now() - interval '30 days'
 from demo_leagues l
 cross join lateral unnest(l.players) as u(n)
-join demo_player_ids p on p.n = u.n
+join demo_account_ids p on p.n = u.n
 on conflict do nothing;
 
 insert into league_competitions (league_id, competition_id)
@@ -313,11 +342,6 @@ with patterns (i, p) as (
   select row_number() over () - 1, p from unnest(array[
     'abc', 'bac', 'acb', 'bca', 'cab', 'cba', 'abd', 'bad', 'adb', 'bda', 'dab', 'dba',
     'acd', 'cad', 'adc', 'cda', 'dac', 'dca', 'bcd', 'cbd', 'bdc', 'cdb', 'dbc', 'dcb']) as p
-),
-starts as (
-  select e.id as event_id, array_agg(a.id order by a.r) as s
-  from demo_event_ids e join demo_athlete_ids a using (gender, key)
-  group by e.id
 )
 insert into predictions (user_id, event_id, p1, p2, p3, use_joker)
 select pl.id, e.id,
@@ -326,7 +350,7 @@ select pl.id, e.id,
        pl.n % 2 = 0 and e.ord = pl.n % e.of_count + 1
 from demo_player_ids pl
 join demo_event_ids e on e.k = 1 or e.k = 2 or (e.k = 3 and pl.n <= 12) or (e.k = 4 and pl.n <= 6)
-join starts s on s.event_id = e.id
+join demo_starts s on s.event_id = e.id
 join patterns pt on pt.i = (pl.n * 7 + e.ord * 5) % 24
 where e.lock_at > now()
   and not exists (select 1 from predictions x where x.user_id = pl.id and x.event_id = e.id)
@@ -334,75 +358,146 @@ where e.lock_at > now()
            and exists (select 1 from predictions x
                        where x.user_id = pl.id and x.competition_id = e.competition_id and x.use_joker));
 
--- ---------- Manager league (fixed id 00000000-0000-4000-9b00-000000000001) ----------
--- Four players (1, 4, 7, 11), mercato opened 3 weeks ago and closed 12 days ago, the 6 demo
--- competitions as season: 6 head-to-head matchdays, the first one played.
-create temp table demo_managers (k int primary key, n int) on commit drop;
-insert into demo_managers values (1, 1), (2, 4), (3, 7), (4, 11);
+-- ---------- Test accounts (#944) ----------
+-- Démo Nouveau (21): a profile and nothing else (no prediction, no league).
+-- Démo Direct (23): predicts the whole ongoing competition, as its friends of « Démo Club du
+-- jeudi » do, so the running event shows their podiums.
+-- Démo Joker (24): predicts the finished and the ongoing competitions on the three strongest of
+-- each start list (the winner is always found, see « Results »), its joker on the first event of
+-- the ongoing one, already finished; and the badge those winners give.
+-- Their predictions and lineups go on locked events: the events of the finished and the ongoing
+-- competitions are opened for the time of the load, and get their dates back in « Dates of the
+-- day ». The 20 players still only add rows on events that were open (demo_event_ids.lock_at).
+update events ev
+set starts_at = now() + interval '400 days', lock_at = now() + interval '400 days'
+from demo_event_ids e
+where ev.id = e.id and e.k in (1, 2);
+
+insert into predictions (user_id, event_id, p1, p2, p3, use_joker)
+select t.id, e.id,
+       case when t.n = 23 then s.s[2] else s.s[1] end,
+       case when t.n = 23 then s.s[1] else s.s[2] end, s.s[3],
+       t.n = 24 and e.k = 2 and e.ord = 1
+         and not exists (select 1 from predictions x
+                         where x.user_id = t.id and x.competition_id = e.competition_id and x.use_joker)
+from demo_account_ids t
+join demo_event_ids e on (t.n = 23 and e.k = 2) or (t.n = 24 and e.k in (1, 2))
+join demo_starts s on s.event_id = e.id
+where not exists (select 1 from predictions x where x.user_id = t.id and x.event_id = e.id);
+
+-- Kept by the app once won (raise_my_badge_levels only raises it): bronze of « Chasseur ».
+insert into user_badges (user_id, badge_code, level)
+select id, 'chasseur', 'bronze' from demo_account_ids where n = 24
+on conflict do nothing;
+
+-- ---------- Manager leagues (fixed ids 00000000-0000-4000-9b00-00000000000M) ----------
+-- 1. « Démo Manager »: four players, mercato opened 3 weeks ago and closed 12 days ago, the 6
+--    demo competitions as season: 6 head-to-head matchdays, the first one played.
+-- 2. « Démo Direct »: Démo Direct and three players, mercato closed 2 days ago, so the season
+--    starts with the ongoing competition: matchday 1 under way, yesterday's points in.
+-- 3. « Démo Mercato »: Démo Mercato and three players, mercato open: its round under way ends a
+--    day after the load, the next one comes after (moved again at each load).
+create temp table demo_manager_leagues (
+  m int primary key, name text, is_public boolean, owner int, first_k int,
+  opened_days int, closed_days int, joined_days int
+) on commit drop;
+insert into demo_manager_leagues values
+  (1, 'Démo Manager', true, 1, 1, 21, 12, 25),
+  (2, 'Démo Direct', false, 23, 2, 6, 2, 8),
+  (3, 'Démo Mercato', false, 22, 3, null, null, 2);
+
+create temp table demo_managers (m int, k int, n int, primary key (m, k)) on commit drop;
+insert into demo_managers values
+  (1, 1, 1), (1, 2, 4), (1, 3, 7), (1, 4, 11),
+  (2, 1, 23), (2, 2, 3), (2, 3, 6), (2, 4, 9),
+  (3, 1, 22), (3, 2, 12), (3, 3, 15), (3, 4, 18);
+
+create temp table demo_manager_ids on commit drop as
+select m, ('00000000-0000-4000-9b00-' || lpad(m::text, 12, '0'))::uuid as id
+from demo_manager_leagues;
 
 insert into manager_leagues (id, name, is_public, owner_id, rules, competition_ids, player_target,
                              mercato_starts_at, mercato_opened_at, mercato_closed_at)
-select '00000000-0000-4000-9b00-000000000001', 'Démo Manager', true,
-       '00000000-0000-4000-9000-000000000001', (select rules from manager_rules),
-       (select array_agg(c.id order by k.k) from demo_competitions k join competitions c using (slug)),
-       4, now() - interval '21 days', now() - interval '21 days', now() - interval '12 days'
+select i.id, l.name, l.is_public, o.id, (select rules from manager_rules),
+       (select array_agg(c.id order by k.k)
+        from demo_competitions k join competitions c using (slug) where k.k >= l.first_k),
+       4, now() - coalesce(l.opened_days, 1) * interval '1 day',
+       now() - coalesce(l.opened_days, 1) * interval '1 day',
+       now() - l.closed_days * interval '1 day'
+from demo_manager_leagues l
+join demo_manager_ids i using (m)
+join demo_account_ids o on o.n = l.owner
 on conflict (id) do nothing;
 
 insert into manager_members (league_id, user_id, joined_at, team_compliant, revealed_round)
-select '00000000-0000-4000-9b00-000000000001', p.id, now() - interval '25 days', true, 2
-from demo_managers m join demo_player_ids p using (n)
+select i.id, p.id, now() - l.joined_days * interval '1 day',
+       case when l.closed_days is not null then true end,
+       case when l.closed_days is not null then 2 else 0 end
+from demo_managers m
+join demo_manager_leagues l using (m)
+join demo_manager_ids i using (m)
+join demo_account_ids p using (n)
 on conflict do nothing;
 
+-- The two rounds of the closed mercatos.
 insert into manager_rounds (league_id, round, ends_at, closed_at)
-select '00000000-0000-4000-9b00-000000000001', r,
-       now() - interval '21 days' + r * interval '48 hours',
-       now() - interval '21 days' + r * interval '48 hours'
-from generate_series(1, 2) r
+select i.id, r,
+       now() - l.opened_days * interval '1 day' + r * interval '48 hours',
+       now() - l.opened_days * interval '1 day' + r * interval '48 hours'
+from demo_manager_leagues l
+join demo_manager_ids i using (m)
+cross join generate_series(1, 2) r
+where l.closed_days is not null
 on conflict do nothing;
 
 -- Teams of 12, within the quotas and the budget of 100: per sex, one sprinter, hurdler, long jumper
 -- (the k-th strongest for manager k) and one middle-distance, long-distance runner and thrower
 -- (the k-th weakest), so each team costs 90. Vaulters and the 5th sprinters and milers stay free.
 insert into manager_awards (league_id, athlete_id, user_id, amount, round)
-select '00000000-0000-4000-9b00-000000000001', a.id, p.id, 10 - a.r, case when a.r <= 2 then 1 else 2 end
+select i.id, a.id, p.id, 10 - a.r, case when a.r <= 2 then 1 else 2 end
 from demo_athlete_ids a
 join demo_managers m on m.k = case when a.family in ('sprint', 'hurdles', 'horizontal_jumps') then a.r
                                    else 5 - a.r end
-join demo_player_ids p on p.n = m.n
+join demo_manager_leagues l using (m)
+join demo_manager_ids i using (m)
+join demo_account_ids p on p.n = m.n
 where a.family in ('sprint', 'hurdles', 'horizontal_jumps', 'middle', 'long', 'throws') and a.r <= 4
+  and l.closed_days is not null
 on conflict do nothing;
 
 insert into manager_competitions (competition_id)
 select c.id from demo_competitions k join competitions c using (slug) where k.k >= 3
 on conflict do nothing;
 
--- Lineups of the 4 managers on the first two competitions, of two of them on the third: up to 8
--- athletes of their team entered in it, a sprinter, a miler and a thrower first. Only while open.
+-- Lineups: in « Démo Manager », the 4 managers on the first two competitions and two of them on
+-- the third; in « Démo Direct », the 4 on the ongoing and the next competitions. Up to 8 athletes
+-- of their team entered in it, a sprinter, a miler and a thrower first. Only while open.
 insert into manager_lineups (league_id, competition_id, user_id, athlete_ids)
-select '00000000-0000-4000-9b00-000000000001', s.competition_id, s.user_id,
+select s.league_id, s.competition_id, s.user_id,
        (array_agg(s.athlete_id order by s.priority, s.athlete_id))[1:8]
 from (
-  select distinct c.id as competition_id, w.user_id, w.athlete_id,
+  select distinct w.league_id, c.id as competition_id, w.user_id, w.athlete_id,
          case a.family when 'sprint' then 1 when 'middle' then 2 when 'throws' then 3 else 4 end
-           as priority, m.k as manager
+           as priority
   from demo_competitions k
   join competitions c using (slug)
   join competition_athletes ca on ca.competition_id = c.id
   join manager_awards w on w.athlete_id = ca.athlete_id
-                       and w.league_id = '00000000-0000-4000-9b00-000000000001'
+  join demo_manager_ids i on i.id = w.league_id
   join demo_athlete_ids a on a.id = w.athlete_id
-  join demo_player_ids p on p.id = w.user_id
-  join demo_managers m on m.n = p.n
-  where k.k in (1, 2) or (k.k = 3 and m.k <= 2)
+  join demo_account_ids p on p.id = w.user_id
+  join demo_managers m on m.m = i.m and m.n = p.n
+  where (i.m = 1 and (k.k in (1, 2) or (k.k = 3 and m.k <= 2)))
+     or (i.m = 2 and k.k in (2, 3))
 ) s
 where private.manager_lineup_lock(s.competition_id) > now()
   and not exists (select 1 from manager_lineups l
-                  where l.league_id = '00000000-0000-4000-9b00-000000000001'
+                  where l.league_id = s.league_id
                     and l.competition_id = s.competition_id and l.user_id = s.user_id)
-group by s.competition_id, s.user_id;
+group by s.league_id, s.competition_id, s.user_id;
 
 -- ---------- Dates of the day ----------
--- Every load moves the demo competitions, events and Manager league to their place around today.
+-- Every load moves the demo competitions, events and Manager leagues to their place around today.
 update competitions c
 set starts_on = pg_temp.demo_today() + k.start_offset,
     ends_on = pg_temp.demo_today() + k.start_offset + k.days - 1,
@@ -411,38 +506,76 @@ from demo_competitions k
 where c.slug = k.slug;
 
 update events ev
-set starts_at = ((pg_temp.demo_today() + k.start_offset + e.day) + e.at) at time zone 'Europe/Paris',
-    lock_at = ((pg_temp.demo_today() + k.start_offset + e.day) + e.at) at time zone 'Europe/Paris'
+set starts_at = coalesce(((pg_temp.demo_today() + k.start_offset + e.day) + e.at) at time zone 'Europe/Paris',
+                         now() - interval '20 minutes'),
+    lock_at = coalesce(((pg_temp.demo_today() + k.start_offset + e.day) + e.at) at time zone 'Europe/Paris',
+                       now() - interval '20 minutes')
               - interval '5 minutes'
 from demo_events e
 join demo_competitions k using (k)
 join competitions c on c.slug = k.slug
 where ev.competition_id = c.id and ev.slug = k.slug || '-' || lower(e.gender) || '-' || e.key;
 
-update manager_leagues
-set mercato_starts_at = now() - interval '21 days', mercato_opened_at = now() - interval '21 days',
-    mercato_closed_at = now() - interval '12 days'
-where id = '00000000-0000-4000-9b00-000000000001';
+-- Closed mercatos: at their place around today.
+update manager_leagues ml
+set mercato_starts_at = now() - l.opened_days * interval '1 day',
+    mercato_opened_at = now() - l.opened_days * interval '1 day',
+    mercato_closed_at = now() - l.closed_days * interval '1 day'
+from demo_manager_leagues l
+join demo_manager_ids i using (m)
+where ml.id = i.id and l.closed_days is not null;
 
-update manager_rounds
-set ends_at = now() - interval '21 days' + round * interval '48 hours',
-    closed_at = now() - interval '21 days' + round * interval '48 hours'
-where league_id = '00000000-0000-4000-9b00-000000000001';
+update manager_rounds r
+set ends_at = now() - l.opened_days * interval '1 day' + r.round * interval '48 hours',
+    closed_at = now() - l.opened_days * interval '1 day' + r.round * interval '48 hours'
+from demo_manager_leagues l
+join demo_manager_ids i using (m)
+where r.league_id = i.id and l.closed_days is not null;
+
+-- The open mercato stays open (closed by hand since the last load: opened again, its schedule
+-- dropped), and its round under way, whichever it is, ends a day after the load.
+update manager_leagues ml
+set mercato_closed_at = null, mercato_closes_at = null
+from demo_manager_leagues l
+join demo_manager_ids i using (m)
+where ml.id = i.id and l.closed_days is null and ml.mercato_closed_at is not null;
+
+delete from manager_matchdays d
+using demo_manager_leagues l
+join demo_manager_ids i using (m)
+where d.league_id = i.id and l.closed_days is null;
+
+update manager_leagues ml
+set mercato_starts_at = ml.mercato_opened_at + (now() + interval '1 day' - o.ends_at),
+    mercato_opened_at = ml.mercato_opened_at + (now() + interval '1 day' - o.ends_at)
+from demo_manager_leagues l
+join demo_manager_ids i using (m)
+cross join lateral private.manager_open_round(i.id) o
+where ml.id = i.id and l.closed_days is null;
 
 update league_members
 set joined_at = now() - interval '30 days'
 where league_id in (select ('00000000-0000-4000-9a00-' || lpad(n::text, 12, '0'))::uuid from demo_leagues)
-  and user_id in (select id from demo_player_ids);
+  and user_id in (select id from demo_account_ids);
 
-update manager_members
-set joined_at = now() - interval '25 days'
-where league_id = '00000000-0000-4000-9b00-000000000001';
+update manager_members mm
+set joined_at = now() - l.joined_days * interval '1 day'
+from demo_manager_leagues l
+join demo_manager_ids i using (m)
+where mm.league_id = i.id;
 
--- The season: drawn once, in a reproducible order, now that the competitions have their dates.
+-- The seasons: drawn once each, in a reproducible order, now that the competitions have their
+-- dates.
 do $$
+declare v_league uuid;
 begin
-  perform setseed(0.694);
-  perform private.schedule_manager_season('00000000-0000-4000-9b00-000000000001');
+  for v_league in
+    select i.id from demo_manager_leagues l join demo_manager_ids i using (m)
+    where l.closed_days is not null order by l.m
+  loop
+    perform setseed(0.694);
+    perform private.schedule_manager_season(v_league);
+  end loop;
 end $$;
 
 -- ---------- Results of the finished events ----------
@@ -470,7 +603,7 @@ on conflict do nothing;
 -- ---------- Points of the demo players ----------
 -- The rules of src/domain/scoring.ts with the scoring_rules of the database: exact place, on the
 -- podium at another place, perfect podium, flair (winner found by less than 15 % of at least 10
--- players), joker. Written again at each load, for the demo players only.
+-- players), joker. Written again at each load, for the demo accounts only.
 create temp table demo_scores on commit drop as
 with rules as (
   select max(value) filter (where key = 'exact_slot') as exact_slot,
@@ -505,7 +638,7 @@ slots as (
   from predictions pr
   join podium po using (event_id)
   join field f using (event_id)
-  where pr.user_id in (select id from demo_player_ids)
+  where pr.user_id in (select id from demo_account_ids)
 ),
 counted as (
   select s.*, (s.e1::int + s.e2::int + s.e3::int) = 3 as perfect,
@@ -530,7 +663,7 @@ from counted c, rules ru;
 
 delete from score_events s
 using demo_event_ids e
-where s.event_id = e.id and s.source = 'prediction' and s.user_id in (select id from demo_player_ids);
+where s.event_id = e.id and s.source = 'prediction' and s.user_id in (select id from demo_account_ids);
 
 insert into score_events (user_id, event_id, competition_id, source, points, reason, detail)
 select user_id, event_id, competition_id, 'prediction', points, 'prediction', detail
@@ -542,8 +675,10 @@ from demo_scores s
 where pr.user_id = s.user_id and pr.event_id = s.event_id;
 
 -- ---------- Manager scores of the first matchday ----------
--- Each lined-up athlete: about 1200 World Athletics points, less by place, and the podium bonuses
--- of the league's rules; plus the manager's prediction points on the competition.
+-- Each lined-up athlete with a result: about 1200 World Athletics points, less by place, and the
+-- podium bonuses of the league's rules; plus the manager's prediction points on the competition.
+-- On the first competition of each closed league's season: the finished one for « Démo Manager »,
+-- the ongoing one (yesterday's results only, as after a first scoring run) for « Démo Direct ».
 insert into manager_scores (league_id, competition_id, user_id, lined_up, total, hungarian, bonus,
                             predictions, athletes)
 select l.league_id, l.competition_id, l.user_id, true,
@@ -554,7 +689,9 @@ select l.league_id, l.competition_id, l.user_id, true,
          'points', x.points, 'bonuses', x.bonuses, 'bonus_points', x.bonus_points,
          'total', x.points + x.bonus_points) order by x.points + x.bonus_points desc, x.athlete_id)
 from manager_lineups l
-join demo_competitions k on k.k = 1
+join demo_manager_ids i on i.id = l.league_id
+join demo_manager_leagues dl on dl.m = i.m and dl.closed_days is not null
+join demo_competitions k on k.k = dl.first_k
 join competitions c on c.slug = k.slug and c.id = l.competition_id
 cross join lateral (
   select r.athlete_id, ev.discipline, r.mark, 1220 - 35 * r.rank as points,
@@ -574,7 +711,6 @@ left join lateral (
   select sum(points)::int as points from score_events s
   where s.user_id = l.user_id and s.competition_id = l.competition_id
 ) pp on true
-where l.league_id = '00000000-0000-4000-9b00-000000000001'
 group by l.league_id, l.competition_id, l.user_id, pp.points
 on conflict do nothing;
 
