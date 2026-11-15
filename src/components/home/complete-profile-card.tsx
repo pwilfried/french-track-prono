@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useActionState, useState, useTransition } from "react";
 
 import type { Club } from "@/application/clubs";
@@ -48,6 +47,7 @@ function clubNameOf(state: ClubPickerValue): string {
  * sheet keep what was chosen. « Plus tard » hides the card for 30 days.
  */
 export function CompleteProfileCard({
+  ask = true,
   firstPodium,
   bib,
   pseudo,
@@ -56,6 +56,9 @@ export function CompleteProfileCard({
   save,
   later,
 }: {
+  /** False once the profile is complete or put off: the card shows nothing, unless its sheet
+   * still holds the confirmation of the save. */
+  ask?: boolean;
   /** Just after the first prediction: a green banner above the card. */
   firstPodium: boolean;
   bib: BibValue;
@@ -72,7 +75,6 @@ export function CompleteProfileCard({
   const [clubName, setClubName] = useState(clubNameOf(initial));
   const [answered, setAnswered] = useState(state);
   const [, startTransition] = useTransition();
-  const router = useRouter();
 
   const error = state.error ? messages.errors[state.error] : undefined;
   const clubError = state.error && CLUB_ERRORS.includes(state.error) ? error : undefined;
@@ -87,12 +89,10 @@ export function CompleteProfileCard({
     setOpen(false);
     startTransition(() => later());
   };
-  // Once saved, closing the confirmation refreshes the home, which no longer asks (#889).
-  const close = () => {
-    setOpen(false);
-    if (state.done) router.refresh();
-  };
-  if (hidden || (state.done && !open)) return null;
+  const close = () => setOpen(false);
+  // After the save, the home re-renders with `ask` false: the sheet keeps its confirmation until
+  // the player closes it (#889).
+  if (hidden || (state.done && !open) || (!ask && !state.done)) return null;
 
   const laterButton = (
     <button

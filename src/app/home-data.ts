@@ -47,8 +47,11 @@ export type PlayerHome = Omit<
   clubNotices: ClubNotice[];
   /** « Le saviez-vous ? » (#766), in the order of the day; empty when off or unreadable. */
   funFacts: FunFact[];
-  /** Null unless the profile is incomplete and « Plus tard » does not hide the card (#540). */
-  completeProfile: { firstPodium: boolean; bib: Bib; pseudo: string } | null;
+  /**
+   * The « Complète ton profil » card (#540). `ask` is false once the profile is complete or while
+   * « Plus tard » hides it; the card stays mounted so its confirmation survives the save (#889).
+   */
+  completeProfile: { ask: boolean; firstPodium: boolean; bib: Bib; pseudo: string };
 };
 
 async function safely<T>(load: () => Promise<T>): Promise<T | null> {
@@ -173,9 +176,12 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
     pseudo: profile.pseudo,
     // When it cannot be read, the steps stay hidden rather than shown to a seasoned player.
     isNew: predictionCount === 0,
-    completeProfile: askProfile
-      ? { firstPodium: predictionCount === 1, bib: profile.bib, pseudo: profile.pseudo }
-      : null,
+    completeProfile: {
+      ask: Boolean(askProfile),
+      firstPodium: predictionCount === 1,
+      bib: profile.bib,
+      pseudo: profile.pseudo,
+    },
     action: nextAction({
       events: events ?? [],
       predicted: new Set((mine ?? []).map((p) => p.eventId)),

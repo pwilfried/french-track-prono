@@ -113,16 +113,15 @@ export default async function Home() {
           }
           funFact={<FunFactCard facts={funFacts} />}
           completeProfile={
-            completeProfile ? (
-              <CompleteProfileCard
-                firstPodium={completeProfile.firstPodium}
-                bib={completeProfile.bib}
-                pseudo={completeProfile.pseudo}
-                search={findClubsAction}
-                save={completeProfileAction}
-                later={completeProfileLaterAction}
-              />
-            ) : null
+            <CompleteProfileCard
+              ask={completeProfile.ask}
+              firstPodium={completeProfile.firstPodium}
+              bib={completeProfile.bib}
+              pseudo={completeProfile.pseudo}
+              search={findClubsAction}
+              save={completeProfileAction}
+              later={completeProfileLaterAction}
+            />
           }
         />
       </div>

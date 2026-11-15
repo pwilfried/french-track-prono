@@ -91,6 +91,15 @@ export const Empty: Story = {
   },
 };
 
+/** The profile is complete or put off: the home does not ask, nothing shows. */
+export const NotAsked: Story = {
+  args: { ask: false, firstPodium: true },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).queryByRole("heading", { name: text.title })).toBeNull();
+    await expect(within(canvasElement).queryByText(text.firstPodium)).toBeNull();
+  },
+};
+
 /** The club picked in the list prints at once on the bib. */
 export const ClubPrinted: Story = {
   play: async ({ canvasElement }) => {
