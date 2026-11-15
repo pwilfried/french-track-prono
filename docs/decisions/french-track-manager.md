@@ -345,16 +345,14 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   l'alignement validé ou verrouillé jusqu'au calcul, « confrontations » après une journée calculée,
   « champion » à la fin de la saison. Les quatre étapes du milieu reviennent à chaque journée. Cas
   d'usage : `getManagerHome`, `src/application/manager-home.ts`.
-- **Tutoriel « Comment ça marche ? »** (#616) : sept étapes plein écran (une ligue entre amis, le
-  mercato, l'équipe pour la saison, l'alignement, les points, une confrontation par journée,
-  devenir champion), chacune avec un dessin en formes simples. Il s'ouvre seul à la première
-  visite de `/manager` (vu, mémorisé sur l'appareil), puis à la demande par « Comment ça
-  marche ? » (`/manager?tutoriel=1`) ; « Passer » à toute étape. Ses chiffres (budget, taille
-  minimum, titulaires, bonus de victoire, au moins 6 compétitions qui fixent de 4 à 10 joueurs)
-  viennent des règles de l'admin (`managerIntroFigures`), comme ceux de la présentation (#618).
-  Ses textes suivent ce document : le nombre de joueurs vient des compétitions (#644), les
-  compétitions en trop sont des journées bonus. La navigation suit le contenu, sans vide jusqu'au
-  bas de l'écran, et le tutoriel s'ouvre sans focus visible sur « Passer » (#709).
+- **Tutoriel « Comment ça marche ? »** (#616, raccourci par #802) : trois écrans plein écran (le
+  principe : recrute, aligne, affronte tes amis ; la saison : mercato puis journées ; l'action :
+  créer ou rejoindre une ligue), chacun avec un dessin en formes simples. Il s'ouvre seul à la
+  première visite de `/manager` (vu, mémorisé sur l'appareil), puis à la demande par « Comment ça
+  marche ? » (`/manager?tutoriel=1`) ; « Passer » à tout écran. Aucun chiffre : ils sont dans
+  « Règles de la ligue », lus dans les règles figées de la ligue. La navigation suit le contenu,
+  sans vide jusqu'au bas de l'écran, et le tutoriel s'ouvre sans focus visible sur « Passer »
+  (#709).
 
 ## Réponses du propriétaire (#416, 10 novembre 2026)
 
