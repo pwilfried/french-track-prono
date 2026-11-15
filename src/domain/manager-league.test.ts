@@ -7,6 +7,8 @@ import {
   fitsMembers,
   hasEnoughCompetitions,
   isRoundHours,
+  mercatoCalendar,
+  mercatoStatus,
   MANAGER_LEAGUE_MAX,
   MANAGER_LEAGUE_MIN,
   MIN_SEASON_COMPETITIONS,
@@ -184,6 +186,66 @@ describe("plannedMercatoEnd", () => {
         nextHours: 12,
       }),
     ).toBe("2027-01-04T08:00:00.000Z");
+  });
+});
+
+describe("mercatoStatus", () => {
+  // Rounds end on Jan 3 08:00, Jan 3 20:00 and Jan 4 08:00.
+  const rules = { firstHours: 48, longRounds: 1, nextHours: 12 };
+  const opened = "2027-01-01T08:00:00.000Z";
+
+  it("is waiting while the mercato has not opened", () => {
+    expect(mercatoStatus(null, rules, "2027-01-02T08:00:00.000Z")).toEqual({ phase: "waiting" });
+  });
+
+  it.each([
+    ["2027-01-01T08:00:00.000Z", 1, "2027-01-03T08:00:00.000Z"],
+    ["2027-01-03T07:59:59.000Z", 1, "2027-01-03T08:00:00.000Z"],
+    ["2027-01-03T08:00:00.000Z", 2, "2027-01-03T20:00:00.000Z"],
+    ["2027-01-04T07:59:59.000Z", 3, "2027-01-04T08:00:00.000Z"],
+  ])("at %s is round %i until %s", (now, round, endsAt) => {
+    expect(mercatoStatus(opened, rules, now)).toEqual({ phase: "round", round, endsAt });
+  });
+
+  it("is over once the last planned round has ended", () => {
+    expect(mercatoStatus(opened, rules, "2027-01-04T08:00:00.000Z")).toEqual({ phase: "over" });
+    expect(mercatoStatus(opened, rules, "2027-02-01T00:00:00.000Z")).toEqual({ phase: "over" });
+  });
+});
+
+describe("mercatoCalendar", () => {
+  const rules = { firstHours: 48, longRounds: 1, nextHours: 12 };
+  const opened = "2027-01-01T08:00:00.000Z";
+  const states = (start: string, now: string, open: boolean) =>
+    mercatoCalendar(start, rules, now, open).map((r) => r.state);
+
+  it("lists the 3 planned rounds with their length and end", () => {
+    expect(mercatoCalendar(opened, rules, "2027-01-01T09:00:00.000Z", true)).toEqual([
+      { round: 1, hours: 48, endsAt: "2027-01-03T08:00:00.000Z", state: "current" },
+      { round: 2, hours: 12, endsAt: "2027-01-03T20:00:00.000Z", state: "upcoming" },
+      { round: 3, hours: 12, endsAt: "2027-01-04T08:00:00.000Z", state: "upcoming" },
+    ]);
+  });
+
+  it("marks the rounds passed and the round under way", () => {
+    expect(states(opened, "2027-01-03T10:00:00.000Z", true)).toEqual([
+      "past",
+      "current",
+      "upcoming",
+    ]);
+    expect(states(opened, "2027-01-04T07:00:00.000Z", true)).toEqual(["past", "past", "current"]);
+  });
+
+  it("marks every round passed after the last one", () => {
+    expect(states(opened, "2027-01-05T00:00:00.000Z", true)).toEqual(["past", "past", "past"]);
+  });
+
+  it("keeps every round upcoming until the mercato opens, even past its planned start", () => {
+    expect(states(opened, "2027-01-05T00:00:00.000Z", false)).toEqual([
+      "upcoming",
+      "upcoming",
+      "upcoming",
+    ]);
   });
 });
 
