@@ -1,6 +1,7 @@
 import { UseCaseError } from "@/application/errors";
 import { listEvents } from "@/application/list-events";
 import { ClubNotices } from "@/components/account/club-notices";
+import { CommunityBlock } from "@/components/community/community-block";
 import { CompleteProfileCard } from "@/components/home/complete-profile-card";
 import { FunFactCard } from "@/components/home/fun-fact-card";
 import { PlayerHome } from "@/components/home/player-home";
@@ -9,6 +10,8 @@ import { daysUntil } from "@/domain/competition";
 import { firstFinalToPredict } from "@/domain/home";
 
 import { findClubsAction } from "../club-actions";
+import { votePollAction } from "../community-actions";
+import { loadCommunity } from "../community-data";
 import { completeProfileAction, completeProfileLaterAction } from "../complete-profile-actions";
 import {
   currentCompetition,
@@ -20,6 +23,9 @@ import { loadPlayerHome } from "../home-data";
 import { loadScale } from "../scale";
 import { getCurrentUser } from "../session";
 import { publicEventReader } from "../public-data";
+
+/** The moments of my leagues the community block of the home shows (#673). */
+const HOME_MOMENTS = 3;
 
 /** The points « Comment ça marche » reads from the scale. */
 function stepPoints(scale: Record<string, number>) {
@@ -75,10 +81,11 @@ export default async function Home() {
   const today = currentDay();
   const now = new Date();
   const user = await getCurrentUser();
-  const [{ coming }, player, scale] = await Promise.all([
+  const [{ coming }, player, scale, community] = await Promise.all([
     loadCompetitions(),
     user ? loadPlayerHome(user.userId, now) : Promise.resolve(null),
     loadScale(),
+    user ? loadCommunity(HOME_MOMENTS) : Promise.resolve(null),
   ]);
 
   if (!user || !player) {
@@ -101,6 +108,9 @@ export default async function Home() {
           now={now}
           {...stepPoints(scale)}
           {...home}
+          community={
+            <CommunityBlock community={community} now={now} vote={votePollAction} compact />
+          }
           funFact={<FunFactCard facts={funFacts} />}
           completeProfile={
             completeProfile ? (
