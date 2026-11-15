@@ -40,7 +40,8 @@ const SPOT_BUTTON =
  * track or the field. Tap a spot: a sheet lists only the athletes of the team who can go there
  * (entered, of its family; #937), or says none can; pick one and the stadium changes at
  * once (an athlete already placed elsewhere swaps with whoever sat there when they fit). The
- * athletes not lined up wait on the bench below. « Valider mon alignement » turns on once every
+ * athletes not lined up wait on the bench below. Right under the stadium, never over it (#929),
+ * the bar and « Valider mon alignement », which turns on once every
  * place the team can fill is filled (#839: the bar says how many stay empty and why; with no
  * athlete entered, it says so and offers nothing to validate; with no athlete at all, the bench
  * says so). Validated: a banner, still editable until the lock. Locked:
@@ -183,6 +184,57 @@ export function LineupBoard({
         <StadiumMap label={text.stadium} places={places} spots={spots} />
       </section>
 
+      {editable && athletes.length > 0 && (
+        <div className="flex flex-col gap-2 rounded-2xl bg-foreground p-3 text-background shadow-lg">
+          {nobodyEntered ? (
+            <p className="text-sm font-semibold" aria-live="polite">
+              {text.nobodyEntered}
+            </p>
+          ) : (
+            <div className="flex flex-col gap-1" aria-live="polite">
+              <p className="text-sm font-semibold">
+                {progress.toFill.length > 0
+                  ? text.toFill(
+                      progress.toFill.map(({ place, count }) => ({
+                        label: text.place[place],
+                        count,
+                      })),
+                    )
+                  : progress.unfillable > 0
+                    ? text.fullOfEntered
+                    : text.full}
+              </p>
+              {progress.unfillable > 0 && (
+                <p className="text-sm">{text.unfillable(progress.unfillable)}</p>
+              )}
+            </div>
+          )}
+          {error && (
+            <p role="alert" className="text-sm font-semibold text-secondary">
+              {error}
+            </p>
+          )}
+          {!nobodyEntered && (
+            <button
+              type="button"
+              disabled={!progress.ready || saving}
+              onClick={async () => {
+                setSaving(true);
+                const ok = await onValidate(lineup);
+                setSaving(false);
+                if (ok) {
+                  setSaved(true);
+                  setChanged(false);
+                }
+              }}
+              className={cn(buttonVariants(), "w-full")}
+            >
+              {saving ? text.validating : text.validate}
+            </button>
+          )}
+        </div>
+      )}
+
       <BottomSheet
         open={open !== null}
         onClose={() => setOpen(null)}
@@ -262,57 +314,6 @@ export function LineupBoard({
           </ul>
         )}
       </section>
-
-      {editable && athletes.length > 0 && (
-        <div className="sticky bottom-20 flex flex-col gap-2 rounded-2xl bg-foreground p-3 text-background shadow-lg md:bottom-3">
-          {nobodyEntered ? (
-            <p className="text-sm font-semibold" aria-live="polite">
-              {text.nobodyEntered}
-            </p>
-          ) : (
-            <div className="flex flex-col gap-1" aria-live="polite">
-              <p className="text-sm font-semibold">
-                {progress.toFill.length > 0
-                  ? text.toFill(
-                      progress.toFill.map(({ place, count }) => ({
-                        label: text.place[place],
-                        count,
-                      })),
-                    )
-                  : progress.unfillable > 0
-                    ? text.fullOfEntered
-                    : text.full}
-              </p>
-              {progress.unfillable > 0 && (
-                <p className="text-sm">{text.unfillable(progress.unfillable)}</p>
-              )}
-            </div>
-          )}
-          {error && (
-            <p role="alert" className="text-sm font-semibold text-secondary">
-              {error}
-            </p>
-          )}
-          {!nobodyEntered && (
-            <button
-              type="button"
-              disabled={!progress.ready || saving}
-              onClick={async () => {
-                setSaving(true);
-                const ok = await onValidate(lineup);
-                setSaving(false);
-                if (ok) {
-                  setSaved(true);
-                  setChanged(false);
-                }
-              }}
-              className={cn(buttonVariants(), "w-full")}
-            >
-              {saving ? text.validating : text.validate}
-            </button>
-          )}
-        </div>
-      )}
     </div>
   );
 }

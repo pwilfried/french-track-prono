@@ -55,6 +55,17 @@ export const EmptyStadium: Story = {
     await expect(canvas.getByRole("button", { name: text.validate })).toBeDisabled();
     await expect(canvas.getByText("À remplir : Sprint, Demi-fond, Libre")).toBeVisible();
     await expect(canvas.getByText(text.unfillable(1))).toBeVisible();
+    // The bar sits right under the stadium, never over it (#929): not stuck to the screen's bottom.
+    const validate = canvas.getByRole("button", { name: text.validate });
+    await expect(getComputedStyle(validate.parentElement!).position).not.toBe("sticky");
+    const stadium = canvas.getByRole("list", { name: text.stadium });
+    const bench = canvas.getByRole("heading", { name: text.bench });
+    await expect(
+      stadium.compareDocumentPosition(validate) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    await expect(
+      validate.compareDocumentPosition(bench) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   },
 };
 
