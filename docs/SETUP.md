@@ -447,7 +447,8 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   `docker exec -i supabase_db_french-track-prono psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/preprod/demo.sql`.
 - **Tests e2e après chaque déploiement** (#695) : le job « End-to-end tests against
   pre-production » lance toute la suite `e2e/` contre l'adresse de préprod (`E2E_BASE_URL`,
-  sans serveur local). Le SQL des tests passe par l'API de gestion Supabase, la connexion des
+  sans serveur local). Le SQL des tests passe par l'API de gestion Supabase (renvoyé jusqu'à 4 fois sur une erreur de
+  passerelle 502, 503 ou 504, #871), la connexion des
   comptes de test par l'API admin (création déjà confirmée et `generateLink`, clé `service_role`
   de la préprod, #793) : aucun e-mail envoyé, sauf pour le seul test qui passe par « Recevoir mon
   code », dont le code vient aussi de `generateLink`. Un passage complet n'envoie donc plus qu'un
