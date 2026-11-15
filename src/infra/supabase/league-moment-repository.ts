@@ -5,7 +5,7 @@ import type { LeagueMomentRepository, MomentLeague } from "@/application/league-
 import { BADGE_LEVELS, BADGES, type Badge, type BadgeLevel } from "@/domain/badges";
 import { bibOf } from "@/domain/bib";
 import { inScreenOrder, type LeagueFamily } from "@/domain/league-families";
-import { MOMENT_KINDS, type FeedMoment, type MomentKind } from "@/domain/league-moments";
+import { isMomentKind, type FeedMoment } from "@/domain/league-moments";
 
 type LeagueRow = {
   id: string;
@@ -39,7 +39,6 @@ export type FeedRow = {
 const iso = (value: string) => new Date(value).toISOString();
 const isGender = (gender: string | null | undefined): gender is "F" | "M" | "X" =>
   gender === "F" || gender === "M" || gender === "X";
-const isKind = (kind: string): kind is MomentKind => (MOMENT_KINDS as readonly string[]).includes(kind);
 
 function leagueOf(row: LeagueRow): MomentLeague {
   const competitions = row.competitions ?? [];
@@ -70,7 +69,7 @@ const isLevel = (level: unknown): level is BadgeLevel => BADGE_LEVELS.includes(l
 
 /** A moment of a feed; a kind, a badge or a level the app no longer knows is left out. */
 export function momentOf(row: FeedRow): FeedMoment | null {
-  if (!isKind(row.kind)) return null;
+  if (!isMomentKind(row.kind)) return null;
   const { length, price, athlete, badge, level, scores } = row.data ?? {};
   return {
     key: row.key,

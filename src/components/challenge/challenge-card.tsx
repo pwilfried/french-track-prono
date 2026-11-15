@@ -12,7 +12,7 @@ const text = messages.challenge;
 const PLACES = ["first", "second", "third"] as const;
 
 /** On the night blue of FrenchTrack, the same in both themes (AA). */
-export const challengeCard =
+const challengeCard =
   "flex flex-col gap-3 rounded-card border border-white/15 bg-nuit p-4 text-white";
 
 type Athlete = { name: string; countryCode: string };

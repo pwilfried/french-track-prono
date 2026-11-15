@@ -1,6 +1,6 @@
 import type { Badge, BadgeLevel } from "./badges";
 import type { Bib } from "./bib";
-import type { FeedMoment } from "./league-moments";
+import { unpublished, type FeedMoment } from "./league-moments";
 
 /**
  * The moments that do not come from score lines (#875): an athlete won at the reveal of a
@@ -46,10 +46,7 @@ export type BadgeMoment = {
 };
 
 /** Keeps the first moment of each key. */
-function oncePerKey<T extends { key: string }>(moments: T[]): T[] {
-  const seen = new Set<string>();
-  return moments.filter((m) => (seen.has(m.key) ? false : (seen.add(m.key), true)));
-}
+const oncePerKey = <T extends { key: string }>(moments: T[]): T[] => unpublished([], moments);
 
 const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
 
