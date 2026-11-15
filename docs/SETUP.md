@@ -518,7 +518,7 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   dont le mercato n'est pas encore fermé, ce compte compte comme un participant (nombre pair pour
   lancer la saison, équipe complétée à la fermeture), à garder en tête quand on teste une ligue
   Manager à la main.
-- **Pas de captcha ni de notifications push** en préprod (pas de clé Turnstile ni VAPID).
+- **Pas de captcha** en préprod (pas de clé Turnstile) ; **notifications push** seulement si les clés VAPID y sont posées (#977, « Tester une notification »).
 - **Tests e2e contre la préprod** (#830) : la préprod n'épingle pas `COMPETITION_SLUG` et garde le
   jeu de démo et les restes des passages précédents. Un test vise donc sa compétition par son slug
   (ou la compétition par défaut, lue en SQL par `defaultCompetitionSlug` dans `e2e/competitions.ts`),
@@ -655,6 +655,14 @@ veut dire que le secret de la fonction et celui de Vault diffèrent : reposer un
 
 La clé privée ne va jamais dans Vercel ni dans le dépôt ; aucun secret dans une migration. Sur iPhone, les notifications ne
 marchent qu'une fois l'appli ajoutée à l'écran d'accueil (iOS 16.4 ou plus).
+
+**Tester une notification** (#977) : Actions > « Push notifications » > Run workflow, `test` coché,
+`target` = production ou preprod. Le workflow envoie « 🔔 Notification de test » à chaque appareil
+abonné du compte dont l'e-mail est dans le secret `PUSH_TEST_EMAIL` de cet environnement (en
+préprod, `PREPROD_OWNER_EMAIL` suffit). Aucun appareil abonné : avertissement « Aucun appareil
+abonné pour ce compte ». En préprod, il faut d'abord les clés VAPID : `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
+dans le projet Vercel de préprod, `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY` dans l'environnement
+GitHub `preprod` (une paire à part ou celle de la prod), puis un déploiement de la préprod.
 ## Sentry (erreurs en prod)
 
 Optionnel : voir `docs/sentry.md` (compte UE, `NEXT_PUBLIC_SENTRY_DSN` dans Vercel, jeton pour
