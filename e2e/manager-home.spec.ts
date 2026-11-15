@@ -8,7 +8,7 @@ test("the Manager tab lists my leagues; a league tells my season and the action 
 }) => {
   const tag = `${Date.now() % 1000000}`;
   const player = newPlayer("mhome");
-  await page.goto("/manager");
+  await page.goto("/connexion?next=/manager");
   await signUp(page, player);
   await page.waitForURL(/\/manager$/);
   const playerId = sql(`select id from auth.users where email = '${player.email}'`);

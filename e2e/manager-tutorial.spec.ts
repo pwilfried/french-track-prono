@@ -5,7 +5,7 @@ import { newPlayer, signUp } from "./players";
 test("the Manager presentation has three screens, opens once, then on demand (#616, #802)", async ({
   page,
 }) => {
-  await page.goto("/manager");
+  await page.goto("/connexion?next=/manager");
   await signUp(page, newPlayer("mgr-tutorial"));
   await page.waitForURL(/\/manager$/);
 

@@ -13,11 +13,12 @@ import { LeagueHero } from "@/components/leagues/league-hero";
 import { ManagerStart } from "@/components/manager/manager-home";
 import { ManagerLeagueCard } from "@/components/manager/manager-league-card";
 import { ManagerTutorialGate } from "@/components/manager/manager-tutorial";
+import { ManagerDemo, VisitorTeaser } from "@/components/shell/visitor-teaser";
 import { buttonVariants } from "@/components/ui/button";
 import { createSupabaseManagerLineups, createSupabaseManagerSeasonRepository } from "@/infra";
 
 import { messages } from "../messages.fr";
-import { getSessionClient } from "../session";
+import { getCurrentUser, getSessionClient } from "../session";
 import { managerPorts } from "./data";
 import { JoinPublicManagerLeagueForm } from "./join-forms";
 
@@ -31,13 +32,20 @@ const TUTORIAL_HREF = "/manager?tutoriel=1";
  * card each with its phase, the player's place, the next deadline and what waits for them; a card
  * enters the league (#774). Until the player has one, the mode in one line, the ways in and the
  * steps. The presentation in three screens opens over it at the first visit, then on demand
- * (#616, #802).
+ * (#616, #802). A visitor sees what the Manager is, an example and « Se connecter » (#934).
  */
 export default async function ManagerPage({
   searchParams,
 }: {
   searchParams: Promise<{ tutoriel?: string | string[] }>;
 }) {
+  if (!(await getCurrentUser())) {
+    return (
+      <VisitorTeaser title={text.title} intro={messages.visitorTeaser.manager.text} back="/manager">
+        <ManagerDemo />
+      </VisitorTeaser>
+    );
+  }
   const ports = await managerPorts("/manager");
   const { tutoriel } = await searchParams;
   let leagues: ManagerLeague[] | "error";

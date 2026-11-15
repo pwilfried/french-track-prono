@@ -9,7 +9,7 @@ test("a double tap on « Créer la ligue » creates one league only", async ({ p
   const competition = comingCompetition(`e2e-double-${Date.now() % 1000000}`);
   const name = `Double Tap ${Date.now() % 100000}`;
 
-  await page.goto("/ligues");
+  await page.goto("/connexion?next=/ligues");
   await signUp(page, player);
   await page.waitForURL(/\/ligues$/);
   await page.goto(`/ligues/creer?competition=${competition}`);

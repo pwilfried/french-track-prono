@@ -90,7 +90,7 @@ test("a league needs a competition; on one under way, only the events locked aft
   const player = newPlayer("active");
 
   // Without a competition, the league cannot be created.
-  await page.goto("/ligues");
+  await page.goto("/connexion?next=/ligues");
   await signUp(page, player);
   await page.waitForURL(/\/ligues$/);
   await page.getByRole("link", { name: "Créer une ligue" }).click();

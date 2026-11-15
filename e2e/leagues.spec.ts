@@ -12,7 +12,7 @@ test("two friends in the same league see the same ranking", async ({ browser }) 
   const bobPage = await (await browser.newContext()).newPage();
 
   // Anna creates a league and reads its invite code.
-  await annaPage.goto("/ligues");
+  await annaPage.goto("/connexion?next=/ligues");
   await signUp(annaPage, anna);
   await annaPage.waitForURL(/\/ligues$/);
   // A league made from a coming competition counts it from the start.

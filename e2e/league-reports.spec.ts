@@ -24,7 +24,7 @@ test("a player reports a public league and the admin renames it", async ({ brows
   await expect(creatorPage.getByText("Ta ligue est prête")).toBeVisible();
 
   // Another player reports it from the list of public leagues.
-  await reporterPage.goto("/ligues");
+  await reporterPage.goto("/connexion?next=/ligues");
   await signUp(reporterPage, reporter);
   await reporterPage.waitForURL(/\/ligues$/);
   await reporterPage.getByRole("tab", { name: "Découvrir" }).click();

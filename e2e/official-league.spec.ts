@@ -29,7 +29,7 @@ test("a player joins the Ligue FrenchTrack from my leagues and finds it among th
 
 async function joinTheOfficialLeague(page: Page): Promise<void> {
   const player = newPlayer("official");
-  await page.goto("/ligues");
+  await page.goto("/connexion?next=/ligues");
   await signUp(page, player);
   await page.waitForURL(/\/ligues$/);
   // The official league waits in « Découvrir » (#662).

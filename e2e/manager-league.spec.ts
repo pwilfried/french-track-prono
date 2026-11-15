@@ -10,7 +10,7 @@ test("a player creates a private French Track Manager league that keeps its rule
   seasonReady();
   const budget = sql("select rules ->> 'budget' from manager_rules");
   const creator = newPlayer("manager-league");
-  await page.goto("/ligues");
+  await page.goto("/connexion?next=/ligues");
   await signUp(page, creator);
   await page.waitForURL(/\/ligues$/);
 
