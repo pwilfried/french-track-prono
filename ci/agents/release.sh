@@ -3,8 +3,9 @@
 # The version is the open milestone right after the latest tag: `vX.Y …` is tagged vX.Y.0, a patch
 # milestone `vX.Y.Z …` is tagged vX.Y.Z (owner's decision, 12 Nov 2026). It is tagged when:
 #   - the milestone has closed issues and no open one;
-#   - every push run on main's last commit (CI, pre-production deploy, …) is completed and green;
-#   - the full e2e suite has passed against pre-production on that commit (#743).
+#   - the full e2e suite has passed against pre-production on a commit that holds the whole version
+#     (a pass started after its last issue closed, #743): that commit is tagged, even if main has
+#     moved on since (#967). To start that pass, main's last commit must be green (CI, deploy).
 # Every merge into main is deployed to pre-production with a smoke test only (preprod.yml); the
 # full e2e suite runs once per version, started here when the rest is green (preprod.yml with
 # e2e=true), and every morning (preprod-daily.yml): running it at every merge wore the free
@@ -53,54 +54,65 @@ if [ "$open" != 0 ] || [ "$closed" = 0 ]; then
   exit 0
 fi
 
-sha=$(as_bot gh api "repos/$repo/commits/main" --jq .sha)
-runs=$(as_bot gh api "repos/$repo/actions/runs?head_sha=$sha&event=push&per_page=100" \
-  --jq '.workflow_runs[] | "\(.name)|\(.status)|\(.conclusion)"')
-if [ -z "$runs" ] || ! grep -q '^CI|' <<< "$runs"; then
-  echo "$version is finished, but main's CI has not run yet on ${sha:0:7}."
-  exit 0
-fi
-if grep -q '^Pre-production|completed|' <<< "$runs" &&
-  ! grep -q '^Pre-production|completed|\(success\|skipped\|neutral\)$' <<< "$runs"; then
-  echo "::warning::$version is finished, but the pre-production deploy of ${sha:0:7} failed: no tag."
-  echo "$runs"
-  exit 0
-fi
-if grep -qv '|completed|\(success\|skipped\|neutral\)$' <<< "$runs"; then
-  if grep -q '|completed|' <<< "$runs" && ! grep -qv '|completed|' <<< "$runs"; then
-    echo "::warning::$version is finished, but main is red on ${sha:0:7}: no tag."
-  else
-    echo "$version is finished, main's runs are still going on ${sha:0:7}."
+head=$(as_bot gh api "repos/$repo/commits/main" --jq .sha)
+sha=$head
+passed=false
+
+# The full e2e suite against pre-production, once per version (#743). A pass counts when it was
+# started after the milestone's last issue closed: its commit then holds the whole version. The tag
+# goes on THAT commit, even when main has moved on since (#967): agents keep merging the next
+# version, and waiting for a green pass on main's newest commit could last forever.
+last_close=$(as_bot gh api --paginate "repos/$repo/issues?milestone=$number&state=closed&per_page=100" \
+  --jq '.[].closed_at' | sort | tail -1)
+e2e=$(as_bot gh api "repos/$repo/actions/workflows/preprod.yml/runs?event=workflow_dispatch&branch=main&per_page=20" \
+  --jq '.workflow_runs[] | select(.display_title | startswith("Pre-production e2e"))
+    | "\(.created_at)|\(.status)|\(.conclusion)|\(.head_sha)"' |
+  awk -F'|' -v after="$last_close" '$1 > after' | head -1)
+IFS='|' read -r _ e2e_status e2e_conclusion e2e_sha <<< "$e2e"
+if [ -n "$e2e" ]; then
+  if [ "$e2e_status" != completed ]; then
+    echo "$version is finished, the full e2e suite against pre-production is running on ${e2e_sha:0:7}."
+    exit 0
   fi
-  echo "$runs"
-  exit 0
+  if [ "$e2e_conclusion" = success ]; then
+    sha=$e2e_sha
+    passed=true
+  elif [ "$e2e_sha" = "$head" ]; then
+    # No automatic retry (AGENTS.md): the fix merged into main makes a new commit, a new pass.
+    echo "::warning::$version is finished, but the full e2e suite against pre-production failed on ${head:0:7}: no tag."
+    exit 0
+  fi
 fi
 
-# The full e2e suite against pre-production, once per version (#743): started on main's commit
-# when everything else is green, never again after a failure (no automatic retry, AGENTS.md):
-# the fix merged into main makes a new commit, hence a new pass.
-if grep -q '^Pre-production|' <<< "$runs"; then
-  e2e=$(as_bot gh api \
-    "repos/$repo/actions/workflows/preprod.yml/runs?head_sha=$sha&event=workflow_dispatch&per_page=20" \
-    --jq '[.workflow_runs[] | select(.display_title | startswith("Pre-production e2e"))][0]
-      | select(.) | "\(.status)|\(.conclusion)"')
-  case "$e2e" in
-    "")
-      echo "$version is finished: starting the full e2e suite against pre-production on ${sha:0:7}."
-      as_owner gh api -X POST "repos/$repo/actions/workflows/preprod.yml/dispatches" \
-        -f ref=main -f "inputs[e2e]=true" >/dev/null
-      exit 0
-      ;;
-    completed\|success) ;;
-    completed\|*)
-      echo "::warning::$version is finished, but the full e2e suite against pre-production failed on ${sha:0:7}: no tag."
-      exit 0
-      ;;
-    *)
-      echo "$version is finished, the full e2e suite against pre-production is running on ${sha:0:7}."
-      exit 0
-      ;;
-  esac
+if [ "$passed" = false ]; then
+  runs=$(as_bot gh api "repos/$repo/actions/runs?head_sha=$head&event=push&per_page=100" \
+    --jq '.workflow_runs[] | "\(.name)|\(.status)|\(.conclusion)"')
+  if [ -z "$runs" ] || ! grep -q '^CI|' <<< "$runs"; then
+    echo "$version is finished, but main's CI has not run yet on ${head:0:7}."
+    exit 0
+  fi
+  if grep -q '^Pre-production|completed|' <<< "$runs" &&
+    ! grep -q '^Pre-production|completed|\(success\|skipped\|neutral\)$' <<< "$runs"; then
+    echo "::warning::$version is finished, but the pre-production deploy of ${head:0:7} failed: no tag."
+    echo "$runs"
+    exit 0
+  fi
+  if grep -qv '|completed|\(success\|skipped\|neutral\)$' <<< "$runs"; then
+    if grep -q '|completed|' <<< "$runs" && ! grep -qv '|completed|' <<< "$runs"; then
+      echo "::warning::$version is finished, but main is red on ${head:0:7}: no tag."
+    else
+      echo "$version is finished, main's runs are still going on ${head:0:7}."
+    fi
+    echo "$runs"
+    exit 0
+  fi
+  # main is green and no pass holds the whole version yet: start one on main's commit.
+  if grep -q '^Pre-production|' <<< "$runs"; then
+    echo "$version is finished: starting the full e2e suite against pre-production on ${head:0:7}."
+    as_owner gh api -X POST "repos/$repo/actions/workflows/preprod.yml/dispatches" \
+      -f ref=main -f "inputs[e2e]=true" >/dev/null
+    exit 0
+  fi
 fi
 
 echo "Tagging $tag on ${sha:0:7}"

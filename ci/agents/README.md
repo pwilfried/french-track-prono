@@ -28,7 +28,8 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
 6. Quand le milestone qui suit le dernier tag n'a plus d'issue ouverte et que tous les
    runs du dernier commit de `main` sont verts (CI et préprod), `release.sh` lance la suite e2e
    complète contre la préprod sur ce commit (`preprod.yml` avec `e2e=true`, run « Pre-production
-   e2e », une seule fois, #743) ; quand elle est verte, il pose le tag annoté :
+   e2e », une seule fois, #743) ; quand elle est verte, il pose le tag annoté sur le commit de ce
+   passage, même si `main` a avancé depuis (#967) :
    `vX.Y.0` pour un milestone `vX.Y …`, `vX.Y.Z` pour un milestone correctif `vX.Y.Z …`. Il le pose
    avec `AGENTS_PAT`, ce qui lance la mise en prod (`migrations.yml`). Aucun feu vert humain
    (décision du propriétaire du 13 nov. 2026). Une release GitHub liste les PR (sa notification
