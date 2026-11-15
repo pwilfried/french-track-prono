@@ -70,7 +70,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 
 | Écran | Contenu clé |
 |---|---|
-| Accueil (joueur connecté, #526) | Salutation ; carte « Ta prochaine action » (finale à pronostiquer la plus proche du verrouillage, sinon prochaine compétition) ; dessous, « Complète ton profil » tant que le profil n'a ni club ni discipline (#540 : recherche de club, six familles en boutons à bascule, « Préciser les épreuves », × « Plus tard » pour 30 jours ; bandeau vert « Ton premier podium est posé ! » au-dessus après le premier prono) ; « Comment ça marche » avant le premier prono (refermable) ; ma ligue (place, écart, trois lignes) ou l'invitation à en créer une ; dernier résultat noté ; French Track Manager ; bloc FrenchTrack (podcast, réseaux). Un bloc vide ne s'affiche pas |
+| Accueil (joueur connecté, #526) | Salutation ; carte « Ta prochaine action » (finale à pronostiquer la plus proche du verrouillage, sinon prochaine compétition) ; dessous, « Complète ton profil » tant que le profil n'a ni club ni discipline (#540, #801 : une carte compacte, une ligne et « Compléter », qui ouvre par-dessus l'accueil une feuille avec la recherche de club, six familles en boutons à bascule et « Préciser les épreuves » ; fermer la feuille garde la saisie ; × « Plus tard » pour 30 jours ; bandeau vert « Ton premier podium est posé ! » au-dessus après le premier prono) ; « Comment ça marche » avant le premier prono (refermable) ; ma ligue (place, écart, trois lignes) ou l'invitation à en créer une ; dernier résultat noté ; French Track Manager ; bloc FrenchTrack (podcast, réseaux). Un bloc vide ne s'affiche pas |
 | Compétitions (onglet, #546, #659) | Libellé « Compétition » puis bouton-carte (pavé date, nom en `h1`, ville, dates, nombre d'épreuves, « Changer ») qui ouvre la feuille « Choisir une compétition » (recherche, Toutes / Internationales / France, « Dans mes ligues » puis par mois, puis « Terminées ») ; barre des jours (`?jour=`, « AUJ. », pastille pour un jour fini et pour aujourd'hui) ; bandeau d'une ligne (à pronostiquer ce jour, podiums posés, points) ; sélecteur segmenté « À faire » (par défaut s'il reste à faire), « Posés », « Terminées » (si le jour a des épreuves finies), « Toutes » ; sessions Matin / Après-midi / Soir. Sans programme : « Le programme n'est pas encore publié », jours avant le début, « Me prévenir à la publication ». Un visiteur n'a ni le bandeau ni les filtres « À faire » et « Posés » |
 | Épreuve | Liste de départ, **podium à composer** (glisser-déposer ou taps), joker, verrou |
 | Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
@@ -79,7 +79,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Page d'une ligue Manager (#419, #774) | En-tête : « ‹ French Track Manager » (retour à la liste), nom, phase · participants · type ; bloc bleu nuit « Ma saison » (phase, place, points V · N · D, différence, prochaine confrontation avec les dossards, l'action du moment) ; état du mercato ; liens vers ce qu'elle contient (catalogue, Mon équipe, Mon alignement, La journée, Classement, Mes derniers points) ; calendrier, participants, règles |
 | Ligues (#662) | « Créer une ligue » et « J'ai un code », puis deux onglets **Mes ligues · N** / **Découvrir** (`?onglet=decouvrir`). Mes ligues : cartes résumées (**LeagueCard**). Découvrir : tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553) ; puis les ligues publiques (**DiscoverLeagues**) : recherche par nom, puces de famille (Toutes + celles présentes), tri (places restantes par défaut, plus de joueurs, plus récentes), une **PublicLeagueRow** par ligue. Une fois membre, la ligue officielle rejoint Mes ligues avec le badge « Officielle » |
 | Classement général | Top de la communauté, ma progression |
-| Profil | Célébration du lièvre (niveaux gagnés), changement d'animal ; dossard (grand format, avec le pseudo), club ; ma bande (mon animal) ; vitrine des trophées (une étagère par saison) ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager ; « Mes rappels » (`/profil/rappels`, #681) ; palmarès Manager (une ligne par saison finie, en or si champion, #434) |
+| Profil | Célébration du lièvre (niveaux gagnés), changement d'animal ; dossard (grand format, avec le pseudo), club ; avant la première épreuve calculée, un seul encart à la place des stats et de la grille de badges (**ProfileStart**, #799 : « Fais ton premier prono… » ou les pronos en attente, le prochain badge, un bouton vers la prochaine finale ouverte, sinon vers les compétitions) ; ma bande (mon animal) ; vitrine des trophées (une étagère par saison) ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager ; « Mes rappels » (`/profil/rappels`, #681) ; palmarès Manager (une ligne par saison finie, en or si champion, #434) |
 | Back-office (toi) | Tableau de bord (choses à faire, préparation), compétitions (filtres portée, lieu, niveau, statut, #647) et épreuves, une feuille de résultats par épreuve qui calcule tout (collage du tableau World Athletics, #665, #666), listes des clubs, joueurs et ligues |
 
 ## Composants clés
@@ -114,11 +114,13 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **CountdownBadge** : « Verrouillage dans 12 min », neutre, puis orange dès 1 h et rouge dès
   10 min (jetons `--countdown-*` dans `globals.css`, contrastes AA), « 🔒 Verrouillé » ensuite ;
   rien ne clignote.
-- **EventCard** (#546) : l'heure de Paris, le nom avec le genre (« 100 m femmes »), une ligne
-  dessous, un statut à droite. À venir : « Verrouille dans … » (`LockLine`, rouge dès 1 h ; au-delà
-  de 24 h, « Verrouille le <jour> à <heure> »), « + Prono » ou « ✓ Posé » avec « modifiable ».
-  Terminée : fond atténué, mon résultat (« 2 athlètes bien placées », « Podium parfait ! ») et
-  mes points en pastille verte ; sans prono, « Pas joué » et rien à droite, jamais de tiret seul
+- **EventCard** (#546, #800) : l'heure de Paris au-dessus de l'animal de la famille (petit,
+  décoratif ; le lièvre pour un relais ou une famille inconnue, `animalOrHare`, le même en tête de
+  la page de l'épreuve), le nom avec le genre (« 100 m femmes »), une ligne dessous, un statut à
+  droite. À venir sans prono : le temps restant (`LockLine`, rouge dès 1 h ; au-delà de 24 h,
+  « Verrouille le <jour> à <heure> ») et « + Prono » ; avec prono : mon podium en noms courts
+  et « modifiable », « ✓ Posé » à droite. Terminée : fond atténué, le vainqueur, mon résultat
+  (« 2 athlètes bien placées », « Podium parfait ! ») et mes points en pastille verte ; sans prono, « Pas joué » et rien à droite, jamais de tiret seul
   (#707). Le lien est nommé par l'épreuve puis par son statut (#517). Dates d'une compétition :
   mois et année écrits une fois (« 11–13 sept. 2026 », « 30 sept. – 2 oct. 2026 »).
 - **DayProgress** (#659) : une ligne, les épreuves à pronostiquer du jour affiché, les podiums
