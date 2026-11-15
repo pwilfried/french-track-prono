@@ -7,19 +7,20 @@ const season = {
   rank: 3,
   players: 120,
   bestShot: { discipline: "100 m", gender: "F" as const, points: 12, perfect: true },
+  animal: "guepard" as const,
 };
 
 describe("seasonCardOf", () => {
   it("keeps the public figures of the season", () => {
     expect(
       seasonCardOf({
-        profile: { pseudo: "Démo Gazelle", bib: { number: 7, color: "blue" } },
+        profile: { pseudo: "Démo Gazelle" },
         club: { name: "Démo Club", validated: true },
         season,
       }),
     ).toEqual({
       pseudo: "Démo Gazelle",
-      bib: { number: 7, color: "blue" },
+      animal: "guepard",
       club: "Démo Club",
       points: 42,
       rank: 3,
@@ -59,11 +60,22 @@ describe("seasonCardOf", () => {
 
   it("has no best shot before the first computed event", () => {
     const card = seasonCardOf({
-      profile: { pseudo: "Démo", bib: { number: 7, color: "blue" } },
+      profile: { pseudo: "Démo" },
       club: null,
-      season: { points: 0, rank: null, players: 10, bestShot: null },
+      season: { points: 0, rank: null, players: 10, bestShot: null, animal: null },
     });
     expect(card.best).toBeNull();
     expect(card.rank).toBeNull();
+    expect(card.animal).toBeNull();
+  });
+
+  it("never carries the bib number: the card wears the player's animal instead", () => {
+    const card = seasonCardOf({
+      profile: { pseudo: "Démo", bib: { number: 4321, color: "blue" } } as never,
+      club: null,
+      season,
+    });
+    expect(JSON.stringify(card)).not.toContain("4321");
+    expect(card.animal).toBe("guepard");
   });
 });
