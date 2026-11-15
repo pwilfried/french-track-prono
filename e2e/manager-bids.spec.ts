@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { chooseSeason, seasonReady } from "./manager-season";
+import { chooseSeason, createLeague, seasonReady } from "./manager-season";
 import { newPlayer, signUp } from "./players";
 
 test("a participant bids secretly within the budget, changes and withdraws a bid", async ({
@@ -37,7 +37,7 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await ownerPage.waitForURL(/\/manager\/creer$/);
     await ownerPage.getByLabel("Nom de la ligue").fill(league);
     await chooseSeason(ownerPage);
-    await ownerPage.getByRole("button", { name: "Créer la ligue" }).click();
+    await createLeague(ownerPage);
     await expect(ownerPage.getByRole("heading", { level: 1 })).toHaveText(league);
     const code = sql(`select invite_code from manager_leagues where name = '${league}'`);
     await rivalPage.goto("/manager");

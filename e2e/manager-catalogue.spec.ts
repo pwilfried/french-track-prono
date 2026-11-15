@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { chooseSeason, seasonReady } from "./manager-season";
+import { chooseSeason, createLeague, seasonReady } from "./manager-season";
 import { newPlayer, signUp } from "./players";
 
 test("the admin prices an athlete, who then shows in the catalogue of a Manager league", async ({
@@ -49,7 +49,7 @@ test("the admin prices an athlete, who then shows in the catalogue of a Manager 
     await page.goto("/manager/creer");
     await page.getByLabel("Nom de la ligue").fill(`Mercato ${tag}`);
     await chooseSeason(page);
-    await page.getByRole("button", { name: "Créer la ligue" }).click();
+    await createLeague(page);
     await page.getByRole("link", { name: "Catalogue du mercato" }).click();
     // The first athlete shows without scrolling on a phone (#497).
     await page.setViewportSize({ width: 390, height: 844 });

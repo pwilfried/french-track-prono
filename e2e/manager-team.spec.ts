@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { chooseSeason, seasonReady } from "./manager-season";
+import { chooseSeason, createLeague, seasonReady } from "./manager-season";
 import { newPlayer, signUp } from "./players";
 
 test("a participant sees their team fixed for the season after the mercato, and what it misses", async ({
@@ -29,7 +29,7 @@ test("a participant sees their team fixed for the season after the mercato, and 
   await page.waitForURL(/\/manager\/creer$/);
   await page.getByLabel("Nom de la ligue").fill(league);
   await chooseSeason(page);
-  await page.getByRole("button", { name: "Créer la ligue" }).click();
+  await createLeague(page);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(league);
   const id = sql(`select id from manager_leagues where name = '${league}'`);
   sql(`update manager_leagues
