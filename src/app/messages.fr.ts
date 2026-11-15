@@ -173,6 +173,58 @@ export const messages = {
       listen: "Écouter le dernier épisode",
     },
   },
+  /** The « Dans ma communauté » block of the home and its page (#673). */
+  community: {
+    title: "Dans ma communauté",
+    seeAll: "Tout voir",
+    pageTitle: "Ma communauté",
+    pageSubtitle: "Les moments de tes ligues, les annonces FrenchTrack et les sondages.",
+    back: "Retour à l'accueil",
+    empty:
+      "Rien de neuf pour l'instant. Les moments de tes ligues, les annonces FrenchTrack et les sondages arriveront ici.",
+    momentsTitle: "Dans mes ligues",
+    announcementsTitle: "FrenchTrack",
+    pollsTitle: "Sondages",
+    announcement: {
+      label: {
+        episode: "Nouvel épisode",
+        competition_open: "Compétition ouverte",
+        schedule: "Programme publié",
+      },
+      emoji: { episode: "🎙️", competition_open: "🏟️", schedule: "📅" },
+      listen: "Écouter l'épisode",
+      see: "Voir",
+    },
+    poll: {
+      label: "Sondage",
+      choose: "Choisis ta réponse : les résultats s'affichent après ton vote.",
+      voting: "Vote en cours…",
+      voted: "Merci, ton vote est compté.",
+      myVote: "Ton vote",
+      closed: "Sondage clos",
+      /** « Clôture samedi 21 novembre à 20:00 », Paris time. */
+      closesAt: (iso: string) => {
+        const date = new Date(iso);
+        const day = date.toLocaleDateString("fr-FR", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          timeZone: "Europe/Paris",
+        });
+        const time = date.toLocaleTimeString("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: "Europe/Paris",
+        });
+        return `Clôture ${day} à ${time}`;
+      },
+      votes: (n: number) => (n <= 1 ? `${n} vote` : `${n} votes`),
+      percent: (n: number) => `${n} %`,
+      /** Screen readers: « Bravo : 60 %, ton vote ». */
+      result: (option: string, percent: number, mine: boolean) =>
+        `${option} : ${percent} %${mine ? ", ton vote" : ""}`,
+    },
+  },
   visitorHome: {
     eyebrow: "Pronostics d'athlétisme",
     title: "Devine le podium. Bats tes amis.",
@@ -1470,6 +1522,33 @@ export const messages = {
     profile: "Installer l'appli",
   },
   /** Back-office of the season trophies (#822). */
+  /** Announcements and polls of the community block (#673), in the back-office. */
+  adminCommunity: {
+    title: "Annonces et sondages",
+    subtitle:
+      "Ce que tu publies ici s'affiche dans « Dans ma communauté » sur l'accueil de chaque joueur.",
+    announcementTitle: "Publier une annonce",
+    kind: "Type",
+    titleLabel: "Titre (60 caractères au plus)",
+    subtitleLabel: "Sous-titre (120 caractères au plus, facultatif)",
+    linkLabel: "Lien (https://… ou une page du site, obligatoire pour un épisode)",
+    publish: "Publier l'annonce",
+    publishing: "Publication…",
+    published: "Annonce publiée.",
+    pollTitle: "Lancer un sondage",
+    question: "Question (120 caractères au plus)",
+    option: (n: number) => (n <= 2 ? `Réponse ${n}` : `Réponse ${n} (facultative)`),
+    closesAt: "Clôture (heure de Paris)",
+    create: "Lancer le sondage",
+    creating: "Création…",
+    created: "Sondage lancé.",
+    listTitle: "En ligne",
+    none: "Rien de publié pour l'instant.",
+    remove: "Retirer",
+    removing: "Retrait…",
+    removeLabel: (title: string) => `Retirer « ${title} »`,
+    pollSummary: (votes: number) => (votes <= 1 ? `${votes} vote` : `${votes} votes`),
+  },
   adminTrophies: {
     title: "Trophées",
     subtitle:
@@ -1922,6 +2001,7 @@ export const messages = {
       demoPlayers: "Joueurs démo",
       clubs: "Clubs",
       trophies: "Trophées",
+      community: "Annonces et sondages",
       history: "Historique",
     },
     create: "+ Nouvelle compétition",
@@ -2748,6 +2828,14 @@ export const messages = {
     REMINDER_SETTINGS_INVALID: "Choisis un délai et des heures calmes parmi ceux proposés.",
     REMINDER_SETTINGS_UNAVAILABLE:
       "Tes rappels n'ont pas pu être enregistrés. Réessaie dans un instant.",
+    ANNOUNCEMENT_INVALID:
+      "Annonce incomplète : un titre de 60 caractères au plus, un sous-titre de 120 au plus, et un lien d'écoute pour un épisode.",
+    POLL_INVALID:
+      "Sondage incomplet : une question, 2 à 4 réponses différentes de 40 caractères au plus, et une clôture à venir.",
+    POLL_NOT_FOUND: "Ce sondage n'existe plus.",
+    POLL_CLOSED: "Ce sondage est clos : les votes sont fermés.",
+    POLL_ALREADY_VOTED: "Tu as déjà voté à ce sondage.",
+    COMMUNITY_UNAVAILABLE: "Les annonces et les sondages n'ont pas pu être chargés. Réessaie.",
     EMAIL_INVALID: "Cette adresse e-mail n'a pas l'air valide.",
     CODE_INVALID: "Code incorrect ou expiré. Vérifie-le ou demande-en un nouveau.",
     AUTH_UNAVAILABLE: "La connexion ne marche pas pour le moment. Réessaie dans un instant.",

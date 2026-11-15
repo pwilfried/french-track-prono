@@ -566,6 +566,20 @@ celles de ses ligues, aucune écriture hors des fonctions ; aucun texte stocké,
 étiquettes sont dans `messages.fr.ts`. Onglet « Fil » de la page d'une ligue, groupé « Ce soir ·
 <compétition> », « Hier », puis par jour (`feedGroups`, heure de Paris).
 
+Communauté de l'accueil (v0.19, #673, décision `docs/decisions/communaute.md`) : le bloc « Dans
+ma communauté » rassemble les derniers moments de toutes mes ligues (`getCommunity` fusionne les
+fils de chaque ligue, du plus récent au plus ancien, avec le nom de la ligue :
+`communityMoments`, `src/domain/community.ts`), les annonces FrenchTrack et les sondages ; « Tout
+voir » ouvre `/communaute`. Port `CommunityRepository` (Supabase + fake). Annonces et sondages
+viennent de l'admin seul (`/admin/communaute`, fonctions `admin_publish_announcement()`,
+`admin_create_poll()`, `admin_remove_…()`) : une annonce a un type énuméré (nouvel épisode, avec
+lien d'écoute obligatoire ; compétition qui ouvre ; programme publié), un titre (60 caractères) et
+un sous-titre (120) ; un sondage a une question (120), 2 à 4 réponses distinctes (40) et une
+clôture à venir. Les joueurs n'écrivent aucun texte : ils votent une fois par `vote_poll()`
+(`poll_votes`, clé joueur + sondage) ; `community_polls()` ne donne les votes qu'après le vote du
+joueur ou la clôture (l'admin les voit toujours). Les parts s'affichent en pourcentages entiers
+qui font 100 (`pollResults`, plus fort reste).
+
 Notifications push (#203) : le joueur les active par appareil depuis son profil (opt-in
 explicite, désactivation en un geste). Les abonnements (`push_subscriptions`) ne s'écrivent que
 par `save_push_subscription()` et `delete_push_subscription()`. Chaque minute, l'Edge Function

@@ -40,14 +40,16 @@ export type PlayerHomeProps = {
   /** The last event the player scored, with what earned the points. */
   lastResult: { event: EventSummary; points: number; exact: number; onPodium: number } | null;
   mercatoOpen: boolean;
+  /** « Dans ma communauté » (#673), under the league and the last result. */
+  community?: React.ReactNode;
   /** « Complète ton profil » (#540), under the next action; left out when the profile is complete. */
   completeProfile?: React.ReactNode;
 };
 
 /**
  * The signed-in player's home (#526, « Ta prochaine action »): a greeting, the one thing to do now,
- * then the league, the last result, the Manager and FrenchTrack. A block with nothing to show is
- * left out.
+ * then the league, the last result, the community (#673), the Manager and FrenchTrack. A block with
+ * nothing to show is left out.
  */
 export function PlayerHome(props: PlayerHomeProps) {
   const { pseudo, isNew, now, action, competitionSlug, league, lastResult } = props;
@@ -71,6 +73,7 @@ export function PlayerHome(props: PlayerHomeProps) {
       ) : null}
       {league ? <MyLeague userId={props.userId} {...league} /> : <NoLeague />}
       {lastResult ? <LastResult {...lastResult} /> : null}
+      {props.community}
       <Manager mercatoOpen={props.mercatoOpen} />
       <FrenchTrack />
     </>
