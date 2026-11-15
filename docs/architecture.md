@@ -553,6 +553,18 @@ des joueurs du club, 3 joueurs au moins) ; derniers pronos et historique complet
 (`seasonCardOf`, `src/domain/season-card.ts` : pseudo, dossard, chiffres de la saison, club validé)
 et se partage par le partage natif du téléphone, ou se télécharge à défaut.
 
+Fil de ligue (v0.19, #671) : l'app raconte les moments de chaque ligue de pronos, personne n'y
+écrit (pas de texte libre, non-objectif 6). Les moments se déduisent en TypeScript des lignes de
+points comptées par la ligue (`leagueMoments`, `src/domain/league-moments.ts`, décision B) :
+podium parfait, nouveau leader (seul en tête après une épreuve), série de pronos qui rapportent
+(paliers 5, 7, 10). Chaque fait a une clé stable (`perfect_podium:<épreuve>:<joueur>`…) : le
+calcul des points de la feuille de résultats (`recomputeResultSheet`) publie ensuite les moments
+de toutes les ligues de la compétition par `admin_publish_league_moments()`, qui garde une clé une
+seule fois ; relancer le calcul ne publie rien de nouveau. Table `league_moments` : un membre lit
+celles de ses ligues, aucune écriture hors des fonctions ; aucun texte stocké, les phrases et les
+étiquettes sont dans `messages.fr.ts`. Onglet « Fil » de la page d'une ligue, groupé « Ce soir ·
+<compétition> », « Hier », puis par jour (`feedGroups`, heure de Paris).
+
 Notifications push (#203) : le joueur les active par appareil depuis son profil (opt-in
 explicite, désactivation en un geste). Les abonnements (`push_subscriptions`) ne s'écrivent que
 par `save_push_subscription()` et `delete_push_subscription()`. Chaque minute, l'Edge Function
