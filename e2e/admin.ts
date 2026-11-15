@@ -9,5 +9,5 @@ export async function openAdminSection(page: Page, name: string) {
   const menu = adminMenu(page);
   const toggle = menu.locator("summary");
   if (await toggle.isVisible()) await toggle.click();
-  await menu.getByRole("link", { name: new RegExp(`^${name}`) }).click();
+  await menu.getByRole("link", { name, exact: true }).click();
 }
