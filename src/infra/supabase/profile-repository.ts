@@ -12,14 +12,16 @@ type Row = {
   age_confirmed_at: string;
 };
 
-/** The client must carry the player's session: row level security only lets one create their own profile. */
+/**
+ * The client must carry the player's session: row level security only lets one create their own
+ * profile, and read_profile() returns the whole profile only to its owner or to the admin (#912).
+ */
 export function createSupabaseProfileRepository(client: SupabaseClient): ProfileRepository {
   return {
     async find(userId) {
       const { data, error } = await client
-        .from("profiles")
+        .rpc("read_profile", { p_user: userId })
         .select("id, pseudo, bib_number, bib_color, age_confirmed_at")
-        .eq("id", userId)
         .maybeSingle<Row>();
       if (error) throw new UseCaseError("PROFILE_UNAVAILABLE");
       if (!data) return null;
@@ -33,9 +35,8 @@ export function createSupabaseProfileRepository(client: SupabaseClient): Profile
 
     async isAdmin(userId) {
       const { data, error } = await client
-        .from("profiles")
+        .rpc("read_profile", { p_user: userId })
         .select("is_admin")
-        .eq("id", userId)
         .maybeSingle<{ is_admin: boolean }>();
       if (error) throw new UseCaseError("PROFILE_UNAVAILABLE");
       return data?.is_admin ?? false;
