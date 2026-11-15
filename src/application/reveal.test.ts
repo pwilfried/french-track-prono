@@ -17,7 +17,14 @@ const prediction = (userId: string, pseudo: string): RevealedPrediction => ({
 const reveal = (locked: boolean, predictions: RevealedPrediction[]): RevealRepository => ({
   listForEvent: async () => ({ locked, predictions }),
 });
-const leagues = (members: LeagueMember[] | null): LeagueRepository => ({
+const member = (userId: string): LeagueMember => ({
+  userId,
+  pseudo: userId,
+  bib: { number: 7, color: "blue" },
+});
+const leagues = (
+  members: LeagueMember[] | null | ((leagueId: string) => LeagueMember[] | null),
+): LeagueRepository => ({
   create: async () => Promise.reject(new Error("unused")),
   addCompetition: async () => "added",
   addFamily: async () => "added",
@@ -27,7 +34,7 @@ const leagues = (members: LeagueMember[] | null): LeagueRepository => ({
   report: async () => "unknown",
   join: async () => ({ outcome: "unknown_code" }),
   listMine: async () => [],
-  members: async () => members,
+  members: async (leagueId) => (typeof members === "function" ? members(leagueId) : members),
   leave: async () => "left",
   handOver: async () => "done",
 });
@@ -72,5 +79,37 @@ describe("listEventPredictions", () => {
         leagueId: "l1",
       }),
     ).rejects.toEqual(new UseCaseError("LEAGUE_NOT_FOUND"));
+  });
+
+  it("puts the members of my leagues first and folds the other players' podiums", async () => {
+    const result = await listEventPredictions({
+      reveal: reveal(true, all),
+      leagues: leagues((leagueId) =>
+        leagueId === "l1" ? [member("me"), member("z")] : [member("b")],
+      ),
+    }).execute({ eventId: "e1", myLeagueIds: ["l1", "l2"] });
+
+    expect(result.predictions.map((p) => p.userId)).toEqual(["b", "z"]);
+    expect(result.others.map((p) => p.userId)).toEqual(["a"]);
+  });
+
+  it("folds nothing when I am in no league", async () => {
+    const result = await listEventPredictions({
+      reveal: reveal(true, all),
+      leagues: leagues(null),
+    }).execute({ eventId: "e1", myLeagueIds: [] });
+
+    expect(result.predictions).toHaveLength(3);
+    expect(result.others).toEqual([]);
+  });
+
+  it("folds nothing when I filter on one of my leagues", async () => {
+    const result = await listEventPredictions({
+      reveal: reveal(true, all),
+      leagues: leagues([member("b")]),
+    }).execute({ eventId: "e1", leagueId: "l1", myLeagueIds: ["l1", "l2"] });
+
+    expect(result.predictions.map((p) => p.userId)).toEqual(["b"]);
+    expect(result.others).toEqual([]);
   });
 });

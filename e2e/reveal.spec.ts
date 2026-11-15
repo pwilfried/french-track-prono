@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { sql } from "../src/infra/contract/database";
 import { joinLeagueFor, newPlayer, signUp } from "./players";
 
-test("a player cannot see a friend's podium before the lock, sees it after and reacts to it", async ({
+test("a player cannot see a podium before the lock, unfolds it after and reacts to it", async ({
   browser,
 }) => {
   // An open event of its own, nobody's prediction on it yet: Anna's is then 100 % of them (#830).
@@ -42,12 +42,18 @@ test("a player cannot see a friend's podium before the lock, sees it after and r
     bobPage.getByText("Les pronos des autres se dévoilent au verrouillage."),
   ).toBeVisible();
   await expect(bobPage.getByText(anna.pseudo)).toHaveCount(0);
+  // Bob has a league of his own, without Anna: her podium will be folded (#949).
+  joinLeagueFor(bob.email, "ultimate-championship-2026");
 
   // After the lock, he sees it.
   sql(`update events set lock_at = now() - interval '1 second' where slug = '${slug}'`);
   await bobPage.reload();
   await expect(bobPage.getByRole("heading", { name: "Les pronos" })).toBeVisible();
+  // Anna is in none of his leagues: her podium waits behind « Voir tous les pronos (N) ».
+  await expect(bobPage.getByText(anna.pseudo)).toBeHidden();
+  await bobPage.getByText(/^Voir tous les pronos \(\d+\)$/).click();
   await expect(bobPage.getByText(anna.pseudo)).toBeVisible();
+  await expect(bobPage.getByText("Masquer les autres pronos")).toBeVisible();
   await expect(
     bobPage.getByRole("heading", { name: "Ce qu'ont pronostiqué les joueurs" }),
   ).toBeVisible();

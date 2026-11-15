@@ -3,7 +3,11 @@ import Link from "next/link";
 import { getEventConsensus, type EventConsensus } from "@/application/consensus";
 import { UseCaseError } from "@/application/errors";
 import { listMyLeagues, type League } from "@/application/leagues";
-import { listEventPredictions, type EventReveal } from "@/application/reveal";
+import {
+  listEventPredictions,
+  type EventReveal,
+  type RevealedPrediction,
+} from "@/application/reveal";
 import { buttonVariants } from "@/components/ui/button";
 import { ErrorNotice } from "@/components/error-notice";
 import { ReactionBar, ReactionSummary } from "@/components/reveal/reaction-bar";
@@ -29,21 +33,22 @@ async function load(
   try {
     const client = await getSessionClient();
     const leagueRepository = createSupabaseLeagueRepository(client);
-    const [reveal, leagues] = await Promise.all([
+    const leagues = await listMyLeagues({ leagues: leagueRepository }).execute();
+    const leagueIds = leagues.map((league) => league.id);
+    const [reveal, consensus] = await Promise.all([
       listEventPredictions({
         reveal: createSupabaseRevealRepository(client),
         leagues: leagueRepository,
-      }).execute({ eventId: event.id, leagueId }),
-      listMyLeagues({ leagues: leagueRepository }).execute(),
+      }).execute({ eventId: event.id, leagueId, myLeagueIds: leagueIds }),
+      getEventConsensus({
+        consensus: createSupabaseConsensusRepository(client),
+      }).execute({
+        eventId: event.id,
+        leagueId,
+        leagueIds,
+        official: event.results,
+      }),
     ]);
-    const consensus = await getEventConsensus({
-      consensus: createSupabaseConsensusRepository(client),
-    }).execute({
-      eventId: event.id,
-      leagueId,
-      leagueIds: leagues.map((league) => league.id),
-      official: event.results,
-    });
     return { ...reveal, ...consensus, leagues };
   } catch (error) {
     if (error instanceof UseCaseError) return "error";
@@ -53,7 +58,8 @@ async function load(
 
 /**
  * Once the event is locked: what the players predicted (#680), then everyone's podium, with a
- * filter on each of my leagues that applies to both.
+ * filter on each of my leagues that applies to both. Unfiltered, the podiums of the players
+ * outside my leagues are folded (#949).
  */
 export async function RevealSection({
   event,
@@ -79,7 +85,7 @@ export async function RevealSection({
     );
   }
 
-  const { predictions, consensus, counts, leagues } = loaded;
+  const { predictions, others, consensus, counts, leagues } = loaded;
   const names = new Map(event.entries.map((entry) => [entry.athleteId, entry.name]));
   names.set(OTHER_ATHLETE, messages.picker.other);
   const nameOf = (athleteId: string) => names.get(athleteId) ?? "?";
@@ -100,7 +106,7 @@ export async function RevealSection({
           {messages.reveal.title}
         </h2>
         <span className="text-sm text-muted-foreground">
-          {messages.reveal.count(predictions.length)}
+          {messages.reveal.count(predictions.length + others.length)}
         </span>
       </div>
       {leagues.length > 0 && (
@@ -131,7 +137,7 @@ export async function RevealSection({
       {consensus.total > 0 && (
         <ConsensusBlock consensus={consensus} nameOf={nameOf} official={event.results} />
       )}
-      {predictions.length === 0 ? (
+      {predictions.length + others.length === 0 ? (
         <div className="mx-4 flex flex-col items-center gap-2 rounded-card bg-muted p-6 text-center">
           <span aria-hidden="true" className="text-4xl">
             🦗
@@ -145,39 +151,73 @@ export async function RevealSection({
           </Link>
         </div>
       ) : (
-        <ul className="mx-4 flex flex-col gap-2.5">
-          {predictions.map((prediction) => {
-            const mine = prediction.userId === user.userId;
-            const counts = reactionCounts(prediction.reactions.map((r) => r.reaction));
-            const myReaction: Reaction | null =
-              prediction.reactions.find((r) => r.userId === user.userId)?.reaction ?? null;
-            return (
-              <RevealedPredictionCard
-                key={prediction.predictionId}
-                pseudo={prediction.pseudo}
-                bib={prediction.bib}
-                podium={prediction.podium}
-                useJoker={prediction.useJoker}
-                mine={mine}
-                flair={prediction.flair}
-                nameOf={nameOf}
+        <>
+          {predictions.length > 0 && (
+            <PredictionList predictions={predictions} slug={slug} user={user} nameOf={nameOf} />
+          )}
+          {others.length > 0 && (
+            <details className="group">
+              <summary
+                className={`${buttonVariants({ variant: "outline" })} mx-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden`}
               >
-                {mine ? (
-                  <ReactionSummary counts={counts} />
-                ) : (
-                  <ReactionBar
-                    slug={slug}
-                    predictionId={prediction.predictionId}
-                    counts={Object.fromEntries(counts.map((c) => [c.reaction, c.count]))}
-                    mine={myReaction}
-                  />
-                )}
-              </RevealedPredictionCard>
-            );
-          })}
-        </ul>
+                <span className="group-open:hidden">{messages.reveal.seeAll(others.length)}</span>
+                <span className="hidden group-open:inline">{messages.reveal.hideOthers}</span>
+              </summary>
+              <div className="mt-2.5">
+                <PredictionList predictions={others} slug={slug} user={user} nameOf={nameOf} />
+              </div>
+            </details>
+          )}
+        </>
       )}
     </div>
+  );
+}
+
+/** The revealed podiums, each with its reactions (mine: only the counts). */
+function PredictionList({
+  predictions,
+  slug,
+  user,
+  nameOf,
+}: {
+  predictions: RevealedPrediction[];
+  slug: string;
+  user: CurrentUser;
+  nameOf: (athleteId: string) => string;
+}) {
+  return (
+    <ul className="mx-4 flex flex-col gap-2.5">
+      {predictions.map((prediction) => {
+        const mine = prediction.userId === user.userId;
+        const counts = reactionCounts(prediction.reactions.map((r) => r.reaction));
+        const myReaction: Reaction | null =
+          prediction.reactions.find((r) => r.userId === user.userId)?.reaction ?? null;
+        return (
+          <RevealedPredictionCard
+            key={prediction.predictionId}
+            pseudo={prediction.pseudo}
+            bib={prediction.bib}
+            podium={prediction.podium}
+            useJoker={prediction.useJoker}
+            mine={mine}
+            flair={prediction.flair}
+            nameOf={nameOf}
+          >
+            {mine ? (
+              <ReactionSummary counts={counts} />
+            ) : (
+              <ReactionBar
+                slug={slug}
+                predictionId={prediction.predictionId}
+                counts={Object.fromEntries(counts.map((c) => [c.reaction, c.count]))}
+                mine={myReaction}
+              />
+            )}
+          </RevealedPredictionCard>
+        );
+      })}
+    </ul>
   );
 }
 
