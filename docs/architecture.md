@@ -182,6 +182,10 @@ Conséquences :
 - Un visiteur (`anon`, #573) lit le classement général : les lignes de `score_events` et, des
   profils, seulement `id`, `pseudo`, `bib_number`, `bib_color` et `club_id` (droits colonne par
   colonne), jamais d'un joueur bloqué ; il n'écrit rien.
+- Un joueur connecté (#912) lit des autres profils seulement `id`, `pseudo`, `bib_number`,
+  `bib_color`, `club_id` et `created_at` (droits colonne par colonne). Son propre profil entier
+  (`is_admin`, `age_confirmed_at`…) passe par `read_profile(p_user)`, qui rend aussi n'importe
+  quel profil à l'admin ; les fonctions `admin_*` (security definer) lisent toutes les colonnes.
 - Alternative écartée : calcul en SQL (`score_event()`), plus atomique mais plus dur à tester
   et à lire pour des agents.
 
