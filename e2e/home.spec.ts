@@ -82,11 +82,16 @@ test("the app can be installed: the manifest and its icons are served", async ({
   expect((await request.get("/favicon.ico")).ok()).toBe(true);
 });
 
-/** The open final of a competition closest to its lock (run `npm run db:open-events` first). */
-function closestFinal(competition: string) {
+/**
+ * The open final of a competition closest to its lock (run `npm run db:open-events` first). With
+ * `margin`, one that stays open long enough to predict it: on pre-production the finals lock on
+ * the real clock, and one may lock during the test (#953).
+ */
+function closestFinal(competition: string, margin = "0 seconds") {
   const slug = sql(
     `select e.slug from events e join competitions c on c.id = e.competition_id
-     where c.slug = '${competition}' and e.round = 'final' and e.lock_at > now()
+     where c.slug = '${competition}' and e.round = 'final'
+       and e.lock_at > now() + interval '${margin}'
      order by e.lock_at, e.starts_at, e.slug limit 1`,
   );
   expect(slug, "no open final: run npm run db:open-events").not.toBe("");
@@ -130,10 +135,14 @@ test("a new player without a league is asked for a first podium, then for a leag
     "href",
     "/manager",
   );
+  // One « Écouter » link: the latest episode published, else the podcast (pre-production may
+  // have a real episode, #953).
   const frenchTrack = page.getByRole("region", { name: "Le podcast FrenchTrack" });
   await expect(
-    frenchTrack.getByRole("link", { name: "Écouter le dernier épisode (nouvel onglet)" }),
-  ).toHaveAttribute("href", "https://podcastics.com/podcast/french-track");
+    frenchTrack.getByRole("link", {
+      name: /^Écouter (le dernier épisode|l'épisode) \(nouvel onglet\)$/,
+    }),
+  ).toHaveCount(1);
   for (const name of ["Instagram", "YouTube", "TikTok"]) {
     await expect(frenchTrack.getByRole("link", { name: `${name} (nouvel onglet)` })).toBeVisible();
   }
@@ -165,7 +174,7 @@ test("a new player without a league is asked for a first podium, then for a leag
 test("a player in a league sees their place in it and their next final after a prediction", async ({
   page,
 }) => {
-  const slug = closestFinal("ultimate-championship-2026");
+  const slug = closestFinal("ultimate-championship-2026", "3 minutes");
   const player = newPlayer("home-league");
   await page.goto("/profil");
   await signUp(page, player);
