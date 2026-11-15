@@ -24,3 +24,13 @@ export async function chooseSeason(page: Page, count = 6): Promise<void> {
   }
   await search.fill("");
 }
+
+/**
+ * Submits the creation form and waits for the redirect to the new league. On pre-production the
+ * creating action can take more than the 5 s of an assertion (cold function, #869): the wait is
+ * bound by the test timeout instead.
+ */
+export async function createLeague(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "Créer la ligue" }).click();
+  await page.waitForURL(/\/manager\/[0-9a-f-]{36}$/);
+}

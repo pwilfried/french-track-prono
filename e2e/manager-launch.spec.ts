@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { chooseSeason, seasonReady } from "./manager-season";
+import { chooseSeason, createLeague, seasonReady } from "./manager-season";
 import { newPlayer, signUp } from "./players";
 
 test("the creator of a league of 6 competitions launches the mercato once 3 friends are in", async ({
@@ -24,7 +24,7 @@ test("the creator of a league of 6 competitions launches the mercato once 3 frie
   await expect(
     creatorPage.getByText("6 compétitions → 4 joueurs · 6 journées", { exact: true }),
   ).toBeVisible();
-  await creatorPage.getByRole("button", { name: "Créer la ligue" }).click();
+  await createLeague(creatorPage);
   await expect(creatorPage.getByRole("heading", { level: 1 })).toHaveText(league);
   await expect(creatorPage.getByText("1 / 4 participants · Privée")).toBeVisible();
   await expect(creatorPage.getByRole("heading", { name: "Inviter des amis" })).toBeVisible();
@@ -89,7 +89,7 @@ test("the creator is told when a custom mercato ends after the first competition
     await chooseSeason(page, 6);
     // 7 competitions: 4 players, one competition left over as a bonus matchday.
     await expect(page.getByText("7 compétitions → 4 joueurs · 6 journées + 1 bonus")).toBeVisible();
-    await page.getByRole("button", { name: "Créer la ligue" }).click();
+    await createLeague(page);
     await expect(page.getByText("1 / 4 participants · Privée")).toBeVisible();
 
     // Three rounds of 72 hours end after the meeting in 4 days: it will not count.

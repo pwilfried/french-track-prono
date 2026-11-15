@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { chooseSeason, seasonReady } from "./manager-season";
+import { chooseSeason, createLeague, seasonReady } from "./manager-season";
 import { newPlayer, signUp } from "./players";
 
 test("a player joins a public Manager league in one tap and a private one by its link", async ({
@@ -23,12 +23,12 @@ test("a player joins a public Manager league in one tap and a private one by its
   await creatorPage.getByLabel("Nom de la ligue").fill(open);
   await creatorPage.getByText("Ligue publique").click();
   await chooseSeason(creatorPage);
-  await creatorPage.getByRole("button", { name: "Créer la ligue" }).click();
+  await createLeague(creatorPage);
   await expect(creatorPage.getByText("1 / 4 participants · Publique")).toBeVisible();
   await creatorPage.goto("/manager/creer");
   await creatorPage.getByLabel("Nom de la ligue").fill(closed);
   await chooseSeason(creatorPage);
-  await creatorPage.getByRole("button", { name: "Créer la ligue" }).click();
+  await createLeague(creatorPage);
   await expect(creatorPage.getByRole("heading", { level: 1 })).toHaveText(closed);
   // Its creator shares the code, or the link that brings it.
   await expect(creatorPage.getByRole("button", { name: "Partager le lien" })).toBeVisible();
@@ -75,7 +75,7 @@ test("joining a Manager league whose mercato is launched is refused", async ({ b
   await creatorPage.getByLabel("Nom de la ligue").fill(name);
   await creatorPage.getByText("Ligue publique").click();
   await chooseSeason(creatorPage);
-  await creatorPage.getByRole("button", { name: "Créer la ligue" }).click();
+  await createLeague(creatorPage);
   await expect(creatorPage.getByRole("heading", { level: 1 })).toHaveText(name);
   const code = sql(`select invite_code from manager_leagues where name = '${name}'`);
   // The mercato is launched (by the creator once the league is full, or by the job at its time).
