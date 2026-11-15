@@ -1,4 +1,5 @@
 import { messages } from "@/app/messages.fr";
+import { CountryFlag } from "@/components/athletes/country-flag";
 import type { ResultLine } from "@/domain/event";
 import { podiumSteps } from "@/domain/podium";
 import { cn } from "@/lib/utils";
@@ -58,7 +59,10 @@ export function PodiumMedals({ results }: { results: ResultLine[] }) {
                     <span className="max-w-full break-words font-display text-sm font-bold leading-tight text-card-foreground">
                       {athlete.name}
                     </span>
-                    <span className="text-xs text-muted-foreground">{athlete.countryCode}</span>
+                    <span aria-hidden="true" className="text-xl leading-none">
+                      <CountryFlag code={athlete.countryCode} />
+                    </span>
+                    <span className="sr-only">{athlete.countryCode}</span>
                     {athlete.mark && (
                       <span className="text-sm font-bold tabular-nums text-card-foreground">
                         {athlete.mark}
