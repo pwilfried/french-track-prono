@@ -78,14 +78,14 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Accueil (joueur connecté, #526) | Salutation ; carte « Ta prochaine action » (finale à pronostiquer la plus proche du verrouillage, sinon prochaine compétition ; premier bloc, #932) ; juste dessous, carte « Le saviez-vous ? » (#766 : un fait, son étiquette, « Un autre », × jusqu'au lendemain ; absente si la banque est vide ou la carte masquée) ; dessous, « Complète ton profil » tant que le profil n'a ni club ni discipline (#540, #801 : une carte compacte, une ligne et « Compléter », qui ouvre par-dessus l'accueil une feuille en deux étapes, #889 : « Mon club », la recherche de club et le club imprimé en direct sur le dossard du joueur, puis « Mes épreuves », six animaux de la bande à allumer d'un toucher (nom et famille écrits dessous, coche quand allumé) et « Préciser les épreuves » ; « Retour » et la fermeture gardent la saisie ; « Plus tard » sur les deux étapes ; la confirmation s'affiche dans la feuille ; × « Plus tard » pour 30 jours ; bandeau vert « Ton premier podium est posé ! » au-dessus après le premier prono) ; « Comment ça marche » avant le premier prono (refermable) ; ma ligue (place, écart, trois lignes) ou l'invitation à en créer une ; dernier résultat noté ; « Dans ma communauté » (#673 : la dernière annonce FrenchTrack hors épisode, le dernier défi « Battez FrenchTrack » calculé (#877 : épreuve, part des joueurs qui l'ont battu, mon verdict ; la carte mène à l'épreuve), le sondage ouvert, les trois derniers moments de mes ligues avec le nom de la ligue, « Tout voir » vers `/communaute`) ; French Track Manager ; bloc FrenchTrack (podcast avec le dernier épisode annoncé par l'admin, #896, réseaux). Un bloc vide ne s'affiche pas |
 | Compétitions (onglet, #546, #659) | Libellé « Compétition » puis bouton-carte (pavé date, nom en `h1`, ville, dates, nombre d'épreuves, « Changer ») qui ouvre la feuille « Choisir une compétition » (recherche, Toutes / Internationales / France, « Dans mes ligues » puis par mois, puis « Terminées ») ; barre des jours (`?jour=`, « AUJ. », pastille pour un jour fini et pour aujourd'hui) ; bandeau d'une ligne (à pronostiquer ce jour, podiums posés, points) ; sélecteur segmenté « À faire » (par défaut s'il reste à faire), « Posés », « Terminées » (si le jour a des épreuves finies), « Toutes » ; sessions Matin / Après-midi / Soir. Sans programme : « Le programme n'est pas encore publié », jours avant le début, « Me prévenir à la publication ». Un visiteur n'a ni le bandeau ni les filtres « À faire » et « Posés » |
 | Épreuve | Liste de départ (par meilleure marque de la saison, et c'est écrit, #939), **podium à composer** (glisser-déposer ou taps), joker, verrou ; sur un défi, la carte « Battez FrenchTrack » (#674 : « posé, dévoilé au verrouillage », puis les deux podiums, le verdict, la part des joueurs qui l'ont battu, « Partager ») |
-| Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait |
+| Résultat d'épreuve | Podium officiel vs mon prono, points gagnés, confettis si podium parfait ; drapeau de chaque athlète sur le podium officiel, comme partout (#948) ; podiums révélés : ceux des membres de mes ligues d'abord, ceux des autres repliés sous « Voir tous les pronos (N) » et « Masquer les autres pronos » (#949 ; sans ligue, ou filtré sur une ligue, tout est affiché) |
 | Ligue | Onglets **Classement** · **Membres** · **Fil** (#671 : moments groupés « Ce soir · <compétition> », « Hier », puis par jour ; sous chaque moment, quatre emojis, cinq messages prédéfinis et « Signaler », #672 ; même onglet « Fil » sur une ligue Manager, #875) ; derniers pronos révélés, réactions emoji ; tant que le joueur y est seul, **InviteBanner** à la place du classement |
-| Accueil Manager (onglet, #606, #774) | Titre et accroche ; « Créer une ligue Manager » et « Rejoindre avec un code » côte à côte en haut ; « Mes ligues Manager », une carte compacte par ligue (nom, phase : mercato · tour N, saison · journée N sur M ou terminée, ma place, la prochaine échéance : fin du tour ou verrou d'alignement, et une pastille rouge « Enchères à faire » ou « Alignement à valider ») ; puis « Comment ça marche ? » et les ligues publiques. Une carte ouvre la page de la ligue, même avec une seule ligue. Sans ligue : la présentation en trois écrans par-dessus à la première visite (#802), puis le mode en une ligne, « Créer ou rejoindre une ligue » et « Le déroulé de la saison » |
-| Page d'une ligue Manager (#419, #774) | En-tête : « ‹ French Track Manager » (retour à la liste), nom, phase · participants · type ; bloc bleu nuit « Ma saison » (phase, place, points V · N · D, différence, prochaine confrontation avec les dossards, l'action du moment) ; état du mercato ; liens vers ce qu'elle contient (catalogue, Mon équipe, Mon alignement, La journée, Classement, Mes derniers points) ; calendrier, participants, règles |
-| Ligues (#662) | « Créer une ligue » et « J'ai un code », puis deux onglets **Mes ligues · N** / **Découvrir** (`?onglet=decouvrir`). Mes ligues : cartes résumées (**LeagueCard**). Découvrir : tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553) ; puis les ligues publiques (**DiscoverLeagues**) : recherche par nom, puces de famille (Toutes + celles présentes), tri (places restantes par défaut, plus de joueurs, plus récentes), une **PublicLeagueRow** par ligue. Une fois membre, la ligue officielle rejoint Mes ligues avec le badge « Officielle » |
+| Accueil Manager (onglet, #606, #774) | Titre et accroche ; « Créer une ligue Manager » et « Rejoindre avec un code » côte à côte en haut ; « Mes ligues Manager », une carte compacte par ligue (nom, phase : mercato · tour N, saison · journée N sur M ou terminée, ma place, la prochaine échéance : fin du tour ou verrou d'alignement, et une pastille rouge « Enchères à faire » ou « Alignement à valider ») ; puis « Comment ça marche ? » et les ligues publiques. Une carte ouvre la page de la ligue, même avec une seule ligue. Sans ligue : la présentation en trois écrans par-dessus à la première visite (#802), puis le mode en une ligne, « Créer ou rejoindre une ligue » et « Le déroulé de la saison ». Un visiteur voit à la place ce que l'onglet contient (**VisitorTeaser**, #934) |
+| Page d'une ligue Manager (#419, #774) | En-tête : « ‹ French Track Manager » (retour à la liste), nom, phase · participants · type ; bloc bleu nuit « Ma saison » (phase, place, points V · N · D, différence, prochaine confrontation avec les dossards, l'action du moment) ; état du mercato (« Tour N en cours jusqu'au … (heure de Paris). », puis « Mercato terminé. » après son dernier tour, #925) ; « Écrans de la ligue », une navigation de vrais liens vers ce qu'elle contient (catalogue, Mon équipe, Mon alignement, La journée, Classement, Mes derniers points, #926) ; calendrier (chaque tour « terminé », « en cours » ou à venir), participants, règles. Pas de place dans « Ma saison » avant que la 1re journée soit notée (#936) |
+| Ligues (#662) | « Créer une ligue » et « J'ai un code », puis deux onglets **Mes ligues · N** / **Découvrir** (`?onglet=decouvrir`). Mes ligues : cartes résumées (**LeagueCard**). Découvrir : tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553) ; puis les ligues publiques (**DiscoverLeagues**) : recherche par nom, puces de famille (Toutes + celles présentes), tri (places restantes par défaut, plus de joueurs, plus récentes), une **PublicLeagueRow** par ligue. Une fois membre, la ligue officielle rejoint Mes ligues avec le badge « Officielle ». Un visiteur voit à la place ce que l'onglet contient (**VisitorTeaser**, #934) |
 | Classement général | Top de la communauté, ma progression ; lien vers `/classement/frenchtrack` (#674 : « Qui bat FrenchTrack le plus souvent ? », victoires puis points, pseudo et dossard) |
 | Communauté (`/communaute`, #673) | Tout le bloc « Dans ma communauté » : annonces, défis « Battez FrenchTrack » calculés, sondages (vote puis parts en pourcentages), moments de mes ligues avec le nom de la ligue |
-| Profil | Célébration du lièvre (niveaux gagnés), changement d'animal ; dossard (grand format, avec le pseudo), club ; avant la première épreuve calculée, un seul encart à la place des stats et de la grille de badges (**ProfileStart**, #799 : « Fais ton premier prono… » ou les pronos en attente, le prochain badge, un bouton vers la prochaine finale ouverte, sinon vers les compétitions) ; ma bande (mon animal) ; vitrine des trophées (une étagère par saison) ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager ; « Mes rappels » (`/profil/rappels`, #681) ; palmarès Manager (une ligne par saison finie, en or si champion, #434) |
+| Profil | Célébration du lièvre (niveaux gagnés), changement d'animal ; dossard (grand format, avec le pseudo), club ; avant la première épreuve calculée, un seul encart à la place des stats et de la grille de badges (**ProfileStart**, #799 : « Fais ton premier prono… » ou les pronos en attente, le prochain badge, un bouton vers la prochaine finale ouverte, sinon vers les compétitions) ; ma bande (mon animal) ; vitrine des trophées (une étagère par saison) ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager ; « Mes rappels » (`/profil/rappels`, #681) ; palmarès Manager (une ligne par saison finie, en or si champion, #434) ; « C'est quoi ? » sous l'animal ouvre par-dessus la feuille « L'animal et les badges » (#940 : d'où vient l'animal, comment se gagnent les badges, ce que dit « Prochain ») |
 | Back-office (toi) | Tableau de bord (choses à faire, préparation), compétitions (filtres portée, lieu, niveau, statut, #647) et épreuves, une feuille de résultats par épreuve qui calcule tout (collage du tableau World Athletics, #665, #666), listes des clubs, joueurs et ligues (« Signalements du fil » en tête des ligues : masquer ou classer, #672), « Communauté » (annonces et sondages, #673), « Le saviez-vous ? » (faits et carte, #766), défi FrenchTrack d'une épreuve (#674) |
 
 ## Composants clés
@@ -137,10 +137,18 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   `src/components/ui/view-tabs.tsx`) : le segment choisi est surélevé et cerné d'un anneau
   `--border`, lisible en clair comme en sombre ; les autres sont atténués.
 - **AthleteChip** : drapeau, nom, record de saison.
+- **CountryFlag** (#948) : le pays d'un athlète s'écrit d'une seule façon partout (podium à
+  composer, podium officiel, défi, catalogue) : son drapeau, ou son code CIO en petites capitales
+  grasses quand il n'en a pas. Tous les comités du CIO ont un drapeau, plus les membres de World
+  Athletics sans comité (`flagOf`, `src/domain/flag.ts`).
+- **VisitorTeaser** (#934) : sur les onglets Ligues et Manager d'un visiteur, une phrase sur ce
+  qu'il y trouve, un exemple marqué « Exemple » (un mini-classement de ligue, une confrontation
+  Manager) et « Se connecter ».
 - **AthleteSheet** (fiche athlète, #679) : initiales dans un rond (jamais de photo), pays,
-  disciplines ; chiffres clés (PB, SB de la discipline principale, prix Manager) ; un bloc par
-  discipline avec PB et SB de la saison, lieu et date quand on les connaît ; une marque non
-  vérifiée porte un « ? » (lu « marque à vérifier »). Records seulement, pas de résultats.
+  disciplines ; prix Manager ; un bloc par discipline avec PB et SB de la saison, lieu et date
+  quand on les connaît ; chaque marque une seule fois (un SB égal au PB n'est pas répété, #938) ;
+  une marque non vérifiée porte un « ? » (lu « marque à vérifier »), expliqué par une seule légende
+  sous les records. Records seulement, pas de résultats.
 - **ConsensusBlock** (#680) : « Ce qu'ont pronostiqué les joueurs », au-dessus des podiums révélés
   et filtré par les mêmes onglets ; par place, les athlètes choisis et leur pourcentage, mon choix
   surligné ; la part des joueurs qui ont mon podium, mon choix le plus original et, après le
@@ -190,7 +198,8 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   dossard, pseudo et points ; lu dans l'ordre 1-2-3 ; absent tant que personne n'a de points.
 - **Onglet Classement** (#551, #661) : sélecteur segmenté (onglets) « Ma ligue » (ouvert par
   défaut), « Ce soir », « Général » ; dessous, un seul bouton de portée (**ScopeButton**) :
-  « Ligue · <nom> · N joueurs » ou « Portée · Toute la saison 2026-27 » (ou la compétition), avec
+  « Ligue · <nom> · N joueurs » ou « Portée · Toute la saison 2026-27 » (ou la compétition ; les années vont de la première
+  compétition à la dernière déjà commencée, jamais une compétition lointaine « 2099 », #924), avec
   « Changer », qui ouvre la feuille « Choisir le classement » (**ScopeSheet**, même feuille du bas
   que celle des Compétitions, `BottomSheet`) : onglet « Saison ou compétition » (recherche,
   « Toute la saison » en tête, « En cours » puis « Terminées », jamais les compétitions à venir) et
@@ -209,8 +218,9 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **LeagueCard** (#552, résumée en #662) : une de mes ligues ; nom sur deux lignes au plus,
   étiquette « Privée », « Publique » ou « Officielle », badge de familles (#613), « 12 compétitions ·
   déc. 2026 → avr. 2027 » (jamais leurs noms, qui restent sur la page de la ligue), « Prochaine :
-  <compétition>, <date> » ; à droite ma place en gros, « sur N » et ▲/▼ depuis la veille, « Pas
-  encore de points » sans points.
+  <compétition>, <date> », ou « En cours : <compétition> » pendant qu'elle se court (#928) ; à
+  droite ma place en gros, « sur N » et ▲/▼ depuis la veille, « Tu n'as pas encore de points » sans
+  points (#936).
 - **PublicLeagueRow** (#662) : une ligue publique de « Découvrir » ; nom, badge de familles,
   « 12/200 joueurs · 3 compétitions · période », barre de remplissage, « Rejoindre » et « Signaler ».
 - **LeagueFamilyPicker** (#613) : « Épreuves qui comptent » à la création d'une ligue ; deux
@@ -233,7 +243,8 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **Navigation** (#471) : sur mobile, barre du bas « Accueil, Compétitions, Classement, Ligues,
   Manager » ; sur desktop, menu du haut « Accueil, Compétitions, Classement, Ma ligue, Manager ». Le
   profil s'ouvre depuis le pseudo et le dossard de l'en-tête.
-- **Menu admin** : entrées groupées par rubrique, le tableau de bord en tête.
+- **Menu admin** : entrées groupées par rubrique, le tableau de bord en tête ; chaque lien porte le
+  nom de sa page, le compteur de choses à faire en est la description (#950).
 - **BadgeGrid** : les 6 badges de jeu, puis les 7 badges de famille ; un badge gagné porte une
   médaille (bronze, argent, or) derrière son emoji et son niveau en étiquette, les autres sont
   grisés ; chacun dit ce qu'il compte et le seuil suivant (« 2 / 3 pour le bronze »). Dessous, le
@@ -266,11 +277,11 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   les places « Libre » prennent les endroits restants dans cet ordre. Quatre cartes tiennent côte à
   côte sur la ligne du milieu, sans chevauchement et dans l'ovale de 320 à 390 px (#929). Une place montre l'athlète ou un
   « + » en pointillés. Toucher une
-  place ouvre une feuille avec les athlètes de l'équipe : ceux qui ne vont pas sont grisés avec la
-  raison (absent·e, autre famille) ; en choisir un déjà placé ailleurs échange les deux s'il le
-  peut ; « Retirer de cette place ». Dessous, les remplaçants. Compteur « N/M places » ; juste
+  place ouvre une feuille avec les seuls athlètes de l'équipe qui peuvent la prendre (engagés et
+  de sa famille, #937), ou dit qu'aucun ne le peut ; en choisir un déjà placé ailleurs échange les
+  deux s'il le peut ; « Retirer de cette place ». Dessous, les remplaçants. Compteur « N/M places » ; juste
   sous le stade, jamais par-dessus (#929), la barre « À remplir : … » et « Valider mon alignement » (« Validation en cours… »). Une place que
-  l'équipe ne peut pas remplir reste grise (« Personne ») et n'empêche pas de valider ; la barre
+  l'équipe ne peut pas remplir reste grise (« Aucun athlète engagé », #936) et n'empêche pas de valider ; la barre
   dit combien restent vides et pourquoi (#839). Le compteur et la barre ne comptent que les places
   tenues par un athlète engagé (`lineupProgress`, `src/domain/manager-lineup.ts`). Aucun athlète
   engagé : la barre le dit (« Aucun de tes athlètes n'est inscrit… ») et ne propose pas de valider. Bandeaux
@@ -308,4 +319,8 @@ alternative au tap, animations réduites si `prefers-reduced-motion`.
 
 Toute saisie du joueur est bornée (#712) : longueur maximale sur chaque champ (`maxLength`),
 reprise côté serveur, et perfs plausibles pour la discipline (#702) avec le message à côté du
-champ.
+champ. Un champ de perf (#927, #931, #935) porte un nom lu par les lecteurs d'écran, montre en
+grisé une marque typique de sa discipline (« 10.85 » sur un 100 m, « 7.45 » en longueur, jamais
+un 100 m partout) et, dessous, son format : « Format ss.cc », « Format m:ss.cc »,
+« Format h:mm:ss », « Format m.cc » ou « En points ». Les écritures françaises (« 4'02 »,
+« 3'35"20 », virgule) sont acceptées. L'interrupteur du joker a lui aussi un nom accessible.
