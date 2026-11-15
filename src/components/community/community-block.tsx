@@ -18,8 +18,8 @@ const heading = "text-xs font-bold uppercase tracking-wide text-muted-foreground
 const link = "inline-flex min-h-11 items-center text-sm font-bold underline underline-offset-4";
 
 /**
- * On the home, the block keeps the latest of each: one announcement, one « Battez FrenchTrack »
- * challenge, one poll, a few moments.
+ * On the home, the block keeps the latest of each: one announcement (not an episode, the podcast
+ * card shows it), one « Battez FrenchTrack » challenge, one poll, a few moments.
  */
 const HOME = { announcements: 1, challenges: 1, polls: 1 };
 
@@ -77,8 +77,9 @@ export function CommunityBlock({
   const polls = [...community.polls].sort(
     (a, b) => Number(pollPhase(b, now) === "open") - Number(pollPhase(a, now) === "open"),
   );
+  // On the home, the episodes live in the podcast card (#896).
   const announcements = compact
-    ? community.announcements.slice(0, HOME.announcements)
+    ? community.announcements.filter((a) => a.kind !== "episode").slice(0, HOME.announcements)
     : community.announcements;
   const challenges = compact
     ? community.challenges.slice(0, HOME.challenges)

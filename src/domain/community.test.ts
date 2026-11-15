@@ -5,7 +5,9 @@ import {
   checkAnnouncement,
   checkPoll,
   communityMoments,
+  latestEpisode,
   pollPhase,
+  type Announcement,
   pollResults,
   type Poll,
 } from "./community";
@@ -56,6 +58,34 @@ describe("communityMoments", () => {
       { league: { id: "b", name: "B" }, moments: [moment("x", "2026-11-14T19:00:00Z")] },
     ];
     expect(communityMoments(feeds, 10)).toEqual(communityMoments([...feeds].reverse(), 10));
+  });
+});
+
+const announcement = (
+  id: string,
+  kind: Announcement["kind"],
+  publishedAt: string,
+): Announcement => ({
+  id,
+  kind,
+  title: id,
+  subtitle: null,
+  link: "https://example.test/" + id,
+  publishedAt,
+});
+
+describe("latestEpisode", () => {
+  it("picks the latest episode, whatever the order and the other announcements", () => {
+    const old = announcement("old", "episode", "2026-11-10T08:00:00.000Z");
+    const recent = announcement("recent", "episode", "2026-11-14T08:00:00.000Z");
+    const newer = announcement("newer", "schedule", "2026-11-15T08:00:00.000Z");
+    expect(latestEpisode([old, newer, recent])).toBe(recent);
+    expect(latestEpisode([recent, old])).toBe(recent);
+  });
+
+  it("is null without an episode", () => {
+    expect(latestEpisode([])).toBeNull();
+    expect(latestEpisode([announcement("a", "schedule", "2026-11-15T08:00:00.000Z")])).toBeNull();
   });
 });
 
