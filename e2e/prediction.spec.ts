@@ -175,7 +175,7 @@ test("a new player predicts a perfect podium, the admin enters the results sheet
   await page.waitForURL(/\/profil\/pronos/);
   // Other tests add competitions: open the one of this event.
   await page.goto("/profil/pronos?competition=ultimate-championship-2026");
-  const mine = page.locator("main").getByRole("link", { name: /\+12 pts/ });
+  const mine = page.locator("main").getByRole("link", { name: /\+12\spts/ });
   await expect(mine).toBeVisible();
   await expect(mine.getByText("bonne place")).toHaveCount(3);
   await mine.click();

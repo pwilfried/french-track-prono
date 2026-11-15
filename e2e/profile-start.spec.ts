@@ -34,7 +34,7 @@ test("a new player sees one card on the profile, then the full profile after a f
     await expect(page.getByRole("region", { name, exact: true })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Vitrine", exact: true })).toHaveCount(0);
   await expect(page.locator("main")).not.toContainText("pas encore classé");
-  await expect(page.locator("main")).not.toContainText(/\b0 pt/);
+  await expect(page.locator("main")).not.toContainText(/\b0\spt/);
 
   // A first computed event: the card gives way to the figures and the full grid of badges.
   sql(`insert into score_events (user_id, competition_id, event_id, source, points, reason, detail)

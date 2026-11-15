@@ -1,3 +1,5 @@
+import { parseMark, type MarkUnit } from "./discipline";
+
 /** The most athletes a start list can hold (a final has 8 to 12, a heat-less race up to 24). */
 export const MAX_START_LIST = 24;
 
@@ -67,4 +69,28 @@ export function sortByDiscipline<T extends { name: string; fit: DisciplineFit }>
   return [...athletes].sort(
     (a, b) => FIT_ORDER.indexOf(a.fit) - FIT_ORDER.indexOf(b.fit) || a.name.localeCompare(b.name),
   );
+}
+
+/**
+ * A start list as it is shown (#939): best season mark first (lowest time, longest distance,
+ * most points), athletes without a readable mark last, in their listed order. Unknown unit: the
+ * listed order. Returns a new list.
+ */
+export function sortStartList<T extends { seasonBest: string | null }>(
+  entries: readonly T[],
+  unit: MarkUnit | undefined,
+): T[] {
+  if (!unit) return [...entries];
+  const sign = unit === "time" ? 1 : -1;
+  const value = (e: T) => (e.seasonBest === null ? null : parseMark(e.seasonBest, unit));
+  return entries
+    .map((entry, index) => ({ entry, index, mark: value(entry) }))
+    .sort((a, b) => {
+      if (a.mark === null || b.mark === null) {
+        if (a.mark !== b.mark) return a.mark === null ? 1 : -1;
+        return a.index - b.index;
+      }
+      return sign * (a.mark - b.mark) || a.index - b.index;
+    })
+    .map(({ entry }) => entry);
 }

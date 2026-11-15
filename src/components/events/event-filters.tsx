@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 /**
  * The filters of the « Compétitions » tab as a segmented control with their count (#546, #659).
  * Plain links (`hrefOf`), so the page stays a server component and a filter can be shared.
+ * A single filter is no choice (« Toutes » alone for a visitor): nothing shows (#939).
  */
 export function EventFilters({
   filters,
@@ -20,6 +21,7 @@ export function EventFilters({
   counts: Record<EventFilter, number>;
   hrefOf: (filter: EventFilter) => string;
 }) {
+  if (filters.length < 2) return null;
   return (
     <nav aria-label={messages.events.filtersLabel}>
       <ul
