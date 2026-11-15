@@ -118,6 +118,11 @@ test("a new player without a league is asked for a first podium, then for a leag
   const play = action.getByRole("link", { name: "Faire mon podium" });
   await expect(play).toHaveAttribute("href", `/epreuves/${slug}`);
   await expect(play).toBeInViewport();
+  // The next action is the first block (#932).
+  const blocks = await page
+    .locator("main section[aria-labelledby]")
+    .evaluateAll((sections) => sections.map((s) => s.getAttribute("aria-labelledby")));
+  expect(blocks[0]).toBe("next-action-label");
 
   // Before a first prediction, the three steps on one line (#476), closed with ×.
   const steps = page.getByRole("region", { name: "Comment ça marche" });
