@@ -566,6 +566,18 @@ celles de ses ligues, aucune écriture hors des fonctions ; aucun texte stocké,
 étiquettes sont dans `messages.fr.ts`. Onglet « Fil » de la page d'une ligue, groupé « Ce soir ·
 <compétition> », « Hier », puis par jour (`feedGroups`, heure de Paris).
 
+Fil d'une ligue Manager et badges (v0.19, #875) : l'onglet « Fil » de la page d'une ligue Manager
+(`?onglet=fil`, à côté de « Saison ») raconte les athlètes gagnés à la révélation de chaque tour
+du mercato (`mercato_win`, depuis `manager_round_bids`) et le résultat de chaque confrontation
+dès que sa journée a ses scores Manager (`duel_result`, vainqueur d'abord, score manquant = 0 ;
+pas de duel les journées bonus). Ces faits sont déjà stockés : `manager_feed()` les lit (sécurité
+par ligne, un non-participant ne lit rien) et `managerMoments` (`src/domain/manager-moments.ts`)
+les raconte avec une clé stable (`mercato_win:<tour>:<athlète>`, `duel_result:<journée>:<domicile>`).
+Un niveau de badge, lui, n'a pas de trace datée : quand le joueur a vu la célébration
+(`markBadgesSeen`), `publish_my_badge_moments()` le publie une fois (`badge:<joueur>:<badge>:<niveau>`)
+dans chacune de ses ligues de pronos (`league_moments`) et Manager (table jumelle
+`manager_moments`), seulement s'il détient ce niveau.
+
 Notifications push (#203) : le joueur les active par appareil depuis son profil (opt-in
 explicite, désactivation en un geste). Les abonnements (`push_subscriptions`) ne s'écrivent que
 par `save_push_subscription()` et `delete_push_subscription()`. Chaque minute, l'Edge Function

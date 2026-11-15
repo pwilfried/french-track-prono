@@ -34,5 +34,14 @@ export function createSupabaseBadgeLevelRepository(client: SupabaseClient): Badg
       const { error } = await client.rpc("raise_my_badge_levels", { p_levels: levels });
       if (error) fail();
     },
+
+    async publishMoments(moments) {
+      if (moments.length === 0) return 0;
+      const { data, error } = await client.rpc("publish_my_badge_moments", {
+        p_moments: moments.map((m) => ({ key: m.key, badge: m.badge, level: m.level })),
+      });
+      if (error) fail();
+      return data as number;
+    },
   };
 }

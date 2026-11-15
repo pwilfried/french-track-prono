@@ -70,6 +70,25 @@ export const Empty: Story = {
   },
 };
 
+/** An empty Manager feed points to the mercato of the league (#875). */
+export const ManagerEmpty: Story = {
+  args: {
+    groups: [],
+    empty: {
+      text: messages.manager.feed.empty,
+      href: "/manager/ligue/catalogue",
+      action: messages.manager.feed.toMercato,
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(messages.manager.feed.empty)).toBeVisible();
+    await expect(
+      canvas.getByRole("link", { name: messages.manager.feed.toMercato }),
+    ).toHaveAttribute("href", "/manager/ligue/catalogue");
+  },
+};
+
 /** A long competition name wraps in the title of its group. */
 export const LongText: Story = {
   args: {

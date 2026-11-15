@@ -91,11 +91,37 @@ export const MercatoWin: Story = {
   },
 };
 
-/** A new badge. */
-export const Badge: Story = {
-  args: { moment: { ...base, key: "badge", kind: "badge", badge: "Nostradamus" } },
+/** A draw: both players named, the same score. */
+export const DuelDraw: Story = {
+  args: {
+    moment: {
+      ...base,
+      key: "draw",
+      kind: "duel_result",
+      otherPseudo: "Perche Dorée",
+      scores: [3000, 3000],
+    },
+  },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText(text.label.badge)).toBeVisible();
+    await expect(
+      within(canvasElement).getByText(
+        text.text.duel_result("Flèche du Nord", "Perche Dorée", [3000, 3000]),
+      ),
+    ).toBeVisible();
+  },
+};
+
+/** A new badge level, named with its level. */
+export const Badge: Story = {
+  args: {
+    moment: { ...base, key: "badge", kind: "badge", badge: "nostradamus", level: "gold" },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(text.label.badge)).toBeVisible();
+    await expect(
+      canvas.getByText(text.text.badge("Flèche du Nord", "Nostradamus", "en or")),
+    ).toBeVisible();
   },
 };
 
