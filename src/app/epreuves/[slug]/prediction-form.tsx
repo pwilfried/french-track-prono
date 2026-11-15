@@ -165,8 +165,10 @@ export function PredictionForm({
         <>
           <label className="mx-4 flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border-2 border-transparent bg-gold-soft px-3.5 py-2 text-gold-ink has-checked:border-secondary">
             <span className="min-w-0 flex-1">
-              <span className="block font-extrabold">{messages.prediction.joker}</span>
-              <span className="block text-sm text-muted-foreground">
+              <span id="joker-label" className="block font-extrabold">
+                {messages.prediction.joker}
+              </span>
+              <span id="joker-hint" className="block text-sm text-muted-foreground">
                 {messages.prediction.jokerHint}
               </span>
             </span>
@@ -174,6 +176,8 @@ export function PredictionForm({
               type="checkbox"
               role="switch"
               name="joker"
+              aria-labelledby="joker-label"
+              aria-describedby="joker-hint"
               checked={joker}
               onChange={(e) => {
                 setJoker(e.target.checked);
@@ -344,10 +348,11 @@ function MarkFields({
         const id = athlete.athleteId;
         const problem = shown(id);
         const errorId = `mark-error-${slot}`;
+        const labelId = `mark-label-${slot}`;
         return (
           <div key={slot} className="flex flex-col gap-1">
             <label className="flex items-center gap-3">
-              <span className="min-w-0 flex-1 text-sm font-semibold">
+              <span id={labelId} className="min-w-0 flex-1 text-sm font-semibold">
                 {messages.picker.markLabel(athlete.name)}
               </span>
               <input
@@ -361,6 +366,7 @@ function MarkFields({
                   setValues((v) => ({ ...v, [id]: text }));
                 }}
                 onBlur={() => setChecked((c) => ({ ...c, [id]: true }))}
+                aria-labelledby={labelId}
                 aria-invalid={problem ? true : undefined}
                 aria-describedby={problem ? errorId : undefined}
                 placeholder={markExample(unit, family)}
