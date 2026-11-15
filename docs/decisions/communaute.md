@@ -42,6 +42,27 @@ Une **carte en haut de l'accueil** (variante A de la maquette) : un fait, une é
 autre », × la ferme jusqu'au lendemain. La fenêtre quotidienne (variante B) est abandonnée.
 L'admin gère les faits et peut éteindre la carte.
 
+## Livré en v0.19
+
+- Fil de ligue (#671, #875) : les six moments prévus, publiés une seule fois par clé stable ;
+  l'enchère gagnée n'apparaît qu'à la révélation du tour, le badge quand le joueur a vu sa
+  célébration.
+- Réactions (#672) : 🔥 👏 😮 😂 et cinq messages (« Bien joué ! », « Quel flair ! »,
+  « Revanche ? », « Pas de chance », « Je te rattrape »), stockés comme des codes. « Signaler » est
+  proposé sous chaque message (la base accepte aussi un emoji, l'interface ne le propose pas) ;
+  l'admin traite les « Signalements du fil » depuis la page « Ligues » du back-office. Le joueur concerné reçoit une notification
+  regroupée (famille « Ma ligue » de ses rappels, son interrupteur arrive avec #903).
+- « Battez FrenchTrack » (#674, #877) : posé par l'admin depuis l'épreuve, calculé avec le même
+  barème que les joueurs (sans joker), classement `/classement/frenchtrack` par année civile ; un
+  défi calculé devient aussi un moment de « Dans ma communauté ».
+- Accueil (#673, #896) : « Dans ma communauté » garde la dernière annonce, le dernier défi, le
+  sondage ouvert et trois moments, « Tout voir » ouvre `/communaute`. L'annonce d'un nouvel
+  épisode va dans la carte du podcast, pas dans ce bloc, pour ne pas l'afficher deux fois.
+- « Le saviez-vous ? » (#766) : variante A, 48 faits de départ gérés depuis
+  `/admin/le-saviez-vous`.
+
+Le détail technique (tables, fonctions, règles) est dans `docs/architecture.md`.
+
 ## Écarté pour l'instant
 
 Profils publics et abonnements, défis entre joueurs, texte libre.
