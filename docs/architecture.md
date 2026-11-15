@@ -284,7 +284,9 @@ reste est relu à chaque page, comme avant.
 
 - Durée : 120 s (`PUBLIC_CACHE_SECONDS`) ; une invalidation manquée se répare d'elle-même dans ce
   délai. Au sein d'un rendu, une même lecture demandée deux fois (deux ligues sur une même
-  compétition) n'est faite qu'une fois (#824).
+  compétition) n'est faite qu'une fois (#824). Un classement qui couvre plusieurs compétitions
+  (général, saison) les lit par lots de quatre (`linesOf`, `src/application/rankings.ts`, #691) :
+  des dizaines de lectures à la fois échouaient de temps en temps.
 - Jamais au build : chaque lecture gardée commence par `connection()` (`next/server`). Pendant
   `next build`, le prérendu s'arrête là, avant Supabase ; la page est rendue à la demande. Une
   base lente ou en panne au moment d'un déploiement ne fait donc plus échouer le build (#919).
@@ -503,7 +505,10 @@ principale (PB, SB, prix Manager) ; puis un bloc par discipline avec son PB et s
 en cours (`disciplineRecords`, `keyRecords` dans `src/domain/athlete.ts` ; un SB daté d'une année
 passée est écarté). Une marque non vérifiée (`athlete_records.verified`, vraie pour une saisie de
 l'admin) porte un « ? ». « Retour » ramène d'où l'on vient (`?from=`, #699 : au podium en cours
-depuis une épreuve). Cas d'usage `getAthlete`, port `AthleteReader`.
+depuis une épreuve). Cas d'usage `getAthlete`, port `AthleteReader`. Enrichissement depuis
+Wikidata (identité, date de naissance, lien Wikipédia, PB quand Wikidata les connaît, jamais les
+médailles) : étudié en v0.20 (#895), décision et découpage dans
+`docs/decisions/athletes-wikidata.md`, pas encore construit.
 
 Disciplines (v0.9, issue #257) : la table `disciplines` porte, pour chaque discipline, sa famille,
 son unité (`time`, `distance`, `points`), le sens du classement et la tolérance du prono de
@@ -743,6 +748,7 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 | v0.18 Fiche athlète, consensus et rappels | Fiche athlète (records seulement), consensus des pronos après verrouillage, rappels groupés et « Mes rappels », rappels Manager, bande d'animaux, badges en bronze, argent, or et badges de famille, trophées de saison, icône du lièvre | …depuis une épreuve, le mercato ou une équipe Manager, un joueur ouvre la fiche d'un athlète et voit ses records par discipline ; après le verrouillage d'une épreuve, il voit ce qu'ont pronostiqué tous les joueurs et sa ligue ; il reçoit au plus un rappel groupé avant un verrou s'il lui manque des podiums, et règle ses rappels dans son profil ; il voit aussi sa bande, ses dossards et la vitrine de ses trophées |
 | v0.18.1 Premiers pas du joueur | Profil sans épreuve calculée réduit à un encart (prochain badge, prochaine finale), cartes d'épreuve avec l'animal de la famille, le temps restant, mon podium et le vainqueur, « Complète ton profil » en carte compacte qui ouvre une feuille, présentation du Manager en trois écrans, squelettes de chargement, cache du navigateur et lignes de classement en cache | …un nouveau joueur, sur son téléphone, voit d'abord sa prochaine épreuve à pronostiquer, comprend la liste des épreuves d'un coup d'œil (à faire, terminée et ce qu'elle lui a rapporté), trouve un profil qui ne montre pas de cases vides mais lui dit quoi faire pour le remplir, et découvre le Manager en trois écrans |
 | v0.19 Communauté | **F21** : fil de ligue (pronos et Manager : podium parfait, nouveau leader, série, enchère gagnée, confrontation, badge), réactions par emojis et messages prédéfinis avec signalement et masquage par l'admin, « Battez FrenchTrack » et son classement de saison, bloc « Dans ma communauté » et page `/communaute` (moments, annonces, sondages), dernier épisode dans la carte du podcast, « Le saviez-vous ? », « Complète ton profil » en deux étapes, carte de saison aux couleurs de l'animal | …dans chaque ligue, un fil raconte tout seul les moments marquants (pronos et Manager) et les joueurs y réagissent par emojis et messages prédéfinis, sans texte libre ; sur les grandes finales, chacun voit s'il a battu le prono de FrenchTrack et un classement de saison le suit ; l'accueil rassemble ces moments, les annonces et les sondages FrenchTrack |
+| v0.20 Finitions | Statuettes dessinées dans la vitrine des trophées (animal de la ligue, laurier du général, formes des exploits), classement général lu par lots de quatre compétitions, e2e du profil stabilisés, un seul job e2e de préprod (avant le tag et chaque matin), étude Wikidata pour les fiches athlètes (`docs/decisions/athletes-wikidata.md`), correctifs des audits du 15 nov. 2026 (colonnes d'un prono modifiables par le joueur, colonnes publiques des profils, plafonds de signalements et d'appareils, aucune lecture Supabase au build) | …la vitrine du profil montre les statuettes dessinées de la bande, la feuille « Compléter mon profil » imprime le club sur le dossard puis allume les animaux choisis, le classement général se calcule sans multiplier les lectures en parallèle, les tests de bout en bout du profil ne sont plus instables, et la préprod n'a plus qu'un seul job de tests de bout en bout partagé par le déploiement et le test quotidien |
 | Plus tard | Carte « Mon podium du 100 m », questions bonus, connexion Google / Apple | à planifier |
 
 ## Cas de test du cœur

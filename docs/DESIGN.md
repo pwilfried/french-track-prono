@@ -166,9 +166,13 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **Dossard** (badge, #768) : carte blanche à deux épingles, bande du niveau en haut (dégradés or,
   argent, bronze), l'animal de la discipline en grand, le numéro et le nom en bas ; grisé avec le
   « ? » tant qu'il est à débloquer.
-- **Statuette** (trophée, #768) : l'animal coulé en or, argent ou bronze sur un socle en bois et
-  sa plaque gravée (ligue, saison, place) ; une place vide de la vitrine montre le « ? » gris et
-  ce qu'il faut pour la gagner.
+- **Statuette** (trophée, #768, dessinée en SVG depuis #856) : une forme coulée en or, argent ou
+  bronze sur un socle en bois et sa plaque gravée (ligue, saison, place). La forme est l'animal de
+  la ligue (le lièvre pour une ligue Manager sans animal), une couronne de laurier pour le
+  classement général (« 1er », « Top 3 » ou « Top 10 » au centre), ou le dessin de l'exploit :
+  chrono (Chrono figé), record (Record de ligue), témoin (Témoin d'or), toujours en or. Aucun
+  emoji. Une place vide de la vitrine montre la même forme en gris et ce qu'il faut pour la
+  gagner.
 - **TrophyShowcase** (vitrine, #822) : une étagère par saison, la plus récente en haut, une
   statuette par trophée avec son nom (« Guépard d'or », « Chrono figé ») et où il a été gagné ;
   vide, elle dit comment gagner le premier.
