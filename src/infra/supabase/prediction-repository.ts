@@ -17,6 +17,10 @@ type Row = {
   m3: number | string | null;
 };
 
+/** Where a Postgres error happened: the constraint or the table, named in its message or details. */
+const whereOf = (error: { message: string; details?: string | null }) =>
+  `${error.message} ${error.details ?? ""}`;
+
 const num = (value: number | string | null) => (value === null ? null : Number(value));
 
 function toPrediction(row: Row): Prediction {
@@ -76,19 +80,20 @@ export function createSupabasePredictionRepository(client: SupabaseClient): Pred
           .eq("user_id", prediction.userId)
           .eq("event_id", prediction.eventId)
           .select("event_id");
-      let { data: updated, error } = await update();
-      if (!error && updated!.length === 0) {
+      const first = await update();
+      let error = first.error;
+      if (!error && first.data!.length === 0) {
         ({ error } = await client
           .from("predictions")
           .insert({ user_id: prediction.userId, event_id: prediction.eventId, ...picks }));
         // 23505 on (user_id, event_id): a save sent at the same time created the row first.
-        if (error?.code === "23505" && `${error.message} ${error.details ?? ""}`.includes("user_id_event_id")) {
-          ({ data: updated, error } = await update());
+        if (error?.code === "23505" && whereOf(error).includes("user_id_event_id")) {
+          ({ error } = await update());
         }
       }
       if (!error) return "saved";
 
-      const where = `${error.message} ${error.details ?? ""}`;
+      const where = whereOf(error);
       // P0001: raised by the lock trigger.
       if (error.code === "P0001") return "locked";
       // FT001: a heat, or a final whose earlier rounds are not finished.

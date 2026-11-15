@@ -16,7 +16,7 @@ const FORM: Record<Exclude<TrophyKind, "league" | "manager">, StatuetteShape> = 
 const FEATS = Object.keys(FORM) as (keyof typeof FORM)[];
 
 /** The statuette's name (« Guépard d'or », « Chrono figé ») and what it was won in. */
-export function trophyLabel(trophy: Trophy): { name: string; detail: string } {
+function trophyLabel(trophy: Trophy): { name: string; detail: string } {
   const kind = text.kinds[trophy.kind];
   const base =
     trophy.kind === "league" && trophy.animal ? messages.band.animals[trophy.animal] : kind.name;
