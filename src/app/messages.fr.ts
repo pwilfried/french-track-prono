@@ -16,6 +16,8 @@ const gain = (n: number) => (n > 0 ? `+${pts(n)}` : pts(n));
 const pointsWord = (n: number) => (Math.abs(n) <= 1 ? "point" : "points");
 const points = (n: number) => `${n} ${pointsWord(n)}`;
 const eventsCount = (n: number) => `${n} ${n <= 1 ? "épreuve" : "épreuves"}`;
+const credits = (n: number) => `${n} ${n <= 1 ? "crédit" : "crédits"}`;
+const athletesCount = (n: number) => `${n} ${n <= 1 ? "athlète" : "athlètes"}`;
 const GENDER = { F: "Femmes", M: "Hommes", X: "Mixte" } as const;
 /** The contact address published on the site: written here only. */
 const CONTACT_EMAIL = "frenchtrackprono@gmail.com";
@@ -1297,8 +1299,8 @@ export const messages = {
           scores && scores[0] === scores[1]
             ? `${pseudo} et ${other ?? "son adversaire"} font match nul ${scores[0]} à ${scores[1]}.`
             : `${pseudo} bat ${other ?? "son adversaire"}${scores ? ` ${scores[0]} à ${scores[1]}` : ""}.`,
-        mercato_win: (pseudo: string, athlete: string | null, price: number | null) =>
-          `${pseudo} remporte ${athlete ?? "un athlète"} au mercato${price !== null ? ` pour ${price} crédits` : ""}.`,
+        mercato_win: (pseudo: string, count: number, round: number | null, spent: number) =>
+          `${pseudo} remporte ${athletesCount(count)}${round !== null ? ` au tour ${round}` : " au mercato"} · ${credits(spent)}`,
         badge: (pseudo: string, badge: string | null, level: string | null) =>
           badge
             ? `${pseudo} gagne le badge « ${badge} »${level ? ` ${level}` : ""}.`
@@ -1306,6 +1308,11 @@ export const messages = {
         streak: (pseudo: string, length: number | null) =>
           `${pseudo} enchaîne ${length ?? 5} pronos qui rapportent d'affilée.`,
       },
+      /** The athletes of a mercato round, folded under its card (#979). */
+      athletes: "Voir les athlètes",
+      credits,
+      /** The feed shows its latest cards, then more on demand (#979). */
+      more: "Voir plus",
       reactions: {
         group: "Réagir à ce moment",
         emoji: { fire: "🔥", clap: "👏", wow: "😮", laugh: "😂" },

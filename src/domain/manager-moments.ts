@@ -50,19 +50,41 @@ const oncePerKey = <T extends { key: string }>(moments: T[]): T[] => unpublished
 
 const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
 
-/** « Mercato »: who won which athlete, and for how much, once per round and athlete. */
+/**
+ * « Mercato »: who won which athletes at the reveal of a round, and for how much in all: one
+ * moment per round and player (#979), each athlete once per round. The athletes are listed most
+ * expensive first.
+ */
 export function mercatoMoments(wins: MercatoWinFact[]): FeedMoment[] {
-  return oncePerKey(
-    wins.map((w): FeedMoment => ({
-      key: `mercato_win:${w.round}:${w.athleteId}`,
+  // Sorted first, so the same facts in any order keep the same athlete when one is told twice.
+  const athletes = oncePerKey(
+    wins
+      .map((w) => ({ ...w, key: `${w.round}:${w.athleteId}` }))
+      .sort((a, b) => byKey(a, b) || a.userId.localeCompare(b.userId)),
+  );
+  const moments = new Map<string, FeedMoment & { athletes: { name: string; price: number }[] }>();
+  for (const w of athletes) {
+    const key = `mercato_win:${w.round}:${w.userId}`;
+    const moment = moments.get(key) ?? {
+      key,
       kind: "mercato_win",
       happenedAt: w.closedAt,
       pseudo: w.pseudo,
       ...(w.bib ? { bib: w.bib } : {}),
-      athlete: w.athlete,
-      price: w.price,
-    })),
-  ).sort(byKey);
+      round: w.round,
+      price: 0,
+      athletes: [],
+    };
+    moment.price = (moment.price ?? 0) + w.price;
+    moment.athletes.push({ name: w.athlete, price: w.price });
+    moments.set(key, moment);
+  }
+  return [...moments.values()]
+    .map((m) => ({
+      ...m,
+      athletes: m.athletes.sort((a, b) => b.price - a.price || a.name.localeCompare(b.name)),
+    }))
+    .sort(byKey);
 }
 
 /**

@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 
 import { messages } from "@/app/messages.fr";
 import { buttonVariants } from "@/components/ui/button";
-import type { FeedGroup, FeedGroupTitle } from "@/domain/league-moments";
+import { firstMoments, type FeedGroup, type FeedGroupTitle } from "@/domain/league-moments";
 import { NO_REACTIONS, type MomentReactions as Reactions } from "@/domain/moment-reactions";
 
 import { MomentCard } from "./moment-card";
@@ -21,12 +24,14 @@ const titleOf = (title: FeedGroupTitle) =>
  * The « Fil » tab of a league (#671), prediction or Manager (#875): the moments the app tells,
  * latest first, grouped « Ce soir · <compétition> », « Hier », then by day. Nobody writes in it:
  * the members react with emojis and preset messages (#672), when `reactions` are given. Empty:
- * what it will tell, and the next thing to do.
+ * what it will tell, and the next thing to do. With `pageSize`, it shows that many cards, then
+ * « Voir plus » shows as many more (#979).
  */
 export function LeagueFeed({
   groups,
   reactions,
   empty = { text: text.empty, href: "/competitions", action: messages.ranking.predict },
+  pageSize,
 }: {
   groups: FeedGroup[];
   reactions?: {
@@ -36,7 +41,11 @@ export function LeagueFeed({
   };
   /** What an empty feed says, and its next action: a Manager league points to its mercato. */
   empty?: { text: string; href: string; action: string };
+  /** How many cards the feed shows at first, and adds at each « Voir plus ». */
+  pageSize?: number;
 }) {
+  const [shown, setShown] = useState(pageSize ?? Infinity);
+  const total = groups.reduce((n, g) => n + g.moments.length, 0);
   if (groups.length === 0) {
     return (
       <div className="flex flex-col gap-3 rounded-card bg-muted p-4">
@@ -49,7 +58,7 @@ export function LeagueFeed({
   }
   return (
     <section aria-label={text.title} className="flex flex-col gap-4">
-      {groups.map((group) => (
+      {firstMoments(groups, shown).map((group) => (
         <section
           key={group.id}
           aria-labelledby={`feed-${group.id}`}
@@ -79,6 +88,15 @@ export function LeagueFeed({
           </ul>
         </section>
       ))}
+      {pageSize !== undefined && shown < total && (
+        <button
+          type="button"
+          className={`${buttonVariants({ variant: "outline" })} self-center`}
+          onClick={() => setShown((n) => n + pageSize)}
+        >
+          {text.more}
+        </button>
+      )}
     </section>
   );
 }
