@@ -23,7 +23,7 @@ export function leagueSummaryText(summary: {
 }
 
 /** « Privée », « Publique » or « Officielle », next to a league name. */
-export function LeagueKindBadge({
+function LeagueKindBadge({
   isPublic,
   isOfficial = false,
 }: {

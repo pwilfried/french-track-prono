@@ -1,4 +1,4 @@
-import { roundEndsAt, roundHours, type RoundRules } from "./manager-round";
+import { currentRound, roundEndsAt, roundHours, type RoundRules } from "./manager-round";
 
 /**
  * A French Track Manager league plays a home-and-away championship (#644): with N players, each
@@ -57,10 +57,8 @@ export function mercatoStatus(
   now: string,
 ): MercatoStatus {
   if (openedAt === null) return { phase: "waiting" };
-  const current = mercatoCalendar(openedAt, rounds, now, true).find((r) => r.state === "current");
-  return current
-    ? { phase: "round", round: current.round, endsAt: current.endsAt }
-    : { phase: "over" };
+  const current = currentRound(openedAt, rounds, now);
+  return current.round <= PLANNED_ROUNDS ? { phase: "round", ...current } : { phase: "over" };
 }
 
 export type CalendarRound = {
