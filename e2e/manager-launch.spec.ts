@@ -65,6 +65,12 @@ test("the creator of a league of 6 competitions launches the mercato once 3 frie
     sql(`select r.round from manager_leagues l, private.manager_open_round(l.id) r
          where l.name = '${league}'`),
   ).toBe("1");
+
+  // The league page tells the round under way and marks it in the calendar (#925).
+  const id = sql(`select id from manager_leagues where name = '${league}'`);
+  await creatorPage.goto(`/manager/${id}`);
+  await expect(creatorPage.getByText(/^Tour 1 en cours jusqu'au/)).toBeVisible();
+  await expect(calendar.getByText("en cours", { exact: true })).toBeVisible();
 });
 
 test("the creator is told when a custom mercato ends after the first competition starts", async ({
