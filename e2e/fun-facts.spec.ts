@@ -54,7 +54,7 @@ test("an admin adds a fact to the bank, edits it and deletes it", async ({ page 
   );
   try {
     await page.goto("/admin/tableau-de-bord");
-    await openAdminSection(page, "Le saviez-vous");
+    await openAdminSection(page, "Le saviez-vous ?");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Le saviez-vous ?");
 
     const add = page.getByRole("region", { name: "Ajouter un fait" });
