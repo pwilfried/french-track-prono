@@ -2794,6 +2794,9 @@ export const messages = {
     emptyAll: "Personne n'a pronostiqué cette épreuve.",
     emptyLeague: "Personne dans cette ligue n'a pronostiqué cette épreuve.",
     emptyText: "Même Duplantis commence à 5 m. Rendez-vous à la prochaine.",
+    /** Unfolds the podiums of the players outside my leagues (#949); `n`: how many are folded. */
+    seeAll: (n: number) => `Voir tous les pronos (${n})`,
+    hideOthers: "Masquer les autres pronos",
     seeEvents: "Voir les autres épreuves",
     places: { first: "1er", second: "2e", third: "3e" },
   },
