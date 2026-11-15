@@ -240,6 +240,8 @@ export const messages = {
       listen: "Écouter l'épisode",
       see: "Voir",
     },
+    /** The « Battez FrenchTrack » moment (#877); its sentences are those of `challenge`. */
+    challenge: { emoji: "🎯" },
     poll: {
       label: "Sondage",
       choose: "Choisis ta réponse : les résultats s'affichent après ton vote.",

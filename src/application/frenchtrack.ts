@@ -36,6 +36,10 @@ export type ChallengeSummary = {
   lockAt: string;
   points: number | null;
   mine: number | null;
+  /** ISO 8601: when its points were first computed; null until then. */
+  scoredAt: string | null;
+  /** The points of every player once computed, without any name. */
+  scores: number[];
 };
 
 /** Port: « Battez FrenchTrack » (#674). Real adapter = Supabase, fake = in memory. */
@@ -50,7 +54,10 @@ export interface FrenchTrackRepository {
   savePick(eventId: string, podium: Podium): Promise<"saved" | "not_admin" | "locked" | "invalid">;
   /** The admin removes the challenge before the lock. */
   removePick(eventId: string): Promise<"removed" | "not_admin" | "locked">;
-  /** FrenchTrack's points, stored with the players' when the event is computed. */
+  /**
+   * FrenchTrack's points, stored with the players' when the event is computed; the first
+   * computation dates the challenge, a new one keeps that date.
+   */
   saveScore(eventId: string, points: number): Promise<"saved" | "not_admin">;
 }
 

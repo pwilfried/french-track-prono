@@ -2,7 +2,7 @@
 -- lock; the players cannot read it before the lock, even through the API.
 -- Run with `supabase test db`. Everything is rolled back at the end.
 begin;
-select plan(18);
+select plan(20);
 
 insert into auth.users (id, email) values
   ('f7f70000-0000-0000-0000-000000000001', 'admin-frenchtrack@example.test'),
@@ -63,6 +63,10 @@ select is((select count(*)::int from frenchtrack_challenges(
              extract(year from (now() + interval '1 day') at time zone 'Europe/Paris')::int)
            where event_id = 'f7f70000-0000-0000-0000-0000000000e1'), 1,
   'the challenge is listed in its season');
+select is((select row(scored_at, scores)::text from frenchtrack_challenges(
+             extract(year from (now() + interval '1 day') at time zone 'Europe/Paris')::int)
+           where event_id = 'f7f70000-0000-0000-0000-0000000000e1'), '(,{})',
+  'before its points are computed, a challenge has no date nor the points of the players');
 
 -- Bob and Cleo predict, the event locks and is computed.
 reset role;
@@ -99,6 +103,10 @@ select is((select count(*)::int from frenchtrack_season(
              extract(year from (now() + interval '1 day') at time zone 'Europe/Paris')::int)
            where event_id = 'f7f70000-0000-0000-0000-0000000000e1'), 2,
   'the season counts every player of a computed challenge');
+select is((select row(scored_at is not null, scores)::text from frenchtrack_challenges(
+             extract(year from (now() + interval '1 day') at time zone 'Europe/Paris')::int)
+           where event_id = 'f7f70000-0000-0000-0000-0000000000e1'), '(t,"{0,12}")',
+  'once computed, the challenge is dated and listed with the points of every player');
 
 reset role;
 set local role anon;

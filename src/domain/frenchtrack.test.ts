@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   beatShare,
   challengeSeason,
+  challengeMoments,
   challengeSeasonOf,
   challengeVerdict,
   featuredChallenge,
@@ -178,6 +179,70 @@ describe("featuredChallenge", () => {
 
   it("shows nothing without any challenge", () => {
     expect(featuredChallenge([], now)).toBeNull();
+  });
+});
+
+describe("challengeMoments", () => {
+  const challenge = (
+    eventId: string,
+    scoredAt: string | null,
+    points: number | null,
+    mine: number | null,
+    scores: number[],
+  ) => ({
+    eventId,
+    slug: `slug-${eventId}`,
+    discipline: "100 m",
+    gender: "F" as const,
+    scoredAt,
+    points,
+    mine,
+    scores,
+  });
+
+  it("tells each computed challenge, latest computed first, with the share and my verdict", () => {
+    const moments = challengeMoments(
+      [
+        challenge("old", "2026-08-01T21:00:00.000Z", 5, 9, [2, 5, 9, 12]),
+        challenge("last", "2026-08-09T21:00:00.000Z", 5, null, [2, 9]),
+      ],
+      10,
+    );
+
+    expect(moments).toEqual([
+      {
+        key: "frenchtrack:last",
+        eventId: "last",
+        slug: "slug-last",
+        discipline: "100 m",
+        gender: "F",
+        happenedAt: "2026-08-09T21:00:00.000Z",
+        beaten: { count: 1, percent: 50 },
+        verdict: "no_prediction",
+      },
+      expect.objectContaining({
+        key: "frenchtrack:old",
+        beaten: { count: 2, percent: 50 },
+        verdict: "won",
+      }),
+    ]);
+  });
+
+  it("tells nothing of a challenge whose points are not computed yet", () => {
+    expect(challengeMoments([challenge("open", null, null, null, [])], 10)).toEqual([]);
+  });
+
+  it("keeps the latest ones only", () => {
+    const moments = challengeMoments(
+      [
+        challenge("a", "2026-08-01T21:00:00.000Z", 5, 5, [5]),
+        challenge("b", "2026-08-03T21:00:00.000Z", 5, 5, [5]),
+        challenge("c", "2026-08-02T21:00:00.000Z", 5, 5, [5]),
+      ],
+      2,
+    );
+
+    expect(moments.map((m) => m.eventId)).toEqual(["b", "c"]);
   });
 });
 

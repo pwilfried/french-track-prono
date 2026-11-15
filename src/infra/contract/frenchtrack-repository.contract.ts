@@ -92,7 +92,7 @@ export function frenchTrackRepositoryContract(
         scores: [0, 12],
       });
       const listed = (await w.bob.challenges(w.year)).find((c) => c.eventId === w.eventId);
-      expect(listed).toMatchObject({ points: 5, mine: 12 });
+      expect(listed).toMatchObject({ points: 5, mine: 12, scores: [0, 12] });
       const season = (await w.bob.season(w.year)).filter((l) => l.eventId === w.eventId);
       expect(season.map((l) => [l.userId, l.points, l.frenchTrackPoints]).sort()).toEqual(
         [
@@ -100,6 +100,26 @@ export function frenchTrackRepositoryContract(
           [w.adminId, 0, 5],
         ].sort(),
       );
+    });
+
+    it("dates a challenge by the first computation of its points, and keeps that date", async () => {
+      const w = await world();
+      await w.admin.savePick(w.otherEventId, podiumOf(w));
+      w.lock(w.otherEventId);
+      const listed = async () =>
+        (await w.bob.challenges(w.year)).find((c) => c.eventId === w.otherEventId);
+
+      expect(await listed()).toMatchObject({ points: null, scoredAt: null, scores: [] });
+
+      w.score(w.otherEventId, { [w.bobId]: 3 });
+      await w.admin.saveScore(w.otherEventId, 5);
+      const first = (await listed())?.scoredAt;
+      expect(first).toEqual(expect.any(String));
+
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      await w.admin.saveScore(w.otherEventId, 6);
+
+      expect(await listed()).toMatchObject({ points: 6, scoredAt: first });
     });
   });
 }
