@@ -466,7 +466,8 @@ montre « Ma saison » de cette ligue (journée, rang, prochaine confrontation, 
 l'étape du déroulé vient de
 `currentSeasonStep` (`src/domain/manager-home.ts`). Le tutoriel est un composant client
 (`ManagerTutorial`) : ouvert seul à la première visite (mémorisé sur l'appareil, rien en base),
-puis par `/manager?tutoriel=1` ; ses chiffres viennent de `managerIntroFigures`. Détail :
+puis par `/manager?tutoriel=1` ; trois écrans sans chiffre depuis #802 (les chiffres sont dans
+« Règles de la ligue »). Détail :
 `docs/decisions/french-track-manager.md`, section 6.
 
 Records (v0.8, issue #196) : le trigger `update_records_from_result` met à jour le PB (`kind = 'pr'` en base) et le SB
@@ -570,6 +571,18 @@ des joueurs du club, 3 joueurs au moins) ; derniers pronos et historique complet
 (`seasonCardOf`, `src/domain/season-card.ts` : pseudo, dossard, chiffres de la saison, club validé)
 et se partage par le partage natif du téléphone, ou se télécharge à défaut.
 
+Fil de ligue (v0.19, #671) : l'app raconte les moments de chaque ligue de pronos, personne n'y
+écrit (pas de texte libre, non-objectif 6). Les moments se déduisent en TypeScript des lignes de
+points comptées par la ligue (`leagueMoments`, `src/domain/league-moments.ts`, décision B) :
+podium parfait, nouveau leader (seul en tête après une épreuve), série de pronos qui rapportent
+(paliers 5, 7, 10). Chaque fait a une clé stable (`perfect_podium:<épreuve>:<joueur>`…) : le
+calcul des points de la feuille de résultats (`recomputeResultSheet`) publie ensuite les moments
+de toutes les ligues de la compétition par `admin_publish_league_moments()`, qui garde une clé une
+seule fois ; relancer le calcul ne publie rien de nouveau. Table `league_moments` : un membre lit
+celles de ses ligues, aucune écriture hors des fonctions ; aucun texte stocké, les phrases et les
+étiquettes sont dans `messages.fr.ts`. Onglet « Fil » de la page d'une ligue, groupé « Ce soir ·
+<compétition> », « Hier », puis par jour (`feedGroups`, heure de Paris).
+
 Notifications push (#203) : le joueur les active par appareil depuis son profil (opt-in
 explicite, désactivation en un geste). Les abonnements (`push_subscriptions`) ne s'écrivent que
 par `save_push_subscription()` et `delete_push_subscription()`. Chaque minute, l'Edge Function
@@ -654,6 +667,7 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 | v0.17 Ligues thématiques | **F20**, onglets Compétitions (programme par jour), Classement (une portée, ma place, évolution depuis la dernière compétition) et Ligues (Mes ligues, Découvrir), sélecteur de compétitions de la saison, ligue créée avec au moins une compétition active, feuille de résultats unique qui calcule pronos et Manager, collage du tableau World Athletics, filtres des compétitions du back-office, cache des données publiques | …un joueur crée une ligue (privée ou publique) limitée à une ou plusieurs familles d'épreuves (sprint, haies, lancers…) ; seuls les pronos sur ces épreuves comptent dans le classement de la ligue ; le classement général et le jeu sans ligue ne changent pas |
 | v0.17.1 Préprod en ligne | Site de préprod à adresse fixe déployé à chaque fusion dans `main` (projets Supabase et Vercel séparés, jeu de démo fictif), tests e2e après chaque déploiement et chaque matin, connexion en tant qu'un joueur démo, tag posé sans feu vert humain, bloqué par une préprod rouge | …chaque PR fusionnée dans main est visible quelques minutes plus tard sur un site de préprod à adresse fixe, branché sur sa propre base Supabase avec des données fictives, sans toucher à la prod |
 | v0.18 Fiche athlète, consensus et rappels | Fiche athlète (records seulement), consensus des pronos après verrouillage, rappels groupés et « Mes rappels », rappels Manager, bande d'animaux, badges en bronze, argent, or et badges de famille, trophées de saison, icône du lièvre | …depuis une épreuve, le mercato ou une équipe Manager, un joueur ouvre la fiche d'un athlète et voit ses records par discipline ; après le verrouillage d'une épreuve, il voit ce qu'ont pronostiqué tous les joueurs et sa ligue ; il reçoit au plus un rappel groupé avant un verrou s'il lui manque des podiums, et règle ses rappels dans son profil ; il voit aussi sa bande, ses dossards et la vitrine de ses trophées |
+| v0.18.1 Premiers pas du joueur | Profil sans épreuve calculée réduit à un encart (prochain badge, prochaine finale), cartes d'épreuve avec l'animal de la famille, le temps restant, mon podium et le vainqueur, « Complète ton profil » en carte compacte qui ouvre une feuille, présentation du Manager en trois écrans, squelettes de chargement, cache du navigateur et lignes de classement en cache | …un nouveau joueur, sur son téléphone, voit d'abord sa prochaine épreuve à pronostiquer, comprend la liste des épreuves d'un coup d'œil (à faire, terminée et ce qu'elle lui a rapporté), trouve un profil qui ne montre pas de cases vides mais lui dit quoi faire pour le remplir, et découvre le Manager en trois écrans |
 | Plus tard | Carte « Mon podium du 100 m », questions bonus, connexion Google / Apple | à planifier |
 
 ## Cas de test du cœur

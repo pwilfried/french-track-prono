@@ -87,6 +87,8 @@ export const Editing: Story = {
     await expect(canvas.getByText(text.fullOfEntered)).toBeVisible();
     await userEvent.click(validate);
     await waitFor(() => expect(args.onValidate).toHaveBeenCalledWith(["s1", "m1", "m2"]));
+    // The confirmation shows as soon as the save succeeds, without waiting for the page (#874).
+    await expect(await canvas.findByRole("status")).toHaveTextContent(text.validated);
 
     // Picking an athlete placed elsewhere swaps the two.
     await userEvent.click(

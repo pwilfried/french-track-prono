@@ -68,6 +68,8 @@ export function LineupBoard({
   const [open, setOpen] = useState<number | null>(null);
   const [changed, setChanged] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Saved from this screen: the banner shows at once, before the page brings its new status (#874).
+  const [saved, setSaved] = useState(false);
   const editable = status !== "locked" && onValidate !== undefined;
   const byId = new Map(athletes.map((a) => [a.athleteId, a]));
 
@@ -161,7 +163,7 @@ export function LineupBoard({
           🔒 {text.locked}
         </p>
       ) : (
-        status === "validated" &&
+        (status === "validated" || saved) &&
         !changed && (
           <p
             role="status"
@@ -302,9 +304,12 @@ export function LineupBoard({
               disabled={!progress.ready || saving}
               onClick={async () => {
                 setSaving(true);
-                const saved = await onValidate(lineup);
+                const ok = await onValidate(lineup);
                 setSaving(false);
-                if (saved) setChanged(false);
+                if (ok) {
+                  setSaved(true);
+                  setChanged(false);
+                }
               }}
               className={cn(buttonVariants(), "w-full")}
             >

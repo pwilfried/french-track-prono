@@ -1,0 +1,122 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { UseCaseError } from "@/application/errors";
+import type { LeagueMomentRepository, MomentLeague } from "@/application/league-moments";
+import { bibOf } from "@/domain/bib";
+import { inScreenOrder, type LeagueFamily } from "@/domain/league-families";
+import { MOMENT_KINDS, type FeedMoment, type MomentKind } from "@/domain/league-moments";
+
+type LeagueRow = {
+  id: string;
+  competitions: { slug: string; added_at: string | null }[] | null;
+  families: { family: LeagueFamily; added_at: string | null }[];
+  members: { user_id: string; joined_at: string | null }[] | null;
+};
+
+type FeedRow = {
+  key: string;
+  kind: string;
+  happened_at: string;
+  pseudo: string;
+  bib_number: number;
+  bib_color: string;
+  other_pseudo: string | null;
+  competition_name: string | null;
+  discipline: string | null;
+  gender: string | null;
+  data: { length?: number; price?: number; athlete?: string; badge?: string; scores?: [number, number] };
+};
+
+const iso = (value: string) => new Date(value).toISOString();
+const isGender = (gender: string | null): gender is "F" | "M" | "X" =>
+  gender === "F" || gender === "M" || gender === "X";
+const isKind = (kind: string): kind is MomentKind => (MOMENT_KINDS as readonly string[]).includes(kind);
+
+function leagueOf(row: LeagueRow): MomentLeague {
+  const competitions = row.competitions ?? [];
+  const dated = competitions.flatMap((c) => (c.added_at ? [[c.slug, iso(c.added_at)] as const] : []));
+  return {
+    id: row.id,
+    competitionSlugs: competitions.map((c) => c.slug).sort(),
+    ...(dated.length > 0 ? { competitionAddedAt: Object.fromEntries(dated) } : {}),
+    ...(row.families.length > 0
+      ? {
+          families: inScreenOrder(
+            row.families.map((f) => ({
+              family: f.family,
+              addedAt: f.added_at === null ? null : iso(f.added_at),
+            })),
+          ),
+        }
+      : {}),
+    members: (row.members ?? []).map((m) => ({
+      userId: m.user_id,
+      ...(m.joined_at ? { joinedAt: iso(m.joined_at) } : {}),
+    })),
+  };
+}
+
+function momentOf(row: FeedRow): FeedMoment | null {
+  if (!isKind(row.kind)) return null;
+  const { length, price, athlete, badge, scores } = row.data ?? {};
+  return {
+    key: row.key,
+    kind: row.kind,
+    happenedAt: iso(row.happened_at),
+    pseudo: row.pseudo,
+    bib: bibOf(row.bib_number, row.bib_color),
+    ...(row.other_pseudo ? { otherPseudo: row.other_pseudo } : {}),
+    ...(row.competition_name ? { competitionName: row.competition_name } : {}),
+    ...(row.discipline && isGender(row.gender)
+      ? { event: { discipline: row.discipline, gender: row.gender } }
+      : {}),
+    ...(typeof length === "number" ? { length } : {}),
+    ...(typeof price === "number" ? { price } : {}),
+    ...(athlete ? { athlete } : {}),
+    ...(badge ? { badge } : {}),
+    ...(scores ? { scores } : {}),
+  };
+}
+
+/**
+ * The admin's session publishes (admin_ functions check it); a member's session reads the feed,
+ * row level security shows someone outside the league nothing.
+ */
+export function createSupabaseLeagueMomentRepository(client: SupabaseClient): LeagueMomentRepository {
+  return {
+    async leaguesOf(competitionSlug) {
+      const { data, error } = await client.rpc("admin_moment_leagues", {
+        p_competition: competitionSlug,
+      });
+      if (error) {
+        if (error.code === "42501") return "not_admin";
+        throw new UseCaseError("LEAGUES_UNAVAILABLE");
+      }
+      return (data as LeagueRow[]).map(leagueOf);
+    },
+
+    async publish(leagueId, moments) {
+      const { data, error } = await client.rpc("admin_publish_league_moments", {
+        p_league: leagueId,
+        p_moments: moments.map((m) => ({
+          key: m.key,
+          kind: m.kind,
+          user_id: m.userId,
+          event_id: m.eventId,
+          data: m.length !== undefined ? { length: m.length } : {},
+        })),
+      });
+      if (error) {
+        if (error.code === "42501") return "not_admin";
+        throw new UseCaseError("LEAGUES_UNAVAILABLE");
+      }
+      return data as number;
+    },
+
+    async feed(leagueId) {
+      const { data, error } = await client.rpc("league_feed", { p_league: leagueId });
+      if (error) throw new UseCaseError("LEAGUES_UNAVAILABLE");
+      return ((data ?? []) as FeedRow[]).flatMap((row) => momentOf(row) ?? []);
+    },
+  };
+}

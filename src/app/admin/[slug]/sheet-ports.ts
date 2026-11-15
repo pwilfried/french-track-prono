@@ -2,9 +2,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   createSupabaseFrenchTrackRepository,
+  createSupabaseLeagueMomentRepository,
   createSupabaseManagerScoreRepository,
   createSupabasePerformanceRepository,
   createSupabasePointsRepository,
+  createSupabaseRankingRepository,
 } from "@/infra";
 
 /**
@@ -17,5 +19,7 @@ export function sheetPorts(client: SupabaseClient) {
     points: createSupabasePointsRepository(client),
     frenchTrack: createSupabaseFrenchTrackRepository(client),
     scores: createSupabaseManagerScoreRepository(client),
+    moments: createSupabaseLeagueMomentRepository(client),
+    ranking: createSupabaseRankingRepository(client),
   };
 }

@@ -13,11 +13,13 @@ import { computeEventPoints, type PointsRepository, type ScoreLine } from "./com
 import type { PerformanceRepository } from "./enter-performances";
 import { UseCaseError, type ErrorCode } from "./errors";
 import type { FrenchTrackRepository } from "./frenchtrack";
+import { publishLeagueMoments, type LeagueMomentRepository } from "./league-moments";
 import {
   computeManagerScores,
   type ManagerScoreLine,
   type ManagerScoreRepository,
 } from "./manager-scores";
+import type { RankingRepository } from "./rankings";
 
 type Ports = {
   performances: PerformanceRepository;
@@ -25,6 +27,8 @@ type Ports = {
   /** On a « Battez FrenchTrack » challenge (#674), its podium is scored too. */
   frenchTrack?: FrenchTrackRepository;
   scores: ManagerScoreRepository;
+  moments: LeagueMomentRepository;
+  ranking: RankingRepository;
   now?: () => Date;
 };
 
@@ -57,7 +61,8 @@ const OUTCOMES = { not_admin: "NOT_ADMIN", athlete_not_in_event: "ATHLETE_NOT_IN
 /**
  * Everything a results sheet scores, in this order (#665): the prediction points of the event from
  * its podium (the general, league and « Ce soir » rankings read them), then the Manager scores of
- * the competition, which add those prediction points. Each step replaces what it stored before:
+ * the competition, which add those prediction points, then the moments of the leagues counting the
+ * competition (#671). Each step replaces what it stored before, or keeps a moment already told:
  * running it again changes nothing.
  */
 export function recomputeResultSheet(ports: Ports) {
@@ -69,6 +74,9 @@ export function recomputeResultSheet(ports: Ports) {
       const manager = event.competitionSlug
         ? await computeManagerScores(ports).execute({ competitionSlug: event.competitionSlug })
         : [];
+      if (predictions && event.competitionSlug) {
+        await publishLeagueMoments(ports).execute({ competitionSlug: event.competitionSlug });
+      }
       return { predictions, manager };
     },
   };

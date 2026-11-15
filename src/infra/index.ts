@@ -128,3 +128,8 @@ export { createInMemoryManagerLineupStore } from "./in-memory/manager-lineup-rep
 export { createSupabaseManagerLineups } from "./supabase/manager-lineup-repository";
 export { createInMemoryBadgeLevelStore } from "./in-memory/badge-level-repository";
 export { createSupabaseBadgeLevelRepository } from "./supabase/badge-level-repository";
+export {
+  createInMemoryLeagueMomentStore,
+  type MomentEventFixture,
+} from "./in-memory/league-moment-repository";
+export { createSupabaseLeagueMomentRepository } from "./supabase/league-moment-repository";
