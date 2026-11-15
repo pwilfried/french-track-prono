@@ -1,4 +1,5 @@
 import { unstable_cache, updateTag } from "next/cache";
+import { connection } from "next/server";
 import { cache } from "react";
 
 import {
@@ -29,14 +30,17 @@ const askedThisRender = cache(() => new Map<string, Promise<unknown>>());
  * The Next.js data cache, shared by every request (and every server instance on Vercel). Only
  * public reads go through it: the anonymous Supabase client, no cookie, no player. Within one
  * page render, the same read asked twice (the rankings of two leagues over one competition) is
- * asked once (#824).
+ * asked once (#824). Never read while prerendering at build time (#919).
  */
 const memo: Memo = (read, key, tags) => {
   const shared = unstable_cache(read, ["public", key], {
     tags: [...tags],
     revalidate: PUBLIC_CACHE_SECONDS,
   });
-  return (...args) => {
+  return async (...args) => {
+    // #919: `next build` stops prerendering here, before asking Supabase. A slow or unavailable
+    // database at build time cannot fail the build; the page is rendered on request (as it was).
+    await connection();
     const asked = askedThisRender();
     const id = JSON.stringify([key, ...args]);
     if (!asked.has(id)) asked.set(id, shared(...args));
