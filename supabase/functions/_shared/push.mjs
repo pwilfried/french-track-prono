@@ -225,3 +225,40 @@ export async function sendDue(database, push) {
     failures: [...failures.values()],
   };
 }
+
+/**
+ * Sends one test notification to the given devices of an account (#977), to check that push
+ * notifications reach a phone without waiting for a reminder or a result.
+ * @param {{ endpoint: string, p256dh: string, auth: string }[]} devices
+ * @param {(device: any, payload: string, options: any) => Promise<unknown>} push
+ */
+export async function sendTest(devices, push) {
+  const payload = JSON.stringify({
+    title: "🔔 Notification de test",
+    body: "Si tu lis ceci, les notifications French Track Prono marchent sur cet appareil.",
+    url: "/",
+    tag: "test",
+  });
+  /** @type {string[]} */
+  const forgotten = [];
+  let sent = 0;
+  let failed = 0;
+  for (const device of devices) {
+    try {
+      await push(
+        { endpoint: device.endpoint, keys: { p256dh: device.p256dh, auth: device.auth } },
+        payload,
+        { TTL: 15 * 60, urgency: "high" },
+      );
+      sent += 1;
+    } catch (error) {
+      const { statusCode, body } = /** @type {{ statusCode?: number, body?: string }} */ (error);
+      if (statusCode === 404 || statusCode === 410) forgotten.push(device.endpoint);
+      else {
+        failed += 1;
+        console.error(`push failed (${statusCode ?? "network"}): ${body ?? error}`);
+      }
+    }
+  }
+  return { sent, forgotten, failed };
+}
