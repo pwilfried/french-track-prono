@@ -57,6 +57,11 @@ export { createInMemoryRevealRepository } from "./in-memory/reveal-repository";
 export { createSupabaseRevealRepository } from "./supabase/reveal-repository";
 export { createInMemoryConsensusRepository } from "./in-memory/consensus-repository";
 export { createSupabaseConsensusRepository } from "./supabase/consensus-repository";
+export {
+  createInMemoryFrenchTrackStore,
+  type FrenchTrackEventFixture,
+} from "./in-memory/frenchtrack-repository";
+export { createSupabaseFrenchTrackRepository } from "./supabase/frenchtrack-repository";
 export { createInMemoryReactionRepository } from "./in-memory/reaction-repository";
 export { createSupabaseReactionRepository } from "./supabase/reaction-repository";
 export {
@@ -123,6 +128,8 @@ export { createInMemoryManagerLineupStore } from "./in-memory/manager-lineup-rep
 export { createSupabaseManagerLineups } from "./supabase/manager-lineup-repository";
 export { createInMemoryBadgeLevelStore } from "./in-memory/badge-level-repository";
 export { createSupabaseBadgeLevelRepository } from "./supabase/badge-level-repository";
+export { createInMemoryFunFactStore } from "./in-memory/fun-fact-repository";
+export { createSupabaseFunFactRepository } from "./supabase/fun-fact-repository";
 export {
   createInMemoryLeagueMomentStore,
   type MomentEventFixture,
@@ -130,3 +137,5 @@ export {
 export { createSupabaseLeagueMomentRepository } from "./supabase/league-moment-repository";
 export { createInMemoryMomentReactionStore } from "./in-memory/moment-reaction-repository";
 export { createSupabaseMomentReactionRepository } from "./supabase/moment-reaction-repository";
+export { createInMemoryManagerFeedStore } from "./in-memory/manager-feed-repository";
+export { createSupabaseManagerFeedRepository } from "./supabase/manager-feed-repository";

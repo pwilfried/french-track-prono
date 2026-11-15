@@ -1,3 +1,4 @@
+import type { Badge, BadgeLevel } from "./badges";
 import type { Bib } from "./bib";
 import { competitionDay } from "./competition";
 import { rankPlayers, totalsOf } from "./ranking";
@@ -153,7 +154,9 @@ export type FeedMoment = {
   length?: number;
   price?: number;
   athlete?: string;
-  badge?: string;
+  badge?: Badge;
+  level?: BadgeLevel;
+  /** A duel's scores, winner first. */
   scores?: [number, number];
 };
 

@@ -223,6 +223,23 @@ joueurs · N » puis une ligue par onglet (« nom · N ») filtrent le bloc comm
 rend les podiums sans nom (seulement « le mien »), refuse une épreuve non verrouillée (FT033,
 aucune fuite avant le verrou, même par l'API) et une ligue dont on n'est pas membre (42501).
 
+**Battez FrenchTrack (v0.19, #674).** Sur une grande finale, l'admin (le compte FrenchTrack) pose
+le podium de FrenchTrack depuis `/admin/<épreuve>/frenchtrack`, avant le verrouillage : l'épreuve
+devient un défi. Le joueur voit la carte « Battez FrenchTrack » sur l'épreuve et à l'accueil (le
+défi ouvert qui verrouille le premier, sinon le dernier joué) : avant le verrouillage, « posé,
+dévoilé au verrouillage » ; après le résultat, les deux podiums côte à côte avec leurs points, le
+verdict (« Tu as battu FrenchTrack », « FrenchTrack gagne », « Égalité », pas de prono), la part
+des joueurs qui l'ont battu et « Partager ». Les points de FrenchTrack sont calculés avec ceux des
+joueurs (même barème, même champ pour le coup de flair, jamais de joker ni de marque :
+`frenchTrackScore()` dans `src/domain/frenchtrack.ts`) ; le verdict compare les points du joueur
+sur l'épreuve, joker compris. `/classement/frenchtrack` classe la saison (année civile, heure de
+Paris) : victoires sur défis joués, puis points cumulés sur ces défis, ex æquo à la même place.
+Données : table `frenchtrack_picks`, lue et écrite seulement par les fonctions de #674 ;
+`admin_set_frenchtrack_pick` et `admin_remove_frenchtrack_pick` (admin, refusées après le
+verrouillage, FT034), `frenchtrack_challenge(événement)` (podium caché avant le verrouillage sauf
+pour l'admin, puis mes points et ceux de tous sans nom), `frenchtrack_challenges(année)` et
+`frenchtrack_season(année)` (pseudo et dossard seulement).
+
 Les décisions du propriétaire prises pendant ces versions sont tracées dans l'issue #112.
 
 **Compétitions du back-office (#647).** `/admin/competitions` filtre ses deux listes (à venir,
@@ -299,7 +316,7 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 |---|---|
 | Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions`, `league_families` |
 | Référentiel | `competitions`, `events` (dont `kind` et `sub_disciplines` des épreuves combinées), `athletes`, `entries` (liste de départ), `results`, `athlete_records` (PR, SB, WR, WB) |
-| Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions`, `badges`, `user_badges` (niveau de badge gagné, #821), `trophies` et `trophy_settings` (trophées de saison et compte FrenchTrack du Témoin d'or, #822) |
+| Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions`, `badges`, `user_badges` (niveau de badge gagné, #821), `trophies` et `trophy_settings` (trophées de saison et compte FrenchTrack du Témoin d'or, #822), `fun_facts` et `fun_fact_settings` (« Le saviez-vous ? », #766) |
 | Notifications | `push_subscriptions`, `reminder_settings`, `reminder_log`, `program_alerts` |
 | Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
 | Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()`, `raise_my_badge_levels()`, `event_consensus()`, `save_reminder_settings()`, `admin_replace_trophies()` |
@@ -554,6 +571,17 @@ des joueurs du club, 3 joueurs au moins) ; derniers pronos et historique complet
 (`seasonCardOf`, `src/domain/season-card.ts` : pseudo, dossard, chiffres de la saison, club validé)
 et se partage par le partage natif du téléphone, ou se télécharge à défaut.
 
+« Le saviez-vous ? » (v0.19, #766) : une carte en haut de l'accueil du joueur, un fait d'athlé,
+son étiquette (« Pour tes pronos », « Insolite », « Pour briller au bar »), « Un autre » et × qui la
+ferme jusqu'au lendemain (jour de Paris, retenu sur l'appareil). La banque vit dans `fun_facts`
+(48 faits de départ chargés par la migration, chacun avec sa source, lue par l'admin seul) ;
+l'admin ajoute, modifie, désactive, supprime les faits et affiche ou masque la carte depuis
+`/admin/le-saviez-vous`, sans déploiement. Un fait lié à une compétition, une discipline ou des
+dates passe en premier ces jours-là, puis la banque tourne d'un fait par jour (`factsOfTheDay`,
+`src/domain/fun-facts.ts`). Les faits sur le jeu (podium parfait, joker, perf) ne sont pas dans
+la banque : leurs chiffres viennent de `scorePrediction` appliqué au barème en cours
+(`gameFigures`), jamais tapés à la main.
+
 Fil de ligue (v0.19, #671) : l'app raconte les moments de chaque ligue de pronos, personne n'y
 écrit (pas de texte libre, non-objectif 6). Les moments se déduisent en TypeScript des lignes de
 points comptées par la ligue (`leagueMoments`, `src/domain/league-moments.ts`, décision B) :
@@ -580,6 +608,18 @@ l'élément (`admin_hide_moment_reaction()`, il disparaît pour tous, noté dans
 le signalement. Le joueur concerné par un moment reçoit une notification push regroupée quand
 d'autres y réagissent (`private.moment_reaction_due()`, famille « Ligues » de « Mes rappels », au
 plus une par heure, mêmes heures calmes).
+
+Fil d'une ligue Manager et badges (v0.19, #875) : l'onglet « Fil » de la page d'une ligue Manager
+(`?onglet=fil`, à côté de « Saison ») raconte les athlètes gagnés à la révélation de chaque tour
+du mercato (`mercato_win`, depuis `manager_round_bids`) et le résultat de chaque confrontation
+dès que sa journée a ses scores Manager (`duel_result`, vainqueur d'abord, score manquant = 0 ;
+pas de duel les journées bonus). Ces faits sont déjà stockés : `manager_feed()` les lit (sécurité
+par ligne, un non-participant ne lit rien) et `managerMoments` (`src/domain/manager-moments.ts`)
+les raconte avec une clé stable (`mercato_win:<tour>:<athlète>`, `duel_result:<journée>:<domicile>`).
+Un niveau de badge, lui, n'a pas de trace datée : quand le joueur a vu la célébration
+(`markBadgesSeen`), `publish_my_badge_moments()` le publie une fois (`badge:<joueur>:<badge>:<niveau>`)
+dans chacune de ses ligues de pronos (`league_moments`) et Manager (table jumelle
+`manager_moments`), seulement s'il détient ce niveau.
 
 Notifications push (#203) : le joueur les active par appareil depuis son profil (opt-in
 explicite, désactivation en un geste). Les abonnements (`push_subscriptions`) ne s'écrivent que

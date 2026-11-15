@@ -4,7 +4,7 @@ import type { Bib } from "./bib";
  * How the members of a league react to its moments (#672), with no free text (non-goal 6): an
  * emoji from a fixed list, one of each per player, and one preset message per player and moment.
  * Codes only: src/app/messages.fr.ts writes the emojis and the sentences. The database checks the
- * same lists (supabase/migrations/20261115030000_moment_reactions.sql).
+ * same lists (supabase/migrations/20261115040000_moment_reactions.sql).
  */
 export const MOMENT_EMOJIS = ["fire", "clap", "wow", "laugh"] as const;
 export type MomentEmoji = (typeof MOMENT_EMOJIS)[number];

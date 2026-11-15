@@ -19,12 +19,12 @@ import { LeagueEventList } from "@/components/leagues/league-event-list";
 import { LeagueFeed } from "@/components/leagues/league-feed";
 import { InviteBanner } from "@/components/leagues/invite-banner";
 import { LeagueHero } from "@/components/leagues/league-hero";
+import { LeagueTabs } from "@/components/leagues/league-tabs";
 import { ShareInvite } from "@/components/leagues/share-invite";
 import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
 import { isOpenToLeagues } from "@/domain/league";
 import { addableFamilies } from "@/domain/league-families";
-import { cn } from "@/lib/utils";
 
 import { currentCompetitionDay, loadCompetitions } from "../../competition";
 import { messages } from "../../messages.fr";
@@ -145,23 +145,14 @@ export default async function LeaguePage({
         }
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
-        <nav className="-mx-4 flex gap-2 overflow-x-auto px-4" aria-label={league.name}>
-          {BAR.map(({ tab: t, label }) => (
-            <Link
-              key={t}
-              href={`/ligues/${id}?onglet=${t}`}
-              aria-current={t === tab ? "page" : undefined}
-              className={cn(
-                "inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-4 font-semibold",
-                t === tab
-                  ? "bg-brand text-brand-foreground dark:bg-secondary dark:text-secondary-foreground"
-                  : "border border-border bg-background text-foreground",
-              )}
-            >
-              {t === "membres" ? `${label} (${league.memberCount})` : label}
-            </Link>
-          ))}
-        </nav>
+        <LeagueTabs
+          label={league.name}
+          tabs={BAR.map(({ tab: t, label }) => ({
+            href: `/ligues/${id}?onglet=${t}`,
+            label: t === "membres" ? `${label} (${league.memberCount})` : label,
+            active: t === tab,
+          }))}
+        />
 
         {tab === "classement" && (
           <>

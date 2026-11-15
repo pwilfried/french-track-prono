@@ -35,7 +35,11 @@ export function momentText(moment: FeedMoment): string {
     case "mercato_win":
       return text.text.mercato_win(moment.pseudo, moment.athlete ?? null, moment.price ?? null);
     case "badge":
-      return text.text.badge(moment.pseudo, moment.badge ?? null);
+      return text.text.badge(
+        moment.pseudo,
+        moment.badge ? messages.badges[moment.badge].name : null,
+        moment.level ? messages.badgeLevels.in[moment.level] : null,
+      );
     case "streak":
       return text.text.streak(moment.pseudo, moment.length ?? null);
   }
