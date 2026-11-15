@@ -116,6 +116,8 @@ export default async function Home() {
             completeProfile ? (
               <CompleteProfileCard
                 firstPodium={completeProfile.firstPodium}
+                bib={completeProfile.bib}
+                pseudo={completeProfile.pseudo}
                 search={findClubsAction}
                 save={completeProfileAction}
                 later={completeProfileLaterAction}

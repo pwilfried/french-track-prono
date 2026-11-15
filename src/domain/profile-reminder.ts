@@ -1,5 +1,6 @@
 // The home asks a player whose profile is incomplete to complete it (#540): a club, or the
 // families of disciplines they practise. « Plus tard » hides the card for 30 days.
+import { type Animal, animalOf } from "./band";
 import type { Discipline, DisciplineFamily } from "./discipline";
 
 /** The families a player ticks on the home, wider than the discipline families (no relay). */
@@ -15,6 +16,15 @@ export const PROFILE_FAMILIES: { family: ProfileFamily; covers: DisciplineFamily
   { family: "throws", covers: ["throws"] },
   { family: "combined", covers: ["combined"] },
 ];
+
+/**
+ * The animal of the band a family wears in « Mes épreuves » (#889): the one of the first
+ * discipline family it covers (the kangaroo for the jumps).
+ */
+export function profileFamilyAnimal(family: ProfileFamily): Animal {
+  const covers = PROFILE_FAMILIES.find((f) => f.family === family)!.covers;
+  return animalOf(covers[0]) ?? "lievre";
+}
 
 /** How long « Plus tard » hides the card. */
 export const COMPLETE_LATER_DAYS = 30;

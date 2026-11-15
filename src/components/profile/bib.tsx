@@ -28,12 +28,15 @@ export function Bib({
   bib,
   size = "small",
   pseudo,
+  club,
   className = "",
 }: {
   bib: BibValue;
   size?: "small" | "large";
   /** Printed under the number on the large bib. */
   pseudo?: string;
+  /** Printed under the pseudo on the large bib, like the club on a real one (#889). */
+  club?: string;
   className?: string;
 }) {
   const palette = BIB_PALETTE[bib.color];
@@ -62,9 +65,7 @@ export function Bib({
   return (
     <div
       role="img"
-      aria-label={
-        pseudo ? `${messages.bib.label(bib.number)}, ${pseudo}` : messages.bib.label(bib.number)
-      }
+      aria-label={[messages.bib.label(bib.number), pseudo, club].filter(Boolean).join(", ")}
       data-bib-color={bib.color}
       style={colours}
       className={cn(

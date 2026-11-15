@@ -24,14 +24,26 @@ export function ClubPicker({
   initial,
   search,
   error,
+  onClubName,
 }: {
   initial: ClubPickerValue;
   search: (query: string) => Promise<Club[]>;
   error?: string;
+  /** Told the club's name as it is picked or typed, empty when none (the bib prints it, #889). */
+  onClubName?: (name: string) => void;
 }) {
   const id = useId();
-  const [club, setClub] = useState(initial.club);
+  const [club, pickClub] = useState(initial.club);
   const [typing, setTyping] = useState(initial.newClubName !== "");
+  const [newName, setNewName] = useState(initial.newClubName);
+  const setClub = (next: ClubPickerValue["club"]) => {
+    pickClub(next);
+    onClubName?.(next?.name ?? "");
+  };
+  const type = (on: boolean) => {
+    setTyping(on);
+    onClubName?.(on ? newName : (club?.name ?? ""));
+  };
   const [query, setQuery] = useState("");
   const [found, setFound] = useState<Club[] | null>(null);
 
@@ -67,6 +79,10 @@ export function ClubPicker({
             label={text.newNameLabel}
             hint={text.newNameHint}
             defaultValue={initial.newClubName}
+            onChange={(event) => {
+              setNewName(event.target.value);
+              onClubName?.(event.target.value);
+            }}
             error={error}
             maxLength={120}
           />
@@ -79,7 +95,7 @@ export function ClubPicker({
           />
           <button
             type="button"
-            onClick={() => setTyping(false)}
+            onClick={() => type(false)}
             className="min-h-11 self-start font-semibold text-primary underline underline-offset-4"
           >
             {text.backToSearch}
@@ -144,7 +160,7 @@ export function ClubPicker({
           ) : null}
           <button
             type="button"
-            onClick={() => setTyping(true)}
+            onClick={() => type(true)}
             className="min-h-11 self-start font-semibold text-primary underline underline-offset-4"
           >
             {text.missing}

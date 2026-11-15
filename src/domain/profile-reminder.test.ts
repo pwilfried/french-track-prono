@@ -7,6 +7,7 @@ import {
   completeLaterUntil,
   disciplinesOfFamilies,
   isProfileIncomplete,
+  profileFamilyAnimal,
   shouldAskToCompleteProfile,
 } from "./profile-reminder";
 
@@ -99,5 +100,23 @@ describe("disciplinesOfFamilies", () => {
     const all = PROFILE_FAMILIES.map((f) => f.family);
     expect(disciplinesOfFamilies([...all, "relay", "golf"], known)).not.toContain("4 x 100 m");
     expect(disciplinesOfFamilies(["golf"], known)).toEqual([]);
+  });
+});
+
+describe("profileFamilyAnimal", () => {
+  it("gives each family of the home its animal of the band", () => {
+    expect(PROFILE_FAMILIES.map(({ family }) => profileFamilyAnimal(family))).toEqual([
+      "guepard",
+      "impala",
+      "lievre",
+      "kangourou",
+      "ours",
+      "renard",
+    ]);
+  });
+
+  it("gives six different animals, so no two families look alike", () => {
+    const animals = PROFILE_FAMILIES.map(({ family }) => profileFamilyAnimal(family));
+    expect(new Set(animals).size).toBe(PROFILE_FAMILIES.length);
   });
 });
