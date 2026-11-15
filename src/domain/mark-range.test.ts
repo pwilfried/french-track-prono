@@ -2,7 +2,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import { DISCIPLINE_FAMILIES, MARK_UNITS } from "./discipline";
-import { isInRange, markInputMode, markRange, readMark } from "./mark-range";
+import { isInRange, markExample, markInputMode, markRange, readMark } from "./mark-range";
 
 describe("markRange", () => {
   it("accepts a triple jump from 5 m to 20 m", () => {
@@ -78,5 +78,32 @@ describe("markInputMode", () => {
     expect(markInputMode("distance", "throws")).toBe("decimal");
     expect(markInputMode("time", "sprint")).toBe("decimal");
     expect(markInputMode("time", "middle")).toBe("text");
+  });
+});
+
+describe("markExample", () => {
+  it.each([
+    ["time", "sprint", "10.85"],
+    ["time", "middle", "4:01.20"],
+    ["distance", "horizontal_jumps", "7.45"],
+    ["distance", "vertical_jumps", "1.95"],
+    ["distance", "throws", "62.40"],
+    ["points", "combined", "8250"],
+  ] as const)("shows a %s mark of the %s family as %s", (unit, family, example) => {
+    expect(markExample(unit, family)).toBe(example);
+  });
+
+  it("falls back on a mark of the unit when the family is unknown or uses another unit", () => {
+    expect(markExample("time")).toBe("10.85");
+    expect(markExample("distance", "sprint")).toBe("8.15");
+  });
+
+  it("gives every family and unit an example that reads and lies in its range", () => {
+    for (const unit of MARK_UNITS) {
+      for (const family of [undefined, ...DISCIPLINE_FAMILIES]) {
+        const read = readMark(markExample(unit, family), unit, family);
+        expect(typeof read, `${unit} ${family}`).toBe("number");
+      }
+    }
   });
 });
