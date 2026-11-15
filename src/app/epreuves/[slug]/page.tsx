@@ -8,6 +8,7 @@ import { getEventOdds } from "@/application/set-event-odds";
 import { listMyLeagues, type League } from "@/application/leagues";
 import { getMyPrediction, type Prediction } from "@/application/save-prediction";
 import { Animal } from "@/components/band/animal";
+import { CountryFlag } from "@/components/athletes/country-flag";
 import { buttonVariants } from "@/components/ui/button";
 import { LockBanner } from "@/components/countdown/lock-banner";
 import { ErrorNotice } from "@/components/error-notice";
@@ -19,7 +20,6 @@ import { competitionDay, TIME_ZONE } from "@/domain/competition";
 import { eventPhase } from "@/domain/countdown";
 import type { EventDetail } from "@/domain/event";
 import { formatMark, tidyMark } from "@/domain/discipline";
-import { flagOf } from "@/domain/flag";
 import { pickChoices } from "@/domain/odds";
 import { canPredictRound } from "@/domain/rounds";
 import { draftFromPodium, emptyDraft } from "@/domain/podium-draft";
@@ -410,7 +410,9 @@ export default async function EventPage({
                         <span className="w-6 shrink-0 text-center font-mono text-sm text-muted-foreground">
                           {r.rank}
                         </span>
-                        <span aria-hidden="true">{flagOf(r.countryCode)}</span>
+                        <span aria-hidden="true">
+                          <CountryFlag code={r.countryCode} />
+                        </span>
                         <Link
                           href={athleteHref(r.slug, `/epreuves/${slug}`)}
                           className="min-w-0 flex-1 break-words font-semibold"
@@ -482,9 +484,7 @@ export default async function EventPage({
                     aria-hidden="true"
                     className="w-7 shrink-0 text-center text-xl leading-none"
                   >
-                    {flagOf(entry.countryCode) ?? (
-                      <span className="text-xs font-bold">{entry.countryCode}</span>
-                    )}
+                    <CountryFlag code={entry.countryCode} />
                   </span>
                   <Link
                     href={athleteHref(entry.slug, `/epreuves/${slug}`)}

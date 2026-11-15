@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useRef, useState, type ReactNode } from "react";
 
 import { messages } from "@/app/messages.fr";
+import { CountryFlag } from "@/components/athletes/country-flag";
 import type { Entry } from "@/domain/event";
-import { flagOf } from "@/domain/flag";
 import {
   emptyDraft,
   nextEmptyStep,
@@ -171,9 +171,11 @@ export function PodiumPicker({
               {athlete ? (
                 <>
                   <span aria-hidden className="text-lg leading-none">
-                    {athlete.athleteId === OTHER_ATHLETE
-                      ? "?"
-                      : (flagOf(athlete.countryCode) ?? athlete.countryCode)}
+                    {athlete.athleteId === OTHER_ATHLETE ? (
+                      "?"
+                    ) : (
+                      <CountryFlag code={athlete.countryCode} />
+                    )}
                   </span>
                   <span className="line-clamp-2 break-words hyphens-auto">{athlete.name}</span>
                 </>
@@ -225,11 +227,7 @@ export function PodiumPicker({
                 )}
               >
                 <span aria-hidden className="w-7 shrink-0 text-center text-xl leading-none">
-                  {other
-                    ? "?"
-                    : (flagOf(athlete.countryCode) ?? (
-                        <span className="text-xs font-bold">{athlete.countryCode}</span>
-                      ))}
+                  {other ? "?" : <CountryFlag code={athlete.countryCode} />}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-bold break-words">{athlete.name}</span>
