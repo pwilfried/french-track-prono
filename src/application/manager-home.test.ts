@@ -144,11 +144,11 @@ describe("the seasons of my Manager leagues", () => {
       now: NOW,
     });
 
-    // Then she lines up her team before matchday 1, against max at home
+    // Then she lines up her team before matchday 1, against max at home, with no place yet
     expect(home).toMatchObject({
       step: "lineup",
       round: { current: 1, total: 3 },
-      standing: { rank: 1, points: 0, wins: 0, draws: 0, losses: 0, difference: 0 },
+      standing: null,
       lineup: { slug: "meeting-1", lockAt: inDays(2) },
       lastPoints: null,
     });

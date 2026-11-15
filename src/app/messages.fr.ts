@@ -14,6 +14,7 @@ const pts = (n: number) => `${n} ${ptsUnit(n)}`;
 const gain = (n: number) => (n > 0 ? `+${pts(n)}` : pts(n));
 const pointsWord = (n: number) => (Math.abs(n) <= 1 ? "point" : "points");
 const points = (n: number) => `${n} ${pointsWord(n)}`;
+const eventsCount = (n: number) => `${n} ${n <= 1 ? "épreuve" : "épreuves"}`;
 const GENDER = { F: "Femmes", M: "Hommes", X: "Mixte" } as const;
 /** The contact address published on the site: written here only. */
 const CONTACT_EMAIL = "frenchtrackprono@gmail.com";
@@ -316,7 +317,9 @@ export const messages = {
   start: {
     none: "Aucune compétition à venir pour l'instant.",
     inDays: (days: number) => (days === 0 ? "En cours" : days === 1 ? "Demain" : `Dans ${days} j`),
-    events: (count: number) => (count <= 1 ? `${count} épreuve` : `${count} épreuves`),
+    events: eventsCount,
+    /** The finals of a competition, or « programme à venir » before any (never « 0 épreuve »). */
+    program: (finals: number) => (finals > 0 ? eventsCount(finals) : "programme à venir"),
   },
   events: {
     filtersLabel: "Filtrer les épreuves",
@@ -350,7 +353,6 @@ export const messages = {
     label: "Compétition",
     change: "Changer",
     changeLabel: (name: string) => `Changer de compétition (${name} affichée)`,
-    noProgram: "programme à venir",
     sheet: {
       title: "Choisir une compétition",
       close: "Fermer",
@@ -795,7 +797,7 @@ export const messages = {
     takenPlace: (place: string, name: string) => `Place ${place} : ${name}, changer`,
     lockedPlace: (place: string, name: string) => `Place ${place} : ${name}`,
     unfillablePlace: (place: string) => `Place ${place} : aucun athlète de ton équipe disponible`,
-    nobody: "Personne",
+    nobody: "Aucun athlète engagé",
     add: "+",
     bench: "Remplaçants",
     benchEmpty: "Tous tes athlètes engagés sont alignés.",
@@ -1125,7 +1127,7 @@ export const messages = {
     noCompetitionTag: "Sans compétition",
     rank: (rank: number) => ordinal(rank),
     rankLabel: (rank: number) => `Ta place : ${ordinal(rank)}`,
-    noPointsYet: "Pas encore de points",
+    noPointsYet: "Tu n'as pas encore de points",
     emptyTitle: "Joue entre amis",
     emptyText: "Crée une ligue et partage son code, ou rejoins celle d'un ami.",
     create: "Créer une ligue",
@@ -1857,9 +1859,12 @@ export const messages = {
       `Exemple : podium parfait = 3 × ${exact} + ${perfect} = ${3 * exact + perfect} points.`,
     oddsTitle: "Les cotes",
     odds: (a: number, b: number, c: number) =>
-      `Sur les compétitions avec cotes, tu choisis parmi les athlètes proposés par l'admin ou « Autre athlète ». En plus du podium, chaque athlète rapporte sa cote × ${a} à la bonne place, × ${b} à une place d'écart, × ${c} à deux places.`,
-    oddsExample: (odds: string, a: number, points: number) =>
-      `Exemple : une athlète à ${odds} à la bonne place rapporte ${odds} × ${a} = ${points} points en plus.`,
+      `Sur les compétitions avec cotes, tu choisis parmi les athlètes proposés ou « Autre athlète ». En plus du podium, chaque athlète rapporte sa cote × ${a} à la bonne place, × ${b} à une place d'écart, × ${c} à deux places.`,
+    /** `product` is the exact odds × multiplier, rounded to `points` as in the scoring. */
+    oddsExample: (odds: string, a: number, product: number, points: number) =>
+      `Exemple : une athlète à ${odds} à la bonne place rapporte ${odds} × ${a} = ${
+        product === points ? points : `${String(product).replace(".", ",")}, arrondi à ${points}`
+      } points en plus.`,
     other:
       "« Autre athlète » est juste quand un athlète qui n'était pas proposé finit à cette place.",
     marksTitle: "Les perfs",

@@ -187,6 +187,8 @@ export const Locked: Story = {
     await expect(canvas.queryByRole("button")).toBeNull();
     await expect(canvas.getByText(text.lockedPlace("Sprint", "Léa Fictive"))).toBeInTheDocument();
     await expect(canvas.getByText(text.unfillablePlace("Lancers"))).toBeInTheDocument();
+    // The place nobody can fill says why, not « Personne » (#936).
+    await expect(canvas.getByText(text.nobody)).toBeVisible();
   },
 };
 

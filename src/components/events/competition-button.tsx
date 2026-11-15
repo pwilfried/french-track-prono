@@ -24,7 +24,7 @@ export function CompetitionButton({
   const details = [
     competition.city,
     messages.competition.dates(competition.startsOn, competition.endsOn),
-    competition.finals > 0 ? messages.start.events(competition.finals) : text.noProgram,
+    messages.start.program(competition.finals),
   ]
     .filter(Boolean)
     .join(" · ");

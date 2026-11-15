@@ -157,7 +157,10 @@ export function SpotSwatch({
   );
 }
 
-/** An empty spot, dashed on the track or the grass: « + » and its family, or « Personne ». */
+/**
+ * An empty spot, dashed on the track or the grass: « + » and its family, or « Aucun athlète
+ * engagé » when no athlete of the team can stand there (#936).
+ */
 export function EmptySpot({
   label,
   fillable,
@@ -175,7 +178,10 @@ export function EmptySpot({
         fillable ? "border-white bg-black/25" : "border-white/40 bg-black/40",
       )}
     >
-      <span aria-hidden className={fillable ? "text-lg leading-none" : "text-[10px] leading-none"}>
+      <span
+        aria-hidden
+        className={fillable ? "text-lg leading-none" : "w-full text-[9px] leading-tight"}
+      >
         {fillable ? messages.lineup.add : messages.lineup.nobody}
       </span>
       <span className="w-full truncate text-[9px] leading-tight">{label}</span>
