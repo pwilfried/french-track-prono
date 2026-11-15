@@ -36,6 +36,13 @@ test("a new player sees one card on the profile, then the full profile after a f
   await expect(page.locator("main")).not.toContainText("pas encore classé");
   await expect(page.locator("main")).not.toContainText(/\b0\spt/);
 
+  // « C'est quoi ? » explains the animal and the badges in a sheet, over the profile (#940).
+  await page.getByRole("button", { name: "C'est quoi, l'animal et les badges ?" }).click();
+  const help = page.getByRole("dialog", { name: "L'animal et les badges" });
+  await expect(help.getByRole("heading", { name: "Les badges", exact: true })).toBeVisible();
+  await help.getByRole("button", { name: "Fermer" }).click();
+  await expect(help).toBeHidden();
+
   // A first computed event: the card gives way to the figures and the full grid of badges.
   sql(`insert into score_events (user_id, competition_id, event_id, source, points, reason, detail)
     select u.id, e.competition_id, e.id, 'prediction', 5, 'prediction',
