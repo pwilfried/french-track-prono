@@ -142,6 +142,12 @@ export default async function AdminEventPage({
           >
             {messages.performances.link}
           </Link>
+          <Link
+            href={`/admin/${slug}/frenchtrack`}
+            className="ml-2 mt-2 inline-flex min-h-11 items-center rounded-full bg-nuit px-4 text-sm font-bold text-white"
+          >
+            {messages.challenge.admin.link}
+          </Link>
           {event.previousRounds.length > 0 && (
             <nav aria-label={messages.rounds.previousLinks} className="mt-2 flex flex-wrap gap-2">
               {event.previousRounds.map((round, index) => (

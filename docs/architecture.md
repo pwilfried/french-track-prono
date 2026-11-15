@@ -223,6 +223,23 @@ joueurs · N » puis une ligue par onglet (« nom · N ») filtrent le bloc comm
 rend les podiums sans nom (seulement « le mien »), refuse une épreuve non verrouillée (FT033,
 aucune fuite avant le verrou, même par l'API) et une ligue dont on n'est pas membre (42501).
 
+**Battez FrenchTrack (v0.19, #674).** Sur une grande finale, l'admin (le compte FrenchTrack) pose
+le podium de FrenchTrack depuis `/admin/<épreuve>/frenchtrack`, avant le verrouillage : l'épreuve
+devient un défi. Le joueur voit la carte « Battez FrenchTrack » sur l'épreuve et à l'accueil (le
+défi ouvert qui verrouille le premier, sinon le dernier joué) : avant le verrouillage, « posé,
+dévoilé au verrouillage » ; après le résultat, les deux podiums côte à côte avec leurs points, le
+verdict (« Tu as battu FrenchTrack », « FrenchTrack gagne », « Égalité », pas de prono), la part
+des joueurs qui l'ont battu et « Partager ». Les points de FrenchTrack sont calculés avec ceux des
+joueurs (même barème, même champ pour le coup de flair, jamais de joker ni de marque :
+`frenchTrackScore()` dans `src/domain/frenchtrack.ts`) ; le verdict compare les points du joueur
+sur l'épreuve, joker compris. `/classement/frenchtrack` classe la saison (année civile, heure de
+Paris) : victoires sur défis joués, puis points cumulés sur ces défis, ex æquo à la même place.
+Données : table `frenchtrack_picks`, lue et écrite seulement par les fonctions de #674 ;
+`admin_set_frenchtrack_pick` et `admin_remove_frenchtrack_pick` (admin, refusées après le
+verrouillage, FT034), `frenchtrack_challenge(événement)` (podium caché avant le verrouillage sauf
+pour l'admin, puis mes points et ceux de tous sans nom), `frenchtrack_challenges(année)` et
+`frenchtrack_season(année)` (pseudo et dossard seulement).
+
 Les décisions du propriétaire prises pendant ces versions sont tracées dans l'issue #112.
 
 **Compétitions du back-office (#647).** `/admin/competitions` filtre ses deux listes (à venir,

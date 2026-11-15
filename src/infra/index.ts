@@ -57,6 +57,11 @@ export { createInMemoryRevealRepository } from "./in-memory/reveal-repository";
 export { createSupabaseRevealRepository } from "./supabase/reveal-repository";
 export { createInMemoryConsensusRepository } from "./in-memory/consensus-repository";
 export { createSupabaseConsensusRepository } from "./supabase/consensus-repository";
+export {
+  createInMemoryFrenchTrackStore,
+  type FrenchTrackEventFixture,
+} from "./in-memory/frenchtrack-repository";
+export { createSupabaseFrenchTrackRepository } from "./supabase/frenchtrack-repository";
 export { createInMemoryReactionRepository } from "./in-memory/reaction-repository";
 export { createSupabaseReactionRepository } from "./supabase/reaction-repository";
 export {

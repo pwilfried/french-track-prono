@@ -1,5 +1,6 @@
 import { getClubNotices, type ClubNotice } from "@/application/club-notices";
 import { UseCaseError } from "@/application/errors";
+import { getHomeChallenge } from "@/application/frenchtrack";
 import { getMyPoints } from "@/application/get-my-points";
 import { getProfile } from "@/application/get-profile";
 import { listEvents } from "@/application/list-events";
@@ -8,9 +9,11 @@ import { isMercatoOpenForMe } from "@/application/manager-bids";
 import { askToCompleteProfile } from "@/application/profile-reminder";
 import { getLeagueRanking } from "@/application/rankings";
 import type { PlayerHomeProps } from "@/components/home/player-home";
+import { challengeSeasonOf } from "@/domain/frenchtrack";
 import { leagueStanding, nextAction } from "@/domain/home";
 import {
   createSupabaseClubNoticeRepository,
+  createSupabaseFrenchTrackRepository,
   createSupabaseLeagueRepository,
   createSupabaseManagerBids,
   createSupabaseManagerLeagueRepository,
@@ -65,58 +68,71 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
   const leagueRepository = createSupabaseLeagueRepository(client);
   const listed = [...lists.coming, ...lists.past].map((c) => c.slug);
 
-  const [events, mine, myPoints, rankings, clubNotices, predictionCount, mercatoOpen, askProfile] =
-    await Promise.all([
-      safely(() =>
-        listEvents({ events: publicEventReader() }).execute({
-          competitionSlug: competition.slug,
-        }),
-      ),
-      safely(() =>
-        listMyPredictions({ predictions }).execute({ userId, competitionSlug: competition.slug }),
-      ),
-      safely(() =>
-        getMyPoints({ points: createSupabasePointsRepository(client) }).execute({
-          userId,
-          competitionSlug: competition.slug,
-        }),
-      ),
-      Promise.all(
-        leagues.map(async (league) => ({
-          id: league.id,
-          rows:
-            (await safely(() =>
-              getLeagueRanking({ ranking, leagues: leagueRepository }).execute({
-                leagueId: league.id,
-                competitionSlugs: league.competitionSlugs,
-                families: league.families,
-                competitionAddedAt: league.competitionAddedAt,
-              }),
-            )) ?? [],
-        })),
-      ),
-      safely(() =>
-        getClubNotices({ notices: createSupabaseClubNoticeRepository(client) }).execute(),
-      ),
-      safely(() =>
-        countPredictions({ predictions }).execute({
-          userId,
-          competitionSlugs: [...new Set([competition.slug, ...listed])],
-        }),
-      ),
-      safely(() =>
-        isMercatoOpenForMe({
-          managerLeagues: createSupabaseManagerLeagueRepository(client),
-          bids: createSupabaseManagerBids(client),
-        }).execute(),
-      ),
-      safely(() =>
-        askToCompleteProfile({
-          details: createSupabasePlayerDetailsRepository(client),
-          reminders: createSupabaseProfileReminderRepository(client),
-        }).execute({ userId, now }),
-      ),
-    ]);
+  const [
+    events,
+    mine,
+    myPoints,
+    rankings,
+    clubNotices,
+    predictionCount,
+    mercatoOpen,
+    askProfile,
+    challenge,
+  ] = await Promise.all([
+    safely(() =>
+      listEvents({ events: publicEventReader() }).execute({
+        competitionSlug: competition.slug,
+      }),
+    ),
+    safely(() =>
+      listMyPredictions({ predictions }).execute({ userId, competitionSlug: competition.slug }),
+    ),
+    safely(() =>
+      getMyPoints({ points: createSupabasePointsRepository(client) }).execute({
+        userId,
+        competitionSlug: competition.slug,
+      }),
+    ),
+    Promise.all(
+      leagues.map(async (league) => ({
+        id: league.id,
+        rows:
+          (await safely(() =>
+            getLeagueRanking({ ranking, leagues: leagueRepository }).execute({
+              leagueId: league.id,
+              competitionSlugs: league.competitionSlugs,
+              families: league.families,
+              competitionAddedAt: league.competitionAddedAt,
+            }),
+          )) ?? [],
+      })),
+    ),
+    safely(() => getClubNotices({ notices: createSupabaseClubNoticeRepository(client) }).execute()),
+    safely(() =>
+      countPredictions({ predictions }).execute({
+        userId,
+        competitionSlugs: [...new Set([competition.slug, ...listed])],
+      }),
+    ),
+    safely(() =>
+      isMercatoOpenForMe({
+        managerLeagues: createSupabaseManagerLeagueRepository(client),
+        bids: createSupabaseManagerBids(client),
+      }).execute(),
+    ),
+    safely(() =>
+      askToCompleteProfile({
+        details: createSupabasePlayerDetailsRepository(client),
+        reminders: createSupabaseProfileReminderRepository(client),
+      }).execute({ userId, now }),
+    ),
+    safely(() =>
+      getHomeChallenge({ frenchTrack: createSupabaseFrenchTrackRepository(client) }).execute({
+        year: challengeSeasonOf(now.toISOString()),
+        now,
+      }),
+    ),
+  ]);
 
   const standing = leagueStanding(rankings, userId);
   const shownLeague = leagues.find((l) => l.id === standing?.leagueId) ?? leagues[0];
@@ -156,5 +172,6 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
           }
         : null,
     mercatoOpen: mercatoOpen ?? false,
+    challenge,
   };
 }

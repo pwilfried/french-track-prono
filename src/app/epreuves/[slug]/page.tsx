@@ -36,6 +36,7 @@ import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
 import { loadScale } from "../../scale";
 import { getCurrentUser, getSessionClient } from "../../session";
+import { ChallengeSection } from "./challenge-section";
 import { ForgetPodium } from "./forget-podium";
 import { PredictionForm } from "./prediction-form";
 import { ResultSection } from "./result-section";
@@ -446,6 +447,12 @@ export default async function EventPage({
           />
         )}
       </section>
+
+      {user && (
+        <div className="mx-auto w-full max-w-md pt-6 empty:hidden">
+          <ChallengeSection event={event} slug={slug} user={user} />
+        </div>
+      )}
 
       {user && (
         <section className="mx-auto w-full max-w-md pt-6">
