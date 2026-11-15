@@ -141,7 +141,10 @@ export type ErrorCode =
   | "FUN_FACT_TAG_INVALID"
   | "FUN_FACT_DATES_INVALID"
   | "FUN_FACT_TIE_INVALID"
-  | "FUN_FACTS_UNAVAILABLE";
+  | "FUN_FACTS_UNAVAILABLE"
+  | "FRENCHTRACK_UNAVAILABLE"
+  | "FRENCHTRACK_LOCKED"
+  | "FRENCHTRACK_PICK_INVALID";
 
 let reportUnavailable: ((code: ErrorCode) => void) | undefined;
 

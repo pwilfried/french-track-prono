@@ -1,4 +1,5 @@
 import { eventPhase } from "@/domain/countdown";
+import { frenchTrackScore } from "@/domain/frenchtrack";
 import { missingPodiumRanks } from "@/domain/official-result";
 import {
   flairContext,
@@ -11,6 +12,7 @@ import {
 } from "@/domain/scoring";
 
 import { UseCaseError } from "./errors";
+import type { FrenchTrackRepository } from "./frenchtrack";
 
 /** Everything needed to score one event. */
 export type EventToScore = {
@@ -42,9 +44,15 @@ export interface PointsRepository {
 
 /**
  * Computes the points of every player who predicted an event, from its official result. Can be run
- * again (after a corrected result): the lines of the event are replaced, never duplicated.
+ * again (after a corrected result): the lines of the event are replaced, never duplicated. On a
+ * « Battez FrenchTrack » challenge (#674), FrenchTrack's podium is scored at the same time, with
+ * the same scale and the same field.
  */
-export function computeEventPoints(ports: { points: PointsRepository; now?: () => Date }) {
+export function computeEventPoints(ports: {
+  points: PointsRepository;
+  frenchTrack?: FrenchTrackRepository;
+  now?: () => Date;
+}) {
   const now = ports.now ?? (() => new Date());
   return {
     async execute(input: { eventId: string }): Promise<ScoreLine[]> {
@@ -61,6 +69,19 @@ export function computeEventPoints(ports: { points: PointsRepository; now?: () =
       }));
       const outcome = await ports.points.replaceEventScores(input.eventId, lines);
       if (outcome === "not_admin") throw new UseCaseError("NOT_ADMIN");
+
+      const challenge = await ports.frenchTrack?.challenge(input.eventId);
+      if (challenge?.podium) {
+        const { points } = frenchTrackScore(
+          challenge.podium,
+          event.results,
+          event.rules,
+          context,
+          event.bets,
+        );
+        const saved = await ports.frenchTrack!.saveScore(input.eventId, points);
+        if (saved === "not_admin") throw new UseCaseError("NOT_ADMIN");
+      }
       return lines;
     },
   };

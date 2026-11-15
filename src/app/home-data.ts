@@ -1,5 +1,6 @@
 import { getClubNotices, type ClubNotice } from "@/application/club-notices";
 import { UseCaseError } from "@/application/errors";
+import { getHomeChallenge } from "@/application/frenchtrack";
 import { getFunFacts } from "@/application/fun-facts";
 import { getMyPoints } from "@/application/get-my-points";
 import { getProfile } from "@/application/get-profile";
@@ -10,10 +11,12 @@ import { askToCompleteProfile } from "@/application/profile-reminder";
 import { getLeagueRanking } from "@/application/rankings";
 import type { PlayerHomeProps } from "@/components/home/player-home";
 import { competitionDay } from "@/domain/competition";
+import { challengeSeasonOf } from "@/domain/frenchtrack";
 import type { FunFact } from "@/domain/fun-facts";
 import { leagueStanding, nextAction } from "@/domain/home";
 import {
   createSupabaseClubNoticeRepository,
+  createSupabaseFrenchTrackRepository,
   createSupabaseFunFactRepository,
   createSupabaseLeagueRepository,
   createSupabaseManagerBids,
@@ -83,6 +86,7 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
     mercatoOpen,
     askProfile,
     scale,
+    challenge,
   ] = await Promise.all([
     safely(() =>
       listEvents({ events: publicEventReader() }).execute({
@@ -132,6 +136,12 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
       }).execute({ userId, now }),
     ),
     loadScale(),
+    safely(() =>
+      getHomeChallenge({ frenchTrack: createSupabaseFrenchTrackRepository(client) }).execute({
+        year: challengeSeasonOf(now.toISOString()),
+        now,
+      }),
+    ),
   ]);
 
   const day = competitionDay(now.toISOString());
@@ -187,5 +197,6 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
           }
         : null,
     mercatoOpen: mercatoOpen ?? false,
+    challenge,
   };
 }

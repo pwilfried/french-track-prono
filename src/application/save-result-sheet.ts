@@ -12,6 +12,7 @@ import {
 import { computeEventPoints, type PointsRepository, type ScoreLine } from "./compute-event-points";
 import type { PerformanceRepository } from "./enter-performances";
 import { UseCaseError, type ErrorCode } from "./errors";
+import type { FrenchTrackRepository } from "./frenchtrack";
 import { publishLeagueMoments, type LeagueMomentRepository } from "./league-moments";
 import {
   computeManagerScores,
@@ -23,6 +24,8 @@ import type { RankingRepository } from "./rankings";
 type Ports = {
   performances: PerformanceRepository;
   points: PointsRepository;
+  /** On a « Battez FrenchTrack » challenge (#674), its podium is scored too. */
+  frenchTrack?: FrenchTrackRepository;
   scores: ManagerScoreRepository;
   moments: LeagueMomentRepository;
   ranking: RankingRepository;
