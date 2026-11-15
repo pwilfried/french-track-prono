@@ -2702,8 +2702,23 @@ export const messages = {
     marksHint: (tolerance: string) =>
       `Une perf est juste à ${tolerance} près de la marque officielle. Laisse vide pour ne pas parier.`,
     markLabel: (name: string) => `Perf de ${name}`,
-    markPlaceholder: { time: "10.85", distance: "8.15", points: "8250" },
-    /** « Entre 5,00 m et 20,00 m pour le triple saut. » */
+    /** An example of a mark, by the way it is written (see markFormat). */
+    markPlaceholder: {
+      seconds: "10.85",
+      minutes: "3:35.20",
+      hours: "2:06:30",
+      metres: "8.15",
+      points: "8250",
+    },
+    /** Shown under a mark field: how to write it (#935). */
+    markFormat: {
+      seconds: "Format ss.cc",
+      minutes: "Format m:ss.cc",
+      hours: "Format h:mm:ss",
+      metres: "Format m.cc",
+      points: "En points",
+    },
+    /** « Entre 11,00 m et 19,00 m pour le triple saut. » */
     markOutOfRange: (min: string, max: string, discipline: string) => {
       const name = discipline.charAt(0).toLowerCase() + discipline.slice(1);
       return `Entre ${min} et ${max} pour ${/^[aeiouyhéè]/i.test(name) ? "l'" : "le "}${name}.`;

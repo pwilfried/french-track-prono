@@ -7,7 +7,13 @@ import { buttonVariants } from "@/components/ui/button";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
 import { ScaleRules } from "@/components/rules/scale-rules";
 import type { DisciplineFamily, MarkUnit } from "@/domain/discipline";
-import { MARK_MAX_LENGTH, markInputMode, markRange, readMark } from "@/domain/mark-range";
+import {
+  MARK_MAX_LENGTH,
+  markFormat,
+  markInputMode,
+  markRange,
+  readMark,
+} from "@/domain/mark-range";
 import { isComplete, OTHER_ATHLETE, type PodiumDraft } from "@/domain/podium-draft";
 import { athleteHref } from "@/domain/redirect";
 import { cn } from "@/lib/utils";
@@ -116,6 +122,7 @@ export function PredictionForm({
       <input type="hidden" name="slug" value={slug} />
       {markUnit && <input type="hidden" name="markUnit" value={markUnit} />}
       {markFamily && <input type="hidden" name="markFamily" value={markFamily} />}
+      {markUnit && <input type="hidden" name="markDiscipline" value={discipline} />}
       {/* Once a podium is saved the tips only push it down (#493). */}
       {!isComplete(initial.draft) && <FirstPredictionTips />}
       {/* Stays for a player who comes back; the notice is what announces a save. */}
@@ -305,11 +312,12 @@ function MarkFields({
   });
   if (placed.length === 0) return null;
 
-  const range = markRange(unit, family);
+  const range = markRange(unit, family, discipline);
+  const format = markFormat(unit, range);
   const problemOf = (id: string) => {
     const text = (values[id] ?? "").trim();
     if (text === "") return null;
-    const read = readMark(text, unit, family);
+    const read = readMark(text, unit, family, discipline);
     if (read === "bad_mark") return messages.errors.MARK_INVALID;
     if (read === "out_of_range") {
       return messages.picker.markOutOfRange(
@@ -338,6 +346,7 @@ function MarkFields({
         const id = athlete.athleteId;
         const problem = shown(id);
         const errorId = `mark-error-${slot}`;
+        const formatId = `mark-format-${slot}`;
         return (
           <div key={slot} className="flex flex-col gap-1">
             <label className="flex items-center gap-3">
@@ -356,11 +365,14 @@ function MarkFields({
                 }}
                 onBlur={() => setChecked((c) => ({ ...c, [id]: true }))}
                 aria-invalid={problem ? true : undefined}
-                aria-describedby={problem ? errorId : undefined}
-                placeholder={messages.picker.markPlaceholder[unit]}
+                aria-describedby={problem ? `${formatId} ${errorId}` : formatId}
+                placeholder={messages.picker.markPlaceholder[format]}
                 className="min-h-11 w-28 rounded-xl border-2 border-border bg-background px-3 text-right font-mono font-bold aria-invalid:border-accent-text"
               />
             </label>
+            <p id={formatId} className="text-right text-xs text-muted-foreground">
+              {messages.picker.markFormat[format]}
+            </p>
             {problem && (
               <p
                 id={errorId}

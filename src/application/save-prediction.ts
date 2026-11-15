@@ -45,6 +45,8 @@ export type SavePredictionInput = {
   markUnit?: MarkUnit;
   /** The family of the discipline: it bounds the plausible marks (5 to 20 m for a triple jump). */
   markFamily?: DisciplineFamily;
+  /** The name of the discipline: when known, it bounds the marks closer (3:20 to 5:30 for a 1500 m). */
+  markDiscipline?: string;
 };
 
 const SLOTS = ["first", "second", "third"] as const;
@@ -64,7 +66,7 @@ function readMarks(
     if (text === "") continue;
     // « Autre athlète » is nobody in particular: no mark to predict.
     if (!input.markUnit || podium[slot] === OTHER_ATHLETE) return "invalid";
-    const value = readMark(text, input.markUnit, input.markFamily);
+    const value = readMark(text, input.markUnit, input.markFamily, input.markDiscipline);
     if (value === "bad_mark") return "invalid";
     if (value === "out_of_range") return "out_of_range";
     marks[slot] = value;

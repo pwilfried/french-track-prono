@@ -43,6 +43,7 @@ export async function savePredictionAction(
   // Bounds the marks here for a clear message; the database checks them against the event anyway.
   const family = formText(data, "markFamily");
   const markFamily = DISCIPLINE_FAMILIES.find((f) => f === family);
+  const markDiscipline = formText(data, "markDiscipline") || undefined;
 
   const user = await getCurrentUser();
   if (!user) redirect(`/connexion?next=${encodeURIComponent(`/epreuves/${slug}`)}`);
@@ -60,6 +61,7 @@ export async function savePredictionAction(
       marks: state.marks,
       markUnit,
       markFamily,
+      markDiscipline,
     });
   } catch (error) {
     // Only known error codes are expected here; anything else is a bug and stays visible.

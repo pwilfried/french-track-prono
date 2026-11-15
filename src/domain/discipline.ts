@@ -40,7 +40,7 @@ export type Discipline = {
 
 /**
  * A mark typed as text, as a number in the unit of the discipline: "10.62", "1:56.70", "2:05:30"
- * (seconds); "2.04", "8,12 m", "2m34" (metres); "8125", "8 125 pts" (points). Null otherwise.
+ * or "3'35\"20" (seconds); "2.04", "8,12 m", "2m34" (metres); "8125", "8 125 pts" (points). Null otherwise.
  */
 export function parseMark(text: string, unit: MarkUnit): number | null {
   const mark = text
@@ -49,7 +49,11 @@ export function parseMark(text: string, unit: MarkUnit): number | null {
     .replace(/\s/g, "")
     .replace(",", ".");
   if (unit === "time") {
-    const parts = mark.split(":");
+    // The French way: 3'35"20 (or 3’35’’20, 3′35″20) is 3:35.20.
+    const parts = mark
+      .replace(/''|’’|"|″/g, ".")
+      .replace(/['’′]/g, ":")
+      .split(":");
     if (
       parts.length > 3 ||
       !parts.every(

@@ -15,7 +15,7 @@ export type PredictionEventFixture = {
   /** With odds: the proposed athletes; the player may also put « autre athlète » on one place. */
   proposed?: string[];
   /** How its discipline measures a mark: a predicted mark must be plausible (#702). */
-  discipline?: { unit: MarkUnit; family: DisciplineFamily };
+  discipline?: { unit: MarkUnit; family: DisciplineFamily; name?: string };
 };
 
 /**
@@ -55,7 +55,8 @@ export function createInMemoryPredictionRepository(options: {
         return "athlete_not_proposed";
       }
       const marks = Object.values(prediction.marks ?? {}).filter((m) => m !== null);
-      const range = event.discipline && markRange(event.discipline.unit, event.discipline.family);
+      const d = event.discipline;
+      const range = d && markRange(d.unit, d.family, d.name);
       if (range && !marks.every((m) => isInRange(m, range))) return "mark_out_of_range";
       if (prediction.useJoker) {
         const otherJoker = [...stored.values()].some(

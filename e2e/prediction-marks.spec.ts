@@ -15,8 +15,8 @@ function openFinal(where: string) {
 }
 
 test("a player predicts a podium with a mark for each of his three athletes", async ({ page }) => {
-  // An open sprint (run `npm run db:open-events` first): marks are times of under 90 s.
-  const slug = openFinal(`d.family in ('sprint', 'hurdles')`);
+  // An open 400 m, flat or hurdles (run `npm run db:open-events` first): marks of 44 to 65 s.
+  const slug = openFinal(`d.name in ('400 m', '400 m haies')`);
   expect(slug, "no open race: run npm run db:open-events").not.toBe("");
   const player = newPlayer("perf");
 
@@ -31,6 +31,8 @@ test("a player predicts a podium with a mark for each of his three athletes", as
   for (const index of [0, 1, 2]) await athletes.nth(index).click();
   const marks = page.getByRole("group", { name: "Tes perfs (facultatif)" }).getByRole("textbox");
   await expect(marks).toHaveCount(3);
+  // The expected format is written under each field (#935).
+  await expect(page.getByText("Format ss.cc")).toHaveCount(3);
 
   // A mark that is not a time is refused.
   await marks.nth(0).fill("vite");
@@ -70,13 +72,14 @@ test("a 300-digit triple jump mark is refused next to its field, a plausible one
   const marks = page.getByRole("group", { name: "Tes perfs (facultatif)" }).getByRole("textbox");
   const first = marks.nth(0);
   await expect(first).toHaveAttribute("inputmode", "decimal");
+  await expect(first).toHaveAccessibleDescription("Format m.cc");
 
   // The field takes only a bounded number of characters, and an absurd mark is refused.
   await first.fill(`8${"0".repeat(297)}989`);
   expect((await first.inputValue()).length).toBeLessThanOrEqual(12);
   await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
   await expect(page.locator("main").getByRole("alert")).toContainText(
-    "Entre 5,00 m et 20,00 m pour le triple saut",
+    "Entre 11,00 m et 19,00 m pour le triple saut",
   );
   await expect(page.getByText("Podium enregistré")).toHaveCount(0);
   // The podium is still there.
@@ -93,4 +96,39 @@ test("a 300-digit triple jump mark is refused next to its field, a plausible one
     sql(`select m1 from predictions p join auth.users u on u.id = p.user_id
          where u.email = '${player.email}'`),
   ).toBe("14.85");
+});
+
+test("a 1500 m mark typed the French way saves in minutes, the format under the field", async ({
+  page,
+}) => {
+  const slug = openFinal(`d.name = '1500 m'`);
+  expect(slug, "no open 1500 m: run npm run db:open-events").not.toBe("");
+  const player = newPlayer("mile");
+
+  await page.goto(`/epreuves/${slug}`);
+  await page.locator("main").getByRole("link", { name: "Se connecter", exact: true }).click();
+  await signUp(page, player);
+  await page.waitForURL(new RegExp(`/epreuves/${slug}$`));
+  joinLeagueFor(player.email, "ultimate-championship-2026");
+  await page.reload();
+
+  const athletes = page.locator("li > button[aria-pressed]");
+  for (const index of [0, 1, 2]) await athletes.nth(index).click();
+  const marks = page.getByRole("group", { name: "Tes perfs (facultatif)" }).getByRole("textbox");
+  await expect(marks.nth(0)).toHaveAccessibleDescription("Format m:ss.cc");
+
+  // #935: « 2:00 » is no 1500 m; « 4,02 » and « 3'58"50 » are.
+  await marks.nth(0).fill("2:00");
+  await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
+  await expect(page.locator("main").getByRole("alert")).toContainText(
+    "Entre 3:20 et 5:30 pour le 1500 m",
+  );
+  await marks.nth(0).fill("4,02");
+  await marks.nth(1).fill(`3'58"50`);
+  await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
+  await expect(page.getByRole("status")).toContainText("Podium enregistré");
+  expect(
+    sql(`select m1 || ' ' || m2 from predictions p join auth.users u on u.id = p.user_id
+         where u.email = '${player.email}'`),
+  ).toBe("242.00 238.50");
 });

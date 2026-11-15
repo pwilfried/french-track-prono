@@ -546,7 +546,12 @@ sinon). Perfs (#261) : `predictions.m1..m3`, dans l'unité de la discipline, ver
 podium. Depuis #702, une perf doit être plausible pour la famille de la discipline (5 à 20 m pour
 un triple saut) : bornes dans `src/domain/mark-range.ts`, reprises par `mark_range()` en base (à
 changer ensemble) ; le formulaire le dit à côté du champ, la base refuse (FT031, et
-`predictions_marks_bounded` : positive, finie, sous 100 000). Sur la feuille de résultats (saisie
+`predictions_marks_bounded` : positive, finie, sous 100 000). Depuis #935, une discipline connue a
+ses propres bornes, autour de ses records (3:20 à 5:30 pour un 1500 m, 11 à 19 m pour un triple
+saut : `BY_DISCIPLINE`, repris par `discipline_mark_range()`) ; les autres gardent celles de leur
+famille. Le joueur peut écrire « 4'02 » ou « 3'35"20 », et « 4,02 » se lit 4:02 quand seule cette
+lecture est plausible ; le format attendu (« m:ss.cc », « m.cc »…) s'affiche sous le champ. La
+feuille de résultats de l'admin garde les bornes de la famille. Sur la feuille de résultats (saisie
 ou collage World Athletics), une marque hors bornes n'est qu'un avertissement que l'admin confirme.
 Saisies bornées (#712) : chaque champ joueur a une longueur maximale, reprise par le cas d'usage
 (recherches à `SEARCH_MAX_LENGTH`, 60 caractères, dans `src/domain/list-view.ts` ; e-mail à 254 ;

@@ -152,6 +152,37 @@ describe("SavePrediction", () => {
     expect(saved[0]?.marks).toEqual({ first: 15.1, second: null, third: null });
   });
 
+  it("saves a 1500 m mark written the French way, read in minutes (#935)", async () => {
+    const { repo, saved } = repository();
+
+    await savePrediction({ predictions: repo }).execute({
+      ...input,
+      marks: { first: "4,02", second: "3'58\"50", third: "" },
+      markUnit: "time",
+      markFamily: "middle",
+      markDiscipline: "1500 m",
+    });
+
+    expect(saved[0]?.marks).toEqual({ first: 242, second: 238.5, third: null });
+  });
+
+  it("refuses a 1500 m in 2 minutes with MARK_OUT_OF_RANGE, saving nothing (#935)", async () => {
+    const { repo, saved } = repository();
+
+    expect(
+      await codeOf(
+        savePrediction({ predictions: repo }).execute({
+          ...input,
+          marks: { first: "2:00.00", second: "", third: "" },
+          markUnit: "time",
+          markFamily: "middle",
+          markDiscipline: "1500 m",
+        }),
+      ),
+    ).toBe("MARK_OUT_OF_RANGE");
+    expect(saved).toEqual([]);
+  });
+
   it("saves a podium with « autre athlète » on one place", async () => {
     const { repo, saved } = repository();
 
