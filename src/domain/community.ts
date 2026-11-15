@@ -54,6 +54,21 @@ export const isAnnouncementKind = (kind: string): kind is AnnouncementKind =>
 const isLink = (link: string) =>
   link.length <= ANNOUNCEMENT_LINK_MAX && (link.startsWith("https://") || link.startsWith("/"));
 
+/**
+ * The episode the podcast card of the home shows (#896): the latest published one (removed ones are
+ * gone), null when there is none; the community block of the home then leaves episodes out.
+ */
+export function latestEpisode(announcements: Announcement[]): Announcement | null {
+  return announcements.reduce<Announcement | null>(
+    (latest, a) =>
+      a.kind === "episode" &&
+      (!latest || Date.parse(a.publishedAt) > Date.parse(latest.publishedAt))
+        ? a
+        : latest,
+    null,
+  );
+}
+
 /** An announcement as typed in the back-office, trimmed; refused when a field is out of bounds. */
 export function checkAnnouncement(input: {
   kind: string;

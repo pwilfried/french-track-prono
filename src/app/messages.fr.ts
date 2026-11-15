@@ -1613,7 +1613,7 @@ export const messages = {
   adminCommunity: {
     title: "Annonces et sondages",
     subtitle:
-      "Ce que tu publies ici s'affiche dans « Dans ma communauté » sur l'accueil de chaque joueur.",
+      "Ce que tu publies ici s'affiche dans « Dans ma communauté » sur l'accueil de chaque joueur ; le dernier épisode, dans la carte « Le podcast FrenchTrack ».",
     announcementTitle: "Publier une annonce",
     kind: "Type",
     titleLabel: "Titre (60 caractères au plus)",

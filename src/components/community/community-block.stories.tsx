@@ -47,7 +47,10 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** On the home: the latest announcement, the open poll, the moments with their league. */
+/**
+ * On the home: the latest announcement that is not an episode (the podcast card shows it, #896),
+ * the open poll, the moments with their league.
+ */
 export const Home: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -56,7 +59,9 @@ export const Home: Story = {
       "href",
       "/communaute",
     );
-    await expect(canvas.queryByText(competitionOpen.title)).toBeNull();
+    await expect(canvas.queryByText(episode.title)).toBeNull();
+    await expect(canvas.queryByRole("link", { name: /Écouter/ })).toBeNull();
+    await expect(canvas.getByText(competitionOpen.title)).toBeVisible();
     await expect(canvas.getByText("Les amis du stade")).toBeVisible();
     await expect(canvas.getByText(poll.question)).toBeVisible();
     await expect(canvas.getByText(messages.challenge.beaten(42))).toBeVisible();
@@ -70,6 +75,7 @@ export const Page: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("heading", { name: text.momentsTitle })).toBeVisible();
     await expect(canvas.getByText(competitionOpen.title)).toBeVisible();
+    await expect(canvas.getByText(episode.title)).toBeVisible();
   },
 };
 

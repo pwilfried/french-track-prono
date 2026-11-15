@@ -3,10 +3,10 @@ import Link from "next/link";
 import type { ChallengeSummary } from "@/application/frenchtrack";
 import type { RankingRow } from "@/application/rankings";
 import { messages } from "@/app/messages.fr";
-import { FRENCHTRACK_ACCOUNTS, SocialIcon } from "@/components/legal/social-icons";
 import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
 import { ChipStatus } from "@/components/ui/chip-status";
+import type { Announcement } from "@/domain/community";
 import type { EventSummary } from "@/domain/event";
 import type { ChallengeVerdict } from "@/domain/frenchtrack";
 import type { LeagueStanding, NextAction } from "@/domain/home";
@@ -14,16 +14,13 @@ import { cn } from "@/lib/utils";
 
 import { DismissibleHowItWorks } from "./dismissible-how-it-works";
 import { NextActionCard, type ActionCompetition } from "./next-action-card";
+import { PodcastCard } from "./podcast-card";
 
 const text = messages.playerHome;
-const footer = messages.legal.footer;
 
 const card = "rounded-card border border-border bg-card/90 p-4 backdrop-blur-sm";
 const heading = "text-xs font-bold uppercase tracking-wide text-muted-foreground";
 const link = "inline-flex min-h-11 items-center text-sm font-bold underline underline-offset-4";
-
-const PODCAST = FRENCHTRACK_ACCOUNTS.find((account) => account.icon === "podcast")!;
-const SOCIAL = FRENCHTRACK_ACCOUNTS.filter((account) => account !== PODCAST);
 
 export type PlayerHomeProps = {
   userId: string;
@@ -44,6 +41,8 @@ export type PlayerHomeProps = {
   mercatoOpen: boolean;
   /** « Dans ma communauté » (#673), under the league and the last result. */
   community?: React.ReactNode;
+  /** The latest episode announced (#896): the podcast card shows it; null, the podcast's page. */
+  episode?: Announcement | null;
   /** « Le saviez-vous ? » (#766), right under the greeting, above the next action. */
   funFact?: React.ReactNode;
   /** « Complète ton profil » (#540), under the next action; left out when the profile is complete. */
@@ -83,7 +82,7 @@ export function PlayerHome(props: PlayerHomeProps) {
       {lastResult ? <LastResult {...lastResult} /> : null}
       {props.community}
       <Manager mercatoOpen={props.mercatoOpen} />
-      <FrenchTrack />
+      <PodcastCard episode={props.episode ?? null} />
     </>
   );
 }
@@ -256,51 +255,6 @@ function Manager({ mercatoOpen }: { mercatoOpen: boolean }) {
       <Link href="/manager" className={cn(buttonVariants({ variant: "outline" }), "self-start")}>
         {text.manager.open}
       </Link>
-    </section>
-  );
-}
-
-/** On the night blue: the podcast, then FrenchTrack's accounts; the footer then leaves them out (#478, #711). */
-function FrenchTrack() {
-  return (
-    <section
-      aria-labelledby="frenchtrack"
-      className="flex flex-col gap-3 rounded-card border border-white/15 bg-nuit p-4 text-white"
-    >
-      <h2 id="frenchtrack" className="font-display text-xl font-extrabold">
-        {text.frenchTrack.title}
-      </h2>
-      <p className="text-sm text-[#d9e4f5]">{text.frenchTrack.text}</p>
-      <a
-        href={PODCAST.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={footer.opensNewTab(text.frenchTrack.listen)}
-        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-white px-5 font-bold text-nuit hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
-      >
-        <SocialIcon name="podcast" />
-        {text.frenchTrack.listen}
-      </a>
-      <ul
-        aria-label={footer.socialLabel}
-        data-social-links="home"
-        className="grid grid-cols-3 gap-2"
-      >
-        {SOCIAL.map((account) => (
-          <li key={account.href}>
-            <a
-              href={account.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={footer.opensNewTab(account.label)}
-              className="flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-white/40 px-2 text-sm font-bold hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
-            >
-              <SocialIcon name={account.icon} />
-              {account.label}
-            </a>
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }
