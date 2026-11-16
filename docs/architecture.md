@@ -146,6 +146,12 @@ Règles :
   marche dans n'importe quel navigateur (utile sur téléphone) ; le lien passe par `/auth/callback`.
 - La session vit dans des cookies (`@supabase/ssr`). `src/proxy.ts` la rafraîchit à chaque page et
   envoie un joueur connecté sans profil vers `/bienvenue` (règle pure : `src/domain/profile-gate.ts`).
+- Une seule vérification auth par page (#1021) : le proxy passe à la page l'utilisateur vérifié et
+  le profil lu par l'en-tête de requête interne `x-ftp-session` (`src/app/proxied-session.ts`),
+  seulement sur GET/HEAD. Il efface toujours celui venu du navigateur (`src/proxy.test.ts`). Les
+  server actions (POST) et les routes (`getVerifiedUser`) revérifient auprès de l'auth.
+  `auth.getClaims()` n'aiderait pas : le projet signe ses jetons en HS256 (clé symétrique), donc
+  elle rappelle `/auth/v1/user`.
 - Les paramètres de redirection n'acceptent que des chemins de l'application
   (`src/domain/redirect.ts`).
 - En préprod seulement (`PREPROD_DEMO_LOGIN=1`), un admin peut se connecter en tant qu'un joueur
@@ -661,7 +667,7 @@ l'élément (`admin_hide_moment_reaction()`, il disparaît pour tous, noté dans
 le signalement. Plafond (#913) : 20 signalements (ligues et fil confondus) par joueur et par
 24 h, au-delà `FT035` (`REPORT_LIMIT`) ; resignaler le même élément ne compte pas. Le joueur concerné par un moment reçoit une notification push regroupée quand
 d'autres y réagissent (`private.moment_reaction_due()`, famille `league` de `reminder_settings`,
-encore masquée dans « Mes rappels », #903 ; au plus une par heure, mêmes heures calmes).
+interrupteur « Ma ligue » de « Mes rappels », #903 ; au plus une par heure, mêmes heures calmes).
 
 Fil d'une ligue Manager et badges (v0.19, #875) : l'onglet « Fil » de la page d'une ligue Manager
 (`?onglet=fil`, à côté de « Saison ») raconte les athlètes gagnés à la révélation de chaque tour
@@ -696,8 +702,9 @@ les clés VAPID, des rappels groupés (#681, règles de référence dans `src/do
   compétition finies et les scores Manager calculés depuis moins de 24 h), aux deux joueurs.
 
 « Mes rappels » (`/profil/rappels`) : un interrupteur par famille (Pronos oubliés, Résultats du
-soir, Manager ; « Ma ligue » et « FrenchTrack » sont stockées mais masquées : « Ma ligue » commande
-déjà les notifications de réactions au fil depuis v0.19, son interrupteur arrive avec #903), le
+soir, Manager, Ma ligue — les réactions d'autres joueurs à mes moments du fil, #903 ; « FrenchTrack »
+est stockée mais masquée tant qu'aucune notification ne l'utilise ; une famille masquée garde sa
+valeur à l'enregistrement), le
 délai avant verrou, les heures calmes (23 h–8 h par défaut, heure de Paris). Rien ne part pendant
 les heures calmes : ce qui reste dû part à leur fin. Réglages dans `reminder_settings` (sans ligne :
 valeurs par défaut), écrite seulement par `save_reminder_settings()` ; ce qui est parti est noté
@@ -708,8 +715,19 @@ compétition), jamais deux fois. Rien pour un joueur bloqué.
 s'abonne (`program_alerts`, écrite seulement par `turn_on_program_alert()` et
 `turn_off_program_alert()`, chacun ne lit que ses lignes). Dès que la compétition a sa première
 épreuve, l'Edge Function `push-notifications` lit `private.program_due()` et envoie une seule
-notification par joueur et par compétition (« Le programme de … est en ligne », lien vers
+notification par joueur et par compétition (« 📣 Le programme de … est en ligne », lien vers
 l'onglet), notée par `private.program_mark_sent()` ; rien pour un joueur bloqué ou sans appareil.
+
+Textes des notifications (#1016, direction « speaker du stade » : un emoji par famille, le chiffre clé
+dans le titre, tutoiement ; `supabase/functions/_shared/push.mjs`) : pronos oubliés « 🚨 Dernier appel :
+100 m femmes » ou « … : 3 podiums à poser » ; résultats « 👑 +12 pts, tu es en tête ! » (1er avec des
+points), « 🔥 +12 pts ce soir », « 😬 Soirée blanche : 0 pt » (0 point, toujours) ; mercato « 🔨 Mercato :
+plus que 2 h pour le tour 2 » ; alignement « 📋 Ton équipe n'est pas alignée » ; duel « 🏆 Victoire contre
+X, 42 à 38 pts ! », « 💥 Défaite … », « 🤝 Match nul … » ; fil « 💬 X et 2 autres ont réagi à ton moment » ;
+programme « 📣 Le programme de … est en ligne ». Le service worker passe `badge`
+(`public/icons/badge-96.png`, silhouette blanche du lapin) et tient la pastille de l'icône de l'app à jour
+(`setAppBadge` = notifications affichées, effacée à l'ouverture de l'app ; sans l'API, rien). Le test du
+workflow envoie un exemple de chaque (`testNotifications`, un `tag` chacun).
 
 Tours (v0.8, issue #198) : une série, un quart ou une demi-finale pointe vers le tour qu'il
 alimente (`events.parent_id`). On ne pronostique que les finales, et une finale seulement quand

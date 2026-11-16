@@ -75,6 +75,7 @@ export const messages = {
     page: "Chargement de la page…",
     manager: "Chargement du Manager…",
     event: "Chargement de l'épreuve…",
+    profile: "Chargement du profil…",
   },
   home: {
     current: "Compétition en cours",
@@ -2621,7 +2622,10 @@ export const messages = {
         label: "Manager",
         hint: "Fin de tour du mercato, alignement à valider, duel terminé.",
       },
-      league: { label: "Ma ligue", hint: "Ce qui se passe dans tes ligues." },
+      league: {
+        label: "Ma ligue",
+        hint: "Quand d'autres réagissent à tes moments dans le fil de tes ligues.",
+      },
       frenchtrack: { label: "FrenchTrack", hint: "Les nouveautés de FrenchTrack." },
     },
     lead: "Prévenir avant le verrou",
