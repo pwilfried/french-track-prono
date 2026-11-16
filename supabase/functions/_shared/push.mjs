@@ -41,27 +41,28 @@ function managerNotificationOf(due, now) {
   const tag = `${due.kind}-${due.ref}`;
   if (due.kind === "mercato_round")
     return {
-      title: `⏳ Le tour ${p.round} du mercato se termine dans ${durationOf(minutesUntil(p.ends_at, now))}`,
-      body: `${p.league_name} : place tes dernières enchères.`,
+      title: `🔨 Mercato : plus que ${durationOf(minutesUntil(p.ends_at, now))} pour le tour ${p.round}`,
+      body: `${p.league_name} : dernières enchères avant le coup de marteau.`,
       url: `/manager/${p.league_id}/catalogue`,
       tag,
     };
   if (due.kind === "lineup")
     return {
-      title: "🏟 Ton alignement n'est pas validé",
+      title: "📋 Ton équipe n'est pas alignée",
       body: `${p.league_name}, ${p.competition_name} : verrou dans ${durationOf(minutesUntil(p.lock_at, now))}. Sans alignement, 0 point.`,
       url: `/manager/${p.league_id}/alignement/${encodeURIComponent(p.competition_slug)}`,
       tag,
     };
+  const score = `${p.my_score} à ${p.their_score} ${Math.max(p.my_score, p.their_score) > 1 ? "pts" : "pt"}`;
   const title =
     p.my_score > p.their_score
-      ? `🏆 Victoire contre ${p.opponent}`
+      ? `🏆 Victoire contre ${p.opponent}, ${score} !`
       : p.my_score < p.their_score
-        ? `Défaite contre ${p.opponent}`
-        : `Match nul contre ${p.opponent}`;
+        ? `💥 Défaite contre ${p.opponent}, ${score}`
+        : `🤝 Match nul contre ${p.opponent}, ${score}`;
   return {
     title,
-    body: `${p.league_name}, journée ${p.round} : ${pts(p.my_score)} à ${pts(p.their_score)}.`,
+    body: `${p.league_name}, journée ${p.round} : va voir la feuille de match.`,
     url: `/manager/${p.league_id}/confrontation/${p.round}/${p.home_id}`,
     tag,
   };
@@ -82,9 +83,9 @@ function momentReactionNotificationOf(p) {
   return {
     title:
       others > 0
-        ? `${p.pseudo} et ${others} ${others > 1 ? "autres" : "autre"} ont réagi à ton moment`
-        : `${p.pseudo} a réagi à ton moment`,
-    body: `${p.league_name} : va voir le fil.`,
+        ? `💬 ${p.pseudo} et ${others} ${others > 1 ? "autres" : "autre"} ont réagi à ton moment`
+        : `💬 ${p.pseudo} a réagi à ton moment`,
+    body: `${p.league_name} : va voir ce qu'ils en disent.`,
     url: `/ligues/${p.league_id}?onglet=fil`,
     tag: "moment_reaction",
   };
@@ -107,22 +108,34 @@ export function notificationOf(due, now = Date.now()) {
     const minutes = minutesUntil(first.lock_at, now);
     if (events.length === 1)
       return {
-        title: `⏱ ${labelOf(first)} se verrouille dans ${minutes} min`,
-        body: "Ton podium n'est pas encore fait.",
+        title: `🚨 Dernier appel : ${labelOf(first)}`,
+        body: `Verrou dans ${durationOf(minutes)} et ton podium n'est pas posé. Fonce !`,
         url: `/epreuves/${first.slug}`,
         tag: `forgotten-${due.evening}`,
       };
     return {
-      title: `⏱ ${events.length} podiums à poser`,
-      body: `${listOf(events.map(labelOf))} : premier verrou dans ${minutes} min.`,
+      title: `🚨 Dernier appel : ${events.length} podiums à poser`,
+      body: `${listOf(events.map(labelOf))}. Premier verrou dans ${durationOf(minutes)}.`,
       url: `/epreuves/${first.slug}`,
       tag: `forgotten-${due.evening}`,
     };
   }
   const { points, finals, rank, players, competition_slug } = due.payload;
-  const place = rank ? ` Tu es ${rank === 1 ? "1er" : `${rank}e`} sur ${players}.` : "";
+  const ordinal = rank === 1 ? "1er" : `${rank}e`;
+  const lead = points > 0 && rank === 1;
+  const place = !rank
+    ? ""
+    : lead
+      ? ` ${ordinal} sur ${players}.`
+      : points > 0
+        ? ` Tu es ${ordinal} sur ${players}.`
+        : ` Tu es ${ordinal} sur ${players} : la revanche, c'est demain.`;
   return {
-    title: points > 0 ? `🎯 +${pts(points)} ce soir` : "0 point ce soir",
+    title: lead
+      ? `👑 +${pts(points)}, tu es en tête !`
+      : points > 0
+        ? `🔥 +${pts(points)} ce soir`
+        : "😬 Soirée blanche : 0 pt",
     body: `${finals > 1 ? `Tes ${finals} finales sont calculées.` : "Ta finale est calculée."}${place}`,
     url: `/mes-points?competition=${encodeURIComponent(competition_slug)}`,
     tag: `recap-${due.evening}`,
@@ -135,8 +148,8 @@ export function notificationOf(due, now = Date.now()) {
  */
 export function programNotificationOf(due) {
   return {
-    title: `Le programme de ${due.competition_name} est en ligne`,
-    body: "Les épreuves sont là : pose tes podiums.",
+    title: `📣 Le programme de ${due.competition_name} est en ligne`,
+    body: "Les finales sont là : à toi de poser tes podiums.",
     url: `/competitions?competition=${encodeURIComponent(due.competition_slug)}`,
     tag: `program-${due.competition_slug}`,
   };
@@ -243,26 +256,80 @@ export async function sendDue(database, push) {
 }
 
 /**
- * Sends one test notification to the given devices of an account (#977), to check that push
- * notifications reach a phone without waiting for a reminder or a result.
+ * One example of every notification, with invented data (#1016), each with its own tag so that
+ * they do not replace one another on the phone.
+ * @param {number} now
+ */
+export function testNotifications(now = Date.now()) {
+  const inMinutes = (/** @type {number} */ m) => new Date(now + m * 60_000).toISOString();
+  const league = { league_id: "demo", league_name: "Les Lièvres" };
+  const duel = { ...league, round: 3, home_id: "demo", opponent: "Gazelle" };
+  const events = [
+    { slug: "100m-f", discipline: "100 m", gender: "F", lock_at: inMinutes(45) },
+    { slug: "400mh-h", discipline: "400 m haies", gender: "M", lock_at: inMinutes(90) },
+    { slug: "perche-f", discipline: "Perche", gender: "F", lock_at: inMinutes(120) },
+  ];
+  const recap = { finals: 3, players: 18, competition_slug: "demo" };
+  const manager = (/** @type {string} */ kind, /** @type {any} */ payload) =>
+    notificationOf({ kind, evening: "demo", ref: kind, payload }, now);
+  const samples = [
+    notificationOf({ kind: "forgotten", evening: "a", payload: { events: events.slice(0, 1) } }, now),
+    notificationOf({ kind: "forgotten", evening: "b", payload: { events } }, now),
+    notificationOf({ kind: "recap", evening: "c", payload: { ...recap, points: 12, rank: 1 } }),
+    notificationOf({ kind: "recap", evening: "d", payload: { ...recap, points: 12, rank: 4 } }),
+    notificationOf({ kind: "recap", evening: "e", payload: { ...recap, points: 0, rank: 12 } }),
+    manager("mercato_round", { ...league, round: 2, ends_at: inMinutes(120) }),
+    manager("lineup", {
+      ...league,
+      competition_slug: "demo",
+      competition_name: "Meeting de démo",
+      lock_at: inMinutes(60),
+    }),
+    manager("duel_over", { ...duel, my_score: 42, their_score: 38 }),
+    manager("duel_over", { ...duel, my_score: 38, their_score: 42 }),
+    manager("duel_over", { ...duel, my_score: 40, their_score: 40 }),
+    notificationOf({
+      kind: "moment_reaction",
+      evening: "f",
+      payload: { ...league, count: 3, pseudo: "Gazelle" },
+    }),
+    programNotificationOf({ competition_slug: "demo", competition_name: "Meeting de démo" }),
+  ];
+  return [
+    ...samples.map((sample, index) => ({ ...sample, tag: `test-${index + 1}` })),
+    {
+      title: "🔔 Test réussi",
+      body: "Les notifications French Track Prono marchent sur cet appareil.",
+      url: "/",
+      tag: "test",
+    },
+  ];
+}
+
+/**
+ * Sends one example of every notification to the given devices of an account (#977, #1016), to
+ * check that push notifications reach a phone, and how they look, without waiting for a reminder
+ * or a result. A device counts as sent when it got them all.
  * @param {{ endpoint: string, p256dh: string, auth: string }[]} devices
  * @param {(device: any, payload: string, options: any) => Promise<unknown>} push
  */
 export async function sendTest(devices, push) {
-  const payload = JSON.stringify({
-    title: "🔔 Notification de test",
-    body: "Si tu lis ceci, les notifications French Track Prono marchent sur cet appareil.",
-    url: "/",
-    tag: "test",
-  });
+  const payloads = testNotifications().map((notification) => JSON.stringify(notification));
   /** @type {string[]} */
   const forgotten = [];
   let sent = 0;
   let failed = 0;
   for (const device of devices) {
-    const status = await sendOne(push, device, payload, 15 * 60);
-    if (status === "sent") sent += 1;
-    else if (status === "gone") forgotten.push(device.endpoint);
+    let outcome = "sent";
+    for (const payload of payloads) {
+      const status = await sendOne(push, device, payload, 15 * 60);
+      if (status !== "sent") {
+        outcome = status === "gone" ? "gone" : "failed";
+        break;
+      }
+    }
+    if (outcome === "sent") sent += 1;
+    else if (outcome === "gone") forgotten.push(device.endpoint);
     else failed += 1;
   }
   return { sent, forgotten, failed };
