@@ -64,7 +64,11 @@ test("the Manager tab lists my leagues; a league tells my season and the action 
        where id = '${mercato}'`);
 
   // The tab lists both leagues, « Créer » and « Rejoindre » above them, out of the league content.
+  // Already in a league: even on a device that never passed it, no presentation by itself (#988).
+  await page.evaluate(() => localStorage.removeItem("ftp:manager-tutorial-seen"));
   await page.goto("/manager");
+  await expect(page.getByRole("link", { name: "Comment ça marche ?" })).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Ma saison" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Créer une ligue Manager" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Rejoindre avec un code" })).toBeVisible();
