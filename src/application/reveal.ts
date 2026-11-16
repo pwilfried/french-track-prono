@@ -19,8 +19,9 @@ export type RevealedPrediction = {
 };
 
 /**
- * The revealed podiums shown first, and the ones folded by default (#949): the players outside
- * all of my leagues, only on the unfiltered view and only when I am in a league.
+ * The revealed podiums shown first, and the ones folded by default, only on the unfiltered view:
+ * the players outside all of my leagues (#949), and every podium past the first
+ * {@link REVEAL_SHOWN} (#984).
  */
 export type EventReveal = { predictions: RevealedPrediction[]; others: RevealedPrediction[] };
 
@@ -30,12 +31,34 @@ export interface RevealRepository {
   listForEvent(eventId: string): Promise<{ locked: boolean; predictions: RevealedPrediction[] }>;
 }
 
+/** How many podiums the unfiltered view shows before folding the rest (#984). */
+export const REVEAL_SHOWN = 20;
+
+/** The `ligue` value of the « Tous les joueurs » view, now that it is not the default (#984). */
+export const ALL_PLAYERS = "tous";
+
+/**
+ * The league whose podiums open the reveal: the one I chose, else my first league (#984);
+ * `undefined` for all the players, chosen with {@link ALL_PLAYERS} or when I am in no league.
+ */
+export function revealFilter(requested: string | undefined, myLeagueIds: string[]) {
+  if (requested === ALL_PLAYERS) return undefined;
+  return requested ?? myLeagueIds[0];
+}
+
+/** Shows the first podiums of `first` then of `rest`, at most {@link REVEAL_SHOWN}; folds the others. */
+const fold = (first: RevealedPrediction[], rest: RevealedPrediction[]): EventReveal => ({
+  predictions: first.slice(0, REVEAL_SHOWN),
+  others: [...first.slice(REVEAL_SHOWN), ...rest],
+});
+
 const byPseudo = (a: RevealedPrediction, b: RevealedPrediction) =>
   a.pseudo.localeCompare(b.pseudo, "fr", { sensitivity: "base" });
 
 /**
  * Everyone's podium once the event is locked, optionally only the members of one of my leagues.
- * Without a filter, the members of my leagues come first and the others are folded.
+ * Without a filter, the members of my leagues come first and the others are folded, as are the
+ * podiums past the first {@link REVEAL_SHOWN}.
  * Ordered by pseudo so that every player sees the same list.
  */
 export function listEventPredictions(ports: {
@@ -61,12 +84,12 @@ export function listEventPredictions(ports: {
         return { predictions: sorted.filter((p) => ids.has(p.userId)), others: [] };
       }
       const myLeagueIds = input.myLeagueIds ?? [];
-      if (myLeagueIds.length === 0) return { predictions: sorted, others: [] };
+      if (myLeagueIds.length === 0) return fold(sorted, []);
       const friends = new Set((await Promise.all(myLeagueIds.map(memberIds))).flat());
-      return {
-        predictions: sorted.filter((p) => friends.has(p.userId)),
-        others: sorted.filter((p) => !friends.has(p.userId)),
-      };
+      return fold(
+        sorted.filter((p) => friends.has(p.userId)),
+        sorted.filter((p) => !friends.has(p.userId)),
+      );
     },
   };
 }
