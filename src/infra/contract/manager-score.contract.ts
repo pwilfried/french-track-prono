@@ -70,6 +70,7 @@ export function managerScoreContract(name: string, world: () => Promise<ManagerS
 
       expect(sheet).toMatchObject({
         competitionId: w.competitionId,
+        indoor: false,
         participants: [
           {
             leagueId: w.leagueId,
@@ -123,7 +124,11 @@ export function managerScoreContract(name: string, world: () => Promise<ManagerS
       if (!sheet || sheet === "not_admin") throw new Error("no sheet");
       const p = sheet.participants[0]!;
 
-      const score = managerCompetitionScore({ ...p, performances: sheet.performances });
+      const score = managerCompetitionScore({
+        ...p,
+        indoor: sheet.indoor,
+        performances: sheet.performances,
+      });
 
       expect(score.athletes.map((a) => [a.athleteId, a.substitution ?? null])).toEqual([
         [w.athleteIds[0], null],

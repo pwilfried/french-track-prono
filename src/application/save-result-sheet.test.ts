@@ -113,6 +113,7 @@ function world(options: { predictions?: Pick[]; participants?: ScoringParticipan
         return {
           competitionId: "meeting-id",
           lockAt: LOCK,
+          indoor: false,
           participants: structuredClone(participants),
           performances: [...sheets.values()].flat().map((p) => ({
             ...p,

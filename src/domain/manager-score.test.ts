@@ -54,6 +54,7 @@ const starter = (athleteId: string, over: Partial<ScoringStarter> = {}): Scoring
 const input = (over: Partial<ManagerScoreInput> = {}): ManagerScoreInput => ({
   lineup: starters("a"),
   performances: [run()],
+  indoor: false,
   tablesDivisor: 10,
   bonuses,
   ...over,
@@ -100,6 +101,38 @@ describe("managerCompetitionScore", () => {
   it("divides the tables by the divisor of the league", () => {
     const score = managerCompetitionScore(input({ tablesDivisor: 1 }));
     expect(score.athletes[0].points).toBe(table100("F", 11));
+  });
+
+  it("scores an indoor competition with the short-track tables (#1026)", () => {
+    const race = run({ discipline: "400 m", sex: "M", mark: "46.50" });
+    const lineup = { starters: [starter("a", { discipline: "400 m" })], bench: [] };
+    const indoors = managerCompetitionScore(input({ indoor: true, lineup, performances: [race] }));
+    const outdoors = managerCompetitionScore(
+      input({ indoor: false, lineup, performances: [race] }),
+    );
+    expect(indoors.athletes[0].points).toBe(114);
+    expect(outdoors.athletes[0].points).toBe(107);
+  });
+
+  it("gives points to a 60 m and a 60 m hurdles indoors", () => {
+    const score = managerCompetitionScore(
+      input({
+        indoor: true,
+        lineup: {
+          starters: [
+            starter("a", { discipline: "60 m" }),
+            starter("b", { discipline: "60 m haies" }),
+          ],
+          bench: [],
+        },
+        performances: [
+          run({ athleteId: "a", discipline: "60 m", sex: "M", mark: "6.60" }),
+          run({ athleteId: "b", discipline: "60 m haies", sex: "F", mark: "7.90" }),
+        ],
+      }),
+    );
+    expect(score.athletes.find((a) => a.athleteId === "a")!.points).toBe(115);
+    expect(score.athletes.find((a) => a.athleteId === "b")!.points).toBeGreaterThan(0);
   });
 
   it("adds every lined-up athlete and their bonuses, rounding each athlete down", () => {
@@ -273,6 +306,7 @@ describe("managerCompetitionScore", () => {
       }),
       { maxLength: 8 },
     ),
+    indoor: fc.boolean(),
     tablesDivisor: fc.integer({ min: 1, max: 20 }),
     bonuses: fc.constant(bonuses),
   });

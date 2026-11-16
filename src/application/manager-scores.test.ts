@@ -57,6 +57,7 @@ function world() {
   const sheet: ManagerScoringSheet = {
     competitionId: "meeting-id",
     lockAt: LOCK,
+    indoor: false,
     participants: [
       { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: starters("a1", "a2") },
       { leagueId: "L", userId: "max", bonuses, tablesDivisor: 10, lineup: null },
@@ -141,6 +142,24 @@ describe("computeManagerScores", () => {
 
     expect(w.stored()).toHaveLength(2);
     expect(w.stored()[0]!.total).toBe(points);
+  });
+
+  it("scores an indoor competition with the short-track tables", async () => {
+    // Given an indoor competition where Zoé's athlete ran a 60 m
+    const w = world();
+    w.sheet.indoor = true;
+    w.sheet.performances[0] = run("a1", "7.10", { discipline: "60 m" });
+    w.sheet.participants[0]!.lineup!.starters[0]!.discipline = "60 m";
+
+    // When the admin runs the computation
+    await computeManagerScores({ scores: w.scores({ isAdmin: true }), now: after }).execute({
+      competitionSlug: "meeting",
+    });
+
+    // Then the 60 m is worth its indoor table, divided by 10
+    const sixty = Math.floor(worldAthleticsPoints("60 m", "F", 7.1, true)! / 10);
+    expect(sixty).toBeGreaterThan(0);
+    expect(w.stored()[0]!.hungarian).toBe(sixty);
   });
 
   it("stores nothing when no Manager league plays the competition", async () => {

@@ -21,6 +21,7 @@ type LineupRow = {
 type SheetRow = {
   competition_id: string;
   lock_at: string;
+  indoor: boolean;
   participants: {
     league_id: string;
     user_id: string;
@@ -114,6 +115,7 @@ export function createSupabaseManagerScoreRepository(
       return {
         competitionId: sheet.competition_id,
         lockAt: sheet.lock_at,
+        indoor: sheet.indoor === true,
         participants: sheet.participants.map((p) => ({
           leagueId: p.league_id,
           userId: p.user_id,
