@@ -854,11 +854,18 @@ pronos ne comptent plus (#1031). M1 à M5 donnent les points bruts des tables.
 | M7 | 1re place en finale, RP et MPS | 80 de bonus (50 + 20 + 10) |
 | M8 | 4e place, ou DNS, DNF, DQ | pas de bonus de place ; DNS, DNF, DQ : 0 point |
 | M9 | Pas d'alignement ; ou des points de pronos sur la compétition | 0 pour la compétition ; les pronos ne changent jamais le score Manager |
-| M10 | Même athlète en série (11.20) puis en finale (11.05) | la meilleure ligne (11.05), sans cumul |
+| M10 | Même athlète en série (11.20) puis en finale (11.05) de sa discipline choisie ; un 200 m meilleur hors de sa discipline | la meilleure ligne de la discipline (11.05), sans cumul ; le 200 m ne compte pas |
 | M11 | 1re place en série avec un RP | RP seul : la place ne compte qu'en finale |
 | M12 | Relancer le calcul, ou les performances dans un autre ordre | même score ; le total est la somme des parties, jamais négative |
 | M13 | 1 109 points des tables, diviseur 10 ; 0 (DNS) | 110 ; 0 |
 | M14 | Équipe A, tables 8 956 au total, 15 de bonus ; équipe B, 8 687 et 66 (cas de référence, #1017) | A 892 + 15 = 907, B 865 + 66 = 931 : B gagne |
+| M15 | Seuil 10"50, titulaire en 10"58, remplaçant désigné en 10"70 ; titulaire en 10"42 ou 10"50 (#1033) | le remplaçant compte (`tactical`), même plus lent ; le titulaire compte |
+| M16 | Seuil 8,00 m en longueur, titulaire à 7,90 m | le remplaçant compte : moins loin que le seuil |
+| M17 | Titulaire DNF, remplaçant désigné DNS ; banc : un sauteur, puis deux sprinteurs | le premier sprinteur du banc qui a une marque (`bench`) |
+| M18 | Titulaire DNS, DNF, DQ ou sans performance, remplaçant désigné avec une marque | le remplaçant désigné (`forfeit`) |
+| M19 | Titulaire sans marque, personne de sa famille sur le banc | 0 pour la place |
+| M20 | Le remplaçant désigné de la place 2 est déjà entré à la place 1 | il n'entre pas deux fois : le suivant du banc, sinon 0 |
+| M21 | Seuil franchi, remplaçant désigné sans marque | le titulaire garde sa place |
 
 **Championnat Manager (v0.16, tests Vitest).** Calendrier (`src/domain/manager-schedule.ts`,
 #432), résultats et classement (`src/domain/manager-championship.ts`, #433), fin de saison

@@ -4,12 +4,13 @@ import {
   type AthleteScore,
   type CompetitionPerformance,
   type ManagerCompetitionScore,
+  type ScoringLineup,
 } from "@/domain/manager-score";
 
 import { UseCaseError } from "./errors";
 import type { ManagerLineupRepository } from "./manager-lineup";
 
-/** A participant of a Manager league playing the competition, with their lineup at the lock. */
+/** A participant of a Manager league playing the competition, with their match sheet at the lock. */
 export type ScoringParticipant = {
   leagueId: string;
   userId: string;
@@ -17,8 +18,8 @@ export type ScoringParticipant = {
   bonuses: Record<ManagerBonus, number>;
   /** The divisor of the table points frozen in the league rules (#1031). */
   tablesDivisor: number;
-  /** Null without a validated lineup. */
-  lineup: string[] | null;
+  /** The match sheet at the lock (#1032); null without a validated lineup. */
+  lineup: ScoringLineup | null;
 };
 
 /** Everything the admin needs to score a competition for every Manager league. */
