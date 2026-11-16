@@ -114,7 +114,11 @@ export default async function CataloguePage({
       <LeagueHero
         title={text.title}
         subtitle={text.subtitle}
-        back={{ href: `/manager/${id}`, label: messages.manager.back }}
+        back={{
+          href: `/manager/${id}`,
+          // Back to the league the player comes from, by its name (#987).
+          label: league === "error" ? messages.manager.back : league.name,
+        }}
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-6 md:max-w-3xl">
         {mine === "error" ? (

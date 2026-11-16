@@ -86,6 +86,11 @@ test("the admin prices an athlete, who then shows in the catalogue of a Manager 
 
     await filters.getByRole("link", { name: "Hommes" }).click();
     await expect(page.getByText("Aucun athlète ne correspond.")).toBeVisible();
+
+    // The back link is named after the league and leads to its page (#987).
+    await page.getByRole("link", { name: `‹ Mercato ${tag}` }).click();
+    await expect(page).toHaveURL(/\/manager\/[^/]+$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Mercato ${tag}`);
   } finally {
     sql(`delete from athletes where slug = '${slug}'`);
   }
