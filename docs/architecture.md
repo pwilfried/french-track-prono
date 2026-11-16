@@ -869,6 +869,11 @@ pronos ne comptent plus (#1031). M1 à M5 donnent les points bruts des tables.
 
 **Championnat Manager (v0.16, tests Vitest).** Calendrier (`src/domain/manager-schedule.ts`,
 #432), résultats et classement (`src/domain/manager-championship.ts`, #433), fin de saison
+
+**Premiers pas Manager (v0.21, #1037).** « Mon équipe en construction » (familles à compléter,
+crédits par athlète manquant) et les étapes de « Ton premier alignement » sont des règles pures
+dans `src/domain/manager-build.ts`. Le guide du premier mercato est mémorisé sur l'appareil
+(`ftp:manager-first-mercato-seen`) ; `?guide=1` le rouvre depuis « Comment ça marche ? ».
 (`src/domain/manager-honours.ts`, #434), étape de l'accueil (`src/domain/manager-home.ts`, #606).
 
 | # | Situation | Attendu |

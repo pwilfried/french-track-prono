@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
 import { chooseSeason, createLeague, seasonReady } from "./manager-season";
+import { skipFirstMercatoGuide } from "./first-mercato";
 import { newPlayer, signUp } from "./players";
 
 test("the creator of a league of 6 competitions launches the mercato once 3 friends are in", async ({
@@ -12,6 +13,7 @@ test("the creator of a league of 6 competitions launches the mercato once 3 frie
   const league = `Lanceurs ${Date.now() % 1000000}`;
   const creator = newPlayer("mgr-launch");
   const creatorPage = await (await browser.newContext()).newPage();
+  await skipFirstMercatoGuide(creatorPage);
 
   // 6 competitions: 4 players, a home-and-away of 6 matchdays (#644).
   await creatorPage.goto("/manager/creer");

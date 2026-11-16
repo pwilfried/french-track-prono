@@ -2,13 +2,24 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
-import { listMyLineups, type LineupSummary } from "@/application/manager-lineup";
+import { getManagerLeague } from "@/application/manager-leagues";
+import {
+  getFirstLineupGuide,
+  listMyLineups,
+  type FirstLineupGuide,
+  type LineupSummary,
+} from "@/application/manager-lineup";
+import { FirstLineupCard } from "@/components/manager/first-lineup-card";
 import { LockLine } from "@/components/countdown/lock-line";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { ChipStatus, type ChipTone } from "@/components/ui/chip-status";
 import type { LineupStatus } from "@/domain/manager-lineup";
-import { createSupabaseManagerLineups } from "@/infra";
+import {
+  createSupabaseManagerBids,
+  createSupabaseManagerCatalogue,
+  createSupabaseManagerLineups,
+} from "@/infra";
 
 import { messages } from "../../../messages.fr";
 import { getSessionClient } from "../../../session";
@@ -20,7 +31,7 @@ const tones: Record<LineupStatus, ChipTone> = { todo: "hot", validated: "ok", lo
 /** The eligible competitions of a Manager league, each with where the player's lineup stands (#427). */
 export default async function MyLineupsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await managerPorts(`/manager/${id}/alignement`);
+  const ports = await managerPorts(`/manager/${id}/alignement`);
   let competitions: LineupSummary[] | "error";
   try {
     competitions = await listMyLineups({
@@ -30,6 +41,32 @@ export default async function MyLineupsPage({ params }: { params: Promise<{ id: 
     if (!(error instanceof UseCaseError)) throw error;
     if (error.code === "LEAGUE_NOT_FOUND") notFound();
     competitions = "error";
+  }
+
+  // The guide of a player who never validated a lineup here; a failure only hides it (#1037).
+  let guide: { steps: FirstLineupGuide; rulesLines: string[] } | null = null;
+  if (competitions !== "error") {
+    try {
+      const client = await getSessionClient();
+      const now = new Date().toISOString();
+      const [steps, league] = await Promise.all([
+        getFirstLineupGuide({
+          managerLeagues: ports.managerLeagues,
+          bids: createSupabaseManagerBids(client),
+          catalogue: createSupabaseManagerCatalogue(client),
+          lineups: createSupabaseManagerLineups(client),
+        }).execute({ leagueId: id, now }),
+        getManagerLeague(ports).execute({ id }),
+      ]);
+      if (steps) {
+        guide = {
+          steps,
+          rulesLines: text.first.rulesLines(steps.divisor, league.rules.bonuses.first),
+        };
+      }
+    } catch (error) {
+      if (!(error instanceof UseCaseError)) throw error;
+    }
   }
 
   return (
@@ -45,7 +82,16 @@ export default async function MyLineupsPage({ params }: { params: Promise<{ id: 
             retryHref={`/manager/${id}/alignement`}
             message={messages.errors.LINEUPS_UNAVAILABLE}
           />
-        ) : competitions.length === 0 ? (
+        ) : null}
+        {guide && (
+          <FirstLineupCard
+            done={guide.steps.done}
+            current={guide.steps.current}
+            href={`/manager/${id}/alignement/${guide.steps.slug}`}
+            rulesLines={guide.rulesLines}
+          />
+        )}
+        {competitions === "error" ? null : competitions.length === 0 ? (
           <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
             {text.noCompetition}
           </p>

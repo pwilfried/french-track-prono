@@ -6,13 +6,17 @@ import { getMyManagerBids } from "@/application/manager-bids";
 import { browseManagerCatalogue } from "@/application/manager-catalogue";
 import { getManagerLeague } from "@/application/manager-leagues";
 import { getManagerRevealRounds } from "@/application/manager-reveal";
+import { getMyManagerTeam } from "@/application/manager-team";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { CatalogueCard } from "@/components/manager/catalogue-card";
+import { FirstMercatoGate } from "@/components/manager/first-mercato";
 import { MercatoBanner } from "@/components/manager/mercato-banner";
+import { TeamBuildCard } from "@/components/manager/team-build-card";
 import { CompetitionChips } from "@/components/events/competition-chips";
 import { buttonVariants } from "@/components/ui/button";
 import { SEARCH_MAX_LENGTH } from "@/domain/list-view";
+import { teamBuild } from "@/domain/manager-build";
 import { athleteHref } from "@/domain/redirect";
 import { MANAGER_FAMILIES, MANAGER_SEXES, type ManagerSex } from "@/domain/manager-rules";
 import {
@@ -30,7 +34,14 @@ import { MyBidsPanel } from "../../my-bids-panel";
 const text = messages.catalogue;
 const field = "min-h-11 w-full rounded-xl border-2 border-border bg-card px-2.5 text-base";
 
-type Params = { q?: string; sexe?: string; famille?: string; libres?: string; page?: string };
+type Params = {
+  guide?: string;
+  q?: string;
+  sexe?: string;
+  famille?: string;
+  libres?: string;
+  page?: string;
+};
 
 /** A league the player is not in is not found; any other refusal shows as an error. */
 function caught(error: unknown): "error" {
@@ -64,7 +75,7 @@ export default async function CataloguePage({
 
   const client = await getSessionClient();
   const catalogue = createSupabaseManagerCatalogue(client);
-  const [view, mine, reveals, league] = await Promise.all([
+  const [view, mine, reveals, league, team] = await Promise.all([
     browseManagerCatalogue({ catalogue })
       .execute({
         leagueId: id,
@@ -80,6 +91,13 @@ export default async function CataloguePage({
       .execute({ leagueId: id })
       .catch(caught),
     getManagerLeague(ports).execute({ id }).catch(caught),
+    getMyManagerTeam({
+      managerLeagues: ports.managerLeagues,
+      bids: createSupabaseManagerBids(client),
+      catalogue,
+    })
+      .execute({ leagueId: id })
+      .catch(caught),
   ]);
   // The first visit after the close of a round opens its reveal, once (#604).
   if (reveals !== "error" && reveals.toReveal !== null) {
@@ -120,7 +138,25 @@ export default async function CataloguePage({
           label: league === "error" ? messages.manager.back : league.name,
         }}
       />
+      {league !== "error" && (
+        <FirstMercatoGate
+          rules={{
+            budget: league.rules.budget,
+            perFamily: league.rules.lineup.perFamily,
+            starters: league.rules.lineup.max,
+            bench: league.rules.lineup.bench,
+          }}
+          open={search.guide !== undefined}
+          returnHref={`/manager/${id}/catalogue`}
+        />
+      )}
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-6 md:max-w-3xl">
+        {league !== "error" && team !== "error" && !team.mercatoClosed && (
+          <TeamBuildCard
+            build={teamBuild(league.rules, team.athletes, team.left)}
+            left={team.left}
+          />
+        )}
         {mine === "error" ? (
           <ErrorNotice
             retryHref={`/manager/${id}/catalogue`}
@@ -137,6 +173,13 @@ export default async function CataloguePage({
           // Before the mercato: when it opens and who plays, no bid yet (#620).
           <MercatoBanner opensAt={league.mercato.startsAt} participants={league.participants} />
         )}
+        <Link
+          href={`/manager/${id}/catalogue?guide=1`}
+          prefetch={false}
+          className="inline-flex min-h-11 items-center self-start text-sm font-bold underline underline-offset-4"
+        >
+          {text.firstMercato.open}
+        </Link>
         {reveals !== "error" && reveals.rounds.length > 0 && (
           <nav aria-labelledby="round-results" className="flex flex-col gap-2">
             <h2

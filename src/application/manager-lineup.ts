@@ -1,4 +1,5 @@
 import type { BenchPlan } from "@/domain/manager-bench";
+import { firstLineupSteps, type FirstLineupStep } from "@/domain/manager-build";
 import {
   fillablePlaces,
   lineupPlaces,
@@ -173,6 +174,52 @@ export function getMyLineup(ports: {
         athletes,
         placed: placeLineup(places, athletes, starters).placed,
       };
+    },
+  };
+}
+
+/** « Ton premier alignement » (#1037): the steps done and the one to do, on a competition. */
+export type FirstLineupGuide = {
+  slug: string;
+  done: Record<FirstLineupStep, boolean>;
+  current: FirstLineupStep | null;
+  /** What the rules sheet quotes. */
+  divisor: number;
+};
+
+/**
+ * The guide of a player who never validated a lineup in the league: null once one was validated
+ * (when no competition is left to line up, or while the mercato runs). The steps read the next open competition.
+ */
+export function getFirstLineupGuide(ports: {
+  managerLeagues: Pick<ManagerLeagueRepository, "find">;
+  bids: ManagerBidRepository;
+  catalogue: ManagerCatalogueRepository;
+  lineups: ManagerLineupRepository;
+}) {
+  return {
+    async execute(input: { leagueId: string; now: string }): Promise<FirstLineupGuide | null> {
+      const mine = await ports.lineups.mine(input.leagueId);
+      if (mine === "not_member") throw new UseCaseError("LEAGUE_NOT_FOUND");
+      if (mine.some((c) => c.lineup !== null)) return null;
+      const next = mine.find((c) => input.now < c.lockAt);
+      if (!next) return null;
+      const view = await getMyLineup(ports).execute({
+        leagueId: input.leagueId,
+        slug: next.slug,
+        now: input.now,
+      });
+      // Nothing to line up while the mercato runs: the team is not fixed yet.
+      if (!view.mercatoClosed) return null;
+      const steps = firstLineupSteps({
+        startersFilled: view.placed.filter((p) => p !== null).length,
+        startersFillable: view.fillable.filter(Boolean).length,
+        benchFilled: view.plan.bench.length,
+        benchSize: view.benchSize,
+        tactical: Object.values(view.plan.settings).some((s) => s.threshold != null),
+        validated: view.status === "validated",
+      });
+      return { slug: view.slug, divisor: view.divisor, ...steps };
     },
   };
 }
