@@ -15,9 +15,14 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
    en cours est le plus petit `vX.Y` qui a encore une issue sans PR ouverte : une version dont
    toutes les issues attendent leur fusion ne bloque pas la suivante.
 3. `agents.yml` lance Claude Code : il travaille sur une branche `claude/…`, la pousse, et le
-   workflow ouvre la PR (`Closes #n`, labels et milestone de l'issue).
+   workflow ouvre la PR (`Closes #n`, labels et milestone de l'issue). Le modèle suit les labels
+   (`model_for`, `lib.sh`, #1012) : Opus pour `p1`, `p2`, `zone:db`, `c:scoring`,
+   `milestone-plan` ou `model:opus`, Sonnet pour le reste. Pour forcer Opus sur une issue `p3`,
+   mets-lui le label `model:opus`.
 4. CI verte : la PR est fusionnée (squash), après y avoir fusionné `main` si elle était en retard.
-   CI rouge ou conflit : la PR repart à Claude avec les logs (3 essais, puis le propriétaire).
+   CI rouge : si les logs montrent une panne de l'outil (GitHub en 5xx, réseau npm, runner perdu),
+   les jobs en échec sont relancés une fois, sans Claude ; sinon la PR repart à Claude avec les
+   logs (2 essais, puis le propriétaire, #1012). Conflit : la PR repart à Claude (3 essais).
    Un conflit avec `main` repart à Claude même quand la PR n'a pas de CI (GitHub n'en lance pas
    sur une branche en conflit) ou que sa CI tourne encore (#713).
 5. Chaque fusion dans `main` part en préprod (`preprod.yml`), correctifs `vX.Y.Z` compris :

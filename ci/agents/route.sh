@@ -5,7 +5,7 @@
 # The label starts nothing on an issue an open PR closes or a person is assigned to.
 # Before starting, a one-word probe checks the plan has usage left; if not, the issue waits
 # (agent:waiting-quota) and agents-merge retries it every hour.
-# Writes claude, auto to $GITHUB_OUTPUT. Env: EVENT, ACTION, LABEL, BODY, SENDER, NUMBER,
+# Writes claude, auto and model (model_for, #1012) to $GITHUB_OUTPUT. Env: EVENT, ACTION, LABEL, BODY, SENDER, NUMBER,
 # BOT_TOKEN, PAT_TOKEN, plus the probe's env.
 set -euo pipefail
 here=$(dirname "$0")
@@ -64,6 +64,9 @@ plan() {
 remove_label "$NUMBER" agent:waiting-quota
 remove_label "$NUMBER" agent:needs-answer
 add_label "$NUMBER" agent:working-claude
+model=$(model_for "$(labels_of "$NUMBER")")
+echo "Model for #$NUMBER: $model"
+out model "$model"
 out claude true
 comment as_bot "$NUMBER" "**Claude** prend cette tâche.
 

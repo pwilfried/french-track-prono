@@ -5,7 +5,13 @@ import { join } from "node:path";
 
 import { expect, it } from "vitest";
 
-type Check = { __typename: string; name: string; status: string; conclusion: string | null };
+type Check = {
+  __typename: string;
+  name: string;
+  status: string;
+  conclusion: string | null;
+  detailsUrl?: string;
+};
 const pending: Check = {
   __typename: "CheckRun",
   name: "ci",
@@ -20,7 +26,7 @@ const green: Check = {
 };
 
 /** Runs ci/agents/merge-sweep.sh on one Claude PR against a fake gh; nothing is written. */
-function sweep(mergeable: string, checks: Check[], event = "workflow_run") {
+function sweep(mergeable: string, checks: Check[], event = "workflow_run", log = "") {
   const dir = mkdtempSync(join(tmpdir(), "agents-sweep-"));
   for (const f of ["merge-sweep.sh", "lib.sh"]) copyFileSync(`ci/agents/${f}`, join(dir, f));
   for (const f of ["release.sh", "next.sh"]) {
@@ -41,12 +47,14 @@ function sweep(mergeable: string, checks: Check[], event = "workflow_run") {
     statusCheckRollup: checks,
   };
   writeFileSync(join(dir, "prs.json"), JSON.stringify([pr]));
+  writeFileSync(join(dir, "job.log"), log);
   writeFileSync(
     join(dir, "gh"),
     `#!/usr/bin/env bash
 case "$*" in
   *"pr list"*) cat "${dir}/prs.json" ;;
   *compare*) echo 0 ;;
+  *"run view"*) cat "${dir}/job.log" ;;
   *"labels=agent:waiting-quota"*) echo 694 ;;
   *"issues/694 "*) echo false ;;
 esac
@@ -93,4 +101,30 @@ it("retries the issues waiting for quota on a manual run, the hourly cron being 
   expect(sweep("MERGEABLE", [], "workflow_dispatch")).toContain("Retrying #694");
   expect(sweep("MERGEABLE", [], "schedule")).toContain("Retrying #694");
   expect(sweep("MERGEABLE", [])).not.toContain("Retrying #694");
+});
+
+const red: Check = {
+  __typename: "CheckRun",
+  name: "shots",
+  status: "COMPLETED",
+  conclusion: "FAILURE",
+  detailsUrl: "https://github.com/owner/repo/actions/runs/4321/job/8765",
+};
+
+it("reruns a check that failed on a GitHub outage once, without Claude (#1012)", () => {
+  const out = sweep(
+    "MERGEABLE",
+    [red],
+    "workflow_run",
+    "fatal: unable to access 'https://github.com/owner/repo/': The requested URL returned error: 503",
+  );
+  expect(out).toContain("gh run rerun 4321 --failed");
+  expect(out).toContain("agents:rerun sha=abcdef1");
+  expect(out).not.toContain("agents:fix");
+});
+
+it("sends a check that failed on the code back to Claude (#1012)", () => {
+  const out = sweep("MERGEABLE", [red], "workflow_run", "AssertionError: expected 2 to be 3");
+  expect(out).toContain("agents:fix sha=abcdef1");
+  expect(out).not.toContain("gh run rerun");
 });
