@@ -54,36 +54,42 @@ export type PlayerHomeProps = {
 /**
  * The signed-in player's home (#526, « Ta prochaine action »): a greeting, the one thing to do now
  * first (#932), the fact of the day, then the league, the last result, the community (#673), the
- * Manager and FrenchTrack. A block with nothing to show is left out.
+ * Manager and FrenchTrack. A block with nothing to show is left out. From 1024 px (#990) it splits
+ * in two columns: the next action and the league on the left, the rest on the right; below, the
+ * two columns stack in the same order.
  */
 export function PlayerHome(props: PlayerHomeProps) {
   const { pseudo, isNew, now, action, competitionSlug, league, lastResult } = props;
   return (
-    <>
-      <h1 className="text-lg font-bold text-muted-foreground">{text.hello(pseudo, isNew)}</h1>
-      {action ? (
-        <NextActionCard
-          action={action}
-          firstPrediction={isNew}
-          competitionSlug={competitionSlug}
-          now={now}
-        />
-      ) : null}
-      {props.funFact}
-      {props.completeProfile}
-      {isNew ? (
-        <DismissibleHowItWorks
-          exactPoints={props.exactPoints}
-          perfectPoints={props.perfectPoints}
-        />
-      ) : null}
-      {league ? <MyLeague userId={props.userId} {...league} /> : <NoLeague />}
-      {props.challenge ? <Challenge {...props.challenge} now={now} /> : null}
-      {lastResult ? <LastResult {...lastResult} /> : null}
-      {props.community}
-      <Manager mercatoOpen={props.mercatoOpen} />
-      <PodcastCard episode={props.episode ?? null} />
-    </>
+    <div className="grid gap-5 lg:grid-cols-2 lg:items-start lg:gap-8">
+      <div className="flex min-w-0 flex-col gap-5">
+        <h1 className="text-lg font-bold text-muted-foreground">{text.hello(pseudo, isNew)}</h1>
+        {action ? (
+          <NextActionCard
+            action={action}
+            firstPrediction={isNew}
+            competitionSlug={competitionSlug}
+            now={now}
+          />
+        ) : null}
+        {props.funFact}
+        {props.completeProfile}
+        {isNew ? (
+          <DismissibleHowItWorks
+            exactPoints={props.exactPoints}
+            perfectPoints={props.perfectPoints}
+          />
+        ) : null}
+        {league ? <MyLeague userId={props.userId} {...league} /> : <NoLeague />}
+      </div>
+      <div className="flex min-w-0 flex-col gap-5">
+        {props.challenge ? <Challenge {...props.challenge} now={now} /> : null}
+        {lastResult ? <LastResult {...lastResult} /> : null}
+        {props.community}
+        <Manager mercatoOpen={props.mercatoOpen} />
+        <PodcastCard episode={props.episode ?? null} />
+      </div>
+    </div>
   );
 }
 

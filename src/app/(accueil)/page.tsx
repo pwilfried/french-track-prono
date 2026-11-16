@@ -102,7 +102,7 @@ export default async function Home() {
   const { clubNotices, completeProfile, funFacts, ...home } = player;
   return (
     <main id="main" className="flex flex-1 flex-col">
-      <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6 lg:max-w-5xl">
         <ClubNotices notices={clubNotices} />
         <PlayerHome
           userId={user.userId}
