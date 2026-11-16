@@ -442,7 +442,8 @@ Feuille de résultats (v0.15, issue #429, puis #665) : place, marque, statut (DN
 indicateurs de records de chaque athlète d'une épreuve, dans `event_performances`. Écriture par
 `admin_set_performances()` (journalisée), qui remplace aussi `results` par les arrivés classés 1
 à 3 (même règle que `podiumFromPerformances` dans `src/domain/performance.ts`) ; lecture publique ;
-`admin_manager_lined_up()` signale à l'admin les athlètes alignés. Détail :
+`admin_manager_lined_up()` signale à l'admin les athlètes alignés (titulaires et remplaçants du
+banc, #1053). Détail :
 `docs/decisions/french-track-manager.md`, section 4.
 
 Points Manager (v0.15, issue #431) : les tables World Athletics vivent en TypeScript, donc le calcul
