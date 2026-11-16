@@ -1,6 +1,20 @@
-import type { LineupCompetition, ManagerLineupRepository } from "@/application/manager-lineup";
+import type {
+  LineupCompetition,
+  ManagerLineupRepository,
+  SheetRefusal,
+} from "@/application/manager-lineup";
 import type { DisciplineFamily } from "@/domain/discipline";
-import { lineupProblem, type LineupRules } from "@/domain/manager-lineup";
+import {
+  lineupProblem,
+  type LineupDiscipline,
+  type LineupProblem,
+  type LineupRules,
+} from "@/domain/manager-lineup";
+
+/** These problems answer `invalid`; the others, of the match sheet, answer their own name. */
+const INVALID: LineupProblem[] = ["not_in_team", "twice", "absent", "does_not_fit", "incomplete"];
+const refusalOf = (problem: LineupProblem): "invalid" | SheetRefusal =>
+  INVALID.includes(problem) ? "invalid" : (problem as SheetRefusal);
 
 type FakeCompetition = Omit<LineupCompetition, "entered" | "lineup"> & {
   /** Every athlete on a start list of the competition. */
@@ -10,8 +24,14 @@ type FakeCompetition = Omit<LineupCompetition, "entered" | "lineup"> & {
 type FakeLeague = {
   rules: LineupRules;
   mercatoClosed: boolean;
-  /** Participant → their team. */
-  teams: Record<string, { athleteId: string; family: DisciplineFamily }[]>;
+  /**
+   * Participant → their team, with the disciplines each athlete may count in (the same for every
+   * competition: the fake has no start list per competition).
+   */
+  teams: Record<
+    string,
+    { athleteId: string; family: DisciplineFamily; disciplines: LineupDiscipline[] }[]
+  >;
   competitions: FakeCompetition[];
 };
 
@@ -50,7 +70,7 @@ export function createInMemoryManagerLineupStore(input: {
               lineup: structuredClone(lineups.get(key(leagueId, c.competitionId, userId)) ?? null),
             }));
         },
-        async save(leagueId, competitionId, athleteIds) {
+        async save(leagueId, competitionId, sheet) {
           const league = leagueOf(leagueId);
           if (!league) return "not_member";
           const competition = league.competitions.find((c) => c.competitionId === competitionId);
@@ -61,8 +81,12 @@ export function createInMemoryManagerLineupStore(input: {
             ...a,
             entered: competition.entries.includes(a.athleteId),
           }));
-          if (lineupProblem(league.rules, team, athleteIds)) return "invalid";
-          lineups.set(key(leagueId, competitionId, userId), [...athleteIds]);
+          const problem = lineupProblem(league.rules, team, sheet);
+          if (problem) return refusalOf(problem);
+          lineups.set(
+            key(leagueId, competitionId, userId),
+            sheet.starters.map((s) => s.athleteId),
+          );
           return "saved";
         },
       };

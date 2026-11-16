@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { UseCaseError } from "@/application/errors";
 import type { LineupSaveOutcome, ManagerLineupRepository } from "@/application/manager-lineup";
 
-/** The answers of save_manager_lineup (supabase/migrations, #427). */
+/** The answers of save_manager_lineup (supabase/migrations, #427, #1032). */
 const refusals: Record<string, Exclude<LineupSaveOutcome, "saved">> = {
   "42501": "not_member",
   "22P02": "not_member",
@@ -11,6 +11,13 @@ const refusals: Record<string, Exclude<LineupSaveOutcome, "saved">> = {
   FT022: "mercato_open",
   FT023: "locked",
   FT024: "invalid",
+  FT036: "discipline_not_entered",
+  FT037: "substitute_other_family",
+  FT038: "substitute_not_on_bench",
+  FT039: "substitute_twice",
+  FT040: "implausible_threshold",
+  FT041: "bench_full",
+  FT042: "threshold_without_substitute",
 };
 
 type LineupRow = {
@@ -43,11 +50,19 @@ export function createSupabaseManagerLineups(client: SupabaseClient): ManagerLin
         lineup: row.athlete_ids,
       }));
     },
-    async save(leagueId, competitionId, athleteIds) {
+    async save(leagueId, competitionId, sheet) {
       const { error } = await client.rpc("save_manager_lineup", {
         p_league: leagueId,
         p_competition: competitionId,
-        p_athletes: athleteIds,
+        p_sheet: {
+          starters: sheet.starters.map((s) => ({
+            athlete: s.athleteId,
+            discipline: s.discipline ?? null,
+            substitute: s.substituteId ?? null,
+            threshold: s.threshold ?? null,
+          })),
+          bench: sheet.bench.map((s) => ({ athlete: s.athleteId, discipline: s.discipline ?? null })),
+        },
       });
       if (!error) return "saved";
       const refusal = refusals[error.code];

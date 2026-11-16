@@ -20,9 +20,23 @@ managerLineupContract("in-memory fake", async () => {
   const open = competition("open", at(48 * hour), ["s1", "m1"]);
   const locked = competition("locked", at(-hour), ["s1", "m1"]);
   const team = [
-    { athleteId: "s1", family: "sprint" as const },
-    { athleteId: "m1", family: "middle" as const },
-    { athleteId: "t1", family: "throws" as const },
+    {
+      athleteId: "s1",
+      family: "sprint" as const,
+      disciplines: [{ name: "100 m", family: "sprint" as const, unit: "time" as const }],
+    },
+    {
+      athleteId: "m1",
+      family: "middle" as const,
+      disciplines: [{ name: "800 m", family: "middle" as const, unit: "time" as const }],
+    },
+    {
+      athleteId: "t1",
+      family: "throws" as const,
+      disciplines: [
+        { name: "Lancer du poids", family: "throws" as const, unit: "distance" as const },
+      ],
+    },
   ];
   const rules = { max: 4, perFamily: 1, bench: 0 };
   const store = createInMemoryManagerLineupStore({

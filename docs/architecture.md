@@ -355,7 +355,7 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 | Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions`, `badges`, `user_badges` (niveau de badge gagné, #821), `trophies` et `trophy_settings` (trophées de saison et compte FrenchTrack du Témoin d'or, #822), `fun_facts` et `fun_fact_settings` (« Le saviez-vous ? », #766) |
 | Communauté (v0.19) | `league_moments`, `manager_moments`, `moment_reactions`, `moment_reaction_reports`, `frenchtrack_picks`, `announcements`, `polls`, `poll_votes` |
 | Notifications | `push_subscriptions`, `reminder_settings`, `reminder_log`, `program_alerts` |
-| Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
+| Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `manager_lineup_entries`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
 | Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()`, `raise_my_badge_levels()`, `event_consensus()`, `save_reminder_settings()`, `admin_replace_trophies()` |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers` |
 

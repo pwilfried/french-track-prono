@@ -4,7 +4,9 @@ import {
   lineupStatus,
   placeLineup,
   type LineupPlace,
+  type LineupProblem,
   type LineupStatus,
+  type MatchSheet,
 } from "@/domain/manager-lineup";
 
 import { UseCaseError, type ErrorCode } from "./errors";
@@ -28,8 +30,14 @@ export type LineupCompetition = {
   lineup: string[] | null;
 };
 
+/** The refusals of a match sheet with an error of their own (#1032); the others are `invalid`. */
+export type SheetRefusal = Exclude<
+  LineupProblem,
+  "not_in_team" | "twice" | "absent" | "does_not_fit" | "incomplete"
+>;
+
 export type LineupSaveOutcome =
-  "saved" | "not_member" | "not_eligible" | "mercato_open" | "locked" | "invalid";
+  "saved" | "not_member" | "not_eligible" | "mercato_open" | "locked" | "invalid" | SheetRefusal;
 
 /**
  * Port: the lineups of the signed-in player. Real adapter = Supabase (the database checks the
@@ -38,8 +46,8 @@ export type LineupSaveOutcome =
 export interface ManagerLineupRepository {
   /** The eligible competitions of the league, first one first. */
   mine(leagueId: string): Promise<LineupCompetition[] | "not_member">;
-  /** Validates the lineup for a competition, or replaces it: the last one counts. */
-  save(leagueId: string, competitionId: string, athleteIds: string[]): Promise<LineupSaveOutcome>;
+  /** Validates the match sheet for a competition, or replaces it: the last one counts. */
+  save(leagueId: string, competitionId: string, sheet: MatchSheet): Promise<LineupSaveOutcome>;
 }
 
 export type LineupSummary = Pick<LineupCompetition, "slug" | "name" | "startsOn" | "lockAt"> & {
@@ -126,21 +134,24 @@ const refused: Record<Exclude<LineupSaveOutcome, "saved">, ErrorCode> = {
   mercato_open: "MERCATO_NOT_OVER",
   locked: "LINEUP_LOCKED",
   invalid: "LINEUP_INVALID",
+  bench_full: "LINEUP_BENCH_FULL",
+  discipline_not_entered: "LINEUP_DISCIPLINE_NOT_ENTERED",
+  substitute_not_on_bench: "LINEUP_SUBSTITUTE_NOT_ON_BENCH",
+  substitute_other_family: "LINEUP_SUBSTITUTE_OTHER_FAMILY",
+  substitute_twice: "LINEUP_SUBSTITUTE_TWICE",
+  threshold_without_substitute: "LINEUP_THRESHOLD_WITHOUT_SUBSTITUTE",
+  implausible_threshold: "LINEUP_THRESHOLD_IMPLAUSIBLE",
 };
 
-/** Validates the player's lineup for a competition, or changes it, until the lock. */
+/** Validates the player's match sheet for a competition, or changes it, until the lock. */
 export function saveMyLineup(ports: { lineups: ManagerLineupRepository }) {
   return {
     async execute(input: {
       leagueId: string;
       competitionId: string;
-      athleteIds: string[];
+      sheet: MatchSheet;
     }): Promise<void> {
-      const outcome = await ports.lineups.save(
-        input.leagueId,
-        input.competitionId,
-        input.athleteIds,
-      );
+      const outcome = await ports.lineups.save(input.leagueId, input.competitionId, input.sheet);
       if (outcome !== "saved") throw new UseCaseError(refused[outcome]);
     },
   };
