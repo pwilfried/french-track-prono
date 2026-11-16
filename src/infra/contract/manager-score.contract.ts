@@ -67,6 +67,7 @@ export function managerScoreContract(name: string, world: () => Promise<ManagerS
 
       expect(sheet).toMatchObject({
         competitionId: w.competitionId,
+        indoor: false,
         participants: [
           {
             leagueId: w.leagueId,

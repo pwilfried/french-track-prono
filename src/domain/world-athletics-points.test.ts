@@ -63,6 +63,45 @@ describe("worldAthleticsPoints", () => {
     },
   );
 
+  // Short-track tables for an indoor competition (decision of the owner of 16 Nov. 2026, #1026).
+  it("scores the 60 m: 6.60 for a man is worth 1 153 points", () => {
+    expect(worldAthleticsPoints("60 m", "M", 6.6, true)).toBe(1153);
+    expect(worldAthleticsPoints("60 m", "M", 6.6, false)).toBe(1153);
+  });
+
+  it.each([
+    ["60 m", "F", 7.2],
+    ["60 m haies", "M", 7.6],
+    ["60 m haies", "F", 8.1],
+    ["3000 m", "M", 470],
+    ["3000 m", "F", 520],
+    ["Mile", "M", 240],
+    ["2 miles", "F", 560],
+  ] as const)("gives points to an indoor discipline: %s %s in %ss", (discipline, sex, mark) => {
+    expect(worldAthleticsPoints(discipline, sex, mark, true)).toBeGreaterThan(900);
+    expect(worldAthleticsPoints(discipline, sex, mark, false)).toBeGreaterThan(900);
+  });
+
+  it("scores an indoor race with its short-track table", () => {
+    expect(worldAthleticsPoints("400 m", "M", 46.5, true)).toBe(1140);
+    expect(worldAthleticsPoints("400 m", "M", 46.5, false)).toBe(1078);
+    expect(worldAthleticsPoints("1500 m", "F", 252, true)).toBe(1132);
+  });
+
+  it("keeps the outdoor table indoors when there is no short-track one", () => {
+    expect(worldAthleticsPoints("Saut en hauteur", "M", 2.2, true)).toBe(
+      worldAthleticsPoints("Saut en hauteur", "M", 2.2, false),
+    );
+    expect(worldAthleticsPoints("60 m haies", "F", 7.8, true)).toBe(
+      worldAthleticsPoints("60 m haies", "F", 7.8, false),
+    );
+  });
+
+  it("scores the indoor combined events on their official total", () => {
+    expect(worldAthleticsPoints("Pentathlon", "F", 4800, true)).toBeGreaterThan(0);
+    expect(worldAthleticsPoints("Heptathlon", "M", 6200, true)).toBeGreaterThan(0);
+  });
+
   it("gives 0 points to a race slower than the zero of the table", () => {
     expect(worldAthleticsPoints("100 m", "M", 17.5)).toBe(0);
   });
@@ -85,12 +124,16 @@ describe("worldAthleticsPoints", () => {
   });
 
   const SCORED = [
+    "60 m",
+    "60 m haies",
     "100 m",
     "200 m",
     "400 m",
     "400 m haies",
     "800 m",
     "1500 m",
+    "Mile",
+    "3000 m",
     "3000 m steeple",
     "5000 m",
     "10 000 m",
@@ -105,14 +148,18 @@ describe("worldAthleticsPoints", () => {
     "Javelot",
     "Heptathlon",
     "Relais 4x100 m",
+    "Relais 4x200 m",
     "Relais 4x400 m",
     "Relais mixte 4x400 m",
   ];
 
-  it("has a table for both sexes in every individual discipline they share", () => {
+  it("has a table for both sexes in every individual discipline they share, indoors or out", () => {
     for (const discipline of SCORED) {
       for (const sex of ["F", "M"] as const) {
-        expect(worldAthleticsPoints(discipline, sex, 1), `${discipline} ${sex}`).not.toBeNull();
+        for (const indoor of [false, true]) {
+          const points = worldAthleticsPoints(discipline, sex, 1, indoor);
+          expect(points, `${discipline} ${sex} ${indoor}`).not.toBeNull();
+        }
       }
     }
   });
@@ -134,12 +181,13 @@ describe("worldAthleticsPoints", () => {
     sex: fc.constantFrom("F" as const, "M" as const),
     a: fc.double({ min: 0.01, max: 10_000, noNaN: true }),
     b: fc.double({ min: 0.01, max: 10_000, noNaN: true }),
+    indoor: fc.boolean(),
   });
 
   it("always gives a whole number of points, never negative", () => {
     fc.assert(
-      fc.property(scored, ({ discipline, sex, a }) => {
-        const points = worldAthleticsPoints(discipline, sex, a)!;
+      fc.property(scored, ({ discipline, sex, a, indoor }) => {
+        const points = worldAthleticsPoints(discipline, sex, a, indoor)!;
         return Number.isInteger(points) && points >= 0;
       }),
     );
@@ -147,12 +195,12 @@ describe("worldAthleticsPoints", () => {
 
   it("never gives fewer points to a better mark", () => {
     fc.assert(
-      fc.property(scored, ({ discipline, sex, a, b }) => {
+      fc.property(scored, ({ discipline, sex, a, b, indoor }) => {
         const [low, high] = [Math.min(a, b), Math.max(a, b)];
         const [worse, better] = HIGHER_IS_BETTER.has(discipline) ? [low, high] : [high, low];
         return (
-          worldAthleticsPoints(discipline, sex, better)! >=
-          worldAthleticsPoints(discipline, sex, worse)!
+          worldAthleticsPoints(discipline, sex, better, indoor)! >=
+          worldAthleticsPoints(discipline, sex, worse, indoor)!
         );
       }),
     );

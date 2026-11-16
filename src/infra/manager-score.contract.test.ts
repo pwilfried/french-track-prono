@@ -17,6 +17,7 @@ managerScoreContract("in-memory fake", async () => {
       competitionId: "c1",
       slug: "meeting",
       lockAt: "2026-07-10T16:00:00Z",
+      indoor: false,
       participants: [
         { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: ["a1", "a2"] },
       ],

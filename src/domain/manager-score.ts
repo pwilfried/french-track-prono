@@ -24,6 +24,8 @@ export type ManagerScoreInput = {
   lineup: string[] | null;
   /** Every performance of the competition; those of athletes not lined up are ignored. */
   performances: CompetitionPerformance[];
+  /** An indoor competition: the races use the short-track tables (#1026). */
+  indoor: boolean;
   /** The table points of an athlete are divided by it, rounded down (the league rules). */
   tablesDivisor: number;
   /** The bonus values frozen in the league rules. */
@@ -84,18 +86,18 @@ export function managerTablePoints(tablePoints: number, divisor: number): number
 }
 
 /** DNS, DNF, DQ, a mark that cannot be read or a discipline without a table: 0 point (#416). */
-function tablePoints(p: CompetitionPerformance): number {
+function tablePoints(p: CompetitionPerformance, indoor: boolean): number {
   if (p.status !== "ok" || p.mark === null || p.sex === null) return 0;
   const mark = parseMark(p.mark, p.unit);
   if (mark === null) return 0;
-  return worldAthleticsPoints(p.discipline, p.sex, mark) ?? 0;
+  return worldAthleticsPoints(p.discipline, p.sex, mark, indoor) ?? 0;
 }
 
 function scorePerformance(
   p: CompetitionPerformance,
-  values: Record<ManagerBonus, number>,
-  divisor: number,
+  input: Pick<ManagerScoreInput, "bonuses" | "indoor" | "tablesDivisor">,
 ): AthleteScore {
+  const values = input.bonuses;
   // DNS, DNF and DQ earn no bonus (#416); the place bonuses come from a final only.
   const result: ManagerBonusResult =
     p.status === "ok"
@@ -105,7 +107,7 @@ function scorePerformance(
         }
       : { place: null, records: [] };
   const bonuses = managerBonusesEarned(result).map((bonus) => ({ bonus, points: values[bonus] }));
-  const points = managerTablePoints(tablePoints(p), divisor);
+  const points = managerTablePoints(tablePoints(p, input.indoor), input.tablesDivisor);
   const bonusPoints = managerBonusPoints(result, values);
   return {
     athleteId: p.athleteId,
@@ -143,7 +145,7 @@ export function managerCompetitionScore(input: ManagerScoreInput): ManagerCompet
   const best = new Map<string, AthleteScore>();
   for (const p of input.performances) {
     if (!lineup.includes(p.athleteId)) continue;
-    const line = scorePerformance(p, input.bonuses, input.tablesDivisor);
+    const line = scorePerformance(p, input);
     const kept = best.get(p.athleteId);
     best.set(p.athleteId, kept ? better(kept, line) : line);
   }

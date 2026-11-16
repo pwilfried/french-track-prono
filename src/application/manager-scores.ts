@@ -26,6 +26,8 @@ export type ManagerScoringSheet = {
   competitionId: string;
   /** The lineups lock then: no score before. */
   lockAt: string;
+  /** An indoor competition (`venue = 'indoor'`): its races use the short-track tables (#1026). */
+  indoor: boolean;
   participants: ScoringParticipant[];
   performances: CompetitionPerformance[];
 };
@@ -74,6 +76,7 @@ export function computeManagerScores(ports: { scores: ManagerScoreRepository; no
         ...managerCompetitionScore({
           lineup: p.lineup,
           performances: sheet.performances,
+          indoor: sheet.indoor,
           tablesDivisor: p.tablesDivisor,
           bonuses: p.bonuses,
         }),

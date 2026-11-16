@@ -290,8 +290,9 @@ points » en fin de section.
 
 - **Barème hongrois** (« tables World Athletics ») : chaque athlète aligné rapporte des points selon sa performance réelle ;
   la place n'entre pas dans ce calcul. Tables World Athletics (#428) ; DNS, DNF, DQ = 0 point.
-  Calcul : `src/domain/world-athletics-points.ts`, à partir de la discipline, du sexe et de la
-  performance (secondes, mètres, ou total officiel pour les épreuves combinées).
+  Calcul : `src/domain/world-athletics-points.ts`, à partir de la discipline, du sexe, de la
+  performance (secondes, mètres, ou total officiel pour les épreuves combinées) et du lieu de la
+  compétition : en salle, tables « piste courte » (#1026, voir les réponses de #428).
 - **Bonus sportifs**, tous cumulables, valeurs fixées par l'admin : 1re, 2e, 3e place, record
   personnel, meilleure performance de la saison, record national, continental et du monde.
   Calcul : `src/domain/manager-bonus.ts`, à partir de la place (aucune pour DNS, DNF, DQ) et des
@@ -490,9 +491,19 @@ les scores déjà stockés (tables ÷ diviseur, pronos à 0).
   script, le relancer, vérifier les valeurs de référence des tests.
 - **Épreuves combinées** : pas de tables du décathlon ou de l'heptathlon par épreuve. La
   performance saisie est le total officiel, converti par les tables comme toute autre épreuve.
-- Chronométrage électronique et piste de 400 m seulement (pas de correction manuelle, pas de
-  tables « piste courte »). Une discipline absente des tables (relais mixte 4 × 100 m, ou créée
-  par l'admin sous un autre nom) n'a pas de barème : le calcul renvoie « pas de table ».
+- Chronométrage électronique seulement (pas de correction manuelle). Une discipline absente des
+  tables (relais mixte 4 × 100 m, ou créée par l'admin sous un autre nom) n'a pas de barème : le
+  calcul renvoie « pas de table ».
+- **Salle** (décision du 16 nov. 2026, #1026, remplace ici « pas de tables piste courte ») : la
+  salle reste dans le Manager. Une compétition en salle (`venue = 'indoor'`, celle du filtre
+  « Saison en salle ») prend la table `<épreuve>_short` d'une course quand elle existe (200 m,
+  300 m, 400 m, 500 m, 600 m, 800 m, 1000 m, 1500 m, mile, 2000 m, 3000 m, 2 miles, 5000 m,
+  relais 4 × 200 m, 4 × 400 m et mixte 4 × 400 m), sinon la table de plein air. Le 50 m, le
+  55 m, le 60 m et leurs haies n'ont qu'une table, la même partout ; le 3000 m plat a aussi sa
+  table de plein air. Pentathlon (femmes) et heptathlon (hommes) en salle ont leurs tables ;
+  sauts et lancers : même table dedans et dehors. La feuille de calcul SQL
+  (`admin_manager_scoring_sheet`) transmet `indoor` ; le calcul reste celui du cœur. Les scores
+  déjà stockés d'une compétition en salle changent au prochain « Recalculer ».
 
 ## Réponse du propriétaire (#440, 10 novembre 2026)
 
