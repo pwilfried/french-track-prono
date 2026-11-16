@@ -51,7 +51,8 @@ test("the admin recomputes the Manager points and the participant reads them, at
   sql(`update events set starts_at = now() - interval '1 hour', lock_at = now() - interval '1 hour'
        where id = '${event}'`);
 
-  // Alpha wins with a personal best, Bravo does not finish; the admin's predictions earned 6.
+  // Alpha wins with a personal best, Bravo does not finish; the admin's predictions earned 6,
+  // which the Manager does not count (#1031).
   sql(`insert into event_performances (event_id, athlete_id, status, place, mark, records)
        select '${event}', id, case when slug = 'mpts-0-${tag}' then 'ok' else 'dnf' end,
               case when slug = 'mpts-0-${tag}' then 1 end,
@@ -79,12 +80,13 @@ test("the admin recomputes the Manager points and the participant reads them, at
          where action = 'run_manager_scoring' and admin_id = '${adminId}'`),
   ).toBe("1");
 
-  // « Mes points »: the total, its three parts, then the starters from the strongest.
-  const hungarian = worldAthleticsPoints("100 m", "F", 10.9)!;
+  // « Mes points »: the total, its two parts (the tables divided by 10, the bonuses), then the
+  // starters from the strongest.
+  const hungarian = Math.floor(worldAthleticsPoints("100 m", "F", 10.9)! / 10);
   await page.goto(`/manager/${league}/points/${slug}`);
   const summary = page.getByRole("region", { name: "Mon score de la compétition" });
-  await expect(summary).toContainText(`${hungarian + 70 + 6} pts`);
-  await expect(summary.getByRole("definition")).toHaveText([`${hungarian}`, "70", "6"]);
+  await expect(summary).toContainText(`${hungarian + 70} pts`);
+  await expect(summary.getByRole("definition")).toHaveText([`${hungarian}`, "70"]);
   const starters = page.getByRole("list", { name: "Mes titulaires" }).getByRole("listitem");
   await expect(starters).toHaveCount(2);
   await expect(starters.first()).toHaveAccessibleName(winner);

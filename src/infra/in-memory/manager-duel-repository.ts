@@ -42,8 +42,8 @@ export function createInMemoryManagerDuelStore(leagues: ManagerDuelFixture[]) {
           const league = find(leagueId, userId);
           return (league?.scores ?? [])
             .filter((s) => s.competitionId === competitionId)
-            .map(({ userId: id, total, predictions, athletes }) =>
-              structuredClone({ userId: id, total, predictions, athletes }),
+            .map(({ userId: id, total, athletes }) =>
+              structuredClone({ userId: id, total, athletes }),
             );
         },
       };

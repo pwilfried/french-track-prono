@@ -138,16 +138,6 @@ export default async function ManagerDuelPage({
                 : `${top.participant.pseudo} ${championship.vs} ${bottom.participant.pseudo}`}
           </p>
           <p className="text-muted-foreground">{details.join(" · ")}</p>
-          {bottom.predictions !== null && top.predictions !== null && (
-            <p className="text-muted-foreground">
-              {text.predictions(
-                view.mine ? text.you : bottom.participant.pseudo,
-                bottom.predictions,
-                view.mine ? text.opponent : top.participant.pseudo,
-                top.predictions,
-              )}
-            </p>
-          )}
         </section>
 
         <Link

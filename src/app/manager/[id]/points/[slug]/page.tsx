@@ -65,12 +65,11 @@ export default async function ManagerPointsPage({
               <p className="font-display text-5xl font-extrabold leading-none">
                 {text.points(mine.score.total)}
               </p>
-              <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
+              <dl className="mt-4 grid grid-cols-2 gap-2 text-center">
                 {(
                   [
                     [text.hungarian, mine.score.hungarian],
                     [text.bonus, mine.score.bonus],
-                    [text.predictions, mine.score.predictions],
                   ] as const
                 ).map(([label, value]) => (
                   <div key={label} className="rounded-xl bg-white/10 px-2 py-2">

@@ -17,7 +17,9 @@ managerScoreContract("in-memory fake", async () => {
       competitionId: "c1",
       slug: "meeting",
       lockAt: "2026-07-10T16:00:00Z",
-      participants: [{ leagueId: "L", userId: "zoe", bonuses, lineup: ["a1", "a2"] }],
+      participants: [
+        { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: ["a1", "a2"] },
+      ],
       performances: [
         {
           athleteId: "a1",
@@ -31,7 +33,6 @@ managerScoreContract("in-memory fake", async () => {
           records: ["pb"],
         },
       ],
-      predictionPoints: { zoe: 3 },
       names,
     },
   ]);
@@ -71,7 +72,7 @@ if (url && key) {
     // The player's league, mercato closed; their lineup before the lock, then the event starts.
     const leagueId = sql(`insert into manager_leagues (name, owner_id, rules, competition_ids,
                             mercato_opened_at, mercato_closed_at)
-      values ('Points', '${player.userId}', '{"bonuses": {"first": 50}}',
+      values ('Points', '${player.userId}', '{"bonuses": {"first": 50}, "tablesDivisor": 10}',
               array['${competitionId}']::uuid[], now() - interval '3 days', now() - interval '1 day')
       returning id`);
     sql(
@@ -84,8 +85,6 @@ if (url && key) {
          where id = '${eventId}'`);
     sql(`insert into event_performances (event_id, athlete_id, status, place, mark, records)
          values ('${eventId}', '${athleteIds[0]}', 'ok', 1, '10.90', array['pb'])`);
-    sql(`insert into score_events (user_id, competition_id, event_id, source, points, reason)
-         values ('${player.userId}', '${competitionId}', '${eventId}', 'prediction', 3, 'prediction')`);
     return {
       competitionSlug,
       competitionId,

@@ -47,7 +47,7 @@ const pick = (userId: string, first: string, second: string, third: string, useJ
 /**
  * One women's 100 m final of the « meeting » competition, and the fakes of the three ports sharing
  * their state as the database does: the podium is drawn from the sheet, the Manager reads the
- * performances and the prediction points stored.
+ * performances stored.
  */
 function world(options: { predictions?: Pick[]; participants?: ScoringParticipant[] } = {}) {
   const predictions = options.predictions ?? [];
@@ -95,10 +95,6 @@ function world(options: { predictions?: Pick[]; participants?: ScoringParticipan
       sheet: async (slug) => {
         if (!isAdmin) return "not_admin";
         if (slug !== "meeting") return null;
-        const predictionPoints: Record<string, number> = {};
-        for (const line of [...eventScores.values()].flat()) {
-          predictionPoints[line.userId] = (predictionPoints[line.userId] ?? 0) + line.points;
-        }
         return {
           competitionId: "meeting-id",
           lockAt: LOCK,
@@ -110,7 +106,6 @@ function world(options: { predictions?: Pick[]; participants?: ScoringParticipan
             unit: "time" as const,
             round: "final",
           })),
-          predictionPoints,
         };
       },
       replace: async (_, lines) => {
@@ -174,14 +169,17 @@ const codeOf = async (promise: Promise<unknown>) => {
   }
 };
 
+/** A women's 100 m in the Manager: the tables divided by 10. */
+const tables = (mark: number) => Math.floor(worldAthleticsPoints("100 m", "F", mark)! / 10);
+
 describe("saveResultSheet", () => {
   it("scores the predictions and the Manager from one sheet, with no other call", async () => {
     // Given a final predicted by Zoé and Max, who both play a Manager league on the competition
     const w = world({
       predictions: [pick("zoe", "a1", "a2", "a3"), pick("max", "a4", "a5", "a6")],
       participants: [
-        { leagueId: "L", userId: "zoe", bonuses, lineup: ["a1", "a4"] },
-        { leagueId: "L", userId: "max", bonuses, lineup: ["a2"] },
+        { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: ["a1", "a4"] },
+        { leagueId: "L", userId: "max", bonuses, tablesDivisor: 10, lineup: ["a2"] },
       ],
     });
 
@@ -193,23 +191,23 @@ describe("saveResultSheet", () => {
       { athleteId: "a4", status: "dnf", place: null, mark: null, records: [] },
     ]);
 
-    // Then the prediction points come first, then the Manager scores that add them, then the
-    // moments of the leagues
+    // Then the prediction points come first, then the Manager scores, without them (#1031), then
+    // the moments of the leagues
     expect(w.calls).toEqual(["sheet", "predictions", "manager", "moments"]);
     expect(w.eventPoints("zoe")).toBe(12);
     expect(w.eventPoints("max")).toBe(0);
-    const winner = worldAthleticsPoints("100 m", "F", 10.9)!;
-    expect(w.manager("zoe")).toMatchObject({ hungarian: winner, bonus: 70, predictions: 12 });
-    expect(w.manager("zoe")!.total).toBe(winner + 70 + 12);
-    expect(w.manager("max")!.total).toBe(worldAthleticsPoints("100 m", "F", 11)! + 30);
+    const winner = tables(10.9);
+    expect(w.manager("zoe")).toMatchObject({ hungarian: winner, bonus: 70 });
+    expect(w.manager("zoe")!.total).toBe(winner + 70);
+    expect(w.manager("max")!.total).toBe(tables(11) + 30);
   });
 
   it("changes the Manager score and the head-to-head when a mark is corrected", async () => {
     // Given Zoé's athlete ahead of Max's on the first sheet
     const w = world({
       participants: [
-        { leagueId: "L", userId: "zoe", bonuses, lineup: ["a3"] },
-        { leagueId: "L", userId: "max", bonuses, lineup: ["a4"] },
+        { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: ["a3"] },
+        { leagueId: "L", userId: "max", bonuses, tablesDivisor: 10, lineup: ["a4"] },
       ],
     });
     await save(w.admin, [...podium.slice(0, 2), ok("a3", 3, "10.80"), ok("a4", 4, "11.50")]);
@@ -219,7 +217,7 @@ describe("saveResultSheet", () => {
     await save(w.admin, [...podium.slice(0, 2), ok("a3", 3, "12.90"), ok("a4", 4, "11.50")]);
 
     // Then her score drops and she loses the head-to-head
-    expect(w.manager("zoe")!.total).toBe(worldAthleticsPoints("100 m", "F", 12.9)! + 20);
+    expect(w.manager("zoe")!.total).toBe(tables(12.9) + 20);
     expect(duelOutcome(w.manager("zoe")!.total, w.manager("max")!.total).outcome).toBe("loss");
   });
 
@@ -243,7 +241,9 @@ describe("saveResultSheet", () => {
 
   it("tells the sheet a Manager league plays the competition, and who is lined up", async () => {
     const w = world({
-      participants: [{ leagueId: "L", userId: "zoe", bonuses, lineup: ["a5", "a2"] }],
+      participants: [
+        { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: ["a5", "a2"] },
+      ],
     });
     await save(w.admin, podium);
 
@@ -258,7 +258,7 @@ describe("saveResultSheet", () => {
   it("gives no prediction points on a heat, and still scores the Manager", async () => {
     const w = world({
       predictions: [pick("zoe", "a1", "a2", "a3")],
-      participants: [{ leagueId: "L", userId: "zoe", bonuses, lineup: ["a1"] }],
+      participants: [{ leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: ["a1"] }],
     });
 
     const saved = await save(w.admin, podium, false);
@@ -320,7 +320,7 @@ describe("saveResultSheet", () => {
   it("changes nothing when the computation runs again", async () => {
     const w = world({
       predictions: [pick("zoe", "a1", "a3", "a2")],
-      participants: [{ leagueId: "L", userId: "zoe", bonuses, lineup: ["a1"] }],
+      participants: [{ leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: ["a1"] }],
     });
     const first = await save(w.admin, [ok("a1", 1, "10.90"), ok("a2", 2), ok("a3", 3)]);
 

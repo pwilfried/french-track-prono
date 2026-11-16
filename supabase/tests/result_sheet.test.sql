@@ -80,10 +80,10 @@ create function pg_temp.manager_lines() returns jsonb language sql stable as $$
   select jsonb_build_array(
     jsonb_build_object('league_id', pg_temp.league(),
       'user_id', '9e665000-0000-0000-0000-000000000001', 'lined_up', true, 'total', 900,
-      'hungarian', 900, 'bonus', 0, 'predictions', 0),
+      'hungarian', 900, 'bonus', 0),
     jsonb_build_object('league_id', pg_temp.league(),
       'user_id', '9e665000-0000-0000-0000-000000000002', 'lined_up', true, 'total', 700,
-      'hungarian', 700, 'bonus', 0, 'predictions', 0))
+      'hungarian', 700, 'bonus', 0))
 $$;
 grant execute on function pg_temp.manager_lines() to authenticated;
 

@@ -15,6 +15,8 @@ export type ScoringParticipant = {
   userId: string;
   /** The bonus values frozen in the league rules. */
   bonuses: Record<ManagerBonus, number>;
+  /** The divisor of the table points frozen in the league rules (#1031). */
+  tablesDivisor: number;
   /** Null without a validated lineup. */
   lineup: string[] | null;
 };
@@ -26,8 +28,6 @@ export type ManagerScoringSheet = {
   lockAt: string;
   participants: ScoringParticipant[];
   performances: CompetitionPerformance[];
-  /** The prediction points of every player on the competition; a player without any is absent. */
-  predictionPoints: Record<string, number>;
 };
 
 /** One stored score: a participant of a league, for the competition. */
@@ -53,7 +53,7 @@ export interface ManagerScoreRepository {
 
 /**
  * The Manager score of every participant of every league playing the competition, from the
- * performances entered and the prediction points. Run by every results sheet (#665) and by the
+ * performances entered (the predictions do not count, #1031). Run by every results sheet (#665) and by the
  * admin's « Recalculer »: everything is computed again and replaced (#416).
  */
 export function computeManagerScores(ports: { scores: ManagerScoreRepository; now?: () => Date }) {
@@ -74,7 +74,7 @@ export function computeManagerScores(ports: { scores: ManagerScoreRepository; no
         ...managerCompetitionScore({
           lineup: p.lineup,
           performances: sheet.performances,
-          predictionPoints: sheet.predictionPoints[p.userId] ?? 0,
+          tablesDivisor: p.tablesDivisor,
           bonuses: p.bonuses,
         }),
       }));

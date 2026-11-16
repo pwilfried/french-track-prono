@@ -113,9 +113,11 @@ test("the admin saves one results sheet: prediction points and the Manager head-
   await page.goto(`/epreuves/${slug}`);
   await expect(page.locator('main:not([aria-busy="true"])')).toContainText("+12 pts");
 
-  // ...and the score of the head-to-head in the Manager league.
-  const mine = worldAthleticsPoints("100 m", "F", 10.9)! + 50 + 20 + 12;
-  const theirs = worldAthleticsPoints("100 m", "F", 11.5)!;
+  // ...and the score of the head-to-head in the Manager league: the tables divided by 10 and the
+  // bonuses, without the prediction points (#1031).
+  const tables = (mark: number) => Math.floor(worldAthleticsPoints("100 m", "F", mark)! / 10);
+  const mine = tables(10.9) + 50 + 20;
+  const theirs = tables(11.5);
   await page.goto(`/manager/${league}/journee/1`);
   await page
     .getByRole("listitem", { name: "Ma confrontation" })

@@ -81,7 +81,6 @@ function world(
             {
               userId: "zoe",
               total: 1130,
-              predictions: 30,
               athletes: [
                 { athleteId: "z1", total: 1100, bonusPoints: 20 },
                 { athleteId: "z2", total: 0, bonusPoints: 0 },
@@ -90,7 +89,6 @@ function world(
             {
               userId: "max",
               total: 950,
-              predictions: 12,
               athletes: [{ athleteId: "m1", total: 938, bonusPoints: 0 }],
             },
           ])
@@ -135,14 +133,12 @@ describe("getManagerDuel", () => {
       participant: { userId: "max" },
       home: false,
       score: 950,
-      predictions: 12,
       linedUp: true,
     });
     expect(view.bottom).toMatchObject({
       participant: { userId: "zoe" },
       home: true,
       score: 1130,
-      predictions: 30,
     });
     expect(view.bottom.cards.map((c) => c && [c.athleteId, c.points, c.bonus])).toEqual([
       ["z1", 1100, 20],
