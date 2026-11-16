@@ -70,7 +70,7 @@ export const LongName: Story = {
   },
 };
 
-/** Each family has its code; on the night background of the dark theme. */
+/** Each of the four families has its code (#1017); on the night background of the dark theme. */
 export const Families: Story = {
   render: () => (
     <div className="grid w-[22rem] grid-cols-3 gap-3 rounded-2xl bg-nuit p-4">
@@ -78,10 +78,8 @@ export const Families: Story = {
         [
           ["Léa Fictive", "100 m", "sprint"],
           ["Inès Démo", "800 m", "middle"],
-          ["Hugo Fictif", "10 000 m", "long"],
           ["Noé Démo", "Perche", "vertical_jumps"],
           ["Sam Fictif", "Disque", "throws"],
-          ["Alex Démo", "Décathlon", "combined"],
         ] as const
       ).map(([name, discipline, family]) => (
         <AthleteCard key={name} athlete={{ name, discipline, family, sex: "M" }} paid={10} />
@@ -93,10 +91,8 @@ export const Families: Story = {
     await expect(cards.map((c) => c.textContent?.slice(0, 3))).toEqual([
       "SPR",
       "DEM",
-      "FON",
       "SAU",
       "LAN",
-      "COM",
     ]);
   },
 };
