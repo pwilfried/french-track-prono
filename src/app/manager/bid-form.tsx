@@ -5,10 +5,10 @@ import { useActionState, useState } from "react";
 import { messages } from "@/app/messages.fr";
 import { SubmitButton } from "@/components/account/submit-button";
 import { buttonVariants } from "@/components/ui/button";
-import { ChipStatus } from "@/components/ui/chip-status";
 import { MAX_BID_DIGITS } from "@/domain/manager-bid";
 
 import { managerBidAction, type BidFormState } from "./bid-actions";
+import { BidOpener } from "./bid-opener";
 
 const text = messages.catalogue;
 const step =
@@ -47,24 +47,7 @@ export function BidForm({
   const nudge = (by: number) =>
     setAmount(String(Math.min(max, Math.max(price, (Number(amount) || price) + by))));
 
-  if (!open) {
-    return (
-      <div className="flex flex-col gap-2">
-        {current !== null && (
-          <ChipStatus tone="brand" className="justify-center">
-            {text.myBid(current)}
-          </ChipStatus>
-        )}
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className={`${buttonVariants({ variant: current !== null ? "outline" : "default" })} w-full px-3 text-sm`}
-        >
-          {current !== null ? text.change : text.bid}
-        </button>
-      </div>
-    );
-  }
+  if (!open) return <BidOpener name={name} current={current} onOpen={() => setOpen(true)} />;
 
   return (
     <form action={action} noValidate className="flex flex-col gap-2 border-t border-border pt-3">
