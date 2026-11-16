@@ -46,14 +46,13 @@ function world() {
     competitionId: "meeting-id",
     lockAt: LOCK,
     participants: [
-      { leagueId: "L", userId: "zoe", bonuses, lineup: ["a1", "a2"] },
-      { leagueId: "L", userId: "max", bonuses, lineup: null },
+      { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: ["a1", "a2"] },
+      { leagueId: "L", userId: "max", bonuses, tablesDivisor: 10, lineup: null },
     ],
     performances: [
       run("a1", "10.90", { place: 1, records: ["pb"] }),
       run("a2", "", { status: "dnf", mark: null }),
     ],
-    predictionPoints: { zoe: 12, max: 30 },
   };
   const names: Record<string, string> = { a1: "Alice Fictive", a2: "Berthe Démo" };
   let stored: ManagerScoreLine[] = [];
@@ -89,7 +88,8 @@ function world() {
 }
 
 const after = () => new Date("2026-07-11T08:00:00Z");
-const points = worldAthleticsPoints("100 m", "F", 10.9)!;
+/** 10.90 on the 100 m, the tables divided by 10. */
+const points = Math.floor(worldAthleticsPoints("100 m", "F", 10.9)! / 10);
 
 describe("computeManagerScores", () => {
   it("scores every participant of the competition once the admin runs the computation", async () => {
@@ -101,7 +101,7 @@ describe("computeManagerScores", () => {
       competitionSlug: "meeting",
     });
 
-    // Then Zoé gets her athletes' points, their bonuses and her predictions; Max gets 0
+    // Then Zoé gets her athletes' points (the tables divided by 10) and their bonuses; Max gets 0
     const [zoe, max] = w.stored();
     expect(zoe).toMatchObject({
       leagueId: "L",
@@ -109,14 +109,13 @@ describe("computeManagerScores", () => {
       linedUp: true,
       hungarian: points,
       bonus: 70,
-      predictions: 12,
-      total: points + 70 + 12,
+      total: points + 70,
     });
     expect(zoe!.athletes.map((a) => [a.athleteId, a.total])).toEqual([
       ["a1", points + 70],
       ["a2", 0],
     ]);
-    expect(max).toMatchObject({ userId: "max", linedUp: false, total: 0, predictions: 0 });
+    expect(max).toMatchObject({ userId: "max", linedUp: false, total: 0 });
   });
 
   it("replaces the scores when run again after a corrected result", async () => {
@@ -128,7 +127,7 @@ describe("computeManagerScores", () => {
     await compute.execute({ competitionSlug: "meeting" });
 
     expect(w.stored()).toHaveLength(2);
-    expect(w.stored()[0]!.total).toBe(points + 12);
+    expect(w.stored()[0]!.total).toBe(points);
   });
 
   it("stores nothing when no Manager league plays the competition", async () => {
@@ -199,7 +198,7 @@ describe("getMyManagerScore", () => {
       scores: w.scores({ isAdmin: false, userId: "zoe" }),
     }).execute({ leagueId: "L", slug: "meeting" });
 
-    expect(mine.score?.total).toBe(points + 70 + 12);
+    expect(mine.score?.total).toBe(points + 70);
     expect(mine.score?.athletes.map((a) => a.name)).toEqual(["Alice Fictive", "Berthe Démo"]);
   });
 

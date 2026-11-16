@@ -283,11 +283,10 @@ viennent avec #1032 à #1034.
 
 ## 4. Points (v0.15)
 
-**Score d'une compétition = points du barème hongrois + bonus sportifs + points de pronostics.**
-
-> **Changement décidé le 16 nov. 2026 (#1017), à construire** : score = **points des tables ÷ 10**
-> (entier inférieur, par athlète) **+ bonus sportifs**, sans les pronostics. Voir « Équilibre des
-> points » en fin de section.
+**Score d'une compétition = points des tables ÷ `tablesDivisor` (10, entier inférieur, par
+athlète) + bonus sportifs**, sans les pronostics (décision du 16 nov. 2026, #1017, livrée par
+#1031). Jusque-là : barème hongrois brut + bonus + points de pronostics. Voir « Équilibre des
+points » en fin de section.
 
 - **Barème hongrois** (« tables World Athletics ») : chaque athlète aligné rapporte des points selon sa performance réelle ;
   la place n'entre pas dans ce calcul. Tables World Athletics (#428) ; DNS, DNF, DQ = 0 point.
@@ -324,10 +323,11 @@ viennent avec #1032 à #1034.
   les scores de la compétition. Tant qu'une épreuve de la compétition n'a pas de résultat, les
   scores sont provisoires : la confrontation s'affiche, elle ne compte au classement (et ne clôt la
   saison) qu'une fois toutes les épreuves saisies. Pour chaque participant d'une ligue dont le mercato
-  est clos : sans alignement, 0 au total (pronos compris) ; sinon, pour chaque titulaire, les
-  points des tables (0 pour DNS, DNF, DQ, sans performance saisie, marque illisible ou discipline
-  sans table) plus ses bonus, puis la somme des points de pronos du joueur sur la compétition
-  (`score_events`). Règles pures : `src/domain/manager-score.ts` ; en base : `manager_scores`
+  est clos : sans alignement, 0 au total ; sinon, pour chaque titulaire, les points des tables
+  divisés par le diviseur de la ligue, à l'entier inférieur (0 pour DNS, DNF, DQ, sans performance
+  saisie, marque illisible ou discipline sans table), plus ses bonus. Les points de pronos ne
+  comptent plus (#1031) : la colonne `predictions` de `manager_scores` reste, toujours à 0.
+  Règles pures : `src/domain/manager-score.ts` ; en base : `manager_scores`
   (lecture par les participants de la ligue). Écran « Mes points » :
   `/manager/<id>/points/<compétition>`, depuis l'alignement verrouillé ; le détail des titulaires va
   du plus fort au plus faible, les bonus en étiquettes dorées.
@@ -338,11 +338,12 @@ viennent avec #1032 à #1034.
   série compte. « Mes points » ne mène pas encore à la journée : on y va par la page de la ligue
   (« Journée ») ou le classement.
 - Cas chiffrés de référence (tables, bonus, score d'une compétition) : `docs/architecture.md`,
-  « Cas de test du cœur », M1 à M12.
+  « Cas de test du cœur », M1 à M14.
 
 ### Équilibre des points (décisions du propriétaire du 16 nov. 2026, #1017)
 
-À construire ; tant que ce n'est pas livré, le calcul ci-dessus reste en vigueur.
+Livré par #1031 (score) ; la migration `20261116120000_manager_score_divisor.sql` a recalculé
+les scores déjà stockés (tables ÷ diviseur, pronos à 0).
 
 - **Constat** (barème des migrations) : un athlète vaut 900 à 1 250 points des tables, 8 titulaires
   environ 8 500. Sur 20 000 confrontations simulées, l'écart médian des tables est d'environ

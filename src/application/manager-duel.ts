@@ -24,7 +24,6 @@ export type DuelLineups = {
 export type DuelScore = {
   userId: string;
   total: number;
-  predictions: number;
   athletes: { athleteId: string; total: number; bonusPoints: number }[];
 };
 
@@ -56,8 +55,6 @@ export type DuelSide = {
   home: boolean;
   /** Null until the competition is scored. */
   score: number | null;
-  /** The prediction points within the score. */
-  predictions: number | null;
   /** False once locked without a lineup: the player scores 0. */
   linedUp: boolean;
   /** One per place of the stadium: null for an empty one, or everyone before the lock. */
@@ -137,7 +134,6 @@ export function getManagerDuel(ports: {
           participant: participant(userId),
           home: userId === fixture.home,
           score: scored ? (score?.total ?? 0) : null,
-          predictions: scored ? (score?.predictions ?? 0) : null,
           linedUp: !lineups.locked || lineup !== undefined,
           cards: placed.map((id) => {
             const a = id ? athletes.get(id) : undefined;

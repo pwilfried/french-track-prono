@@ -859,7 +859,6 @@ export const messages = {
     points: pts,
     hungarian: "Barème hongrois",
     bonus: "Bonus sportifs",
-    predictions: "Mes pronos",
     starters: "Mes titulaires",
     athletePoints: pts,
     performance: (a: { discipline: string | null; mark: string | null; status: string | null }) =>
@@ -1029,10 +1028,6 @@ export const messages = {
     venue: (home: boolean) => (home ? "Domicile" : "Extérieur"),
     outcome: (outcome: "win" | "draw" | "loss", points: number) =>
       `${{ win: "Victoire", draw: "Match nul", loss: "Défaite" }[outcome]} +${points}`,
-    you: "toi",
-    opponent: "adversaire",
-    predictions: (bottom: string, bottomPoints: number, top: string, topPoints: number) =>
-      `Pronos : ${bottom} +${bottomPoints}, ${top} +${topPoints} (inclus)`,
     secret:
       "Les alignements restent secrets jusqu'au verrouillage de la compétition : reviens au premier départ.",
     stadium: "Le stade de la confrontation",

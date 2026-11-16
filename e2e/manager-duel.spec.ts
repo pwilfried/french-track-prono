@@ -85,9 +85,9 @@ test("a participant opens their head-to-head from the matchday and sees both lin
     );
   sql(`insert into manager_scores (league_id, competition_id, user_id, lined_up, total, hungarian,
                                    bonus, predictions, athletes)
-       values ('${league}', '${competitions[0]}', '${playerId}', true, 930, 880, 20, 30,
+       values ('${league}', '${competitions[0]}', '${playerId}', true, 930, 910, 20, 0,
                '${detail(mine, 0)}'),
-              ('${league}', '${competitions[0]}', '${rivalId}', true, 812, 780, 20, 12,
+              ('${league}', '${competitions[0]}', '${rivalId}', true, 812, 792, 20, 0,
                '${detail(theirs, 100)}')`);
 
   // From the matchday to the head-to-head.
@@ -104,7 +104,8 @@ test("a participant opens their head-to-head from the matchday and sees both lin
   const summary = page.getByRole("region", { name: "Résultat de la confrontation" });
   await expect(summary).toContainText("Victoire +3");
   await expect(summary).toContainText(`Aller · `);
-  await expect(summary).toContainText("Pronos : toi +30, adversaire +12 (inclus)");
+  // The predictions do not count in the Manager (#1031).
+  await expect(summary).not.toContainText("Pronos");
 
   // Stadium against stadium: the rival's at the top, « Mon stade » at the bottom, 812 - 930.
   const stadium = page.getByRole("region", { name: "Le stade de la confrontation" });

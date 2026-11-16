@@ -24,19 +24,20 @@ export type ManagerScoreInput = {
   lineup: string[] | null;
   /** Every performance of the competition; those of athletes not lined up are ignored. */
   performances: CompetitionPerformance[];
-  /** The points of the participant's classic predictions on the competition. */
-  predictionPoints: number;
+  /** The table points of an athlete are divided by it, rounded down (the league rules). */
+  tablesDivisor: number;
   /** The bonus values frozen in the league rules. */
   bonuses: Record<ManagerBonus, number>;
 };
 
-/** What one lined-up athlete brought: table points, bonuses, both added. */
+/** What one lined-up athlete brought: table points (divided), bonuses, both added. */
 export type AthleteScore = {
   athleteId: string;
   /** The discipline, mark and status of the performance kept; null without any performance. */
   discipline: string | null;
   mark: string | null;
   status: PerformanceStatus | null;
+  /** The World Athletics points divided by the league's divisor, rounded down. */
   points: number;
   /** The bonuses earned with their value in the league, place first then records. */
   bonuses: { bonus: ManagerBonus; points: number }[];
@@ -48,10 +49,9 @@ export type AthleteScore = {
 export type ManagerCompetitionScore = {
   linedUp: boolean;
   total: number;
-  /** World Athletics tables (« barème hongrois »). */
+  /** World Athletics tables (« barème hongrois »), divided athlete by athlete. */
   hungarian: number;
   bonus: number;
-  predictions: number;
   /** From the strongest to the weakest. */
   athletes: AthleteScore[];
 };
@@ -75,6 +75,14 @@ const nothing = (athleteId: string): AthleteScore => ({
   total: 0,
 });
 
+/**
+ * What the table points of one athlete are worth in the Manager: divided by the league's divisor,
+ * rounded down athlete by athlete (#1031): 1 109 points of the tables are worth 110 with 10.
+ */
+export function managerTablePoints(tablePoints: number, divisor: number): number {
+  return Math.floor(tablePoints / divisor);
+}
+
 /** DNS, DNF, DQ, a mark that cannot be read or a discipline without a table: 0 point (#416). */
 function tablePoints(p: CompetitionPerformance): number {
   if (p.status !== "ok" || p.mark === null || p.sex === null) return 0;
@@ -86,6 +94,7 @@ function tablePoints(p: CompetitionPerformance): number {
 function scorePerformance(
   p: CompetitionPerformance,
   values: Record<ManagerBonus, number>,
+  divisor: number,
 ): AthleteScore {
   // DNS, DNF and DQ earn no bonus (#416); the place bonuses come from a final only.
   const result: ManagerBonusResult =
@@ -96,7 +105,7 @@ function scorePerformance(
         }
       : { place: null, records: [] };
   const bonuses = managerBonusesEarned(result).map((bonus) => ({ bonus, points: values[bonus] }));
-  const points = tablePoints(p);
+  const points = managerTablePoints(tablePoints(p), divisor);
   const bonusPoints = managerBonusPoints(result, values);
   return {
     athleteId: p.athleteId,
@@ -120,21 +129,21 @@ function better(a: AthleteScore, b: AthleteScore): AthleteScore {
 }
 
 /**
- * Score of a competition = World Athletics points of every lined-up athlete + their sporting
- * bonuses + the participant's prediction points (docs/decisions/french-track-manager.md, §4).
- * Without a lineup, 0 for the whole competition. An athlete who took part in several events
+ * Score of a competition = for every lined-up athlete, their World Athletics points divided by the
+ * league's divisor (rounded down) + their sporting bonuses; the predictions do not count (#1031,
+ * docs/decisions/french-track-manager.md, §4). Without a lineup, 0 for the whole competition. An athlete who took part in several events
  * (heats and final, two disciplines) brings their best line only; the place bonuses come from a
  * final.
  */
 export function managerCompetitionScore(input: ManagerScoreInput): ManagerCompetitionScore {
   if (input.lineup === null) {
-    return { linedUp: false, total: 0, hungarian: 0, bonus: 0, predictions: 0, athletes: [] };
+    return { linedUp: false, total: 0, hungarian: 0, bonus: 0, athletes: [] };
   }
   const lineup = input.lineup;
   const best = new Map<string, AthleteScore>();
   for (const p of input.performances) {
     if (!lineup.includes(p.athleteId)) continue;
-    const line = scorePerformance(p, input.bonuses);
+    const line = scorePerformance(p, input.bonuses, input.tablesDivisor);
     const kept = best.get(p.athleteId);
     best.set(p.athleteId, kept ? better(kept, line) : line);
   }
@@ -143,13 +152,5 @@ export function managerCompetitionScore(input: ManagerScoreInput): ManagerCompet
     .sort((a, b) => b.total - a.total || lineup.indexOf(a.athleteId) - lineup.indexOf(b.athleteId));
   const hungarian = athletes.reduce((sum, a) => sum + a.points, 0);
   const bonus = athletes.reduce((sum, a) => sum + a.bonusPoints, 0);
-  const predictions = input.predictionPoints;
-  return {
-    linedUp: true,
-    total: hungarian + bonus + predictions,
-    hungarian,
-    bonus,
-    predictions,
-    athletes,
-  };
+  return { linedUp: true, total: hungarian + bonus, hungarian, bonus, athletes };
 }

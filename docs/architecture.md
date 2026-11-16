@@ -838,7 +838,9 @@ X 3e non proposé, C 4e ; tolérance 0,05.
 **Points Manager (v0.15, tests Vitest).** Tables World Athletics, édition 2025
 (`src/domain/world-athletics-points.ts`, #428) ; bonus (`src/domain/manager-bonus.ts`, #430) et
 score d'une compétition (`src/domain/manager-score.ts`, #431) avec le barème de test 1re 50,
-2e 30, 3e 20, RP 20, MPS 10, RN 40, RC 60, RM 100.
+2e 30, 3e 20, RP 20, MPS 10, RN 40, RC 60, RM 100. Dans le score, les points des tables d'un
+athlète sont divisés par `tablesDivisor` (10), à l'entier inférieur, athlète par athlète ; les
+pronos ne comptent plus (#1031). M1 à M5 donnent les points bruts des tables.
 
 | # | Situation | Attendu |
 |---|---|---|
@@ -850,10 +852,12 @@ score d'une compétition (`src/domain/manager-score.ts`, #431) avec le barème d
 | M6 | Relais mixte 4 × 100 m, 110 m haies femmes, discipline inconnue | pas de table : 0 point de table, les bonus comptent |
 | M7 | 1re place en finale, RP et MPS | 80 de bonus (50 + 20 + 10) |
 | M8 | 4e place, ou DNS, DNF, DQ | pas de bonus de place ; DNS, DNF, DQ : 0 point |
-| M9 | Pas d'alignement, 25 points de pronos | 0 pour la compétition, pronos compris |
+| M9 | Pas d'alignement ; ou des points de pronos sur la compétition | 0 pour la compétition ; les pronos ne changent jamais le score Manager |
 | M10 | Même athlète en série (11.20) puis en finale (11.05) | la meilleure ligne (11.05), sans cumul |
 | M11 | 1re place en série avec un RP | RP seul : la place ne compte qu'en finale |
 | M12 | Relancer le calcul, ou les performances dans un autre ordre | même score ; le total est la somme des parties, jamais négative |
+| M13 | 1 109 points des tables, diviseur 10 ; 0 (DNS) | 110 ; 0 |
+| M14 | Équipe A, tables 8 956 au total, 15 de bonus ; équipe B, 8 687 et 66 (cas de référence, #1017) | A 892 + 15 = 907, B 865 + 66 = 931 : B gagne |
 
 **Championnat Manager (v0.16, tests Vitest).** Calendrier (`src/domain/manager-schedule.ts`,
 #432), résultats et classement (`src/domain/manager-championship.ts`, #433), fin de saison

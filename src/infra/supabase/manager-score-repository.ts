@@ -14,6 +14,7 @@ type SheetRow = {
     league_id: string;
     user_id: string;
     bonuses: Partial<Record<ManagerBonus, number>>;
+    tables_divisor: number;
     lineup: string[] | null;
   }[];
   performances: {
@@ -27,7 +28,6 @@ type SheetRow = {
     mark: string | null;
     records: RecordFlag[];
   }[];
-  predictions: Record<string, number>;
 };
 
 type AthleteRow = {
@@ -46,7 +46,6 @@ type ScoreRow = {
   total: number;
   hungarian: number;
   bonus: number;
-  predictions: number;
   athletes: (AthleteRow & { name: string })[];
 };
 
@@ -88,6 +87,7 @@ export function createSupabaseManagerScoreRepository(
           leagueId: p.league_id,
           userId: p.user_id,
           bonuses: bonusValues(p.bonuses),
+          tablesDivisor: p.tables_divisor,
           lineup: p.lineup,
         })),
         performances: sheet.performances.map(
@@ -103,7 +103,6 @@ export function createSupabaseManagerScoreRepository(
             records: p.records,
           }),
         ),
-        predictionPoints: sheet.predictions,
       };
     },
 
@@ -117,7 +116,6 @@ export function createSupabaseManagerScoreRepository(
           total: l.total,
           hungarian: l.hungarian,
           bonus: l.bonus,
-          predictions: l.predictions,
           athletes: l.athletes.map(athleteRow),
         })),
       });
@@ -140,7 +138,6 @@ export function createSupabaseManagerScoreRepository(
         total: row.total,
         hungarian: row.hungarian,
         bonus: row.bonus,
-        predictions: row.predictions,
         athletes: row.athletes.map(
           (a): StoredManagerScore["athletes"][number] => ({
             athleteId: a.athlete_id,
