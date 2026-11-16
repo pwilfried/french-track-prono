@@ -144,7 +144,7 @@ describe("suggestManagerPrice", () => {
   it("suggests nothing for a discipline without a scoring table", () => {
     const suggestion = suggestManagerPrice(
       athlete({
-        discipline: { ...sprint, name: "60 m" },
+        discipline: { ...sprint, name: "Course en sac" },
         records: [{ kind: "pr", mark: "6.50", date: "2026-02-01" }],
       }),
       pricing,

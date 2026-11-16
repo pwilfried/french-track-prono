@@ -1,7 +1,7 @@
 -- pgTAP: the Manager scores of a competition (#431). Only an admin reads the scoring sheet (the
 -- lineups stay private) and writes the scores; a new computation replaces them all; the
 -- participants of a league read its scores, nobody else; the parts of a score add up; the
--- predictions no longer count (#1031).
+-- predictions no longer count (#1031); the sheet tells an indoor competition (#1026).
 --   One competition, athletes 1 to 3 on its 100 m. A Manager league (mercato closed) with player 1
 --   (lined up 1 and 2) and player 2 (no lineup); a league whose mercato is open with player 1;
 --   player 3 is in no league; player 4 is admin. Player 1 has 7 prediction points, which the Manager ignores.
@@ -9,7 +9,7 @@
 --   athlete 2 on the 100 m, athlete 3 on the bench; the score applies it (managerCompetitionScore).
 -- Rolled back at the end.
 begin;
-select plan(24);
+select plan(26);
 
 insert into auth.users (id, email) values
   ('9e500000-0000-0000-0000-000000000001', 'one@example.test'),
@@ -235,6 +235,21 @@ select throws_ok(
 
 select is(
   (select count(*)::int from manager_scores), 0, 'nor reads its scores');
+
+-- Indoors, the races use the short-track tables (#1026): the sheet tells the venue.
+select pg_temp.as_player(4);
+
+select is(
+  (admin_manager_scoring_sheet('score-c1') ->> 'indoor')::boolean, false,
+  'the sheet tells an outdoor competition');
+
+reset role;
+update competitions set venue = 'indoor' where id = pg_temp.competition();
+set local role authenticated;
+
+select is(
+  (admin_manager_scoring_sheet('score-c1') ->> 'indoor')::boolean, true,
+  'the sheet tells an indoor competition');
 
 select * from finish();
 rollback;

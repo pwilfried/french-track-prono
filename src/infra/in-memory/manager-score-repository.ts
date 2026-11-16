@@ -25,8 +25,8 @@ export function createInMemoryManagerScoreStore(competitions: ManagerScoreFixtur
           if (!options.isAdmin) return "not_admin";
           const found = competitions.find((c) => c.slug === slug);
           if (!found) return null;
-          const { competitionId, lockAt, participants, performances } = found;
-          return structuredClone({ competitionId, lockAt, participants, performances });
+          const { competitionId, lockAt, indoor, participants, performances } = found;
+          return structuredClone({ competitionId, lockAt, indoor, participants, performances });
         },
         async replace(competitionId, lines) {
           if (!options.isAdmin) return "not_admin";
