@@ -6,6 +6,8 @@ import { reportError } from "@/lib/report-error";
 /** Registers the service worker (offline pages), in production builds only. */
 export function ServiceWorker() {
   useEffect(() => {
+    // Opening the app clears the number on its icon (#1016); nothing where unsupported.
+    void navigator.clearAppBadge?.().catch(() => {});
     if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
     navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch((error: unknown) => {
       // Without a service worker the app works the same, online only.
