@@ -146,6 +146,12 @@ Règles :
   marche dans n'importe quel navigateur (utile sur téléphone) ; le lien passe par `/auth/callback`.
 - La session vit dans des cookies (`@supabase/ssr`). `src/proxy.ts` la rafraîchit à chaque page et
   envoie un joueur connecté sans profil vers `/bienvenue` (règle pure : `src/domain/profile-gate.ts`).
+- Une seule vérification auth par page (#1021) : le proxy passe à la page l'utilisateur vérifié et
+  le profil lu par l'en-tête de requête interne `x-ftp-session` (`src/app/proxied-session.ts`),
+  seulement sur GET/HEAD. Il efface toujours celui venu du navigateur (`src/proxy.test.ts`). Les
+  server actions (POST) et les routes (`getVerifiedUser`) revérifient auprès de l'auth.
+  `auth.getClaims()` n'aiderait pas : le projet signe ses jetons en HS256 (clé symétrique), donc
+  elle rappelle `/auth/v1/user`.
 - Les paramètres de redirection n'acceptent que des chemins de l'application
   (`src/domain/redirect.ts`).
 - En préprod seulement (`PREPROD_DEMO_LOGIN=1`), un admin peut se connecter en tant qu'un joueur
