@@ -174,7 +174,8 @@ export const messages = {
       create: "Créer ma ligue",
       joinPublic: "Ou rejoindre une ligue publique",
       place: (rank: number, total: number) => `${ordinal(rank)} sur ${total}`,
-      gap: (gap: number, pseudo: string) => `À ${points(gap)} de ${pseudo}`,
+      gap: (gap: number, pseudo: string) =>
+        gap === 0 ? `À égalité de points avec ${pseudo}` : `À ${points(gap)} de ${pseudo}`,
       leading: "Tu es en tête",
       ranking: "Classement",
     },
