@@ -342,9 +342,17 @@ migrations au projet Supabase de prod, puis construit et déploie ce commit sur 
 production (`vercel pull`, `vercel build --prod`, `vercel deploy --prebuilt --prod`), et enfin
 lance le test de fumée. Le code ne tourne donc jamais en prod avant son schéma.
 
-- Les fonctions tournent à Londres (`vercel.json`, `"regions": ["lhr1"]`, #825), à côté de la
-  base de prod (Supabase `eu-west-2`) et près de celle de préprod (`eu-central-1`). Sans ce
-  réglage, Vercel les place à Washington (`iad1`) et chaque lecture en base traverse l'Atlantique.
+- Régions des fonctions, chacune à côté de sa base (sans réglage, Vercel les place à Washington,
+  `iad1`, et chaque lecture en base traverse l'Atlantique) :
+
+  | Environnement | Région Vercel | Base Supabase |
+  |---|---|---|
+  | Production | `lhr1` (Londres, `vercel.json`, #825) | `eu-west-2` (Londres) |
+  | Préproduction | `fra1` (Francfort, #1019) | `eu-central-1` (Francfort) |
+
+  `ci/vercel-deploy.sh` reconnaît la préprod à son adresse (`https://french-track-preprod.vercel.app`)
+  et écrit `fra1` dans `vercel.json` avant `vercel build` : le déploiement prébuilt garde la région
+  du build. Vérifier : Vercel → Deployments → le déploiement → champ « Regions ».
 - Aucun push ne déploie (`vercel.json`, `git.deploymentEnabled: false`) : ni `main`, ni les
   branches de travail (`feat/`, `fix/`, `claude/`…), ni la branche `boards`. Le plan
   gratuit limite le nombre de déploiements par jour : le 9 novembre 2026, les prévisualisations de

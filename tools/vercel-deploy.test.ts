@@ -31,6 +31,7 @@ function deploy({
   apiStatus = 200,
   domain = "new",
   unset,
+  base = "https://www.example.test",
 }: {
   pulled: string;
   smoke: number;
@@ -38,19 +39,21 @@ function deploy({
   apiStatus?: number;
   domain?: "new" | "old-until-promoted" | "old";
   unset?: string;
+  base?: string;
 }) {
   const root = mkdtempSync(join(tmpdir(), "vercel-deploy-"));
   const bin = join(root, "bin");
   mkdirSync(bin);
   const calls = join(root, "calls");
   writeFileSync(calls, "");
+  writeFileSync(join(root, "vercel.json"), readFileSync(resolve("vercel.json")));
   executable(
     join(bin, "npx"),
     `shift 2  # --yes vercel@latest
 echo "vercel $*" >> "${calls}"
 case "$1" in
   pull) mkdir -p .vercel && printf '%s' "$PULLED" > .vercel/.env.production.local ;;
-  build) cp .vercel/.env.production.local "${root}/built-env" ;;
+  build) cp .vercel/.env.production.local "${root}/built-env"; cp vercel.json "${root}/built-vercel.json" ;;
   deploy) echo "https://french-track-abc.vercel.app" ;;
 esac`,
   );
@@ -83,7 +86,7 @@ printf '%s' "$API_STATUS"`,
   // One line per call, even for a multi-line issue body.
   executable(join(bin, "gh"), `args="$*"; echo "gh \${args//$'\\n'/ }" >> "${calls}"`);
   executable(join(root, "smoke.sh"), `echo "smoke $*" >> "${calls}"; exit ${smoke}`);
-  const run = spawnSync("bash", [script, "https://www.example.test"], {
+  const run = spawnSync("bash", [script, base], {
     cwd: root,
     encoding: "utf8",
     env: {
@@ -110,6 +113,9 @@ printf '%s' "$API_STATUS"`,
     output: run.stdout + run.stderr,
     calls: readFileSync(calls, "utf8").trim().split("\n"),
     builtEnv: () => readFileSync(join(root, "built-env"), "utf8"),
+    builtRegions: () =>
+      (JSON.parse(readFileSync(join(root, "built-vercel.json"), "utf8")) as { regions: string[] })
+        .regions,
   };
 }
 
@@ -185,6 +191,25 @@ it("adds the extra build variables to the pulled environment (pre-production's n
   expect(run.status).toBe(0);
   expect(run.builtEnv()).toContain("NEXT_PUBLIC_SUPABASE_ANON_KEY=");
   expect(run.builtEnv()).toMatch(/^NEXT_PUBLIC_SITE_NOINDEX=1$/m);
+});
+
+it("builds pre-production in Frankfurt, next to its database (#1019)", () => {
+  const run = deploy({
+    pulled: complete,
+    smoke: 0,
+    base: "https://french-track-preprod.vercel.app",
+  });
+
+  expect(run.status).toBe(0);
+  expect(run.builtRegions()).toEqual(["fra1"]);
+  expect(run.output).toContain("Functions region: fra1");
+});
+
+it("keeps production in London, next to its database (#1019)", () => {
+  const run = deploy({ pulled: complete, smoke: 0, base: "https://www.frenchtrackprono.com" });
+
+  expect(run.status).toBe(0);
+  expect(run.builtRegions()).toEqual(["lhr1"]);
 });
 
 it("promotes the new deployment when a rollback keeps the domain on the old one (#827)", () => {
