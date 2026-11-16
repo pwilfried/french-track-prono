@@ -2,7 +2,8 @@
 -- (#429): place, mark, records, or DNS, DNF, DQ. Everybody reads them; only an admin writes them,
 -- and reads which athletes of the start list are lined up in a Manager league.
 --   One event, athletes 1 to 4 on its start list, 5 off it. Player 1 lines up 1 and 3 in a
---   Manager league; player 2 is not admin; player 3 is admin.
+--   Manager league, with 2 on the bench (4 stays in reserve, off the sheet); player 2 is not
+--   admin; player 3 is admin.
 -- Rolled back at the end.
 begin;
 select plan(18);
@@ -48,6 +49,11 @@ insert into manager_members (league_id, user_id) values
 insert into manager_lineups (league_id, competition_id, user_id, athlete_ids) values
   ('9e400000-0000-0000-0000-0000000000f1', '9e400000-0000-0000-0000-0000000000c1',
    '9e400000-0000-0000-0000-000000000001', array[pg_temp.athlete(1), pg_temp.athlete(3)]);
+insert into manager_lineup_entries (league_id, competition_id, user_id, athlete_id, role, slot,
+                                    discipline)
+select '9e400000-0000-0000-0000-0000000000f1', '9e400000-0000-0000-0000-0000000000c1',
+       '9e400000-0000-0000-0000-000000000001', pg_temp.athlete(a), r, s, '100 m'
+from (values (1, 'starter', 1), (3, 'starter', 2), (2, 'substitute', 1)) v(a, r, s);
 
 create function pg_temp.as_player(p_n int) returns void language sql as $$
   select set_config('request.jwt.claims', json_build_object('sub',
@@ -70,8 +76,8 @@ select pg_temp.as_player(3);
 
 select is(
   (select array_agg(a order by a) from admin_manager_lined_up(pg_temp.event()) a),
-  array[pg_temp.athlete(1), pg_temp.athlete(3)],
-  'an admin sees which athletes of the start list are lined up in a Manager league');
+  array[pg_temp.athlete(1), pg_temp.athlete(2), pg_temp.athlete(3)],
+  'an admin sees the starters and bench substitutes of the start list, not the reserve');
 
 select lives_ok(
   $$select admin_set_performances(pg_temp.event(), jsonb_build_array(
