@@ -57,6 +57,10 @@ describe("the mercato catalogue", () => {
     expect(names("", { ...none, family: "throws" })).toEqual(["Zoé Lancer"]);
     expect(names("", { ...none, availableOnly: true })).toEqual(["Zoé Lancer", "Élodie Sprint"]);
   });
+
+  it("filters by Manager family: hurdlers are sprinters", () => {
+    expect(names("", { ...none, family: "sprint" })).toEqual(["Élodie Sprint", "Marc Haies"]);
+  });
 });
 
 describe("missesCatalogueForMainDiscipline", () => {

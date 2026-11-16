@@ -34,9 +34,8 @@ test("a participant sees their team fixed for the season after the mercato, and 
   const id = sql(`select id from manager_leagues where name = '${league}'`);
   sql(`update manager_leagues
        set rules = rules || '{"budget": 100, "minTeamSize": 3, "quotas": [
-             {"sex": "F", "family": "sprint", "min": 1, "max": 1},
-             {"sex": "F", "family": "hurdles", "min": 0, "max": 1},
-             {"sex": "F", "family": "throws", "min": 1, "max": 1}]}',
+             {"family": "sprint", "min": 1, "minPerSex": 0, "maxPerSex": 2},
+             {"family": "throws", "min": 1, "minPerSex": 0, "maxPerSex": 1}]}',
            mercato_opened_at = now() - interval '3 days', mercato_closed_at = now()
        where id = '${id}'`);
   sql(`insert into manager_rounds (league_id, round, ends_at) values ('${id}', 1, now())`);
@@ -79,7 +78,7 @@ test("a participant sees their team fixed for the season after the mercato, and 
 
   // No compliance badge: a concrete message, and the team plays all the same.
   await expect(page.getByRole("main").getByRole("status")).toHaveText(
-    "Ton équipe compte 2 athlètes au lieu de 3 : il ne restait plus aucune lanceuse libre à la fin du mercato. Tu joues quand même.",
+    "Ton équipe compte 2 athlètes au lieu de 3 : il ne restait plus assez de lanceurs libres à la fin du mercato. Tu joues quand même.",
   );
   await expect(page.getByText(/non conforme/i)).toHaveCount(0);
 

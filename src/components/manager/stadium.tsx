@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import { messages } from "@/app/messages.fr";
 import type { DisciplineFamily } from "@/domain/discipline";
 import type { LineupPlace } from "@/domain/manager-lineup";
-import { cardGroupOf, shortAthleteName } from "@/domain/manager-team";
+import { managerFamilyOf } from "@/domain/manager-rules";
+import { shortAthleteName } from "@/domain/manager-team";
 import { cn } from "@/lib/utils";
 
 import { CARD_WIDTH, STADIUM_RATIO, stadiumSpots } from "./stadium-spots";
@@ -145,7 +146,7 @@ export function SpotSwatch({ family }: { family: DisciplineFamily }) {
         isRace(family) ? "bg-spot-race" : "bg-spot-field",
       )}
     >
-      {messages.team.codes[cardGroupOf(family)]}
+      {messages.team.codes[managerFamilyOf(family) ?? "sprint"]}
     </span>
   );
 }

@@ -471,12 +471,17 @@ on conflict do nothing;
 
 -- Lineups: in « Démo Manager », the 4 managers on the first two competitions and two of them on
 -- the third; in « Démo Direct », the 4 on the ongoing and the next competitions. Up to 8 athletes
--- of their team entered in it, a sprinter, a miler and a thrower first. Only while open.
+-- of their team entered in it, a sprinter, a miler and a thrower first, two per Manager family at
+-- most (the places of the stadium, #1030). Only while open.
 insert into manager_lineups (league_id, competition_id, user_id, athlete_ids)
 select s.league_id, s.competition_id, s.user_id,
        (array_agg(s.athlete_id order by s.priority, s.athlete_id))[1:8]
 from (
-  select distinct w.league_id, c.id as competition_id, w.user_id, w.athlete_id,
+ select f.*, row_number() over (partition by f.league_id, f.competition_id, f.user_id,
+                                             private.manager_family(f.family)
+                                order by f.priority, f.athlete_id) as rank_in_family
+ from (
+  select distinct w.league_id, c.id as competition_id, w.user_id, w.athlete_id, a.family,
          case a.family when 'sprint' then 1 when 'middle' then 2 when 'throws' then 3 else 4 end
            as priority
   from demo_competitions k
@@ -489,8 +494,10 @@ from (
   join demo_managers m on m.m = i.m and m.n = p.n
   where (i.m = 1 and (k.k in (1, 2) or (k.k = 3 and m.k <= 2)))
      or (i.m = 2 and k.k in (2, 3))
+ ) f
 ) s
-where private.manager_lineup_lock(s.competition_id) > now()
+where s.rank_in_family <= 2
+  and private.manager_lineup_lock(s.competition_id) > now()
   and not exists (select 1 from manager_lineups l
                   where l.league_id = s.league_id
                     and l.competition_id = s.competition_id and l.user_id = s.user_id)

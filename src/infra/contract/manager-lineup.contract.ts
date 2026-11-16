@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ManagerLineupRepository } from "@/application/manager-lineup";
 
 /**
- * A league whose mercato is closed, with one sprint place and one free place. The first
+ * A league whose mercato is closed, with one place per family (sprint, distance, jumps, throws). The first
  * participant's team: a sprinter and a middle-distance runner entered in the `open` competition, a
  * thrower entered nowhere. The `locked` competition has started. `elsewhere` is a competition the
  * league does not play; `mercatoLeagueId` a league of the first participant still in its mercato.

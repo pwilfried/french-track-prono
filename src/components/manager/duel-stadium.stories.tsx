@@ -16,28 +16,37 @@ const card = (
   bonus = 0,
 ): DuelCard => ({ athleteId: name, name, discipline, family, sex: "F", points, bonus });
 
-/** The default rules: one sprint, one middle distance, one throws place and five free ones. */
-const places = ["sprint", "middle", "throws", "free", "free", "free", "free", "free"] as const;
+/** The default rules: two places per family (#1017). */
+const places = [
+  "sprint",
+  "sprint",
+  "distance",
+  "distance",
+  "jumps",
+  "jumps",
+  "throws",
+  "throws",
+] as const;
 
 const opponent = [
   card("Dora Modèle", "100 m", "sprint", 7),
-  card("Gaby Exemple", "1500 m", "middle", null),
-  card("Bea Démo", "Javelot", "throws", 8),
   card("Flo Démo", "400 m", "sprint", null),
+  card("Gaby Exemple", "1500 m", "middle", null),
+  null,
   card("Ana Fictive", "Hauteur", "vertical_jumps", 6),
   card("Eva Fictive", "Longueur", "horizontal_jumps", 9),
+  card("Bea Démo", "Javelot", "throws", 8),
   card("Cléo Exemple", "Poids", "throws", 8, 2),
-  null,
 ];
 const mine = [
   card("Sue Exemple", "100 m", "sprint", 13, 3),
-  card("Mia Démo", "1500 m", "middle", null),
-  card("Mona Modèle", "Javelot", "throws", 5),
   card("Quia Fictive", "400 m", "sprint", null),
+  card("Mia Démo", "1500 m", "middle", null),
+  card("Tia Modèle", "5000 m", "long", 0),
   card("Hana Démo", "Hauteur", "vertical_jumps", 10),
   card("Lou Fictive", "Longueur", "horizontal_jumps", 11),
+  card("Mona Modèle", "Javelot", "throws", 5),
   card("Pia Fictive", "Poids", "throws", 7),
-  card("Tia Modèle", "200 m", "sprint", 0),
 ];
 
 const meta = {
@@ -75,7 +84,9 @@ export const Scored: Story = {
     const bottom = canvas.getByRole("list", { name: text.sideOf("Moi") });
     await expect(within(top).getAllByRole("article")).toHaveLength(7);
     await expect(within(bottom).getAllByRole("article")).toHaveLength(8);
-    await expect(within(top).getByText(messages.lineup.emptyPlace("Libre"))).toBeInTheDocument();
+    await expect(
+      within(top).getByText(messages.lineup.emptyPlace("Demi-fond et fond")),
+    ).toBeInTheDocument();
     const sprint = within(bottom).getByRole("article", {
       name: messages.team.scoredCardLabel("Sue Exemple", "100 m", 13, 3),
     });

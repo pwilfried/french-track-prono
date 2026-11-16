@@ -1,5 +1,5 @@
--- pgTAP: the lineup before each eligible competition (#427). The stadium of the league has 3
--- places: one sprint (hurdles count as sprint), one middle distance, one free. A lineup holds
+-- pgTAP: the lineup before each eligible competition (#427, #1030). The stadium of the league has
+-- one place per family: sprint (hurdles count as sprint), distance, jumps, throws. A lineup holds
 -- athletes of the player's team, each once, entered in the competition, and fills every place the
 -- team can fill; it locks at the first prediction lock of the competition.
 --   c1 open, c2 locked (its event has started), c3 not eligible, c4 open, nobody entered.
@@ -57,7 +57,7 @@ insert into manager_leagues (id, name, owner_id, rules, competition_ids, mercato
                              mercato_closed_at)
 values (pg_temp.league(), 'Alignement', 'a1e00000-0000-0000-0000-000000000001',
         '{"budget": 100, "minTeamSize": 6, "quotas": [],
-          "lineup": {"max": 3, "minPerFamily": {"hurdles": 1, "middle": 1}}}',
+          "lineup": {"max": 4, "perFamily": 1, "bench": 0}}',
         array[pg_temp.competition(1), pg_temp.competition(2), pg_temp.competition(4)],
         now() - interval '3 days', now() - interval '1 day');
 insert into manager_members (league_id, user_id) values
@@ -94,7 +94,7 @@ select throws_ok(pg_temp.save(1, array[1, 3]), 'FT024', null,
 select throws_ok(pg_temp.save(1, array[3, 4]), 'FT024', null,
   'a lineup without a sprinter, when one is entered, is refused');
 select throws_ok(pg_temp.save(1, array[1, 2, 3, 4]), 'FT024', null,
-  'a lineup over the maximum is refused');
+  'two sprinters for one sprint place are refused');
 select throws_ok(pg_temp.save(1, array[1, 1, 3]), 'FT024', null,
   'the same athlete twice is refused');
 select throws_ok(pg_temp.save(1, array[1, 3, 6]), 'FT024', null,
@@ -107,13 +107,13 @@ select is((select athlete_ids from manager_lineups
            where competition_id = pg_temp.competition(1)),
           array[pg_temp.athlete(2), pg_temp.athlete(3), pg_temp.athlete(4)],
           'the player reads the lineup they validated');
-select lives_ok(pg_temp.save(1, array[1, 3, 2]), '…and changes it until the lock');
+select lives_ok(pg_temp.save(1, array[1, 3, 4]), '…and changes it until the lock');
 select is((select athlete_ids from manager_lineups
            where competition_id = pg_temp.competition(1)),
-          array[pg_temp.athlete(1), pg_temp.athlete(3), pg_temp.athlete(2)],
+          array[pg_temp.athlete(1), pg_temp.athlete(3), pg_temp.athlete(4)],
           'the last lineup counts');
 
--- An incomplete team: a place nobody can fill does not stop the lineup.
+-- A place nobody can fill (no jumper) does not stop the lineup, nor an incomplete team.
 select lives_ok(pg_temp.save(4, array[]::int[]),
   'with nobody entered, an empty lineup is the full one');
 

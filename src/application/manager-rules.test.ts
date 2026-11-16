@@ -1,18 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import type { ManagerRules } from "@/domain/manager-rules";
+import { MANAGER_FAMILIES, type ManagerRules } from "@/domain/manager-rules";
 
 import { UseCaseError } from "./errors";
 import { setManagerRules, type ManagerRuleRepository, type ManagerRuleSet } from "./manager-rules";
 
 const rules: ManagerRules = {
   budget: 100,
-  minTeamSize: 2,
-  quotas: [
-    { sex: "F", family: "sprint", min: 1, max: 1 },
-    { sex: "M", family: "sprint", min: 1, max: 1 },
-  ],
-  lineup: { max: 2, minPerFamily: { sprint: 1 } },
+  minTeamSize: 12,
+  quotas: MANAGER_FAMILIES.map((family) => ({ family, min: 3, minPerSex: 1, maxPerSex: 4 })),
+  lineup: { max: 8, perFamily: 2, bench: 4 },
+  tablesDivisor: 10,
   rounds: { firstHours: 48, longRounds: 2, nextHours: 24 },
   closeModes: ["scheduled"],
   bonuses: {

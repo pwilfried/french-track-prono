@@ -31,8 +31,8 @@ describe("incomplete Manager team text", () => {
   });
 
   it("joins several missing families with « ni »", () => {
-    expect(short(1, 3, [nobody.F.sprint, nobody.M.long, nobody.M.throws])).toBe(
-      "Ton équipe compte 1 athlète au lieu de 3 : il ne restait plus aucune sprinteuse, aucun fondeur ni aucun lanceur libre à la fin du mercato. Tu joues quand même.",
+    expect(short(1, 3, [nobody.F.sprint, nobody.M.distance, nobody.all.throws])).toBe(
+      "Ton équipe compte 1 athlète au lieu de 3 : il ne restait plus aucune sprinteuse libre, aucun coureur de demi-fond ou de fond libre ni assez de lanceurs libres à la fin du mercato. Tu joues quand même.",
     );
   });
 

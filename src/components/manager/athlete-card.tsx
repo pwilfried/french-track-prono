@@ -1,7 +1,7 @@
 import { messages } from "@/app/messages.fr";
 import type { DisciplineFamily } from "@/domain/discipline";
-import type { ManagerSex } from "@/domain/manager-rules";
-import { athleteInitials, cardGroupOf, shortAthleteName } from "@/domain/manager-team";
+import { managerFamilyOf, type ManagerSex } from "@/domain/manager-rules";
+import { athleteInitials, shortAthleteName } from "@/domain/manager-team";
 import { cn } from "@/lib/utils";
 
 const text = messages.team;
@@ -34,7 +34,9 @@ export function AthleteCard({
         )}
       >
         <div className="flex items-start justify-between gap-1 text-xs font-extrabold">
-          <span className="font-mono tracking-wider">{text.codes[cardGroupOf(family)]}</span>
+          <span className="font-mono tracking-wider">
+            {text.codes[managerFamilyOf(family) ?? "sprint"]}
+          </span>
           <span className="font-mono tabular-nums">{messages.catalogue.price(paid)}</span>
         </div>
         <span

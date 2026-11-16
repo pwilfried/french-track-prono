@@ -1,6 +1,6 @@
 import type { DisciplineFamily } from "./discipline";
 import { matchesWords } from "./list-view";
-import type { ManagerSex } from "./manager-rules";
+import { managerFamilyOf, type ManagerFamily, type ManagerSex } from "./manager-rules";
 
 /**
  * An athlete of the mercato catalogue of a league (v0.13, #421). Only athletes the admin gave a
@@ -24,14 +24,15 @@ export type CatalogueAthlete = {
 
 export type CatalogueFilter = {
   sex: ManagerSex | null;
-  family: DisciplineFamily | null;
+  /** One of the four Manager families (#1017). */
+  family: ManagerFamily | null;
   availableOnly: boolean;
 };
 
 /** Whether an athlete passes the filters of the catalogue. */
 export const inCatalogueFilter = (a: CatalogueAthlete, f: CatalogueFilter) =>
   (!f.sex || a.sex === f.sex) &&
-  (!f.family || a.family === f.family) &&
+  (!f.family || managerFamilyOf(a.family) === f.family) &&
   (!f.availableOnly || a.available);
 
 /**

@@ -66,6 +66,8 @@ test("a player creates a private French Track Manager league that keeps its rule
     const rules = page.getByRole("region", { name: "Règles de la ligue" });
     await expect(rules).toContainText("barème World Athletics");
     await expect(rules).toContainText("victoire 3 points, nul 1, défaite 0");
+    await expect(rules).toContainText("8 titulaires (2 par famille");
+    await expect(rules).toContainText("et 4 remplaçants");
     sql(`update manager_rules set rules = jsonb_set(rules, '{budget}', '999')`);
     await page.reload();
     await expect(page.getByText("130 crédits de budget")).toBeVisible();

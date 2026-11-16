@@ -35,8 +35,7 @@ test("the admin recomputes the Manager points and the participant reads them, at
   const league = sql(`insert into manager_leagues (name, owner_id, rules, competition_ids,
                         mercato_opened_at, mercato_closed_at)
     select 'Points ${tag}', '${adminId}',
-           rules || '{"lineup": {"max": 2, "minPerFamily": {}},
-                      "bonuses": {"first": 50, "second": 30, "third": 20, "personal_best": 20,
+           rules || '{"bonuses": {"first": 50, "second": 30, "third": 20, "personal_best": 20,
                                   "season_best": 10, "national_record": 40, "area_record": 60,
                                   "world_record": 100}}',
            array['${competition}']::uuid[], now() - interval '3 days', now() - interval '1 day'

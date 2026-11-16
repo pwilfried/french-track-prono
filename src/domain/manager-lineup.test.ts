@@ -14,8 +14,9 @@ import {
   type LineupAthlete,
 } from "./manager-lineup";
 
-/** 8 places: one sprint, one middle distance, one throws, five free (the rules of #418). */
-const RULES = { max: 8, minPerFamily: { sprint: 1, middle: 1, throws: 1 } };
+/** 8 places: two per family (the rules of 16 Nov. 2026, #1017). */
+const RULES = { perFamily: 2 };
+const ONE = { perFamily: 1 };
 
 const athlete = (athleteId: string, family: DisciplineFamily, entered = true): LineupAthlete => ({
   athleteId,
@@ -24,92 +25,88 @@ const athlete = (athleteId: string, family: DisciplineFamily, entered = true): L
 });
 
 describe("lineupPlaces", () => {
-  it("gives each family minimum its places, in the order of the cards, then free places", () => {
+  it("gives each of the four families its places, in order, and no free place", () => {
     expect(lineupPlaces(RULES)).toEqual([
       "sprint",
-      "middle",
+      "sprint",
+      "distance",
+      "distance",
+      "jumps",
+      "jumps",
       "throws",
-      "free",
-      "free",
-      "free",
-      "free",
-      "free",
+      "throws",
     ]);
-  });
-
-  it("counts hurdles as sprint and both jumps together", () => {
-    expect(
-      lineupPlaces({ max: 4, minPerFamily: { hurdles: 1, sprint: 1, vertical_jumps: 1 } }),
-    ).toEqual(["sprint", "sprint", "jumps", "free"]);
-  });
-
-  it("gives no free place when the minimums take the whole lineup", () => {
-    expect(lineupPlaces({ max: 2, minPerFamily: { long: 2 } })).toEqual(["long", "long"]);
   });
 });
 
 describe("fitsPlace", () => {
-  it("takes an athlete of the place's family, or anyone on a free place", () => {
+  it("takes an athlete of the place's family only", () => {
     expect(fitsPlace("sprint", "hurdles")).toBe(true);
     expect(fitsPlace("sprint", "middle")).toBe(false);
+    expect(fitsPlace("distance", "long")).toBe(true);
     expect(fitsPlace("jumps", "horizontal_jumps")).toBe(true);
-    expect(fitsPlace("free", "throws")).toBe(true);
+    expect(fitsPlace("jumps", "combined")).toBe(true);
+    expect(fitsPlace("throws", "relay")).toBe(false);
   });
 });
 
 describe("placeLineup", () => {
-  it("fills the family places first, then the free places", () => {
+  it("seats each athlete on the first empty place of their family", () => {
     const team = [athlete("m1", "middle"), athlete("s1", "sprint"), athlete("s2", "hurdles")];
     expect(placeLineup(lineupPlaces(RULES), team, ["s2", "m1", "s1"])).toEqual({
-      placed: ["s2", "m1", null, "s1", null, null, null, null],
+      placed: ["s2", "s1", "m1", null, null, null, null, null],
       left: [],
     });
   });
 
   it("leaves out who finds no place", () => {
-    const places = lineupPlaces({ max: 1, minPerFamily: { sprint: 1 } });
-    const team = [athlete("s1", "sprint"), athlete("t1", "throws")];
-    expect(placeLineup(places, team, ["t1", "s1"])).toEqual({ placed: ["s1"], left: ["t1"] });
+    const team = [athlete("s1", "sprint"), athlete("s2", "sprint"), athlete("t1", "throws")];
+    expect(placeLineup(lineupPlaces(ONE), team, ["s1", "s2", "t1"])).toEqual({
+      placed: ["s1", null, null, "t1"],
+      left: ["s2"],
+    });
   });
 });
 
 describe("seatAthlete", () => {
-  const places = lineupPlaces({ max: 3, minPerFamily: { sprint: 1 } });
+  const places = lineupPlaces(ONE);
   const team = [
     athlete("s1", "sprint"),
+    athlete("s2", "hurdles"),
     athlete("m1", "middle"),
-    athlete("m2", "middle"),
     athlete("t1", "throws", false),
   ];
 
-  it("seats an athlete on a free place and sends whoever sat there back to the bench", () => {
-    const placed = seatAthlete(places, team, [null, null, null], "m1", 2);
-    expect(placed).toEqual([null, "m1", null]);
-    expect(seatAthlete(places, team, placed, "m2", 1)).toEqual([null, "m2", null]);
+  it("seats an athlete and sends whoever sat there back to the bench", () => {
+    const placed = seatAthlete(places, team, [null, null, null, null], "s1", 0);
+    expect(placed).toEqual(["s1", null, null, null]);
+    expect(seatAthlete(places, team, placed, "s2", 0)).toEqual(["s2", null, null, null]);
   });
 
-  it("moves a sprinter dropped on a free place to the empty sprint place", () => {
-    expect(seatAthlete(places, team, [null, "m1", null], "s1", 2)).toEqual(["s1", "m1", null]);
-  });
-
-  it("swaps two athletes of the stadium: whoever sat there takes the place left", () => {
-    expect(seatAthlete(places, team, ["s1", "m1", "m2"], "m2", 1)).toEqual(["s1", "m2", "m1"]);
-  });
-
-  it("sends whoever sat there back to the bench when they do not fit the place left", () => {
-    const sprinters = [...team, athlete("s2", "sprint")];
-    expect(seatAthlete(places, sprinters, ["s1", "m1", "s2"], "m1", 0)).toEqual(["s1", "m1", "s2"]);
-    expect(seatAthlete(places, sprinters, ["s1", "m1", null], "s1", 1)).toEqual(["s1", null, null]);
+  it("swaps two athletes of the same family", () => {
+    const two = lineupPlaces(RULES);
+    const placed = ["s1", "s2", null, null, null, null, null, null];
+    expect(seatAthlete(two, team, placed, "s2", 0)).toEqual([
+      "s2",
+      "s1",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ]);
   });
 
   it("refuses a place of another family, and an athlete who is not entered", () => {
-    expect(seatAthlete(places, team, [null, null, null], "m1", 0)).toEqual([null, null, null]);
-    expect(seatAthlete(places, team, [null, null, null], "t1", 1)).toEqual([null, null, null]);
+    const empty = [null, null, null, null];
+    expect(seatAthlete(places, team, empty, "m1", 0)).toEqual(empty);
+    expect(seatAthlete(places, team, empty, "t1", 3)).toEqual(empty);
   });
 });
 
 describe("fillablePlaces", () => {
-  it("greys a family place nobody entered can fill, and the free places nobody is left for", () => {
+  it("greys the places nobody entered can fill", () => {
     const team = [
       athlete("s1", "sprint"),
       athlete("s2", "sprint"),
@@ -119,8 +116,8 @@ describe("fillablePlaces", () => {
     expect(fillablePlaces(lineupPlaces(RULES), team)).toEqual([
       true,
       true,
-      false,
       true,
+      false,
       false,
       false,
       false,
@@ -137,38 +134,29 @@ describe("lineupProblem", () => {
     athlete("t1", "throws"),
     athlete("l1", "long", false),
   ];
-  const rules = { max: 4, minPerFamily: { sprint: 1, middle: 1 } };
 
   it("accepts a lineup that fills every place it can", () => {
-    expect(lineupProblem(rules, team, ["s1", "m1", "s2", "t1"])).toBeNull();
+    expect(lineupProblem(ONE, team, ["s1", "m1", "t1"])).toBeNull();
   });
 
   it("refuses an athlete of another team, twice the same, or an absent one", () => {
-    expect(lineupProblem(rules, team, ["s1", "m1", "s2", "x9"])).toBe("not_in_team");
-    expect(lineupProblem(rules, team, ["s1", "m1", "s2", "s2"])).toBe("twice");
-    expect(lineupProblem(rules, team, ["s1", "m1", "s2", "l1"])).toBe("absent");
+    expect(lineupProblem(ONE, team, ["s1", "m1", "t1", "x9"])).toBe("not_in_team");
+    expect(lineupProblem(ONE, team, ["s1", "m1", "t1", "t1"])).toBe("twice");
+    expect(lineupProblem(ONE, team, ["s1", "t1", "l1"])).toBe("absent");
   });
 
   it("refuses a lineup that leaves a place it could fill empty", () => {
-    expect(lineupProblem(rules, team, ["s1", "m1", "s2"])).toBe("incomplete");
+    expect(lineupProblem(ONE, team, ["s1", "m1"])).toBe("incomplete");
   });
 
-  it("refuses a lineup that leaves a family place empty for a free one", () => {
-    expect(lineupProblem({ max: 2, minPerFamily: { sprint: 1 } }, team, ["m1", "t1"])).toBe(
-      "does_not_fit",
-    );
+  it("refuses more athletes of a family than its places", () => {
+    expect(lineupProblem(ONE, team, ["s1", "s2", "m1", "t1"])).toBe("does_not_fit");
   });
 
   it("accepts fewer athletes when the team cannot fill a place", () => {
     const short = [athlete("s1", "sprint"), athlete("t1", "throws", false)];
-    expect(lineupProblem(rules, short, ["s1"])).toBeNull();
-    expect(lineupProblem(rules, short, [])).toBe("incomplete");
-  });
-
-  it("keeps to the maximum", () => {
-    expect(lineupProblem(rules, team, ["s1", "m1", "s2", "t1", "t1"])).toBe("twice");
-    const big = [...team, athlete("t2", "throws")];
-    expect(lineupProblem(rules, big, ["s1", "m1", "s2", "t1", "t2"])).toBe("does_not_fit");
+    expect(lineupProblem(ONE, short, ["s1"])).toBeNull();
+    expect(lineupProblem(ONE, short, [])).toBe("incomplete");
   });
 
   it("accepts any lineup placeLineup builds from a full selection (property)", () => {
@@ -176,12 +164,10 @@ describe("lineupProblem", () => {
     fc.assert(
       fc.property(
         fc.array(fc.tuple(fc.constantFrom(...families), fc.boolean()), { maxLength: 12 }),
-        fc.integer({ min: 0, max: 2 }),
-        fc.integer({ min: 0, max: 2 }),
-        fc.integer({ min: 0, max: 4 }),
-        (drawn, sprint, middle, free) => {
+        fc.integer({ min: 0, max: 3 }),
+        (drawn, perFamily) => {
           const squad = drawn.map(([family, entered], i) => athlete(`a${i}`, family, entered));
-          const r = { max: sprint + middle + free, minPerFamily: { sprint, middle } };
+          const r = { perFamily };
           const places = lineupPlaces(r);
           const entered = squad.filter((a) => a.entered).map((a) => a.athleteId);
           const { placed } = placeLineup(places, squad, entered);
@@ -209,13 +195,12 @@ describe("lineupProgress", () => {
   });
 
   it("counts the places to fill by place, and the ones nobody can fill", () => {
-    const squad = [athlete("s1", "sprint"), athlete("m1", "middle"), athlete("m2", "middle")];
+    const squad = [athlete("s1", "sprint"), athlete("m1", "middle"), athlete("m2", "long")];
     expect(lineupProgress(places, squad, empty)).toEqual({
       filled: 0,
       toFill: [
         { place: "sprint", count: 1 },
-        { place: "middle", count: 1 },
-        { place: "free", count: 1 },
+        { place: "distance", count: 2 },
       ],
       unfillable: 5,
       ready: false,

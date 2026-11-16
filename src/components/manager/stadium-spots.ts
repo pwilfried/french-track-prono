@@ -4,11 +4,11 @@ import type { LineupPlace } from "@/domain/manager-lineup";
  * Where the places of a lineup sit on the stadium seen from above (#775), as in the validated
  * mock-up « Confrontation stade contre stade »: in percent of the width (x) and of the height (y)
  * of the stadium. Races on the track: sprint at the bottom of the home straight (« 100 m »), then
- * the left bend (« 400 m »); middle and long distance on the right bend (« 1500 m »); the back
- * straight at the top takes an eighth place. Field events on the grass: jumps at the top
- * (« hauteur ») then on the left (« longueur »), throws on the right (« javelot ») then in the
- * centre (« poids »), combined events in the centre. Free places take the spots left, in the
- * order of the mock-up. A family with more places than its zone takes the next free spot.
+ * the left bend (« 400 m »); middle and long distance on the right bend (« 1500 m »), then the
+ * back straight at the top. Field events on the grass: jumps at the top (« hauteur ») then on the
+ * left (« longueur »), throws on the right (« javelot ») then in the centre (« poids »). Two
+ * places per family (#1017) fill the eight spots; a family with more places than its zone takes
+ * the next free spot.
  */
 export type StadiumSpot = { x: number; y: number };
 
@@ -29,13 +29,10 @@ const JAVELIN: StadiumSpot = { x: 61.5, y: 50 };
 const SHOT_PUT: StadiumSpot = { x: 50, y: 71 };
 
 const ZONES: Record<LineupPlace, StadiumSpot[]> = {
-  sprint: [BOTTOM_STRAIGHT, LEFT_BEND, BACK_STRAIGHT],
-  middle: [RIGHT_BEND, LEFT_BEND, BACK_STRAIGHT],
-  long: [RIGHT_BEND, BACK_STRAIGHT, LEFT_BEND],
+  sprint: [BOTTOM_STRAIGHT, LEFT_BEND],
+  distance: [RIGHT_BEND, BACK_STRAIGHT],
   jumps: [HIGH_JUMP, LONG_JUMP],
   throws: [JAVELIN, SHOT_PUT],
-  combined: [SHOT_PUT, HIGH_JUMP],
-  free: [LEFT_BEND, HIGH_JUMP, LONG_JUMP, SHOT_PUT, BACK_STRAIGHT, JAVELIN, RIGHT_BEND],
 };
 
 /** Every spot, in the order a family that overflows its zone takes them. */

@@ -19,9 +19,16 @@ test("a participant opens their head-to-head from the matchday and sees both lin
     insert into profiles (id, pseudo, age_confirmed_at)
     select id, '${rivalPseudo}', now() from u returning id`);
 
-  // Eight athletes each: a stadium of 8 places (one sprint, one middle distance, one throws, five
-  // free, the default rules).
-  const disciplines = ["100 m", "800 m", "Lancer du poids", "100 m", "800 m", "5000 m", "100 m"];
+  // Eight athletes each: a stadium of 8 places, two per family (the default rules, #1030).
+  const disciplines = [
+    "100 m",
+    "800 m",
+    "Lancer du poids",
+    "Saut en longueur",
+    "5000 m",
+    "Saut en hauteur",
+    "Javelot",
+  ];
   // One statement per player: in pre-production each one costs an API call and a cache flush (#840).
   const athletes = (who: string) => {
     const rows = [...disciplines, "200 m"].map((discipline, n) => `(${n}, '${discipline}')`);

@@ -581,7 +581,8 @@ export const messages = {
     rules: "Règles de la ligue",
     budget: (n: number) => `${n} crédits de budget`,
     minTeamSize: (n: number) => `Équipes d'au moins ${n} athlètes, sans maximum`,
-    lineup: (n: number) => `${n} athlètes alignés au plus par compétition`,
+    lineup: (starters: number, perFamily: number, bench: number) =>
+      `Par compétition : ${starters} titulaires (${perFamily} par famille : sprint, demi-fond et fond, sauts, lancers) et ${bench} remplaçants`,
     /** The scale of the Manager, in the rules of the league (#802). */
     scoring: (winBonus: number) =>
       `Points : barème World Athletics, bonus sportifs (+${winBonus} pour une victoire) et tes pronos de la compétition`,
@@ -748,45 +749,41 @@ export const messages = {
     fixed: "Équipe fixe pour la saison",
     notFixed: "Le mercato n'est pas fini : ton équipe peut encore changer.",
     empty: "Aucun athlète dans ton équipe pour l'instant.",
+    /** The four Manager families (#1017), as the team page groups the cards. */
     groups: {
       sprint: "Sprint et haies",
-      middle: "Demi-fond",
-      long: "Fond",
-      jumps: "Sauts",
+      distance: "Demi-fond et fond",
+      jumps: "Sauts et épreuves combinées",
       throws: "Lancers",
-      combined: "Épreuves combinées",
     },
     codes: {
       sprint: "SPR",
-      middle: "DEM",
-      long: "FON",
+      distance: "DEM",
       jumps: "SAU",
       throws: "LAN",
-      combined: "COM",
     },
-    /** « aucune lanceuse », « aucun sprinteur »: what was missing at the end of the mercato. */
+    /**
+     * « aucune lanceuse libre », « assez de sprinteurs libres »: what was missing at the end of
+     * the mercato, by sex, or in all for a family (`all`).
+     */
     nobody: {
       F: {
-        sprint: "aucune sprinteuse",
-        hurdles: "aucune hurdleuse",
-        middle: "aucune demi-fondeuse",
-        long: "aucune fondeuse",
-        relay: "aucune relayeuse",
-        horizontal_jumps: "aucune sauteuse en longueur ou au triple saut",
-        vertical_jumps: "aucune sauteuse en hauteur ou à la perche",
-        throws: "aucune lanceuse",
-        combined: "aucune heptathlonienne",
+        sprint: "aucune sprinteuse libre",
+        distance: "aucune coureuse de demi-fond ou de fond libre",
+        jumps: "aucune sauteuse libre",
+        throws: "aucune lanceuse libre",
       },
       M: {
-        sprint: "aucun sprinteur",
-        hurdles: "aucun hurdleur",
-        middle: "aucun demi-fondeur",
-        long: "aucun fondeur",
-        relay: "aucun relayeur",
-        horizontal_jumps: "aucun sauteur en longueur ou au triple saut",
-        vertical_jumps: "aucun sauteur en hauteur ou à la perche",
-        throws: "aucun lanceur",
-        combined: "aucun décathlonien",
+        sprint: "aucun sprinteur libre",
+        distance: "aucun coureur de demi-fond ou de fond libre",
+        jumps: "aucun sauteur libre",
+        throws: "aucun lanceur libre",
+      },
+      all: {
+        sprint: "assez de sprinteurs libres",
+        distance: "assez de coureurs de demi-fond ou de fond libres",
+        jumps: "assez de sauteurs libres",
+        throws: "assez de lanceurs libres",
       },
     },
     short: (count: number, minimum: number, nobody: string[]) => {
@@ -797,7 +794,7 @@ export const messages = {
           : nobody.length === 1
             ? nobody[0]
             : `${nobody.slice(0, -1).join(", ")} ni ${nobody[nobody.length - 1]}`;
-      const why = missing ? ` : il ne restait plus ${missing} libre à la fin du mercato` : "";
+      const why = missing ? ` : il ne restait plus ${missing} à la fin du mercato` : "";
       return `Ton équipe compte ${count} ${athletes} au lieu de ${minimum}${why}. Tu joues quand même.`;
     },
     cardLabel: (name: string, discipline: string, paid: number) =>
@@ -818,12 +815,9 @@ export const messages = {
     stadium: "Le stade",
     place: {
       sprint: "Sprint",
-      middle: "Demi-fond",
-      long: "Fond",
+      distance: "Demi-fond et fond",
       jumps: "Sauts",
       throws: "Lancers",
-      combined: "Combinées",
-      free: "Libre",
     },
     emptyPlace: (place: string) => `Place ${place}, vide`,
     takenPlace: (place: string, name: string) => `Place ${place} : ${name}, changer`,
@@ -835,10 +829,7 @@ export const messages = {
     benchEmpty: "Tous tes athlètes engagés sont alignés.",
     hint: "Touche une place du stade pour y mettre un athlète de ton équipe.",
     sheetTitle: (place: string) => `Place ${place}`,
-    sheetHint: (place: string) =>
-      place === "Libre"
-        ? "Une place libre accueille un athlète de n'importe quelle famille."
-        : `Seuls les athlètes de la famille ${place} vont sur cette place.`,
+    sheetHint: (place: string) => `Seuls les athlètes de la famille ${place} vont sur cette place.`,
     choices: "Athlètes de ton équipe",
     onThisPlace: "Sur cette place",
     elsewhere: (place: string) => `Déjà sur la place ${place} : touche pour l'échanger`,
@@ -848,7 +839,7 @@ export const messages = {
     toFill: (places: { label: string; count: number }[]) =>
       `À remplir : ${places.map((p) => (p.count > 1 ? `${p.label} ×${p.count}` : p.label)).join(", ")}`,
     full: "Toutes les places sont remplies.",
-    fullOfEntered: "Tous tes athlètes engagés sont alignés.",
+    fullOfEntered: "Toutes les places que ton équipe peut remplir sont remplies.",
     unfillable: (count: number) =>
       count > 1
         ? `${count} places resteront vides : aucun autre athlète de ton équipe n'est engagé pour elles.`
@@ -1980,16 +1971,16 @@ export const messages = {
     team: "Budget et équipe",
     budget: "Budget de départ (crédits)",
     minTeamSize: "Taille minimum d'une équipe",
-    quotas: "Quotas de l'équipe (minimum et maximum par sexe)",
-    quotaHint: "Une famille à 0 au maximum ne se recrute pas.",
+    quotas: "Quotas de l'équipe, par famille",
+    quotaHint: "Au moins tant d'athlètes en tout, et de chaque sexe au moins et au plus tant.",
     family: "Famille",
-    sex: { F: "Femmes", M: "Hommes" },
-    min: "min",
-    max: "max",
-    quotaLabel: (sex: string, family: string, bound: string) => `${family}, ${sex}, ${bound}`,
+    quotaBound: { min: "En tout, min", minPerSex: "Par sexe, min", maxPerSex: "Par sexe, max" },
+    quotaLabel: (family: string, bound: string) => `${family}, ${bound}`,
     lineup: "Alignement",
-    lineupMax: "Athlètes alignés au plus",
-    lineupMin: "Minimum aligné par famille",
+    lineupPerFamily: "Places par famille au stade",
+    lineupBench: "Remplaçants sur le banc",
+    lineupHint:
+      "Le stade compte autant de places pour chacune des 4 familles, sans place libre. Titulaires et remplaçants tiennent dans la taille minimum d'une équipe.",
     mercato: "Mercato",
     firstHours: "Durée des premiers tours (heures)",
     longRounds: "Nombre de premiers tours",
@@ -2000,6 +1991,8 @@ export const messages = {
       last_bidder: "Choix du dernier enchérisseur",
       scheduled: "Date programmée",
     },
+    points: "Points",
+    tablesDivisor: "Diviseur des points des tables",
     bonuses: "Bonus sportifs (points)",
     bonus: {
       first: "1re place",
@@ -3268,7 +3261,7 @@ export const messages = {
       "Le prix est un nombre entier de crédits, au moins 1 (vide pour retirer l'athlète du catalogue).",
     CATALOGUE_UNAVAILABLE: "Le catalogue n'a pas pu être chargé. Réessaie.",
     MANAGER_RULES_INVALID:
-      "Ces règles ne permettent pas de jouer : vérifie que les quotas remplissent l'équipe, que l'alignement y tient et qu'un mode de clôture est coché.",
+      "Ces règles ne permettent pas de jouer : vérifie que les quotas remplissent l'équipe, que titulaires et banc y tiennent, que le diviseur est un entier positif et qu'un mode de clôture est coché.",
     MANAGER_RULES_UNAVAILABLE: "Les règles Manager n'ont pas pu être chargées. Réessaie.",
     MERCATO_OPEN: "Le mercato de cette ligue a commencé : les inscriptions sont closes.",
     MANAGER_LEAGUE_FULL: "Cette ligue est complète : tous les joueurs prévus sont inscrits.",

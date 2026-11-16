@@ -43,7 +43,7 @@ select pg_temp.athlete(n), '100 m', true from generate_series(1, 15) as n;
 insert into manager_leagues (id, name, owner_id, rules, mercato_opened_at)
 values (pg_temp.league(), 'Sans maximum', pg_temp.player(),
   '{"budget": 200, "minTeamSize": 2,
-    "quotas": [{"sex": "F", "family": "sprint", "min": 0, "max": 20}],
+    "quotas": [{"family": "sprint", "min": 0, "minPerSex": 0, "maxPerSex": 20}],
     "rounds": {"firstHours": 48, "longRounds": 2, "nextHours": 24},
     "closeModes": ["budgets_spent"]}', now() - interval '1 hour');
 insert into manager_members (league_id, user_id) values (pg_temp.league(), pg_temp.player());

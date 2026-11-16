@@ -273,10 +273,10 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **LineupBoard** (Manager, #427, #775) : le stade vu du dessus (`StadiumMap` : un ovale, piste
   `--track` avec un fin liseré clair autour d'une pelouse `--field`), une place par titulaire à son
   endroit, les mêmes que dans une confrontation (`stadium-spots.ts`) : sur la piste, sprint et haies
-  en bas (« 100 m ») puis à gauche (« 400 m »), demi-fond et fond à droite (« 1500 m »), une
-  huitième place en haut ; sur la pelouse, sauts en haut (« hauteur ») puis à gauche
-  (« longueur »), lancers à droite (« javelot ») puis au centre (« poids »), combinées au centre ;
-  les places « Libre » prennent les endroits restants dans cet ordre. Quatre cartes tiennent côte à
+  en bas (« 100 m ») puis à gauche (« 400 m »), demi-fond et fond à droite (« 1500 m ») puis en
+  haut ; sur la pelouse, sauts (combinées comprises) en haut (« hauteur ») puis à gauche
+  (« longueur »), lancers à droite (« javelot ») puis au centre (« poids ») : deux places par
+  famille, sans place « Libre » (#1030). Quatre cartes tiennent côte à
   côte sur la ligne du milieu, sans chevauchement et dans l'ovale de 320 à 390 px (#929). Une place montre l'athlète ou un
   « + » en pointillés. Toucher une
   place ouvre une feuille avec les seuls athlètes de l'équipe qui peuvent la prendre (engagés et

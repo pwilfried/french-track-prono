@@ -1,30 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  athleteInitials,
-  cardGroupOf,
-  CARD_GROUPS,
-  shortAthleteName,
-  unmetQuotas,
-} from "./manager-team";
-import type { TeamQuota } from "./manager-rules";
-
-describe("cardGroupOf", () => {
-  it("puts sprint and hurdles together, and both jumps together", () => {
-    expect(cardGroupOf("sprint")).toBe("sprint");
-    expect(cardGroupOf("hurdles")).toBe("sprint");
-    expect(cardGroupOf("middle")).toBe("middle");
-    expect(cardGroupOf("long")).toBe("long");
-    expect(cardGroupOf("horizontal_jumps")).toBe("jumps");
-    expect(cardGroupOf("vertical_jumps")).toBe("jumps");
-    expect(cardGroupOf("throws")).toBe("throws");
-    expect(cardGroupOf("combined")).toBe("combined");
-  });
-
-  it("lists the groups in the order of the team page", () => {
-    expect(CARD_GROUPS).toEqual(["sprint", "middle", "long", "jumps", "throws", "combined"]);
-  });
-});
+import type { DisciplineFamily } from "./discipline";
+import { MANAGER_FAMILIES, type ManagerSex, type TeamQuota } from "./manager-rules";
+import { athleteInitials, fitsQuotas, shortAthleteName, unmetQuotas } from "./manager-team";
 
 describe("athleteInitials", () => {
   it("takes the first letter of the first and the last name", () => {
@@ -48,25 +26,71 @@ describe("shortAthleteName", () => {
   });
 });
 
-describe("unmetQuotas", () => {
-  const quotas: TeamQuota[] = [
-    { sex: "F", family: "sprint", min: 1, max: 2 },
-    { sex: "M", family: "throws", min: 1, max: 2 },
-    { sex: "F", family: "long", min: 0, max: 2 },
-  ];
+/** The quotas of 16 Nov. 2026 (#1017): per family 1 woman and 1 man, 3 in all, 4 of a sex at most. */
+const quotas: TeamQuota[] = MANAGER_FAMILIES.map((family) => ({
+  family,
+  min: 3,
+  minPerSex: 1,
+  maxPerSex: 4,
+}));
 
+const athletes = (n: number, sex: ManagerSex, family: DisciplineFamily) =>
+  Array.from({ length: n }, () => ({ sex, family }));
+
+/** Two women and a man in every family: compliant. */
+const balanced = [
+  ...athletes(2, "F", "sprint"),
+  ...athletes(1, "M", "hurdles"),
+  ...athletes(2, "F", "middle"),
+  ...athletes(1, "M", "long"),
+  ...athletes(2, "F", "horizontal_jumps"),
+  ...athletes(1, "M", "combined"),
+  ...athletes(2, "F", "throws"),
+  ...athletes(1, "M", "throws"),
+];
+
+describe("unmetQuotas", () => {
   it("is empty when the team reaches every minimum", () => {
+    expect(unmetQuotas(quotas, balanced)).toEqual([]);
+  });
+
+  it("finds a team without a woman thrower not compliant", () => {
+    const team = [...balanced.filter((a) => a.family !== "throws"), ...athletes(3, "M", "throws")];
+    expect(unmetQuotas(quotas, team)).toEqual([{ family: "throws", sex: "F" }]);
+  });
+
+  it("counts hurdlers as sprinters and combined events as jumps", () => {
     const team = [
-      { sex: "F" as const, family: "sprint" as const },
-      { sex: "M" as const, family: "throws" as const },
+      ...balanced.filter((a) => a.family !== "sprint" && a.family !== "horizontal_jumps"),
+      ...athletes(2, "F", "hurdles"),
+      ...athletes(2, "F", "combined"),
     ];
     expect(unmetQuotas(quotas, team)).toEqual([]);
   });
 
-  it("lists the sex and family of each minimum not reached, in the order of the rules", () => {
-    expect(unmetQuotas(quotas, [{ sex: "M", family: "sprint" }])).toEqual([
-      { sex: "F", family: "sprint" },
-      { sex: "M", family: "throws" },
+  it("lists, family by family, the sexes missing and then a family too small", () => {
+    expect(unmetQuotas(quotas, [{ sex: "M", family: "sprint" }]).slice(0, 4)).toEqual([
+      { family: "sprint", sex: "F" },
+      { family: "sprint", sex: null },
+      { family: "distance", sex: "F" },
+      { family: "distance", sex: "M" },
     ]);
+  });
+});
+
+describe("fitsQuotas", () => {
+  it("refuses a fifth man sprinter", () => {
+    const team = athletes(4, "M", "sprint");
+    expect(fitsQuotas(quotas, team, { sex: "M", family: "hurdles" })).toBe(false);
+  });
+
+  it("still takes a woman sprinter next to four men", () => {
+    const team = athletes(4, "M", "sprint");
+    expect(fitsQuotas(quotas, team, { sex: "F", family: "sprint" })).toBe(true);
+  });
+
+  it("refuses a relay team and a family without a quota", () => {
+    expect(fitsQuotas(quotas, [], { sex: "F", family: "relay" })).toBe(false);
+    expect(fitsQuotas(quotas.slice(1), [], { sex: "F", family: "sprint" })).toBe(false);
   });
 });
