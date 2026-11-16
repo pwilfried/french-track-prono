@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
 import { chooseSeason, createLeague, seasonReady } from "./manager-season";
+import { skipFirstMercatoGuide } from "./first-mercato";
 import { newPlayer, signUp } from "./players";
 
 test("a participant bids secretly within the budget, changes and withdraws a bid", async ({
@@ -29,6 +30,8 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
   const rival = newPlayer("bid-rival");
   const ownerPage = await (await browser.newContext()).newPage();
   const rivalPage = await (await browser.newContext()).newPage();
+  await skipFirstMercatoGuide(ownerPage);
+  await skipFirstMercatoGuide(rivalPage);
 
   try {
     // Two participants in a league, before the mercato opens.

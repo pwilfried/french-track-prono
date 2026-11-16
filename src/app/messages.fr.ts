@@ -698,6 +698,71 @@ export const messages = {
     roundEndsIn: "Fin du tour dans",
     myTeam: "Mes athlètes",
     noTeam: "Aucun athlète remporté pour l'instant.",
+    /** « Mon équipe en construction » (#1037): the card under the catalogue until the mercato ends. */
+    build: {
+      title: "Mon équipe en construction",
+      count: (have: number, target: number) => `${have}/${target}`,
+      progress: (have: number, target: number) => `${have} athlètes sur ${target}`,
+      family: (name: string, have: number, need: number, done: boolean) =>
+        done ? `${name} : ${have}, complète` : `${name} : ${have} sur ${need}, à compléter`,
+      /** What is still missing, in one sentence: families first, then the credits per athlete. */
+      missing: (
+        gaps: { name: string; count: number; sexes: ("F" | "M")[] }[],
+        left: number,
+        missing: number,
+        perMissing: number | null,
+      ) => {
+        const who = (g: { name: string; count: number; sexes: ("F" | "M")[] }) => {
+          const sexes =
+            g.sexes.length === 1 ? (g.sexes[0] === "F" ? " dont 1 femme" : " dont 1 homme") : "";
+          return `${g.count} ${g.name}${sexes}`;
+        };
+        const list = gaps.map(who).join(", ");
+        const credits =
+          perMissing === null
+            ? ""
+            : ` Reste ${left} crédits, soit ${perMissing} par athlète manquant.`;
+        if (gaps.length === 0 && missing === 0)
+          return "Ton équipe est complète : tu peux passer à l'alignement.";
+        if (gaps.length === 0)
+          return `Il te manque ${missing} athlète${missing > 1 ? "s" : ""}.${credits}`;
+        return `Il te manque au moins ${list}.${credits}`;
+      },
+      complete: "Ton équipe est complète.",
+    },
+    /** The four cards of the first mercato (#1037); then on demand from « Comment ça marche ? ». */
+    firstMercato: {
+      label: "Premier mercato",
+      progress: (step: number, total: number) => `Premier mercato · ${step} sur ${total}`,
+      skip: "Passer",
+      skipLabel: "Passer le guide du premier mercato",
+      previous: "Précédent",
+      next: "Suivant",
+      done: "C'est parti",
+      open: "Comment ça marche ?",
+      steps: [
+        {
+          title: "Ton budget",
+          text: (budget: number) =>
+            `Tu as ${budget} crédits pour toute la saison. Chaque athlète a un prix de départ : tu mises au moins ce prix.`,
+        },
+        {
+          title: "Enchères secrètes",
+          text: () =>
+            "Tes mises sont secrètes. À la fin du tour, tout est révélé : le plus haut enchérisseur remporte l'athlète.",
+        },
+        {
+          title: "Couvre toutes les familles",
+          text: (perFamily: number) =>
+            `Le stade a ${perFamily} places par famille : sprint, demi-fond et fond, sauts, lancers. Prends au moins 1 femme et 1 homme dans chaque famille.`,
+        },
+        {
+          title: "Vise 12 athlètes",
+          text: (starters: number, bench: number) =>
+            `${starters} titulaires et ${bench} remplaçants. Garde des crédits pour les athlètes qu'il te reste à recruter.`,
+        },
+      ],
+    },
     wonIn: (round: number) => `tour ${round}`,
     secret:
       "Tes offres restent secrètes jusqu'à la fin du tour : les autres participants ne voient ni tes offres, ni leur nombre. Puis toutes les offres du tour sont révélées. La dernière offre compte.",
@@ -823,6 +888,31 @@ export const messages = {
   },
   lineup: {
     title: "Mon alignement",
+    /** « Ton premier alignement » (#1037): shown until a lineup has been validated in the league. */
+    first: {
+      title: "Ton premier alignement",
+      subtitle: "Quatre étapes, cochées au fil de l'eau.",
+      steps: {
+        starters: "Choisis tes titulaires",
+        bench: "Place tes remplaçants",
+        tactical: "Un remplacement tactique, si tu veux",
+        validate: "Valide avant le verrou",
+      },
+      optional: "facultatif",
+      done: (label: string) => `${label}, fait`,
+      todo: (label: string) => `${label}, à faire`,
+      forgot: "Un oubli ? On reprend ton dernier alignement.",
+      go: "Aller à l'étape en cours",
+      rules: "Comment sont calculés les points ?",
+      rulesTitle: "Comment sont calculés les points ?",
+      rulesLines: (divisor: number, win: number) => [
+        `Chaque titulaire marque les points World Athletics de sa marque, divisés par ${divisor}.`,
+        `Des bonus s'ajoutent : victoire (+${win}), record personnel, record de saison, records.`,
+        "Un remplaçant entre si un titulaire de sa famille ne participe pas, ou selon ton remplacement tactique.",
+        "Après le verrou, plus de changement : un oubli reprend ton dernier alignement.",
+      ],
+      close: "Fermer",
+    },
     subtitle: "Aligne tes athlètes avant chaque compétition.",
     link: "Mon alignement",
     competitions: "Compétitions éligibles",

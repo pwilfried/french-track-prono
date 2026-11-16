@@ -9,6 +9,7 @@ import type { ManagerBidRepository, MyManagerBids } from "./manager-bids";
 import type { ManagerCatalogueRepository } from "./manager-catalogue";
 import type { ManagerLeagueFile, ManagerLeagueRepository } from "./manager-leagues";
 import {
+  getFirstLineupGuide,
   getMyLineup,
   listMyLineups,
   saveMyLineup,
@@ -258,5 +259,50 @@ describe("saveMyLineup", () => {
         sheet: { starters: [{ athleteId: "a1" }], bench: [] },
       }),
     ).rejects.toEqual(new UseCaseError(code));
+  });
+});
+
+describe("getFirstLineupGuide", () => {
+  const ports = (competitions: LineupCompetition[], read?: SavedSheet) => ({
+    managerLeagues: leagues,
+    bids,
+    catalogue,
+    lineups: lineups(competitions, "saved", read),
+  });
+
+  it("guides a player who never validated a lineup, on the next competition", async () => {
+    // Given a team of three and no lineup yet in the league
+    const guide = await getFirstLineupGuide(ports([meeting()])).execute({
+      leagueId: "l1",
+      now: BEFORE,
+    });
+
+    // Then the guide points at the starters step of that competition
+    expect(guide).toMatchObject({ slug: "meeting", current: "starters" });
+    expect(guide?.done).toEqual({ starters: false, bench: true, tactical: false, validate: false });
+  });
+
+  it("is gone once any lineup of the league was validated", async () => {
+    const guide = await getFirstLineupGuide(
+      ports([meeting({ slug: "done", lineup: ["a1"] }), meeting({ slug: "next" })]),
+    ).execute({ leagueId: "l1", now: BEFORE });
+    expect(guide).toBeNull();
+  });
+
+  it("has nothing to show when every competition is locked", async () => {
+    const guide = await getFirstLineupGuide(ports([meeting()])).execute({
+      leagueId: "l1",
+      now: AFTER,
+    });
+    expect(guide).toBeNull();
+  });
+
+  it("refuses a player who is not in the league", async () => {
+    await expect(
+      getFirstLineupGuide({ ...ports([]), lineups: lineups("not_member") }).execute({
+        leagueId: "l1",
+        now: BEFORE,
+      }),
+    ).rejects.toEqual(new UseCaseError("LEAGUE_NOT_FOUND"));
   });
 });

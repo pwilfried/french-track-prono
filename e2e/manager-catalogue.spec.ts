@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
 import { chooseSeason, createLeague, seasonReady } from "./manager-season";
+import { skipFirstMercatoGuide } from "./first-mercato";
 import { newPlayer, signUp } from "./players";
 
 test("the admin prices an athlete, who then shows in the catalogue of a Manager league", async ({
@@ -17,6 +18,7 @@ test("the admin prices an athlete, who then shows in the catalogue of a Manager 
   sql(`insert into athlete_disciplines (athlete_id, discipline, is_primary)
        select id, (select name from disciplines where family = 'throws' order by name limit 1), true
        from athletes where slug = '${slug}'`);
+  await skipFirstMercatoGuide(page);
   const admin = newPlayer("catalogue");
   await page.goto("/manager/creer");
   await signUp(page, admin);
