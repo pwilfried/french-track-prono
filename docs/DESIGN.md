@@ -231,8 +231,8 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **FamilyBadge** (#613) : « Sprint · Haies », pastille bleu doux sur la carte et la page d'une
   ligue limitée ; rien pour une ligue sur toutes les épreuves.
 - **SeasonCompetitionPicker** (#663, Manager ; ligue de pronos depuis #721, dès 1 compétition, sous le nom et les familles de la ligue) : sélections rapides avec leur nombre, recherche,
-  filtres Portée, Lieu, Niveau, liste rangée par mois avec « Tout cocher », barre fixe « 15
-  compétitions cochées » ; vide : « Aucune compétition ne correspond à ces filtres » et
+  filtres Portée, Lieu, Niveau, liste rangée par mois avec « Tout cocher », puis la barre « 15
+  compétitions cochées » et le bouton, à la fin de la liste, jamais par-dessus (#980) ; vide : « Aucune compétition ne correspond à ces filtres » et
   « Réinitialiser les filtres ».
 - **InviteBanner** (#552) : dans une ligue où le joueur est seul, fond bleu doux, « Tu es seul
   pour l'instant », un grand bouton « Inviter mes amis » (partage natif, sinon lien copié) et le
