@@ -213,7 +213,8 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   `save_manager_lineup`). Le **verrou** est le premier verrou des pronos de la compétition (à
   défaut d'épreuve, minuit heure de Paris le premier jour) ; un déclencheur refuse toute écriture
   dans `manager_lineups` après (FT023). Une ligne de `manager_lineups` est un alignement validé :
-  sans ligne au verrou, 0 point pour la compétition (calcul en v0.15). Chacun ne lit que ses
+  sans ligne au verrou, 0 point pour la compétition (calcul en v0.15), sauf reprise du dernier
+  alignement (#1034). Chacun ne lit que ses
   alignements. Codes : FT022 mercato pas fini, FT023 verrouillé, FT024 alignement invalide.
 - Décisions du coordinateur (à revoir aux tests du propriétaire) : les remplaçants sont un **banc
   simple** en v1, sans remplacement automatique d'un titulaire qui ne court pas ; le chiffre de la
@@ -226,8 +227,8 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 les quotas, les 2 places par famille, la taille du banc et le diviseur sont livrés (#1030, voir
 « Règles Manager à 4 familles » plus bas) ; la feuille de match est enregistrée et vérifiée
 (#1032, voir « Feuille de match en base » plus bas) ; le calcul des remplacements est livré
-(#1033, voir « Remplacements dans le score » plus bas) ; la reprise du dernier alignement et
-l'écran viennent avec #1034 et #1035.
+(#1033, voir « Remplacements dans le score » plus bas), la reprise du dernier alignement aussi
+(#1034, voir « Reprise du dernier alignement » plus bas) ; l'écran vient avec #1035.
 
 - **Une seule action par compétition : aligner.** Le joueur n'a plus de pronostics à faire pour le
   Manager (section 4).
@@ -303,6 +304,25 @@ l'écran viennent avec #1034 et #1035.
   que si le remplaçant désigné a une marque (sinon le titulaire garde sa place, et le remplaçant
   reste disponible) ; un remplaçant du banc n'entre que s'il a une marque ; sans personne, la
   ligne du titulaire reste (0 point).
+
+### Reprise du dernier alignement (#1034)
+
+- Chaque minute, pg_cron lance `private.manager_carry_over_lineups()`
+  (`20261116140000_manager_lineup_carry_over.sql`) : pour chaque ligue et chaque compétition
+  verrouillée, **une seule fois** (`manager_lineup_carry_overs`), un participant sans alignement
+  reçoit une copie de son dernier alignement **validé par lui** (la compétition de la ligue
+  verrouillée juste avant ; décision de l'agent : on ne recopie pas une copie, qui n'aurait que
+  perdu des athlètes). Un alignement validé n'est jamais écrasé ; sans alignement validé avant :
+  pas de ligne, 0 point.
+- La copie ne garde que les athlètes de l'équipe engagés dans la compétition. Un athlète garde
+  sa discipline s'il y est engagé, sinon prend la première où il l'est, sinon il est retiré. Un
+  titulaire retiré laisse sa place à son remplaçant désigné, sinon au premier remplaçant du banc
+  de la même famille (ceux désignés pour un titulaire resté passent en dernier) ; sinon la place
+  reste vide. Un seuil ne reste qu'avec la même discipline et le même remplaçant ; le banc se
+  resserre.
+- La copie porte `manager_lineups.carried_from` ; `my_manager_lineups` rend son nom
+  (`carried_from_name`) et « Mes points » affiche « Alignement repris de … ». Les compétitions déjà
+  verrouillées à la migration ne sont pas reprises.
 
 ### Règles Manager à 4 familles (#1030)
 

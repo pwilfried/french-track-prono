@@ -91,6 +91,8 @@ export type MyManagerScore = {
   slug: string;
   name: string;
   lockAt: string;
+  /** The competition the lineup was carried over from (#1034), or null. */
+  carriedFrom: string | null;
   score: StoredManagerScore | null;
 };
 
@@ -107,7 +109,7 @@ export function getMyManagerScore(ports: {
       const score = await ports.scores.mine(input.leagueId, competition.competitionId);
       if (score === "not_member") throw new UseCaseError("LEAGUE_NOT_FOUND");
       const { slug, name, lockAt } = competition;
-      return { slug, name, lockAt, score };
+      return { slug, name, lockAt, carriedFrom: competition.carriedFrom ?? null, score };
     },
   };
 }
