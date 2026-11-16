@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import type { ManagerScoreLine, ManagerScoreRepository } from "@/application/manager-scores";
-import type { ManagerCompetitionScore } from "@/domain/manager-score";
+import { managerCompetitionScore, type ManagerCompetitionScore } from "@/domain/manager-score";
 
 /**
  * A started competition of its own, a Manager league (mercato closed) where `player` lined up the
- * first two athletes, a performance entered for the first one.
+ * first two athletes on the 100 m, the third one on the bench, designated for the second one; a
+ * performance entered for the first one (10.90, 1st, PB) and the third one (11.20), none for the
+ * second one.
  */
 export type ManagerScoreWorld = {
   competitionSlug: string;
@@ -45,14 +47,15 @@ const score = (w: ManagerScoreWorld, total: number): ManagerCompetitionScore => 
       total,
     },
     {
-      athleteId: w.athleteIds[1]!,
-      discipline: null,
-      mark: null,
-      status: null,
+      athleteId: w.athleteIds[2]!,
+      discipline: "100 m",
+      mark: "11.20",
+      status: "ok",
       points: 0,
       bonuses: [],
       bonusPoints: 0,
       total: 0,
+      substitution: { starterId: w.athleteIds[1]!, reason: "forfeit" },
     },
   ],
 });
@@ -73,7 +76,25 @@ export function managerScoreContract(name: string, world: () => Promise<ManagerS
             leagueId: w.leagueId,
             userId: w.playerId,
             tablesDivisor: 10,
-            lineup: w.athleteIds.slice(0, 2),
+            lineup: {
+              starters: [
+                {
+                  athleteId: w.athleteIds[0],
+                  family: "sprint",
+                  discipline: "100 m",
+                  substituteId: null,
+                  threshold: null,
+                },
+                {
+                  athleteId: w.athleteIds[1],
+                  family: "sprint",
+                  discipline: "100 m",
+                  substituteId: w.athleteIds[2],
+                  threshold: 10.5,
+                },
+              ],
+              bench: [{ athleteId: w.athleteIds[2], family: "sprint", discipline: "100 m" }],
+            },
           },
         ],
         performances: [
@@ -88,12 +109,31 @@ export function managerScoreContract(name: string, world: () => Promise<ManagerS
             mark: "10.90",
             records: ["pb"],
           },
+          { athleteId: w.athleteIds[2], status: "ok", mark: "11.20", records: [] },
         ],
       });
       if (sheet && sheet !== "not_admin") {
         expect(sheet.participants[0]!.bonuses.first).toBeGreaterThanOrEqual(0);
         expect(Date.parse(sheet.lockAt)).toBeLessThan(Date.now());
       }
+    });
+
+    it("gives the core what it needs to bring the substitute in for a starter without a mark", async () => {
+      const w = await world();
+      const sheet = await w.admin.sheet(w.competitionSlug);
+      if (!sheet || sheet === "not_admin") throw new Error("no sheet");
+      const p = sheet.participants[0]!;
+
+      const score = managerCompetitionScore({
+        ...p,
+        indoor: sheet.indoor,
+        performances: sheet.performances,
+      });
+
+      expect(score.athletes.map((a) => [a.athleteId, a.substitution ?? null])).toEqual([
+        [w.athleteIds[0], null],
+        [w.athleteIds[2], { starterId: w.athleteIds[1], reason: "forfeit" }],
+      ]);
     });
 
     it("knows no sheet of an unknown competition", async () => {

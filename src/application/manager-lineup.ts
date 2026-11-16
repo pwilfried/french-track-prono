@@ -1,8 +1,10 @@
+import type { BenchPlan } from "@/domain/manager-bench";
 import {
   fillablePlaces,
   lineupPlaces,
   lineupStatus,
   placeLineup,
+  type LineupDiscipline,
   type LineupPlace,
   type LineupProblem,
   type LineupStatus,
@@ -44,6 +46,14 @@ export type SheetRefusal = Exclude<
 export type LineupSaveOutcome =
   "saved" | "not_member" | "not_eligible" | "mercato_open" | "locked" | "invalid" | SheetRefusal;
 
+/** The match sheet saved for a competition, and the disciplines each athlete may count in there. */
+export type SavedSheet = {
+  /** Athlete of the team → their disciplines for the competition, the first one first. */
+  disciplines: Record<string, LineupDiscipline[]>;
+  /** Null before the first validation. */
+  sheet: MatchSheet | null;
+};
+
 /**
  * Port: the lineups of the signed-in player. Real adapter = Supabase (the database checks the
  * lineup and refuses it after the lock); fake = in memory.
@@ -51,6 +61,11 @@ export type LineupSaveOutcome =
 export interface ManagerLineupRepository {
   /** The eligible competitions of the league, first one first. */
   mine(leagueId: string): Promise<LineupCompetition[] | "not_member">;
+  /** The match sheet of an eligible competition (#1035); `not_eligible` for any other. */
+  sheet(
+    leagueId: string,
+    competitionId: string,
+  ): Promise<SavedSheet | "not_member" | "not_eligible">;
   /** Validates the match sheet for a competition, or replaces it: the last one counts. */
   save(leagueId: string, competitionId: string, sheet: MatchSheet): Promise<LineupSaveOutcome>;
 }
@@ -76,13 +91,24 @@ export function listMyLineups(ports: { lineups: ManagerLineupRepository }) {
   };
 }
 
-export type LineupAthleteView = TeamAthlete & { entered: boolean };
+export type LineupAthleteView = TeamAthlete & {
+  entered: boolean;
+  /** Where they may count in this competition, the first one first; empty when unknown. */
+  disciplines: LineupDiscipline[];
+};
 
 /**
- * The stadium of one competition: its places, which ones the team can fill, the athletes of the
- * team (entered or absent) and who sits where. Without a validated lineup, every place is empty.
+ * The match sheet of one competition (#1035): its places, which ones the team can fill, the
+ * athletes of the team (entered or absent), who sits where, the bench in order and the settings
+ * of each starter. Without a validated lineup, every place and the bench are empty.
  */
 export type MyLineup = {
+  leagueName: string;
+  /** How many substitutes the bench holds. */
+  benchSize: number;
+  /** Table points are divided by it (#1031). */
+  divisor: number;
+  plan: BenchPlan;
   competitionId: string;
   slug: string;
   name: string;
@@ -111,10 +137,28 @@ export function getMyLineup(ports: {
       if (!league || mine === "not_member") throw new UseCaseError("LEAGUE_NOT_FOUND");
       const competition = mine.find((c) => c.slug === input.slug);
       if (!competition) throw new UseCaseError("COMPETITION_NOT_FOUND");
+      const saved = await ports.lineups.sheet(input.leagueId, competition.competitionId);
+      if (saved === "not_member") throw new UseCaseError("LEAGUE_NOT_FOUND");
+      if (saved === "not_eligible") throw new UseCaseError("COMPETITION_NOT_FOUND");
       const entered = new Set(competition.entered);
-      const athletes = team.athletes.map((a) => ({ ...a, entered: entered.has(a.athleteId) }));
+      const athletes = team.athletes.map((a) => ({
+        ...a,
+        entered: entered.has(a.athleteId),
+        disciplines: saved.disciplines[a.athleteId] ?? [],
+      }));
       const places = lineupPlaces(league.rules.lineup);
+      const sheet = saved.sheet;
+      const starters = sheet?.starters.map((s) => s.athleteId) ?? competition.lineup ?? [];
       return {
+        leagueName: league.name,
+        benchSize: league.rules.lineup.bench,
+        divisor: league.rules.tablesDivisor,
+        plan: {
+          bench: sheet?.bench.map((s) => s.athleteId) ?? [],
+          settings: Object.fromEntries(
+            (sheet?.starters ?? []).map(({ athleteId, ...setting }) => [athleteId, setting]),
+          ),
+        },
         competitionId: competition.competitionId,
         slug: competition.slug,
         name: competition.name,
@@ -127,7 +171,7 @@ export function getMyLineup(ports: {
         places,
         fillable: fillablePlaces(places, athletes),
         athletes,
-        placed: placeLineup(places, athletes, competition.lineup ?? []).placed,
+        placed: placeLineup(places, athletes, starters).placed,
       };
     },
   };

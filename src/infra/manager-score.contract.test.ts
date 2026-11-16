@@ -9,6 +9,12 @@ import { createInMemoryManagerScoreStore, createSupabaseManagerScoreRepository }
 
 const bonuses = { first: 50 } as Record<ManagerBonus, number>;
 
+const sprinter = (athleteId: string) => ({
+  athleteId,
+  family: "sprint" as const,
+  discipline: "100 m",
+});
+
 managerScoreContract("in-memory fake", async () => {
   const athleteIds = ["a1", "a2", "a3"];
   const names = { a1: "Alice Fictive", a2: "Berthe Démo", a3: "Chloé Test" };
@@ -19,7 +25,19 @@ managerScoreContract("in-memory fake", async () => {
       lockAt: "2026-07-10T16:00:00Z",
       indoor: false,
       participants: [
-        { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: ["a1", "a2"] },
+        {
+          leagueId: "L",
+          userId: "zoe",
+          bonuses,
+          tablesDivisor: 10,
+          lineup: {
+            starters: [
+              { ...sprinter("a1"), substituteId: null, threshold: null },
+              { ...sprinter("a2"), substituteId: "a3", threshold: 10.5 },
+            ],
+            bench: [sprinter("a3")],
+          },
+        },
       ],
       performances: [
         {
@@ -32,6 +50,17 @@ managerScoreContract("in-memory fake", async () => {
           place: 1,
           mark: "10.90",
           records: ["pb"],
+        },
+        {
+          athleteId: "a3",
+          discipline: "100 m",
+          sex: "F",
+          unit: "time",
+          round: "final",
+          status: "ok",
+          place: 2,
+          mark: "11.20",
+          records: [],
         },
       ],
       names,
@@ -82,10 +111,20 @@ if (url && key) {
     sql(`insert into manager_lineups (league_id, competition_id, user_id, athlete_ids)
          values ('${leagueId}', '${competitionId}', '${player.userId}',
                  array['${athleteIds[0]}', '${athleteIds[1]}']::uuid[])`);
+    // The match sheet: the third athlete on the bench, designated for the second one.
+    sql(`insert into manager_lineup_entries (league_id, competition_id, user_id, athlete_id, role,
+                                             slot, discipline, substitute_id, threshold)
+         values ('${leagueId}', '${competitionId}', '${player.userId}', '${athleteIds[0]}',
+                 'starter', 1, '100 m', null, null),
+                ('${leagueId}', '${competitionId}', '${player.userId}', '${athleteIds[1]}',
+                 'starter', 2, '100 m', '${athleteIds[2]}', 10.5),
+                ('${leagueId}', '${competitionId}', '${player.userId}', '${athleteIds[2]}',
+                 'substitute', 1, '100 m', null, null)`);
     sql(`update events set lock_at = now() - interval '1 hour', starts_at = now() - interval '1 hour'
          where id = '${eventId}'`);
     sql(`insert into event_performances (event_id, athlete_id, status, place, mark, records)
-         values ('${eventId}', '${athleteIds[0]}', 'ok', 1, '10.90', array['pb'])`);
+         values ('${eventId}', '${athleteIds[0]}', 'ok', 1, '10.90', array['pb']),
+                ('${eventId}', '${athleteIds[2]}', 'ok', 2, '11.20', '{}')`);
     return {
       competitionSlug,
       competitionId,

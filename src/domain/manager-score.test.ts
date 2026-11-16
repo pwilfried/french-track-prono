@@ -7,6 +7,8 @@ import {
   managerTablePoints,
   type CompetitionPerformance,
   type ManagerScoreInput,
+  type ScoringLineup,
+  type ScoringStarter,
 } from "./manager-score";
 import { worldAthleticsPoints } from "./world-athletics-points";
 
@@ -34,8 +36,23 @@ const run = (over: Partial<CompetitionPerformance> = {}): CompetitionPerformance
   ...over,
 });
 
+/** Starters on the 100 m, in place order, without a substitute; an empty bench. */
+const starters = (...ids: string[]): ScoringLineup => ({
+  starters: ids.map((athleteId) => starter(athleteId)),
+  bench: [],
+});
+
+const starter = (athleteId: string, over: Partial<ScoringStarter> = {}): ScoringStarter => ({
+  athleteId,
+  family: "sprint",
+  discipline: "100 m",
+  substituteId: null,
+  threshold: null,
+  ...over,
+});
+
 const input = (over: Partial<ManagerScoreInput> = {}): ManagerScoreInput => ({
-  lineup: ["a"],
+  lineup: starters("a"),
   performances: [run()],
   indoor: false,
   tablesDivisor: 10,
@@ -88,8 +105,11 @@ describe("managerCompetitionScore", () => {
 
   it("scores an indoor competition with the short-track tables (#1026)", () => {
     const race = run({ discipline: "400 m", sex: "M", mark: "46.50" });
-    const indoors = managerCompetitionScore(input({ indoor: true, performances: [race] }));
-    const outdoors = managerCompetitionScore(input({ indoor: false, performances: [race] }));
+    const lineup = { starters: [starter("a", { discipline: "400 m" })], bench: [] };
+    const indoors = managerCompetitionScore(input({ indoor: true, lineup, performances: [race] }));
+    const outdoors = managerCompetitionScore(
+      input({ indoor: false, lineup, performances: [race] }),
+    );
     expect(indoors.athletes[0].points).toBe(114);
     expect(outdoors.athletes[0].points).toBe(107);
   });
@@ -98,7 +118,13 @@ describe("managerCompetitionScore", () => {
     const score = managerCompetitionScore(
       input({
         indoor: true,
-        lineup: ["a", "b"],
+        lineup: {
+          starters: [
+            starter("a", { discipline: "60 m" }),
+            starter("b", { discipline: "60 m haies" }),
+          ],
+          bench: [],
+        },
         performances: [
           run({ athleteId: "a", discipline: "60 m", sex: "M", mark: "6.60" }),
           run({ athleteId: "b", discipline: "60 m haies", sex: "F", mark: "7.90" }),
@@ -112,7 +138,7 @@ describe("managerCompetitionScore", () => {
   it("adds every lined-up athlete and their bonuses, rounding each athlete down", () => {
     const score = managerCompetitionScore(
       input({
-        lineup: ["a", "b"],
+        lineup: starters("a", "b"),
         performances: [
           run({ athleteId: "a", place: 1, records: ["pb"] }),
           run({ athleteId: "b", sex: "M", mark: "10.20", place: 5 }),
@@ -155,7 +181,7 @@ describe("managerCompetitionScore", () => {
     expect(score.athletes).toEqual([
       {
         athleteId: "a",
-        discipline: null,
+        discipline: "100 m",
         mark: null,
         status: null,
         points: 0,
@@ -168,7 +194,10 @@ describe("managerCompetitionScore", () => {
 
   it("gives no table points to a discipline the tables do not cover, the bonuses still count", () => {
     const score = managerCompetitionScore(
-      input({ performances: [run({ discipline: "Course en sac", place: 1 })] }),
+      input({
+        lineup: { starters: [starter("a", { discipline: "Course en sac" })], bench: [] },
+        performances: [run({ discipline: "Course en sac", place: 1 })],
+      }),
     );
     expect(score.athletes[0]).toMatchObject({ points: 0, bonusPoints: 50 });
   });
@@ -185,7 +214,20 @@ describe("managerCompetitionScore", () => {
     expect(score.athletes.map((a) => a.athleteId)).toEqual(["a"]);
   });
 
-  it("keeps the best performance of an athlete who ran several events, without adding them", () => {
+  it("counts the discipline chosen on the match sheet only, even when another one is better", () => {
+    const score = managerCompetitionScore(
+      input({
+        performances: [
+          run({ mark: "11.40" }),
+          run({ discipline: "200 m", mark: "21.80", place: 1, records: ["wr"] }),
+        ],
+      }),
+    );
+    expect(score.athletes).toHaveLength(1);
+    expect(score.athletes[0]).toMatchObject({ discipline: "100 m", mark: "11.40", bonusPoints: 0 });
+  });
+
+  it("keeps the best round of the chosen discipline (heats and final), without adding them", () => {
     const heat = run({ round: "series", mark: "11.20" });
     const final = run({ round: "final", mark: "11.05" });
     const score = managerCompetitionScore(input({ performances: [heat, final] }));
@@ -203,7 +245,7 @@ describe("managerCompetitionScore", () => {
   it("lists the athletes from the strongest to the weakest", () => {
     const score = managerCompetitionScore(
       input({
-        lineup: ["slow", "dnf", "fast"],
+        lineup: starters("slow", "dnf", "fast"),
         performances: [
           run({ athleteId: "slow", mark: "12.50" }),
           run({ athleteId: "dnf", status: "dnf", place: null, mark: null }),
@@ -214,13 +256,42 @@ describe("managerCompetitionScore", () => {
     expect(score.athletes.map((a) => a.athleteId)).toEqual(["fast", "slow", "dnf"]);
   });
 
+  const ids = ["a", "b", "c", "d", "e", "f"];
+  const arbitraryLineup = fc.shuffledSubarray(ids, { maxLength: 6 }).chain((chosen) => {
+    const cut = Math.min(chosen.length, 3);
+    const onStage = chosen.slice(0, cut);
+    const onBench = chosen.slice(cut);
+    return fc.record({
+      starters: fc.tuple(
+        ...onStage.map((athleteId) =>
+          fc.record({
+            athleteId: fc.constant(athleteId),
+            family: fc.constantFrom("sprint" as const, "jumps" as const),
+            discipline: fc.constantFrom("100 m", "Saut en longueur"),
+            substituteId: fc.option(fc.constantFrom(...(onBench.length ? onBench : ["x"])), {
+              nil: null,
+            }),
+            threshold: fc.option(fc.double({ min: 1, max: 200, noNaN: true }), { nil: null }),
+          }),
+        ),
+      ),
+      bench: fc.tuple(
+        ...onBench.map((athleteId) =>
+          fc.record({
+            athleteId: fc.constant(athleteId),
+            family: fc.constantFrom("sprint" as const, "jumps" as const),
+            discipline: fc.constantFrom("100 m", "Saut en longueur"),
+          }),
+        ),
+      ),
+    });
+  });
+
   const arbitraryInput = fc.record({
-    lineup: fc.option(fc.uniqueArray(fc.constantFrom("a", "b", "c", "d"), { maxLength: 4 }), {
-      nil: null,
-    }),
+    lineup: fc.option(arbitraryLineup, { nil: null }),
     performances: fc.array(
       fc.record({
-        athleteId: fc.constantFrom("a", "b", "c", "d", "e"),
+        athleteId: fc.constantFrom(...ids, "z"),
         discipline: fc.constantFrom("100 m", "800 m", "Saut en longueur", "Course en sac"),
         sex: fc.constantFrom("F" as const, "M" as const),
         unit: fc.constantFrom("time" as const, "distance" as const),
@@ -254,6 +325,19 @@ describe("managerCompetitionScore", () => {
     );
   });
 
+  it("scores one line per starter and brings every substitute in once at most", () => {
+    fc.assert(
+      fc.property(arbitraryInput, (i) => {
+        const score = managerCompetitionScore(i);
+        const ids = score.athletes.map((a) => a.athleteId);
+        return (
+          score.athletes.length === (i.lineup?.starters.length ?? 0) &&
+          new Set(ids).size === ids.length
+        );
+      }),
+    );
+  });
+
   it("does not change when computed again or with the performances in another order", () => {
     fc.assert(
       fc.property(arbitraryInput, (i) => {
@@ -266,5 +350,212 @@ describe("managerCompetitionScore", () => {
         expect(reversed.total).toBe(once.total);
       }),
     );
+  });
+});
+
+describe("managerCompetitionScore with substitutions (#1033)", () => {
+  /** Starter "a" on the 100 m with "s" designated, threshold 10"50; "s" and "t" on the bench. */
+  const sheet = (over: Partial<ScoringStarter> = {}): ScoringLineup => ({
+    starters: [starter("a", { substituteId: "s", threshold: 10.5, ...over })],
+    bench: [
+      { athleteId: "s", family: "sprint", discipline: "100 m" },
+      { athleteId: "t", family: "sprint", discipline: "100 m" },
+    ],
+  });
+  const dnf = (athleteId: string) => run({ athleteId, status: "dnf", place: null, mark: null });
+  const dns = (athleteId: string) => run({ athleteId, status: "dns", place: null, mark: null });
+  const dq = (athleteId: string) => run({ athleteId, status: "dq", place: null, mark: null });
+  const counted = (i: ManagerScoreInput) =>
+    managerCompetitionScore(i).athletes.map((a) => [a.athleteId, a.substitution?.reason ?? null]);
+
+  it("brings the designated substitute in when the starter is slower than the threshold, even if slower still", () => {
+    const score = managerCompetitionScore(
+      input({
+        lineup: sheet(),
+        performances: [
+          run({ athleteId: "a", mark: "10.58" }),
+          run({ athleteId: "s", mark: "10.70" }),
+        ],
+      }),
+    );
+    expect(score.athletes).toEqual([
+      expect.objectContaining({
+        athleteId: "s",
+        mark: "10.70",
+        substitution: { starterId: "a", reason: "tactical" },
+      }),
+    ]);
+    expect(score.total).toBe(points100("F", 10.7));
+  });
+
+  it("keeps the starter who beats the threshold", () => {
+    const i = input({
+      lineup: sheet(),
+      performances: [
+        run({ athleteId: "a", mark: "10.42" }),
+        run({ athleteId: "s", mark: "10.30" }),
+      ],
+    });
+    expect(counted(i)).toEqual([["a", null]]);
+    expect(managerCompetitionScore(i).athletes[0]).not.toHaveProperty("substitution");
+  });
+
+  it("keeps the starter who equals the threshold", () => {
+    const i = input({
+      lineup: sheet(),
+      performances: [
+        run({ athleteId: "a", mark: "10.50" }),
+        run({ athleteId: "s", mark: "10.30" }),
+      ],
+    });
+    expect(counted(i)).toEqual([["a", null]]);
+  });
+
+  it("reads the threshold of a jump the other way: less far than it brings the substitute in", () => {
+    const long = { discipline: "Saut en longueur", unit: "distance" as const };
+    const lineup: ScoringLineup = {
+      starters: [
+        starter("a", { family: "jumps", ...long, substituteId: "s", threshold: 8 }),
+        starter("b", { family: "jumps", ...long, substituteId: "t", threshold: 8 }),
+      ],
+      bench: [
+        { athleteId: "s", family: "jumps", discipline: long.discipline },
+        { athleteId: "t", family: "jumps", discipline: long.discipline },
+      ],
+    };
+    const i = input({
+      lineup,
+      performances: [
+        run({ athleteId: "a", ...long, sex: "M", mark: "7.90" }),
+        run({ athleteId: "b", ...long, sex: "M", mark: "8.10" }),
+        run({ athleteId: "s", ...long, sex: "M", mark: "7.80" }),
+        run({ athleteId: "t", ...long, sex: "M", mark: "8.30" }),
+      ],
+    });
+    expect(counted(i)).toEqual(
+      expect.arrayContaining([
+        ["s", "tactical"],
+        ["b", null],
+      ]),
+    );
+  });
+
+  it("keeps the starter when the designated substitute has no mark to replace their slow one", () => {
+    const i = input({
+      lineup: sheet(),
+      performances: [run({ athleteId: "a", mark: "10.58" }), dns("s")],
+    });
+    expect(counted(i)).toEqual([["a", null]]);
+  });
+
+  it("brings the designated substitute in for a starter who is DNS, DNF or DQ", () => {
+    const i = input({
+      lineup: sheet({ threshold: null }),
+      performances: [dnf("a"), run({ athleteId: "s", mark: "11.20" })],
+    });
+    expect(counted(i)).toEqual([["s", "forfeit"]]);
+  });
+
+  it("brings the designated substitute in for a starter without any performance entered", () => {
+    const i = input({ lineup: sheet(), performances: [run({ athleteId: "s", mark: "11.20" })] });
+    expect(counted(i)).toEqual([["s", "forfeit"]]);
+  });
+
+  it("brings the first substitute of the bench of the family in when the designated one did not run either", () => {
+    const lineup: ScoringLineup = {
+      starters: [starter("a", { substituteId: "s" })],
+      bench: [
+        { athleteId: "s", family: "sprint", discipline: "100 m" },
+        { athleteId: "j", family: "jumps", discipline: "Saut en longueur" },
+        { athleteId: "t", family: "sprint", discipline: "100 m" },
+        { athleteId: "u", family: "sprint", discipline: "100 m" },
+      ],
+    };
+    const long = { discipline: "Saut en longueur", unit: "distance" as const };
+    const i = input({
+      lineup,
+      performances: [
+        dnf("a"),
+        dns("s"),
+        run({ athleteId: "j", ...long, mark: "6.50" }),
+        run({ athleteId: "t", mark: "11.60" }),
+        run({ athleteId: "u", mark: "11.10" }),
+      ],
+    });
+    expect(counted(i)).toEqual([["t", "bench"]]);
+  });
+
+  it("brings the first substitute of the family in for a starter without a designated one", () => {
+    const i = input({
+      lineup: { ...sheet({ substituteId: null, threshold: null }) },
+      performances: [dq("a"), run({ athleteId: "s", mark: "11.60" })],
+    });
+    expect(counted(i)).toEqual([["s", "bench"]]);
+  });
+
+  it("scores 0 for the place when the bench holds nobody of the family", () => {
+    const i = input({
+      lineup: {
+        starters: [starter("a")],
+        bench: [{ athleteId: "j", family: "jumps", discipline: "Saut en longueur" }],
+      },
+      performances: [
+        dnf("a"),
+        run({ athleteId: "j", discipline: "Saut en longueur", unit: "distance", mark: "6.50" }),
+      ],
+    });
+    const score = managerCompetitionScore(i);
+    expect(counted(i)).toEqual([["a", null]]);
+    expect(score.total).toBe(0);
+  });
+
+  it("never brings a substitute in twice: one designated already in elsewhere does not come again", () => {
+    // Place 1 has no designated substitute: the first one of the bench, "s", comes in. Place 2
+    // designated "s", already in: the next one of the bench, "t", comes in; place 3 gets nobody.
+    const lineup: ScoringLineup = {
+      starters: [starter("a"), starter("b", { substituteId: "s" }), starter("c")],
+      bench: [
+        { athleteId: "s", family: "sprint", discipline: "100 m" },
+        { athleteId: "t", family: "sprint", discipline: "100 m" },
+      ],
+    };
+    const i = input({
+      lineup,
+      performances: [
+        dnf("a"),
+        dnf("b"),
+        dns("c"),
+        run({ athleteId: "s", mark: "11.10" }),
+        run({ athleteId: "t", mark: "11.30" }),
+      ],
+    });
+    expect(counted(i)).toEqual([
+      ["s", "bench"],
+      ["t", "bench"],
+      ["c", null],
+    ]);
+  });
+
+  it("does not count the substitutes who did not come in", () => {
+    const i = input({
+      lineup: sheet(),
+      performances: [
+        run({ athleteId: "a", mark: "10.40" }),
+        run({ athleteId: "t", mark: "10.10" }),
+      ],
+    });
+    expect(managerCompetitionScore(i).total).toBe(points100("F", 10.4));
+  });
+
+  it("counts the substitute in the discipline chosen for them", () => {
+    const i = input({
+      lineup: {
+        starters: [starter("a", { substituteId: "s" })],
+        bench: [{ athleteId: "s", family: "sprint", discipline: "200 m" }],
+      },
+      performances: [dnf("a"), run({ athleteId: "s", mark: "11.00" })],
+    });
+    // "s" ran the 100 m only, not the 200 m chosen for them: nobody comes in.
+    expect(counted(i)).toEqual([["a", null]]);
   });
 });

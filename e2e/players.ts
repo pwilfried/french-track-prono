@@ -5,7 +5,8 @@ import { sql } from "../src/infra/contract/database";
 
 /** A new invented player: e-mail on example.test, short pseudo. */
 export function newPlayer(tag: string) {
-  const id = `${Date.now() % 1000000}${Math.floor(Math.random() * 100)}`;
+  // Pre-production keeps the players of earlier runs: 100 draws per 16 minutes collided (#1058).
+  const id = `${Date.now() % 1000000}${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`;
   return { email: `e2e-${tag}-${id}@example.test`, pseudo: `E2E ${tag} ${id}`.slice(0, 24) };
 }
 

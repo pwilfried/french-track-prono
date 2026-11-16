@@ -5,7 +5,7 @@ import {
   type ManagerBonusResult,
   type ManagerRecord,
 } from "./manager-bonus";
-import type { ManagerBonus, ManagerSex } from "./manager-rules";
+import type { ManagerBonus, ManagerFamily, ManagerSex } from "./manager-rules";
 import type { Performance, PerformanceStatus, RecordFlag } from "./performance";
 import { worldAthleticsPoints } from "./world-athletics-points";
 
@@ -19,9 +19,33 @@ export type CompetitionPerformance = Performance & {
   round: string;
 };
 
+/**
+ * A starter of the match sheet at the lock (#1032): the discipline that counts, the Manager family
+ * of their place, their designated substitute and tactical threshold (a mark in the unit of the
+ * discipline: seconds, metres or points), both optional.
+ */
+export type ScoringStarter = {
+  athleteId: string;
+  family: ManagerFamily;
+  discipline: string;
+  substituteId: string | null;
+  threshold: number | null;
+};
+export type ScoringSubstitute = { athleteId: string; family: ManagerFamily; discipline: string };
+
+/** Starters in place order, substitutes in the order they come in; the reserve never plays. */
+export type ScoringLineup = { starters: ScoringStarter[]; bench: ScoringSubstitute[] };
+
+/**
+ * Why a substitute counts for a place (#1033): `tactical`, the starter did worse than their
+ * threshold; `forfeit`, the starter has no mark and their designated substitute has one; `bench`,
+ * neither has one and the first substitute of the family on the bench comes in.
+ */
+export type SubstitutionReason = "tactical" | "forfeit" | "bench";
+
 export type ManagerScoreInput = {
-  /** The validated lineup of the participant at the lock; null without one. */
-  lineup: string[] | null;
+  /** The validated match sheet of the participant at the lock; null without one. */
+  lineup: ScoringLineup | null;
   /** Every performance of the competition; those of athletes not lined up are ignored. */
   performances: CompetitionPerformance[];
   /** An indoor competition: the races use the short-track tables (#1026). */
@@ -45,6 +69,8 @@ export type AthleteScore = {
   bonuses: { bonus: ManagerBonus; points: number }[];
   bonusPoints: number;
   total: number;
+  /** When a substitute counts for the place: whose place, and why. Absent when the starter counts. */
+  substitution?: { starterId: string; reason: SubstitutionReason };
 };
 
 /** The Manager score of a participant for a competition, with its detail (#431). */
@@ -66,9 +92,9 @@ const RECORD_BONUSES: Record<RecordFlag, ManagerRecord> = {
   wr: "world_record",
 };
 
-const nothing = (athleteId: string): AthleteScore => ({
+const nothing = (athleteId: string, discipline: string): AthleteScore => ({
   athleteId,
-  discipline: null,
+  discipline,
   mark: null,
   status: null,
   points: 0,
@@ -130,28 +156,77 @@ function better(a: AthleteScore, b: AthleteScore): AthleteScore {
   return keyA <= keyB ? a : b;
 }
 
+/** The line an athlete brings in a discipline, with their mark read, or null without a mark. */
+type Line = { score: AthleteScore; mark: number | null; unit: MarkUnit };
+
+/** Whether a mark is worse than the threshold: slower for a race, shorter or lower otherwise. */
+function worseThan(mark: number, threshold: number, unit: MarkUnit): boolean {
+  return unit === "time" ? mark > threshold : mark < threshold;
+}
+
 /**
- * Score of a competition = for every lined-up athlete, their World Athletics points divided by the
- * league's divisor (rounded down) + their sporting bonuses; the predictions do not count (#1031,
- * docs/decisions/french-track-manager.md, §4). Without a lineup, 0 for the whole competition. An athlete who took part in several events
- * (heats and final, two disciplines) brings their best line only; the place bonuses come from a
- * final.
+ * Score of a competition = for every place of the match sheet, the World Athletics points of the
+ * athlete who counts for it divided by the league's divisor (rounded down) + their sporting
+ * bonuses; the predictions do not count (#1031, docs/decisions/french-track-manager.md, §3 and 4).
+ * Without a lineup, 0 for the whole competition. Only the discipline chosen for an athlete counts;
+ * in it, their best round (heats and final), without adding them; the place bonuses come from a
+ * final. The places are taken in order (#1033):
+ * - a starter with a mark worse than their threshold gives way to their designated substitute,
+ *   whose line counts even if worse, provided the substitute has a mark;
+ * - a starter without a mark (DNS, DNF, DQ, none entered) gives way to their designated substitute
+ *   if they have one, else to the first substitute of the bench of the same family with one;
+ *   otherwise the place scores 0.
+ * A substitute comes in once at most.
  */
 export function managerCompetitionScore(input: ManagerScoreInput): ManagerCompetitionScore {
   if (input.lineup === null) {
     return { linedUp: false, total: 0, hungarian: 0, bonus: 0, athletes: [] };
   }
-  const lineup = input.lineup;
-  const best = new Map<string, AthleteScore>();
+  const { starters, bench } = input.lineup;
+  const lines = new Map<string, Line>();
   for (const p of input.performances) {
-    if (!lineup.includes(p.athleteId)) continue;
-    const line = scorePerformance(p, input);
-    const kept = best.get(p.athleteId);
-    best.set(p.athleteId, kept ? better(kept, line) : line);
+    const chosen =
+      starters.find((s) => s.athleteId === p.athleteId) ??
+      bench.find((s) => s.athleteId === p.athleteId);
+    if (chosen?.discipline !== p.discipline) continue;
+    const score = scorePerformance(p, input);
+    const kept = lines.get(p.athleteId);
+    if (kept && better(kept.score, score) === kept.score) continue;
+    const mark = p.status === "ok" && p.mark !== null ? parseMark(p.mark, p.unit) : null;
+    lines.set(p.athleteId, { score, mark, unit: p.unit });
   }
-  const athletes = lineup
-    .map((id) => best.get(id) ?? nothing(id))
-    .sort((a, b) => b.total - a.total || lineup.indexOf(a.athleteId) - lineup.indexOf(b.athleteId));
+  const hasMark = (id: string) => (lines.get(id)?.mark ?? null) !== null;
+
+  const entered = new Set<string>();
+  const counted = starters.map((s, place) => {
+    const own = lines.get(s.athleteId);
+    const designated = bench.some((b) => b.athleteId === s.substituteId) ? s.substituteId : null;
+    const free = (id: string | null): id is string =>
+      id !== null && !entered.has(id) && hasMark(id);
+    let substitute: { id: string; reason: SubstitutionReason } | null = null;
+    if (own && own.mark !== null) {
+      const tooBad = s.threshold !== null && worseThan(own.mark, s.threshold, own.unit);
+      if (tooBad && free(designated)) {
+        substitute = { id: designated, reason: "tactical" };
+      }
+    } else if (free(designated)) {
+      substitute = { id: designated, reason: "forfeit" };
+    } else {
+      const next = bench.find((b) => b.family === s.family && free(b.athleteId));
+      if (next) substitute = { id: next.athleteId, reason: "bench" };
+    }
+    if (!substitute) return { place, score: own?.score ?? nothing(s.athleteId, s.discipline) };
+    entered.add(substitute.id);
+    const score: AthleteScore = {
+      ...lines.get(substitute.id)!.score,
+      substitution: { starterId: s.athleteId, reason: substitute.reason },
+    };
+    return { place, score };
+  });
+
+  const athletes = counted
+    .sort((a, b) => b.score.total - a.score.total || a.place - b.place)
+    .map((c) => c.score);
   const hungarian = athletes.reduce((sum, a) => sum + a.points, 0);
   const bonus = athletes.reduce((sum, a) => sum + a.bonusPoints, 0);
   return { linedUp: true, total: hungarian + bonus, hungarian, bonus, athletes };

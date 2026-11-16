@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { duelOutcome } from "@/domain/manager-championship";
 import type { ManagerBonus } from "@/domain/manager-rules";
+import type { ScoringLineup } from "@/domain/manager-score";
 import { podiumFromPerformances, type Performance } from "@/domain/performance";
 import {
   DEFAULT_RULES,
@@ -28,6 +29,18 @@ const NOW = () => new Date("2026-07-10T20:00:00Z");
 const LOCK = "2026-07-10T18:00:00Z";
 const EVENT = "final-100";
 const START_LIST = ["a1", "a2", "a3", "a4", "a5", "a6"];
+
+/** A match sheet of starters on the 100 m, without a substitute. */
+const starters = (...ids: string[]): ScoringLineup => ({
+  starters: ids.map((athleteId) => ({
+    athleteId,
+    family: "sprint",
+    discipline: "100 m",
+    substituteId: null,
+    threshold: null,
+  })),
+  bench: [],
+});
 
 const bonuses: Record<ManagerBonus, number> = {
   first: 50,
@@ -62,7 +75,9 @@ function world(options: { predictions?: Pick[]; participants?: ScoringParticipan
       find: async (eventId) => structuredClone(sheets.get(eventId) ?? []),
       linedUp: async () => {
         if (!isAdmin) return "not_admin";
-        const lineups = participants.flatMap((p) => p.lineup ?? []);
+        const lineups = participants.flatMap(
+          (p) => p.lineup?.starters.map((s) => s.athleteId) ?? [],
+        );
         return START_LIST.filter((id) => lineups.includes(id));
       },
       replace: async (eventId, lines) => {
@@ -179,8 +194,8 @@ describe("saveResultSheet", () => {
     const w = world({
       predictions: [pick("zoe", "a1", "a2", "a3"), pick("max", "a4", "a5", "a6")],
       participants: [
-        { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: ["a1", "a4"] },
-        { leagueId: "L", userId: "max", bonuses, tablesDivisor: 10, lineup: ["a2"] },
+        { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: starters("a1", "a4") },
+        { leagueId: "L", userId: "max", bonuses, tablesDivisor: 10, lineup: starters("a2") },
       ],
     });
 
@@ -207,8 +222,8 @@ describe("saveResultSheet", () => {
     // Given Zoé's athlete ahead of Max's on the first sheet
     const w = world({
       participants: [
-        { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: ["a3"] },
-        { leagueId: "L", userId: "max", bonuses, tablesDivisor: 10, lineup: ["a4"] },
+        { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: starters("a3") },
+        { leagueId: "L", userId: "max", bonuses, tablesDivisor: 10, lineup: starters("a4") },
       ],
     });
     await save(w.admin, [...podium.slice(0, 2), ok("a3", 3, "10.80"), ok("a4", 4, "11.50")]);
@@ -243,7 +258,7 @@ describe("saveResultSheet", () => {
   it("tells the sheet a Manager league plays the competition, and who is lined up", async () => {
     const w = world({
       participants: [
-        { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: ["a5", "a2"] },
+        { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: starters("a5", "a2") },
       ],
     });
     await save(w.admin, podium);
@@ -259,7 +274,9 @@ describe("saveResultSheet", () => {
   it("gives no prediction points on a heat, and still scores the Manager", async () => {
     const w = world({
       predictions: [pick("zoe", "a1", "a2", "a3")],
-      participants: [{ leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: ["a1"] }],
+      participants: [
+        { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: starters("a1") },
+      ],
     });
 
     const saved = await save(w.admin, podium, false);
@@ -321,7 +338,9 @@ describe("saveResultSheet", () => {
   it("changes nothing when the computation runs again", async () => {
     const w = world({
       predictions: [pick("zoe", "a1", "a3", "a2")],
-      participants: [{ leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: ["a1"] }],
+      participants: [
+        { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: starters("a1") },
+      ],
     });
     const first = await save(w.admin, [ok("a1", 1, "10.90"), ok("a2", 2), ok("a3", 3)]);
 
