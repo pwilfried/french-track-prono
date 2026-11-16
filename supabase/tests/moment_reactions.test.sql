@@ -3,7 +3,7 @@
 -- by nobody. The player of the moment gets one grouped notification an hour at most.
 -- Run with `supabase test db`. Everything is rolled back at the end.
 begin;
-select plan(25);
+select plan(26);
 
 insert into auth.users (id, email) values
   ('f6720000-0000-0000-0000-000000000001', 'ana@example.test'),
@@ -153,6 +153,12 @@ select results_eq(
      where user_id = 'f6720000-0000-0000-0000-000000000001' $$,
   $$ values ('1'::text) $$,
   'an hour later, only what came since the last one');
+update reminder_settings set league = false
+where user_id = 'f6720000-0000-0000-0000-000000000001';
+select is(
+  (select count(*) from private.moment_reaction_due(now() + interval '62 minutes')
+   where user_id = 'f6720000-0000-0000-0000-000000000001'), 0::bigint,
+  'nothing once « Ma ligue » is switched off (#903)');
 
 select * from finish();
 rollback;
