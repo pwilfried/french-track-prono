@@ -30,6 +30,11 @@ export type LineupCompetition = {
   entered: string[];
   /** The validated lineup; null without one. */
   lineup: string[] | null;
+  /**
+   * The name of the competition a forgotten lineup was carried over from at the lock (#1034);
+   * absent for a lineup the player validated.
+   */
+  carriedFrom?: string;
 };
 
 /** The refusals of a match sheet with an error of their own (#1032); the others are `invalid`. */

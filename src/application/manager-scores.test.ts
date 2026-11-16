@@ -185,7 +185,42 @@ describe("getMyManagerScore", () => {
       scores: w.scores({ isAdmin: false, userId: "zoe" }),
     }).execute({ leagueId: "L", slug: "meeting" });
 
-    expect(mine).toEqual({ slug: "meeting", name: "Meeting Fictif", lockAt: LOCK, score: null });
+    expect(mine).toEqual({
+      slug: "meeting",
+      name: "Meeting Fictif",
+      lockAt: LOCK,
+      carriedFrom: null,
+      score: null,
+    });
+  });
+
+  it("says which competition a forgotten lineup was carried over from", async () => {
+    // Given Zoé forgot her lineup: the one of the previous meeting was carried over at the lock
+    const w = world();
+    const lineups: ManagerLineupRepository = {
+      ...w.lineups,
+      mine: async () => [
+        {
+          competitionId: "meeting-id",
+          slug: "meeting",
+          name: "Meeting Fictif",
+          startsOn: "2026-07-10",
+          lockAt: LOCK,
+          entered: ["a1"],
+          lineup: ["a1"],
+          carriedFrom: "Meeting Précédent",
+        },
+      ],
+    };
+
+    // When she opens « Mes points »
+    const mine = await getMyManagerScore({
+      lineups,
+      scores: w.scores({ isAdmin: false, userId: "zoe" }),
+    }).execute({ leagueId: "L", slug: "meeting" });
+
+    // Then the page can say where her lineup comes from
+    expect(mine.carriedFrom).toBe("Meeting Précédent");
   });
 
   it("shows the participant's points with the name of each athlete", async () => {

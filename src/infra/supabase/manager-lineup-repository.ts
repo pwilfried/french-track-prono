@@ -29,6 +29,7 @@ type LineupRow = {
   lock_at: string;
   entered: string[];
   athlete_ids: string[] | null;
+  carried_from_name: string | null;
 };
 
 type SheetRow = {
@@ -61,6 +62,7 @@ export function createSupabaseManagerLineups(client: SupabaseClient): ManagerLin
         lockAt: new Date(row.lock_at).toISOString(),
         entered: row.entered,
         lineup: row.athlete_ids,
+        ...(row.carried_from_name ? { carriedFrom: row.carried_from_name } : {}),
       }));
     },
     async sheet(leagueId, competitionId) {

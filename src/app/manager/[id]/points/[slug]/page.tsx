@@ -86,6 +86,11 @@ export default async function ManagerPointsPage({
               </p>
             ) : (
               <section aria-labelledby="starters" className="flex flex-col gap-2">
+                {mine.carriedFrom !== null && (
+                  <p role="status" className="rounded-card bg-muted p-4 text-sm font-semibold">
+                    {text.carriedFrom(mine.carriedFrom)}
+                  </p>
+                )}
                 <h2
                   id="starters"
                   className="text-xs font-bold uppercase tracking-wide text-muted-foreground"
