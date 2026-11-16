@@ -56,3 +56,16 @@ Ensuite, par page (allers-retours en série après ces quatre ; estimations de l
 Écartés pour l'instant, à rouvrir si la prod montre des pages lentes une fois en usage : fonctions
 SQL qui regroupent les lectures (Ligue, Accueil, saison du profil), rendu en deux temps, index
 (Supabase → Query Performance).
+
+## Ce qui a été fait (v0.20.3)
+
+1. Préprod en `fra1` : #1019 (`ci/vercel-deploy.sh`, `docs/SETUP.md`).
+2. Nouvelle tentative sur les lectures : #1020 (`limitedFetch`, `docs/architecture.md`).
+3. Une vérification auth par page : #1021 (`x-ftp-session`, `src/app/proxied-session.ts`). Écart
+   avec la décision : `auth.getClaims()` n'aide pas, le projet signe en HS256 ; le proxy passe
+   donc l'utilisateur (et le profil) à la page.
+4. Épreuve et Classement en parallèle, squelette de `/profil` : #1027.
+
+Revue des doublons : rien à fusionner ni à retirer. À mesurer : pages lentes en préprod, avant /
+après, puis Sentry quand la prod aura du trafic ; sinon rouvrir les pistes écartées ci-dessus.
+
