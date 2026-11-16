@@ -224,8 +224,9 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 
 À construire ; tant que ce n'est pas livré, les règles ci-dessus restent en vigueur. Les familles,
 les quotas, les 2 places par famille, la taille du banc et le diviseur sont livrés (#1030, voir
-« Règles Manager à 4 familles » plus bas) ; le banc rangé, les disciplines et les remplacements
-viennent avec #1032 à #1034.
+« Règles Manager à 4 familles » plus bas) ; la feuille de match est enregistrée et vérifiée
+(#1032, voir « Feuille de match en base » plus bas) ; le calcul des remplacements, la reprise du
+dernier alignement et l'écran viennent avec #1033, #1034 et #1035.
 
 - **Une seule action par compétition : aligner.** Le joueur n'a plus de pronostics à faire pour le
   Manager (section 4).
@@ -260,6 +261,27 @@ viennent avec #1032 à #1034.
   banc, disciplines et seuils), en ne gardant que les athlètes engagés ; une place que personne ne
   peut remplir reste vide. « Mes points » affiche « Alignement repris de … ». Sans aucun
   alignement précédent : 0.
+
+### Feuille de match en base (#1032)
+
+- `manager_lineups.athlete_ids` garde les titulaires dans l'ordre des places (scores, duels et
+  rappels la lisent) ; `manager_lineup_entries` garde la feuille, une ligne par athlète aligné :
+  rôle (`starter` et son ordre de place, ou `substitute` et son rang 1 à `lineup.bench`),
+  discipline qui compte, et pour un titulaire son remplaçant désigné et son seuil tactique
+  (facultatifs ; marque dans l'unité de la discipline, comme `athlete_records.mark_value`). Même
+  verrou (FT023) et même lecture (chacun ne lit que ses lignes) que `manager_lineups` ; les
+  alignements déjà validés deviennent des feuilles de titulaires, chacun dans sa première
+  discipline.
+- `save_manager_lineup(ligue, compétition, feuille jsonb)` et `lineupProblem`
+  (`src/domain/manager-lineup.ts`) vérifient, en plus des règles de l'alignement (FT024) : la
+  discipline parmi celles des listes de départ de l'athlète dans la compétition, relais exclus
+  (sans liste de départ : celles de sa fiche ; sans choix, la première, la principale d'abord),
+  FT036 ; remplaçant désigné de la même famille Manager, homme ou femme, FT037 ; sur le banc,
+  FT038 ; pour un seul titulaire, FT039 ; seuil plausible pour la discipline
+  (`discipline_mark_range`, `markRange`), FT040 ; au plus `lineup.bench` remplaçants, FT041 ;
+  seuil sans remplaçant désigné, FT042 (décision de l'agent : un seuil sans remplaçant n'aurait
+  aucun effet). L'écran actuel envoie ses titulaires seuls, dans leur première discipline, jusqu'à
+  la feuille de match (#1035).
 
 ### Règles Manager à 4 familles (#1030)
 

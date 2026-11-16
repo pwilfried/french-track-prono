@@ -20,7 +20,10 @@ export async function saveLineupAction(input: {
   await managerPorts(`/manager/${leagueId}/alignement/${slug}`);
   const ports = { lineups: createSupabaseManagerLineups(await getSessionClient()) };
   try {
-    await saveMyLineup(ports).execute({ leagueId, competitionId, athleteIds });
+    // The stadium sends its starters only; their discipline is their first one (#1032). The
+    // bench and the substitutions come with the match sheet screen (#1035).
+    const sheet = { starters: athleteIds.map((athleteId) => ({ athleteId })), bench: [] };
+    await saveMyLineup(ports).execute({ leagueId, competitionId, sheet });
   } catch (error) {
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
