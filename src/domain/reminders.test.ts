@@ -9,6 +9,7 @@ import {
   isQuietTime,
   parseReminderSettings,
   playersToRemind,
+  SHOWN_REMINDER_FAMILIES,
   type ReminderCandidate,
   type ReminderSettings,
 } from "./reminders";
@@ -48,7 +49,7 @@ describe("reminder settings", () => {
 
   it("reads the form: a shown family not ticked is off, a hidden one keeps its value", () => {
     const current = settings({
-      families: { ...DEFAULT_REMINDER_SETTINGS.families, league: false },
+      families: { ...DEFAULT_REMINDER_SETTINGS.families, frenchtrack: false },
     });
     expect(
       parseReminderSettings(
@@ -61,7 +62,7 @@ describe("reminder settings", () => {
         eveningResults: false,
         manager: false,
         league: false,
-        frenchtrack: true,
+        frenchtrack: false,
       },
       leadMinutes: 180,
       quietFrom: 22,
@@ -69,12 +70,17 @@ describe("reminder settings", () => {
     });
   });
 
+  it("shows « Ma ligue », which sends the reactions push, but keeps « FrenchTrack » hidden", () => {
+    expect(SHOWN_REMINDER_FAMILIES).toContain("league");
+    expect(SHOWN_REMINDER_FAMILIES).not.toContain("frenchtrack");
+  });
+
   it.each([
     { lead: "45", quietFrom: "23", quietTo: "8", families: [] },
     { lead: "60", quietFrom: "24", quietTo: "8", families: [] },
     { lead: "60", quietFrom: "23", quietTo: "", families: [] },
     { lead: "60", quietFrom: "7.5", quietTo: "8", families: [] },
-    { lead: "60", quietFrom: "23", quietTo: "8", families: ["league"] },
+    { lead: "60", quietFrom: "23", quietTo: "8", families: ["frenchtrack"] },
     { lead: "60", quietFrom: "23", quietTo: "8", families: ["spam"] },
   ])("refuses an implausible value: %o", (input) => {
     expect(parseReminderSettings(input)).toBeNull();

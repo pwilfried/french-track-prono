@@ -667,7 +667,7 @@ l'élément (`admin_hide_moment_reaction()`, il disparaît pour tous, noté dans
 le signalement. Plafond (#913) : 20 signalements (ligues et fil confondus) par joueur et par
 24 h, au-delà `FT035` (`REPORT_LIMIT`) ; resignaler le même élément ne compte pas. Le joueur concerné par un moment reçoit une notification push regroupée quand
 d'autres y réagissent (`private.moment_reaction_due()`, famille `league` de `reminder_settings`,
-encore masquée dans « Mes rappels », #903 ; au plus une par heure, mêmes heures calmes).
+interrupteur « Ma ligue » de « Mes rappels », #903 ; au plus une par heure, mêmes heures calmes).
 
 Fil d'une ligue Manager et badges (v0.19, #875) : l'onglet « Fil » de la page d'une ligue Manager
 (`?onglet=fil`, à côté de « Saison ») raconte les athlètes gagnés à la révélation de chaque tour
@@ -702,8 +702,9 @@ les clés VAPID, des rappels groupés (#681, règles de référence dans `src/do
   compétition finies et les scores Manager calculés depuis moins de 24 h), aux deux joueurs.
 
 « Mes rappels » (`/profil/rappels`) : un interrupteur par famille (Pronos oubliés, Résultats du
-soir, Manager ; « Ma ligue » et « FrenchTrack » sont stockées mais masquées : « Ma ligue » commande
-déjà les notifications de réactions au fil depuis v0.19, son interrupteur arrive avec #903), le
+soir, Manager, Ma ligue — les réactions d'autres joueurs à mes moments du fil, #903 ; « FrenchTrack »
+est stockée mais masquée tant qu'aucune notification ne l'utilise ; une famille masquée garde sa
+valeur à l'enregistrement), le
 délai avant verrou, les heures calmes (23 h–8 h par défaut, heure de Paris). Rien ne part pendant
 les heures calmes : ce qui reste dû part à leur fin. Réglages dans `reminder_settings` (sans ligne :
 valeurs par défaut), écrite seulement par `save_reminder_settings()` ; ce qui est parti est noté

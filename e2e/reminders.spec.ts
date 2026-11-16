@@ -18,7 +18,8 @@ test("a player sets their reminders, reloads, and finds them again", async ({ pa
   // The defaults: every family shown is on, one hour before a lock, quiet from 23 h to 8 h.
   const manager = page.getByRole("switch", { name: text.family.manager.label });
   await expect(manager).toBeChecked();
-  await expect(page.getByRole("switch")).toHaveCount(3);
+  await expect(page.getByRole("switch", { name: text.family.league.label })).toBeChecked();
+  await expect(page.getByRole("switch")).toHaveCount(4);
   const quietFrom = page.getByRole("combobox", { name: text.quietFrom, exact: true });
   const quietTo = page.getByRole("combobox", { name: text.quietTo, exact: true });
   await expect(page.getByRole("radio", { name: "1 h" })).toBeChecked();
