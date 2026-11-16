@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { CatalogueAthlete } from "@/domain/manager-catalogue";
+import type { MatchSheet } from "@/domain/manager-lineup";
 import type { ManagerRules } from "@/domain/manager-rules";
 
 import { UseCaseError } from "./errors";
@@ -86,13 +87,13 @@ const meeting = (over: Partial<LineupCompetition> = {}): LineupCompetition => ({
 const lineups = (
   competitions: LineupCompetition[] | "not_member",
   save: LineupSaveOutcome = "saved",
-): ManagerLineupRepository & { saved: string[][] } => {
-  const saved: string[][] = [];
+): ManagerLineupRepository & { saved: MatchSheet[] } => {
+  const saved: MatchSheet[] = [];
   return {
     saved,
     mine: async () => competitions,
-    save: async (_league, _competition, athleteIds) => {
-      saved.push(athleteIds);
+    save: async (_league, _competition, sheet) => {
+      saved.push(sheet);
       return save;
     },
   };
@@ -180,14 +181,14 @@ describe("listMyLineups", () => {
 });
 
 describe("saveMyLineup", () => {
-  it("validates the lineup the player chose", async () => {
+  it("validates the match sheet the player chose", async () => {
     const repo = lineups([meeting()]);
-    await saveMyLineup({ lineups: repo }).execute({
-      leagueId: "l1",
-      competitionId: "c1",
-      athleteIds: ["a1", "a2"],
-    });
-    expect(repo.saved).toEqual([["a1", "a2"]]);
+    const sheet: MatchSheet = {
+      starters: [{ athleteId: "a1", discipline: "100 m", substituteId: "a3", threshold: 10.5 }],
+      bench: [{ athleteId: "a3" }],
+    };
+    await saveMyLineup({ lineups: repo }).execute({ leagueId: "l1", competitionId: "c1", sheet });
+    expect(repo.saved).toEqual([sheet]);
   });
 
   it.each([
@@ -196,12 +197,19 @@ describe("saveMyLineup", () => {
     ["mercato_open", "MERCATO_NOT_OVER"],
     ["not_eligible", "COMPETITION_NOT_FOUND"],
     ["not_member", "LEAGUE_NOT_FOUND"],
+    ["bench_full", "LINEUP_BENCH_FULL"],
+    ["discipline_not_entered", "LINEUP_DISCIPLINE_NOT_ENTERED"],
+    ["substitute_not_on_bench", "LINEUP_SUBSTITUTE_NOT_ON_BENCH"],
+    ["substitute_other_family", "LINEUP_SUBSTITUTE_OTHER_FAMILY"],
+    ["substitute_twice", "LINEUP_SUBSTITUTE_TWICE"],
+    ["threshold_without_substitute", "LINEUP_THRESHOLD_WITHOUT_SUBSTITUTE"],
+    ["implausible_threshold", "LINEUP_THRESHOLD_IMPLAUSIBLE"],
   ] as const)("refuses a lineup the database answers %s to", async (outcome, code) => {
     await expect(
       saveMyLineup({ lineups: lineups([meeting()], outcome) }).execute({
         leagueId: "l1",
         competitionId: "c1",
-        athleteIds: ["a1"],
+        sheet: { starters: [{ athleteId: "a1" }], bench: [] },
       }),
     ).rejects.toEqual(new UseCaseError(code));
   });

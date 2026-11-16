@@ -1,4 +1,5 @@
-import type { DisciplineFamily } from "./discipline";
+import type { DisciplineFamily, MarkUnit } from "./discipline";
+import { isInRange, markRange } from "./mark-range";
 import {
   MANAGER_FAMILIES,
   managerFamilyOf,
@@ -7,24 +8,63 @@ import {
 } from "./manager-rules";
 
 /**
- * The lineup of a Manager team before an eligible competition (v0.14, #427). The stadium holds
- * `lineup.perFamily` places for each of the four Manager families (#1017), in their order, and no
- * free place. A lineup fills every place its team can fill, with athletes of the team entered in
- * the competition, each once. The same rule runs in SQL (save_manager_lineup, supabase/migrations).
+ * The lineup of a Manager team before an eligible competition (v0.14, #427), a match sheet since
+ * #1032. The stadium holds `lineup.perFamily` places for each of the four Manager families
+ * (#1017), in their order, and no free place. The starters fill every place their team can fill,
+ * with athletes of the team entered in the competition, each once; at most `lineup.bench`
+ * substitutes follow, in order; the rest of the team is the reserve. The same rule runs in SQL
+ * (save_manager_lineup, supabase/migrations).
  */
 export type LineupPlace = ManagerFamily;
-export type LineupRules = Pick<ManagerRules["lineup"], "perFamily">;
+export type LineupRules = Pick<ManagerRules["lineup"], "perFamily" | "bench">;
 
 /** An athlete of the team, and whether they are entered in the competition. */
 export type LineupAthlete = { athleteId: string; family: DisciplineFamily; entered: boolean };
 
-export type LineupProblem = "not_in_team" | "twice" | "absent" | "does_not_fit" | "incomplete";
+/** A discipline an athlete may count in, with what its marks are read in. */
+export type LineupDiscipline = { name: string; family: DisciplineFamily; unit: MarkUnit };
+
+/**
+ * An athlete of the team for the match sheet: their disciplines on a start list of the
+ * competition (without any, those of their profile), the main one first.
+ */
+export type SheetAthlete = LineupAthlete & { disciplines: LineupDiscipline[] };
+
+/**
+ * A starter: the discipline that counts (the first one of the athlete when none is chosen), the
+ * substitute designated for them on the bench, and the tactical threshold, a mark in the unit of
+ * the discipline (seconds, metres or points) below which the substitute comes in.
+ */
+export type SheetStarter = {
+  athleteId: string;
+  discipline?: string;
+  substituteId?: string | null;
+  threshold?: number | null;
+};
+export type SheetSubstitute = { athleteId: string; discipline?: string };
+
+/** Starters in place order, substitutes in the order they come in (rank 1 first). */
+export type MatchSheet = { starters: SheetStarter[]; bench: SheetSubstitute[] };
+
+export type LineupProblem =
+  | "not_in_team"
+  | "twice"
+  | "absent"
+  | "bench_full"
+  | "does_not_fit"
+  | "incomplete"
+  | "discipline_not_entered"
+  | "substitute_not_on_bench"
+  | "substitute_other_family"
+  | "substitute_twice"
+  | "threshold_without_substitute"
+  | "implausible_threshold";
 
 /** Validated lineups can change until the lock: the first prediction lock of the competition. */
 export type LineupStatus = "todo" | "validated" | "locked";
 
 /** The places of the stadium: `perFamily` for each family, in the order of the families. */
-export function lineupPlaces(rules: LineupRules): LineupPlace[] {
+export function lineupPlaces(rules: Pick<LineupRules, "perFamily">): LineupPlace[] {
   return MANAGER_FAMILIES.flatMap((f) => Array.from({ length: rules.perFamily }, () => f));
 }
 
@@ -122,20 +162,57 @@ export function lineupProgress(
   };
 }
 
-/** Why the chosen athletes are not a lineup, or null when they are one. */
+/** The discipline that counts for an athlete: the one chosen, or their first; null when none fits. */
+export function sheetDiscipline(
+  athlete: Pick<SheetAthlete, "disciplines">,
+  chosen: string | undefined,
+): LineupDiscipline | null {
+  if (chosen === undefined) return athlete.disciplines[0] ?? null;
+  return athlete.disciplines.find((d) => d.name === chosen) ?? null;
+}
+
+/** Why the match sheet is not a lineup of the team, or null when it is one. */
 export function lineupProblem(
   rules: LineupRules,
-  team: LineupAthlete[],
-  chosen: string[],
+  team: SheetAthlete[],
+  sheet: MatchSheet,
 ): LineupProblem | null {
   const byId = new Map(team.map((a) => [a.athleteId, a]));
+  const starters = sheet.starters.map((s) => s.athleteId);
+  const bench = sheet.bench.map((s) => s.athleteId);
+  const chosen = [...starters, ...bench];
   if (chosen.some((id) => !byId.has(id))) return "not_in_team";
   if (new Set(chosen).size !== chosen.length) return "twice";
   if (chosen.some((id) => !byId.get(id)!.entered)) return "absent";
+  if (bench.length > rules.bench) return "bench_full";
+  const familyOf = (id: string) => managerFamilyOf(byId.get(id)!.family);
+  if (bench.some((id) => familyOf(id) === null)) return "does_not_fit";
   const places = lineupPlaces(rules);
-  if (placeLineup(places, team, chosen).left.length > 0) return "does_not_fit";
+  if (placeLineup(places, team, starters).left.length > 0) return "does_not_fit";
   const fillable = fillablePlaces(places, team).filter(Boolean).length;
-  return chosen.length < fillable ? "incomplete" : null;
+  if (starters.length < fillable) return "incomplete";
+
+  const entries = [...sheet.starters, ...sheet.bench];
+  if (entries.some((e) => !sheetDiscipline(byId.get(e.athleteId)!, e.discipline))) {
+    return "discipline_not_entered";
+  }
+  const designated = sheet.starters.flatMap((s) => (s.substituteId == null ? [] : [s]));
+  if (designated.some((s) => !bench.includes(s.substituteId!))) return "substitute_not_on_bench";
+  if (designated.some((s) => familyOf(s.substituteId!) !== familyOf(s.athleteId))) {
+    return "substitute_other_family";
+  }
+  if (new Set(designated.map((s) => s.substituteId)).size !== designated.length) {
+    return "substitute_twice";
+  }
+  for (const s of sheet.starters) {
+    if (s.threshold == null) continue;
+    if (s.substituteId == null) return "threshold_without_substitute";
+    const d = sheetDiscipline(byId.get(s.athleteId)!, s.discipline)!;
+    if (!isInRange(s.threshold, markRange(d.unit, d.family, d.name))) {
+      return "implausible_threshold";
+    }
+  }
+  return null;
 }
 
 export function lineupStatus(

@@ -1,11 +1,18 @@
 import { describe, expect, it } from "vitest";
 
 import type { ManagerLineupRepository } from "@/application/manager-lineup";
+import type { MatchSheet } from "@/domain/manager-lineup";
+
+/** A match sheet of these starters, with their first discipline, and no substitute. */
+const starters = (ids: string[]): MatchSheet => ({
+  starters: ids.map((athleteId) => ({ athleteId })),
+  bench: [],
+});
 
 /**
  * A league whose mercato is closed, with one place per family (sprint, distance, jumps, throws). The first
  * participant's team: a sprinter and a middle-distance runner entered in the `open` competition, a
- * thrower entered nowhere. The `locked` competition has started. `elsewhere` is a competition the
+ * thrower entered nowhere; the sprinter runs the 100 m only. No bench. The `locked` competition has started. `elsewhere` is a competition the
  * league does not play; `mercatoLeagueId` a league of the first participant still in its mercato.
  */
 export type ManagerLineupWorld = {
@@ -39,12 +46,12 @@ export function managerLineupContract(name: string, world: () => Promise<Manager
         const locked = before.find((c) => c.slug === w.locked.slug)!;
         expect(Date.parse(locked.lockAt)).toBeLessThanOrEqual(Date.now());
 
-        expect(await w.first.save(w.leagueId, w.open.competitionId, [w.sprinter, w.runner])).toBe(
-          "saved",
-        );
-        expect(await w.first.save(w.leagueId, w.open.competitionId, [w.runner, w.sprinter])).toBe(
-          "saved",
-        );
+        expect(
+          await w.first.save(w.leagueId, w.open.competitionId, starters([w.sprinter, w.runner])),
+        ).toBe("saved");
+        expect(
+          await w.first.save(w.leagueId, w.open.competitionId, starters([w.runner, w.sprinter])),
+        ).toBe("saved");
         const after = await w.first.mine(w.leagueId);
         if (after === "not_member") throw new Error("the participant reads their lineups");
         expect(after.find((c) => c.slug === w.open.slug)!.lineup).toEqual([w.runner, w.sprinter]);
@@ -60,7 +67,8 @@ export function managerLineupContract(name: string, world: () => Promise<Manager
     it("refuses a lineup that leaves a place empty, repeats an athlete or holds an absent one", async () => {
       const w = await world();
       try {
-        const save = (ids: string[]) => w.first.save(w.leagueId, w.open.competitionId, ids);
+        const save = (ids: string[]) =>
+          w.first.save(w.leagueId, w.open.competitionId, starters(ids));
         expect(await save([w.sprinter])).toBe("invalid");
         expect(await save([w.sprinter, w.sprinter])).toBe("invalid");
         expect(await save([w.sprinter, w.thrower])).toBe("invalid");
@@ -70,10 +78,37 @@ export function managerLineupContract(name: string, world: () => Promise<Manager
       }
     });
 
+    it("refuses a substitute beyond the bench and a discipline the athlete is not entered in", async () => {
+      const w = await world();
+      try {
+        const save = (sheet: MatchSheet) => w.first.save(w.leagueId, w.open.competitionId, sheet);
+        expect(
+          await save({ starters: [{ athleteId: w.sprinter }], bench: [{ athleteId: w.runner }] }),
+        ).toBe("bench_full");
+        expect(
+          await save({
+            starters: [
+              { athleteId: w.sprinter, discipline: "Lancer du poids" },
+              { athleteId: w.runner },
+            ],
+            bench: [],
+          }),
+        ).toBe("discipline_not_entered");
+        expect(
+          await save({
+            starters: [{ athleteId: w.sprinter, discipline: "100 m" }, { athleteId: w.runner }],
+            bench: [],
+          }),
+        ).toBe("saved");
+      } finally {
+        await w.restore();
+      }
+    });
+
     it("refuses a lineup after the lock, outside the league or before the end of the mercato", async () => {
       const w = await world();
       try {
-        const ids = [w.sprinter, w.runner];
+        const ids = starters([w.sprinter, w.runner]);
         expect(await w.first.save(w.leagueId, w.locked.competitionId, ids)).toBe("locked");
         expect(await w.first.save(w.leagueId, w.elsewhere, ids)).toBe("not_eligible");
         expect(await w.first.save(w.mercatoLeagueId, w.open.competitionId, ids)).toBe(

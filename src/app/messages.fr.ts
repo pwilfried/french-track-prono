@@ -3325,6 +3325,17 @@ export const messages = {
     LINEUP_LOCKED: "La compétition a commencé : ton alignement est verrouillé.",
     LINEUP_INVALID:
       "Cet alignement ne respecte pas les règles de la ligue : remplis chaque place avec un athlète engagé de ton équipe.",
+    LINEUP_BENCH_FULL: "Ton banc est plein : retire un remplaçant avant d'en ajouter un autre.",
+    LINEUP_DISCIPLINE_NOT_ENTERED:
+      "Un athlète n'est pas engagé dans la discipline choisie : choisis-en une où il est au départ.",
+    LINEUP_SUBSTITUTE_NOT_ON_BENCH: "Un remplaçant désigné doit être sur ton banc.",
+    LINEUP_SUBSTITUTE_OTHER_FAMILY:
+      "Un remplaçant désigné doit être de la même famille que son titulaire.",
+    LINEUP_SUBSTITUTE_TWICE: "Un remplaçant ne peut remplacer qu'un seul titulaire.",
+    LINEUP_THRESHOLD_WITHOUT_SUBSTITUTE:
+      "Un remplacement tactique a besoin d'un remplaçant désigné.",
+    LINEUP_THRESHOLD_IMPLAUSIBLE:
+      "Ce seuil n'est pas une marque plausible pour la discipline : corrige-le.",
     LINEUPS_UNAVAILABLE: "Ton alignement n'a pas pu être chargé ou enregistré. Réessaie.",
     ROUND_NOT_FOUND: "Ce tour n'est pas encore clos, ou personne n'y a fait d'offre.",
     COMPETITION_NOT_STARTED:

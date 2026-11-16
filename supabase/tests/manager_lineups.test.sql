@@ -75,13 +75,15 @@ create function pg_temp.as_player(p_n int) returns void language sql as $$
 $$;
 grant execute on function pg_temp.as_player(int) to authenticated;
 
--- `save_manager_lineup` for player 1 in c1 with these athletes.
+-- `save_manager_lineup` with these starters, in their first discipline, and no substitute.
 create function pg_temp.save(p_competition int, p_athletes int[]) returns text
 language sql as $$
   select format('select save_manager_lineup(%L, %L, %L)', pg_temp.league(),
                 pg_temp.competition(p_competition),
-                (select coalesce(array_agg(pg_temp.athlete(a) order by o), '{}')
-                 from unnest(p_athletes) with ordinality u(a, o)))
+                jsonb_build_object('starters', (
+                  select coalesce(jsonb_agg(jsonb_build_object('athlete', pg_temp.athlete(a))
+                                            order by o), '[]')
+                  from unnest(p_athletes) with ordinality u(a, o))))
 $$;
 grant execute on function pg_temp.save(int, int[]) to authenticated;
 
