@@ -29,7 +29,7 @@ const athlete = (athleteId: string, family: CatalogueAthlete["family"]): Catalog
 
 /**
  * A league of three players (zoe signed in, ali a member outside the head-to-head): a stadium of
- * two places, one sprint and one free. Matchday 1 on c1 (locked, scored): zoe at home against max.
+ * one place per family. Matchday 1 on c1 (locked, scored): zoe at home against max.
  * Matchday 2 on c2: not locked yet. Matchday 3 on c3: a bonus one.
  */
 function world(
@@ -38,7 +38,7 @@ function world(
   const league = {
     id: "L",
     name: "Ligue des copains",
-    rules: { lineup: { max: 2, minPerFamily: { sprint: 1 } } },
+    rules: { lineup: { max: 4, perFamily: 1, bench: 0 } },
     participants: [participant("zoe", 7), participant("max", 12), participant("ali", 3)],
   } as unknown as ManagerLeagueFile;
   const managerLeagues: Pick<ManagerLeagueRepository, "find"> = {
@@ -59,7 +59,7 @@ function world(
   };
   const season: ManagerSeasonRepository = { season: async () => data };
   const locked = new Set(options.locked ?? ["c1"]);
-  // zoe lined up her middle-distance runner first: she still sits on the free place.
+  // zoe lined up her middle-distance runner first: each still sits on the place of their family.
   const lineups = [
     { userId: "zoe", athleteIds: ["z2", "z1"] },
     { userId: "max", athleteIds: ["m1"] },
@@ -127,7 +127,7 @@ describe("getManagerDuel", () => {
       leg: "first",
       locked: true,
       mine: true,
-      places: ["sprint", "free"],
+      places: ["sprint", "distance", "jumps", "throws"],
       outcome: { outcome: "win", points: 3 },
       result: "home",
     });
@@ -147,9 +147,13 @@ describe("getManagerDuel", () => {
     expect(view.bottom.cards.map((c) => c && [c.athleteId, c.points, c.bonus])).toEqual([
       ["z1", 1100, 20],
       ["z2", 0, 0],
+      null,
+      null,
     ]);
     expect(view.top.cards.map((c) => c && [c.athleteId, c.family, c.points])).toEqual([
       ["m1", "sprint", 938],
+      null,
+      null,
       null,
     ]);
   });
@@ -189,7 +193,7 @@ describe("getManagerDuel", () => {
 
     expect(view).toMatchObject({ locked: true, result: null, outcome: null });
     expect(view.bottom.score).toBeNull();
-    expect(view.bottom.cards.map((c) => c?.points)).toEqual([null, null]);
+    expect(view.bottom.cards.map((c) => c?.points)).toEqual([null, null, undefined, undefined]);
   });
 
   it("keeps both lineups secret until the lock", async () => {
@@ -198,7 +202,7 @@ describe("getManagerDuel", () => {
 
     // Then no athlete is shown, on either side
     expect(view.locked).toBe(false);
-    expect([...view.top.cards, ...view.bottom.cards]).toEqual([null, null, null, null]);
+    expect([...view.top.cards, ...view.bottom.cards]).toEqual(Array(8).fill(null));
     expect(view.bottom.home).toBe(false);
     expect(view.leg).toBe("return");
   });
@@ -212,7 +216,7 @@ describe("getManagerDuel", () => {
 
     expect(view.locked).toBe(true);
     expect(view.top).toMatchObject({ participant: { userId: "max" }, linedUp: false });
-    expect(view.top.cards).toEqual([null, null]);
+    expect(view.top.cards).toEqual([null, null, null, null]);
     expect(view.bottom.linedUp).toBe(true);
   });
 

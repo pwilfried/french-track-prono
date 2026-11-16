@@ -24,7 +24,7 @@ managerLineupContract("in-memory fake", async () => {
     { athleteId: "m1", family: "middle" as const },
     { athleteId: "t1", family: "throws" as const },
   ];
-  const rules = { max: 2, minPerFamily: { sprint: 1 } };
+  const rules = { max: 4, perFamily: 1, bench: 0 };
   const store = createInMemoryManagerLineupStore({
     leagues: {
       l1: { rules, mercatoClosed: true, teams: { u1: team, u2: [] }, competitions: [open, locked] },
@@ -103,7 +103,7 @@ if (url && key) {
     const elsewhere = competition("elsewhere", "2 days", [sprinter, runner]).competitionId;
 
     sql(`update manager_leagues
-         set rules = rules || '{"lineup": {"max": 2, "minPerFamily": {"sprint": 1}}}',
+         set rules = rules || '{"lineup": {"max": 4, "perFamily": 1, "bench": 0}}',
              competition_ids = array['${open.competitionId}', '${locked.competitionId}']::uuid[]
          where id in ('${leagueId}', '${mercatoLeagueId}')`);
     sql(`update manager_leagues

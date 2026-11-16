@@ -2,7 +2,6 @@ import type { ManagerRuleSet } from "@/application/manager-rules";
 import {
   MANAGER_BONUSES,
   MANAGER_FAMILIES,
-  MANAGER_SEXES,
   MERCATO_CLOSE_MODES,
   type ManagerRules,
 } from "@/domain/manager-rules";
@@ -27,22 +26,19 @@ export function parseManagerRulesForm(data: FormData): ManagerRuleSet {
   const rules: ManagerRules = {
     budget: num(data, "budget"),
     minTeamSize: num(data, "minTeamSize"),
-    quotas: MANAGER_SEXES.flatMap((sex) =>
-      MANAGER_FAMILIES.map((family) => ({
-        sex,
-        family,
-        min: num(data, `quota.${sex}.${family}.min`) || 0,
-        max: num(data, `quota.${sex}.${family}.max`) || 0,
-      })),
-    ).filter((q) => q.min !== 0 || q.max !== 0),
+    quotas: MANAGER_FAMILIES.map((family) => ({
+      family,
+      min: num(data, `quota.${family}.min`),
+      minPerSex: num(data, `quota.${family}.minPerSex`),
+      maxPerSex: num(data, `quota.${family}.maxPerSex`),
+    })),
+    // No free place (#1017): the starters are the places of the four families.
     lineup: {
-      max: num(data, "lineup.max"),
-      minPerFamily: Object.fromEntries(
-        MANAGER_FAMILIES.map((f) => [f, num(data, `lineup.min.${f}`) || 0]).filter(
-          ([, n]) => n !== 0,
-        ),
-      ),
+      max: num(data, "lineup.perFamily") * MANAGER_FAMILIES.length,
+      perFamily: num(data, "lineup.perFamily"),
+      bench: num(data, "lineup.bench"),
     },
+    tablesDivisor: num(data, "tablesDivisor"),
     rounds: {
       firstHours: num(data, "rounds.firstHours"),
       longRounds: num(data, "rounds.longRounds"),

@@ -1,13 +1,14 @@
--- pgTAP: completing the teams at the close of the mercato (#425). An incomplete team receives free
+-- pgTAP: completing the teams at the close of the mercato (#425, #1030). An incomplete team receives free
 -- athletes at random, within its quotas and its credits left, at the reference price, until it
 -- reaches the minimum size (#607), its credits are spent or no free athlete fits. Then each team is
 -- checked against the minimum quotas. The draw follows setseed().
 --   f1 the team reaches the minimum;  f2 the credits run out;
 --   f3 no athlete fits, non-compliant; f4 a team at the minimum gets nothing;
---   f5 and f6 the same league twice, with the same seed.
+--   f5 and f6 the same league twice, with the same seed;
+--   f7 one athlete of each sex at most; f8 no woman thrower left, non-compliant.
 -- Rolled back at the end.
 begin;
-select plan(18);
+select plan(22);
 
 -- Only the athletes of this test are in the catalogue.
 update athletes set manager_price = null where manager_price is not null;
@@ -38,38 +39,45 @@ from (values (1, 'F', 10), (2, 'F', 10), (3, 'F', 10), (4, 'M', 10),
 insert into athlete_disciplines (athlete_id, discipline, is_primary)
 select pg_temp.athlete(n), discipline, true
 from (values (1, '100 m'), (2, '200 m'), (3, '400 m'), (4, '100 m'), (5, '800 m'),
-             (6, '1500 m'), (7, 'Lancer du poids'), (8, '5000 m')) as t(n, discipline);
+             (6, '1500 m'), (7, 'Lancer du poids'), (8, 'Saut en longueur')) as t(n, discipline);
 
--- Women sprinters: 1 to 2; men sprinters: up to 1; women middle distance: up to 2; men throwers:
--- up to 1. No quota for long distance: athlete 8 is never given.
+-- Sprinters (hurdlers too): at least 1, up to 2 of each sex; distance: up to 2 of each sex;
+-- throwers: up to 1 of each sex. No quota for jumps: athlete 8 is never given.
 create function pg_temp.rules(p_budget int, p_size int) returns jsonb language sql immutable as $$
   select jsonb_build_object('budget', p_budget, 'minTeamSize', p_size,
     'rounds', '{"firstHours": 48, "longRounds": 2, "nextHours": 24}'::jsonb,
     'closeModes', '["last_bidder"]'::jsonb,
-    'quotas', '[{"sex": "F", "family": "sprint", "min": 1, "max": 2},
-                {"sex": "M", "family": "sprint", "min": 0, "max": 1},
-                {"sex": "F", "family": "middle", "min": 0, "max": 2},
-                {"sex": "M", "family": "throws", "min": 0, "max": 1}]'::jsonb)
+    'quotas', '[{"family": "sprint", "min": 1, "minPerSex": 0, "maxPerSex": 2},
+                {"family": "distance", "min": 0, "minPerSex": 0, "maxPerSex": 2},
+                {"family": "throws", "min": 0, "minPerSex": 0, "maxPerSex": 1}]'::jsonb)
 $$;
 insert into manager_leagues (id, name, owner_id, rules, mercato_opened_at)
 select pg_temp.league(n), 'Complement ' || n, pg_temp.player(1), rules, now() - interval '1 hour'
 from (values (1, pg_temp.rules(100, 4)),
              (2, pg_temp.rules(30, 12)),
              (3, pg_temp.rules(100, 12)
-                 || '{"quotas": [{"sex": "F", "family": "middle", "min": 3, "max": 3}]}'),
+                 || '{"quotas": [{"family": "distance", "min": 3, "minPerSex": 0, "maxPerSex": 3}]}'),
              (4, pg_temp.rules(100, 1)),
              (5, pg_temp.rules(100, 3)),
-             (6, pg_temp.rules(100, 3))) as t(n, rules);
+             (6, pg_temp.rules(100, 3)),
+             (7, pg_temp.rules(100, 12)
+                 || '{"quotas": [{"family": "sprint", "min": 1, "minPerSex": 1, "maxPerSex": 1}]}'),
+             (8, pg_temp.rules(100, 12)
+                 || '{"quotas": [{"family": "throws", "min": 1, "minPerSex": 1, "maxPerSex": 1}]}'))
+  as t(n, rules);
 insert into manager_members (league_id, user_id)
 select pg_temp.league(l), pg_temp.player(p)
-from (values (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (5, 2), (5, 3), (6, 1), (6, 2), (6, 3))
+from (values (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (5, 2), (5, 3), (6, 1), (6, 2), (6, 3),
+             (7, 1), (8, 1))
   as t(l, p);
--- In f1 and f4, one already won athlete 1 in round 1.
+-- In f1, f4 and f7, one already won athlete 1 in round 1.
 insert into manager_rounds (league_id, round, ends_at)
-values (pg_temp.league(1), 1, now()), (pg_temp.league(4), 1, now());
+values (pg_temp.league(1), 1, now()), (pg_temp.league(4), 1, now()),
+       (pg_temp.league(7), 1, now());
 insert into manager_awards (league_id, athlete_id, user_id, amount, round)
 values (pg_temp.league(1), pg_temp.athlete(1), pg_temp.player(1), 10, 1),
-       (pg_temp.league(4), pg_temp.athlete(1), pg_temp.player(1), 10, 1);
+       (pg_temp.league(4), pg_temp.athlete(1), pg_temp.player(1), 10, 1),
+       (pg_temp.league(7), pg_temp.athlete(1), pg_temp.player(1), 10, 1);
 
 create function pg_temp.team(p_league int, p_player int) returns setof uuid language sql as $$
   select athlete_id from manager_awards
@@ -97,8 +105,10 @@ update manager_leagues set rules = pg_temp.rules(100, 4) where id = pg_temp.leag
 select ok(not exists (
     select 1
     from jsonb_array_elements(pg_temp.rules(100, 4) -> 'quotas') q
+    cross join (values ('F'), ('M')) s(sex)
     where (select count(*) from private.manager_team(pg_temp.league(1), pg_temp.player(1)) t
-           where t.sex = q ->> 'sex' and t.family = q ->> 'family') > (q ->> 'max')::int),
+           where t.sex = s.sex and private.manager_family(t.family) = q ->> 'family')
+          > (q ->> 'maxPerSex')::int),
   'within the maximum of each quota');
 select ok(pg_temp.athlete(8) not in (select pg_temp.team(1, 1)),
   'never in a family without a quota');
@@ -150,6 +160,18 @@ select is((select count(*)::int from manager_awards where league_id = pg_temp.le
 select ok(not exists (select 1 from manager_members
                       where league_id = pg_temp.league(5) and team_compliant is null),
   'every team is checked at the close');
+
+-- 7. One sprinter of each sex at most: the man is given, no second woman.
+select private.finish_manager_mercato(pg_temp.league(7));
+select set_eq($$select pg_temp.team(7, 1)$$, array[pg_temp.athlete(1), pg_temp.athlete(4)],
+  'a sex at its maximum in a family takes nobody more');
+select is(pg_temp.compliant(7, 1), true, 'a woman and a man sprinter make the family valid');
+
+-- 8. A thrower of each sex wanted, only a man is free: non-compliant.
+select private.finish_manager_mercato(pg_temp.league(8));
+select set_eq($$select pg_temp.team(8, 1)$$, array[pg_temp.athlete(7)],
+  'the man thrower is given');
+select is(pg_temp.compliant(8, 1), false, 'a team without a woman thrower is non-compliant');
 
 select * from finish();
 rollback;

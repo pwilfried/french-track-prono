@@ -154,7 +154,8 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   autant d'athlètes que le budget le permet, dans les quotas. L'admin fixe seulement une **taille
   minimum** (`minTeamSize`, figée par ligue comme les autres règles) ; elle doit couvrir
   l'alignement (`lineup.max` ≤ `minTeamSize`). Les ligues créées avant gardent leurs règles : la
-  migration de #607 renomme leur `teamSize` en `minTeamSize`.
+  migration de #607 renomme leur `teamSize` en `minTeamSize`. Depuis #1030, titulaires et banc y
+  tiennent (`lineup.max` + `lineup.bench` ≤ `minTeamSize`).
 - Clôture du mercato (#424, #607), selon les `closeModes` des règles de la ligue. « Peut
   recruter » : le budget restant (budget moins les athlètes
   gagnés, les offres en cours ne comptent pas) paie l'athlète libre le moins cher du catalogue
@@ -174,12 +175,14 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   situation de tous est vérifiée avant de finaliser.
 - Complément (#425), dans `private.finish_manager_mercato`, après les offres en cours : un
   athlète libre du catalogue convient à une équipe si elle est sous le minimum (`minTeamSize`), si
-  son prix de référence tient dans le budget restant et si son sexe et sa famille ont un quota
-  (`quotas`) pas encore au maximum (une famille sans quota ne se recrute pas). Les équipes
+  son prix de référence tient dans le budget restant et si sa famille Manager a un quota
+  (`quotas`) dont le maximum de son sexe (`maxPerSex`) n'est pas atteint (une famille sans quota
+  ne se recrute pas ; `fitsQuotas`, `src/domain/manager-team.ts`). Les équipes
   reçoivent un athlète chacune à tour de rôle (ordre des identifiants), tiré au hasard parmi ceux
   qui leur conviennent, jusqu'à ce qu'aucune ne puisse plus en recevoir. Les athlètes donnés
   forment un dernier tour (`manager_rounds`), au prix de référence. Puis chaque équipe reçoit
-  `manager_members.team_compliant` : vrai si elle atteint le minimum de chaque quota, faux
+  `manager_members.team_compliant` : vrai si elle atteint le minimum de chaque quota (`min` en
+  tout et `minPerSex` de chaque sexe, `unmetQuotas`), faux
   (« non conforme ») sinon ; nul avant la clôture. Le tirage utilise `random()` : `setseed()` le
   rend reproductible (tests pgTAP). L'affichage de « non conforme » n'a pas encore d'écran.
 
@@ -200,9 +203,9 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   **0 point** pour la compétition.
 - Pas de mercato secondaire payant : le budget reste en crédits virtuels (#416).
 - Alignement (#427), écran `/manager/<id>/alignement` puis une page par compétition éligible de
-  la ligue. Le stade compte `lineup.max` places : pour chaque famille de `lineup.minPerFamily`,
-  autant de places (haies avec le sprint, les deux sauts ensemble, comme sur les cartes), le reste
-  en places « Libre » (toutes familles). Un alignement valide : des athlètes de son équipe, chacun
+  la ligue. Le stade compte `lineup.perFamily` places pour chacune des 4 familles Manager, sans
+  place « Libre » (#1030 ; avant : des places par famille de `lineup.minPerFamily`, le reste
+  « Libre »). Un alignement valide : des athlètes de son équipe, chacun
   une fois, **engagés** dans la compétition (`competition_athletes`, back-office ou liste de
   départ), et toutes les places que l'équipe peut remplir sont remplies ; une place que personne
   ne peut remplir (équipe incomplète, athlètes absents) reste vide sans bloquer
@@ -219,7 +222,10 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 
 ### Feuille de match et remplacements (décisions du propriétaire du 16 nov. 2026, #1017)
 
-À construire ; tant que ce n'est pas livré, les règles ci-dessus restent en vigueur.
+À construire ; tant que ce n'est pas livré, les règles ci-dessus restent en vigueur. Les familles,
+les quotas, les 2 places par famille, la taille du banc et le diviseur sont livrés (#1030, voir
+« Règles Manager à 4 familles » plus bas) ; le banc rangé, les disciplines et les remplacements
+viennent avec #1032 à #1034.
 
 - **Une seule action par compétition : aligner.** Le joueur n'a plus de pronostics à faire pour le
   Manager (section 4).
@@ -254,6 +260,26 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   banc, disciplines et seuils), en ne gardant que les athlètes engagés ; une place que personne ne
   peut remplir reste vide. « Mes points » affiche « Alignement repris de … ». Sans aucun
   alignement précédent : 0.
+
+### Règles Manager à 4 familles (#1030)
+
+- Familles Manager (`ManagerFamily`, `managerFamilyOf` dans `src/domain/manager-rules.ts` ; en
+  SQL `private.manager_family`) : `sprint` (sprint, haies), `distance` (demi-fond, fond),
+  `jumps` (sauts horizontaux et verticaux, épreuves combinées), `throws` ; un relais n'en a pas.
+  Les familles des disciplines (`DisciplineFamily`, jeu de pronos) ne changent pas. Les cartes de
+  l'équipe, le stade et le filtre du catalogue utilisent ces 4 familles.
+- Règles : `quotas` = une entrée par famille `{family, min, minPerSex, maxPerSex}` (1, 1 et 4 ;
+  `min` 3), `minTeamSize` 12, budget 100, `lineup` = `{max: 8, perFamily: 2, bench: 4}` (`max`
+  vaut toujours 4 × `perFamily`), `tablesDivisor` 10. `isPlayableManagerRules` refuse aussi une
+  famille sans quota, un minimum de famille qui ne couvre pas ses places, titulaires et banc
+  au-delà de la taille minimum, un diviseur qui n'est pas un entier positif. Back-office ›
+  Manager : quotas par famille, places par famille, banc, diviseur.
+- Migration `20261116110000_manager_four_families.sql` : nouvelles valeurs par défaut (les
+  tours, clôtures, bonus et saison de l'admin restent) ; une ligue dont le mercato n'a pas ouvert
+  reprend les règles en vigueur (en gardant ses tours) ; les autres gardent les leurs, converties :
+  par famille, `min` = somme des minimums des deux sexes, `minPerSex` = la plus petite somme d'un
+  sexe, `maxPerSex` = la plus grande somme des maximums ; `perFamily` = `lineup.max` ÷ 4 (au moins
+  1), `bench` 4, `tablesDivisor` 10.
 
 ## 4. Points (v0.15)
 

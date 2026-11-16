@@ -18,7 +18,7 @@ const athlete = (
 const team: BoardAthlete[] = [
   athlete("s1", "Léa Fictive", "100 m", "sprint"),
   athlete("m1", "Inès Démo", "800 m", "middle"),
-  athlete("m2", "Zoé Exemple", "1500 m", "middle"),
+  athlete("j1", "Zoé Exemple", "Longueur", "horizontal_jumps"),
   athlete("t1", "Anna Modèle", "Poids", "throws", false),
 ];
 
@@ -26,9 +26,9 @@ const meta = {
   title: "Manager/LineupBoard",
   component: LineupBoard,
   args: {
-    // One sprint place, one middle-distance place, one free place and one nobody can fill.
-    places: ["sprint", "middle", "throws", "free"],
-    fillable: [true, true, false, true],
+    // One place per family; nobody can fill the throws one.
+    places: ["sprint", "distance", "jumps", "throws"],
+    fillable: [true, true, true, false],
     athletes: team,
     initial: [null, null, null, null],
     status: "todo",
@@ -53,7 +53,7 @@ export const EmptyStadium: Story = {
     await expect(canvas.getByRole("list", { name: text.stadium })).toBeVisible();
     await expect(canvas.getByText("0/4 places")).toBeVisible();
     await expect(canvas.getByRole("button", { name: text.validate })).toBeDisabled();
-    await expect(canvas.getByText("À remplir : Sprint, Demi-fond, Libre")).toBeVisible();
+    await expect(canvas.getByText("À remplir : Sprint, Demi-fond et fond, Sauts")).toBeVisible();
     await expect(canvas.getByText(text.unfillable(1))).toBeVisible();
     // The bar sits right under the stadium, never over it (#929): not stuck to the screen's bottom.
     const validate = canvas.getByRole("button", { name: text.validate });
@@ -88,30 +88,23 @@ export const Editing: Story = {
       canvas.getByRole("button", { name: text.takenPlace("Sprint", "Léa Fictive") }),
     ).toBeVisible();
 
-    await userEvent.click(canvas.getByRole("button", { name: text.emptyPlace("Demi-fond") }));
+    await userEvent.click(
+      canvas.getByRole("button", { name: text.emptyPlace("Demi-fond et fond") }),
+    );
     await userEvent.click(sheet().getByRole("button", { name: /Inès Démo/ }));
-    await userEvent.click(canvas.getByRole("button", { name: text.emptyPlace("Libre") }));
+    await userEvent.click(canvas.getByRole("button", { name: text.emptyPlace("Sauts") }));
     await userEvent.click(sheet().getByRole("button", { name: /Zoé Exemple/ }));
 
     await expect(canvas.getByText("3/4 places")).toBeVisible();
     await expect(canvas.getByText(text.fullOfEntered)).toBeVisible();
     await userEvent.click(validate);
-    await waitFor(() => expect(args.onValidate).toHaveBeenCalledWith(["s1", "m1", "m2"]));
+    await waitFor(() => expect(args.onValidate).toHaveBeenCalledWith(["s1", "m1", "j1"]));
     // The confirmation shows as soon as the save succeeds, without waiting for the page (#874).
     await expect(await canvas.findByRole("status")).toHaveTextContent(text.validated);
 
-    // Picking an athlete placed elsewhere swaps the two.
-    await userEvent.click(
-      canvas.getByRole("button", { name: text.takenPlace("Demi-fond", "Inès Démo") }),
-    );
-    await userEvent.click(sheet().getByRole("button", { name: /Zoé Exemple/ }));
-    await expect(
-      canvas.getByRole("button", { name: text.takenPlace("Libre", "Inès Démo") }),
-    ).toBeVisible();
-
     // « Retirer de cette place » sends the athlete back to the bench.
     await userEvent.click(
-      canvas.getByRole("button", { name: text.takenPlace("Libre", "Inès Démo") }),
+      canvas.getByRole("button", { name: text.takenPlace("Sauts", "Zoé Exemple") }),
     );
     await userEvent.click(sheet().getByRole("button", { name: text.remove }));
     await expect(canvas.getByRole("button", { name: text.validate })).toBeDisabled();
@@ -124,7 +117,7 @@ export const PartlyFilled: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("1/4 places")).toBeVisible();
-    await expect(canvas.getByText("À remplir : Demi-fond, Libre")).toBeVisible();
+    await expect(canvas.getByText("À remplir : Demi-fond et fond, Sauts")).toBeVisible();
   },
 };
 
@@ -133,7 +126,7 @@ export const PartlyFilled: Story = {
  * places stay empty and why.
  */
 export const Full: Story = {
-  args: { initial: ["s1", "m1", null, "m2"] },
+  args: { initial: ["s1", "m1", "j1", null] },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText(text.fullOfEntered)).toBeVisible();
@@ -145,9 +138,9 @@ export const Full: Story = {
 /** Every place filled, none left that nobody could fill. */
 export const AllPlacesFilled: Story = {
   args: {
-    places: ["sprint", "middle", "free"],
+    places: ["sprint", "distance", "jumps"],
     fillable: [true, true, true],
-    initial: ["s1", "m1", "m2"],
+    initial: ["s1", "m1", "j1"],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -192,7 +185,7 @@ export const NobodyFits: Story = {
 
 /** Validated: still editable until the lock. */
 export const Validated: Story = {
-  args: { status: "validated", initial: ["s1", "m1", null, "m2"] },
+  args: { status: "validated", initial: ["s1", "m1", "j1", null] },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("status")).toHaveTextContent(text.validated);
@@ -202,7 +195,7 @@ export const Validated: Story = {
 
 /** Locked: the stadium reads only. */
 export const Locked: Story = {
-  args: { status: "locked", initial: ["s1", "m1", null, "m2"] },
+  args: { status: "locked", initial: ["s1", "m1", "j1", null] },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("status")).toHaveTextContent(text.locked);
@@ -235,26 +228,44 @@ export const Empty: Story = {
 };
 
 /**
- * The default rules (one sprint, one middle distance, one throws place, five free ones): the same
- * stadium and places as a head-to-head, a « + » on each empty one.
+ * The default rules (two places per family, #1017): the same stadium and places as a
+ * head-to-head, a « + » on each empty one. Picking an athlete placed elsewhere swaps the two.
  */
 export const DefaultRules: Story = {
   args: {
-    places: ["sprint", "middle", "throws", "free", "free", "free", "free", "free"],
+    places: ["sprint", "sprint", "distance", "distance", "jumps", "jumps", "throws", "throws"],
     fillable: [true, true, true, true, true, true, true, true],
     athletes: [
       ...team.slice(0, 3),
       athlete("t2", "Bea Démo", "Javelot", "throws"),
-      athlete("j1", "Hana Démo", "Hauteur", "vertical_jumps"),
-      athlete("j2", "Eva Fictive", "Longueur", "horizontal_jumps"),
+      athlete("t3", "Lou Démo", "Disque", "throws"),
+      athlete("j2", "Hana Démo", "Hauteur", "vertical_jumps"),
+      athlete("m2", "Eva Fictive", "5000 m", "long"),
       athlete("s2", "Quia Fictive", "400 m", "sprint"),
     ],
-    initial: ["s1", "m2", "t2", "s2", "j1", "j2", null, null],
+    initial: ["s1", "s2", "m1", "m2", "j1", "j2", null, null],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    const page = within(canvasElement.ownerDocument.body);
     await expect(canvas.getByText("6/8 places")).toBeVisible();
-    await expect(canvas.getAllByRole("button", { name: text.emptyPlace("Libre") })).toHaveLength(2);
+    await expect(canvas.getAllByRole("button", { name: text.emptyPlace("Lancers") })).toHaveLength(
+      2,
+    );
+    await userEvent.click(
+      canvas.getByRole("button", { name: text.takenPlace("Sprint", "Léa Fictive") }),
+    );
+    await userEvent.click(
+      within(page.getByRole("dialog")).getByRole("button", { name: /Quia Fictive/ }),
+    );
+    await expect(
+      canvas
+        .getAllByRole("button", { name: /^Place Sprint/ })
+        .map((b) => b.getAttribute("aria-label")),
+    ).toEqual([
+      text.takenPlace("Sprint", "Quia Fictive"),
+      text.takenPlace("Sprint", "Léa Fictive"),
+    ]);
   },
 };
 

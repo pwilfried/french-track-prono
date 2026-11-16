@@ -1,7 +1,7 @@
 -- pgTAP: the admin of French Track Prono sets the Manager rules (#418); a player cannot.
 -- Rolled back at the end.
 begin;
-select plan(9);
+select plan(12);
 
 insert into auth.users (id, email) values
   ('ababab00-0000-0000-0000-000000000001', 'admin@example.test'),
@@ -14,6 +14,15 @@ insert into competitions (slug, name, starts_on, ends_on)
 values ('manager-meeting', 'Meeting Manager', '2027-06-01', '2027-06-01');
 
 select is((select (rules ->> 'budget')::int from manager_rules), 100, 'the rules start with a budget of 100');
+select is((select array_agg(q ->> 'family' order by n) from manager_rules,
+            jsonb_array_elements(rules -> 'quotas') with ordinality q(q, n)),
+          array['sprint', 'distance', 'jumps', 'throws'],
+          'the team has a quota for each of the four families (#1030)');
+select is((select rules -> 'lineup' from manager_rules),
+          '{"max": 8, "perFamily": 2, "bench": 4}'::jsonb,
+          'the stadium holds two places per family and the bench four substitutes');
+select is((select (rules ->> 'tablesDivisor')::int from manager_rules), 10,
+          'the table points are divided by 10');
 
 set local role authenticated;
 select set_config('request.jwt.claims',

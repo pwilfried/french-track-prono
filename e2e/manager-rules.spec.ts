@@ -27,11 +27,18 @@ test("the admin sets the French Track Manager rules and its eligible competition
     await expect(page.getByLabel("Taille minimum d'une équipe")).toHaveValue(
       sql("select rules ->> 'minTeamSize' from manager_rules"),
     );
-    await page.getByLabel("Sprint, Femmes, max").fill("4");
+    await page.getByLabel("Sprint et haies, Par sexe, max").fill("3");
+    await expect(page.getByLabel("Places par famille au stade")).toHaveValue("2");
+    await expect(page.getByLabel("Diviseur des points des tables")).toHaveValue("10");
     await page.getByRole("checkbox", { name: new RegExp(meeting) }).check();
     await page.getByRole("button", { name: "Enregistrer les règles" }).click();
     await expect(page.getByRole("status")).toContainText("Règles enregistrées");
     expect(sql("select rules ->> 'budget' from manager_rules")).toBe("150");
+    expect(
+      sql(`select q ->> 'maxPerSex' from manager_rules, jsonb_array_elements(rules -> 'quotas') q
+           where q ->> 'family' = 'sprint'`),
+    ).toBe("3");
+    expect(sql("select rules -> 'lineup' ->> 'max' from manager_rules")).toBe("8");
     expect(
       sql(`select count(*) from manager_competitions mc join competitions c on c.id = mc.competition_id
            where c.slug = 'manager-${tag}'`),
@@ -41,9 +48,9 @@ test("the admin sets the French Track Manager rules and its eligible competition
     await openAdminSection(page, "Historique");
     await expect(page.getByText("Règles Manager modifiées").first()).toBeVisible();
 
-    // Rules a team cannot be lined up with are refused.
+    // Rules whose starters and bench do not fit in the minimum team are refused.
     await openAdminSection(page, "Manager");
-    await page.getByLabel("Athlètes alignés au plus").fill("99");
+    await page.getByLabel("Remplaçants sur le banc").fill("9");
     await page.getByRole("button", { name: "Enregistrer les règles" }).click();
     await expect(page.locator("main").getByRole("alert")).toContainText(
       "ne permettent pas de jouer",

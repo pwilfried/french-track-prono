@@ -11,8 +11,9 @@ managerRuleRepositoryContract("in-memory fake", async () => {
       rules: {
         budget: 100,
         minTeamSize: 1,
-        quotas: [{ sex: "F", family: "sprint", min: 1, max: 1 }],
-        lineup: { max: 1, minPerFamily: {} },
+        quotas: [{ family: "sprint", min: 1, minPerSex: 0, maxPerSex: 1 }],
+        lineup: { max: 4, perFamily: 1, bench: 0 },
+        tablesDivisor: 10,
         rounds: { firstHours: 48, longRounds: 2, nextHours: 24 },
         closeModes: ["scheduled"],
         bonuses: {

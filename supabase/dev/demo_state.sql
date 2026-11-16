@@ -226,7 +226,7 @@ from leagues l, competitions c
 where l.name = 'Démo Prono' and c.slug = 'ultimate-championship-2026';
 
 -- 6. One demo Manager league, four members, Démo Gazelle owns it. Mercato open so bids make sense
--- in #422+. The rules are the default seeded set (budget 100, 14 quotas, saison 2027).
+-- in #422+. The rules are the default seeded set (budget 100, one quota per family, saison 2027).
 insert into manager_leagues (name, owner_id, is_public, rules, competition_ids, mercato_opened_at)
 select 'Démo Manager',
        '00000000-0000-4000-9000-000000000001',

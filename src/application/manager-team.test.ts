@@ -40,8 +40,8 @@ const rules = {
   budget: 100,
   minTeamSize: 3,
   quotas: [
-    { sex: "F", family: "sprint", min: 1, max: 2 },
-    { sex: "M", family: "throws", min: 1, max: 1 },
+    { family: "sprint", min: 2, minPerSex: 0, maxPerSex: 2 },
+    { family: "throws", min: 1, minPerSex: 0, maxPerSex: 1 },
   ],
 } as ManagerRules;
 
@@ -112,7 +112,7 @@ describe("getMyManagerTeam", () => {
     }).execute({ leagueId: "l1" });
 
     expect(team.athletes).toHaveLength(2);
-    expect(team.unmet).toEqual([{ sex: "M", family: "throws" }]);
+    expect(team.unmet).toEqual([{ family: "throws", sex: null }]);
   });
 
   it("refuses a league the player is not in", async () => {

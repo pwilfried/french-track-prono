@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { LineupPlace } from "@/domain/manager-lineup";
+import { lineupPlaces, type LineupPlace } from "@/domain/manager-lineup";
 
 import { CARD_WIDTH, STADIUM_RATIO, STADIUM_SPOTS, stadiumSpots } from "./stadium-spots";
 
@@ -24,29 +24,16 @@ const where = (spot: { x: number; y: number } | null) => {
 };
 
 describe("stadium spots", () => {
-  it("puts the places of the default rules where the mock-up draws them", () => {
-    const places: LineupPlace[] = ["sprint", "middle", "throws", ...Array(5).fill("free")];
-    expect(stadiumSpots(places).map(where)).toEqual([
+  it("puts races on the track and field events on the grass, two places per family", () => {
+    expect(stadiumSpots(lineupPlaces({ perFamily: 2 })).map(where)).toEqual([
       "bottom-straight",
-      "right-bend",
-      "field-right",
       "left-bend",
-      "field-top",
-      "field-left",
-      "field-centre",
+      "right-bend",
       "back-straight",
-    ]);
-  });
-
-  it("puts races on the track and field events on the grass", () => {
-    const places: LineupPlace[] = ["sprint", "sprint", "middle", "jumps", "jumps", "throws"];
-    expect(stadiumSpots(places).map(where)).toEqual([
-      "bottom-straight",
-      "left-bend",
-      "right-bend",
       "field-top",
       "field-left",
       "field-right",
+      "field-centre",
     ]);
   });
 
@@ -58,14 +45,13 @@ describe("stadium spots", () => {
   });
 
   it("leaves the places beyond the stadium outside it", () => {
-    const places: LineupPlace[] = Array.from({ length: STADIUM_SPOTS + 2 }, () => "free");
+    const places: LineupPlace[] = Array.from({ length: STADIUM_SPOTS + 2 }, () => "jumps");
     expect(stadiumSpots(places).filter((s) => s === null)).toHaveLength(2);
   });
 
   it("keeps cards apart on a 320 px screen, inside the stadium's width", () => {
     const height = (CARD_HEIGHT / (NARROWEST * STADIUM_RATIO)) * 100;
-    const places: LineupPlace[] = Array.from({ length: STADIUM_SPOTS }, () => "free");
-    const spots = stadiumSpots(places).filter((s) => s !== null);
+    const spots = stadiumSpots(lineupPlaces({ perFamily: 2 })).filter((s) => s !== null);
     for (const a of spots) {
       expect(a.x - CARD_WIDTH / 2).toBeGreaterThanOrEqual(0);
       expect(a.x + CARD_WIDTH / 2).toBeLessThanOrEqual(100);
@@ -77,8 +63,7 @@ describe("stadium spots", () => {
 
   it.each(WIDTHS)("keeps every card inside the oval on a %i px wide stadium", (width) => {
     const half = ((CARD_HEIGHT / (width * STADIUM_RATIO)) * 100) / 2;
-    const places: LineupPlace[] = Array.from({ length: STADIUM_SPOTS }, () => "free");
-    for (const s of stadiumSpots(places).filter((s) => s !== null)) {
+    for (const s of stadiumSpots(lineupPlaces({ perFamily: 2 })).filter((s) => s !== null)) {
       const corners = [-1, 1].flatMap((dx) =>
         [-1, 1].map((dy) => [s.x + (dx * CARD_WIDTH) / 2, s.y + dy * half] as const),
       );

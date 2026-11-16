@@ -6,7 +6,7 @@ import { getMyManagerTeam, type MyManagerTeam } from "@/application/manager-team
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { AthleteCard } from "@/components/manager/athlete-card";
-import { CARD_GROUPS, cardGroupOf } from "@/domain/manager-team";
+import { MANAGER_FAMILIES, managerFamilyOf } from "@/domain/manager-rules";
 import { athleteHref } from "@/domain/redirect";
 import { createSupabaseManagerBids, createSupabaseManagerCatalogue } from "@/infra";
 
@@ -85,7 +85,7 @@ export default async function MyTeamPage({ params }: { params: Promise<{ id: str
                 {text.short(
                   team.athletes.length,
                   team.minTeamSize,
-                  team.unmet.map((q) => text.nobody[q.sex][q.family]),
+                  team.unmet.map((q) => text.nobody[q.sex ?? "all"][q.family]),
                 )}
               </p>
             )}
@@ -95,8 +95,8 @@ export default async function MyTeamPage({ params }: { params: Promise<{ id: str
                 {text.empty}
               </p>
             ) : (
-              CARD_GROUPS.map((group) => {
-                const athletes = team.athletes.filter((a) => cardGroupOf(a.family) === group);
+              MANAGER_FAMILIES.map((group) => {
+                const athletes = team.athletes.filter((a) => managerFamilyOf(a.family) === group);
                 if (athletes.length === 0) return null;
                 return (
                   <section

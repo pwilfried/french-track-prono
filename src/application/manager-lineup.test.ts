@@ -42,11 +42,11 @@ const catalogue: ManagerCatalogueRepository = {
   ],
 };
 
-// One sprint place, one free place.
+// One place per family.
 const rules = {
   minTeamSize: 3,
   quotas: [],
-  lineup: { max: 2, minPerFamily: { sprint: 1 } },
+  lineup: { max: 4, perFamily: 1, bench: 0 },
 } as unknown as ManagerRules;
 
 const leagues = {
@@ -109,14 +109,14 @@ describe("getMyLineup", () => {
     // When the player opens the lineup of the meeting
     const view = await getMyLineup(ports).execute({ leagueId: "l1", slug: "meeting", now: BEFORE });
 
-    // Then the stadium has a sprint place and a free one, both empty, both fillable
+    // Then the stadium has one empty place per family, the throws one beyond the team's reach
     expect(view).toMatchObject({
       competitionId: "c1",
       status: "todo",
       mercatoClosed: true,
-      places: ["sprint", "free"],
-      fillable: [true, true],
-      placed: [null, null],
+      places: ["sprint", "distance", "jumps", "throws"],
+      fillable: [true, true, false, false],
+      placed: [null, null, null, null],
     });
     expect(view.athletes.map((a) => [a.athleteId, a.entered, a.paid])).toEqual([
       ["a2", true, 20],
@@ -142,8 +142,8 @@ describe("getMyLineup", () => {
     });
     const after = await getMyLineup(ports).execute({ leagueId: "l1", slug: "meeting", now: AFTER });
 
-    // Then the sprinter sits on the sprint place; validated, then locked
-    expect(before).toMatchObject({ status: "validated", placed: ["a1", "a2"] });
+    // Then each sits on the place of their family; validated, then locked
+    expect(before).toMatchObject({ status: "validated", placed: ["a1", "a2", null, null] });
     expect(after.status).toBe("locked");
   });
 

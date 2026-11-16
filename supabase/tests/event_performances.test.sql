@@ -40,7 +40,7 @@ select pg_temp.event(), pg_temp.athlete(n) from generate_series(1, 4) n;
 insert into manager_leagues (id, name, owner_id, rules, competition_ids, mercato_opened_at,
                              mercato_closed_at)
 values ('9e400000-0000-0000-0000-0000000000f1', 'Performances',
-        '9e400000-0000-0000-0000-000000000001', '{"lineup": {"max": 2, "minPerFamily": {}}}',
+        '9e400000-0000-0000-0000-000000000001', '{"lineup": {"max": 4, "perFamily": 1, "bench": 0}}',
         array['9e400000-0000-0000-0000-0000000000c1']::uuid[], now() - interval '3 days',
         now() - interval '1 day');
 insert into manager_members (league_id, user_id) values

@@ -8,15 +8,16 @@ import { SubmitButton } from "@/components/account/submit-button";
 import {
   MANAGER_BONUSES,
   MANAGER_FAMILIES,
-  MANAGER_SEXES,
   MERCATO_CLOSE_MODES,
+  type TeamQuota,
 } from "@/domain/manager-rules";
 
 import { saveManagerRulesAction, type ManagerRulesState } from "./actions";
 
 const text = messages.managerRules;
-const families = messages.disciplines.family;
+const families = messages.team.groups;
 const field = "min-h-11 w-full rounded-xl border-2 border-border bg-card px-2.5 text-base";
+const QUOTA_BOUNDS = ["min", "minPerSex", "maxPerSex"] as const satisfies (keyof TeamQuota)[];
 const small =
   "min-h-11 w-14 rounded-xl border-2 border-border bg-card px-1.5 text-center font-mono text-base";
 
@@ -68,8 +69,7 @@ export function ManagerRulesForm({
 }) {
   const [state, action] = useActionState<ManagerRulesState, FormData>(saveManagerRulesAction, {});
   const { rules } = initial;
-  const quota = (sex: string, family: string) =>
-    rules.quotas.find((q) => q.sex === sex && q.family === family);
+  const quota = (family: string) => rules.quotas.find((q) => q.family === family);
 
   return (
     <form action={action} className="flex flex-col gap-4">
@@ -86,9 +86,9 @@ export function ManagerRulesForm({
               <th scope="col" className="text-left font-semibold">
                 {text.family}
               </th>
-              {MANAGER_SEXES.map((sex) => (
-                <th key={sex} scope="col" colSpan={2} className="font-semibold">
-                  {text.sex[sex]}
+              {QUOTA_BOUNDS.map((bound) => (
+                <th key={bound} scope="col" className="font-semibold">
+                  {text.quotaBound[bound]}
                 </th>
               ))}
             </tr>
@@ -99,20 +99,18 @@ export function ManagerRulesForm({
                 <th scope="row" className="py-1 pr-1 text-left font-semibold">
                   {families[family]}
                 </th>
-                {MANAGER_SEXES.flatMap((sex) =>
-                  (["min", "max"] as const).map((bound) => (
-                    <td key={`${sex}-${bound}`} className="py-1 text-center">
-                      <input
-                        name={`quota.${sex}.${family}.${bound}`}
-                        aria-label={text.quotaLabel(text.sex[sex], families[family], text[bound])}
-                        placeholder={text[bound]}
-                        defaultValue={String(quota(sex, family)?.[bound] ?? 0)}
-                        inputMode="numeric"
-                        className={small}
-                      />
-                    </td>
-                  )),
-                )}
+                {QUOTA_BOUNDS.map((bound) => (
+                  <td key={bound} className="py-1 text-center">
+                    <input
+                      name={`quota.${family}.${bound}`}
+                      aria-label={text.quotaLabel(families[family], text.quotaBound[bound])}
+                      defaultValue={String(quota(family)?.[bound] ?? 0)}
+                      inputMode="numeric"
+                      required
+                      className={small}
+                    />
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
@@ -120,21 +118,13 @@ export function ManagerRulesForm({
       </Section>
 
       <Section title={text.lineup}>
-        <NumberField label={text.lineupMax} name="lineup.max" value={rules.lineup.max} />
-        <p className="font-semibold">{text.lineupMin}</p>
-        <div className="grid grid-cols-2 gap-2">
-          {MANAGER_FAMILIES.map((family) => (
-            <label key={family} className="flex items-center justify-between gap-2 text-sm">
-              {families[family]}
-              <input
-                name={`lineup.min.${family}`}
-                defaultValue={String(rules.lineup.minPerFamily[family] ?? 0)}
-                inputMode="numeric"
-                className={small}
-              />
-            </label>
-          ))}
-        </div>
+        <NumberField
+          label={text.lineupPerFamily}
+          name="lineup.perFamily"
+          value={rules.lineup.perFamily}
+        />
+        <NumberField label={text.lineupBench} name="lineup.bench" value={rules.lineup.bench} />
+        <p className="text-sm text-muted-foreground">{text.lineupHint}</p>
       </Section>
 
       <Section title={text.mercato}>
@@ -167,7 +157,9 @@ export function ManagerRulesForm({
         ))}
       </Section>
 
-      <Section title={text.bonuses}>
+      <Section title={text.points}>
+        <NumberField label={text.tablesDivisor} name="tablesDivisor" value={rules.tablesDivisor} />
+        <p className="font-semibold">{text.bonuses}</p>
         {MANAGER_BONUSES.map((bonus) => (
           <NumberField
             key={bonus}

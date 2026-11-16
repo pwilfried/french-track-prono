@@ -15,6 +15,7 @@ test("a participant lines up their team before a competition and can no longer c
     ["sprint", `Sprint Align ${tag}`, "100 m"],
     ["haies", `Haies Align ${tag}`, "100 m haies"],
     ["demi", `Demi Align ${tag}`, "800 m"],
+    ["saut", `Saut Align ${tag}`, "Saut en longueur"],
     ["poids", `Poids Align ${tag}`, "Lancer du poids"],
   ] as const;
   for (const [key, name, discipline] of athletes) {
@@ -23,7 +24,7 @@ test("a participant lines up their team before a competition and can no longer c
     sql(`insert into athlete_disciplines (athlete_id, discipline, is_primary)
          select id, '${discipline}', true from athletes where slug = 'align-${key}-${tag}'`);
   }
-  const [sprinter, hurdler, runner, thrower] = athletes.map(([, name]) => name);
+  const [sprinter, hurdler, runner, jumper, thrower] = athletes.map(([, name]) => name);
 
   // An eligible competition whose first event locks in two days; the thrower is not entered.
   const competition = sql(`insert into competitions (slug, name, starts_on, ends_on)
@@ -34,7 +35,8 @@ test("a participant lines up their team before a competition and can no longer c
             now() + interval '2 days') returning id`);
   sql(`insert into entries (event_id, athlete_id)
        select '${event}', id from athletes
-       where slug in ('align-sprint-${tag}', 'align-haies-${tag}', 'align-demi-${tag}')`);
+       where slug in ('align-sprint-${tag}', 'align-haies-${tag}', 'align-demi-${tag}',
+                      'align-saut-${tag}')`);
 
   // A second competition with no start list yet: none of the team is entered (#839).
   const bare = `Meeting Vide ${tag}`;
@@ -54,10 +56,10 @@ test("a participant lines up their team before a competition and can no longer c
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(league);
   const id = sql(`select id from manager_leagues where name = '${league}'`);
 
-  // The mercato is over: the four athletes are the owner's team. Three places: sprint, middle
-  // distance, free.
+  // The mercato is over: the five athletes are the owner's team. Four places, one per family:
+  // sprint, distance, jumps, throws.
   sql(`update manager_leagues
-       set rules = rules || '{"lineup": {"max": 3, "minPerFamily": {"sprint": 1, "middle": 1}}}',
+       set rules = rules || '{"lineup": {"max": 4, "perFamily": 1, "bench": 0}}',
            competition_ids = array['${competition}', '${bareCompetition}']::uuid[],
            mercato_opened_at = now() - interval '3 days', mercato_closed_at = now()
        where id = '${id}'`);
@@ -75,7 +77,7 @@ test("a participant lines up their team before a competition and can no longer c
   // Nobody entered in the bare competition: the screen says so, no empty lineup to validate.
   await page.getByRole("link", { name: new RegExp(bare) }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(bare);
-  await expect(page.getByText("0/3 places")).toBeVisible();
+  await expect(page.getByText("0/4 places")).toBeVisible();
   await expect(
     page.getByText("Aucun de tes athlètes n'est inscrit à cette compétition pour l'instant."),
   ).toBeVisible();
@@ -95,7 +97,7 @@ test("a participant lines up their team before a competition and can no longer c
 
   const validate = page.getByRole("button", { name: "Valider mon alignement" });
   await expect(validate).toBeDisabled();
-  await expect(page.getByText("À remplir : Sprint, Demi-fond, Libre")).toBeVisible();
+  await expect(page.getByText("À remplir : Sprint, Demi-fond et fond, Sauts")).toBeVisible();
 
   // Tap a spot of the stadium, then pick an athlete in the sheet: only those who fit are listed.
   const sheet = page.getByRole("dialog");
@@ -107,12 +109,15 @@ test("a participant lines up their team before a competition and can no longer c
   await expect(
     page.getByRole("button", { name: `Place Sprint : ${sprinter}, changer` }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Place Demi-fond, vide" }).click();
+  await page.getByRole("button", { name: "Place Demi-fond et fond, vide" }).click();
   await sheet.getByRole("button", { name: new RegExp(runner) }).click();
-  await page.getByRole("button", { name: "Place Libre, vide" }).click();
-  await sheet.getByRole("button", { name: new RegExp(hurdler) }).click();
-  await expect(page.getByText("3/3 places")).toBeVisible();
-  await expect(page.getByText("Toutes les places sont remplies.")).toBeVisible();
+  await page.getByRole("button", { name: "Place Sauts, vide" }).click();
+  await sheet.getByRole("button", { name: new RegExp(jumper) }).click();
+  await expect(page.getByText("3/4 places")).toBeVisible();
+  // Nobody entered can take the throws place: it stays empty without blocking.
+  await expect(
+    page.getByText("Toutes les places que ton équipe peut remplir sont remplies."),
+  ).toBeVisible();
 
   await validate.click();
   await expect(page.getByRole("main").getByRole("status")).toHaveText(
@@ -123,10 +128,16 @@ test("a participant lines up their team before a competition and can no longer c
          where league_id = '${id}' and competition_id = '${competition}'`),
   ).toBe("3");
 
-  // Changed until the lock: the hurdler goes back to the bench, the lineup is no longer complete.
+  // Changed until the lock: the hurdler takes the sprint place, the jumper goes back to the bench
+  // and the lineup is no longer complete.
   await page.reload();
-  await expect(page.getByText("3/3 places")).toBeVisible();
-  await page.getByRole("button", { name: `Place Libre : ${hurdler}, changer` }).click();
+  await expect(page.getByText("3/4 places")).toBeVisible();
+  await page.getByRole("button", { name: `Place Sprint : ${sprinter}, changer` }).click();
+  await sheet.getByRole("button", { name: new RegExp(hurdler) }).click();
+  await expect(
+    page.getByRole("button", { name: `Place Sprint : ${hurdler}, changer` }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: `Place Sauts : ${jumper}, changer` }).click();
   await sheet.getByRole("button", { name: "Retirer de cette place" }).click();
   await expect(validate).toBeDisabled();
 

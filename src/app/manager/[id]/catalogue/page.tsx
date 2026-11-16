@@ -182,7 +182,7 @@ export default async function CataloguePage({
             { key: "all", name: text.all, active: !family, href: href({ family: null }) },
             ...MANAGER_FAMILIES.map((f) => ({
               key: f,
-              name: messages.disciplines.family[f],
+              name: messages.team.groups[f],
               active: family === f,
               href: href({ family: family === f ? null : f }),
             })),
