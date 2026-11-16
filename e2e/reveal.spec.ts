@@ -81,7 +81,9 @@ test("a player cannot see a podium before the lock, unfolds it after and reacts 
   }
 
   // Bob reacts with a fire; Anna sees it on her own podium.
-  const fire = bobPage.getByRole("button", { name: /^Réagir : feu/ });
+  const fire = bobPage
+    .getByRole("group", { name: `Réagir au prono de ${anna.pseudo}` })
+    .getByRole("button", { name: /^Réagir : feu/ });
   await fire.click();
   await expect(fire).toHaveAttribute("aria-pressed", "true");
   await expect(fire).toHaveAccessibleName("Réagir : feu, 1 réaction");
