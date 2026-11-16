@@ -4,6 +4,7 @@ import type { AthleteAdminRepository, AthleteSummary } from "@/application/edit-
 import { UseCaseError } from "@/application/errors";
 import type { RecordKind } from "@/domain/athlete";
 import type { EventGender } from "@/domain/event";
+import type { AthleteCondition, FrancePresence } from "@/domain/manager-price";
 
 import { readAll } from "./read-all";
 
@@ -55,12 +56,14 @@ export function createSupabaseAthleteAdminRepository(client: SupabaseClient): At
       const { data, error } = await client
         .from("athletes")
         .select(
-          "id, slug, name, country_code, gender, manager_price, athlete_disciplines(discipline, is_primary), athlete_records(discipline, kind, mark, record_date, meeting_name)",
+          "id, slug, name, country_code, gender, manager_price, manager_condition, france_presence, athlete_disciplines(discipline, is_primary), athlete_records(discipline, kind, mark, record_date, meeting_name)",
         )
         .eq("slug", slug)
         .maybeSingle<
           AthleteRow & {
             manager_price: number | null;
+            manager_condition: AthleteCondition;
+            france_presence: FrancePresence;
             athlete_disciplines: { discipline: string; is_primary: boolean }[];
             athlete_records: {
               discipline: string;
@@ -87,11 +90,19 @@ export function createSupabaseAthleteAdminRepository(client: SupabaseClient): At
           meeting: r.meeting_name,
         })),
         managerPrice: data.manager_price,
+        condition: data.manager_condition,
+        presence: data.france_presence,
       };
     },
 
     setPrice: (athleteId, price) =>
       call("admin_set_athlete_price", { p_athlete: athleteId, p_price: price }),
+    setManagerProfile: (athleteId, profile) =>
+      call("admin_set_athlete_manager_profile", {
+        p_athlete: athleteId,
+        p_condition: profile.condition,
+        p_presence: profile.presence,
+      }),
 
     async create(fields) {
       const created = await client.rpc("create_athlete", {

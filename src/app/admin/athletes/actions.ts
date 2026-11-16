@@ -8,6 +8,7 @@ import {
   createAthlete,
   editAthlete,
   editAthleteDiscipline,
+  setAthleteManagerProfile,
   setAthletePrice,
 } from "@/application/edit-athlete";
 import { UseCaseError } from "@/application/errors";
@@ -62,6 +63,16 @@ export async function setPriceAction(data: FormData) {
     setAthletePrice({ athletes: createSupabaseAthleteAdminRepository(client) }).execute({
       athleteId: formText(data, "athleteId"),
       price: formText(data, "price"),
+    }),
+  );
+}
+
+export async function setManagerProfileAction(data: FormData) {
+  await change(data, (client) =>
+    setAthleteManagerProfile({ athletes: createSupabaseAthleteAdminRepository(client) }).execute({
+      athleteId: formText(data, "athleteId"),
+      condition: formText(data, "condition"),
+      presence: formText(data, "presence"),
     }),
   );
 }

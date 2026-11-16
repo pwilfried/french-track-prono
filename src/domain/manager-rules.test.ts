@@ -28,6 +28,15 @@ const rules: ManagerRules = {
     world_record: 25,
   },
   season: { startsOn: "2027-01-01", endsOn: "2027-12-31" },
+  pricing: {
+    grid: [
+      { minPoints: 1200, price: 20 },
+      { minPoints: 0, price: 2 },
+    ],
+    oldMarkPenalty: 0.05,
+    unfitFactor: 0.5,
+    rarelyFactor: 0.6,
+  },
 };
 
 const withQuota = (change: Partial<ManagerRules["quotas"][number]>): ManagerRules => ({
@@ -93,6 +102,7 @@ describe("isPlayableManagerRules", () => {
     ],
     ["no way to close the mercato", { ...rules, closeModes: [] }],
     ["a negative bonus", { ...rules, bonuses: { ...rules.bonuses, world_record: -1 } }],
+    ["a price grid without a step", { ...rules, pricing: { ...rules.pricing, grid: [] } }],
     [
       "a season ending before it starts",
       { ...rules, season: { startsOn: "2027-12-31", endsOn: "2027-01-01" } },

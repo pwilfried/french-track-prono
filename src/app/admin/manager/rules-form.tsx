@@ -32,14 +32,24 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function NumberField({ label, name, value }: { label: string; name: string; value: number }) {
+function NumberField({
+  label,
+  name,
+  value,
+  decimal = false,
+}: {
+  label: string;
+  name: string;
+  value: number;
+  decimal?: boolean;
+}) {
   return (
     <label className="flex items-center justify-between gap-3 font-semibold">
       {label}
       <input
         name={name}
-        defaultValue={String(value)}
-        inputMode="numeric"
+        defaultValue={decimal ? String(value).replace(".", ",") : String(value)}
+        inputMode={decimal ? "decimal" : "numeric"}
         required
         className={`${small} w-20 shrink-0`}
       />
@@ -158,6 +168,54 @@ export function ManagerRulesForm({
             value={rules.bonuses[bonus]}
           />
         ))}
+      </Section>
+
+      <Section title={text.pricing}>
+        <p className="text-sm text-muted-foreground">{text.pricingHint}</p>
+        {rules.pricing.grid.map((step, i) => (
+          <div key={i} className="flex items-center justify-between gap-2 text-sm font-semibold">
+            <label className="flex items-center gap-2">
+              {text.fromPoints}
+              <input
+                name={`pricing.grid.${i}.minPoints`}
+                aria-label={text.stepPoints(i + 1)}
+                defaultValue={String(step.minPoints)}
+                inputMode="numeric"
+                required
+                className={`${small} w-20`}
+              />
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                name={`pricing.grid.${i}.price`}
+                aria-label={text.stepPrice(i + 1)}
+                defaultValue={String(step.price)}
+                inputMode="numeric"
+                required
+                className={small}
+              />
+              {text.credits}
+            </label>
+          </div>
+        ))}
+        <NumberField
+          label={text.oldMarkPenalty}
+          name="pricing.oldMarkPenalty"
+          value={rules.pricing.oldMarkPenalty}
+          decimal
+        />
+        <NumberField
+          label={text.unfitFactor}
+          name="pricing.unfitFactor"
+          value={rules.pricing.unfitFactor}
+          decimal
+        />
+        <NumberField
+          label={text.rarelyFactor}
+          name="pricing.rarelyFactor"
+          value={rules.pricing.rarelyFactor}
+          decimal
+        />
       </Section>
 
       <Section title={text.season}>

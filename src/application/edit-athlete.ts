@@ -1,5 +1,11 @@
 import type { AthleteRecord } from "@/domain/athlete";
 import type { EventGender } from "@/domain/event";
+import {
+  ATHLETE_CONDITIONS,
+  FRANCE_PRESENCES,
+  type AthleteCondition,
+  type FrancePresence,
+} from "@/domain/manager-price";
 import { athleteSlug } from "@/domain/start-list-import";
 
 import { UseCaseError } from "./errors";
@@ -25,6 +31,9 @@ export type AthleteFile = AthleteSummary & {
   records: AthleteRecord[];
   /** Price in the French Track Manager catalogue (#421); null keeps them out of it. */
   managerPrice: number | null;
+  /** What the suggested Manager price reads besides the marks (#1028). */
+  condition: AthleteCondition;
+  presence: FrancePresence;
 };
 
 type Write = Promise<"saved" | "not_admin">;
@@ -50,6 +59,10 @@ export interface AthleteAdminRepository {
   setDiscipline(athleteId: string, discipline: string, isPrimary: boolean): Write;
   removeDiscipline(athleteId: string, discipline: string): Write;
   setPrice(athleteId: string, price: number | null): Write;
+  setManagerProfile(
+    athleteId: string,
+    profile: { condition: AthleteCondition; presence: FrancePresence },
+  ): Write;
   /** Sets a PR or SB; a null mark removes it. */
   setRecord(
     athleteId: string,
@@ -140,6 +153,18 @@ export function setAthletePrice(ports: { athletes: AthleteAdminRepository }) {
         throw new UseCaseError("ATHLETE_PRICE_INVALID");
       }
       await allowed(ports.athletes.setPrice(input.athleteId, price));
+    },
+  };
+}
+
+/** The admin sets how fit an athlete is and how often they run in France (#1028). */
+export function setAthleteManagerProfile(ports: { athletes: AthleteAdminRepository }) {
+  return {
+    async execute(input: { athleteId: string; condition: string; presence: string }) {
+      const condition = ATHLETE_CONDITIONS.find((c) => c === input.condition);
+      const presence = FRANCE_PRESENCES.find((p) => p === input.presence);
+      if (!condition || !presence) throw new UseCaseError("ATHLETE_PROFILE_INVALID");
+      await allowed(ports.athletes.setManagerProfile(input.athleteId, { condition, presence }));
     },
   };
 }
