@@ -5,9 +5,11 @@
 --   One competition, athletes 1 to 3 on its 100 m. A Manager league (mercato closed) with player 1
 --   (lined up 1 and 2) and player 2 (no lineup); a league whose mercato is open with player 1;
 --   player 3 is in no league; player 4 is admin. Player 1 has 7 prediction points, which the Manager ignores.
+--   Their match sheet (#1033): athlete 1 on the 100 m with athlete 3 designated below 10"50,
+--   athlete 2 on the 100 m, athlete 3 on the bench; the score applies it (managerCompetitionScore).
 -- Rolled back at the end.
 begin;
-select plan(21);
+select plan(24);
 
 insert into auth.users (id, email) values
   ('9e500000-0000-0000-0000-000000000001', 'one@example.test'),
@@ -61,6 +63,14 @@ insert into manager_members (league_id, user_id) values
 insert into manager_lineups (league_id, competition_id, user_id, athlete_ids) values
   (pg_temp.league(), pg_temp.competition(), pg_temp.player(1),
    array[pg_temp.athlete(1), pg_temp.athlete(2)]);
+insert into manager_lineup_entries (league_id, competition_id, user_id, athlete_id, role, slot,
+                                    discipline, substitute_id, threshold) values
+  (pg_temp.league(), pg_temp.competition(), pg_temp.player(1), pg_temp.athlete(1), 'starter', 1,
+   '100 m', pg_temp.athlete(3), 10.50),
+  (pg_temp.league(), pg_temp.competition(), pg_temp.player(1), pg_temp.athlete(2), 'starter', 2,
+   '100 m', null, null),
+  (pg_temp.league(), pg_temp.competition(), pg_temp.player(1), pg_temp.athlete(3), 'substitute', 1,
+   '100 m', null, null);
 
 -- The competition starts; the admin enters the performances and the prediction points exist.
 update events set starts_at = now() - interval '1 hour', lock_at = now() - interval '1 hour'
@@ -101,11 +111,34 @@ select is(
   2, 'the sheet holds the participants of the leagues whose mercato is over');
 
 select is(
-  (select p -> 'lineup' from jsonb_array_elements(
+  (select array_agg(s ->> 'athlete_id' order by n) from jsonb_array_elements(
+     admin_manager_scoring_sheet('score-c1') -> 'participants') p,
+     jsonb_array_elements(p -> 'lineup' -> 'starters') with ordinality s(s, n)
+   where p ->> 'user_id' = pg_temp.player(1)::text),
+  array[pg_temp.athlete(1)::text, pg_temp.athlete(2)::text],
+  'the sheet holds the starters of a participant in place order');
+
+select is(
+  (select p -> 'lineup' -> 'starters' -> 0 from jsonb_array_elements(
      admin_manager_scoring_sheet('score-c1') -> 'participants') p
    where p ->> 'user_id' = pg_temp.player(1)::text),
-  jsonb_build_array(pg_temp.athlete(1), pg_temp.athlete(2)),
-  'the sheet holds the lineup of a participant');
+  jsonb_build_object('athlete_id', pg_temp.athlete(1), 'family', 'sprint', 'discipline', '100 m',
+                     'substitute_id', pg_temp.athlete(3), 'threshold', 10.50),
+  'a starter comes with their discipline, family, designated substitute and threshold');
+
+select is(
+  (select p -> 'lineup' -> 'starters' -> 1 ->> 'substitute_id' from jsonb_array_elements(
+     admin_manager_scoring_sheet('score-c1') -> 'participants') p
+   where p ->> 'user_id' = pg_temp.player(1)::text),
+  null, 'a starter without a designated substitute has none');
+
+select is(
+  (select p -> 'lineup' -> 'bench' from jsonb_array_elements(
+     admin_manager_scoring_sheet('score-c1') -> 'participants') p
+   where p ->> 'user_id' = pg_temp.player(1)::text),
+  jsonb_build_array(jsonb_build_object('athlete_id', pg_temp.athlete(3), 'family', 'sprint',
+                                       'discipline', '100 m')),
+  'the sheet holds the bench in rank order, the reserve left out');
 
 select is(
   (select p -> 'lineup' from jsonb_array_elements(

@@ -225,8 +225,9 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 À construire ; tant que ce n'est pas livré, les règles ci-dessus restent en vigueur. Les familles,
 les quotas, les 2 places par famille, la taille du banc et le diviseur sont livrés (#1030, voir
 « Règles Manager à 4 familles » plus bas) ; la feuille de match est enregistrée et vérifiée
-(#1032, voir « Feuille de match en base » plus bas) ; le calcul des remplacements, la reprise du
-dernier alignement et l'écran viennent avec #1033, #1034 et #1035.
+(#1032, voir « Feuille de match en base » plus bas) ; le calcul des remplacements est livré
+(#1033, voir « Remplacements dans le score » plus bas) ; la reprise du dernier alignement et
+l'écran viennent avec #1034 et #1035.
 
 - **Une seule action par compétition : aligner.** Le joueur n'a plus de pronostics à faire pour le
   Manager (section 4).
@@ -282,6 +283,26 @@ dernier alignement et l'écran viennent avec #1033, #1034 et #1035.
   seuil sans remplaçant désigné, FT042 (décision de l'agent : un seuil sans remplaçant n'aurait
   aucun effet). L'écran actuel envoie ses titulaires seuls, dans leur première discipline, jusqu'à
   la feuille de match (#1035).
+
+### Remplacements dans le score (#1033)
+
+- `managerCompetitionScore` (`src/domain/manager-score.ts`) part de la feuille de match au
+  verrou, que `admin_manager_scoring_sheet` donne pour chaque participant (titulaires dans l'ordre
+  des places avec discipline, famille Manager, remplaçant désigné et seuil ; banc dans l'ordre).
+  La famille est celle de l'athlète dans l'équipe (sa discipline principale), à défaut celle de la
+  discipline qui compte ; un alignement sans lignes de feuille compte ses titulaires dans leur
+  première discipline, sans remplaçant.
+- Seule la discipline choisie compte ; dans cette discipline, la meilleure manche (séries et
+  finale), sans cumul. Les places sont traitées dans l'ordre ; un remplaçant n'entre qu'une fois.
+- Une **marque** : un arrivé dont la marque se lit. Seuil : le titulaire fait strictement moins
+  bien (plus lent pour une course, moins loin ou moins haut, moins de points) ; à égalité il reste.
+- Pour chaque place, le score dit qui a compté et pourquoi (`substitution` :
+  `{starterId, reason}`, `tactical`, `forfeit` ou `bench`), absent quand le titulaire compte ; il
+  est stocké dans `manager_scores.athletes` (`substitution: {starter_id, reason}`).
+- Décisions de l'agent (à revoir aux tests du propriétaire) : un remplacement tactique n'a lieu
+  que si le remplaçant désigné a une marque (sinon le titulaire garde sa place, et le remplaçant
+  reste disponible) ; un remplaçant du banc n'entre que s'il a une marque ; sans personne, la
+  ligne du titulaire reste (0 point).
 
 ### Règles Manager à 4 familles (#1030)
 
@@ -354,7 +375,7 @@ points » en fin de section.
   `/manager/<id>/points/<compétition>`, depuis l'alignement verrouillé ; le détail des titulaires va
   du plus fort au plus faible, les bonus en étiquettes dorées.
 - Décisions du coordinateur (la « meilleure ligne » est remplacée par la discipline choisie à
-  l'alignement, #1017) : un athlète engagé dans plusieurs
+  l'alignement, #1017, livrée par #1033) : un athlète engagé dans plusieurs
   épreuves de la compétition (séries et finale, deux disciplines) rapporte sa **meilleure ligne**,
   sans cumul ; les bonus de place (1re, 2e, 3e) ne comptent qu'en **finale**, un record battu en
   série compte. « Mes points » ne mène pas encore à la journée : on y va par la page de la ligue

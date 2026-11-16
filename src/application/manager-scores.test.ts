@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ManagerBonus } from "@/domain/manager-rules";
-import type { CompetitionPerformance } from "@/domain/manager-score";
+import type { CompetitionPerformance, ScoringLineup } from "@/domain/manager-score";
 import { worldAthleticsPoints } from "@/domain/world-athletics-points";
 
 import { UseCaseError } from "./errors";
@@ -25,6 +25,18 @@ const bonuses: Record<ManagerBonus, number> = {
   world_record: 100,
 };
 
+/** A match sheet of starters on the 100 m, without a substitute. */
+const starters = (...ids: string[]): ScoringLineup => ({
+  starters: ids.map((athleteId) => ({
+    athleteId,
+    family: "sprint",
+    discipline: "100 m",
+    substituteId: null,
+    threshold: null,
+  })),
+  bench: [],
+});
+
 const LOCK = "2026-07-10T16:00:00Z";
 const run = (athleteId: string, mark: string, extra: Partial<CompetitionPerformance> = {}) =>
   ({
@@ -46,7 +58,7 @@ function world() {
     competitionId: "meeting-id",
     lockAt: LOCK,
     participants: [
-      { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: ["a1", "a2"] },
+      { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: starters("a1", "a2") },
       { leagueId: "L", userId: "max", bonuses, tablesDivisor: 10, lineup: null },
     ],
     performances: [

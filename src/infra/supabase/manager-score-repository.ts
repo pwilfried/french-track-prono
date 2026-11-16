@@ -3,9 +3,20 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { UseCaseError } from "@/application/errors";
 import type { ManagerScoreRepository, StoredManagerScore } from "@/application/manager-scores";
 import type { MarkUnit } from "@/domain/discipline";
-import { MANAGER_BONUSES, type ManagerBonus } from "@/domain/manager-rules";
-import type { AthleteScore, CompetitionPerformance } from "@/domain/manager-score";
+import { MANAGER_BONUSES, type ManagerBonus, type ManagerFamily } from "@/domain/manager-rules";
+import type {
+  AthleteScore,
+  CompetitionPerformance,
+  ScoringLineup,
+  SubstitutionReason,
+} from "@/domain/manager-score";
 import type { PerformanceStatus, RecordFlag } from "@/domain/performance";
+
+type SubstituteRow = { athlete_id: string; family: ManagerFamily; discipline: string };
+type LineupRow = {
+  starters: (SubstituteRow & { substitute_id: string | null; threshold: number | null })[];
+  bench: SubstituteRow[];
+};
 
 type SheetRow = {
   competition_id: string;
@@ -15,7 +26,7 @@ type SheetRow = {
     user_id: string;
     bonuses: Partial<Record<ManagerBonus, number>>;
     tables_divisor: number;
-    lineup: string[] | null;
+    lineup: LineupRow | null;
   }[];
   performances: {
     athlete_id: string;
@@ -39,6 +50,7 @@ type AthleteRow = {
   bonuses: { bonus: ManagerBonus; points: number }[];
   bonus_points: number;
   total: number;
+  substitution?: { starter_id: string; reason: SubstitutionReason };
 };
 
 type ScoreRow = {
@@ -65,7 +77,26 @@ const athleteRow = (a: AthleteScore): AthleteRow => ({
   bonuses: a.bonuses,
   bonus_points: a.bonusPoints,
   total: a.total,
+  ...(a.substitution && {
+    substitution: { starter_id: a.substitution.starterId, reason: a.substitution.reason },
+  }),
 });
+
+const lineup = (row: LineupRow | null): ScoringLineup | null =>
+  row && {
+    starters: row.starters.map((s) => ({
+      athleteId: s.athlete_id,
+      family: s.family,
+      discipline: s.discipline,
+      substituteId: s.substitute_id,
+      threshold: s.threshold === null ? null : Number(s.threshold),
+    })),
+    bench: row.bench.map((b) => ({
+      athleteId: b.athlete_id,
+      family: b.family,
+      discipline: b.discipline,
+    })),
+  };
 
 /** The admin reads the sheet and writes the scores with their own session; a participant reads theirs. */
 export function createSupabaseManagerScoreRepository(
@@ -88,7 +119,7 @@ export function createSupabaseManagerScoreRepository(
           userId: p.user_id,
           bonuses: bonusValues(p.bonuses),
           tablesDivisor: p.tables_divisor,
-          lineup: p.lineup,
+          lineup: lineup(p.lineup),
         })),
         performances: sheet.performances.map(
           (p): CompetitionPerformance => ({
@@ -149,6 +180,9 @@ export function createSupabaseManagerScoreRepository(
             bonuses: a.bonuses,
             bonusPoints: a.bonus_points,
             total: a.total,
+            ...(a.substitution && {
+              substitution: { starterId: a.substitution.starter_id, reason: a.substitution.reason },
+            }),
           }),
         ),
       };
