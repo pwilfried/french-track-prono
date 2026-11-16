@@ -25,6 +25,11 @@ export function countdown(now: Date, lockAt: string): Countdown {
   return { phase: "open", remainingSeconds, level };
 }
 
+/** An alert colour only means something near the lock: in the last hour, not 22 hours ahead (#989). */
+export function lockAlert(state: Countdown): boolean {
+  return state.phase === "open" && state.level !== "far";
+}
+
 export function splitDuration(totalSeconds: number) {
   return {
     days: Math.floor(totalSeconds / 86400),
@@ -50,5 +55,5 @@ export function lockLabel(
   const left = countdown(now, lockAt);
   if (left.phase === "locked") return { kind: "locked" };
   if (!timeLeft && left.remainingSeconds > 86_400) return { kind: "on" };
-  return { kind: "in", seconds: left.remainingSeconds, urgent: left.level !== "far" };
+  return { kind: "in", seconds: left.remainingSeconds, urgent: lockAlert(left) };
 }
