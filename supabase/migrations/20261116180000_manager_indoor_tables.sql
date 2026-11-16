@@ -2,7 +2,7 @@
 -- (`venue = 'indoor'`) scores its races with the World Athletics short-track tables. The scoring
 -- sheet tells the venue; the points are computed by src/domain/world-athletics-points.ts.
 
--- As in #1031, with `indoor`.
+-- As in #1033 (substitutions, 20261116160000), with `indoor`.
 create or replace function admin_manager_scoring_sheet(p_competition text) returns jsonb
 language plpgsql stable security definer set search_path = public as $$
 declare
@@ -25,12 +25,10 @@ begin
                'league_id', m.league_id, 'user_id', m.user_id,
                'bonuses', coalesce(l.rules -> 'bonuses', '{}'::jsonb),
                'tables_divisor', coalesce((l.rules ->> 'tablesDivisor')::numeric::int, 10),
-               'lineup', to_jsonb(ml.athlete_ids))
+               'lineup', private.manager_scoring_lineup(l.id, v_id, m.user_id))
              order by m.league_id, m.user_id)
       from manager_leagues l
       join manager_members m on m.league_id = l.id
-      left join manager_lineups ml
-        on ml.league_id = l.id and ml.competition_id = v_id and ml.user_id = m.user_id
       where v_id = any (l.competition_ids) and l.mercato_closed_at is not null), '[]'::jsonb),
     'performances', coalesce((
       select jsonb_agg(jsonb_build_object(
