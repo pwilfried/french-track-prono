@@ -31,8 +31,8 @@ const TUTORIAL_HREF = "/manager?tutoriel=1";
  * French Track Manager (#419): « Créer » and « Rejoindre », then the player's Manager leagues, one
  * card each with its phase, the player's place, the next deadline and what waits for them; a card
  * enters the league (#774). Until the player has one, the mode in one line, the ways in and the
- * steps. The presentation in three screens opens over it at the first visit, then on demand
- * (#616, #802). A visitor sees what the Manager is, an example and « Se connecter » (#934).
+ * steps. The presentation in three screens opens over it at the first visit of a player without a
+ * Manager league, then on demand (#616, #802, #988). A visitor sees what the Manager is, an example and « Se connecter » (#934).
  */
 export default async function ManagerPage({
   searchParams,
@@ -65,7 +65,11 @@ export default async function ManagerPage({
   return (
     <main id="main" className="flex flex-1 flex-col">
       {/* A new instance each time « Comment ça marche ? » asks for it again. */}
-      <ManagerTutorialGate key={String(tutoriel !== undefined)} open={tutoriel !== undefined} />
+      <ManagerTutorialGate
+        key={String(tutoriel !== undefined)}
+        open={tutoriel !== undefined}
+        hasLeague={leagues !== "error" && leagues.length > 0}
+      />
       <LeagueHero title={text.title} subtitle={text.slogan} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-3 px-4 py-6">
         {leagues !== "error" && leagues.length === 0 ? (
