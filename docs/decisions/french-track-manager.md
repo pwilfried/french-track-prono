@@ -214,11 +214,44 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   alignements. Codes : FT022 mercato pas fini, FT023 verrouillé, FT024 alignement invalide.
 - Décisions du coordinateur (à revoir aux tests du propriétaire) : les remplaçants sont un **banc
   simple** en v1, sans remplacement automatique d'un titulaire qui ne court pas ; le chiffre de la
-  carte reste le **prix payé** (les points de la saison viendront avec la v0.15).
+  carte reste le **prix payé** (les points de la saison viendront avec la v0.15). **Remplacé par
+  la feuille de match ci-dessous (#1017).**
+
+### Feuille de match et remplacements (décisions du propriétaire du 16 nov. 2026, #1017)
+
+À construire ; tant que ce n'est pas livré, les règles ci-dessus restent en vigueur.
+
+- **Une seule action par compétition : aligner.** Le joueur n'a plus de pronostics à faire pour le
+  Manager (section 4).
+- **Feuille de match** : 8 titulaires (`lineup.max`), **4 remplaçants rangés** dans l'ordre, et le
+  reste de l'équipe en **réserve**. Un réserviste ne joue jamais sur la compétition, même en
+  dernier recours.
+- **Une discipline par athlète** aligné, titulaire ou remplaçant : le joueur la choisit parmi les
+  disciplines où l'athlète est sur une liste de départ de la compétition (sans liste de départ,
+  celles de sa fiche) ; une seule possible, elle est pré-remplie. Seule cette discipline compte :
+  la règle de la « meilleure ligne » disparaît.
+- **Remplaçant désigné** : chaque titulaire peut avoir un remplaçant de la **même famille**
+  (familles des places du stade : haies avec le sprint, les deux sauts ensemble), **homme ou
+  femme**. Un remplaçant ne sert qu'à un titulaire.
+- **Remplacement tactique** (facultatif) : un seuil de marque dans l'unité de la discipline
+  (« si plus lent que 10"50 », « si moins de 8,00 m »), affiché aussi en points. Si le titulaire
+  fait moins bien que le seuil, le remplaçant entre et c'est **sa** ligne qui compte, même si elle
+  est moins bonne.
+- **Titulaire DNS, DNF ou DQ** : son remplaçant désigné entre ; s'il n'a pas couru non plus (ou
+  sans remplaçant désigné), le **premier remplaçant du banc de la même famille** qui n'est pas déjà
+  entré ; sinon 0.
+- **Oubli d'alignement** : au verrou, le **dernier alignement** du joueur est repris (titulaires,
+  banc, disciplines et seuils), en ne gardant que les athlètes engagés ; une place que personne ne
+  peut remplir reste vide. « Mes points » affiche « Alignement repris de … ». Sans aucun
+  alignement précédent : 0.
 
 ## 4. Points (v0.15)
 
 **Score d'une compétition = points du barème hongrois + bonus sportifs + points de pronostics.**
+
+> **Changement décidé le 16 nov. 2026 (#1017), à construire** : score = **points des tables ÷ 10**
+> (entier inférieur, par athlète) **+ bonus sportifs**, sans les pronostics. Voir « Équilibre des
+> points » en fin de section.
 
 - **Barème hongrois** (« tables World Athletics ») : chaque athlète aligné rapporte des points selon sa performance réelle ;
   la place n'entre pas dans ce calcul. Tables World Athletics (#428) ; DNS, DNF, DQ = 0 point.
@@ -246,7 +279,7 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   (journalisée `set_performances` dans `admin_actions`), qui remplace aussi `results` par les
   arrivés classés 1 à 3 ; `admin_manager_lined_up` dit à l'admin seul quels athlètes de la liste sont
   alignés (les alignements restent privés). Règles pures : `src/domain/performance.ts`.
-- **Pronostics classiques obligatoires** sur toutes les épreuves de chaque compétition éligible,
+- **Pronostics classiques obligatoires** (retirés le 16 nov. 2026, #1017) sur toutes les épreuves de chaque compétition éligible,
   verrouillés au départ ;
   sans pronostic, 0 sur cette partie.
 - Calcul (#431, automatique depuis #665) : chaque feuille de résultats enregistrée calcule les
@@ -262,13 +295,36 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   (lecture par les participants de la ligue). Écran « Mes points » :
   `/manager/<id>/points/<compétition>`, depuis l'alignement verrouillé ; le détail des titulaires va
   du plus fort au plus faible, les bonus en étiquettes dorées.
-- Décisions du coordinateur (à revoir aux tests du propriétaire) : un athlète engagé dans plusieurs
+- Décisions du coordinateur (la « meilleure ligne » est remplacée par la discipline choisie à
+  l'alignement, #1017) : un athlète engagé dans plusieurs
   épreuves de la compétition (séries et finale, deux disciplines) rapporte sa **meilleure ligne**,
   sans cumul ; les bonus de place (1re, 2e, 3e) ne comptent qu'en **finale**, un record battu en
   série compte. « Mes points » ne mène pas encore à la journée : on y va par la page de la ligue
   (« Journée ») ou le classement.
 - Cas chiffrés de référence (tables, bonus, score d'une compétition) : `docs/architecture.md`,
   « Cas de test du cœur », M1 à M12.
+
+### Équilibre des points (décisions du propriétaire du 16 nov. 2026, #1017)
+
+À construire ; tant que ce n'est pas livré, le calcul ci-dessus reste en vigueur.
+
+- **Constat** (barème des migrations) : un athlète vaut 900 à 1 250 points des tables, 8 titulaires
+  environ 8 500. Sur 20 000 confrontations simulées, l'écart médian des tables est d'environ
+  450 points, celui des bonus 8 et celui des pronos 12 à 57 : les bonus changent le vainqueur dans
+  moins de 1 % des cas, et 0,09 s sur un 100 m (30 points) pèse plus que trois titres.
+- **Points des tables ÷ 10**, arrondis à l'entier inférieur pour chaque athlète (un athlète vaut
+  environ 100). Le diviseur est une règle de la ligue (`tablesDivisor`, 10), figée à la création ;
+  les ligues déjà créées passent à 10 aussi (la saison n'a pas commencé).
+- **Bonus inchangés** et automatiques, lus dans la feuille de résultats : 1re 10, 2e 6, 3e 3 (en
+  finale), RP 5, MPS 3, RN 10, RC 15, RM 25 (en série aussi). Un titre vaut environ 0,3 s sur
+  100 m. Le joueur n'a rien à saisir.
+- **Plus de pronostics dans le Manager** : ni obligatoires, ni comptés. Le jeu de pronos et ses
+  ligues restent à part. La seule action du joueur pour une compétition est l'alignement
+  (section 3).
+- Exemple de référence (championnats de France, marques réalistes, tout le monde au départ) :
+  l'équipe A, plus rapide sur le papier sans titre, faisait 8 956 + 15 bonus ; l'équipe B, quatre
+  titres, 8 687 + 66 : A gagnait de 218. Avec ÷ 10 : A 892 + 15 = 907, B 865 + 66 = 931, B gagne
+  de 24.
 
 ## 5. Championnat (v0.16)
 
@@ -368,6 +424,7 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   participant ; l'admin peut aussi saisir tous les résultats de la compétition pour qu'ils
   soient visibles dans l'app.
 - **Pronostics obligatoires** : ceux de **toutes les épreuves** pronostiquables de la compétition.
+  Retirés le 16 nov. 2026 (#1017) : les pronos ne comptent plus dans le Manager.
 - **Monnaie** : crédits virtuels uniquement, rien de payant. Le mercato secondaire payant est hors
   périmètre.
 
