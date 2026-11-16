@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { countdown, eventPhase, lockLabel, splitDuration } from "./countdown";
+import { countdown, eventPhase, lockAlert, lockLabel, splitDuration } from "./countdown";
 
 const lockAt = "2026-09-12T18:30:00.000Z";
 const at = (offsetMs: number) => new Date(Date.parse(lockAt) + offsetMs);
@@ -86,6 +86,22 @@ describe("countdown", () => {
         },
       ),
     );
+  });
+});
+
+describe("lockAlert", () => {
+  it("stays calm more than one hour before the lock (#989)", () => {
+    expect(lockAlert(countdown(at(-22 * 3600_000), lockAt))).toBe(false);
+    expect(lockAlert(countdown(at(-3601_000), lockAt))).toBe(false);
+  });
+
+  it("alerts in the last hour before the lock", () => {
+    expect(lockAlert(countdown(at(-3600_000), lockAt))).toBe(true);
+    expect(lockAlert(countdown(at(-1000), lockAt))).toBe(true);
+  });
+
+  it("does not alert once locked", () => {
+    expect(lockAlert(countdown(at(0), lockAt))).toBe(false);
   });
 });
 
