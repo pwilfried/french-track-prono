@@ -240,6 +240,16 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - **Titulaire DNS, DNF ou DQ** : son remplaçant désigné entre ; s'il n'a pas couru non plus (ou
   sans remplaçant désigné), le **premier remplaçant du banc de la même famille** qui n'est pas déjà
   entré ; sinon 0.
+- **Familles, quotas et budget** (même décision) : 4 familles partout, équipe comme stade —
+  **sprint** (100 à 400 m, haies), **demi-fond et fond** (800 m au marathon, steeple), **sauts**
+  (les quatre, épreuves combinées comprises), **lancers**. Le stade : **2 places par famille**, sans
+  place « Libre » ni contrainte de sexe. L'équipe : par famille au moins **1 femme et 1 homme**, au
+  moins **3** au total, au plus **4 par sexe** ; taille minimum **12**. Budget **100**. Prix de
+  départ indicatifs selon les points de la meilleure marque des 12 derniers mois : 20 (≥ 1 200),
+  12 (1 150–1 199), 7 (1 100–1 149), 4 (1 050–1 099), 2 (en dessous) ; une équipe équilibrée coûte
+  alors 75 à 90 au prix de départ. Prix proposé dans le back-office : #1028. Le catalogue doit
+  compter au moins 200 athlètes avec un prix, environ 25 par famille et par sexe. Valeurs de départ
+  à ajuster après les tests du propriétaire.
 - **Oubli d'alignement** : au verrou, le **dernier alignement** du joueur est repris (titulaires,
   banc, disciplines et seuils), en ne gardant que les athlètes engagés ; une place que personne ne
   peut remplir reste vide. « Mes points » affiche « Alignement repris de … ». Sans aucun
