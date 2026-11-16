@@ -2011,6 +2011,16 @@ export const messages = {
       area_record: "Record continental",
       world_record: "Record du monde",
     },
+    pricing: "Prix proposé des athlètes",
+    pricingHint:
+      "Le back-office propose un prix depuis la fiche : points World Athletics de la meilleure marque des 12 derniers mois (sinon le RP dégradé), puis cette grille. L'admin garde le dernier mot.",
+    fromPoints: "Dès",
+    credits: "crédits",
+    stepPoints: (step: number) => `Palier ${step}, points minimum`,
+    stepPrice: (step: number) => `Palier ${step}, prix en crédits`,
+    oldMarkPenalty: "Dégradé d'un RP de plus de 12 mois (0,05 = 5 %)",
+    unfitFactor: "Coefficient blessé, incertain ou absent",
+    rarelyFactor: "Coefficient rarement en France",
     season: "Saison",
     startsOn: "Début",
     endsOn: "Fin",
@@ -2065,6 +2075,28 @@ export const messages = {
     managerPriceHint:
       "L'enchère minimale au mercato, en crédits. Vide : l'athlète n'est pas dans le catalogue.",
     managerPriceLabel: "Prix (crédits)",
+    suggestedPrice: (price: number) => `Prix proposé : ${price}`,
+    suggestedBasis: {
+      recent: (mark: string, total: number) =>
+        `Meilleure marque des 12 derniers mois : ${mark}, ${points(total)} World Athletics.`,
+      old_pb: (mark: string, total: number, percent: number) =>
+        `RP de plus de 12 mois (${mark}) dégradé de ${percent} % : ${points(total)} World Athletics.`,
+    },
+    suggestedFactors: "État et présence en France compris.",
+    takeSuggestedPrice: "Reprendre ce prix",
+    takingSuggestedPrice: "Reprise…",
+    noSuggestedPrice:
+      "Pas de prix proposé : il faut une marque dans la discipline principale, couverte par les tables World Athletics.",
+    condition: "État",
+    conditions: {
+      fit: "En forme",
+      doubtful: "Blessé ou incertain",
+      out: "Saison blanche ou retraite",
+    },
+    presence: "Présence en France",
+    presences: { often: "Souvent", sometimes: "Parfois", rarely: "Rarement" },
+    saveProfile: "Enregistrer l'état et la présence",
+    savingProfile: "Enregistrement…",
     name: "Nom",
     gender: "Catégorie",
     disciplines: "Disciplines, PB et SB",
@@ -3266,6 +3298,7 @@ export const messages = {
     ATHLETES_UNAVAILABLE: "La fiche athlète n'a pas pu être chargée. Réessaie.",
     ATHLETE_PRICE_INVALID:
       "Le prix est un nombre entier de crédits, au moins 1 (vide pour retirer l'athlète du catalogue).",
+    ATHLETE_PROFILE_INVALID: "Choisis un état et une présence en France dans les listes.",
     CATALOGUE_UNAVAILABLE: "Le catalogue n'a pas pu être chargé. Réessaie.",
     MANAGER_RULES_INVALID:
       "Ces règles ne permettent pas de jouer : vérifie que les quotas remplissent l'équipe, que l'alignement y tient et qu'un mode de clôture est coché.",

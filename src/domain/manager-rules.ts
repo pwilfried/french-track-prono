@@ -1,4 +1,5 @@
 import { DISCIPLINE_FAMILIES, type DisciplineFamily } from "./discipline";
+import { isValidManagerPricing, type ManagerPricing } from "./manager-price";
 
 /** French Track Manager teams are made of women and men (v0.12, #418). */
 export type ManagerSex = "F" | "M";
@@ -53,6 +54,8 @@ export type ManagerRules = {
   bonuses: Record<ManagerBonus, number>;
   /** ISO dates (YYYY-MM-DD). */
   season: { startsOn: string; endsOn: string };
+  /** How the back-office suggests the price of an athlete (#1028). */
+  pricing: ManagerPricing;
 };
 
 const isCount = (n: number) => Number.isInteger(n) && n >= 0;
@@ -62,7 +65,8 @@ const isDate = (s: string) =>
 
 /**
  * Rules a season can be played with: a team can be completed up to its minimum within its quotas,
- * the minimum team covers a lineup, every duration and bonus makes sense, at least one way to close the mercato.
+ * the minimum team covers a lineup, every duration and bonus makes sense, at least one way to close the mercato,
+ * a pricing the back-office can suggest prices with.
  */
 export function isPlayableManagerRules(rules: ManagerRules): boolean {
   const { quotas, lineup, rounds, season } = rules;
@@ -89,6 +93,7 @@ export function isPlayableManagerRules(rules: ManagerRules): boolean {
     MANAGER_BONUSES.every((b) => Number.isFinite(rules.bonuses[b]) && rules.bonuses[b] >= 0) &&
     isDate(season.startsOn) &&
     isDate(season.endsOn) &&
-    season.startsOn <= season.endsOn
+    season.startsOn <= season.endsOn &&
+    isValidManagerPricing(rules.pricing)
   );
 }

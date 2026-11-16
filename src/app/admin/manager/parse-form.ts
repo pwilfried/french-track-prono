@@ -15,6 +15,13 @@ const num = (data: FormData, name: string) => {
   return text === "" ? NaN : Number(text);
 };
 
+/** How many steps of the price grid the form holds. */
+const gridSteps = (data: FormData) => {
+  let steps = 0;
+  while (data.has(`pricing.grid.${steps}.price`)) steps++;
+  return steps;
+};
+
 /** The rules form of the back-office, field by field; the use case checks the values. */
 export function parseManagerRulesForm(data: FormData): ManagerRuleSet {
   const rules: ManagerRules = {
@@ -48,6 +55,15 @@ export function parseManagerRulesForm(data: FormData): ManagerRuleSet {
     season: {
       startsOn: formText(data, "season.startsOn"),
       endsOn: formText(data, "season.endsOn"),
+    },
+    pricing: {
+      grid: Array.from({ length: gridSteps(data) }, (_, i) => ({
+        minPoints: num(data, `pricing.grid.${i}.minPoints`),
+        price: num(data, `pricing.grid.${i}.price`),
+      })),
+      oldMarkPenalty: num(data, "pricing.oldMarkPenalty"),
+      unfitFactor: num(data, "pricing.unfitFactor"),
+      rarelyFactor: num(data, "pricing.rarelyFactor"),
     },
   };
   return {

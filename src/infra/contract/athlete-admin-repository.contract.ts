@@ -87,6 +87,16 @@ export function athleteAdminRepositoryContract(
       expect((await w.admin.find(w.slug))?.managerPrice).toBeNull();
     });
 
+    it("lets an admin set the condition and the presence in France, not a player", async () => {
+      const w = await world();
+
+      expect(await w.admin.find(w.slug)).toMatchObject({ condition: "fit", presence: "sometimes" });
+      const profile = { condition: "doubtful", presence: "rarely" } as const;
+      expect(await w.player.setManagerProfile(w.athleteId, profile)).toBe("not_admin");
+      expect(await w.admin.setManagerProfile(w.athleteId, profile)).toBe("saved");
+      expect(await w.admin.find(w.slug)).toMatchObject(profile);
+    });
+
     it("refuses every write from a player", async () => {
       const w = await world();
 

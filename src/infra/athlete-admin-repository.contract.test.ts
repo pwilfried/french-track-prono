@@ -16,6 +16,8 @@ athleteAdminRepositoryContract("in-memory fake", async () => {
       disciplines: [{ discipline: "100 m", isPrimary: true }],
       records: [],
       managerPrice: null,
+      condition: "fit",
+      presence: "sometimes",
     },
   ]);
   return {
