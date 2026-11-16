@@ -222,7 +222,10 @@ son propre prono (décisions du propriétaire, issue #16). Le badge « Coup de f
 calculés (`score_events`, raison `flair`) : il suit toujours le barème de la base. Sur l'onglet « Tous les
 joueurs », un joueur membre d'au moins une ligue voit d'abord les podiums des membres de ses
 ligues ; ceux des autres sont repliés sous « Voir tous les pronos (N) » (#949 :
-`listEventPredictions` rend `predictions` et `others`, `src/application/reveal.ts`).
+`listEventPredictions` rend `predictions` et `others`, `src/application/reveal.ts`). Sur cet
+onglet, au plus 20 podiums sont dépliés (`REVEAL_SHOWN`), avec ou sans ligue ; les suivants
+rejoignent le même pli (#984). Un joueur membre d'une ligue ouvre la section sur sa première
+ligue ; « Tous les joueurs » est l'onglet `?ligue=tous` (`revealFilter`, #984).
 
 **Consensus (v0.18, #680).** Au-dessus des podiums, le bloc « Ce qu'ont pronostiqué les joueurs »
 remplace l'ancienne répartition « Qui ont-ils vu gagner ? » : pour chaque place, les athlètes

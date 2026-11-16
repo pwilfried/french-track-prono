@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { UseCaseError } from "./errors";
 import type { LeagueMember, LeagueRepository } from "./leagues";
-import { listEventPredictions, type RevealedPrediction, type RevealRepository } from "./reveal";
+import {
+  listEventPredictions,
+  revealFilter,
+  type RevealedPrediction,
+  type RevealRepository,
+} from "./reveal";
 
 const prediction = (userId: string, pseudo: string): RevealedPrediction => ({
   predictionId: `p-${userId}`,
@@ -111,5 +116,42 @@ describe("listEventPredictions", () => {
 
     expect(result.predictions.map((p) => p.userId)).toEqual(["b"]);
     expect(result.others).toEqual([]);
+  });
+
+  it("shows at most 20 podiums unfiltered and folds the rest when I am in no league", async () => {
+    const many = Array.from({ length: 23 }, (_, i) => prediction(`u${i}`, `p${100 + i}`));
+    const result = await listEventPredictions({
+      reveal: reveal(true, many),
+      leagues: leagues(null),
+    }).execute({ eventId: "e1", myLeagueIds: [] });
+
+    expect(result.predictions.map((p) => p.pseudo)).toEqual(many.slice(0, 20).map((p) => p.pseudo));
+    expect(result.others.map((p) => p.pseudo)).toEqual(["p120", "p121", "p122"]);
+  });
+
+  it("folds the members of my leagues past the first 20, before the other players", async () => {
+    const friends = Array.from({ length: 21 }, (_, i) => prediction(`f${i}`, `f${100 + i}`));
+    const result = await listEventPredictions({
+      reveal: reveal(true, [prediction("x", "aaa"), ...friends]),
+      leagues: leagues(friends.map((f) => member(f.userId))),
+    }).execute({ eventId: "e1", myLeagueIds: ["l1"] });
+
+    expect(result.predictions).toHaveLength(20);
+    expect(result.others.map((p) => p.userId)).toEqual(["f20", "x"]);
+  });
+});
+
+describe("revealFilter", () => {
+  it("opens on my first league when I am in one and chose nothing", () => {
+    expect(revealFilter(undefined, ["l1", "l2"])).toBe("l1");
+  });
+
+  it("opens on all the players when I am in no league", () => {
+    expect(revealFilter(undefined, [])).toBeUndefined();
+  });
+
+  it("keeps the league or the all players view I chose", () => {
+    expect(revealFilter("l2", ["l1", "l2"])).toBe("l2");
+    expect(revealFilter("tous", ["l1", "l2"])).toBeUndefined();
   });
 });
