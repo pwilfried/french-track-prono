@@ -13,11 +13,15 @@ export const REMINDER_FAMILIES = [
 ] as const;
 export type ReminderFamily = (typeof REMINDER_FAMILIES)[number];
 
-/** The families shown today: « Ma ligue » and « FrenchTrack » wait for v0.19. */
+/**
+ * The families shown today. « Ma ligue » sends the reactions push (#672, #903); « FrenchTrack »
+ * stays hidden until a notification uses it.
+ */
 export const SHOWN_REMINDER_FAMILIES: readonly ReminderFamily[] = [
   "forgotten",
   "eveningResults",
   "manager",
+  "league",
 ];
 
 /** How long before a lock « Pronos oubliés » may be sent, in minutes. */
