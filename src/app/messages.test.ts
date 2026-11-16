@@ -84,6 +84,10 @@ describe("points text (#706)", () => {
     expect(messages.playerHome.league.gap(1, "Ana")).toBe("À 1 point de Ana");
     expect(messages.managerPoints.athletePoints(5)).toBe("5\u00a0pts");
   });
+
+  it("says tied instead of a zero-point gap on the home league card", () => {
+    expect(messages.playerHome.league.gap(0, "Ana")).toBe("À égalité de points avec Ana");
+  });
 });
 
 describe("competition date range text", () => {
