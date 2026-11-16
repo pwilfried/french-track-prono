@@ -6,6 +6,7 @@ import { getMyLineup, type MyLineup } from "@/application/manager-lineup";
 import { LockLine } from "@/components/countdown/lock-line";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
+import { cn } from "@/lib/utils";
 import {
   createSupabaseManagerBids,
   createSupabaseManagerCatalogue,
@@ -20,8 +21,9 @@ import { LineupForm } from "./lineup-form";
 const text = messages.lineup;
 
 /**
- * The player's lineup for one eligible competition of the league (#427): the stadium, the bench
- * and « Valider mon alignement », until the competition's first prediction lock.
+ * The player's match sheet for one eligible competition of the league (#427, #1035): the
+ * starters on the stadium, the substitutes in order, the reserve and « Valider mon alignement »,
+ * until the competition's first prediction lock.
  */
 export default async function LineupPage({
   params,
@@ -50,8 +52,12 @@ export default async function LineupPage({
     <main id="main" className="flex flex-1 flex-col">
       <LeagueHero
         title={lineup === "error" ? text.title : lineup.name}
-        subtitle={text.subtitle}
-        back={{ href: `/manager/${id}/alignement`, label: text.title }}
+        subtitle={text.title}
+        back={
+          lineup === "error"
+            ? { href: `/manager/${id}/alignement`, label: text.title }
+            : { href: `/manager/${id}`, label: lineup.leagueName }
+        }
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6 md:max-w-3xl">
         {lineup === "error" ? (
@@ -62,9 +68,23 @@ export default async function LineupPage({
           </p>
         ) : (
           <>
-            <p className="text-sm font-semibold text-muted-foreground">
-              <LockLine lockAt={lineup.lockAt} />
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-muted-foreground">
+                <LockLine lockAt={lineup.lockAt} />
+              </p>
+              <span
+                className={cn(
+                  "rounded-full px-3 py-1 text-xs font-bold",
+                  lineup.status === "validated"
+                    ? "bg-success-soft text-success-ink"
+                    : lineup.status === "todo"
+                      ? "bg-gold-soft text-gold-ink"
+                      : "bg-muted",
+                )}
+              >
+                {text.tag[lineup.status]}
+              </span>
+            </div>
             {lineup.status === "locked" && (
               <Link
                 href={`/manager/${id}/points/${lineup.slug}`}
@@ -81,6 +101,9 @@ export default async function LineupPage({
               fillable={lineup.fillable}
               athletes={lineup.athletes}
               initial={lineup.placed}
+              initialPlan={lineup.plan}
+              benchSize={lineup.benchSize}
+              divisor={lineup.divisor}
               status={lineup.status}
             />
           </>

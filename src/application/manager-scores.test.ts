@@ -94,6 +94,7 @@ function world() {
   };
   const lineups: ManagerLineupRepository = {
     mine: async (leagueId) => (leagueId === "L" ? [competition] : "not_member"),
+    sheet: async () => ({ disciplines: {}, sheet: null }),
     save: async () => "saved",
   };
   return { sheet, scores, lineups, stored: () => stored };

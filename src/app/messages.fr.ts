@@ -1,6 +1,7 @@
 // Every visible UI string lives here (French only in v1, no i18n library).
 
 import { eventLabel, keepUnits } from "@/domain/event-label";
+import type { ThresholdSense } from "@/domain/manager-bench";
 
 /** « 1er », « 2e »… */
 const ordinal = (rank: number) => (rank === 1 ? "1er" : `${rank}e`);
@@ -27,6 +28,22 @@ const LEVEL_NAMES: Record<string, string | undefined> = {
   championnat: "Championnat",
   "diamond-league": "Diamond League",
   "world-indoor-tour-gold": "World Indoor Tour Gold",
+};
+
+/** How a mark falls short of a tactical threshold (#1035), before the field and in a sentence. */
+const thresholdVerb: Record<ThresholdSense, string> = {
+  slower: "court plus lentement que",
+  lower: "saute moins haut que",
+  shorter_jump: "saute moins loin que",
+  shorter_throw: "lance moins loin que",
+  fewer: "marque moins de points que",
+};
+const thresholdBelow: Record<ThresholdSense, string> = {
+  slower: "si plus lent que",
+  lower: "s'il saute moins haut que",
+  shorter_jump: "s'il saute moins loin que",
+  shorter_throw: "s'il lance moins loin que",
+  fewer: "s'il marque moins de",
 };
 
 export const messages = {
@@ -811,8 +828,13 @@ export const messages = {
     competitions: "Compétitions éligibles",
     noCompetition: "Aucune compétition éligible dans cette ligue pour l'instant.",
     status: { todo: "À aligner", validated: "Validé", locked: "Verrouillé" },
-    places: (filled: number, total: number) => `${filled}/${total} places`,
-    stadium: "Le stade",
+    places: (filled: number, total: number) => `${filled}/${total}`,
+    placesLabel: (filled: number, total: number) => `${filled} places remplies sur ${total}`,
+    stadium: "Titulaires",
+    tag: { todo: "À valider", validated: "Validé", locked: "Verrouillé" },
+    legend: "↻ remplaçant prévu · ⏱ remplacement tactique. Touche une place pour la régler.",
+    spotNote: (substitute: string | null, threshold: string | null) =>
+      [substitute && `↻ ${substitute}`, threshold && `⏱ ${threshold}`].filter(Boolean).join(" "),
     place: {
       sprint: "Sprint",
       distance: "Demi-fond et fond",
@@ -826,8 +848,64 @@ export const messages = {
     nobody: "Aucun athlète engagé",
     add: "+",
     bench: "Remplaçants",
-    benchEmpty: "Tous tes athlètes engagés sont alignés.",
-    hint: "Touche une place du stade pour y mettre un athlète de ton équipe.",
+    benchOrder: "Dans l'ordre d'entrée",
+    benchCount: (count: number, size: number) => `${count}/${size}`,
+    benchEmpty: "Banc vide : mets des remplaçants depuis la réserve.",
+    noBench: "Pas de banc dans cette ligue : seuls les titulaires jouent.",
+    rank: (n: number) => `Remplaçant n° ${n}`,
+    role: (
+      role:
+        | { kind: "threshold"; starter: string; threshold: string; sense: ThresholdSense }
+        | { kind: "absent"; starter: string }
+        | { kind: "bench" },
+    ) =>
+      role.kind === "bench"
+        ? "Banc"
+        : role.kind === "absent"
+          ? `Remplace ${role.starter} s'il ne participe pas`
+          : `Remplace ${role.starter} ${thresholdBelow[role.sense]} ${role.threshold}`,
+    moveUp: (name: string) => `Faire entrer ${name} plus tôt`,
+    moveDown: (name: string) => `Faire entrer ${name} plus tard`,
+    toReserve: (name: string) => `Renvoyer ${name} en réserve`,
+    toReserveShort: "Réserve",
+    reserve: (count: number) => `Réserve · ${count}`,
+    reserveHint: "Ne jouent pas cette compétition",
+    reserveEmpty: "Personne en réserve : toute ton équipe joue.",
+    toBench: "Au banc",
+    toBenchLabel: (name: string) => `Mettre ${name} sur le banc`,
+    benchFull: "Banc complet",
+    summary: (starters: number, substitutes: number, tactical: number) =>
+      `${starters} ${starters > 1 ? "titulaires" : "titulaire"} · ${substitutes} ${substitutes > 1 ? "remplaçants" : "remplaçant"} · ${tactical} ${tactical > 1 ? "remplacements tactiques" : "remplacement tactique"}`,
+    starterTitle: (family: string) => `Titulaire · ${family}`,
+    records: (pb: string | null, sb: string | null) =>
+      [pb && `RP ${pb}`, sb && `MPS ${sb}`].filter(Boolean).join(" · "),
+    discipline: "Discipline qui compte",
+    onlyDiscipline: (discipline: string) =>
+      /^\d/.test(discipline)
+        ? `Seul le ${discipline} comptera.`
+        : `Seule l'épreuve ${discipline} comptera.`,
+    substitute: (family: string) => `Son remplaçant (${family})`,
+    noSubstitute: "Aucun remplaçant désigné",
+    noSubstituteHint: "S'il ne participe pas, le 1er du banc de sa famille entre",
+    noCandidate: "Aucun autre athlète de sa famille n'est engagé.",
+    candidateOnBench: (rank: number) => `Remplaçant n° ${rank}`,
+    candidateFor: (name: string) => `Prévu pour ${name} : le choisir le lui retire`,
+    candidateInReserve: "En réserve : passera sur le banc",
+    tactical: "Remplacement tactique",
+    optional: "facultatif",
+    tacticalToggle: "Remplacement tactique si la performance déçoit",
+    tacticalNeedsSubstitute: "Désigne d'abord son remplaçant.",
+    tacticalRule: (substitute: string, starter: string, sense: ThresholdSense) =>
+      `${substitute} entre si ${starter} ${thresholdVerb[sense]}`,
+    threshold: "Seuil",
+    thresholdPoints: (points: number) => `≈ ${points} pts au barème`,
+    tacticalNote: (substitute: string, sense: ThresholdSense) =>
+      sense === "slower"
+        ? `Si le remplacement se déclenche, c'est la course de ${substitute} qui compte, même si elle est moins bonne.`
+        : `Si le remplacement se déclenche, c'est le concours de ${substitute} qui compte, même s'il est moins bon.`,
+    save: "Enregistrer",
+    back: "Retour",
+    changeStarter: "Changer de titulaire",
     sheetTitle: (place: string) => `Place ${place}`,
     sheetHint: (place: string) => `Seuls les athlètes de la famille ${place} vont sur cette place.`,
     choices: "Athlètes de ton équipe",

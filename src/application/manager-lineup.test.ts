@@ -15,6 +15,7 @@ import {
   type LineupCompetition,
   type LineupSaveOutcome,
   type ManagerLineupRepository,
+  type SavedSheet,
 } from "./manager-lineup";
 
 const athlete = (
@@ -48,10 +49,12 @@ const rules = {
   minTeamSize: 3,
   quotas: [],
   lineup: { max: 4, perFamily: 1, bench: 0 },
+  tablesDivisor: 10,
 } as unknown as ManagerRules;
 
 const leagues = {
-  find: async (id: string) => ({ id, rules }) as unknown as ManagerLeagueFile,
+  find: async (id: string) =>
+    ({ id, name: "Ligue fictive", rules }) as unknown as ManagerLeagueFile,
 } as unknown as ManagerLeagueRepository;
 
 const bids: ManagerBidRepository = {
@@ -87,11 +90,13 @@ const meeting = (over: Partial<LineupCompetition> = {}): LineupCompetition => ({
 const lineups = (
   competitions: LineupCompetition[] | "not_member",
   save: LineupSaveOutcome = "saved",
+  read: SavedSheet = { disciplines: {}, sheet: null },
 ): ManagerLineupRepository & { saved: MatchSheet[] } => {
   const saved: MatchSheet[] = [];
   return {
     saved,
     mine: async () => competitions,
+    sheet: async () => (competitions === "not_member" ? "not_member" : read),
     save: async (_league, _competition, sheet) => {
       saved.push(sheet);
       return save;
@@ -146,6 +151,47 @@ describe("getMyLineup", () => {
     // Then each sits on the place of their family; validated, then locked
     expect(before).toMatchObject({ status: "validated", placed: ["a1", "a2", null, null] });
     expect(after.status).toBe("locked");
+  });
+
+  it("brings back the saved bench, substitutes, thresholds and the disciplines each athlete may count in", async () => {
+    // Given a sheet saved with the sprinter in the 200 m, the runner on the bench as her
+    // designated substitute below 23"00, and a bench of two
+    const sprint = { name: "100 m", family: "sprint" as const, unit: "time" as const };
+    const twoHundred = { ...sprint, name: "200 m" };
+    const read: SavedSheet = {
+      disciplines: { a1: [sprint, twoHundred] },
+      sheet: {
+        starters: [{ athleteId: "a1", discipline: "200 m", substituteId: "a2", threshold: 23 }],
+        bench: [{ athleteId: "a2" }],
+      },
+    };
+    const ports = {
+      managerLeagues: leagues,
+      bids,
+      catalogue,
+      lineups: lineups([meeting({ lineup: ["a1"] })], "saved", read),
+    };
+
+    // When the player opens the lineup
+    const view = await getMyLineup(ports).execute({ leagueId: "l1", slug: "meeting", now: BEFORE });
+
+    // Then the stadium, the bench and the settings of the place are those saved
+    expect(view).toMatchObject({
+      leagueName: "Ligue fictive",
+      benchSize: 0,
+      divisor: 10,
+      placed: ["a1", null, null, null],
+      plan: {
+        bench: ["a2"],
+        settings: { a1: { discipline: "200 m", substituteId: "a2", threshold: 23 } },
+      },
+    });
+    expect(view.athletes.find((a) => a.athleteId === "a1")!.disciplines).toEqual([
+      sprint,
+      twoHundred,
+    ]);
+    // An athlete the saved sheet says nothing of has no discipline to choose from
+    expect(view.athletes.find((a) => a.athleteId === "a3")!.disciplines).toEqual([]);
   });
 
   it("finds no competition the league does not play", async () => {

@@ -282,8 +282,15 @@ les quotas, les 2 places par famille, la taille du banc et le diviseur sont livr
   FT038 ; pour un seul titulaire, FT039 ; seuil plausible pour la discipline
   (`discipline_mark_range`, `markRange`), FT040 ; au plus `lineup.bench` remplaçants, FT041 ;
   seuil sans remplaçant désigné, FT042 (décision de l'agent : un seuil sans remplaçant n'aurait
-  aucun effet). L'écran actuel envoie ses titulaires seuls, dans leur première discipline, jusqu'à
-  la feuille de match (#1035).
+  aucun effet).
+- `my_manager_sheet(ligue, compétition)` relit la feuille pour l'écran « Mon alignement » (#1035) :
+  chaque athlète de l'équipe avec les disciplines où il peut compter (la première d'abord), et sa
+  place sur la feuille (titulaire, remplaçant et son rang, ou rien : la réserve), discipline,
+  remplaçant désigné et seuil. L'écran envoie toute la feuille ; les règles d'édition du banc
+  (ajout, retrait, ordre, désignation) vivent dans `src/domain/manager-bench.ts`. Décisions de
+  l'agent : choisir un réserviste comme remplaçant le met au bout du banc s'il reste de la place
+  (sinon il n'est pas proposé) ; le désigner pour un titulaire le retire à celui qui l'avait ; un
+  remplaçant renvoyé en réserve emporte la désignation et le seuil qui en dépendaient.
 
 ### Remplacements dans le score (#1033)
 

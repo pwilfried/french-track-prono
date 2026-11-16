@@ -7,7 +7,7 @@ import { LineupBoard } from "@/components/manager/lineup-board";
 
 import { saveLineupAction } from "../../../lineup-actions";
 
-/** The stadium of one competition, wired to the database (#427). */
+/** The match sheet of one competition, wired to the database (#427, #1035). */
 export function LineupForm({
   leagueId,
   competitionId,
@@ -23,8 +23,8 @@ export function LineupForm({
     <LineupBoard
       {...board}
       error={error}
-      onValidate={async (athleteIds) => {
-        const result = await saveLineupAction({ leagueId, competitionId, slug, athleteIds });
+      onValidate={async (sheet) => {
+        const result = await saveLineupAction({ leagueId, competitionId, slug, sheet });
         setError(result.error ? messages.errors[result.error] : undefined);
         return !result.error;
       }}

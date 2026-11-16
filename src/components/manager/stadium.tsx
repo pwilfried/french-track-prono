@@ -96,8 +96,11 @@ export function PlacedSpot({
   points,
   won = false,
   label,
+  note,
 }: {
   athlete: { name: string; discipline: string; family: DisciplineFamily };
+  /** In a lineup (#1035): « ↻ » the designated substitute, « ⏱ » the tactical threshold. */
+  note?: string;
   /** In a head-to-head: the athlete's points, null until scored. */
   points?: number | null;
   won?: boolean;
@@ -126,6 +129,7 @@ export function PlacedSpot({
       <span className="w-full truncate text-[11px] font-bold leading-tight">
         {shortAthleteName(athlete.name)}
       </span>
+      {note && <span className="w-full truncate text-[9px] font-bold leading-none">{note}</span>}
       {points !== undefined && (
         <span className="w-full truncate font-mono text-[11px] font-bold leading-tight tabular-nums">
           {points === null ? messages.managerDuel.toCome : points}

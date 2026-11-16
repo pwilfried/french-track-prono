@@ -4,25 +4,26 @@ import { revalidatePath } from "next/cache";
 
 import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { saveMyLineup } from "@/application/manager-lineup";
+import type { MatchSheet } from "@/domain/manager-lineup";
 import { createSupabaseManagerLineups } from "@/infra";
 
 import { getSessionClient } from "../session";
 import { managerPorts } from "./data";
 
-/** Validates the player's lineup for an eligible competition, or changes it until the lock (#427). */
+/**
+ * Validates the player's match sheet for an eligible competition, or changes it until the lock
+ * (#427, #1035): starters, bench in order, disciplines, substitutes and thresholds.
+ */
 export async function saveLineupAction(input: {
   leagueId: string;
   competitionId: string;
   slug: string;
-  athleteIds: string[];
+  sheet: MatchSheet;
 }): Promise<{ error?: ErrorCode }> {
-  const { leagueId, competitionId, slug, athleteIds } = input;
+  const { leagueId, competitionId, slug, sheet } = input;
   await managerPorts(`/manager/${leagueId}/alignement/${slug}`);
   const ports = { lineups: createSupabaseManagerLineups(await getSessionClient()) };
   try {
-    // The stadium sends its starters only; their discipline is their first one (#1032). The
-    // bench and the substitutions come with the match sheet screen (#1035).
-    const sheet = { starters: athleteIds.map((athleteId) => ({ athleteId })), bench: [] };
     await saveMyLineup(ports).execute({ leagueId, competitionId, sheet });
   } catch (error) {
     if (error instanceof UseCaseError) return { error: error.code };

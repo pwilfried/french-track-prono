@@ -7,7 +7,7 @@ import type { ManagerCatalogueRepository } from "./manager-catalogue";
 import type { ManagerLeagueRepository } from "./manager-leagues";
 
 /** An athlete of the player's team, with the price they paid for them. */
-export type TeamAthlete = Omit<CatalogueAthlete, "price" | "available" | "pb" | "sb"> & {
+export type TeamAthlete = Omit<CatalogueAthlete, "price" | "available"> & {
   paid: number;
 };
 
@@ -51,8 +51,10 @@ export function getMyManagerTeam(ports: {
         .flatMap(({ athleteId, amount }) => {
           const a = byId.get(athleteId);
           if (!a) return [];
-          const { slug, name, countryCode, sex, discipline, family } = a;
-          return [{ athleteId, slug, name, countryCode, sex, discipline, family, paid: amount }];
+          const { slug, name, countryCode, sex, discipline, family, pb, sb } = a;
+          return [
+            { athleteId, slug, name, countryCode, sex, discipline, family, pb, sb, paid: amount },
+          ];
         })
         .sort(byName);
       const spent = mine.team.reduce((sum, a) => sum + a.amount, 0);
