@@ -357,7 +357,8 @@ points » en fin de section.
   table `event_performances`, lecture publique, écriture seulement par `admin_set_performances`
   (journalisée `set_performances` dans `admin_actions`), qui remplace aussi `results` par les
   arrivés classés 1 à 3 ; `admin_manager_lined_up` dit à l'admin seul quels athlètes de la liste sont
-  alignés (les alignements restent privés). Règles pures : `src/domain/performance.ts`.
+  alignés, titulaires et remplaçants du banc, pas les réservistes (#1053 ; les alignements
+  restent privés). Règles pures : `src/domain/performance.ts`.
 - **Pronostics classiques obligatoires** (retirés le 16 nov. 2026, #1017) sur toutes les épreuves de chaque compétition éligible,
   verrouillés au départ ;
   sans pronostic, 0 sur cette partie.
