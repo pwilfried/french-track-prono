@@ -33,11 +33,17 @@ test("a player picks two French competitions in the season picker and his league
   for (const name of names) await page.getByRole("checkbox", { name: new RegExp(name) }).check();
   await expect(page.getByText("2 compétitions cochées")).toBeVisible();
   await expect(page.getByLabel("Nom de la ligue")).toHaveValue(`Multi ${tag}`);
-  // Once ticked, the bar sticks above the navigation: the button is whole, without scrolling (#804).
+  // The bar stays at the end of the list, never over it (#980): scrolled to the bottom, the last
+  // competition sits above the bar, and the button is whole above the navigation (#804).
   const submit = page.getByRole("button", { name: "Créer la ligue" });
+  const lastBox = page.getByRole("checkbox", { name: new RegExp(names[1]!) });
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: 700 });
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await expect(submit).toBeInViewport({ ratio: 1 });
+    const last = (await lastBox.boundingBox())!;
+    const bar = (await submit.locator("..").boundingBox())!;
+    expect(last.y + last.height).toBeLessThanOrEqual(bar.y);
     const button = (await submit.boundingBox())!;
     const nav = (await page
       .getByRole("navigation", { name: "Navigation principale" })
