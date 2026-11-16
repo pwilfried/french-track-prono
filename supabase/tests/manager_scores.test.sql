@@ -1,12 +1,13 @@
 -- pgTAP: the Manager scores of a competition (#431). Only an admin reads the scoring sheet (the
 -- lineups stay private) and writes the scores; a new computation replaces them all; the
--- participants of a league read its scores, nobody else; the parts of a score add up.
+-- participants of a league read its scores, nobody else; the parts of a score add up; the
+-- predictions no longer count (#1031).
 --   One competition, athletes 1 to 3 on its 100 m. A Manager league (mercato closed) with player 1
 --   (lined up 1 and 2) and player 2 (no lineup); a league whose mercato is open with player 1;
---   player 3 is in no league; player 4 is admin. Player 1 has 7 prediction points.
+--   player 3 is in no league; player 4 is admin. Player 1 has 7 prediction points, which the Manager ignores.
 -- Rolled back at the end.
 begin;
-select plan(18);
+select plan(21);
 
 insert into auth.users (id, email) values
   ('9e500000-0000-0000-0000-000000000001', 'one@example.test'),
@@ -49,7 +50,7 @@ select '9e500000-0000-0000-0000-0000000000e1', pg_temp.athlete(n) from generate_
 insert into manager_leagues (id, name, owner_id, rules, competition_ids, mercato_opened_at,
                              mercato_closed_at)
 values (pg_temp.league(), 'Scores', pg_temp.player(1),
-        '{"bonuses": {"first": 50, "personal_best": 20}}', array[pg_temp.competition()],
+        '{"bonuses": {"first": 50, "personal_best": 20}, "tablesDivisor": 5}', array[pg_temp.competition()],
         now() - interval '3 days', now() - interval '1 day'),
        ('9e500000-0000-0000-0000-0000000000f2', 'Mercato ouvert', pg_temp.player(1),
         '{"bonuses": {}}', array[pg_temp.competition()], now() - interval '1 day', null);
@@ -80,13 +81,13 @@ grant execute on function pg_temp.as_player(int) to authenticated;
 -- A score line of player n: its parts and one athlete.
 create function pg_temp.line(p_n int, p_total int) returns jsonb language sql stable as $$
   select jsonb_build_object('league_id', pg_temp.league(), 'user_id', pg_temp.player(p_n),
-    'lined_up', true, 'total', p_total, 'hungarian', p_total - 77, 'bonus', 70, 'predictions', 7,
+    'lined_up', true, 'total', p_total, 'hungarian', p_total - 70, 'bonus', 70,
     'athletes', jsonb_build_array(jsonb_build_object('athlete_id', pg_temp.athlete(1),
-      'points', p_total - 77, 'bonus_points', 70, 'total', p_total - 7)))
+      'points', p_total - 70, 'bonus_points', 70, 'total', p_total)))
 $$;
 create function pg_temp.empty_line(p_n int) returns jsonb language sql stable as $$
   select jsonb_build_object('league_id', pg_temp.league(), 'user_id', pg_temp.player(p_n),
-    'lined_up', false, 'total', 0, 'hungarian', 0, 'bonus', 0, 'predictions', 0)
+    'lined_up', false, 'total', 0, 'hungarian', 0, 'bonus', 0)
 $$;
 grant execute on function pg_temp.line(int, int), pg_temp.empty_line(int) to authenticated;
 
@@ -126,8 +127,13 @@ select is(
   'the sheet holds every performance with its unit and round');
 
 select is(
-  admin_manager_scoring_sheet('score-c1') -> 'predictions' ->> pg_temp.player(1)::text,
-  '7', 'the sheet holds the prediction points of the competition');
+  (select p -> 'tables_divisor' from jsonb_array_elements(
+     admin_manager_scoring_sheet('score-c1') -> 'participants') p limit 1),
+  '5'::jsonb, 'the sheet holds the divisor of the table points frozen in the league');
+
+select ok(
+  not (admin_manager_scoring_sheet('score-c1') ? 'predictions'),
+  'the sheet holds no prediction points: they do not count in the Manager');
 
 select ok(
   (admin_manager_scoring_sheet('score-c1') ->> 'lock_at')::timestamptz < now(),
@@ -158,11 +164,20 @@ select throws_ok(
 
 select throws_ok(
   $$select admin_set_manager_scores(pg_temp.competition(), jsonb_build_array(
-      pg_temp.empty_line(2) || '{"total": 7, "predictions": 7}'))$$,
-  '23514', null, 'without a lineup the score is 0, predictions included');
+      pg_temp.empty_line(2) || '{"total": 7, "bonus": 7}'))$$,
+  '23514', null, 'without a lineup the score is 0');
+
+select throws_ok(
+  $$select admin_set_manager_scores(pg_temp.competition(), jsonb_build_array(
+      pg_temp.line(1, 800) || '{"total": 807, "predictions": 7}'))$$,
+  '23514', null, 'prediction points no longer add up into a Manager score');
 
 -- A participant
 select pg_temp.as_player(1);
+
+select is(
+  (select total || ':' || predictions from manager_scores where user_id = pg_temp.player(1)),
+  '800:0', 'the prediction part of a stored score is 0');
 
 select is(
   (select total || ':' || (athletes -> 0 ->> 'name')

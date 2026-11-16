@@ -25,14 +25,8 @@ export function createInMemoryManagerScoreStore(competitions: ManagerScoreFixtur
           if (!options.isAdmin) return "not_admin";
           const found = competitions.find((c) => c.slug === slug);
           if (!found) return null;
-          const { competitionId, lockAt, participants, performances, predictionPoints } = found;
-          return structuredClone({
-            competitionId,
-            lockAt,
-            participants,
-            performances,
-            predictionPoints,
-          });
+          const { competitionId, lockAt, participants, performances } = found;
+          return structuredClone({ competitionId, lockAt, participants, performances });
         },
         async replace(competitionId, lines) {
           if (!options.isAdmin) return "not_admin";
@@ -49,13 +43,12 @@ export function createInMemoryManagerScoreStore(competitions: ManagerScoreFixtur
             (l) => l.leagueId === leagueId && l.userId === options.userId,
           );
           if (!line) return null;
-          const { linedUp, total, hungarian, bonus, predictions, athletes } = structuredClone(line);
+          const { linedUp, total, hungarian, bonus, athletes } = structuredClone(line);
           return {
             linedUp,
             total,
             hungarian,
             bonus,
-            predictions,
             athletes: athletes.map((a) => ({
               ...a,
               name: competition?.names[a.athleteId] ?? "?",

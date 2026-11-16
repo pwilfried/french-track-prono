@@ -7,7 +7,6 @@ type LineupsJson = { locked: boolean; lineups: { user_id: string; athlete_ids: s
 type ScoreRow = {
   user_id: string;
   total: number;
-  predictions: number;
   athletes: { athlete_id: string; total: number; bonus_points: number }[];
 };
 
@@ -34,7 +33,7 @@ export function createSupabaseManagerDuelRepository(client: SupabaseClient): Man
       // One line per participant of the league: one page is enough.
       const { data, error } = await client
         .from("manager_scores")
-        .select("user_id, total, predictions, athletes")
+        .select("user_id, total, athletes")
         .eq("league_id", leagueId)
         .eq("competition_id", competitionId)
         .order("user_id");
@@ -42,7 +41,6 @@ export function createSupabaseManagerDuelRepository(client: SupabaseClient): Man
       return ((data ?? []) as ScoreRow[]).map((s) => ({
         userId: s.user_id,
         total: s.total,
-        predictions: s.predictions,
         athletes: s.athletes.map((a) => ({
           athleteId: a.athlete_id,
           total: a.total,

@@ -20,7 +20,6 @@ managerDuelContract("in-memory fake", async () => {
           competitionId: "c1",
           userId: "ana",
           total: 900,
-          predictions: 30,
           athletes: [{ athleteId: "a2", total: 850, bonusPoints: 20 }],
         },
       ],
@@ -74,7 +73,7 @@ if (url && key) {
          where id = '${locked!.eventId}'`);
     sql(`insert into manager_scores (league_id, competition_id, user_id, lined_up, total, hungarian,
                                      bonus, predictions, athletes)
-         values ('${leagueId}', '${locked!.id}', '${first.userId}', true, 900, 850, 20, 30,
+         values ('${leagueId}', '${locked!.id}', '${first.userId}', true, 900, 880, 20, 0,
                  '[{"athlete_id": "${firstLineup[0]}", "total": 850, "bonus_points": 20}]')`);
     return {
       leagueId,

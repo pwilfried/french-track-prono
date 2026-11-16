@@ -5,7 +5,7 @@ import type { ManagerCompetitionScore } from "@/domain/manager-score";
 
 /**
  * A started competition of its own, a Manager league (mercato closed) where `player` lined up the
- * first two athletes, a performance entered for the first one, and the player's prediction points.
+ * first two athletes, a performance entered for the first one.
  */
 export type ManagerScoreWorld = {
   competitionSlug: string;
@@ -31,19 +31,18 @@ const line = (w: ManagerScoreWorld, total: number): ManagerScoreLine => ({
 const score = (w: ManagerScoreWorld, total: number): ManagerCompetitionScore => ({
   linedUp: true,
   total,
-  hungarian: total - 50 - 3,
+  hungarian: total - 50,
   bonus: 50,
-  predictions: 3,
   athletes: [
     {
       athleteId: w.athleteIds[0]!,
       discipline: "100 m",
       mark: "10.90",
       status: "ok",
-      points: total - 53,
+      points: total - 50,
       bonuses: [{ bonus: "first", points: 50 }],
       bonusPoints: 50,
-      total: total - 3,
+      total,
     },
     {
       athleteId: w.athleteIds[1]!,
@@ -61,7 +60,7 @@ const score = (w: ManagerScoreWorld, total: number): ManagerCompetitionScore => 
 /** Contract of the ManagerScoreRepository port, run against the in-memory fake AND Supabase. */
 export function managerScoreContract(name: string, world: () => Promise<ManagerScoreWorld>) {
   describe(`ManagerScoreRepository contract: ${name}`, () => {
-    it("gives the admin the sheet of the competition: lineups, performances, predictions", async () => {
+    it("gives the admin the sheet of the competition: lineups, divisor, performances", async () => {
       const w = await world();
 
       const sheet = await w.admin.sheet(w.competitionSlug);
@@ -69,7 +68,12 @@ export function managerScoreContract(name: string, world: () => Promise<ManagerS
       expect(sheet).toMatchObject({
         competitionId: w.competitionId,
         participants: [
-          { leagueId: w.leagueId, userId: w.playerId, lineup: w.athleteIds.slice(0, 2) },
+          {
+            leagueId: w.leagueId,
+            userId: w.playerId,
+            tablesDivisor: 10,
+            lineup: w.athleteIds.slice(0, 2),
+          },
         ],
         performances: [
           {
@@ -84,7 +88,6 @@ export function managerScoreContract(name: string, world: () => Promise<ManagerS
             records: ["pb"],
           },
         ],
-        predictionPoints: { [w.playerId]: 3 },
       });
       if (sheet && sheet !== "not_admin") {
         expect(sheet.participants[0]!.bonuses.first).toBeGreaterThanOrEqual(0);
