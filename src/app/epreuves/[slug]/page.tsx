@@ -360,7 +360,7 @@ export default async function EventPage({
   return (
     <main id="main" className="flex flex-1 flex-col">
       <header className="px-4 pt-4">
-        <div className="mx-auto flex max-w-md flex-col gap-3">
+        <div className="mx-auto flex max-w-md flex-col gap-3 lg:max-w-5xl">
           <Link
             href={`/competitions?competition=${competition.slug}&jour=${competitionDay(event.startsAt)}`}
             className="inline-flex min-h-11 items-center self-start font-semibold text-brand dark:text-secondary"
@@ -417,133 +417,142 @@ export default async function EventPage({
             </section>
           )}
           {event.results.length > 0 && (
-            <div className="rounded-card border border-border bg-card p-4">
+            <div className="rounded-card border border-border bg-card p-4 lg:max-w-md">
               <PodiumMedals results={event.results} />
             </div>
           )}
         </div>
       </header>
 
-      {event.previousRounds.length > 0 && (
-        <details className="mx-auto mt-4 w-full max-w-md px-4">
-          <summary className="flex min-h-11 cursor-pointer items-center font-bold">
-            {messages.rounds.previous(event.previousRounds.length)}
-          </summary>
-          <div className="mt-2 flex flex-col gap-4">
-            {event.previousRounds.map((round, index) => (
-              <section key={round.slug} aria-label={messages.rounds.label(round.round, index + 1)}>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {messages.rounds.label(round.round, index + 1)} ·{" "}
-                  {messages.events.status[round.status]}
-                </h3>
-                {round.results.length === 0 ? (
-                  <p className="mt-1 text-sm text-muted-foreground">{messages.rounds.noResult}</p>
-                ) : (
-                  <ol className="mt-1 flex flex-col">
-                    {round.results.map((r) => (
-                      <li
-                        key={r.athleteId}
-                        className="flex min-h-11 items-center gap-3 border-b border-border py-1.5"
-                      >
-                        <span className="w-6 shrink-0 text-center font-mono text-sm text-muted-foreground">
-                          {r.rank}
-                        </span>
-                        <span aria-hidden="true">
-                          <CountryFlag code={r.countryCode} />
-                        </span>
-                        <Link
-                          href={athleteHref(r.slug, `/epreuves/${slug}`)}
-                          className="min-w-0 flex-1 break-words font-semibold"
-                        >
-                          {r.name}
-                        </Link>
-                        <span className="font-mono text-sm font-semibold tabular-nums">
-                          {r.mark ?? ""}
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </section>
-            ))}
-          </div>
-        </details>
-      )}
-
-      <section className="mx-auto w-full max-w-md pt-6" aria-label={messages.picker.podium}>
-        {user && !open && <ForgetPodium eventId={event.id} />}
-        {user && winner ? (
-          <ResultSection event={event} slug={slug} user={user} />
-        ) : (
-          <PredictionSection
-            event={event}
-            slug={slug}
-            user={user}
-            open={open}
-            choices={choices}
-            competitionSlug={competition.slug}
-            competitionName={competition.name}
-            leagues={leagues}
-          />
-        )}
-      </section>
-
-      {user && (
-        <div className="mx-auto w-full max-w-md pt-6 empty:hidden">
-          <ChallengeSection event={event} slug={slug} user={user} />
-        </div>
-      )}
-
-      {user && (
-        <section className="mx-auto w-full max-w-md pt-6">
-          {open ? (
-            <RevealHidden />
-          ) : (
-            <RevealSection event={event} slug={slug} user={user} ligue={requestedLeague} />
+      {/* From 1024 px (#990) the start list stands beside the podium; below, it comes after. */}
+      <div className="mx-auto w-full max-w-md lg:grid lg:max-w-5xl lg:grid-cols-2 lg:items-start lg:gap-8">
+        <div className="flex min-w-0 flex-col">
+          {event.previousRounds.length > 0 && (
+            <details className="mx-auto mt-4 w-full max-w-md px-4">
+              <summary className="flex min-h-11 cursor-pointer items-center font-bold">
+                {messages.rounds.previous(event.previousRounds.length)}
+              </summary>
+              <div className="mt-2 flex flex-col gap-4">
+                {event.previousRounds.map((round, index) => (
+                  <section
+                    key={round.slug}
+                    aria-label={messages.rounds.label(round.round, index + 1)}
+                  >
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      {messages.rounds.label(round.round, index + 1)} ·{" "}
+                      {messages.events.status[round.status]}
+                    </h3>
+                    {round.results.length === 0 ? (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {messages.rounds.noResult}
+                      </p>
+                    ) : (
+                      <ol className="mt-1 flex flex-col">
+                        {round.results.map((r) => (
+                          <li
+                            key={r.athleteId}
+                            className="flex min-h-11 items-center gap-3 border-b border-border py-1.5"
+                          >
+                            <span className="w-6 shrink-0 text-center font-mono text-sm text-muted-foreground">
+                              {r.rank}
+                            </span>
+                            <span aria-hidden="true">
+                              <CountryFlag code={r.countryCode} />
+                            </span>
+                            <Link
+                              href={athleteHref(r.slug, `/epreuves/${slug}`)}
+                              className="min-w-0 flex-1 break-words font-semibold"
+                            >
+                              {r.name}
+                            </Link>
+                            <span className="font-mono text-sm font-semibold tabular-nums">
+                              {r.mark ?? ""}
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </section>
+                ))}
+              </div>
+            </details>
           )}
-        </section>
-      )}
 
-      {showStartList && (
-        <div className="mx-auto flex w-full max-w-md flex-col gap-3 px-4 py-6">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              {messages.event.startList}
-            </h2>
-            {bySeasonBest && (
-              <p className="text-xs text-muted-foreground">{messages.event.startListOrder}</p>
+          <section className="mx-auto w-full max-w-md pt-6" aria-label={messages.picker.podium}>
+            {user && !open && <ForgetPodium eventId={event.id} />}
+            {user && winner ? (
+              <ResultSection event={event} slug={slug} user={user} />
+            ) : (
+              <PredictionSection
+                event={event}
+                slug={slug}
+                user={user}
+                open={open}
+                choices={choices}
+                competitionSlug={competition.slug}
+                competitionName={competition.name}
+                leagues={leagues}
+              />
+            )}
+          </section>
+
+          {user && (
+            <div className="mx-auto w-full max-w-md pt-6 empty:hidden">
+              <ChallengeSection event={event} slug={slug} user={user} />
+            </div>
+          )}
+
+          {user && (
+            <section className="mx-auto w-full max-w-md pt-6">
+              {open ? (
+                <RevealHidden />
+              ) : (
+                <RevealSection event={event} slug={slug} user={user} ligue={requestedLeague} />
+              )}
+            </section>
+          )}
+        </div>
+        {showStartList && (
+          <div className="mx-auto flex w-full min-w-0 max-w-md flex-col gap-3 px-4 py-6">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                {messages.event.startList}
+              </h2>
+              {bySeasonBest && (
+                <p className="text-xs text-muted-foreground">{messages.event.startListOrder}</p>
+              )}
+            </div>
+            {startList.length === 0 ? (
+              <p className="rounded-card bg-muted p-4">{messages.event.startListEmpty}</p>
+            ) : (
+              <ul aria-label={messages.event.startList} className="flex flex-col gap-2">
+                {startList.map((entry) => (
+                  <li
+                    key={entry.athleteId}
+                    className="flex min-h-14 items-center gap-3 rounded-2xl border border-border bg-card px-3.5 py-2"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="w-7 shrink-0 text-center text-xl leading-none"
+                    >
+                      <CountryFlag code={entry.countryCode} />
+                    </span>
+                    <Link
+                      href={athleteHref(entry.slug, `/epreuves/${slug}`)}
+                      className="min-w-0 flex-1 break-words font-bold underline-offset-2 hover:underline"
+                    >
+                      {entry.name}
+                    </Link>
+                    <span className="font-mono text-sm font-semibold tabular-nums">
+                      {markOf.get(entry.athleteId) ?? entry.seasonBest ?? ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
-          {startList.length === 0 ? (
-            <p className="rounded-card bg-muted p-4">{messages.event.startListEmpty}</p>
-          ) : (
-            <ul aria-label={messages.event.startList} className="flex flex-col gap-2">
-              {startList.map((entry) => (
-                <li
-                  key={entry.athleteId}
-                  className="flex min-h-14 items-center gap-3 rounded-2xl border border-border bg-card px-3.5 py-2"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="w-7 shrink-0 text-center text-xl leading-none"
-                  >
-                    <CountryFlag code={entry.countryCode} />
-                  </span>
-                  <Link
-                    href={athleteHref(entry.slug, `/epreuves/${slug}`)}
-                    className="min-w-0 flex-1 break-words font-bold underline-offset-2 hover:underline"
-                  >
-                    {entry.name}
-                  </Link>
-                  <span className="font-mono text-sm font-semibold tabular-nums">
-                    {markOf.get(entry.athleteId) ?? entry.seasonBest ?? ""}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </main>
   );
 }
