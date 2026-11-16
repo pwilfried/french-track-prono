@@ -105,6 +105,46 @@ export function managerLineupContract(name: string, world: () => Promise<Manager
       }
     });
 
+    it("reads back the saved sheet, with the discipline that counts, and each athlete's disciplines", async () => {
+      const w = await world();
+      try {
+        const empty = await w.first.sheet(w.leagueId, w.open.competitionId);
+        if (typeof empty === "string") throw new Error("the participant reads their sheet");
+        expect(empty.sheet).toBeNull();
+        expect(empty.disciplines[w.sprinter]!.map((d) => d.name)).toEqual(["100 m"]);
+        expect(empty.disciplines[w.sprinter]![0]).toEqual({
+          name: "100 m",
+          family: "sprint",
+          unit: "time",
+        });
+
+        await w.first.save(w.leagueId, w.open.competitionId, starters([w.sprinter, w.runner]));
+        const saved = await w.first.sheet(w.leagueId, w.open.competitionId);
+        if (typeof saved === "string") throw new Error("the participant reads their sheet");
+        expect(saved.sheet).toEqual({
+          starters: [
+            { athleteId: w.sprinter, discipline: "100 m", substituteId: null, threshold: null },
+            {
+              athleteId: w.runner,
+              // Their first discipline, whichever the start lists give.
+              discipline: empty.disciplines[w.runner]![0]!.name,
+              substituteId: null,
+              threshold: null,
+            },
+          ],
+          bench: [],
+        });
+
+        const theirs = await w.second.sheet(w.leagueId, w.open.competitionId);
+        if (typeof theirs === "string") throw new Error("the second participant reads theirs");
+        expect(theirs.sheet).toBeNull();
+        expect(await w.outsider.sheet(w.leagueId, w.open.competitionId)).toBe("not_member");
+        expect(await w.first.sheet(w.leagueId, w.elsewhere)).toBe("not_eligible");
+      } finally {
+        await w.restore();
+      }
+    });
+
     it("refuses a lineup after the lock, outside the league or before the end of the mercato", async () => {
       const w = await world();
       try {

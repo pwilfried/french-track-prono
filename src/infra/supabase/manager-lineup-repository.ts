@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { UseCaseError } from "@/application/errors";
 import type { LineupSaveOutcome, ManagerLineupRepository } from "@/application/manager-lineup";
+import type { DisciplineFamily, MarkUnit } from "@/domain/discipline";
 
 /** The answers of save_manager_lineup (supabase/migrations, #427, #1032). */
 const refusals: Record<string, Exclude<LineupSaveOutcome, "saved">> = {
@@ -30,6 +31,18 @@ type LineupRow = {
   athlete_ids: string[] | null;
 };
 
+type SheetRow = {
+  athlete_id: string;
+  disciplines: { name: string; family: DisciplineFamily; unit: MarkUnit }[];
+  role: "starter" | "substitute" | null;
+  slot: number | null;
+  discipline: string | null;
+  substitute_id: string | null;
+  threshold: number | string | null;
+};
+
+const bySlot = (a: SheetRow, b: SheetRow) => (a.slot ?? 0) - (b.slot ?? 0);
+
 /**
  * The player's session. Row level security shows a player their own lineups; the database checks
  * a lineup against the rules of the league and refuses any change after the lock.
@@ -49,6 +62,36 @@ export function createSupabaseManagerLineups(client: SupabaseClient): ManagerLin
         entered: row.entered,
         lineup: row.athlete_ids,
       }));
+    },
+    async sheet(leagueId, competitionId) {
+      const { data, error } = await client.rpc("my_manager_sheet", {
+        p_league: leagueId,
+        p_competition: competitionId,
+      });
+      if (error && refusals[error.code] === "not_member") return "not_member";
+      if (error && refusals[error.code] === "not_eligible") return "not_eligible";
+      if (error) throw new UseCaseError("LINEUPS_UNAVAILABLE");
+      const rows = (data ?? []) as SheetRow[];
+      const starters = rows.filter((r) => r.role === "starter").sort(bySlot);
+      const bench = rows.filter((r) => r.role === "substitute").sort(bySlot);
+      return {
+        disciplines: Object.fromEntries(rows.map((r) => [r.athlete_id, r.disciplines])),
+        sheet:
+          starters.length === 0
+            ? null
+            : {
+                starters: starters.map((r) => ({
+                  athleteId: r.athlete_id,
+                  discipline: r.discipline ?? undefined,
+                  substituteId: r.substitute_id,
+                  threshold: r.threshold === null ? null : Number(r.threshold),
+                })),
+                bench: bench.map((r) => ({
+                  athleteId: r.athlete_id,
+                  discipline: r.discipline ?? undefined,
+                })),
+              },
+      };
     },
     async save(leagueId, competitionId, sheet) {
       const { error } = await client.rpc("save_manager_lineup", {
