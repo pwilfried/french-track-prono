@@ -26,6 +26,8 @@ import {
 import { messages } from "../../messages.fr";
 import { getSessionClient } from "../../session";
 
+import { reactAction } from "./react-action";
+
 async function load(
   event: EventDetail,
   leagueId: string | undefined,
@@ -210,8 +212,10 @@ function PredictionList({
               <ReactionBar
                 slug={slug}
                 predictionId={prediction.predictionId}
+                pseudo={prediction.pseudo}
                 counts={Object.fromEntries(counts.map((c) => [c.reaction, c.count]))}
                 mine={myReaction}
+                react={reactAction}
               />
             )}
           </RevealedPredictionCard>

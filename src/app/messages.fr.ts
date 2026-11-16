@@ -2843,7 +2843,7 @@ export const messages = {
     perfectNobody: "Personne n'a trouvé le podium parfait.",
   },
   reactions: {
-    group: "Réagir à ce prono",
+    group: (pseudo: string) => `Réagir au prono de ${pseudo}`,
     names: {
       "🔥": "feu",
       "😂": "mort de rire",
