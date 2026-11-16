@@ -325,7 +325,7 @@ export default async function EventPage({
 }) {
   const { slug } = await params;
   const { ligue } = await searchParams;
-  const leagueId = typeof ligue === "string" && ligue !== "" ? ligue : undefined;
+  const requestedLeague = typeof ligue === "string" && ligue !== "" ? ligue : undefined;
   const loaded = await loadEvent(slug);
 
   if (loaded === "error") {
@@ -499,7 +499,7 @@ export default async function EventPage({
           {open ? (
             <RevealHidden />
           ) : (
-            <RevealSection event={event} slug={slug} user={user} leagueId={leagueId} />
+            <RevealSection event={event} slug={slug} user={user} ligue={requestedLeague} />
           )}
         </section>
       )}
