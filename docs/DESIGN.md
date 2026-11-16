@@ -120,6 +120,8 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **CountdownBadge** : « Verrouillage dans 12 min », neutre, puis orange dès 1 h et rouge dès
   10 min (jetons `--countdown-*` dans `globals.css`, contrastes AA), « 🔒 Verrouillé » ensuite ;
   rien ne clignote.
+- **LockBanner** (page d'une épreuve) : « Verrouillage dans 22:18:33 », neutre (`--muted`) au-delà
+  d'une heure, rouge dans la dernière heure (#989, `lockAlert`), « 🔒 Verrouillé » ensuite.
 - **EventCard** (#546, #800) : l'heure de Paris au-dessus de l'animal de la famille (petit,
   décoratif ; le lièvre pour un relais ou une famille inconnue, `animalOrHare`, le même en tête de
   la page de l'épreuve), le nom avec le genre (« 100 m femmes »), une ligne dessous, un statut à
@@ -229,8 +231,8 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **FamilyBadge** (#613) : « Sprint · Haies », pastille bleu doux sur la carte et la page d'une
   ligue limitée ; rien pour une ligue sur toutes les épreuves.
 - **SeasonCompetitionPicker** (#663, Manager ; ligue de pronos depuis #721, dès 1 compétition, sous le nom et les familles de la ligue) : sélections rapides avec leur nombre, recherche,
-  filtres Portée, Lieu, Niveau, liste rangée par mois avec « Tout cocher », barre fixe « 15
-  compétitions cochées » ; vide : « Aucune compétition ne correspond à ces filtres » et
+  filtres Portée, Lieu, Niveau, liste rangée par mois avec « Tout cocher », puis la barre « 15
+  compétitions cochées » et le bouton, à la fin de la liste, jamais par-dessus (#980) ; vide : « Aucune compétition ne correspond à ces filtres » et
   « Réinitialiser les filtres ».
 - **InviteBanner** (#552) : dans une ligue où le joueur est seul, fond bleu doux, « Tu es seul
   pour l'instant », un grand bouton « Inviter mes amis » (partage natif, sinon lien copié) et le

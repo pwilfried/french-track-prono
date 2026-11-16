@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { messages } from "@/app/messages.fr";
-import { reactAction, type ReactState } from "@/app/epreuves/[slug]/react-action";
+import type { ReactState } from "@/app/epreuves/[slug]/react-action";
 import { REACTIONS, type Reaction } from "@/domain/reveal";
 
 function ReactionButton({
@@ -39,25 +39,37 @@ function ReactionButton({
   );
 }
 
-/** The six emoji under someone else's revealed podium: tap to react, tap mine again to remove it. */
+/**
+ * The six emoji under someone else's revealed podium: tap to react, tap mine again to remove it.
+ * The group names whose podium it is, so the buttons are not all alike to a screen reader (#986).
+ * The page passes its server action.
+ */
 export function ReactionBar({
   slug,
   predictionId,
+  pseudo,
   counts,
   mine,
+  react,
 }: {
   slug: string;
   predictionId: string;
+  pseudo: string;
   counts: Partial<Record<Reaction, number>>;
   mine: Reaction | null;
+  react: (state: ReactState, data: FormData) => Promise<ReactState>;
 }) {
-  const [state, action] = useActionState<ReactState, FormData>(reactAction, {});
+  const [state, action] = useActionState<ReactState, FormData>(react, {});
   return (
     <form action={action} className="flex flex-col gap-1">
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="predictionId" value={predictionId} />
       <input type="hidden" name="current" value={mine ?? ""} />
-      <div role="group" aria-label={messages.reactions.group} className="grid grid-cols-6 gap-1.5">
+      <div
+        role="group"
+        aria-label={messages.reactions.group(pseudo)}
+        className="grid grid-cols-6 gap-1.5"
+      >
         {REACTIONS.map((reaction) => (
           <ReactionButton
             key={reaction}
