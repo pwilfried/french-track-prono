@@ -54,10 +54,10 @@ export default async function RankingPage({
   }>;
 }) {
   const query = await searchParams;
-  const { coming, past } = await loadCompetitions();
+  // The player is read while the competitions are.
+  const [{ coming, past }, user] = await Promise.all([loadCompetitions(), getCurrentUser()]);
   const all = [...coming, ...past].sort((a, b) => b.startsOn.localeCompare(a.startsOn));
   const start = rankingStart(all, currentDay());
-  const user = await getCurrentUser();
   const views: readonly RankingView[] = user
     ? RANKING_VIEWS.filter((v) => v !== "soir" || !start)
     : ["general"];
@@ -88,23 +88,47 @@ export default async function RankingPage({
     );
   // The player's leagues in the scope sheet, with their rank: one ranking per league, fine for
   // the few leagues a player is in. « error » when they cannot be read.
-  let leagueRankings: RankingRow[][] | "error";
-  try {
-    leagueRankings = await Promise.all(
-      leagues.map((l) =>
-        leagueRanking.execute({
-          leagueId: l.id,
-          competitionSlugs: l.competitionSlugs,
-          families: l.families,
-          competitionAddedAt: l.competitionAddedAt,
-          previousSlugs: previousOf(l.competitionSlugs),
-        }),
-      ),
-    );
-  } catch (error) {
-    if (!(error instanceof UseCaseError)) throw error;
-    leagueRankings = "error";
-  }
+  const readLeagueRankings = async (): Promise<RankingRow[][] | "error"> => {
+    try {
+      return await Promise.all(
+        leagues.map((l) =>
+          leagueRanking.execute({
+            leagueId: l.id,
+            competitionSlugs: l.competitionSlugs,
+            families: l.families,
+            competitionAddedAt: l.competitionAddedAt,
+            previousSlugs: previousOf(l.competitionSlugs),
+          }),
+        ),
+      );
+    } catch (error) {
+      if (!(error instanceof UseCaseError)) throw error;
+      return "error";
+    }
+  };
+  const readRows = async (): Promise<RankingRow[] | "error" | null> => {
+    try {
+      if (view === "soir") {
+        return await getTonightRanking({ ranking }).execute({
+          competitionSlugs: all.map((c) => c.slug),
+          today,
+        });
+      }
+      if (view === "general") {
+        const slugs = chosen ? [chosen.slug] : all.map((c) => c.slug);
+        return await getGeneralRanking({ ranking }).execute({
+          competitionSlugs: slugs,
+          previousSlugs: previousOf(slugs),
+        });
+      }
+      return null;
+    } catch (error) {
+      if (!(error instanceof UseCaseError)) throw error;
+      return "error";
+    }
+  };
+  // The league rankings and the general or tonight one do not depend on each other: read together.
+  const [leagueRankings, otherRows] = await Promise.all([readLeagueRankings(), readRows()]);
   const scopeLeagues: ScopeLeague[] = leagues.map((l, i) => ({
     id: l.id,
     name: l.name,
@@ -116,26 +140,12 @@ export default async function RankingPage({
     competitions: l.competitionSlugs.length,
   }));
 
-  let rows: RankingRow[] | "error" | null = null;
-  try {
-    if (view === "ligue" && league) {
-      rows = leagueRankings === "error" ? "error" : leagueRankings[leagues.indexOf(league)]!;
-    } else if (view === "soir") {
-      rows = await getTonightRanking({ ranking }).execute({
-        competitionSlugs: all.map((c) => c.slug),
-        today,
-      });
-    } else if (view === "general") {
-      const slugs = chosen ? [chosen.slug] : all.map((c) => c.slug);
-      rows = await getGeneralRanking({ ranking }).execute({
-        competitionSlugs: slugs,
-        previousSlugs: previousOf(slugs),
-      });
-    }
-  } catch (error) {
-    if (!(error instanceof UseCaseError)) throw error;
-    rows = "error";
-  }
+  const rows: RankingRow[] | "error" | null =
+    view === "ligue" && league
+      ? leagueRankings === "error"
+        ? "error"
+        : leagueRankings[leagues.indexOf(league)]!
+      : otherRows;
   const meId = user?.userId;
   const me = Array.isArray(rows) ? rows.find((p) => p.userId === meId) : undefined;
   const place = Array.isArray(rows) && !start ? placeOf(rows, meId) : null;

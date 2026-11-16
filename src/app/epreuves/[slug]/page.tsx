@@ -197,6 +197,8 @@ async function PredictionSection({
   competitionSlug,
   competitionName,
   leagues,
+  mine,
+  jokerElsewhere: jokerElsewhereRead,
 }: {
   event: EventDetail;
   slug: string;
@@ -207,6 +209,10 @@ async function PredictionSection({
   competitionName: string;
   /** The player's leagues (read for an open event only), or "error". */
   leagues: League[] | "error";
+  /** The player's prediction (read with the leagues), null when none, "error" when unreadable. */
+  mine: Prediction | null | "error";
+  /** Where the joker is played when on another event, read with the prediction. */
+  jokerElsewhere: JokerSpot | null;
 }) {
   const back = `/epreuves/${slug}`;
 
@@ -237,7 +243,6 @@ async function PredictionSection({
     );
   }
 
-  const mine = await loadMyPrediction(user.userId, event.id);
   if (mine === "error") return <ErrorNotice retryHref={back} />;
   // Leagues that cannot be read only hide the suggestion: predicting never waits for them.
   const suggestion =
@@ -262,10 +267,8 @@ async function PredictionSection({
   };
 
   if (open) {
-    const [scale, jokerElsewhere] = await Promise.all([
-      loadScale(),
-      mine?.useJoker ? null : loadJokerElsewhere(user.userId, competitionSlug, event.id),
-    ]);
+    const scale = await loadScale();
+    const jokerElsewhere = mine?.useJoker ? null : jokerElsewhereRead;
     return (
       <div className="flex flex-col gap-5">
         <PredictionForm
@@ -326,7 +329,8 @@ export default async function EventPage({
   const { slug } = await params;
   const { ligue } = await searchParams;
   const requestedLeague = typeof ligue === "string" && ligue !== "" ? ligue : undefined;
-  const loaded = await loadEvent(slug);
+  // The player is read while the event is.
+  const [loaded, user] = await Promise.all([loadEvent(slug), getCurrentUser()]);
 
   if (loaded === "error") {
     return (
@@ -337,12 +341,24 @@ export default async function EventPage({
   }
 
   const event = loaded;
+  const winner = event.results.find((result) => result.rank === 1);
   // Times and points follow the event's own competition.
-  const competition = await currentCompetition(event.competitionSlug);
-  const [user, choices] = await Promise.all([getCurrentUser(), loadChoices(event)]);
+  const [competition, choices] = await Promise.all([
+    currentCompetition(event.competitionSlug),
+    loadChoices(event),
+  ]);
   const open = eventPhase(new Date(), event.lockAt) === "open";
-  // The picker already lists the athletes of an open event for a signed-in player.
-  const leagues = user && open ? await loadMyLeagues() : [];
+  // The picker already lists the athletes of an open event for a signed-in player. Their leagues,
+  // prediction and joker do not depend on one another: read together.
+  const readsPrediction =
+    !!choices && !(open && !canPredictRound(event.round, event.previousRounds));
+  const [leagues, mine, jokerElsewhere] = await Promise.all([
+    user && open ? loadMyLeagues() : [],
+    user && readsPrediction && !winner ? loadMyPrediction(user.userId, event.id) : null,
+    user && readsPrediction && open && !winner
+      ? loadJokerElsewhere(user.userId, competition.slug, event.id)
+      : null,
+  ]);
   const showStartList = !(user && open);
   const when = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
@@ -352,7 +368,6 @@ export default async function EventPage({
     minute: "2-digit",
     timeZone: TIME_ZONE,
   }).format(new Date(event.startsAt));
-  const winner = event.results.find((result) => result.rank === 1);
   const markOf = new Map(event.results.map((result) => [result.athleteId, result.mark]));
   const startList = sortStartList(event.entries, event.markUnit);
   const bySeasonBest = !!event.markUnit && startList.some((entry) => entry.seasonBest);
@@ -492,6 +507,8 @@ export default async function EventPage({
                 competitionSlug={competition.slug}
                 competitionName={competition.name}
                 leagues={leagues}
+                mine={mine}
+                jokerElsewhere={jokerElsewhere}
               />
             )}
           </section>
