@@ -75,6 +75,7 @@ export const messages = {
     page: "Chargement de la page…",
     manager: "Chargement du Manager…",
     event: "Chargement de l'épreuve…",
+    profile: "Chargement du profil…",
   },
   home: {
     current: "Compétition en cours",
