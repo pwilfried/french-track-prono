@@ -120,6 +120,8 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 - **CountdownBadge** : « Verrouillage dans 12 min », neutre, puis orange dès 1 h et rouge dès
   10 min (jetons `--countdown-*` dans `globals.css`, contrastes AA), « 🔒 Verrouillé » ensuite ;
   rien ne clignote.
+- **LockBanner** (page d'une épreuve) : « Verrouillage dans 22:18:33 », neutre (`--muted`) au-delà
+  d'une heure, rouge dans la dernière heure (#989, `lockAlert`), « 🔒 Verrouillé » ensuite.
 - **EventCard** (#546, #800) : l'heure de Paris au-dessus de l'animal de la famille (petit,
   décoratif ; le lièvre pour un relais ou une famille inconnue, `animalOrHare`, le même en tête de
   la page de l'épreuve), le nom avec le genre (« 100 m femmes »), une ligne dessous, un statut à
