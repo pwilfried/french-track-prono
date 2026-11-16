@@ -698,7 +698,7 @@ export const messages = {
     roundEndsIn: "Fin du tour dans",
     myTeam: "Mes athlètes",
     noTeam: "Aucun athlète remporté pour l'instant.",
-    /** « Mon équipe en construction » (#1037): the card on top of the catalogue until the mercato ends. */
+    /** « Mon équipe en construction » (#1037): the card under the catalogue until the mercato ends. */
     build: {
       title: "Mon équipe en construction",
       count: (have: number, target: number) => `${have}/${target}`,

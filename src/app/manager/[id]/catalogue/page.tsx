@@ -151,12 +151,6 @@ export default async function CataloguePage({
         />
       )}
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-6 md:max-w-3xl">
-        {league !== "error" && team !== "error" && !team.mercatoClosed && (
-          <TeamBuildCard
-            build={teamBuild(league.rules, team.athletes, team.left)}
-            left={team.left}
-          />
-        )}
         {mine === "error" ? (
           <ErrorNotice
             retryHref={`/manager/${id}/catalogue`}
@@ -308,6 +302,13 @@ export default async function CataloguePage({
               </nav>
             )}
           </>
+        )}
+        {/* Under the catalogue: the first athlete stays in view on a phone (#497). */}
+        {league !== "error" && team !== "error" && !team.mercatoClosed && (
+          <TeamBuildCard
+            build={teamBuild(league.rules, team.athletes, team.left)}
+            left={team.left}
+          />
         )}
       </div>
     </main>

@@ -25,7 +25,7 @@ test("a new player sees the guide of the first mercato once, then on demand (#10
   await guide.getByRole("button", { name: "Passer le guide du premier mercato" }).click();
   await expect(guide).toBeHidden();
 
-  // « Mon équipe en construction » sits on top of the catalogue, empty.
+  // « Mon équipe en construction » sits under the catalogue, empty.
   const build = page.getByRole("region", { name: "Mon équipe en construction" });
   await expect(build).toContainText("0/");
   await expect(build).toContainText("Il te manque");
