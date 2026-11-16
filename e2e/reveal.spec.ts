@@ -49,7 +49,16 @@ test("a player cannot see a podium before the lock, unfolds it after and reacts 
   sql(`update events set lock_at = now() - interval '1 second' where slug = '${slug}'`);
   await bobPage.reload();
   await expect(bobPage.getByRole("heading", { name: "Les pronos" })).toBeVisible();
-  // Anna is in none of his leagues: her podium waits behind « Voir tous les pronos (N) ».
+  // The reveal opens on his league (#984), where Anna is not.
+  const filters = bobPage.getByRole("navigation", { name: "Voir les pronos de" });
+  const allPlayers = filters.getByRole("link", { name: /^Tous les joueurs/ });
+  await expect(filters.locator('[aria-current="page"]')).toHaveCount(1);
+  await expect(allPlayers).not.toHaveAttribute("aria-current", "page");
+  await expect(bobPage.getByText(anna.pseudo)).toHaveCount(0);
+  // On all the players, Anna is in none of his leagues: her podium waits behind
+  // « Voir tous les pronos (N) ».
+  await allPlayers.click();
+  await expect(allPlayers).toHaveAttribute("aria-current", "page");
   await expect(bobPage.getByText(anna.pseudo)).toBeHidden();
   await bobPage.getByText(/^Voir tous les pronos \(\d+\)$/).click();
   await expect(bobPage.getByText(anna.pseudo)).toBeVisible();

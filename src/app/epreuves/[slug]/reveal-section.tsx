@@ -4,7 +4,9 @@ import { getEventConsensus, type EventConsensus } from "@/application/consensus"
 import { UseCaseError } from "@/application/errors";
 import { listMyLeagues, type League } from "@/application/leagues";
 import {
+  ALL_PLAYERS,
   listEventPredictions,
+  revealFilter,
   type EventReveal,
   type RevealedPrediction,
 } from "@/application/reveal";
@@ -30,13 +32,14 @@ import { reactAction } from "./react-action";
 
 async function load(
   event: EventDetail,
-  leagueId: string | undefined,
-): Promise<(EventReveal & EventConsensus & { leagues: League[] }) | "error"> {
+  requested: string | undefined,
+): Promise<(EventReveal & EventConsensus & { leagues: League[]; leagueId?: string }) | "error"> {
   try {
     const client = await getSessionClient();
     const leagueRepository = createSupabaseLeagueRepository(client);
     const leagues = await listMyLeagues({ leagues: leagueRepository }).execute();
     const leagueIds = leagues.map((league) => league.id);
+    const leagueId = revealFilter(requested, leagueIds);
     const [reveal, consensus] = await Promise.all([
       listEventPredictions({
         reveal: createSupabaseRevealRepository(client),
@@ -51,7 +54,7 @@ async function load(
         official: event.results,
       }),
     ]);
-    return { ...reveal, ...consensus, leagues };
+    return { ...reveal, ...consensus, leagues, leagueId };
   } catch (error) {
     if (error instanceof UseCaseError) return "error";
     throw error;
@@ -60,39 +63,45 @@ async function load(
 
 /**
  * Once the event is locked: what the players predicted (#680), then everyone's podium, with a
- * filter on each of my leagues that applies to both. Unfiltered, the podiums of the players
- * outside my leagues are folded (#949).
+ * filter on each of my leagues that applies to both, opened on my first league (#984).
+ * Unfiltered, the podiums of the players outside my leagues (#949) and those past the first 20
+ * (#984) are folded. `ligue`: the filter asked in the URL, a league id or « tous ».
  */
 export async function RevealSection({
   event,
   slug,
   user,
-  leagueId,
+  ligue,
 }: {
   event: EventDetail;
   slug: string;
   user: CurrentUser;
-  leagueId?: string;
+  ligue?: string;
 }) {
   const base = `/epreuves/${slug}`;
-  const loaded = await load(event, leagueId);
+  const loaded = await load(event, ligue);
   if (loaded === "error") {
     return (
       <div className="mx-4">
         <ErrorNotice
-          retryHref={leagueId ? `${base}?ligue=${leagueId}` : base}
+          retryHref={ligue ? `${base}?ligue=${ligue}` : base}
           message={messages.errors.REVEAL_UNAVAILABLE}
         />
       </div>
     );
   }
 
-  const { predictions, others, consensus, counts, leagues } = loaded;
+  const { predictions, others, consensus, counts, leagues, leagueId } = loaded;
   const names = new Map(event.entries.map((entry) => [entry.athleteId, entry.name]));
   names.set(OTHER_ATHLETE, messages.picker.other);
   const nameOf = (athleteId: string) => names.get(athleteId) ?? "?";
   const tabs = [
-    { href: base, label: messages.reveal.all, count: counts.all, current: !leagueId },
+    {
+      href: `${base}?ligue=${ALL_PLAYERS}`,
+      label: messages.reveal.all,
+      count: counts.all,
+      current: !leagueId,
+    },
     ...leagues.map((league) => ({
       href: `${base}?ligue=${league.id}`,
       label: league.name,
