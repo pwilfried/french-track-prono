@@ -18,6 +18,7 @@ const points = (n: number) => `${n} ${pointsWord(n)}`;
 const eventsCount = (n: number) => `${n} ${n <= 1 ? "épreuve" : "épreuves"}`;
 const credits = (n: number) => `${n} ${n <= 1 ? "crédit" : "crédits"}`;
 const athletesCount = (n: number) => `${n} ${n <= 1 ? "athlète" : "athlètes"}`;
+const playersCount = (n: number) => `${n} ${n <= 1 ? "joueur" : "joueurs"}`;
 const GENDER = { F: "Femmes", M: "Hommes", X: "Mixte" } as const;
 /** The contact address published on the site: written here only. */
 const CONTACT_EMAIL = "frenchtrackprono@gmail.com";
@@ -403,7 +404,7 @@ export const messages = {
     progress: {
       label: "Ma progression",
       todo: (n: number) => `${n} à pronostiquer`,
-      todoLabel: (n: number) => `${n} ${n <= 1 ? "épreuve" : "épreuves"} à pronostiquer ce jour`,
+      todoLabel: (n: number) => `${eventsCount(n)} à pronostiquer ce jour`,
       posed: (posed: number, total: number) => `${posed}/${total} posés`,
       posedLabel: (posed: number, total: number) =>
         `${posed} ${posed <= 1 ? "podium posé" : "podiums posés"} sur ${total} dans la compétition`,
@@ -461,8 +462,7 @@ export const messages = {
     club: "Club",
     noClub: "Club non renseigné",
     rank: "Rang",
-    rankOf: (rank: number, total: number) =>
-      `${ordinal(rank)} sur ${total} ${total <= 1 ? "joueur" : "joueurs"}`,
+    rankOf: (rank: number, total: number) => `${ordinal(rank)} sur ${playersCount(total)}`,
   },
   points: {
     title: "Mes points",
@@ -660,7 +660,7 @@ export const messages = {
     sexes: { F: "Femmes", M: "Hommes" },
     sexShort: { F: "F", M: "H" },
     availableOnly: "Libres",
-    found: (n: number) => (n <= 1 ? `${n} athlète` : `${n} athlètes`),
+    found: athletesCount,
     empty: "Aucun athlète ne correspond.",
     emptyCatalogue: "Le catalogue est vide : l'admin n'a encore donné de prix à aucun athlète.",
     pb: "PB",
@@ -741,7 +741,7 @@ export const messages = {
     link: "Mon équipe",
     summary: "Résumé de mon équipe",
     athletes: "Effectif",
-    count: (n: number) => (n <= 1 ? `${n} athlète` : `${n} athlètes`),
+    count: athletesCount,
     spent: "Crédits dépensés",
     left: "Crédits restants",
     fixed: "Équipe fixe pour la saison",
@@ -1150,7 +1150,7 @@ export const messages = {
   leagues: {
     title: "Mes ligues",
     back: "Mes ligues",
-    players: (n: number) => `${n} ${n <= 1 ? "joueur" : "joueurs"}`,
+    players: playersCount,
     createdByMe: "créée par toi",
     createdBy: (pseudo: string) => `créée par ${pseudo}`,
     noCompetitionTag: "Sans compétition",
@@ -1436,7 +1436,7 @@ export const messages = {
       general: "Portée",
       change: "Changer",
       changeLabel: (name: string) => `Changer de classement (${name} affiché)`,
-      players: (n: number) => `${n} ${n <= 1 ? "joueur" : "joueurs"}`,
+      players: playersCount,
       season: (years: { from: number; to: number } | null) =>
         !years
           ? "Toute la saison"
@@ -1466,9 +1466,7 @@ export const messages = {
       none: "Aucune compétition ne correspond.",
       allSeason: "Tous les joueurs · toutes les compétitions",
       leagueRank: (rank: number | null, members: number) =>
-        rank
-          ? `${ordinal(rank)} sur ${members}`
-          : `Pas encore classé · ${members} ${members <= 1 ? "joueur" : "joueurs"}`,
+        rank ? `${ordinal(rank)} sur ${members}` : `Pas encore classé · ${playersCount(members)}`,
       competitions: (n: number) => `${n} ${n <= 1 ? "compétition" : "compétitions"}`,
       noLeague: "Tu n'as pas encore de ligue : joue contre tes amis.",
       createOrJoin: "Créer ou rejoindre une ligue",
@@ -1544,8 +1542,7 @@ export const messages = {
     correct: "Corriger la feuille de résultats",
     computeNote:
       "Chaque feuille enregistrée calcule les points des pronos puis ceux du Manager. « Recalculer » relance le même calcul en secours : les points sont remplacés, jamais ajoutés deux fois.",
-    computed: (players: number) =>
-      `✓ Points calculés pour ${players} ${players <= 1 ? "joueur" : "joueurs"}.`,
+    computed: (players: number) => `✓ Points calculés pour ${playersCount(players)}.`,
     kpi: {
       predictions: "joueurs",
       total: "points donnés",
@@ -1811,10 +1808,10 @@ export const messages = {
                       : kind === "set_odds"
                         ? `${n} cotes`
                         : kind === "run_scoring" || kind === "run_manager_scoring"
-                          ? `${n} ${n <= 1 ? "joueur" : "joueurs"}`
+                          ? playersCount(n)
                           : kind === "set_results"
                             ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
-                            : `${n} ${n <= 1 ? "athlète" : "athlètes"}`,
+                            : athletesCount(n),
     by: (pseudo: string | null) => (pseudo ? `par ${pseudo}` : "par un compte supprimé"),
   },
   import: {
@@ -2059,7 +2056,7 @@ export const messages = {
     filterGender: "Par sexe",
     filterCountry: "Par pays",
     all: "Tous",
-    found: (n: number) => (n <= 1 ? `${n} athlète` : `${n} athlètes`),
+    found: athletesCount,
     title: "Athlètes",
     saved: "✓ Enregistré.",
     identity: "Identité",
@@ -2970,7 +2967,7 @@ export const messages = {
     searchLabel: "Nom ou ville",
     pending: "À valider",
     source: { import: "Importé", player: "Saisi par un joueur", admin: "Ajouté par l'admin" },
-    players: (n: number) => `${n} ${n <= 1 ? "joueur" : "joueurs"}`,
+    players: playersCount,
     nameLabel: "Nom",
     cityLabel: "Ville",
     departmentLabel: "Département",
