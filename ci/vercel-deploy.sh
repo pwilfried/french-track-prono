@@ -6,6 +6,9 @@
 #      optional VERCEL_EXTRA_ENV: KEY=value lines added to the pulled environment before the build
 #      (pre-production's NEXT_PUBLIC_SITE_NOINDEX=1); optional VERCEL_AUTOMATION_BYPASS_SECRET, passed
 #      on to the smoke test so it gets through Vercel Authentication (pre-production, #692).
+#   0. the functions region: pre-production (its base URL) runs in Frankfurt (fra1) next to its
+#      Supabase (eu-central-1), production in London (lhr1, vercel.json) next to its own (#1019).
+#      Written into vercel.json before `vercel build`: a prebuilt deploy keeps the build's region.
 #   1. `vercel pull`, then the pulled environment must hold the Supabase variables (names only are
 #      printed): on 13 Nov 2026 they had vanished, the build passed and every page answered 500.
 #   2. build, then a production deploy that takes the domains at once (no `vercel promote`: with
@@ -98,6 +101,19 @@ on_domain() {
 
 # The variables without which every page fails (src/infra/supabase).
 required=(NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY)
+
+# Pre-production by its address (the workflows pass nothing else): Frankfurt; otherwise vercel.json.
+case "$base" in
+  https://french-track-preprod.vercel.app*)
+    REGION=fra1 node -e '
+      const fs = require("fs");
+      const config = JSON.parse(fs.readFileSync("vercel.json", "utf8"));
+      config.regions = [process.env.REGION];
+      fs.writeFileSync("vercel.json", JSON.stringify(config, null, 2) + "\n");
+    '
+    ;;
+esac
+echo "Functions region: $(node -e 'console.log(JSON.parse(require("fs").readFileSync("vercel.json", "utf8")).regions.join(", "))')"
 
 vercel pull --yes --environment=production
 env_file=.vercel/.env.production.local
