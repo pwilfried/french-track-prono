@@ -18,7 +18,7 @@ run_url="${GITHUB_SERVER_URL:-https://github.com}/$repo/actions/runs/${GITHUB_RU
 quota_re='usage limit|rate.?limit|limit reached|hit your .*limit|quota|credit balance|too many requests|(^|[^0-9])429([^0-9]|$)|resets? (at|in)|try again (later|in)|out of (credits|usage)'
 
 # DRY_RUN=1: writes (merges, comments, labels) are printed instead of done.
-is_write() { [[ " $* " =~ " "(-X|merge|create|edit|comment)" " || " $* " == *" -f body="* ]]; }
+is_write() { [[ " $* " =~ " "(-X|merge|create|edit|comment|rerun)" " || " $* " == *" -f body="* ]]; }
 as_bot() { if [ -n "${DRY_RUN:-}" ] && is_write "$@"; then echo "DRY bot: $*" >&2; else env ${BOT_TOKEN:+"GH_TOKEN=$BOT_TOKEN"} "$@"; fi; }
 as_owner() { if [ -n "${DRY_RUN:-}" ] && is_write "$@"; then echo "DRY owner: $*" >&2; else env ${PAT_TOKEN:+"GH_TOKEN=$PAT_TOKEN"} "$@"; fi; }
 has_pat() { [ "$PAT_TOKEN" != "$BOT_TOKEN" ]; }
@@ -30,6 +30,20 @@ add_label() { as_bot gh api -X POST "repos/$repo/issues/$1/labels" -f "labels[]=
 remove_label() { as_bot gh api -X DELETE "repos/$repo/issues/$1/labels/$2" >/dev/null 2>&1 || true; }
 comment() { local who=$1 n=$2 body=$3; "$who" gh api "repos/$repo/issues/$n/comments" -f "body=$body" >/dev/null; }
 comments_of() { as_bot gh api --paginate "repos/$repo/issues/$1/comments" --jq '.[].body'; }
+
+# The Claude model for an issue or PR from its labels (comma-separated), to spare the weekly
+# usage (#1012): Opus where a mistake costs (p1, p2, database, scoring, a milestone plan, or the
+# owner's model:opus), Sonnet for the rest (p3, refactor-check, docs-check).
+model_for() {
+  case ",$1," in
+    *,p1,* | *,p2,* | *,zone:db,* | *,c:scoring,* | *,milestone-plan,* | *,model:opus,*) echo claude-opus-5-5 ;;
+    *) echo claude-sonnet-5-5 ;;
+  esac
+}
+
+# A failed check that is the tool's fault, not the code's (#1012): GitHub or the npm registry
+# down, the network cut, the runner lost. Rerunning the job fixes it; Claude would not.
+infra_re='The requested URL returned error: 5[0-9][0-9]|code (ECONNRESET|ETIMEDOUT|EAI_AGAIN)|runner has received a shutdown signal|lost communication with the server|HTTP 50[234]: |Bad Gateway|Service Unavailable'
 
 # The issues that PR bodies (on stdin) close with "Closes/Fixes/Resolves #n", one number per line.
 closed_by() { grep -oiE '(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+' | grep -oE '[0-9]+' | sort -u || true; }

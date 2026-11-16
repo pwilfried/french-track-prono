@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Merges Claude's green PRs, sends red or conflicting ones back to Claude (3 tries, then the
-# owners), retries the work waiting for quota (hourly or manual run: GitHub's cron often skips
+# Merges Claude's green PRs, sends red ones back to Claude (2 tries, then the owners; a failure
+# of the tool is rerun once without Claude, #1012) and conflicting ones (3 tries), retries the work waiting for quota (hourly or manual run: GitHub's cron often skips
 # hours, #736), then starts the next issues (next.sh).
 # Only PRs from a claude/ branch of this repository: never a fork's PR (the repository is public)
 # nor a person's. Not merged automatically: drafts, agent:needs-answer, milestone-plan.
@@ -27,6 +27,11 @@ failed_logs() { # last lines of each failed job of a PR's checks, at most 2 jobs
     done
 }
 
+failed_runs() { # the workflow runs of a PR's failed checks, one id per line
+  jq -r '.statusCheckRollup[] | select(.conclusion == "FAILURE" or .conclusion == "TIMED_OUT" or .conclusion == "STARTUP_FAILURE") | .detailsUrl // empty' <<< "$1" |
+    grep -oE '/runs/[0-9]+' | cut -d/ -f3 | sort -u
+}
+
 # green, red, pending or none, from the latest run of each check.
 check_state() {
   jq -r '
@@ -44,12 +49,22 @@ check_state() {
 send_back_red() { # $1 number, $2 PR JSON
   local n=$1 sha mark; sha=$(jq -r '.headRefOid[0:7]' <<< "$2"); mark="<!-- agents:fix sha=$sha -->"
   seen "$n" "$mark" && return 0
-  if [ "$(count "$n" '<!-- agents:fix ')" -ge 3 ]; then
-    ask_owner "$n" "Les checks sont encore rouges après 3 corrections automatiques."
+  local logs rerun="<!-- agents:rerun sha=$sha -->"
+  logs=$(failed_logs "$2")
+  # The tool's fault (#1012): rerun the failed jobs once, Claude has nothing to fix. A second
+  # failure on the same commit goes to Claude as usual.
+  if grep -qiE "$infra_re" <<< "$logs" && ! seen "$n" "$rerun"; then
+    failed_runs "$2" | while read -r r; do as_owner gh run rerun "$r" --failed -R "$repo" || true; done
+    comment as_bot "$n" "Échec dû à l'outil (GitHub, réseau ou runner), pas au code : jobs relancés une fois, sans Claude. ([run]($run_url))
+$rerun"
+    return 0
+  fi
+  if [ "$(count "$n" '<!-- agents:fix ')" -ge 2 ]; then
+    ask_owner "$n" "Les checks sont encore rouges après 2 corrections automatiques."
   else
     comment as_owner "$n" "@claude Les checks ont échoué sur $sha. Corrige-les sur cette branche (pas de rebase, pas de force-push), puis pousse.
 
-$(failed_logs "$2")
+$logs
 $mark"
   fi
 }
