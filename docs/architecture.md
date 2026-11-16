@@ -708,8 +708,19 @@ compétition), jamais deux fois. Rien pour un joueur bloqué.
 s'abonne (`program_alerts`, écrite seulement par `turn_on_program_alert()` et
 `turn_off_program_alert()`, chacun ne lit que ses lignes). Dès que la compétition a sa première
 épreuve, l'Edge Function `push-notifications` lit `private.program_due()` et envoie une seule
-notification par joueur et par compétition (« Le programme de … est en ligne », lien vers
+notification par joueur et par compétition (« 📣 Le programme de … est en ligne », lien vers
 l'onglet), notée par `private.program_mark_sent()` ; rien pour un joueur bloqué ou sans appareil.
+
+Textes des notifications (#1016, direction « speaker du stade » : un emoji par famille, le chiffre clé
+dans le titre, tutoiement ; `supabase/functions/_shared/push.mjs`) : pronos oubliés « 🚨 Dernier appel :
+100 m femmes » ou « … : 3 podiums à poser » ; résultats « 👑 +12 pts, tu es en tête ! » (1er avec des
+points), « 🔥 +12 pts ce soir », « 😬 Soirée blanche : 0 pt » (0 point, toujours) ; mercato « 🔨 Mercato :
+plus que 2 h pour le tour 2 » ; alignement « 📋 Ton équipe n'est pas alignée » ; duel « 🏆 Victoire contre
+X, 42 à 38 pts ! », « 💥 Défaite … », « 🤝 Match nul … » ; fil « 💬 X et 2 autres ont réagi à ton moment » ;
+programme « 📣 Le programme de … est en ligne ». Le service worker passe `badge`
+(`public/icons/badge-96.png`, silhouette blanche du lapin) et tient la pastille de l'icône de l'app à jour
+(`setAppBadge` = notifications affichées, effacée à l'ouverture de l'app ; sans l'API, rien). Le test du
+workflow envoie un exemple de chaque (`testNotifications`, un `tag` chacun).
 
 Tours (v0.8, issue #198) : une série, un quart ou une demi-finale pointe vers le tour qu'il
 alimente (`events.parent_id`). On ne pronostique que les finales, et une finale seulement quand
