@@ -161,7 +161,7 @@ function Drawing({ step }: { step: number }) {
 }
 
 /** Remembered on the device: the tutorial opens by itself once (#616). */
-const MANAGER_TUTORIAL_SEEN_KEY = "ftp:manager-tutorial-seen";
+export const MANAGER_TUTORIAL_SEEN_KEY = "ftp:manager-tutorial-seen";
 
 const listeners = new Set<() => void>();
 const subscribe = (listener: () => void) => {
@@ -188,18 +188,25 @@ const markSeen = () => {
   listeners.forEach((listener) => listener());
 };
 
+export type ManagerTutorialGateProps = {
+  /** Asked for: « Comment ça marche ? », `/manager?tutoriel=1`. */
+  open?: boolean;
+  /** Already in a Manager league: the player knows the mode, it no longer opens by itself (#988). */
+  hasLeague?: boolean;
+};
+
 /**
  * The presentation over the Manager page, in a modal dialog (Escape skips it): at the first
- * visit, or when `open` (« Comment ça marche ? », `/manager?tutoriel=1`). Closing it leaves the
- * page underneath, « Créer ou rejoindre une ligue » or the player's leagues.
+ * visit of a player without a Manager league, or when `open`. Closing it leaves the page
+ * underneath, « Créer ou rejoindre une ligue » or the player's leagues.
  */
-export function ManagerTutorialGate({ open = false }: { open?: boolean }) {
+export function ManagerTutorialGate({ open = false, hasLeague = false }: ManagerTutorialGateProps) {
   // Seen on the server: a returning player never gets the dialog in the first HTML.
   const seen = useSyncExternalStore(subscribe, isSeen, () => true);
   const [closed, setClosed] = useState(false);
   const router = useRouter();
   const dialog = useRef<HTMLDialogElement>(null);
-  const shown = !closed && (open || !seen);
+  const shown = !closed && (open || (!seen && !hasLeague));
 
   useEffect(() => {
     const current = dialog.current;
