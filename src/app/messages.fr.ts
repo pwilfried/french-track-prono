@@ -894,6 +894,8 @@ export const messages = {
     help: "La performance donne les points, quelle que soit la place ; les bonus s'ajoutent.",
     notYet: "Les points de cette compétition ne sont pas encore calculés.",
     noLineup: "Pas d'alignement validé avant le verrouillage : 0 point pour cette compétition.",
+    carriedFrom: (competition: string) =>
+      `Alignement repris de ${competition} : tu n'avais pas aligné avant le verrouillage.`,
     lineupLink: "Mon alignement",
   },
   managerChampionship: {
