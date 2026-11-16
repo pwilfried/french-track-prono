@@ -443,6 +443,15 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - **Prix de référence** : fixé à la main par l'admin, attribut de l'athlète (back-office ›
   Athlètes › fiche, « Prix French Track Manager »). Un athlète sans prix n'est pas dans le
   catalogue. Le prix servira aussi au futur onglet athlète (#443).
+- **Prix proposé** (#1028, décision du 16 nov. 2026, #1017) : la fiche montre un prix calculé,
+  que l'admin reprend (« Reprendre ce prix ») ou corrige ; seul le prix saisi compte au catalogue
+  et aux enchères. Règle dans `src/domain/manager-price.ts` : meilleure marque des 12 derniers mois
+  dans la discipline principale (RP ou MPS daté), sinon le RP dégradé de 5 % ; points des tables
+  World Athletics, puis grille (≥ 1 200 → 20, ≥ 1 150 → 12, ≥ 1 100 → 7, ≥ 1 050 → 4, sinon 2) ;
+  état `doubtful` ou `out` × 0,5, présence en France `rarely` × 0,6 ; arrondi, jamais sous 1.
+  Sans marque ni table : pas de proposition. La fiche porte l'état (`fit` par défaut, `doubtful`,
+  `out`) et la présence en France (`often`, `sometimes` par défaut, `rarely`), journalisés comme
+  `edit_athlete`. Grille et coefficients : règles Manager du back-office (`pricing`).
 
 ## Réponses du propriétaire (#428, 12 novembre 2026)
 

@@ -24,6 +24,15 @@ const rules: ManagerRules = {
     world_record: 25,
   },
   season: { startsOn: "2027-01-01", endsOn: "2027-12-31" },
+  pricing: {
+    grid: [
+      { minPoints: 1200, price: 20 },
+      { minPoints: 0, price: 2 },
+    ],
+    oldMarkPenalty: 0.05,
+    unfitFactor: 0.5,
+    rarelyFactor: 0.6,
+  },
 };
 
 describe("isPlayableManagerRules", () => {
@@ -58,6 +67,7 @@ describe("isPlayableManagerRules", () => {
     ["a bidding round of no hours", { rounds: { firstHours: 0, longRounds: 2, nextHours: 24 } }],
     ["no way to close the mercato", { closeModes: [] }],
     ["a negative bonus", { bonuses: { ...rules.bonuses, world_record: -1 } }],
+    ["a price grid without a step", { pricing: { ...rules.pricing, grid: [] } }],
     [
       "a season ending before it starts",
       { season: { startsOn: "2027-12-31", endsOn: "2027-01-01" } },

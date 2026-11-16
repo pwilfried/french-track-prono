@@ -6,11 +6,12 @@ import {
   createAthlete,
   editAthlete,
   editAthleteDiscipline,
+  setAthleteManagerProfile,
   setAthletePrice,
   type AthleteAdminRepository,
 } from "./edit-athlete";
 import { UseCaseError } from "./errors";
-import { getAthleteFile, listAthletes } from "./list-athletes";
+import { athletePriceSuggestion, getAthleteFile, listAthletes } from "./list-athletes";
 import { setAthleteRecord } from "./set-athlete-record";
 
 function repository(isAdmin = true) {
@@ -56,6 +57,8 @@ function repository(isAdmin = true) {
             ],
             records: [],
             managerPrice: null,
+            condition: "fit",
+            presence: "sometimes",
           }
         : null,
     create: async (fields) => {
@@ -67,6 +70,7 @@ function repository(isAdmin = true) {
     removeDiscipline: (...args) => write("removeDiscipline", ...args),
     setRecord: (...args) => write("setRecord", ...args),
     setPrice: (...args) => write("setPrice", ...args),
+    setManagerProfile: (...args) => write("setManagerProfile", ...args),
   };
   return { athletes, calls };
 }
@@ -246,5 +250,99 @@ describe("setAthletePrice", () => {
       new UseCaseError("ATHLETE_PRICE_INVALID"),
     );
     expect(calls).toEqual([]);
+  });
+});
+
+describe("setAthleteManagerProfile", () => {
+  it("sets the condition and the presence in France picked in the lists", async () => {
+    const { athletes, calls } = repository();
+
+    await setAthleteManagerProfile({ athletes }).execute({
+      athleteId: "1",
+      condition: "doubtful",
+      presence: "rarely",
+    });
+
+    expect(calls).toEqual([
+      ["setManagerProfile", "1", { condition: "doubtful", presence: "rarely" }],
+    ]);
+  });
+
+  it.each([
+    ["tired", "often"],
+    ["fit", "never"],
+  ])("refuses %s / %s with ATHLETE_PROFILE_INVALID", async (condition, presence) => {
+    const { athletes, calls } = repository();
+
+    await expect(
+      setAthleteManagerProfile({ athletes }).execute({ athleteId: "1", condition, presence }),
+    ).rejects.toEqual(new UseCaseError("ATHLETE_PROFILE_INVALID"));
+    expect(calls).toEqual([]);
+  });
+
+  it("refuses a player with NOT_ADMIN", async () => {
+    const { athletes } = repository(false);
+
+    await expect(
+      setAthleteManagerProfile({ athletes }).execute({
+        athleteId: "1",
+        condition: "out",
+        presence: "often",
+      }),
+    ).rejects.toEqual(new UseCaseError("NOT_ADMIN"));
+  });
+});
+
+describe("athletePriceSuggestion", () => {
+  const file = {
+    athleteId: "1",
+    slug: "a",
+    name: "Sprinteuse Fictive",
+    countryCode: "FRA",
+    gender: "F" as const,
+    disciplines: [
+      { discipline: "200 m", isPrimary: true },
+      { discipline: "100 m", isPrimary: false },
+    ],
+    records: [
+      {
+        discipline: "100 m",
+        kind: "pr" as const,
+        mark: "10.70",
+        date: "2026-07-01",
+        meeting: null,
+      },
+      {
+        discipline: "200 m",
+        kind: "pr" as const,
+        mark: "21.80",
+        date: "2026-07-01",
+        meeting: null,
+      },
+    ],
+    managerPrice: 3,
+    condition: "fit" as const,
+    presence: "sometimes" as const,
+  };
+  const pricing = {
+    grid: [
+      { minPoints: 1200, price: 20 },
+      { minPoints: 0, price: 2 },
+    ],
+    oldMarkPenalty: 0.05,
+    unfitFactor: 0.5,
+    rarelyFactor: 0.6,
+  };
+
+  it("prices an athlete on their main discipline, whatever price the admin typed", () => {
+    expect(
+      athletePriceSuggestion({ file, disciplines: [sprint], pricing, today: "2026-11-16" }),
+    ).toMatchObject({ price: 20, mark: "21.80", basis: "recent" });
+  });
+
+  it("suggests nothing when the main discipline is unknown", () => {
+    expect(
+      athletePriceSuggestion({ file, disciplines: [], pricing, today: "2026-11-16" }),
+    ).toBeNull();
   });
 });

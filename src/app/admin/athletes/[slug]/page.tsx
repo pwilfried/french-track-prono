@@ -3,16 +3,25 @@ import { notFound } from "next/navigation";
 
 import { listDisciplines } from "@/application/disciplines";
 import { UseCaseError, type ErrorCode } from "@/application/errors";
-import { getAthleteFile } from "@/application/list-athletes";
+import { athletePriceSuggestion, getAthleteFile } from "@/application/list-athletes";
+import { getManagerRules } from "@/application/manager-rules";
+import { SubmitButton } from "@/components/account/submit-button";
 import { ErrorNotice } from "@/components/error-notice";
-import { createSupabaseAthleteAdminRepository, createSupabaseDisciplineRepository } from "@/infra";
+import { ATHLETE_CONDITIONS, FRANCE_PRESENCES } from "@/domain/manager-price";
+import {
+  createSupabaseAthleteAdminRepository,
+  createSupabaseDisciplineRepository,
+  createSupabaseManagerRuleRepository,
+} from "@/infra";
 
+import { currentDay } from "../../../competition";
 import { messages } from "../../../messages.fr";
 import { AdminBand } from "../../competitions/admin-shell";
 import { adminOnly } from "../../guard";
 import {
   editAthleteAction,
   editDisciplineAction,
+  setManagerProfileAction,
   setPriceAction,
   setRecordAction,
 } from "../actions";
@@ -22,11 +31,20 @@ const button = "min-h-11 rounded-full px-4 text-sm font-bold";
 
 async function load(slug: string, client: Awaited<ReturnType<typeof adminOnly>>["client"]) {
   try {
-    const [file, disciplines] = await Promise.all([
+    const [file, disciplines, rules] = await Promise.all([
       getAthleteFile({ athletes: createSupabaseAthleteAdminRepository(client) }).execute({ slug }),
       listDisciplines({ disciplines: createSupabaseDisciplineRepository(client) }).execute(),
+      // Without the rules, the page still works: it only misses the suggested price.
+      getManagerRules({ rules: createSupabaseManagerRuleRepository(client) })
+        .execute()
+        .catch(() => null),
     ]);
-    return { file, disciplines };
+    const pricing = rules?.rules.pricing;
+    const suggestion = pricing
+      ? athletePriceSuggestion({ file, disciplines, pricing, today: currentDay() })
+      : null;
+    const penalty = pricing ? Math.round(pricing.oldMarkPenalty * 100) : 0;
+    return { file, disciplines, suggestion, penalty };
   } catch (error) {
     if (error instanceof UseCaseError) {
       if (error.code === "ATHLETE_NOT_FOUND") notFound();
@@ -123,31 +141,98 @@ export default async function AdminAthletePage({
               </button>
             </form>
 
-            <form
-              action={setPriceAction}
-              className="flex flex-col gap-2 rounded-card border border-border bg-card p-3.5"
+            <section
+              aria-labelledby="manager-price-title"
+              className="flex flex-col gap-4 rounded-card border border-border bg-card p-3.5"
             >
-              <input type="hidden" name="slug" value={slug} />
-              <input type="hidden" name="athleteId" value={loaded.file.athleteId} />
-              <h2 className="font-bold">{messages.adminAthletes.managerPrice}</h2>
-              <p className="text-sm text-muted-foreground">
-                {messages.adminAthletes.managerPriceHint}
-              </p>
-              <div className="flex items-end gap-2">
-                <label className="flex flex-1 flex-col gap-1 text-sm font-semibold">
-                  {messages.adminAthletes.managerPriceLabel}
-                  <input
-                    name="price"
-                    defaultValue={loaded.file.managerPrice ?? ""}
-                    inputMode="numeric"
-                    className={`${field} font-mono`}
-                  />
-                </label>
-                <button type="submit" className={`${button} bg-primary text-primary-foreground`}>
-                  {messages.disciplines.save}
-                </button>
-              </div>
-            </form>
+              <h2 id="manager-price-title" className="font-bold">
+                {messages.adminAthletes.managerPrice}
+              </h2>
+              <form action={setPriceAction} className="flex flex-col gap-2">
+                <input type="hidden" name="slug" value={slug} />
+                <input type="hidden" name="athleteId" value={loaded.file.athleteId} />
+                <p className="text-sm text-muted-foreground">
+                  {messages.adminAthletes.managerPriceHint}
+                </p>
+                <div className="flex items-end gap-2">
+                  <label className="flex flex-1 flex-col gap-1 text-sm font-semibold">
+                    {messages.adminAthletes.managerPriceLabel}
+                    <input
+                      name="price"
+                      defaultValue={loaded.file.managerPrice ?? ""}
+                      inputMode="numeric"
+                      className={`${field} font-mono`}
+                    />
+                  </label>
+                  <button type="submit" className={`${button} bg-primary text-primary-foreground`}>
+                    {messages.disciplines.save}
+                  </button>
+                </div>
+              </form>
+              {loaded.suggestion ? (
+                <form
+                  action={setPriceAction}
+                  className="flex flex-col gap-2 rounded-xl bg-muted p-3"
+                >
+                  <input type="hidden" name="slug" value={slug} />
+                  <input type="hidden" name="athleteId" value={loaded.file.athleteId} />
+                  <input type="hidden" name="price" value={loaded.suggestion.price} />
+                  <p className="font-bold">
+                    {messages.adminAthletes.suggestedPrice(loaded.suggestion.price)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {messages.adminAthletes.suggestedBasis[loaded.suggestion.basis](
+                      loaded.suggestion.mark,
+                      loaded.suggestion.points,
+                      loaded.penalty,
+                    )}{" "}
+                    {(loaded.file.condition !== "fit" || loaded.file.presence === "rarely") &&
+                      messages.adminAthletes.suggestedFactors}
+                  </p>
+                  {loaded.suggestion.price !== loaded.file.managerPrice && (
+                    <SubmitButton
+                      variant="outline"
+                      pendingLabel={messages.adminAthletes.takingSuggestedPrice}
+                    >
+                      {messages.adminAthletes.takeSuggestedPrice}
+                    </SubmitButton>
+                  )}
+                </form>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {messages.adminAthletes.noSuggestedPrice}
+                </p>
+              )}
+              <form action={setManagerProfileAction} className="flex flex-col gap-2">
+                <input type="hidden" name="slug" value={slug} />
+                <input type="hidden" name="athleteId" value={loaded.file.athleteId} />
+                <div className="flex gap-3">
+                  <label className="flex flex-1 flex-col gap-1 text-sm font-semibold">
+                    {messages.adminAthletes.condition}
+                    <select name="condition" defaultValue={loaded.file.condition} className={field}>
+                      {ATHLETE_CONDITIONS.map((c) => (
+                        <option key={c} value={c}>
+                          {messages.adminAthletes.conditions[c]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-1 flex-col gap-1 text-sm font-semibold">
+                    {messages.adminAthletes.presence}
+                    <select name="presence" defaultValue={loaded.file.presence} className={field}>
+                      {FRANCE_PRESENCES.map((p) => (
+                        <option key={p} value={p}>
+                          {messages.adminAthletes.presences[p]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <SubmitButton variant="outline" pendingLabel={messages.adminAthletes.savingProfile}>
+                  {messages.adminAthletes.saveProfile}
+                </SubmitButton>
+              </form>
+            </section>
 
             <section aria-labelledby="disciplines-title" className="flex flex-col gap-3">
               <h2
