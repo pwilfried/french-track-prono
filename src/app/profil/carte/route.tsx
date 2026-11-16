@@ -10,13 +10,13 @@ import {
 } from "@/infra";
 
 import { seasonCompetitionSlugs } from "../../competition";
-import { getCurrentUser, getSessionClient } from "../../session";
+import { getSessionClient, getVerifiedUser } from "../../session";
 import { publicEventReader, publicDisciplines, publicRanking } from "../../public-data";
 import { seasonCardImage } from "./season-card-image";
 
 /** « Ma carte de saison » (#388): the signed-in player's season as a story image (1080 × 1920). */
 export async function GET() {
-  const user = await getCurrentUser();
+  const user = await getVerifiedUser();
   if (!user) return new Response(null, { status: 401 });
   const client = await getSessionClient();
   const profile = await getProfile({
