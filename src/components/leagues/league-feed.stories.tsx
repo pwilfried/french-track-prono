@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 
 import { messages } from "@/app/messages.fr";
 import { feedGroups, type FeedMoment } from "@/domain/league-moments";
+import { mercatoMoments, type MercatoWinFact } from "@/domain/manager-moments";
 
 import { LeagueFeed } from "./league-feed";
 
@@ -54,6 +55,61 @@ export const Grouped: Story = {
     ).toBeVisible();
     await expect(canvas.getByRole("heading", { name: text.yesterday })).toBeVisible();
     await expect(canvas.getAllByRole("article")).toHaveLength(3);
+  },
+};
+
+/** A full mercato: 4 players, 3 rounds, 7 athletes each, then a duel and a badge. */
+const PLAYERS = ["Démo Disque", "Démo Haies", "Démo Perche", "Démo Sprint"];
+const fullMercato: MercatoWinFact[] = PLAYERS.flatMap((pseudo, p) =>
+  Array.from({ length: 7 }, (_, i) => {
+    const round = (i % 3) + 1;
+    return {
+      round,
+      athleteId: `${p}-${i}`,
+      athlete: `Athlète ${p * 7 + i + 1}`,
+      price: 3 + ((p + i) % 6),
+      userId: `u${p}`,
+      pseudo,
+      closedAt: `2026-11-1${round}T09:00:00.000Z`,
+    };
+  }),
+);
+
+/** A Manager feed after a full mercato: one card per round and player, 10 first (#979). */
+export const ManagerMercato: Story = {
+  args: {
+    pageSize: 10,
+    groups: feedGroups(
+      [
+        ...mercatoMoments(fullMercato),
+        {
+          key: "duel_result:1:u0",
+          kind: "duel_result",
+          happenedAt: "2026-11-15T20:00:00.000Z",
+          pseudo: "Démo Disque",
+          otherPseudo: "Démo Haies",
+          competitionName: "Meeting de Paris",
+          scores: [900, 700],
+        },
+        {
+          key: "badge:u2:foudre:silver",
+          kind: "badge",
+          happenedAt: "2026-11-15T19:00:00.000Z",
+          pseudo: "Démo Perche",
+          badge: "foudre",
+          level: "silver",
+        },
+      ],
+      NOW,
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // 12 mercato cards (4 players × 3 rounds), a duel and a badge: 14, 10 shown.
+    await expect(canvas.getAllByRole("article")).toHaveLength(10);
+    await userEvent.click(canvas.getByRole("button", { name: text.more }));
+    await expect(canvas.getAllByRole("article")).toHaveLength(14);
+    await expect(canvas.queryByRole("button", { name: text.more })).toBeNull();
   },
 };
 

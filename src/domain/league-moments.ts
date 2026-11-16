@@ -153,10 +153,12 @@ export type FeedMoment = {
   competitionName?: string;
   /** The event of the moment; the screen names it. */
   event?: { discipline: string; gender: "F" | "M" | "X" };
-  /** Streak length, a winning bid's price, a duel's scores. */
+  /** Streak length; the credits spent on the athletes of a mercato round. */
   length?: number;
   price?: number;
-  athlete?: string;
+  /** The mercato round, and the athletes won in it with their price, most expensive first. */
+  round?: number;
+  athletes?: { name: string; price: number }[];
   badge?: Badge;
   level?: BadgeLevel;
   /** A duel's scores, winner first. */
@@ -196,4 +198,15 @@ export function feedGroups(moments: FeedMoment[], now: string): FeedGroup[] {
     groups.set(id, group);
   }
   return [...groups.values()];
+}
+
+/** The first `count` moments of the feed, latest first, in their groups: « Voir plus » shows more. */
+export function firstMoments(groups: FeedGroup[], count: number): FeedGroup[] {
+  let left = count;
+  return groups.flatMap((group) => {
+    if (left <= 0) return [];
+    const moments = group.moments.slice(0, left);
+    left -= moments.length;
+    return [{ ...group, moments }];
+  });
 }

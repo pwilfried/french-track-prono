@@ -16,6 +16,8 @@ const gain = (n: number) => (n > 0 ? `+${pts(n)}` : pts(n));
 const pointsWord = (n: number) => (Math.abs(n) <= 1 ? "point" : "points");
 const points = (n: number) => `${n} ${pointsWord(n)}`;
 const eventsCount = (n: number) => `${n} ${n <= 1 ? "épreuve" : "épreuves"}`;
+const credits = (n: number) => `${n} ${n <= 1 ? "crédit" : "crédits"}`;
+const athletesCount = (n: number) => `${n} ${n <= 1 ? "athlète" : "athlètes"}`;
 const GENDER = { F: "Femmes", M: "Hommes", X: "Mixte" } as const;
 /** The contact address published on the site: written here only. */
 const CONTACT_EMAIL = "frenchtrackprono@gmail.com";
@@ -1297,8 +1299,8 @@ export const messages = {
           scores && scores[0] === scores[1]
             ? `${pseudo} et ${other ?? "son adversaire"} font match nul ${scores[0]} à ${scores[1]}.`
             : `${pseudo} bat ${other ?? "son adversaire"}${scores ? ` ${scores[0]} à ${scores[1]}` : ""}.`,
-        mercato_win: (pseudo: string, athlete: string | null, price: number | null) =>
-          `${pseudo} remporte ${athlete ?? "un athlète"} au mercato${price !== null ? ` pour ${price} crédits` : ""}.`,
+        mercato_win: (pseudo: string, count: number, round: number | null, spent: number) =>
+          `${pseudo} remporte ${athletesCount(count)}${round !== null ? ` au tour ${round}` : " au mercato"} · ${credits(spent)}`,
         badge: (pseudo: string, badge: string | null, level: string | null) =>
           badge
             ? `${pseudo} gagne le badge « ${badge} »${level ? ` ${level}` : ""}.`
@@ -1306,6 +1308,11 @@ export const messages = {
         streak: (pseudo: string, length: number | null) =>
           `${pseudo} enchaîne ${length ?? 5} pronos qui rapportent d'affilée.`,
       },
+      /** The athletes of a mercato round, folded under its card (#979). */
+      athletes: "Voir les athlètes",
+      credits,
+      /** The feed shows its latest cards, then more on demand (#979). */
+      more: "Voir plus",
       reactions: {
         group: "Réagir à ce moment",
         emoji: { fire: "🔥", clap: "👏", wow: "😮", laugh: "😂" },
@@ -2574,6 +2581,11 @@ export const messages = {
       browse: "Voir les compétitions",
     },
   },
+  notFound: {
+    title: "Page introuvable",
+    body: "Cette adresse ne mène nulle part. Le lien est peut-être ancien ou mal recopié.",
+    home: "Retour à l'accueil",
+  },
   globalError: {
     title: "Oups, la page est tombée",
     body: "Une erreur nous empêche de l'afficher. On est prévenus ; réessaie dans un instant.",
@@ -2848,6 +2860,10 @@ export const messages = {
   prediction: {
     joker: "🃏 Joker : points × 2",
     jokerHint: "Un seul par compétition.",
+    /** Followed by a link to the event where the joker is played (#981). */
+    jokerPlayedOn: "Joker joué sur",
+    jokerMovable: "Pour le jouer ici, retire-le d'abord de là-bas.",
+    jokerFixed: "Cette épreuve est verrouillée : il y reste.",
     save: "Enregistrer mon podium",
     saving: "Enregistrement…",
     saved: "✓ Podium enregistré. Tu peux le modifier jusqu'au verrouillage.",
