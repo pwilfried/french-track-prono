@@ -3,7 +3,11 @@ import { expect, fn, userEvent, within } from "storybook/test";
 
 import { messages } from "@/app/messages.fr";
 
-import { ManagerTutorial } from "./manager-tutorial";
+import {
+  MANAGER_TUTORIAL_SEEN_KEY,
+  ManagerTutorial,
+  ManagerTutorialGate,
+} from "./manager-tutorial";
 
 const text = messages.manager.tutorial;
 
@@ -123,5 +127,46 @@ export const LongText: Story = {
   play: async ({ canvasElement }) => {
     const step = within(canvasElement).getByRole("region", { name: text.label });
     await expect(step.scrollWidth).toBeLessThanOrEqual(step.clientWidth);
+  },
+};
+
+/** The gate over the Manager page, on a device where the presentation was never passed. */
+const gate = {
+  render: (args) => <ManagerTutorialGate {...args} />,
+  parameters: { nextjs: { appDirectory: true } },
+  beforeEach: () => {
+    localStorage.removeItem(MANAGER_TUTORIAL_SEEN_KEY);
+  },
+} satisfies StoryObj<typeof ManagerTutorialGate>;
+
+/** A new player, at the first visit: the presentation opens by itself (#616). */
+export const GateNewPlayer: StoryObj<typeof ManagerTutorialGate> = {
+  ...gate,
+  args: { hasLeague: false },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    const dialog = await page.findByRole("dialog", { name: text.label });
+    await expect(dialog).toHaveTextContent(text.progress(1, 3));
+  },
+};
+
+/** A player already in a Manager league: it does not open by itself (#988). */
+export const GateHasLeague: StoryObj<typeof ManagerTutorialGate> = {
+  ...gate,
+  args: { hasLeague: true },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    await expect(page.queryByRole("dialog")).toBeNull();
+  },
+};
+
+/** « Comment ça marche ? » still opens it for a player who has a league (#988). */
+export const GateHasLeagueOnDemand: StoryObj<typeof ManagerTutorialGate> = {
+  ...gate,
+  args: { hasLeague: true, open: true },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    const dialog = await page.findByRole("dialog", { name: text.label });
+    await expect(dialog).toHaveTextContent(text.progress(1, 3));
   },
 };
