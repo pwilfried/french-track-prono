@@ -162,6 +162,9 @@ test("a participant lines up their team before a competition and can no longer c
 test("a participant fills the match sheet: eight starters, four ordered substitutes and a tactical threshold, kept after a reload", async ({
   page,
 }) => {
+  // About fifty round trips (sign-up, a dozen athletes, eight places, the bench): on the slow
+  // pre-production base this brushed the 120 s limit (#1065).
+  test.slow();
   seasonReady();
   const tag = `${Date.now() % 1000000}`;
   const league = `Feuille ${tag}`;
