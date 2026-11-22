@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { addFriendTo, newPlayer, signUp } from "./players";
+import { addFriendTo, countInLeagues, newPlayer, signUp } from "./players";
 
 test("a sprint league counts the 100 m and not the javelin, until its creator adds throws", async ({
   page,
@@ -49,6 +49,8 @@ test("a sprint league counts the 100 m and not the javelin, until its creator ad
       from auth.users u, events e
       where u.email = '${player.email}' and e.slug = '${tag}-${event}'`);
   }
+  // Both podiums added to the league (#1068): its families still leave the javelin out.
+  countInLeagues(tag);
   const friend = addFriendTo(leagueUrl, tag);
 
   // Only the 100 m counts in the league; the javelin is listed « Hors ligue ».

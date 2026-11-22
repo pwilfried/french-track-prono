@@ -29,7 +29,9 @@ const counts = `select json_build_object(
   'matchdays', (select count(*) from manager_matchdays d join manager_leagues l on l.id = d.league_id
                 where l.owner_id::text like ${demoPlayer} and d.competition_id is not null),
   'managerScores', (select count(*) from manager_scores s join manager_leagues l on l.id = s.league_id
-                    where l.owner_id::text like ${demoPlayer})
+                    where l.owner_id::text like ${demoPlayer}),
+  'leaguePredictions', (select count(*) from league_predictions
+                        where user_id::text like ${demoPlayer})
 )::text;`;
 
 // The states of the test accounts (#944): demo-21 Nouveau, demo-22 Mercato, demo-23 Direct,
@@ -109,6 +111,8 @@ if (url && key) {
       });
       expect(first.predictions).toBeGreaterThan(500);
       expect(first.points).toBeGreaterThan(0);
+      // The demo predictions count in the demo leagues (#1068).
+      expect(first.leaguePredictions).toBeGreaterThan(0);
       expect(first.results).toBeGreaterThan(0);
     });
 

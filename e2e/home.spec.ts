@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
 import { defaultCompetitionSlug } from "./competitions";
-import { joinLeagueFor, newPlayer, signUp } from "./players";
+import { joinLeagueFor, newPlayer, signUp, skipLeagueSheet } from "./players";
 
 test("a visitor sees one main action above the fold, how to play and the next competition", async ({
   page,
@@ -190,6 +190,7 @@ test("a player in a league sees their place in it and their next final after a p
   const athletes = page.locator("li > button[aria-pressed]");
   for (const index of [0, 1, 2]) await athletes.nth(index).click();
   await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
+  await skipLeagueSheet(page);
   await expect(page.getByRole("status")).toContainText("Podium enregistré");
 
   await page.goto("/");

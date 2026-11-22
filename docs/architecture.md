@@ -350,13 +350,13 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 
 | Groupe | Tables |
 |---|---|
-| Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions`, `league_families` |
+| Joueurs et ligues | `profiles`, `leagues`, `league_members`, `league_competitions`, `league_families`, `league_predictions` (#1068) |
 | Référentiel | `competitions`, `events` (dont `kind` et `sub_disciplines` des épreuves combinées), `athletes`, `entries` (liste de départ), `results`, `athlete_records` (PR, SB, WR, WB) |
 | Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions`, `badges`, `user_badges` (niveau de badge gagné, #821), `trophies` et `trophy_settings` (trophées de saison et compte FrenchTrack du Témoin d'or, #822), `fun_facts` et `fun_fact_settings` (« Le saviez-vous ? », #766) |
 | Communauté (v0.19) | `league_moments`, `manager_moments`, `moment_reactions`, `moment_reaction_reports`, `frenchtrack_picks`, `announcements`, `polls`, `poll_votes` |
 | Notifications | `push_subscriptions`, `reminder_settings`, `reminder_log`, `program_alerts` |
 | Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `manager_lineup_entries`, `manager_lineup_carry_overs`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
-| Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()`, `raise_my_badge_levels()`, `event_consensus()`, `save_reminder_settings()`, `admin_replace_trophies()` |
+| Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()`, `raise_my_badge_levels()`, `event_consensus()`, `save_reminder_settings()`, `admin_replace_trophies()`, `set_prediction_leagues()` |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers` |
 
 Garanties portées par la base : pronostic impossible après `lock_at`, pronos des autres
@@ -425,6 +425,21 @@ ligue où il est le mieux classé. Un profil incomplet (ni club ni discipline) y
 dans `src/domain/profile-reminder.ts`, la date dans `player_details.reminder_hidden_until` ; les compétitions d'une ligue se cochent sur `/ligues/creer` dans le sélecteur de saison du Manager (#721 ; l'ancienne page `/ligues/creer/competitions` y redirige), et
 les pages suivent la prochaine compétition par date (`src/app/competition.ts`). Ligues et adhésions ne s'écrivent que par les fonctions ci-dessus. Le classement est
 calculé en TypeScript à partir des lignes de points (pas de vue SQL).
+
+Ligues d'un prono (#1068, décision du propriétaire du 22 nov. 2026) : un podium compte toujours au
+classement général et à celui de sa compétition ; dans une ligue, seulement si le joueur l'y a
+ajouté (`league_predictions`, une ligne par ligue, joueur et épreuve). Après le premier
+enregistrement d'un podium, un joueur membre d'au moins une ligue qui compte la compétition voit
+la feuille « Ajouter ce prono à mes ligues » (rien de coché, « Plus tard » la ferme) ; sous son
+podium, le bloc « Ce prono compte dans » ajoute ou retire une ligue jusqu'au verrou, puis dit
+« Compte » ou « Ne compte pas ». L'écriture passe par `set_prediction_leagues(épreuve, ligues[])`
+sous la sécurité par ligne : son propre prono seulement, avant le verrou (code FT043 après), dans
+une ligue dont il est membre et qui compte la compétition. Quitter une ligue ou oublier un prono
+retire ses lignes. Chaque membre lu porte ses épreuves ajoutées (`LeagueMember.countedEvents`) :
+`leagueLines` (classement, fil, trophées), « les pronos des autres » filtrés sur une ligue et
+`admin_league_members()` ne comptent que celles-là, en plus des règles de date d'arrivée, d'entrée
+de la compétition et de familles. La migration a repris tous les pronos déjà posés dans les ligues
+de leur joueur qui comptaient leur compétition.
 
 Ajouts nécessaires au schéma (à faire dans la version indiquée) :
 

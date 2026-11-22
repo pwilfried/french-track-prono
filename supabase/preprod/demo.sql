@@ -385,6 +385,17 @@ join demo_event_ids e on (t.n = 23 and e.k = 2) or (t.n = 24 and e.k in (1, 2))
 join demo_starts s on s.event_id = e.id
 where not exists (select 1 from predictions x where x.user_id = t.id and x.event_id = e.id);
 
+-- Each demo prediction counts in the demo leagues of its player that count its competition, as
+-- if added from the sheet after the save (#1068).
+insert into league_predictions (league_id, user_id, event_id)
+select lm.league_id, p.user_id, p.event_id
+from predictions p
+join demo_event_ids e on e.id = p.event_id
+join league_members lm on lm.user_id = p.user_id
+join league_competitions lc on lc.league_id = lm.league_id and lc.competition_id = p.competition_id
+where p.user_id::text like '00000000-0000-4000-9000-%'
+on conflict do nothing;
+
 -- Kept by the app once won (raise_my_badge_levels only raises it): bronze of « Chasseur ».
 insert into user_badges (user_id, badge_code, level)
 select id, 'chasseur', 'bronze' from demo_account_ids where n = 24

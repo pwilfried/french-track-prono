@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { joinLeagueFor, newPlayer, signUp } from "./players";
+import { joinLeagueFor, newPlayer, signUp, skipLeagueSheet } from "./players";
 
 test("a player cannot see a podium before the lock, unfolds it after and reacts to it", async ({
   browser,
@@ -28,6 +28,7 @@ test("a player cannot see a podium before the lock, unfolds it after and reacts 
   const athletes = annaPage.locator("li > button[aria-pressed]");
   for (const index of [0, 1, 2]) await athletes.nth(index).click();
   await annaPage.getByRole("button", { name: "Enregistrer mon podium" }).click();
+  await skipLeagueSheet(annaPage);
   await expect(annaPage.getByRole("status")).toContainText("Podium enregistré");
   // Before the lock, no consensus: nothing may influence a prediction (#680).
   await expect(

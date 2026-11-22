@@ -11,7 +11,7 @@ type LeagueRow = {
   id: string;
   competitions: { slug: string; added_at: string | null }[] | null;
   families: { family: LeagueFamily; added_at: string | null }[];
-  members: { user_id: string; joined_at: string | null }[] | null;
+  members: { user_id: string; joined_at: string | null; counted?: string[] }[] | null;
 };
 
 /** A moment as the database gives it; the Manager feed (#875) gives no event, nor other player. */
@@ -59,6 +59,7 @@ function leagueOf(row: LeagueRow): MomentLeague {
     members: (row.members ?? []).map((m) => ({
       userId: m.user_id,
       ...(m.joined_at ? { joinedAt: iso(m.joined_at) } : {}),
+      countedEvents: m.counted ?? [],
     })),
   };
 }

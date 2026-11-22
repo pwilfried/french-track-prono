@@ -77,6 +77,18 @@ describe("listEventPredictions", () => {
     expect(result.predictions.map((p) => p.userId)).toEqual(["b", "z"]);
   });
 
+  it("keeps only the podiums added to my league when I filter on it (#1068)", async () => {
+    const result = await listEventPredictions({
+      reveal: reveal(true, all),
+      leagues: leagues([
+        { ...member("b"), countedEvents: ["e1"] },
+        { ...member("z"), countedEvents: ["e2"] },
+      ]),
+    }).execute({ eventId: "e1", leagueId: "l1" });
+
+    expect(result.predictions.map((p) => p.userId)).toEqual(["b"]);
+  });
+
   it("refuses a league I am not in with LEAGUE_NOT_FOUND", async () => {
     await expect(
       listEventPredictions({ reveal: reveal(true, all), leagues: leagues(null) }).execute({

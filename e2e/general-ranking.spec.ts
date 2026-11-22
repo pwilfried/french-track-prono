@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { addFriendTo, joinLeagueFor, newPlayer, signUp } from "./players";
+import { addFriendTo, countInLeagues, joinLeagueFor, newPlayer, signUp } from "./players";
 
 test("the ranking opens on my league, and the general one adds up every competition", async ({
   page,
@@ -50,6 +50,8 @@ test("the ranking opens on my league, and the general one adds up every competit
       from auth.users u, events e
       where u.email = '${player.email}' and e.slug = '${tag}-${i}-100m'`);
     }
+    // The player added their podiums to the league (#1068).
+    countInLeagues(`${tag}-%`);
     await page.reload();
 
     // Alone in the league: an invitation to bring friends in, no ranking of one (#710).

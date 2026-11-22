@@ -16,7 +16,8 @@ export type MomentLeague = {
   competitionSlugs: string[];
   competitionAddedAt?: Record<string, string>;
   families?: LeagueFamilyRule[];
-  members: { userId: string; joinedAt?: string }[];
+  /** `countedEvents`: the predictions each member added to the league (#1068). */
+  members: { userId: string; joinedAt?: string; countedEvents?: string[] }[];
 };
 
 /**

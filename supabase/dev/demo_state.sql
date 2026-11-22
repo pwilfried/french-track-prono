@@ -225,6 +225,14 @@ select l.id, c.id
 from leagues l, competitions c
 where l.name = 'Démo Prono' and c.slug = 'ultimate-championship-2026';
 
+-- Every demo podium counts in the league, as if added from the sheet after the save (#1068).
+insert into league_predictions (league_id, user_id, event_id)
+select lm.league_id, p.user_id, p.event_id
+from predictions p
+join league_members lm on lm.user_id = p.user_id
+join leagues l on l.id = lm.league_id and l.name = 'Démo Prono'
+where p.user_id::text like '00000000-0000-4000-9000-%';
+
 -- 6. One demo Manager league, four members, Démo Gazelle owns it. Mercato open so bids make sense
 -- in #422+. The rules are the default seeded set (budget 100, one quota per family, saison 2027).
 insert into manager_leagues (name, owner_id, is_public, rules, competition_ids, mercato_opened_at)

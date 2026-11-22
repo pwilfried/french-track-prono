@@ -4,6 +4,7 @@ import type { Reaction } from "@/domain/reveal";
 
 import { UseCaseError } from "./errors";
 import type { LeagueRepository } from "./leagues";
+import { addedToLeague } from "./rankings";
 
 /** A prediction as revealed after the lock, with the reactions it received. */
 export type RevealedPrediction = {
@@ -65,11 +66,12 @@ export function listEventPredictions(ports: {
   reveal: RevealRepository;
   leagues: LeagueRepository;
 }) {
-  const memberIds = async (leagueId: string) => {
+  const membersOf = async (leagueId: string) => {
     const members = await ports.leagues.members(leagueId);
     if (!members) throw new UseCaseError("LEAGUE_NOT_FOUND");
-    return members.map((m) => m.userId);
+    return members;
   };
+  const memberIds = async (leagueId: string) => (await membersOf(leagueId)).map((m) => m.userId);
   return {
     async execute(input: {
       eventId: string;
@@ -80,8 +82,15 @@ export function listEventPredictions(ports: {
       if (!locked) throw new UseCaseError("EVENT_NOT_LOCKED");
       const sorted = [...predictions].sort(byPseudo);
       if (input.leagueId) {
-        const ids = new Set(await memberIds(input.leagueId));
-        return { predictions: sorted.filter((p) => ids.has(p.userId)), others: [] };
+        // Only the podiums their players added to the league (#1068).
+        const counted = new Set(
+          (await membersOf(input.leagueId))
+            .filter((m) =>
+              addedToLeague(m.countedEvents && new Set(m.countedEvents), input.eventId),
+            )
+            .map((m) => m.userId),
+        );
+        return { predictions: sorted.filter((p) => counted.has(p.userId)), others: [] };
       }
       const myLeagueIds = input.myLeagueIds ?? [];
       if (myLeagueIds.length === 0) return fold(sorted, []);

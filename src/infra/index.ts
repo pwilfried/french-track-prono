@@ -141,3 +141,5 @@ export { createInMemoryMomentReactionStore } from "./in-memory/moment-reaction-r
 export { createSupabaseMomentReactionRepository } from "./supabase/moment-reaction-repository";
 export { createInMemoryManagerFeedStore } from "./in-memory/manager-feed-repository";
 export { createSupabaseManagerFeedRepository } from "./supabase/manager-feed-repository";
+export { createInMemoryPredictionLeagueRepository } from "./in-memory/prediction-league-repository";
+export { createSupabasePredictionLeagueRepository } from "./supabase/prediction-league-repository";

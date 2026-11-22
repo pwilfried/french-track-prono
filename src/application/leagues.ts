@@ -50,6 +50,11 @@ export type LeagueMember = {
   club?: string | null;
   /** When they joined, ISO 8601: only the events locked after count in the league (#376). */
   joinedAt?: string;
+  /**
+   * The events whose prediction they added to the league (#1068): only those count in it. The
+   * real adapter always reads them; absent, every prediction counts.
+   */
+  countedEvents?: string[];
 };
 
 export type JoinOutcome =

@@ -22,6 +22,10 @@ from (values ('f1f1f1f1-0000-0000-0000-000000000002'::uuid, 'owner'),
 insert into score_events (user_id, competition_id, event_id, source, points, reason)
 select 'f1f1f1f1-0000-0000-0000-000000000003', e.competition_id, e.id, 'prediction', 7, 'prediction'
 from (select id, competition_id from events order by id limit 1) e;
+-- The member added the prediction of that event to the league (#1068).
+insert into league_predictions (league_id, user_id, event_id)
+select 'f1f1f1f1-1111-0000-0000-000000000001', 'f1f1f1f1-0000-0000-0000-000000000003', id
+from events order by id limit 1;
 insert into league_reports (league_id, user_id) values
   ('f1f1f1f1-1111-0000-0000-000000000001', 'f1f1f1f1-0000-0000-0000-000000000003');
 
