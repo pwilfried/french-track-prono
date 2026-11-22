@@ -6,6 +6,7 @@ import {
   type DuelResult,
 } from "@/domain/manager-championship";
 import { lineupPlaces, placeLineup, type LineupPlace } from "@/domain/manager-lineup";
+import type { ManagerJoker, ManagerJokerEffect } from "@/domain/manager-jokers";
 import type { ManagerBonus, ManagerSex } from "@/domain/manager-rules";
 import type { AthleteScore, Substitution, SubstitutionReason } from "@/domain/manager-score";
 import type { PerformanceStatus } from "@/domain/performance";
@@ -13,6 +14,7 @@ import type { PerformanceStatus } from "@/domain/performance";
 import { UseCaseError } from "./errors";
 import { legOf, loadSeason, type ManagerSeasonRepository } from "./manager-championship";
 import type { ManagerCatalogueRepository } from "./manager-catalogue";
+import type { ManagerJokerRepository } from "./manager-jokers";
 import type { ManagerLeagueRepository, ManagerParticipant } from "./manager-leagues";
 
 /** The lineups of a competition of the league: none before the lock, every one from it on. */
@@ -23,7 +25,13 @@ export type DuelLineups = {
 };
 
 /** The stored Manager score of a participant for a competition, as the league reads it. */
-export type DuelScore = { userId: string; total: number; athletes: AthleteScore[] };
+export type DuelScore = {
+  userId: string;
+  total: number;
+  athletes: AthleteScore[];
+  /** What the jokers of the head-to-head did to it (#1091). */
+  jokerEffects?: ManagerJokerEffect[];
+};
 
 /**
  * Port: what a head-to-head shows (#605). Real adapter = Supabase (the database keeps every
@@ -80,6 +88,11 @@ export type DuelSide = {
   linedUp: boolean;
   /** One per place of the stadium: null for an empty one, or everyone before the lock. */
   cards: (DuelCard | null)[];
+  /**
+   * The joker the player played on the matchday (#1091), seen from the lock: the athlete it aimed
+   * at, and what it changed once scored (null before; 0 without effect).
+   */
+  joker: { kind: ManagerJoker; athleteName: string | null; points: number | null } | null;
 };
 
 /** « Une confrontation » (#605): both lineups on one stadium, the opponent at the top. */
@@ -119,6 +132,8 @@ export function getManagerDuel(ports: {
   season: ManagerSeasonRepository;
   duels: ManagerDuelRepository;
   catalogue: ManagerCatalogueRepository;
+  /** The jokers of the league (#1091); without it, no joker is shown. */
+  jokers?: Pick<ManagerJokerRepository, "plays">;
   userId: string;
 }) {
   return {
@@ -142,9 +157,12 @@ export function getManagerDuel(ports: {
       if (lineups === "not_member" || catalogue === "not_member") {
         throw new UseCaseError("LEAGUE_NOT_FOUND");
       }
-      const scores = lineups.locked
-        ? await ports.duels.scores(input.leagueId, matchday.competitionId)
-        : [];
+      const [scores, plays] = lineups.locked
+        ? await Promise.all([
+            ports.duels.scores(input.leagueId, matchday.competitionId),
+            ports.jokers?.plays(input.leagueId) ?? [],
+          ])
+        : [[], []];
       const scored = scores.length > 0;
       const athletes = new Map(catalogue.map((a) => [a.athleteId, a]));
       const places = lineupPlaces(league.rules.lineup);
@@ -161,7 +179,18 @@ export function getManagerDuel(ports: {
           known.map((a) => ({ athleteId: a.athleteId, family: a.family, entered: true })),
           known.map((a) => a.athleteId),
         );
+        const play = plays.find(
+          (p) => p.userId === userId && p.competitionId === matchday.competitionId,
+        );
+        const effect = score?.jokerEffects?.find((e) => e.by === "me");
         return {
+          joker: play
+            ? {
+                kind: play.kind,
+                athleteName: (play.athleteId && athletes.get(play.athleteId)?.name) || null,
+                points: scored ? (effect?.points ?? 0) : null,
+              }
+            : null,
           participant: participant(userId),
           home: userId === fixture.home,
           score: scored ? (score?.total ?? 0) : null,

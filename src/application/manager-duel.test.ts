@@ -225,6 +225,54 @@ describe("getManagerDuel", () => {
     });
   });
 
+  it("shows the joker of each side from the lock, with what it changed once scored (#1091)", async () => {
+    // Given zoe made z1 her captain and max played a false start on z1, matchday 1 scored
+    const ports = world({
+      scores: [
+        {
+          userId: "zoe",
+          total: 1130,
+          athletes: [line("z1", 1100, 20)],
+          jokerEffects: [
+            { kind: "captain", by: "me", athleteId: "z1", points: 1120 },
+            { kind: "false_start", by: "opponent", athleteId: "z1", points: -1120 },
+          ],
+        },
+        {
+          userId: "max",
+          total: 950,
+          athletes: [line("m1", 938)],
+          jokerEffects: [{ kind: "false_start", by: "me", athleteId: "z1", points: -1120 }],
+        },
+      ],
+    });
+    const play = (userId: string, kind: "captain" | "false_start") => ({
+      userId,
+      competitionId: "c1",
+      kind,
+      athleteId: "z1",
+      discipline: null,
+      replacedId: null,
+      coached: false,
+    });
+    const jokers = { plays: async () => [play("zoe", "captain"), play("max", "false_start")] };
+
+    // When zoe opens her head-to-head
+    const view = await getManagerDuel({ ...ports, jokers }).execute({
+      leagueId: "L",
+      round: 1,
+      home: "zoe",
+    });
+
+    // Then both jokers show, each with its effect
+    expect(view.bottom.joker).toEqual({ kind: "captain", athleteName: "Athlète Z1", points: 1120 });
+    expect(view.top.joker).toEqual({
+      kind: "false_start",
+      athleteName: "Athlète Z1",
+      points: -1120,
+    });
+  });
+
   it("shows the opponent's view the other way round", async () => {
     const view = await getManagerDuel(world({ userId: "max" })).execute({
       leagueId: "L",

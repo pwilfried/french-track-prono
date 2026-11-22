@@ -2,6 +2,7 @@ import { UseCaseError } from "@/application/errors";
 import { listJokerCatalogue, type CatalogueJoker } from "@/application/league-jokers";
 import { ErrorNotice } from "@/components/error-notice";
 import { isPredictionJoker, type JokerGame } from "@/domain/league-jokers";
+import { isManagerJoker } from "@/domain/manager-jokers";
 import { createSupabaseLeagueJokerRepository } from "@/infra";
 
 import { messages } from "../../messages.fr";
@@ -53,8 +54,20 @@ export default async function JokersPage() {
                     <JokerForm
                       game={game}
                       joker={joker}
-                      name={isPredictionJoker(joker) ? text.name[joker] : joker}
-                      explain={isPredictionJoker(joker) ? text.explain[joker] : null}
+                      name={
+                        game === "predictions" && isPredictionJoker(joker)
+                          ? text.name[joker]
+                          : game === "manager" && isManagerJoker(joker)
+                            ? messages.managerJokers.name[joker]
+                            : joker
+                      }
+                      explain={
+                        game === "predictions" && isPredictionJoker(joker)
+                          ? text.explain[joker]
+                          : game === "manager" && isManagerJoker(joker)
+                            ? messages.managerJokers.explain[joker]
+                            : null
+                      }
                       active={active}
                     />
                   </li>

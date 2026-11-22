@@ -145,3 +145,5 @@ export { createInMemoryPredictionLeagueRepository } from "./in-memory/prediction
 export { createSupabasePredictionLeagueRepository } from "./supabase/prediction-league-repository";
 export { createInMemoryLeagueJokerStore } from "./in-memory/league-joker-repository";
 export { createSupabaseLeagueJokerRepository } from "./supabase/league-joker-repository";
+export { createInMemoryManagerJokerStore } from "./in-memory/manager-joker-repository";
+export { createSupabaseManagerJokerRepository } from "./supabase/manager-joker-repository";

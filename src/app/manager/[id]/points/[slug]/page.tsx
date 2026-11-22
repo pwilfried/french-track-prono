@@ -5,6 +5,7 @@ import { UseCaseError } from "@/application/errors";
 import { getMyManagerScore, type MyManagerScore } from "@/application/manager-scores";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
+import { JokerEffects } from "@/components/manager/manager-jokers";
 import { PointsBreakdown } from "@/components/manager/points-breakdown";
 import {
   createSupabaseManagerCatalogue,
@@ -62,6 +63,7 @@ export default async function ManagerPointsPage({
         ) : (
           <>
             <PointsBreakdown mine={{ ...mine, score: mine.score }} />
+            <JokerEffects effects={mine.score.jokerEffects ?? []} />
             <Link
               href={`/manager/${id}/alignement/${slug}`}
               className="inline-flex min-h-11 items-center font-semibold text-brand dark:text-secondary"

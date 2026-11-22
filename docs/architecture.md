@@ -221,6 +221,23 @@ des points écrit dans `score_events.detail.jokers` ce que chaque joker fait des
 joker posé (`withLeagueJokers()` dans `getLeagueRanking`), le général compte `points`, sans joker.
 Les fils de ligue et les trophées comptent encore sans joker.
 
+**Jokers Manager (v0.24, #1091, décision du propriétaire du 22 nov. 2026).** Même catalogue (jeu
+`manager`) : une ligue Manager reçoit ses jokers actifs à sa création (`manager_league_jokers`).
+Chaque joueur joue chacun une fois dans la saison, au plus un par confrontation
+(`manager_joker_plays`, par ligue, joueur et compétition de la journée), jamais sur une journée
+bonus. Le joker se choisit avec l'alignement (`play_manager_joker()`, `remove_manager_joker()`),
+modifiable jusqu'au verrou de l'alignement ; l'adversaire le voit à partir du verrou. Capitaine
+(un titulaire × 2, pas son remplaçant), Faux départ (un athlète de l'équipe adverse, visé à
+l'aveugle dans `manager_joker_duel()` : ses points pour l'adversaire ÷ 2, entier inférieur, sinon
+perdu), Banc élargi (un 9e titulaire de n'importe quelle famille, hors feuille de match), Coaching
+(après le verrou, `coach_manager_lineup()` : un athlète hors feuille de match prend la place d'un
+titulaire de la même famille, une fois, avant le départ de l'épreuve de l'un et de l'autre) et
+Avantage terrain (+5 % du total, entier inférieur, à domicile seulement). Le calcul applique Banc
+élargi et Coaching à la feuille de match (`lineupWithJoker()`), puis Capitaine, Faux départ et
+Avantage terrain sur les deux scores de la confrontation (`managerDuelJokers()`,
+`src/domain/manager-jokers.ts`) ; `manager_scores.total` les compte (`jokers`, `joker_effects`),
+le classement du championnat aussi.
+
 **Résultats et points (v0.4, puis #665).** L'admin saisit une seule feuille de résultats par
 épreuve (`/admin/<épreuve>/performances`) : le podium officiel des pronos en est tiré (places 1
 à 3, ex æquo compris : les athlètes partagent la place, décision du propriétaire), et
@@ -382,7 +399,7 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 | Communauté (v0.19) | `league_moments`, `manager_moments`, `moment_reactions`, `moment_reaction_reports`, `frenchtrack_picks`, `announcements`, `polls`, `poll_votes` |
 | Notifications | `push_subscriptions`, `reminder_settings`, `reminder_log`, `program_alerts` |
 | Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_round_done`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `manager_lineup_entries`, `manager_lineup_carry_overs`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
-| Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()`, `raise_my_badge_levels()`, `event_consensus()`, `save_reminder_settings()`, `admin_replace_trophies()`, `set_prediction_leagues()`, `play_league_joker()`, `remove_league_joker()`, `set_joker_active()` |
+| Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()`, `raise_my_badge_levels()`, `event_consensus()`, `save_reminder_settings()`, `admin_replace_trophies()`, `set_prediction_leagues()`, `play_league_joker()`, `remove_league_joker()`, `set_joker_active()`, `play_manager_joker()`, `remove_manager_joker()`, `coach_manager_lineup()`, `manager_joker_duel()` |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers` |
 
 Garanties portées par la base : pronostic impossible après `lock_at`, pronos des autres
@@ -926,6 +943,21 @@ pronos ne comptent plus (#1031). M1 à M5 donnent les points bruts des tables.
 | M20 | Le remplaçant désigné de la place 2 est déjà entré à la place 1 | il n'entre pas deux fois : le suivant du banc, sinon 0 |
 | M21 | Seuil franchi, remplaçant désigné sans marque | le titulaire garde sa place |
 
+**Jokers Manager (v0.24, #1091, `src/domain/manager-jokers.ts`, tests Vitest).** Sur une
+confrontation ; équipe du joueur : A 120, B 200, C 180 (500) ; adversaire : X 95, Y 305 (400).
+
+| # | Situation | Attendu |
+|---|---|---|
+| M22 | Capitaine sur A | 620 (A compte 240) |
+| M23 | Capitaine sur un titulaire remplacé | sans effet : le remplaçant n'est pas doublé |
+| M24 | Faux départ sur X ; sur un athlète qui ne marque pas | adversaire 352 (X 95 → 47) ; joker perdu |
+| M25 | Faux départ sur un remplaçant entré chez l'adversaire (61) | il perd 31 |
+| M26 | Faux départ sur le capitaine adverse (60, doublé à 120) | 120 → 60 |
+| M27 | Banc élargi | un 9e titulaire, sans remplaçant ni seuil, compte |
+| M28 | Coaching | l'athlète entre à la place du titulaire, dans sa discipline, le remplaçant désigné gardé |
+| M29 | Avantage terrain, 907 à domicile ; à l'extérieur | 952 (+45) ; sans effet |
+| M30 | Avantage terrain et Faux départ subi sur B | 500 − 100 = 400, + 20 = 420 |
+
 **Championnat Manager (v0.16, tests Vitest).** Calendrier (`src/domain/manager-schedule.ts`,
 #432), résultats et classement (`src/domain/manager-championship.ts`, #433), fin de saison
 
@@ -981,6 +1013,7 @@ résultats (`src/domain/result-import.ts`, #666).
 | R8 | Rejoindre une ligue avec un code inconnu | erreur |
 | R9 | Départage : égalité de points | podiums parfaits, puis vainqueurs trouvés |
 | R10 | Résultat enregistré (`set_results` ou feuille de résultats) avant `lock_at` | l'épreuve se verrouille tout de suite (`lock_at = now()`, ligne `lock_event` au journal admin) : plus aucun prono, ceux des autres visibles ; un résultat effacé ne verrouille rien (#1063) |
+| R11 | Joker Manager joué deux fois dans la saison, sur une journée bonus, Avantage terrain à l'extérieur, cible hors de l'équipe, après le verrou ; Coaching deux fois ou sur une épreuve commencée (#1091) | refusés (FT045, FT048, FT049, FT050, FT023, FT051) ; un autre joker sur la même journée remplace le premier |
 
 **Domaine TypeScript** : aperçu des points possibles (mêmes cas que S1 à S5), état d'une épreuve
 selon l'heure (ouverte, verrouillée, terminée), compte à rebours (limites : 1 s avant, pile

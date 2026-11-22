@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { UseCaseError } from "@/application/errors";
 import type { ManagerScoreRepository, StoredManagerScore } from "@/application/manager-scores";
 import type { MarkUnit } from "@/domain/discipline";
+import { isManagerJoker, type ManagerJokerEffect } from "@/domain/manager-jokers";
 import { MANAGER_BONUSES, type ManagerBonus, type ManagerFamily } from "@/domain/manager-rules";
 import type { CompetitionPerformance, ScoringLineup } from "@/domain/manager-score";
 import type { PerformanceStatus, RecordFlag } from "@/domain/performance";
@@ -25,7 +26,15 @@ type SheetRow = {
     bonuses: Partial<Record<ManagerBonus, number>>;
     tables_divisor: number;
     lineup: LineupRow | null;
+    joker?: {
+      kind: string;
+      athlete_id: string | null;
+      family: ManagerFamily | null;
+      discipline: string | null;
+      replaced_id: string | null;
+    } | null;
   }[];
+  duels?: { league_id: string; home_id: string; away_id: string }[];
   performances: {
     athlete_id: string;
     discipline: string;
@@ -39,12 +48,21 @@ type SheetRow = {
   }[];
 };
 
+type JokerEffectRow = {
+  kind: ManagerJokerEffect["kind"];
+  by: ManagerJokerEffect["by"];
+  athlete_id: string | null;
+  points: number;
+};
+
 type ScoreRow = {
   lined_up: boolean;
   total: number;
   hungarian: number;
   bonus: number;
   athletes: (AthleteScoreRow & { name: string })[];
+  jokers?: number;
+  joker_effects?: (JokerEffectRow & { name?: string | null })[];
 };
 
 /** A league created before a bonus existed scores 0 for it. */
@@ -93,6 +111,21 @@ export function createSupabaseManagerScoreRepository(
           bonuses: bonusValues(p.bonuses),
           tablesDivisor: p.tables_divisor,
           lineup: lineup(p.lineup),
+          joker:
+            p.joker && isManagerJoker(p.joker.kind)
+              ? {
+                  kind: p.joker.kind,
+                  athleteId: p.joker.athlete_id,
+                  family: p.joker.family,
+                  discipline: p.joker.discipline,
+                  replacedId: p.joker.replaced_id,
+                }
+              : null,
+        })),
+        duels: (sheet.duels ?? []).map((d) => ({
+          leagueId: d.league_id,
+          homeId: d.home_id,
+          awayId: d.away_id,
         })),
         performances: sheet.performances.map(
           (p): CompetitionPerformance => ({
@@ -121,6 +154,15 @@ export function createSupabaseManagerScoreRepository(
           hungarian: l.hungarian,
           bonus: l.bonus,
           athletes: l.athletes.map(athleteScoreRow),
+          jokers: l.jokers ?? 0,
+          joker_effects: (l.jokerEffects ?? []).map(
+            (e): JokerEffectRow => ({
+              kind: e.kind,
+              by: e.by,
+              athlete_id: e.athleteId,
+              points: e.points,
+            }),
+          ),
         })),
       });
       if (!error) return "saved";
@@ -145,6 +187,14 @@ export function createSupabaseManagerScoreRepository(
         athletes: row.athletes.map(
           (a): StoredManagerScore["athletes"][number] => ({ ...athleteScoreOf(a), name: a.name }),
         ),
+        jokers: row.jokers ?? 0,
+        jokerEffects: (row.joker_effects ?? []).map((e) => ({
+          kind: e.kind,
+          by: e.by,
+          athleteId: e.athlete_id,
+          points: e.points,
+          name: e.name ?? null,
+        })),
       };
     },
   };
