@@ -4,14 +4,21 @@ import { useState, useTransition } from "react";
 
 import { messages } from "@/app/messages.fr";
 import type { ErrorCode } from "@/application/errors";
+import { JokerHand, type HandCard } from "@/components/jokers/joker-hand";
 import { buttonVariants } from "@/components/ui/button";
-import type { ManagerJoker, ManagerJokerEffect, ManagerJokerHand } from "@/domain/manager-jokers";
+import {
+  isManagerJoker,
+  MANAGER_JOKERS,
+  type ManagerJoker,
+  type ManagerJokerEffect,
+  type ManagerJokerHand,
+} from "@/domain/manager-jokers";
 import type { ManagerFamily } from "@/domain/manager-rules";
+import { cn } from "@/lib/utils";
 
 const text = messages.managerJokers;
 const common = messages.leagueJokers;
 const heading = "text-xs font-bold uppercase tracking-wider text-muted-foreground";
-const field = "min-h-11 w-full rounded-xl border-2 border-border bg-background px-3 font-semibold";
 
 /** The jokers of a Manager league, each with what it does (#1091): read only. */
 export function ManagerJokerList({ jokers }: { jokers: readonly ManagerJoker[] }) {
@@ -42,16 +49,10 @@ export type MatchdayJoker = {
 
 export type JokerAnswer = Promise<{ error?: ErrorCode }>;
 
-/** Which athlete a joker aims at, among those the player may choose; null: no target. */
-function targetsOf(
-  kind: ManagerJoker,
-  props: Pick<MatchdayJokersProps, "starters" | "offSheet" | "opponentTeam">,
-): { athleteId: string; name: string }[] | null {
-  if (kind === "captain") return props.starters;
-  if (kind === "false_start") return props.opponentTeam;
-  if (kind === "extended_bench") return props.offSheet;
-  return null;
-}
+/** A joker that needs an athlete, and the athletes it may aim at. */
+type Target = "captain" | "false_start" | "extended_bench";
+const hasTarget = (kind: ManagerJoker | null): kind is Target =>
+  kind === "captain" || kind === "false_start" || kind === "extended_bench";
 
 type MatchdayJokersProps = {
   /** The head-to-head of the matchday; null on a bonus one. */
@@ -72,13 +73,58 @@ type MatchdayJokersProps = {
   coach: (outId: string, inId: string) => JokerAnswer;
 };
 
+const familyEmoji = (family: ManagerFamily | null) =>
+  family ? `${text.familyEmoji[family]} ` : "";
+
+/** An athlete to choose as the target of a joker: a chip of at least 44 px. */
+type Chip = { id: string; label: string; disabled?: boolean };
+
+function Chips({
+  label,
+  chips,
+  selected,
+  onPick,
+  disabled,
+}: {
+  label: string;
+  chips: Chip[];
+  selected: string | null;
+  onPick: (id: string) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap gap-2">
+      {chips.map((chip) => {
+        const on = chip.id === selected;
+        return (
+          <button
+            key={chip.id}
+            type="button"
+            aria-pressed={on}
+            disabled={disabled || chip.disabled}
+            onClick={() => onPick(chip.id)}
+            className={cn(
+              "inline-flex min-h-11 max-w-full items-center rounded-full border-2 px-3 text-left text-sm font-semibold break-words disabled:opacity-50",
+              on
+                ? "border-gold-ink bg-gold-ink text-gold-soft"
+                : "border-gold-ink/40 bg-background text-foreground",
+            )}
+          >
+            {chip.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /**
- * « Joker de la journée » on the lineup of a head-to-head (#1091): chosen with the lineup and its
- * target, changed until the lock; after it, the joker played, the opponent's, and « Coaching » to
- * use. The jokers left and played of the season under it.
+ * « Ta carte de la journée » on the lineup of a head-to-head (#1091, #1121): a hand of the season's
+ * jokers, one put down with its target until the lock; after it, both cards face up, and
+ * « Coaching » to use.
  */
 export function MatchdayJokers(props: MatchdayJokersProps) {
-  const { duel, locked, hand } = props;
+  const { duel, locked } = props;
   return (
     <section aria-labelledby="matchday-joker" className="flex flex-col gap-3">
       <div>
@@ -90,269 +136,239 @@ export function MatchdayJokers(props: MatchdayJokersProps) {
       {!duel ? (
         <p className="rounded-card bg-muted p-4 text-sm font-semibold">{text.bonusDay}</p>
       ) : locked ? (
-        <LockedJoker {...props} />
+        <Revealed {...props} />
       ) : (
-        <JokerPicker {...props} />
+        <MatchdayHand {...props} home={duel.home} />
       )}
-      <div className="flex flex-col gap-1.5">
-        <h3 className={heading}>{common.remaining}</h3>
-        <p className="text-sm">
-          {hand.remaining.length === 0
-            ? common.noneLeft
-            : hand.remaining.map((j) => text.name[j]).join(" · ")}
-        </p>
-        <h3 className={heading}>{common.used}</h3>
-        <p className="text-sm">
-          {hand.used.length === 0
-            ? common.noneUsed
-            : hand.used.map((u) => text.name[u.kind]).join(" · ")}
-        </p>
-      </div>
     </section>
   );
 }
 
-function Answer({ answer }: { answer: { ok?: string; error?: ErrorCode } | null }) {
-  if (answer?.ok)
-    return (
-      <p role="status" className="text-sm font-semibold text-success-text">
-        {answer.ok}
-      </p>
-    );
-  if (answer?.error)
-    return (
-      <p role="alert" className="text-sm font-semibold text-accent-text">
-        {messages.errors[answer.error]}
-      </p>
-    );
-  return null;
-}
-
-function JokerPicker(props: MatchdayJokersProps) {
-  const { duel, hand, mine, play } = props;
-  const [kind, setKind] = useState<ManagerJoker | "">(mine?.kind ?? "");
-  const [target, setTarget] = useState<string>(mine?.athleteId ?? "");
-  const [answer, setAnswer] = useState<{ ok?: string; error?: ErrorCode } | null>(null);
+function MatchdayHand(props: MatchdayJokersProps & { home: boolean }) {
+  const { hand, mine, play, home } = props;
+  const [placed, setPlaced] = useState<ManagerJoker | null>(mine?.kind ?? null);
+  const [target, setTarget] = useState<string | null>(mine?.athleteId ?? null);
+  // What the server has: « kind:athlete ».
+  const [saved, setSaved] = useState(mine ? `${mine.kind}:${mine.athleteId}` : null);
+  const [error, setError] = useState<ErrorCode | null>(null);
   const [pending, startTransition] = useTransition();
-  const [action, setAction] = useState<"play" | "remove">("play");
-  const options = [...(hand.onMatchday ? [hand.onMatchday] : []), ...hand.remaining].filter(
-    (j) => j !== "home_advantage" || duel?.home,
-  );
-  const targets = kind ? targetsOf(kind, props) : null;
-  const ready = kind !== "" && (targets === null || target !== "");
-  const unchanged = kind === mine?.kind && (targets === null || target === mine?.athleteId);
 
-  const send = (joker: ManagerJoker | null) => {
-    setAction(joker ? "play" : "remove");
-    setAnswer(null);
+  const send = (kind: ManagerJoker | null, athleteId: string | null) => {
+    setError(null);
     startTransition(async () => {
-      const result = await play(joker, joker && targets ? target : null);
-      if (result.error) setAnswer({ error: result.error });
+      const result = await play(kind, athleteId);
+      if (result.error) setError(result.error);
       else {
-        setAnswer({ ok: joker ? common.played(text.name[joker]) : common.removed });
-        if (!joker) {
-          setKind("");
-          setTarget("");
-        }
+        setPlaced(kind);
+        setTarget(athleteId);
+        setSaved(kind && `${kind}:${athleteId}`);
       }
     });
   };
+  const onPlace = (id: string | null) => {
+    setError(null);
+    if (!isManagerJoker(id)) {
+      // Taking back a card the server has: it leaves the matchday; otherwise it was only chosen.
+      if (saved) send(null, null);
+      else {
+        setPlaced(null);
+        setTarget(null);
+      }
+      return;
+    }
+    // A card with a target waits for its athlete before it is sent.
+    if (hasTarget(id)) {
+      setPlaced(id);
+      setTarget(null);
+    } else send(id, null);
+  };
+
+  const kinds = new Set([
+    ...hand.remaining,
+    ...hand.used.map((u) => u.kind),
+    ...(hand.onMatchday ? [hand.onMatchday] : []),
+  ]);
+  const spent = new Set(hand.used.map((u) => u.kind).filter((k) => k !== hand.onMatchday));
+  const cards: HandCard[] = MANAGER_JOKERS.filter((k) => kinds.has(k)).map((k) => ({
+    id: k,
+    emoji: text.emoji[k],
+    name: text.name[k],
+    off: spent.has(k)
+      ? { emoji: "✓", label: messages.jokerHand.played }
+      : k === "home_advantage" && !home
+        ? text.away
+        : undefined,
+  }));
+
+  const chips: Chip[] =
+    placed === "captain"
+      ? props.starters.map((a) => ({ id: a.athleteId, label: familyEmoji(a.family) + a.name }))
+      : placed === "false_start"
+        ? props.opponentTeam.map((a) => ({ id: a.athleteId, label: `❓ ${a.name}` }))
+        : placed === "extended_bench"
+          ? props.offSheet.map((a) => ({ id: a.athleteId, label: familyEmoji(a.family) + a.name }))
+          : [];
 
   return (
-    <form
-      className="flex flex-col gap-2 rounded-2xl border-2 border-border bg-card p-3.5"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (kind) send(kind);
-      }}
+    <JokerHand
+      cards={cards}
+      placed={placed}
+      onPlace={onPlace}
+      pending={pending}
+      error={error}
+      explain={placed && text.explain[placed]}
     >
-      <label htmlFor="matchday-joker-kind" className="font-bold">
-        {text.choose}
-      </label>
-      <select
-        id="matchday-joker-kind"
-        value={kind}
-        onChange={(e) => {
-          setKind(e.target.value as ManagerJoker | "");
-          setTarget("");
-          setAnswer(null);
-        }}
-        disabled={pending}
-        className={field}
-      >
-        <option value="">{common.none}</option>
-        {options.map((joker) => (
-          <option key={joker} value={joker}>
-            {text.name[joker]}
-          </option>
-        ))}
-      </select>
-      {kind && <p className="text-sm text-muted-foreground">{text.explain[kind]}</p>}
-      {kind && targets && kind !== "coaching" && kind !== "home_advantage" && (
-        <>
-          <label htmlFor="matchday-joker-target" className="font-bold">
-            {text.target[kind]}
-          </label>
-          {targets.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{text.noTarget}</p>
+      {hasTarget(placed) && (
+        <div className="flex flex-col gap-2 pt-1">
+          <p className="text-sm font-bold">
+            {placed === "false_start"
+              ? text.target.false_start(text.opponentName)
+              : text.target[placed]}
+          </p>
+          {chips.length === 0 ? (
+            <p className="text-sm">{text.noTarget}</p>
           ) : (
-            <select
-              id="matchday-joker-target"
-              value={target}
-              onChange={(e) => {
-                setTarget(e.target.value);
-                setAnswer(null);
-              }}
+            <Chips
+              label={
+                placed === "false_start"
+                  ? text.target.false_start(text.opponentName)
+                  : text.target[placed]
+              }
+              chips={chips}
+              selected={target}
               disabled={pending}
-              className={field}
-            >
-              <option value="">{text.pickAthlete}</option>
-              {targets.map((a) => (
-                <option key={a.athleteId} value={a.athleteId}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
+              onPick={(id) => send(placed, id)}
+            />
           )}
-        </>
+        </div>
       )}
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="submit"
-          disabled={pending || !ready || unchanged}
-          className={buttonVariants()}
-        >
-          {pending && action === "play" ? common.playing : common.play}
-        </button>
-        {mine && (
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => send(null)}
-            className={buttonVariants({ variant: "outline" })}
-          >
-            {pending && action === "remove" ? common.removing : common.remove}
-          </button>
-        )}
-      </div>
-      <Answer answer={answer} />
-    </form>
+      {placed === "coaching" && <p className="text-sm font-semibold">{text.coachingWaits}</p>}
+      {saved === `${placed}:${target}` && hasTarget(placed) && target && (
+        <p role="status" className="text-sm font-semibold">
+          {text.targetDone(text.name[placed], props.names[target] ?? "?")}
+        </p>
+      )}
+    </JokerHand>
   );
 }
 
-function LockedJoker(props: MatchdayJokersProps) {
-  const { mine, opponent, names } = props;
+/** One side of the reveal: the card played, with the athlete it aims at. */
+function FaceUp({
+  who,
+  kind,
+  athlete,
+}: {
+  who: string;
+  kind: ManagerJoker | null;
+  athlete: string | null;
+}) {
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border-2 border-border bg-card p-3.5">
-      <p className="text-sm text-muted-foreground">{text.fixed}</p>
-      {mine && (
-        <p className="rounded-xl bg-gold-soft px-3 py-2 text-sm font-semibold text-gold-ink">
-          🃏 {text.mine(text.name[mine.kind])}
-          {mine.kind !== "coaching" && mine.athleteId && names[mine.athleteId]
-            ? ` ${text.on(names[mine.athleteId]!)}`
-            : ""}
-        </p>
-      )}
+    <div className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl border-2 border-[var(--medal-gold-to)] bg-gold-soft px-2 py-3 text-center text-gold-ink">
+      <span className="text-xs font-bold uppercase tracking-wider">{who}</span>
+      <span aria-hidden className="text-[30px] leading-none">
+        {kind ? text.emoji[kind] : "🫥"}
+      </span>
+      <span className="text-sm font-extrabold break-words">
+        {kind ? text.name[kind] : text.noCard}
+      </span>
+      {athlete && <span className="w-full text-xs break-words">{athlete}</span>}
+    </div>
+  );
+}
+
+function Revealed(props: MatchdayJokersProps) {
+  const { mine, opponent, names } = props;
+  const myTarget = mine && hasTarget(mine.kind) && mine.athleteId ? names[mine.athleteId] : null;
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl bg-foreground p-3.5 text-background">
+      <p className="font-bold">{text.revealed}</p>
+      <div className="flex gap-2">
+        <FaceUp who={text.you} kind={mine?.kind ?? null} athlete={myTarget ?? null} />
+        <FaceUp
+          who={text.them}
+          kind={opponent?.kind ?? null}
+          athlete={opponent?.athleteName ?? null}
+        />
+      </div>
+      <p className="text-sm font-semibold">{text.revealTaunt(!!mine, !!opponent)}</p>
       {mine?.kind === "coaching" &&
         (mine.coached && mine.athleteId && mine.replacedId ? (
           <p className="text-sm font-semibold">
             {text.coachDone(names[mine.athleteId] ?? "?", names[mine.replacedId] ?? "?")}
           </p>
         ) : (
-          <CoachForm {...props} />
+          <Coaching {...props} />
         ))}
-      <p className="text-sm font-semibold">
-        {opponent
-          ? `🃏 ${text.opponent(text.name[opponent.kind])}${
-              opponent.athleteName ? ` ${text.on(opponent.athleteName)}` : ""
-            }`
-          : text.opponentNone}
-      </p>
     </div>
   );
 }
 
-function CoachForm({ starters, offSheet, coach }: MatchdayJokersProps) {
-  const [outId, setOutId] = useState("");
-  const [inId, setInId] = useState("");
-  const [answer, setAnswer] = useState<{ error?: ErrorCode } | null>(null);
+/** « Coaching » after the lock, in two steps: who goes out, then who comes in (same family). */
+function Coaching({ starters, offSheet, coach }: MatchdayJokersProps) {
+  const [outId, setOutId] = useState<string | null>(null);
+  const [inId, setInId] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorCode | null>(null);
   const [pending, startTransition] = useTransition();
   const out = starters.find((s) => s.athleteId === outId);
   const candidates = out?.family ? offSheet.filter((a) => a.family === out.family) : [];
+  const chip = (a: JokerAthlete): Chip => ({
+    id: a.athleteId,
+    label: familyEmoji(a.family) + a.name,
+  });
 
   return (
-    <form
-      className="flex flex-col gap-2"
-      onSubmit={(e) => {
-        e.preventDefault();
-        setAnswer(null);
-        startTransition(async () => {
-          // Once done, the page shows the coaching used in place of this form.
-          const result = await coach(outId, inId);
-          if (result.error) setAnswer({ error: result.error });
-        });
-      }}
-    >
-      <h3 className="font-bold">{text.coachTitle}</h3>
-      <p className="text-sm text-muted-foreground">{text.coachHint}</p>
-      <label htmlFor="coach-out" className="text-sm font-bold">
-        {text.coachOut}
-      </label>
-      <select
-        id="coach-out"
-        value={outId}
-        onChange={(e) => {
-          setOutId(e.target.value);
-          setInId("");
-          setAnswer(null);
-        }}
+    <div className="flex flex-col gap-2 rounded-xl bg-gold-soft p-3 text-gold-ink">
+      <p className="text-sm">{text.explain.coaching}</p>
+      <p className="text-sm font-bold">{text.coachOut}</p>
+      <Chips
+        label={text.coachOut}
+        chips={starters.map(chip)}
+        selected={outId}
         disabled={pending}
-        className={field}
-      >
-        <option value="">{text.pickAthlete}</option>
-        {starters.map((a) => (
-          <option key={a.athleteId} value={a.athleteId}>
-            {a.name}
-          </option>
-        ))}
-      </select>
-      {out && (
-        <>
-          <label htmlFor="coach-in" className="text-sm font-bold">
-            {text.coachIn}
-          </label>
-          {candidates.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{text.coachNone}</p>
-          ) : (
-            <select
-              id="coach-in"
-              value={inId}
-              onChange={(e) => {
-                setInId(e.target.value);
-                setAnswer(null);
-              }}
-              disabled={pending}
-              className={field}
-            >
-              <option value="">{text.pickAthlete}</option>
-              {candidates.map((a) => (
-                <option key={a.athleteId} value={a.athleteId}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </>
+        onPick={(id) => {
+          setOutId(id);
+          setInId(null);
+          setError(null);
+        }}
+      />
+      <p className="text-sm font-bold">{text.coachIn}</p>
+      {!out ? (
+        <p className="text-sm">{text.coachPickOut}</p>
+      ) : candidates.length === 0 ? (
+        <p className="text-sm">{text.coachNone}</p>
+      ) : (
+        <Chips
+          label={text.coachIn}
+          chips={candidates.map(chip)}
+          selected={inId}
+          disabled={pending}
+          onPick={(id) => {
+            setInId(id);
+            setError(null);
+          }}
+        />
       )}
       <button
-        type="submit"
+        type="button"
         disabled={pending || !outId || !inId}
+        onClick={() => {
+          setError(null);
+          startTransition(async () => {
+            // Once done, the page shows the coaching used in place of these steps.
+            const result = await coach(outId!, inId!);
+            if (result.error) setError(result.error);
+          });
+        }}
         className={buttonVariants({ className: "self-start" })}
       >
         {pending ? text.coachSending : text.coachSend}
       </button>
-      <Answer answer={answer} />
-    </form>
+      {error && (
+        <p role="alert" className="text-sm font-semibold text-accent-text">
+          {messages.errors[error]}
+        </p>
+      )}
+    </div>
   );
 }
 

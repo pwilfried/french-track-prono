@@ -95,6 +95,23 @@ describe("league jokers", () => {
     ).toBe(code);
   });
 
+  it("refuses the spy in a league the prediction does not count in, like any other joker", async () => {
+    // Given a league switched off for my prediction: the database answers not_in_league
+    const { repository } = jokersOf([], "not_in_league");
+
+    // When I play the spy there
+    const code = await codeOf(
+      playLeagueJoker({ jokers: repository }).execute({
+        leagueId: "amis",
+        eventId: "e1",
+        joker: "spy",
+      }),
+    );
+
+    // Then it is refused with an enumerated code
+    expect(code).toBe("JOKER_NOT_IN_LEAGUE");
+  });
+
   it("shows my jokers of an event in each league that has some, a league without joker left out", async () => {
     const { repository } = jokersOf([{ userId: "me", eventId: "e1", joker: "outsider" }]);
 

@@ -3,8 +3,13 @@ import { expect, fn, userEvent, within } from "storybook/test";
 
 import { messages } from "@/app/messages.fr";
 import type { PredictionLeague } from "@/application/prediction-leagues";
+import { PREDICTION_JOKERS, type JokerHand } from "@/domain/league-jokers";
 
-import { PredictionLeaguesBlock, PredictionLeaguesSheet } from "./prediction-leagues";
+import {
+  PredictionLeaguesBlock,
+  PredictionLeaguesSheet,
+  type LeagueJokersView,
+} from "./prediction-leagues";
 
 const text = messages.predictionLeagues;
 const lockLabel = "samedi 12 septembre à 18:40";
@@ -26,6 +31,15 @@ const longName = league(
 );
 
 const body = () => within(document.body);
+const jokerText = messages.leagueJokers;
+const hand = (over: Partial<JokerHand> = {}): JokerHand => ({
+  remaining: [...PREDICTION_JOKERS],
+  used: [],
+  onEvent: null,
+  canChange: true,
+  ...over,
+});
+const withJokers = (views: Record<string, LeagueJokersView>) => views;
 
 const meta = {
   title: "Leagues/PredictionLeaguesBlock",
@@ -47,9 +61,9 @@ type Story = StoryObj<typeof meta>;
 export const Open: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("region", { name: text.blockTitle })).toBeVisible();
-    await expect(canvas.getByText(text.always)).toBeVisible();
-    await expect(canvas.getByText(text.blockText)).toBeVisible();
+    await expect(canvas.getByRole("region", { name: text.jokersTitle })).toBeVisible();
+    await expect(canvas.getByText(text.noJoker)).toBeVisible();
+    await expect(canvas.getByText(text.jokersText)).toBeVisible();
     await expect(canvas.getByText(text.openFoot(lockLabel))).toBeVisible();
     const toggle = canvas.getByRole("switch", { name: text.switchLabel(amis.name) });
     await expect(toggle).not.toBeChecked();
@@ -73,6 +87,115 @@ export const SaveRefused: Story = {
       messages.errors.PREDICTION_LOCKED,
     );
     await expect(toggle).not.toBeChecked();
+  },
+};
+
+/** A league switched off shows no card; once on, its hand of jokers: put one down, take it back. */
+export const JokersOffThenOn: Story = {
+  args: {
+    jokers: withJokers({ l1: { hand: hand() } }),
+    play: fn(async () => ({})),
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.queryByRole("button", { name: /Double/ })).toBeNull();
+    await expect(canvas.getByText(text.off)).toBeVisible();
+    await userEvent.click(canvas.getByText(amis.name));
+    const double = await canvas.findByRole("button", { name: /Double/ });
+    await userEvent.click(double);
+    await expect(args.play).toHaveBeenCalledWith(amis.id, "double");
+    await expect(double).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(double);
+    await expect(args.play).toHaveBeenLastCalledWith(amis.id, null);
+    await expect(double).toHaveAttribute("aria-pressed", "false");
+  },
+};
+
+/** Switching off a league with a card down asks first; taking it back switches the league off. */
+export const SwitchOffAsks: Story = {
+  args: {
+    leagues: [{ ...amis, counted: true }],
+    jokers: withJokers({
+      l1: { hand: hand({ used: [{ joker: "double", eventId: "e1" }], onEvent: "double" }) },
+    }),
+    play: fn(async () => ({})),
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    const toggle = canvas.getByRole("switch", { name: text.switchLabel(amis.name) });
+    await userEvent.click(canvas.getByText(amis.name));
+    await expect(canvas.getByText(text.offConfirm("🔥", "Double"))).toBeVisible();
+    await expect(toggle).toBeChecked();
+    await userEvent.click(canvas.getByRole("button", { name: text.keep }));
+    await expect(toggle).toBeChecked();
+    await expect(args.save).not.toHaveBeenCalled();
+    await userEvent.click(canvas.getByText(amis.name));
+    await userEvent.click(canvas.getByRole("button", { name: text.takeBack }));
+    await expect(args.play).toHaveBeenCalledWith(amis.id, null);
+    await expect(args.save).toHaveBeenCalledWith([]);
+    await expect(toggle).not.toBeChecked();
+  },
+};
+
+/** The spy asks before it goes out; once played it stays and the trend shows (dark theme). */
+export const SpyDark: Story = {
+  args: {
+    leagues: [
+      { ...amis, counted: true },
+      { ...club, counted: true, rank: 1 },
+    ],
+    jokers: withJokers({
+      l1: { hand: hand() },
+      l2: {
+        hand: hand({ used: [{ joker: "spy", eventId: "e1" }], onEvent: "spy", canChange: false }),
+        spy: {
+          total: 4,
+          places: [
+            { name: "Démo Gazelle", percent: 75 },
+            { name: "Démo Foulée", percent: 50 },
+            { name: jokerText.other, percent: 25 },
+          ],
+        },
+      },
+    }),
+    play: fn(async () => ({})),
+  },
+  decorators: [
+    (Story) => (
+      <div className="dark bg-background">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(jokerText.spySpent)).toBeVisible();
+    await expect(canvas.getByText("75 %")).toBeVisible();
+    await expect(canvas.getByText(text.rankLine(24, 1))).toBeVisible();
+    const [spy] = canvas.getAllByRole("button", { name: /Espion/ });
+    await userEvent.click(spy!);
+    await expect(canvas.getByText(jokerText.spyAsk)).toBeVisible();
+    await expect(args.play).not.toHaveBeenCalled();
+    await userEvent.click(canvas.getByRole("button", { name: jokerText.spyGo }));
+    await expect(args.play).toHaveBeenCalledWith(amis.id, "spy");
+  },
+};
+
+/** A refused card: the reason shows under the hand, nothing is put down. */
+export const JokerRefused: Story = {
+  args: {
+    leagues: [{ ...amis, counted: true }],
+    jokers: withJokers({ l1: { hand: hand() } }),
+    play: fn(async () => ({ error: "JOKER_NOT_IN_LEAGUE" as const })),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const double = canvas.getByRole("button", { name: /Double/ });
+    await userEvent.click(double);
+    await expect(await canvas.findByRole("alert")).toHaveTextContent(
+      messages.errors.JOKER_NOT_IN_LEAGUE,
+    );
+    await expect(double).toHaveAttribute("aria-pressed", "false");
   },
 };
 
@@ -102,9 +225,9 @@ export const LongText: Story = {
   args: { leagues: [longName, amis] },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const region = canvas.getByRole("region", { name: text.blockTitle });
+    const region = canvas.getByRole("region", { name: text.jokersTitle });
     await expect(region.scrollWidth).toBeLessThanOrEqual(region.clientWidth);
-    await expect(canvas.getByText(text.standing(1520, 104))).toBeVisible();
+    await expect(canvas.getByText(text.rankLine(1520, 104))).toBeVisible();
   },
 };
 

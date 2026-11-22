@@ -169,6 +169,19 @@
       transform: translateY(0);
     }
   }
+  /* A joker card is put down on the table (#1121). */
+  --animate-card-pop: card-pop 0.25s ease-out;
+  @keyframes card-pop {
+    0% {
+      transform: scale(0.9);
+    }
+    60% {
+      transform: scale(1.08);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
   /* A card of the round reveal turns over (#604). */
   --animate-card-flip: card-flip 0.45s ease-out;
   @keyframes card-flip {

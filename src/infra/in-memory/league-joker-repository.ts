@@ -19,8 +19,8 @@ export type LeagueJokerWorld = {
 
 /**
  * Test double of the LeagueJokerRepository port (#1090), with the rules of the database: once per
- * league, one per event, on a prediction added to the league (the spy only needs the league to
- * count the event), until the lock, never the spy taken back; the others see a joker once locked.
+ * league, one per event, on a prediction added to the league (the spy too, #1121), until the
+ * lock, never the spy taken back; the others see a joker once locked.
  * One store shared by every session, one session per player.
  */
 export function createInMemoryLeagueJokerStore(world: LeagueJokerWorld) {
@@ -80,8 +80,7 @@ export function createInMemoryLeagueJokerStore(world: LeagueJokerWorld) {
             return "not_available";
           }
           const counted = world.counted.includes(`${leagueId}:${userId}:${eventId}`);
-          if (!league.events.includes(eventId) || (joker !== "spy" && !counted))
-            return "not_in_league";
+          if (!league.events.includes(eventId) || !counted) return "not_in_league";
           const onEvent = mine.find((p) => p.eventId === eventId);
           if (onEvent?.joker === joker) return "done";
           if (onEvent?.joker === "spy") return "spy_spent";

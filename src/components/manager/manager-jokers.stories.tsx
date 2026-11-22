@@ -7,7 +7,7 @@ import { MANAGER_JOKERS } from "@/domain/manager-jokers";
 import { DuelJokers, JokerEffects, ManagerJokerList, MatchdayJokers } from "./manager-jokers";
 
 const text = messages.managerJokers;
-const common = messages.leagueJokers;
+const hand = messages.jokerHand;
 const all = [...MANAGER_JOKERS];
 
 const starters = [
@@ -58,31 +58,42 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Before the lock: the player picks the false start and aims at an athlete of the opponent. */
+/** Before the lock: the false start is put down, then aimed at an athlete of the opponent. */
 export const PickATarget: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    const submit = canvas.getByRole("button", { name: common.play });
-    await expect(submit).toBeDisabled();
-    await userEvent.selectOptions(canvas.getByLabelText(text.choose), "false_start");
+    await expect(canvas.getByText(hand.hint)).toBeVisible();
+    const card = canvas.getByRole("button", { name: /Faux départ/ });
+    await userEvent.click(card);
+    await expect(card).toHaveAttribute("aria-pressed", "true");
     await expect(canvas.getByText(text.explain.false_start)).toBeVisible();
-    await expect(submit).toBeDisabled();
-    await userEvent.selectOptions(canvas.getByLabelText(text.target.false_start), "m2");
-    await userEvent.click(submit);
+    await expect(args.play).not.toHaveBeenCalled();
+    await userEvent.click(canvas.getByRole("button", { name: "❓ Noa Essai" }));
     await expect(args.play).toHaveBeenCalledWith("false_start", "m2");
-    await expect(await canvas.findByRole("status")).toHaveTextContent(
-      common.played(text.name.false_start),
-    );
+    await expect(
+      await canvas.findByText(text.targetDone(text.name.false_start, "Noa Essai")),
+    ).toBeVisible();
   },
 };
 
-/** Away from home: no home advantage to choose. */
+/** The captain: the eight starters with the emoji of their family. */
+export const Captain: Story = {
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: /Capitaine/ }));
+    await expect(canvas.getByText(text.target.captain)).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "💨 Alice Fictive" }));
+    await expect(args.play).toHaveBeenCalledWith("captain", "s1");
+  },
+};
+
+/** Away from home: the home advantage is hatched and disabled. */
 export const Away: Story = {
   args: { duel: { home: false } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const options = within(canvas.getByLabelText(text.choose)).getAllByRole("option");
-    await expect(options.map((o) => o.textContent)).not.toContain(text.name.home_advantage);
+    await expect(canvas.getByRole("button", { name: /Avantage terrain/ })).toBeDisabled();
+    await expect(canvas.getByText(text.away.label)).toBeVisible();
   },
 };
 
@@ -94,25 +105,44 @@ export const BonusDay: Story = {
   },
 };
 
-/** The database refuses the joker: the message shows where the player is. */
+/** The database refuses taking the card back: the message shows under the hand. */
 export const Refused: Story = {
   args: {
-    hand: { remaining: ["coaching"], used: [], onMatchday: "captain" },
+    hand: {
+      remaining: ["coaching"],
+      used: [{ kind: "captain", competitionId: "c1" }],
+      onMatchday: "captain",
+    },
     mine: { kind: "captain", athleteId: "s1", replacedId: null, coached: false },
     play: fn(async () => ({ error: "LINEUP_LOCKED" as const })),
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole("button", { name: common.remove }));
+    await userEvent.click(canvas.getByRole("button", { name: /Capitaine/ }));
+    await expect(args.play).toHaveBeenCalledWith(null, null);
     await expect(await canvas.findByRole("alert")).toHaveTextContent(messages.errors.LINEUP_LOCKED);
   },
 };
 
-/** After the lock, the coaching to use: only an athlete of the same family can come in (dark). */
+/** Coaching before the lock: it waits for the lock. */
+export const CoachingWaits: Story = {
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: /Coaching/ }));
+    await expect(args.play).toHaveBeenCalledWith("coaching", null);
+    await expect(await canvas.findByText(text.coachingWaits)).toBeVisible();
+  },
+};
+
+/** After the lock, both cards face up and the coaching in two steps, same family only (dark). */
 export const CoachingDark: Story = {
   args: {
     locked: true,
-    hand: { remaining: ["captain"], used: [], onMatchday: "coaching" },
+    hand: {
+      remaining: ["captain"],
+      used: [{ kind: "coaching", competitionId: "c1" }],
+      onMatchday: "coaching",
+    },
     mine: { kind: "coaching", athleteId: null, replacedId: null, coached: false },
     opponent: { kind: "false_start", athleteName: "Alice Fictive" },
   },
@@ -125,13 +155,13 @@ export const CoachingDark: Story = {
   ],
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(
-      canvas.getByText(`🃏 ${text.opponent(text.name.false_start)} ${text.on("Alice Fictive")}`),
-    ).toBeVisible();
-    await userEvent.selectOptions(canvas.getByLabelText(text.coachOut), "s1");
-    const options = within(canvas.getByLabelText(text.coachIn)).getAllByRole("option");
-    await expect(options.map((o) => o.textContent)).toEqual([text.pickAthlete, "Chloé Exemple"]);
-    await userEvent.selectOptions(canvas.getByLabelText(text.coachIn), "o1");
+    await expect(canvas.getByText(text.revealed)).toBeVisible();
+    await expect(canvas.getByText(text.revealTaunt(true, true))).toBeVisible();
+    await expect(canvas.getByText(text.coachPickOut)).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "💨 Alice Fictive" }));
+    const comeIn = within(canvas.getByRole("group", { name: text.coachIn })).getAllByRole("button");
+    await expect(comeIn.map((b) => b.textContent)).toEqual(["💨 Chloé Exemple"]);
+    await userEvent.click(comeIn[0]!);
     await userEvent.click(canvas.getByRole("button", { name: text.coachSend }));
     await expect(args.coach).toHaveBeenCalledWith("s1", "o1");
   },
@@ -150,13 +180,28 @@ export const AllPlayed: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText(common.noneLeft)).toBeVisible();
-    await expect(canvas.getByText(text.opponentNone)).toBeVisible();
+    await expect(canvas.getByText(text.revealTaunt(true, false))).toBeVisible();
     await expect(
       canvas.getByText(
         text.coachDone("Marie-Charlotte de La Tour-Fictive-Longuenom", "Berthe Démo"),
       ),
     ).toBeVisible();
+  },
+};
+
+/** Before the lock, every card played on other matchdays: hatched, no card left. */
+export const HandEmpty: Story = {
+  args: {
+    hand: {
+      remaining: [],
+      used: all.map((kind, i) => ({ kind, competitionId: `c${i}` })),
+      onMatchday: null,
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(hand.count(0))).toBeVisible();
+    for (const button of canvas.getAllByRole("button")) await expect(button).toBeDisabled();
   },
 };
 

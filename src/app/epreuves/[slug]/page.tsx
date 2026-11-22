@@ -16,8 +16,10 @@ import { LockBanner } from "@/components/countdown/lock-banner";
 import { ErrorNotice } from "@/components/error-notice";
 import { REVEAL_ANCHOR } from "@/components/community/trend-card";
 import { AddToMyLeagueForm } from "@/components/leagues/league-forms";
-import { EventLeagueJokers, type EventLeagueJokersView } from "@/components/leagues/league-jokers";
-import { PredictionLeaguesBlock } from "@/components/leagues/prediction-leagues";
+import {
+  PredictionLeaguesBlock,
+  type LeagueJokersView,
+} from "@/components/leagues/prediction-leagues";
 import { PodiumMedals } from "@/components/podium/podium-medals";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
 import { animalOrHare } from "@/domain/band";
@@ -147,7 +149,7 @@ async function loadEventJokers(
   eventId: string,
   leagues: PredictionLeague[],
   choices: PickerAthlete[],
-): Promise<EventLeagueJokersView[]> {
+): Promise<Record<string, LeagueJokersView>> {
   try {
     const client = await getSessionClient();
     const found = await getEventLeagueJokers({
@@ -157,9 +159,8 @@ async function loadEventJokers(
       id === OTHER_ATHLETE
         ? messages.leagueJokers.other
         : (choices.find((c) => c.athleteId === id)?.name ?? messages.leagueJokers.other);
-    return await Promise.all(
+    const views = await Promise.all(
       found.map(async ({ leagueId, hand }) => {
-        const league = leagues.find((l) => l.id === leagueId)!;
         const trend =
           hand.onEvent === "spy"
             ? await getSpyTrend({ consensus: createSupabaseConsensusRepository(client) }).execute({
@@ -167,10 +168,7 @@ async function loadEventJokers(
                 eventId,
               })
             : null;
-        return {
-          leagueId,
-          name: league.name,
-          counted: league.counted,
+        const view: LeagueJokersView = {
           hand,
           spy: trend && {
             total: trend.total,
@@ -180,10 +178,12 @@ async function loadEventJokers(
             }),
           },
         };
+        return [leagueId, view] as const;
       }),
     );
+    return Object.fromEntries(views);
   } catch (error) {
-    if (error instanceof UseCaseError) return [];
+    if (error instanceof UseCaseError) return {};
     throw error;
   }
 }
@@ -335,7 +335,7 @@ async function PredictionSection({
       loadScale(),
       mine && predictionLeagues && predictionLeagues.length > 0
         ? loadEventJokers(user.userId, event.id, predictionLeagues, choices)
-        : [],
+        : {},
     ]);
     return (
       <div className="flex flex-col gap-5">
@@ -354,13 +354,9 @@ async function PredictionSection({
               list: predictionLeagues,
               lockLabel: lockLabel(event.lockAt),
               save: savePredictionLeaguesAction.bind(null, slug, event.id),
+              jokers,
+              play: playLeagueJokerAction.bind(null, slug, event.id),
             }
-          }
-          jokers={
-            <EventLeagueJokers
-              leagues={jokers}
-              play={playLeagueJokerAction.bind(null, slug, event.id)}
-            />
           }
         />
         {suggestion}

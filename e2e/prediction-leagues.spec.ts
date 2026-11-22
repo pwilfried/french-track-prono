@@ -66,7 +66,7 @@ test("a podium composed from the home counts only in the league the player ticks
     await expect(sheet).toBeHidden();
 
     // Under the podium, the same choice, still open to change until the lock.
-    const block = page.getByRole("region", { name: "Ce prono compte dans" });
+    const block = page.getByRole("region", { name: "🃏 Sors tes jokers" });
     await expect(
       block.getByRole("switch", { name: `Compter ce prono dans ${amis}` }),
     ).toBeChecked();

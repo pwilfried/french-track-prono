@@ -2236,6 +2236,16 @@ export const messages = {
   },
   /** The league jokers (#1090): their names and what they do, one way of saying each. */
   /** The jokers of the Manager leagues (#1091). */
+  /** A hand of joker cards (#1121), predictions and Manager. */
+  jokerHand: {
+    title: "Ta main",
+    count: (n: number) =>
+      n === 0 ? "Plus de cartes 🫠" : n === 1 ? "1 carte en main" : `${n} cartes en main`,
+    hint: "👆 Touche une carte pour la poser, touche-la encore pour la reprendre.",
+    placed: (name: string) => `${name} posé !`,
+    played: "Joué",
+    sending: "Envoi en cours…",
+  },
   managerJokers: {
     name: {
       captain: "Capitaine",
@@ -2243,6 +2253,13 @@ export const messages = {
       extended_bench: "Banc élargi",
       coaching: "Coaching",
       home_advantage: "Avantage terrain",
+    },
+    emoji: {
+      captain: "🎖️",
+      false_start: "🔫",
+      extended_bench: "🪑",
+      coaching: "📋",
+      home_advantage: "🏟️",
     },
     explain: {
       captain:
@@ -2254,31 +2271,44 @@ export const messages = {
         "Après le verrou, une seule fois : remplace un titulaire dont l'épreuve n'a pas commencé par un athlète non aligné de la même famille.",
       home_advantage: "+5 % du total de la journée. À domicile seulement.",
     },
+    /** The family of an athlete, on the chips of a target. */
+    familyEmoji: { sprint: "💨", distance: "🫁", jumps: "🦘", throws: "💪" },
     /** On the lineup of a matchday. */
-    title: "Joker de la journée",
-    hint: "Un joker par confrontation, chacun une fois dans la saison. Ton adversaire le découvre au verrou, avec ton équipe.",
-    bonusDay: "Journée bonus : pas de confrontation, donc pas de joker.",
-    choose: "Ton joker",
+    title: "🃏 Ta carte de la journée",
+    hint: "Une carte par confrontation, chacune une fois dans la saison. Ton adversaire la découvre au verrou, avec ton équipe.",
+    bonusDay: "Journée bonus : pas de confrontation, donc pas de carte.",
+    /** « Avantage terrain » away from home: the card cannot be played. */
+    away: { emoji: "🚌", label: "Extérieur" },
     target: {
-      captain: "Ton capitaine",
-      false_start: "Athlète adverse visé",
-      extended_bench: "Ton 9e titulaire",
+      captain: "🎖️ Qui porte le brassard ?",
+      false_start: (opponent: string) => `🎯 Qui tu vises chez ${opponent} ? (à l'aveugle)`,
+      extended_bench: "🪑 Qui monte en 9e titulaire ?",
     },
-    pickAthlete: "Choisis un athlète",
-    noTarget: "Aucun athlète possible pour ce joker.",
-    fixed: "Le verrou est passé : le joker de la journée ne change plus.",
-    mine: (joker: string) => `Ton joker : ${joker}`,
-    on: (athlete: string) => `sur ${athlete}`,
-    opponent: (joker: string) => `Joker de l'adversaire : ${joker}`,
-    opponentNone: "Ton adversaire n'a pas joué de joker.",
-    coachTitle: "Coaching",
-    coachHint:
-      "Fais entrer un athlète non aligné de la même famille, avant le départ de l'épreuve du titulaire. Une seule fois.",
-    coachOut: "Titulaire qui sort",
-    coachIn: "Athlète qui entre",
-    coachSend: "Faire entrer",
+    targetDone: (joker: string, athlete: string) =>
+      `✅ ${joker} sur ${athlete}. Enregistré avec ton alignement.`,
+    opponentName: "ton adversaire",
+    noTarget: "Aucun athlète possible pour cette carte.",
+    coachingWaits:
+      "⏳ Elle se déclenche après le verrou : tu choisiras alors qui sort et qui entre.",
+    /** After the lock: both cards face up. */
+    revealed: "🔒 Verrou passé · cartes révélées",
+    you: "Toi",
+    them: "Adversaire",
+    noCard: "Pas de carte",
+    revealTaunt: (mine: boolean, theirs: boolean) =>
+      mine && theirs
+        ? "Carte contre carte : que le meilleur gagne. 🍿"
+        : mine
+          ? "Ton adversaire part les mains vides. Profite. 😏"
+          : theirs
+            ? "Il a sorti une carte, pas toi. À toi de courir plus vite. 😤"
+            : "Personne n'a sorti de carte : à la loyale. 🤝",
+    coachOut: "1. Qui sort ?",
+    coachIn: "2. Qui entre ?",
+    coachPickOut: "Choisis d'abord le titulaire qui sort.",
+    coachSend: "🔄 Faire entrer",
     coachSending: "En cours…",
-    coachDone: (inName: string, outName: string) => `${inName} remplace ${outName}.`,
+    coachDone: (inName: string, outName: string) => `✅ ${inName} remplace ${outName}`,
     coachNone: "Aucun athlète non aligné de la même famille.",
     /** In « Mes points » and the head-to-head: what each joker did. */
     effectsTitle: "Jokers",
@@ -2302,13 +2332,21 @@ export const messages = {
       spy: "Espion",
       outsider: "Outsider",
     },
+    emoji: {
+      double: "🔥",
+      all_or_nothing: "🎰",
+      safety_net: "🛟",
+      spy: "🕵️",
+      outsider: "🦄",
+    },
     explain: {
-      double: "Les points de l'épreuve × 2.",
-      all_or_nothing: "Les points × 3 si ton podium est parfait, 0 sinon.",
+      double: "Les points de l'épreuve × 2. Rien que ça.",
+      all_or_nothing: "Podium parfait : points × 3. Sinon, la gamelle : 0.",
       safety_net:
-        "Un athlète sur le podium mais à la mauvaise place compte comme bien placé (le bonus podium parfait reste pour un vrai podium parfait).",
-      spy: "Avant le verrouillage, montre la tendance des pronos de la ligue sur l'épreuve. Sans effet sur les points, et joué dès que tu l'actives.",
-      outsider: "Les points de cote de « Autre athlète » sont doublés.",
+        "Un athlète sur le podium mais à la mauvaise place compte comme bien placé (le bonus podium parfait reste pour un vrai podium parfait). Le parachute des frileux.",
+      spy: "Avant le verrouillage, montre la tendance des pronos de la ligue sur l'épreuve. Sans effet sur les points, et grillé dès qu'il sort.",
+      outsider:
+        "Les points de cote de « Autre athlète » sont doublés. Pour ceux qui flairent le coup.",
     },
     /** The block of the league page and the event page. */
     title: "Mes jokers",
@@ -2321,21 +2359,11 @@ export const messages = {
     createTitle: "Les jokers de la ligue",
     createText: "Chaque joueur reçoit ces jokers, à jouer chacun une fois dans la ligue.",
     createEmpty: "Aucun joker dans cette ligue.",
-    /** On the event page, under the leagues the podium counts in. */
-    eventTitle: "Jokers de ligue",
-    eventHint: "Un joker par épreuve et par ligue. Il ne compte que dans la ligue.",
-    choose: (league: string) => `Joker dans ${league}`,
-    none: "Aucun joker",
-    play: "Jouer",
-    playing: "En cours…",
-    remove: "Retirer le joker",
-    removing: "Retrait en cours…",
-    played: (name: string) => `✓ ${name} joué`,
-    removed: "✓ Joker retiré",
-    addFirst: "Ajoute ton podium à cette ligue pour y jouer un joker.",
-    fixed: "L'épreuve est verrouillée : le joker ne change plus.",
+    /** On the event page, in the card of a league. */
     spySpent: "Espion joué : il reste sur cette épreuve.",
-    spyConfirm: "L'Espion se joue dès que tu l'actives : tu ne pourras plus le retirer.",
+    spyAsk: "🕵️ Tu jettes un œil aux pronos de la ligue ? L'Espion est grillé dès qu'il sort.",
+    spyGo: "👀 Espionner",
+    spyLater: "Pas maintenant",
     spyTitle: (league: string) => `Tendance dans ${league}`,
     spyEmpty: "Personne d'autre dans la ligue n'a encore pronostiqué cette épreuve.",
     other: "Autre athlète",
@@ -3421,8 +3449,19 @@ export const messages = {
         : `C'est fait : ton prono compte dans ${names.length} ligues et au général.`,
     seeMine: "Voir mon prono",
     blockTitle: "Ce prono compte dans",
-    blockText: "Allume une ligue pour que ton podium y compte.",
+    /** The open event: one block for the leagues and their jokers (#1121). */
+    jokersTitle: "🃏 Sors tes jokers",
+    jokersText: "Allume une ligue, puis pose une carte. Une carte par épreuve et par ligue.",
+    noJoker: "Toujours · sans joker",
+    /** « tu es 3e · 8 joueurs », with a medal for the first. */
+    rankLine: (members: number, rank: number | null) =>
+      `${rank === 1 ? "🥇 " : ""}${rank === null ? "pas encore de points" : `tu es ${ordinal(rank)}`} · ${playersCount(members)}`,
     switchLabel: (name: string) => `Compter ce prono dans ${name}`,
+    off: "😴 Ligue éteinte : ton prono n'y compte pas, tes jokers restent au vestiaire.",
+    offConfirm: (emoji: string, joker: string) =>
+      `${emoji} Ton ${joker} est posé ici. Tu éteins la ligue ? La carte revient dans ta main.`,
+    takeBack: "↩️ Reprendre la carte",
+    keep: "Je garde",
     saving: "Enregistrement en cours…",
     openFoot: (when: string) => `Tu peux changer jusqu'au verrou, ${when}.`,
     counts: "Compte",

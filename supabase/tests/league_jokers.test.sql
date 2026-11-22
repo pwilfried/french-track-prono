@@ -1,10 +1,10 @@
 -- pgTAP: the league jokers (#1090). A league receives the active jokers when it is created; each
 -- joker is played once in the league, one per event, on a prediction added to the league (the spy
--- only needs the league to count the event), until the lock; the spy is spent once played. The
+-- too, #1121), until the lock; the spy is spent once played. The
 -- others see a joker once the event is locked.
 -- Run with `supabase test db`. Everything is rolled back at the end.
 begin;
-select plan(22);
+select plan(24);
 
 insert into auth.users (id, email) values
   ('eeee1090-0000-0000-0000-000000000001', 'anna@example.test'),
@@ -97,7 +97,12 @@ select is(joker_on('e1'), 'all_or_nothing', 'one joker per event and per league'
 select lives_ok($$select anna_plays('e2', 'double')$$, 'the joker replaced is back in the hand');
 select throws_ok($$select anna_plays('e3', 'safety_net')$$, 'FT047', null,
                  'a joker needs the prediction added to the league');
-select lives_ok($$select anna_plays('e3', 'spy')$$, 'the spy only needs the league to count the event');
+select throws_ok($$select anna_plays('e3', 'spy')$$, 'FT047', null,
+                 'the spy too needs the prediction added to the league');
+select lives_ok(
+  $$select set_prediction_leagues('eeee1090-0000-0000-0000-0000000000e3', '{eeee1090-0000-0000-0000-0000000000a1}')$$,
+  'the player turns the league on for the prediction');
+select lives_ok($$select anna_plays('e3', 'spy')$$, 'the spy is played once the league is on');
 select throws_ok(
   $$select remove_league_joker('eeee1090-0000-0000-0000-0000000000a1', 'eeee1090-0000-0000-0000-0000000000e3')$$,
   'FT046', null, 'the spy is spent once played');

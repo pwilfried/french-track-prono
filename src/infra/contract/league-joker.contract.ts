@@ -60,12 +60,13 @@ export function leagueJokerContract(name: string, world: () => Promise<LeagueJok
       expect(await w.anna.plays(w.leagueId)).toEqual([]);
     });
 
-    it("needs the prediction added to the league, except for the spy, which stays once played", async () => {
+    it("needs the prediction added to the league, the spy too, which stays once played", async () => {
       const w = await world();
 
       expect(await w.anna.play(w.leagueId, w.third, "double")).toBe("not_in_league");
-      expect(await w.anna.play(w.leagueId, w.third, "spy")).toBe("done");
-      expect(await w.anna.remove(w.leagueId, w.third)).toBe("spy_spent");
+      expect(await w.anna.play(w.leagueId, w.third, "spy")).toBe("not_in_league");
+      expect(await w.anna.play(w.leagueId, w.second, "spy")).toBe("done");
+      expect(await w.anna.remove(w.leagueId, w.second)).toBe("spy_spent");
       expect((await w.anna.plays(w.leagueId)).map((p) => p.joker)).toEqual(["spy"]);
     });
 

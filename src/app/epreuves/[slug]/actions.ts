@@ -101,7 +101,7 @@ export async function savePredictionLeaguesAction(
 
 /**
  * Plays a league joker on the player's prediction of the event, or takes it back (`joker` null),
- * from the « Jokers de ligue » block (#1090). The page is read again.
+ * from the hand of cards of a league in « Sors tes jokers » (#1090, #1121). The page is read again.
  */
 export async function playLeagueJokerAction(
   slug: string,
