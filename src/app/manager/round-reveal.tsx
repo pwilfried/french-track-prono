@@ -5,9 +5,12 @@ import { useState } from "react";
 
 import type { ManagerRoundReveal } from "@/application/manager-reveal";
 import { messages } from "@/app/messages.fr";
+import { SubmitButton } from "@/components/account/submit-button";
 import { RevealCard } from "@/components/manager/reveal-card";
 import { RoundSummary } from "@/components/manager/round-summary";
 import { buttonVariants } from "@/components/ui/button";
+
+import { leaveRoundRevealAction } from "./reveal-actions";
 
 const text = messages.roundReveal;
 
@@ -45,9 +48,13 @@ export function RoundReveal({
     return (
       <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
         <RoundSummary round={reveal.round} athletes={reveal.athletes} />
-        <Link href={`/manager/${leagueId}/catalogue`} className={`${buttonVariants()} w-full`}>
-          {text.backToMercato}
-        </Link>
+        {/* A server action, not a link: the round is marked seen before the mercato opens, which
+            drops the cached « open the reveal » answer of the mercato (#1120). */}
+        <form action={leaveRoundRevealAction}>
+          <input type="hidden" name="league" value={leagueId} />
+          <input type="hidden" name="round" value={reveal.round} />
+          <SubmitButton pendingLabel={text.backingToMercato}>{text.backToMercato}</SubmitButton>
+        </form>
         <Link
           href={`/manager/${leagueId}/equipe`}
           className={`${buttonVariants({ variant: "muted" })} w-full`}

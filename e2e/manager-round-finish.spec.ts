@@ -68,6 +68,11 @@ test("two participants finish a mercato round: it closes at once and the next on
     await theirs.getByRole("button", { name: "Oui, j'ai fini" }).click();
     await rivalPage.waitForURL(/\/tour\/1$/);
     await expect(rivalPage.getByRole("heading", { level: 1 })).toHaveText("L'heure de vérité");
+    // Back to the mercato: round 2, without the reveal again (#1120).
+    await rivalPage.getByRole("button", { name: "Voir toutes les enchères du tour" }).click();
+    await rivalPage.getByRole("button", { name: "Retour au mercato · tour suivant" }).click();
+    await rivalPage.waitForURL(/\/catalogue$/);
+    await expect(theirs.getByRole("button", { name: "J'ai fini ce tour" })).toBeVisible();
 
     // The owner gets the reveal too, then round 2 is under way, and they bid again.
     await ownerPage.goto(catalogue);
