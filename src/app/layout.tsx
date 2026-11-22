@@ -10,6 +10,7 @@ import { SiteHeader } from "@/components/shell/site-header";
 
 import { DemoBanner } from "./demo-banner";
 import { robotsMeta } from "./indexing";
+import { appViewport } from "./viewport";
 import { messages } from "./messages.fr";
 import "./globals.css";
 
@@ -64,14 +65,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fdfbf5" },
-    { media: "(prefers-color-scheme: dark)", color: "#052b5c" },
-  ],
-};
+export const viewport: Viewport = appViewport;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
