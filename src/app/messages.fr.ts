@@ -298,6 +298,16 @@ export const messages = {
     },
     /** The « Battez FrenchTrack » moment (#877); its sentences are those of `challenge`. */
     challenge: { emoji: "🎯" },
+    /** « La communauté »: the prediction trend of the last locked event (#1080). */
+    trend: {
+      emoji: "📊",
+      label: "La communauté",
+      favourite: (name: string, percent: number) => `${name} favori à ${percent} %`,
+      predictions: (n: number) => (n <= 1 ? `${n} prono` : `${n} pronos`),
+      favouriteWon: (name: string) => `Le favori ${name} a gagné`,
+      favouriteLost: (name: string) => `Le favori ${name} n'a pas gagné`,
+      perfect: (percent: number) => `${percent} % de podiums parfaits`,
+    },
     poll: {
       label: "Sondage",
       choose: "Choisis ta réponse : les résultats s'affichent après ton vote.",
