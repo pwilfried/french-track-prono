@@ -14,14 +14,14 @@ function repository(lines: (ScoreLine & { eventId: string })[]): PointsRepositor
 }
 
 describe("getMyPoints", () => {
-  it("returns the total and one line per scored event, with the joker", async () => {
+  it("returns the total and one line per scored event", async () => {
     const useCase = getMyPoints({
       points: repository([
         {
           userId: "me",
           eventId: "e1",
           points: 24,
-          reasons: [{ kind: "perfect_podium" }, { kind: "joker" }],
+          reasons: [{ kind: "perfect_podium" }],
         },
         { userId: "me", eventId: "e2", points: 3, reasons: [{ kind: "exact", slot: 1 }] },
       ]),
@@ -30,9 +30,9 @@ describe("getMyPoints", () => {
     const mine = await useCase.execute({ userId: "me", competitionSlug: "c" });
 
     expect(mine.total).toBe(27);
-    expect(mine.events.map((e) => [e.eventId, e.points, e.joker])).toEqual([
-      ["e1", 24, true],
-      ["e2", 3, false],
+    expect(mine.events.map((e) => [e.eventId, e.points])).toEqual([
+      ["e1", 24],
+      ["e2", 3],
     ]);
   });
 

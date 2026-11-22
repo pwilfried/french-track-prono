@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal, useFormStatus } from "react-dom";
 
 import type { PredictionLeague } from "@/application/prediction-leagues";
@@ -31,9 +30,6 @@ import { FirstPredictionTips } from "./first-prediction-tips";
 import { savePredictionAction, type MarkTexts, type PredictionState } from "./actions";
 import { forgetPodium, keepPodium, readKeptPodium } from "./kept-podium";
 
-/** The other event of the competition where the player's joker is played (#981). */
-export type JokerSpot = { name: string; href: string; movable: boolean };
-
 /** The player's leagues counting the competition, where the podium may count too (#1068). */
 export type FormLeagues = {
   list: PredictionLeague[];
@@ -42,7 +38,7 @@ export type FormLeagues = {
   save: SavePredictionLeagues;
 };
 
-/** The podium of a signed-in player on an open event: compose, joker, save. */
+/** The podium of a signed-in player on an open event: compose, save. */
 export function PredictionForm({
   eventId,
   slug,
@@ -53,8 +49,8 @@ export function PredictionForm({
   discipline,
   tolerance,
   scale,
-  jokerElsewhere,
   leagues,
+  jokers,
 }: {
   eventId: string;
   slug: string;
@@ -67,19 +63,18 @@ export function PredictionForm({
   tolerance?: number;
   /** The scale shown in the rules sheet of « Règles » (#703). */
   scale: Record<string, number>;
-  /** The joker is played on another event: the switch is off and says where. */
-  jokerElsewhere?: JokerSpot | null;
   /** None, or not readable: neither sheet nor block, the podium still counts in the general. */
   leagues?: FormLeagues | null;
+  /** The league jokers of the event (#1090), under the leagues the podium counts in. */
+  jokers?: ReactNode;
 }) {
   const [state, action] = useActionState(savePredictionAction, initial);
   const [draft, setDraft] = useState(initial.draft);
-  const [joker, setJoker] = useState(initial.useJoker);
   // Bumped when a podium kept in the tab is restored: the picker starts again from it.
   const [restored, setRestored] = useState(0);
   const podiumRef = useRef<HTMLDivElement>(null);
-  const keep = (next: { draft?: PodiumDraft; joker?: boolean; openedAthlete?: boolean }) =>
-    keepPodium(eventId, { draft, joker, openedAthlete: false, ...next });
+  const keep = (next: { draft?: PodiumDraft; openedAthlete?: boolean }) =>
+    keepPodium(eventId, { draft, openedAthlete: false, ...next });
 
   // Back from an athlete's page (#699): the podium being built is still there, in view.
   useEffect(() => {
@@ -91,7 +86,6 @@ export function PredictionForm({
     // Read once the page is on screen: the server cannot see this tab's storage.
     /* eslint-disable react-hooks/set-state-in-effect */
     setDraft(kept.draft);
-    setJoker(kept.joker);
     setRestored((n) => n + 1);
     /* eslint-enable react-hooks/set-state-in-effect */
     if (kept.openedAthlete) {
@@ -138,7 +132,7 @@ export function PredictionForm({
           : null,
     );
   }
-  // The button shows the save until the player changes the podium, the marks or the joker.
+  // The button shows the save until the player changes the podium or the marks.
   const [editedAfter, setEditedAfter] = useState<PredictionState | null>(null);
   const justSaved = state !== initial && state.saved === true && editedAfter !== state;
   const edited = () => setEditedAfter(state);
@@ -200,19 +194,9 @@ export function PredictionForm({
           />
         )}
         {!locked && (
-          <>
-            <JokerSwitch
-              checked={joker && !jokerElsewhere}
-              elsewhere={jokerElsewhere ?? undefined}
-              onChange={(checked) => {
-                setJoker(checked);
-                keep({ joker: checked });
-              }}
-            />
-            <div className="px-4">
-              <SaveButton complete={complete} saved={justSaved} />
-            </div>
-          </>
+          <div className="px-4">
+            <SaveButton complete={complete} saved={justSaved} />
+          </div>
         )}
         <SaveNotice notice={notice} dismiss={setNotice} />
       </form>
@@ -231,72 +215,10 @@ export function PredictionForm({
             lockLabel={leagues.lockLabel}
             save={leagues.save}
           />
+          {jokers}
         </>
       )}
     </>
-  );
-}
-
-/** The joker of the event; off and saying where when it is played on another event. */
-function JokerSwitch({
-  checked,
-  elsewhere,
-  onChange,
-}: {
-  checked: boolean;
-  elsewhere?: JokerSpot;
-  onChange: (checked: boolean) => void;
-}) {
-  const blocked = !!elsewhere;
-  return (
-    <div className="mx-4 flex flex-col gap-1 rounded-2xl border-2 border-transparent bg-gold-soft px-3.5 py-2 text-gold-ink has-checked:border-secondary">
-      <label
-        className={cn(
-          "flex min-h-12 items-center gap-3",
-          blocked ? "cursor-not-allowed" : "cursor-pointer",
-        )}
-      >
-        <span className="min-w-0 flex-1">
-          <span id="joker-label" className="block font-extrabold">
-            {messages.prediction.joker}
-          </span>
-          {!blocked && (
-            <span id="joker-hint" className="block text-sm text-muted-foreground">
-              {messages.prediction.jokerHint}
-            </span>
-          )}
-        </span>
-        <input
-          type="checkbox"
-          role="switch"
-          name="joker"
-          aria-labelledby="joker-label"
-          aria-describedby="joker-hint"
-          checked={checked}
-          disabled={blocked}
-          onChange={(e) => onChange(e.target.checked)}
-          className="peer sr-only"
-        />
-        <span
-          aria-hidden
-          className="relative h-7 w-12 shrink-0 rounded-full bg-border transition-colors peer-checked:bg-primary peer-focus-visible:ring-4 peer-focus-visible:ring-ring peer-disabled:opacity-50 after:absolute after:top-1 after:left-1 after:size-5 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5 motion-reduce:transition-none motion-reduce:after:transition-none"
-        />
-      </label>
-      {elsewhere && (
-        <p id="joker-hint" className="pb-1 text-sm">
-          {messages.prediction.jokerPlayedOn}{" "}
-          <Link
-            href={elsewhere.href}
-            className="inline-flex min-h-11 items-center font-bold break-words underline underline-offset-2"
-          >
-            {elsewhere.name}
-          </Link>
-          <span className="block text-muted-foreground">
-            {elsewhere.movable ? messages.prediction.jokerMovable : messages.prediction.jokerFixed}
-          </span>
-        </p>
-      )}
-    </div>
   );
 }
 

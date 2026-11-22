@@ -35,7 +35,7 @@ describe("frenchTrackScore", () => {
     expect(score.points).toBe(5);
   });
 
-  it("never plays a joker for FrenchTrack", () => {
+  it("scores a perfect podium of FrenchTrack like a player's", () => {
     const score = frenchTrackScore(
       { first: "a", second: "b", third: "c" },
       official,
@@ -47,7 +47,6 @@ describe("frenchTrackScore", () => {
     );
 
     expect(score.points).toBe(12);
-    expect(score.reasons.some((r) => r.kind === "joker")).toBe(false);
   });
 });
 

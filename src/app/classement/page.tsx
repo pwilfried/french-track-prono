@@ -28,7 +28,7 @@ import { ViewTabs, tabPanelProps } from "@/components/ui/view-tabs";
 import { rankingStart } from "@/domain/competition";
 import { seasonYears } from "@/domain/competition-search";
 import { placeOf, previousCompetitionSlugs } from "@/domain/ranking";
-import { createSupabaseLeagueRepository } from "@/infra";
+import { createSupabaseLeagueJokerRepository, createSupabaseLeagueRepository } from "@/infra";
 
 import { currentCompetitionDay, currentDay, loadCompetitions, loadMyLeagues } from "../competition";
 import { messages } from "../messages.fr";
@@ -79,6 +79,7 @@ export default async function RankingPage({
   const leagueRanking = getLeagueRanking({
     ranking,
     leagues: createSupabaseLeagueRepository(client),
+    jokers: createSupabaseLeagueJokerRepository(client),
   });
   // The moves compare with the ranking before the last finished competition of the scope (#661).
   const previousOf = (slugs: string[]) =>

@@ -8,7 +8,6 @@ export type Prediction = {
   userId: string;
   eventId: string;
   podium: Podium;
-  useJoker: boolean;
   /** Present when the player predicted at least one mark. */
   marks?: PodiumMarks;
 };
@@ -20,7 +19,6 @@ export type SaveOutcome =
   | "round_not_ready"
   | "athlete_not_in_event"
   | "athlete_not_proposed"
-  | "joker_already_used"
   | "mark_out_of_range";
 
 /** Port: where predictions are stored. Real adapter = Supabase, fake = in memory. */
@@ -38,7 +36,6 @@ export type SavePredictionInput = {
   first: string;
   second: string;
   third: string;
-  useJoker: boolean;
   /** Marks as typed ("" for none), for the athletes of the podium. */
   marks?: { first: string; second: string; third: string };
   /** How the event's discipline measures a mark; needed when a mark is typed. */
@@ -79,7 +76,6 @@ const CODES = {
   round_not_ready: "ROUND_NOT_READY",
   athlete_not_in_event: "ATHLETE_NOT_IN_EVENT",
   athlete_not_proposed: "ATHLETE_NOT_PROPOSED",
-  joker_already_used: "JOKER_ALREADY_USED",
   mark_out_of_range: "MARK_OUT_OF_RANGE",
 } as const;
 
@@ -96,7 +92,6 @@ export function savePrediction(ports: { predictions: PredictionRepository }) {
         userId: input.userId,
         eventId: input.eventId,
         podium,
-        useJoker: input.useJoker,
         ...(marks ? { marks } : {}),
       };
       const outcome = await ports.predictions.save(prediction);

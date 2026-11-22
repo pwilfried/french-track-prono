@@ -1,5 +1,6 @@
 import { eventPhase } from "@/domain/countdown";
 import { frenchTrackScore } from "@/domain/frenchtrack";
+import { jokerPoints, type JokerPoints } from "@/domain/league-jokers";
 import { missingPodiumRanks } from "@/domain/official-result";
 import {
   flairContext,
@@ -25,8 +26,17 @@ export type EventToScore = {
   bets?: EventBets;
 };
 
-/** One score line: the points of one player on one event, with the reasons. */
-export type ScoreLine = { userId: string; points: number; reasons: ScoreReason[] };
+/**
+ * One score line: the points of one player on one event, with the reasons, and what each league
+ * joker would make of them (#1090): the general ranking counts `points`, a league where a joker is
+ * played on the event counts the joker's.
+ */
+export type ScoreLine = {
+  userId: string;
+  points: number;
+  reasons: ScoreReason[];
+  jokers?: JokerPoints;
+};
 
 /** Port: points. Real adapter = Supabase (the admin's own session), fake = in memory. */
 export interface PointsRepository {
@@ -66,6 +76,7 @@ export function computeEventPoints(ports: {
       const lines = event.predictions.map((prediction) => ({
         userId: prediction.userId,
         ...scorePrediction(prediction, event.results, event.rules, context, event.bets),
+        jokers: jokerPoints(prediction, event.results, event.rules, context, event.bets),
       }));
       const outcome = await ports.points.replaceEventScores(input.eventId, lines);
       if (outcome === "not_admin") throw new UseCaseError("NOT_ADMIN");

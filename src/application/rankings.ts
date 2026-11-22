@@ -11,9 +11,11 @@ import {
   totalsOf,
   type RankedPlayer,
 } from "@/domain/ranking";
+import { pointsWithJoker, type JokerPlay, type JokerPoints } from "@/domain/league-jokers";
 import type { ScoreReason } from "@/domain/scoring";
 
 import { UseCaseError } from "./errors";
+import type { LeagueJokerRepository } from "./league-jokers";
 import type { LeagueRepository } from "./leagues";
 
 export type RankingLine = {
@@ -26,6 +28,8 @@ export type RankingLine = {
   clubId?: string | null;
   points: number;
   reasons: ScoreReason[];
+  /** What each league joker makes of the points (#1090); absent on a line computed before. */
+  jokers?: JokerPoints;
   eventId: string;
   /** Start of the event, ISO 8601: orders the events to find the last computed one. */
   eventStartsAt: string;
@@ -153,9 +157,16 @@ export function countsInLeague(joinedAt: string | undefined, eventLockAt: string
 /**
  * The members of a league, ranked on the league's competitions (their points add up) and, for a
  * league limited to families, on the events of those families only (#613); a member without
- * points is listed with 0. Only a member sees it. Every member gets the same ranking from the same score lines.
+ * points is listed with 0. Only a member sees it. Every member gets the same ranking from the same
+ * score lines. A joker played in the league counts its points there (#1090); the scores of an event
+ * exist once it is locked, when every member sees the jokers played on it.
  */
-export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: LeagueRepository }) {
+export function getLeagueRanking(ports: {
+  ranking: RankingRepository;
+  leagues: LeagueRepository;
+  /** The jokers played in the league; absent: none counts. */
+  jokers?: Pick<LeagueJokerRepository, "plays">;
+}) {
   return {
     async execute(
       input: {
@@ -167,13 +178,20 @@ export function getLeagueRanking(ports: { ranking: RankingRepository; leagues: L
         competitionAddedAt?: Record<string, string>;
       } & MovesInput,
     ): Promise<RankingRow[]> {
-      const members = await ports.leagues.members(input.leagueId);
+      const [members, read, plays] = await Promise.all([
+        ports.leagues.members(input.leagueId),
+        linesOf(ports.ranking, input.competitionSlugs),
+        ports.jokers?.plays(input.leagueId) ?? [],
+      ]);
       if (!members) throw new UseCaseError("LEAGUE_NOT_FOUND");
-      const lines = leagueLines(await linesOf(ports.ranking, input.competitionSlugs), {
-        members,
-        families: input.families,
-        competitionAddedAt: input.competitionAddedAt,
-      });
+      const lines = withLeagueJokers(
+        leagueLines(read, {
+          members,
+          families: input.families,
+          competitionAddedAt: input.competitionAddedAt,
+        }),
+        plays,
+      );
       // Members without any score line yet still appear, with 0 points.
       const zero = members.map((m) => ({
         userId: m.userId,
@@ -222,6 +240,19 @@ export function leagueLines<T extends RankingLine>(
         startsAt: l.eventStartsAt,
       }),
     );
+}
+
+/** The lines of a league with the points of the joker played on each, if any (#1090). */
+export function withLeagueJokers<T extends RankingLine>(
+  lines: T[],
+  plays: (JokerPlay & { userId: string })[],
+): T[] {
+  if (plays.length === 0) return lines;
+  const jokerOf = new Map(plays.map((p) => [`${p.userId}:${p.eventId}`, p.joker]));
+  return lines.map((l) => {
+    const joker = jokerOf.get(`${l.userId}:${l.eventId}`);
+    return joker ? { ...l, points: pointsWithJoker(l, joker) } : l;
+  });
 }
 
 /**

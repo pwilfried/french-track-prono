@@ -7,11 +7,11 @@
 -- list in the app). If the admin enters the result a 1st, b 2nd, c 3rd on both events:
 --
 --   Event 1 (only Démo Gazelle picks a as winner: 1 player out of 12, so the flair applies)
---     Démo Gazelle   a b c + joker  -> (12 + flair 2) x 2 = 28, the maximum
+--     Démo Gazelle   a b c          -> 12 + flair 2 = 14, the maximum
 --     the others     never a first  -> 0 to 3 points
 --   Event 2 (a is a popular winner: no flair)
 --     Démo Perche    a b c          -> 12, perfect podium
---     Démo Haie      a c b + joker  -> (3 + 1 + 1) x 2 = 10
+--     Démo Haie      a c b          -> 3 + 1 + 1 = 5
 --     Démo Relais    b c a          -> 3, all three misplaced
 --     Démo Marteau   c b a          -> 5, 2nd found and two misplaced
 begin;
@@ -44,14 +44,14 @@ select ('00000000-0000-4000-9000-' || lpad(n::text, 12, '0'))::uuid, pseudo, bib
        now()
 from demo;
 
--- (player, event 1 or 2, order of a/b/c on the podium, joker)
-with picks (n, k, podium, joker) as (values
-  (1, 1, 'abc', true),  (2, 1, 'bac', false), (3, 1, 'cab', false), (4, 1, 'bca', false),
-  (5, 1, 'cba', false), (6, 1, 'bac', false), (7, 1, 'cab', false), (8, 1, 'bca', false),
-  (9, 1, 'cba', false), (10, 1, 'bac', false), (11, 1, 'cab', false), (12, 1, 'bca', false),
-  (1, 2, 'bac', false), (2, 2, 'abc', false), (3, 2, 'acb', true),  (4, 2, 'bca', false),
-  (5, 2, 'cba', false), (6, 2, 'abc', false), (7, 2, 'bac', false), (8, 2, 'acb', false),
-  (9, 2, 'abc', false), (10, 2, 'cab', false), (11, 2, 'acb', false), (12, 2, 'abc', false)
+-- (player, event 1 or 2, order of a/b/c on the podium)
+with picks (n, k, podium) as (values
+  (1, 1, 'abc'),  (2, 1, 'bac'), (3, 1, 'cab'), (4, 1, 'bca'),
+  (5, 1, 'cba'), (6, 1, 'bac'), (7, 1, 'cab'), (8, 1, 'bca'),
+  (9, 1, 'cba'), (10, 1, 'bac'), (11, 1, 'cab'), (12, 1, 'bca'),
+  (1, 2, 'bac'), (2, 2, 'abc'), (3, 2, 'acb'),  (4, 2, 'bca'),
+  (5, 2, 'cba'), (6, 2, 'abc'), (7, 2, 'bac'), (8, 2, 'acb'),
+  (9, 2, 'abc'), (10, 2, 'cab'), (11, 2, 'acb'), (12, 2, 'abc')
 ),
 open_events as (
   select id, row_number() over (order by starts_at, slug) as k
@@ -61,12 +61,11 @@ open_events as (
 athletes as (
   select event_id, array_agg(athlete_id order by athlete_id) as a from entries group by event_id
 )
-insert into predictions (user_id, event_id, p1, p2, p3, use_joker)
+insert into predictions (user_id, event_id, p1, p2, p3)
 select ('00000000-0000-4000-9000-' || lpad(p.n::text, 12, '0'))::uuid, e.id,
        x.a[ascii(substr(p.podium, 1, 1)) - 96],
        x.a[ascii(substr(p.podium, 2, 1)) - 96],
-       x.a[ascii(substr(p.podium, 3, 1)) - 96],
-       p.joker
+       x.a[ascii(substr(p.podium, 3, 1)) - 96]
 from picks p
 join open_events e on e.k = p.k
 join athletes x on x.event_id = e.id;

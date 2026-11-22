@@ -119,8 +119,6 @@ export type GameFigures = {
   exactSlot: number;
   wrongPlace: number;
   perfectPodium: number;
-  perfectWithJoker: number;
-  jokerMultiplier: number;
   markExact: number;
 };
 
@@ -134,7 +132,6 @@ export function rulesFromScale(scale: Record<string, number>): ScoringRules {
     flairBonus: pick("flair_bonus", DEFAULT_RULES.flairBonus),
     flairThreshold: pick("flair_threshold", DEFAULT_RULES.flairThreshold),
     flairMinPlayers: pick("flair_min_players", DEFAULT_RULES.flairMinPlayers),
-    jokerMultiplier: pick("joker_multiplier", DEFAULT_RULES.jokerMultiplier),
     oddsExact: pick("odds_exact", DEFAULT_RULES.oddsExact),
     oddsOneOff: pick("odds_one_off", DEFAULT_RULES.oddsOneOff),
     oddsTwoOff: pick("odds_two_off", DEFAULT_RULES.oddsTwoOff),
@@ -151,8 +148,8 @@ const OFFICIAL = [
 const NO_FLAIR = { predictionCount: 0, winnerPicks: {} };
 const points = (
   rules: ScoringRules,
-  prediction: { first: string; second: string; third: string; useJoker?: boolean },
-) => scorePrediction({ useJoker: false, ...prediction }, OFFICIAL, rules, NO_FLAIR).points;
+  prediction: { first: string; second: string; third: string },
+) => scorePrediction(prediction, OFFICIAL, rules, NO_FLAIR).points;
 
 /** The points of a few podiums, scored by the real rules: they follow the admin's scale. */
 export function gameFigures(rules: ScoringRules): GameFigures {
@@ -162,7 +159,6 @@ export function gameFigures(rules: ScoringRules): GameFigures {
       first: "x",
       second: "y",
       third: "a",
-      useJoker: false,
       marks: { first: null, second: null, third: 10 },
     },
     OFFICIAL,
@@ -174,8 +170,6 @@ export function gameFigures(rules: ScoringRules): GameFigures {
     exactSlot: points(rules, { first: "a", second: "x", third: "y" }),
     wrongPlace: points(rules, { first: "b", second: "x", third: "y" }),
     perfectPodium: points(rules, perfect),
-    perfectWithJoker: points(rules, { ...perfect, useJoker: true }),
-    jokerMultiplier: rules.jokerMultiplier,
     markExact: markOnly?.kind === "mark" ? markOnly.points : 0,
   };
 }

@@ -22,7 +22,6 @@ import { ChipStatus } from "../ui/chip-status";
  */
 export type MyEventState = {
   predicted: boolean;
-  joker: boolean;
   points?: number | null;
   hits?: PodiumHits | null;
   podium?: (AthleteName | null)[];
@@ -138,11 +137,6 @@ export function EventCard({
             )}
             {event.isFeatured && (
               <span className="font-bold text-accent-text">★ {messages.events.featured}</span>
-            )}
-            {mine?.joker && (
-              <span className="rounded-full bg-gold-soft px-2 py-0.5 text-[10px] font-extrabold text-gold-ink">
-                {messages.myPredictions.joker}
-              </span>
             )}
           </p>
         </div>

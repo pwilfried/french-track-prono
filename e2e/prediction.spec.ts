@@ -40,8 +40,9 @@ test("a new player predicts a perfect podium, the admin enters the results sheet
   const notice = page.getByRole("status");
   await expect(notice).toContainText("Podium enregistré");
   await expect(notice).toBeInViewport();
-  // A new change brings the button back.
-  await page.getByText("🃏 Joker : points × 2").click();
+  // A new change brings the button back: the winner taken off and put back.
+  await athletes.nth(0).click();
+  await athletes.nth(0).click();
   await expect(save).toBeVisible();
 
   // Reopening the page shows the saved podium and its confirmation, without the tips (#493).

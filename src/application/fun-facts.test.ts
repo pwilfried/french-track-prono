@@ -71,7 +71,7 @@ const today = {
   disciplines: ["100 m"],
 };
 
-const game: FunFact = { ...draft("Le joker"), id: "game-joker" };
+const game: FunFact = { ...draft("Les jokers de ligue"), id: "game-league-jokers" };
 
 describe("the « Le saviez-vous ? » card", () => {
   it("shows the active facts and the facts about the game, never a disabled one", async () => {
@@ -83,7 +83,7 @@ describe("the « Le saviez-vous ? » card", () => {
     // When the player opens the home
     const shown = await getFunFacts({ facts }).execute({ today, gameFacts: [game] });
     // Then the card offers the active fact and the game fact
-    expect(shown.map((f) => f.title).sort()).toEqual(["Actif", "Le joker"]);
+    expect(shown.map((f) => f.title).sort()).toEqual(["Actif", "Les jokers de ligue"]);
   });
 
   it("shows the fact tied to tonight's 100 m first", async () => {

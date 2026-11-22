@@ -1,4 +1,5 @@
--- pgTAP: prediction rules R1 to R7 (lock, visibility, entries, duplicates, joker).
+-- pgTAP: prediction rules R1 to R7 (lock, visibility, entries, duplicates, no joker of a
+-- competition any more: the league jokers are in league_jokers.test.sql, #1090).
 -- Run with `supabase test db`. Everything is rolled back at the end.
 begin;
 select plan(16);
@@ -47,9 +48,9 @@ select set_config('request.jwt.claims',
 
 -- R1: write before the lock
 select lives_ok(
-  $$insert into predictions (user_id, event_id, p1, p2, p3, use_joker)
+  $$insert into predictions (user_id, event_id, p1, p2, p3)
     select 'bbbbbbbb-0000-0000-0000-000000000001', 'eeeeeeee-0000-0000-0000-00000000000a',
-           test_athlete(e, 1), test_athlete(e, 2), test_athlete(e, 3), true
+           test_athlete(e, 1), test_athlete(e, 2), test_athlete(e, 3)
     from (select 'eeeeeeee-0000-0000-0000-00000000000a'::uuid as e) x$$,
   'R1: a prediction can be created before the lock');
 
@@ -97,14 +98,9 @@ select throws_ok(
   '23514', null,
   'R6: the same athlete on two steps is refused');
 
--- R7: one joker per competition (Anna already uses hers on event A)
-select throws_ok(
-  $$insert into predictions (user_id, event_id, p1, p2, p3, use_joker)
-    select 'bbbbbbbb-0000-0000-0000-000000000001', 'eeeeeeee-0000-0000-0000-00000000000b',
-           test_athlete(e, 1), test_athlete(e, 2), test_athlete(e, 3), true
-    from (select 'eeeeeeee-0000-0000-0000-00000000000b'::uuid as e) x$$,
-  '23505', null,
-  'R7: a second joker in the same competition is refused');
+-- R7: the joker of a competition is gone (#1090): a prediction carries no joker any more.
+select hasnt_column('public', 'predictions', 'use_joker',
+  'R7: a prediction has no joker of the competition any more');
 
 -- Delete before the lock works
 select lives_ok(
@@ -112,7 +108,7 @@ select lives_ok(
     select 'bbbbbbbb-0000-0000-0000-000000000001', 'eeeeeeee-0000-0000-0000-00000000000b',
            test_athlete(e, 1), test_athlete(e, 2), test_athlete(e, 3)
     from (select 'eeeeeeee-0000-0000-0000-00000000000b'::uuid as e) x$$,
-  'a prediction without joker can be created on event B');
+  'a prediction can be created on event B');
 delete from predictions where event_id = 'eeeeeeee-0000-0000-0000-00000000000b';
 select is(
   (select count(*) from predictions where event_id = 'eeeeeeee-0000-0000-0000-00000000000b'), 0::bigint,

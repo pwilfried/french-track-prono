@@ -11,7 +11,6 @@ export type ScoringRules = {
   /** Flair applies when the winner was picked by strictly less than this share of the players. */
   flairThreshold: number;
   flairMinPlayers: number;
-  jokerMultiplier: number;
   /** v0.9: the odds of an athlete are multiplied by these, at the right place, 1 or 2 places off. */
   oddsExact: number;
   oddsOneOff: number;
@@ -28,7 +27,6 @@ export const DEFAULT_RULES: ScoringRules = {
   flairBonus: 2,
   flairThreshold: 0.15,
   flairMinPlayers: 10,
-  jokerMultiplier: 2,
   oddsExact: 3,
   oddsOneOff: 2,
   oddsTwoOff: 1,
@@ -40,7 +38,6 @@ export type ScoringPrediction = {
   first: string;
   second: string;
   third: string;
-  useJoker: boolean;
   /** v0.9: the marks predicted for the three athletes. */
   marks?: PodiumMarks;
 };
@@ -60,11 +57,18 @@ export type ScoreReason =
   | { kind: "on_podium"; slot: 1 | 2 | 3 }
   | { kind: "perfect_podium" }
   | { kind: "flair" }
-  | { kind: "joker" }
   | { kind: "odds"; slot: 1 | 2 | 3; odds: number; multiplier: number; points: number }
   | { kind: "mark"; slot: 1 | 2 | 3; predicted: number; official: number; points: number };
 
 export type Score = { points: number; reasons: ScoreReason[] };
+
+/**
+ * How a league joker (#1090) changes the count of the podium itself. `netWrongPlace` (« Filet »):
+ * an athlete on the podium at the wrong place counts as at the right place, but only a true perfect
+ * podium earns its bonus. `otherOddsFactor` (« Outsider »): the odds points of « autre athlète »
+ * are multiplied by it.
+ */
+export type ScoringVariant = { netWrongPlace?: boolean; otherOddsFactor?: number };
 
 export function flairContext(predictions: ScoringPrediction[]): FlairContext {
   const winnerPicks: Record<string, number> = {};
@@ -82,6 +86,7 @@ export function scorePrediction(
   rules: ScoringRules,
   context: FlairContext,
   bets: EventBets = { odds: null, tolerance: null },
+  variant: ScoringVariant = {},
 ): Score {
   const proposed = new Set(bets.odds?.proposed.map((p) => p.athleteId) ?? []);
   // « Autre athlète » stands for the athletes not proposed: its place is the one, among theirs,
@@ -108,6 +113,9 @@ export function scorePrediction(
       points += rules.exactSlot;
       exactCount += 1;
       reasons.push({ kind: "exact", slot });
+    } else if (rank !== undefined && rank <= 3 && variant.netWrongPlace) {
+      points += rules.exactSlot;
+      reasons.push({ kind: "exact", slot });
     } else if (rank !== undefined && rank <= 3) {
       points += rules.wrongPlace;
       reasons.push({ kind: "on_podium", slot });
@@ -119,7 +127,7 @@ export function scorePrediction(
     reasons.push({ kind: "perfect_podium" });
   }
 
-  points += oddsPoints(slots, rankOf, rules, bets, reasons);
+  points += oddsPoints(slots, rankOf, rules, bets, reasons, variant);
   points += markPoints(slots, prediction, official, rules, bets, reasons);
 
   const winnerFound = rankOf(prediction.first, 1) === 1;
@@ -135,11 +143,6 @@ export function scorePrediction(
     points += rules.flairBonus;
     reasons.push({ kind: "flair" });
   }
-
-  if (prediction.useJoker) {
-    points *= rules.jokerMultiplier;
-    reasons.push({ kind: "joker" });
-  }
   return { points, reasons };
 }
 
@@ -152,6 +155,7 @@ function oddsPoints(
   rules: ScoringRules,
   bets: EventBets,
   reasons: ScoreReason[],
+  variant: ScoringVariant,
 ): number {
   if (!bets.odds) return 0;
   let total = 0;
@@ -162,10 +166,11 @@ function oddsPoints(
         : bets.odds.proposed.find((p) => p.athleteId === athleteId)?.odds;
     const rank = rankOf(athleteId, slot);
     if (odds === undefined || rank === undefined || rank > 3) continue;
-    const key = ODDS_MULTIPLIER[Math.abs(rank - slot)];
+    const key = variant.netWrongPlace ? "oddsExact" : ODDS_MULTIPLIER[Math.abs(rank - slot)];
     if (!key) continue;
     const multiplier = rules[key];
-    const points = Math.round(odds * multiplier);
+    const factor = athleteId === OTHER_ATHLETE ? (variant.otherOddsFactor ?? 1) : 1;
+    const points = Math.round(odds * multiplier) * factor;
     total += points;
     reasons.push({ kind: "odds", slot, odds, multiplier, points });
   }

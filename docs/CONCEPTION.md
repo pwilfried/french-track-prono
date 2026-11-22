@@ -26,7 +26,7 @@ Les pronos des autres joueurs ne deviennent visibles **qu'après verrouillage**.
 | Athlète sur le podium, mauvaise place | 1 |
 | Podium parfait (bonus) | +3 (donc 12 max) |
 | Coup de flair : vainqueur trouvé, choisi par moins de 15 % des joueurs (min. 10 pronos) | +2 |
-| Joker (1 par compétition) | points de l'épreuve × 2 |
+| Jokers de ligue (chacun une fois par ligue, un par épreuve, #1090) | Double ×2, Tout ou rien ×3 ou 0, Filet, Espion, Outsider : dans le classement de la ligue seulement |
 
 Départage : points, puis podiums parfaits, puis vainqueurs trouvés.
 

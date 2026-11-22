@@ -4,12 +4,12 @@ import { gameFunFacts } from "./fun-facts";
 
 describe("the facts about the game", () => {
   it("quotes the points of the admin's scale, not typed figures", () => {
-    const facts = gameFunFacts({ exact_slot: 5, perfect_podium: 10, joker_multiplier: 3 });
+    const facts = gameFunFacts({ exact_slot: 5, perfect_podium: 10 });
     const perfect = facts.find((f) => f.id === "game-perfect-podium")!;
-    const joker = facts.find((f) => f.id === "game-joker")!;
+    const jokers = facts.find((f) => f.id === "game-league-jokers")!;
     expect(perfect.body).toContain("25 points");
-    expect(joker.body).toContain("par 3");
-    expect(joker.body).toContain("75 points");
+    expect(jokers.body).toContain("50 points avec le Double");
+    expect(jokers.body).toContain("75 points avec le Tout ou rien");
   });
 
   it("tags them « Pour tes pronos » and ties them to no day", () => {

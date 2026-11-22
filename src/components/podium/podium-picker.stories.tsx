@@ -118,10 +118,10 @@ export const LongNames: Story = {
 export const WithError: Story = {
   args: {
     initialDraft: { first: "lena", second: "ines", third: "mateo" },
-    error: "Tu as déjà utilisé ton joker dans cette compétition.",
+    error: "Trop tard : cette épreuve vient d'être verrouillée. Ton podium n'a pas été enregistré.",
   },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole("alert")).toHaveTextContent("joker");
+    await expect(within(canvasElement).getByRole("alert")).toHaveTextContent("Trop tard");
   },
 };
 

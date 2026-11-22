@@ -80,9 +80,9 @@ export const OTHER_ATHLETE = "other";
 
 /**
  * A podium being built, kept in the tab while the player looks at an athlete's page (#699):
- * the steps, the joker, and whether he left the picker to open an athlete.
+ * the steps, and whether he left the picker to open an athlete.
  */
-export type KeptPodium = { draft: PodiumDraft; joker: boolean; openedAthlete: boolean };
+export type KeptPodium = { draft: PodiumDraft; openedAthlete: boolean };
 
 /** Reads a kept podium back; null when it is missing, malformed or names an unknown athlete. */
 export function parseKeptPodium(raw: string | null, knownIds: string[]): KeptPodium | null {
@@ -93,7 +93,7 @@ export function parseKeptPodium(raw: string | null, knownIds: string[]): KeptPod
     return null;
   }
   if (typeof value !== "object" || value === null) return null;
-  const { draft, joker, openedAthlete } = value as Record<string, unknown>;
+  const { draft, openedAthlete } = value as Record<string, unknown>;
   if (typeof draft !== "object" || draft === null) return null;
   const steps = draft as Record<string, unknown>;
   const ids = [steps.first, steps.second, steps.third];
@@ -105,7 +105,6 @@ export function parseKeptPodium(raw: string | null, knownIds: string[]): KeptPod
   const [first, second, third] = ids as (string | null)[];
   return {
     draft: { first, second, third },
-    joker: joker === true,
     openedAthlete: openedAthlete === true,
   };
 }

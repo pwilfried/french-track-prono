@@ -146,9 +146,6 @@ describe("the facts about the game", () => {
       exactSlot: DEFAULT_RULES.exactSlot,
       wrongPlace: DEFAULT_RULES.wrongPlace,
       perfectPodium: 3 * DEFAULT_RULES.exactSlot + DEFAULT_RULES.perfectPodium,
-      perfectWithJoker:
-        (3 * DEFAULT_RULES.exactSlot + DEFAULT_RULES.perfectPodium) * DEFAULT_RULES.jokerMultiplier,
-      jokerMultiplier: DEFAULT_RULES.jokerMultiplier,
       markExact: DEFAULT_RULES.markExact,
     });
   });
@@ -157,6 +154,5 @@ describe("the facts about the game", () => {
     const figures = gameFigures(rulesFromScale({ exact_slot: 5, perfect_podium: 10 }));
     expect(figures.exactSlot).toBe(5);
     expect(figures.perfectPodium).toBe(25);
-    expect(figures.perfectWithJoker).toBe(25 * DEFAULT_RULES.jokerMultiplier);
   });
 });

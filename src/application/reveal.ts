@@ -13,7 +13,6 @@ export type RevealedPrediction = {
   pseudo: string;
   bib: Bib;
   podium: Podium;
-  useJoker: boolean;
   reactions: { userId: string; reaction: Reaction }[];
   /** True when the computed points of this prediction include the "coup de flair". */
   flair: boolean;

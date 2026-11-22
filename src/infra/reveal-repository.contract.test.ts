@@ -9,23 +9,17 @@ import { createInMemoryRevealRepository, createSupabaseRevealRepository } from "
 
 revealRepositoryContract("in-memory fake", async () => {
   const athleteIds = ["a", "b", "c", "d"];
-  const of = (
-    userId: string,
-    first: string,
-    second: string,
-    joker: boolean,
-  ): RevealedPrediction => ({
+  const of = (userId: string, first: string, second: string): RevealedPrediction => ({
     predictionId: `${userId}-p`,
     userId,
     pseudo: userId.toUpperCase(),
     bib: { number: 7, color: "blue" },
     podium: { first, second, third: "c" },
-    useJoker: joker,
     reactions: [],
     flair: false,
   });
   const anna = {
-    ...of("anna", "a", "b", true),
+    ...of("anna", "a", "b"),
     reactions: [{ userId: "bob", reaction: "🔥" as const }],
     flair: true,
   };
@@ -38,9 +32,9 @@ revealRepositoryContract("in-memory fake", async () => {
     bob: createInMemoryRevealRepository({
       open: {
         locked: false,
-        predictions: [of("anna", "a", "b", true), of("bob", "b", "a", false)],
+        predictions: [of("anna", "a", "b"), of("bob", "b", "a")],
       },
-      locked: { locked: true, predictions: [anna, of("bob", "b", "a", false)] },
+      locked: { locked: true, predictions: [anna, of("bob", "b", "a")] },
     }),
   };
 });
@@ -58,11 +52,10 @@ if (url && key) {
     const athleteIds = locked.athleteIds;
     for (const e of [open, locked]) {
       const [a, b, c] = e.athleteIds as [string, string, string];
-      sql(`insert into predictions (user_id, event_id, p1, p2, p3, use_joker) values
-        ('${anna.userId}', '${e.eventId}', '${a}', '${b}', '${c}', ${e === locked}),
-        ('${bob.userId}', '${e.eventId}', '${b}', '${a}', '${c}', false)`);
+      sql(`insert into predictions (user_id, event_id, p1, p2, p3) values
+        ('${anna.userId}', '${e.eventId}', '${a}', '${b}', '${c}'),
+        ('${bob.userId}', '${e.eventId}', '${b}', '${a}', '${c}')`);
     }
-    // Anna's joker is on the locked event only (one joker per competition).
     sql(`update events set lock_at = now() - interval '1 minute' where id = '${locked.eventId}'`);
     sql(`insert into reactions (prediction_id, user_id, emoji)
       select id, '${bob.userId}', '🔥' from predictions where event_id = '${locked.eventId}' and user_id = '${anna.userId}'`);

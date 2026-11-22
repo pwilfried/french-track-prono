@@ -5,8 +5,8 @@ import { notFound } from "next/navigation";
 import { UseCaseError } from "@/application/errors";
 import { getEvent } from "@/application/get-event";
 import { getEventOdds } from "@/application/set-event-odds";
+import { getEventLeagueJokers, getSpyTrend } from "@/application/league-jokers";
 import { listMyLeagues, type League } from "@/application/leagues";
-import { findMyJokerElsewhere } from "@/application/list-my-predictions";
 import { listPredictionLeagues, type PredictionLeague } from "@/application/prediction-leagues";
 import { getMyPrediction, type Prediction } from "@/application/save-prediction";
 import { Animal } from "@/components/band/animal";
@@ -16,6 +16,7 @@ import { LockBanner } from "@/components/countdown/lock-banner";
 import { ErrorNotice } from "@/components/error-notice";
 import { REVEAL_ANCHOR } from "@/components/community/trend-card";
 import { AddToMyLeagueForm } from "@/components/leagues/league-forms";
+import { EventLeagueJokers, type EventLeagueJokersView } from "@/components/leagues/league-jokers";
 import { PredictionLeaguesBlock } from "@/components/leagues/prediction-leagues";
 import { PodiumMedals } from "@/components/podium/podium-medals";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
@@ -27,10 +28,12 @@ import { formatMark, tidyMark } from "@/domain/discipline";
 import { pickChoices } from "@/domain/odds";
 import { sortStartList } from "@/domain/start-list";
 import { canPredictRound } from "@/domain/rounds";
-import { draftFromPodium, emptyDraft } from "@/domain/podium-draft";
+import { draftFromPodium, emptyDraft, OTHER_ATHLETE } from "@/domain/podium-draft";
 import { athleteHref } from "@/domain/redirect";
 import {
   createPublicSupabaseClient,
+  createSupabaseConsensusRepository,
+  createSupabaseLeagueJokerRepository,
   createSupabaseLeagueRepository,
   createSupabaseOddsRepository,
   createSupabasePredictionLeagueRepository,
@@ -42,10 +45,10 @@ import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
 import { loadScale } from "../../scale";
 import { getCurrentUser, getSessionClient } from "../../session";
-import { savePredictionLeaguesAction } from "./actions";
+import { playLeagueJokerAction, savePredictionLeaguesAction } from "./actions";
 import { ChallengeSection } from "./challenge-section";
 import { ForgetPodium } from "./forget-podium";
-import { PredictionForm, type JokerSpot } from "./prediction-form";
+import { PredictionForm } from "./prediction-form";
 import { ResultSection } from "./result-section";
 import { RevealHidden, RevealSection } from "./reveal-section";
 import { publicEventReader, publicRanking } from "../../public-data";
@@ -100,36 +103,6 @@ async function loadMyPrediction(
   }
 }
 
-/**
- * Where the player's joker of the competition is played when on another event (#981); null when
- * it is not, or cannot be read (the save still refuses a second joker).
- */
-async function loadJokerElsewhere(
-  userId: string,
-  competitionSlug: string,
-  eventId: string,
-): Promise<JokerSpot | null> {
-  try {
-    const predictions = createSupabasePredictionRepository(await getSessionClient());
-    const found = await findMyJokerElsewhere({ predictions, events: publicEventReader() }).execute({
-      userId,
-      competitionSlug,
-      eventId,
-      now: new Date(),
-    });
-    return found
-      ? {
-          name: messages.events.name(found.discipline, found.gender),
-          href: `/epreuves/${found.eventSlug}`,
-          movable: found.movable,
-        }
-      : null;
-  } catch (error) {
-    if (error instanceof UseCaseError) return null;
-    throw error;
-  }
-}
-
 /** The player's leagues; "error" when they cannot be read. */
 async function loadMyLeagues(): Promise<League[] | "error"> {
   try {
@@ -157,9 +130,60 @@ async function loadPredictionLeagues(
       leagues: createSupabaseLeagueRepository(client),
       predictionLeagues: createSupabasePredictionLeagueRepository(client),
       ranking: publicRanking(),
+      jokers: createSupabaseLeagueJokerRepository(client),
     }).execute({ userId, competitionSlug, eventId, hasPrediction });
   } catch (error) {
     if (error instanceof UseCaseError) return null;
+    throw error;
+  }
+}
+
+/**
+ * My jokers of the open event in each league counting it (#1090), with the trend of a spy played
+ * there; empty when they cannot be read: the podium still saves.
+ */
+async function loadEventJokers(
+  userId: string,
+  eventId: string,
+  leagues: PredictionLeague[],
+  choices: PickerAthlete[],
+): Promise<EventLeagueJokersView[]> {
+  try {
+    const client = await getSessionClient();
+    const found = await getEventLeagueJokers({
+      jokers: createSupabaseLeagueJokerRepository(client),
+    }).execute({ userId, leagueIds: leagues.map((l) => l.id), event: { id: eventId, open: true } });
+    const nameOf = (id: string) =>
+      id === OTHER_ATHLETE
+        ? messages.leagueJokers.other
+        : (choices.find((c) => c.athleteId === id)?.name ?? messages.leagueJokers.other);
+    return await Promise.all(
+      found.map(async ({ leagueId, hand }) => {
+        const league = leagues.find((l) => l.id === leagueId)!;
+        const trend =
+          hand.onEvent === "spy"
+            ? await getSpyTrend({ consensus: createSupabaseConsensusRepository(client) }).execute({
+                leagueId,
+                eventId,
+              })
+            : null;
+        return {
+          leagueId,
+          name: league.name,
+          counted: league.counted,
+          hand,
+          spy: trend && {
+            total: trend.total,
+            places: (["first", "second", "third"] as const).flatMap((place) => {
+              const top = trend.places[place][0];
+              return top ? [{ name: nameOf(top.athleteId), percent: top.percent }] : [];
+            }),
+          },
+        };
+      }),
+    );
+  } catch (error) {
+    if (error instanceof UseCaseError) return [];
     throw error;
   }
 }
@@ -238,7 +262,6 @@ async function PredictionSection({
   competitionName,
   leagues,
   mine,
-  jokerElsewhere: jokerElsewhereRead,
   predictionLeagues,
 }: {
   event: EventDetail;
@@ -252,8 +275,6 @@ async function PredictionSection({
   leagues: League[] | "error";
   /** The player's prediction (read with the leagues), null when none, "error" when unreadable. */
   mine: Prediction | null | "error";
-  /** Where the joker is played when on another event, read with the prediction. */
-  jokerElsewhere: JokerSpot | null;
   /** The player's leagues counting the competition (#1068); null when unreadable. */
   predictionLeagues: PredictionLeague[] | null;
 }) {
@@ -310,27 +331,36 @@ async function PredictionSection({
   };
 
   if (open) {
-    const scale = await loadScale();
-    const jokerElsewhere = mine?.useJoker ? null : jokerElsewhereRead;
+    const [scale, jokers] = await Promise.all([
+      loadScale(),
+      mine && predictionLeagues && predictionLeagues.length > 0
+        ? loadEventJokers(user.userId, event.id, predictionLeagues, choices)
+        : [],
+    ]);
     return (
       <div className="flex flex-col gap-5">
         <PredictionForm
           eventId={event.id}
           slug={slug}
           athletes={choices}
-          initial={{ draft, useJoker: mine?.useJoker ?? false, marks }}
+          initial={{ draft, marks }}
           markUnit={event.markUnit}
           markFamily={event.markFamily}
           discipline={event.discipline}
           tolerance={event.tolerance}
           scale={scale}
-          jokerElsewhere={jokerElsewhere}
           leagues={
             predictionLeagues && {
               list: predictionLeagues,
               lockLabel: lockLabel(event.lockAt),
               save: savePredictionLeaguesAction.bind(null, slug, event.id),
             }
+          }
+          jokers={
+            <EventLeagueJokers
+              leagues={jokers}
+              play={playLeagueJokerAction.bind(null, slug, event.id)}
+            />
           }
         />
         {suggestion}
@@ -359,11 +389,6 @@ async function PredictionSection({
             ) : null;
           })}
         </dl>
-      )}
-      {mine.useJoker && (
-        <p className="mx-4 rounded-2xl bg-secondary/20 px-3.5 py-3 font-extrabold">
-          {messages.prediction.jokerUsedHere}
-        </p>
       )}
       {predictionLeagues && predictionLeagues.length > 0 && (
         <PredictionLeaguesBlock
@@ -406,15 +431,12 @@ export default async function EventPage({
   ]);
   const open = eventPhase(new Date(), event.lockAt) === "open";
   // The picker already lists the athletes of an open event for a signed-in player. Their leagues,
-  // prediction and joker do not depend on one another: read together.
+  // and prediction do not depend on one another: read together.
   const readsPrediction =
     !!choices && !(open && !canPredictRound(event.round, event.previousRounds));
-  const [leagues, mine, jokerElsewhere] = await Promise.all([
+  const [leagues, mine] = await Promise.all([
     user && open ? loadMyLeagues() : [],
     user && readsPrediction && !winner ? loadMyPrediction(user.userId, event.id) : null,
-    user && readsPrediction && open && !winner
-      ? loadJokerElsewhere(user.userId, competition.slug, event.id)
-      : null,
   ]);
   // Where the podium counts (#1068): offered while open, told once locked.
   const predictionLeagues =
@@ -563,7 +585,6 @@ export default async function EventPage({
                 competitionName={competition.name}
                 leagues={leagues}
                 mine={mine}
-                jokerElsewhere={jokerElsewhere}
                 predictionLeagues={predictionLeagues}
               />
             )}

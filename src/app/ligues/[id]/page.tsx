@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
+import { getMyLeagueJokers } from "@/application/league-jokers";
 import { getLeagueFeed } from "@/application/league-moments";
 import { getLeague } from "@/application/leagues";
 import { getMomentReactions } from "@/application/moment-reactions";
@@ -19,6 +20,7 @@ import { LeagueEventList } from "@/components/leagues/league-event-list";
 import { LeagueFeed } from "@/components/leagues/league-feed";
 import { InviteBanner } from "@/components/leagues/invite-banner";
 import { LeagueHero } from "@/components/leagues/league-hero";
+import { MyJokers, type PlayedJoker } from "@/components/leagues/league-jokers";
 import { LeaguePredict } from "@/components/leagues/league-predict";
 import { LeagueTabs } from "@/components/leagues/league-tabs";
 import { ShareInvite } from "@/components/leagues/share-invite";
@@ -29,6 +31,7 @@ import { addableFamilies } from "@/domain/league-families";
 
 import { currentCompetitionDay, loadCompetitions } from "../../competition";
 import { messages } from "../../messages.fr";
+import { publicEventReader } from "../../public-data";
 import { leaguePorts, loadLeagueEvents, loadLeaguePredict } from "../data";
 import {
   reactToMomentAction,
@@ -71,6 +74,45 @@ async function load(id: string, ports: Awaited<ReturnType<typeof leaguePorts>>) 
   }
 }
 
+/**
+ * My jokers in the league (#1090): the ones left and the ones played, each with its event; null
+ * when they cannot be read, or when the league has none.
+ */
+async function loadMyJokers(
+  leagueId: string,
+  competitionSlugs: string[],
+  ports: Awaited<ReturnType<typeof leaguePorts>>,
+) {
+  try {
+    const hand = await getMyLeagueJokers(ports).execute({ leagueId, userId: ports.userId });
+    if (hand.remaining.length === 0 && hand.used.length === 0) return null;
+    const events =
+      hand.used.length > 0
+        ? (
+            await Promise.all(
+              competitionSlugs.map((slug) => publicEventReader().listByCompetition(slug)),
+            )
+          ).flat()
+        : [];
+    const used = hand.used.map((play): PlayedJoker => {
+      const event = events.find((e) => e.id === play.eventId);
+      return {
+        joker: play.joker,
+        event: event
+          ? {
+              name: messages.events.name(event.discipline, event.gender),
+              href: `/epreuves/${event.slug}`,
+            }
+          : null,
+      };
+    });
+    return { remaining: hand.remaining, used };
+  } catch (error) {
+    if (error instanceof UseCaseError) return null;
+    throw error;
+  }
+}
+
 export default async function LeaguePage({
   params,
   searchParams,
@@ -105,6 +147,8 @@ export default async function LeaguePage({
   }
 
   const { league, members, ranking, events } = loaded;
+  const jokers =
+    tab === "classement" ? await loadMyJokers(id, league.competitionSlugs, ports) : null;
   const isOwner = league.ownerId === ports.userId;
   const families = league.families ?? [];
   const canAddFamily = isOwner && addableFamilies(families).length > 0;
@@ -231,6 +275,7 @@ export default async function LeaguePage({
                 </details>
               </>
             )}
+            {jokers && <MyJokers remaining={jokers.remaining} used={jokers.used} />}
           </>
         )}
 

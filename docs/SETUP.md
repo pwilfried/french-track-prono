@@ -125,8 +125,8 @@ npm run db:demo-players
 
 Elle peut être relancée : elle repart de zéro. Le haut du fichier `supabase/dev/demo_players.sql`
 donne les points attendus si l'admin saisit le résultat a, b, c (l'ordre de la liste de départ) :
-un podium parfait avec joker et coup de flair (28 points), un podium parfait simple (12), un joker
-sur 5 points (10), etc. `supabase db reset` efface ces joueurs.
+un podium parfait avec coup de flair (14 points), un podium parfait simple (12), un vainqueur et
+deux mal placés (5), etc. `supabase db reset` efface ces joueurs.
 
 Pour vérifier les points en une seule commande (après `npm run db:open-events`) :
 
@@ -153,7 +153,7 @@ Un seul coup et tu obtiens :
 - les **12 joueurs de démo** (`demo-1@example.test` à `demo-12@example.test`) avec e-mail confirmé,
   prêts à se connecter par lien magique (tape l'e-mail sur `/connexion`, clique le lien dans
   Mailpit à http://127.0.0.1:54324) ;
-- un prono par joueur et par épreuve (336 au total), avec joker sur la première ;
+- un prono par joueur et par épreuve (336 au total) ;
 - des **points réels** sur les épreuves terminées (`score_events` et `predictions.points_awarded`
   remplis) — le classement, les stats de profil et la grille de badges s'allument ;
 - la ligue de démo **« Démo Prono »** (publique, 12 membres, Démo Gazelle propriétaire) qui couvre
@@ -456,7 +456,7 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
     | Démo Nouveau (`demo-21@example.test`) | profil seul : aucun prono, aucune ligue, ni club | premier passage : accueil, écrans vides et leur action suivante, premier prono, rejoindre ou créer une ligue |
     | Démo Mercato (`demo-22@example.test`) | dans la ligue Manager « Démo Mercato » (4 joueurs), mercato ouvert : le tour en cours finit un jour après le chargement, le suivant est à venir | catalogue, enchères, budget, tour en cours et compte à rebours |
     | Démo Direct (`demo-23@example.test`) | dans « Démo Direct » (saison commencée sur la compétition en cours : 1re journée en cours, points d'hier déjà tombés, épreuves à venir) et dans « Démo Club du jeudi », pronos sur toute la compétition en cours | confrontation Manager en direct ; épreuve verrouillée en cours avec les pronos des amis de la ligue |
-    | Démo Joker (`demo-24@example.test`) | pronos sur la compétition finie et la compétition en cours, des points, le badge « Chasseur », son joker déjà joué sur la compétition en cours | points et classements, badges, joker déjà utilisé (plus de joker sur cette compétition) |
+    | Démo Joker (`demo-24@example.test`) | pronos sur la compétition finie et la compétition en cours, des points, le badge « Chasseur », son Double déjà joué dans « Démo Les Sprinteurs » sur la compétition en cours | points et classements, badges, « Mes jokers » d'une ligue (Double joué, quatre à jouer) |
 
     Pour garder ces états : les épreuves des compétitions finie et en cours sont rouvertes le
     temps du chargement (pronos et compositions de ces comptes), puis reprennent leurs dates ; le

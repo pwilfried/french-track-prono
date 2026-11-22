@@ -18,7 +18,6 @@ export const loadScale = cache(async (): Promise<Record<string, number>> => {
     flair_bonus: DEFAULT_RULES.flairBonus,
     flair_threshold: DEFAULT_RULES.flairThreshold,
     flair_min_players: DEFAULT_RULES.flairMinPlayers,
-    joker_multiplier: DEFAULT_RULES.jokerMultiplier,
     odds_exact: DEFAULT_RULES.oddsExact,
     odds_one_off: DEFAULT_RULES.oddsOneOff,
     odds_two_off: DEFAULT_RULES.oddsTwoOff,

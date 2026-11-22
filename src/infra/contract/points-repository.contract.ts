@@ -5,7 +5,7 @@ import { DEFAULT_RULES } from "@/domain/scoring";
 
 /**
  * A locked event of its own with an official podium (athletes[0], [1], [2] in this order) and two
- * predictions: the admin's (perfect podium, joker) and the player's (winner only, no joker).
+ * predictions: the admin's (perfect podium) and the player's (winner only).
  */
 export type PointsWorld = {
   competitionSlug: string;
@@ -34,10 +34,10 @@ export function pointsRepositoryContract(name: string, world: () => Promise<Poin
         { athleteId: w.athleteIds[1], rank: 2 },
         { athleteId: w.athleteIds[2], rank: 3 },
       ]);
-      expect(event!.predictions.map((p) => [p.userId, p.first, p.useJoker]).sort()).toEqual(
+      expect(event!.predictions.map((p) => [p.userId, p.first, p.second]).sort()).toEqual(
         [
-          [w.adminId, w.athleteIds[0], true],
-          [w.playerId, w.athleteIds[0], false],
+          [w.adminId, w.athleteIds[0], w.athleteIds[1]],
+          [w.playerId, w.athleteIds[0], w.athleteIds[3]],
         ].sort(),
       );
       expect(event!.rules).toEqual(DEFAULT_RULES);
@@ -49,10 +49,11 @@ export function pointsRepositoryContract(name: string, world: () => Promise<Poin
       expect(await w.admin.loadEvent(crypto.randomUUID())).toBeNull();
     });
 
-    it("lets an admin replace the score lines of an event, without duplicates", async () => {
+    it("lets an admin replace the score lines of an event, without duplicates, with the points of each league joker", async () => {
       const w = await world();
+      const jokers = { double: 24, all_or_nothing: 36, safety_net: 12, spy: 12, outsider: 12 };
       const lines: ScoreLine[] = [
-        { userId: w.adminId, points: 24, reasons: [{ kind: "perfect_podium" }, { kind: "joker" }] },
+        { userId: w.adminId, points: 12, reasons: [{ kind: "perfect_podium" }], jokers },
         { userId: w.playerId, points: 3, reasons: [{ kind: "exact", slot: 1 }] },
       ];
 
@@ -65,7 +66,7 @@ export function pointsRepositoryContract(name: string, world: () => Promise<Poin
     it("lists only the player's own lines of the competition", async () => {
       const w = await world();
       await w.admin.replaceEventScores(w.eventId, [
-        { userId: w.adminId, points: 24, reasons: [{ kind: "joker" }] },
+        { userId: w.adminId, points: 12, reasons: [{ kind: "perfect_podium" }] },
         { userId: w.playerId, points: 3, reasons: [{ kind: "exact", slot: 1 }] },
       ]);
 

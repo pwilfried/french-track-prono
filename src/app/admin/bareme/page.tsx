@@ -10,7 +10,7 @@ import { RuleForm } from "./rule-form";
 
 const GROUPS = {
   podium: ["exact_slot", "wrong_place", "perfect_podium"],
-  bonus: ["flair_bonus", "flair_threshold", "flair_min_players", "joker_multiplier"],
+  bonus: ["flair_bonus", "flair_threshold", "flair_min_players"],
   odds: ["odds_exact", "odds_one_off", "odds_two_off"],
   marks: ["mark_exact", "mark_near"],
 } as const;

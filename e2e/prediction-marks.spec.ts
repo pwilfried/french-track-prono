@@ -33,14 +33,11 @@ test("a player predicts a podium with a mark for each of his three athletes", as
   await expect(marks).toHaveCount(3);
   // The expected format is written under each field (#935).
   await expect(page.getByText("Format ss.cc")).toHaveCount(3);
-  // Each field is named after its athlete, and the joker switch says what it does (#931).
+  // Each field is named after its athlete (#931).
   for (const index of [0, 1, 2]) {
     const name = await athletes.nth(index).locator("span.block.font-bold").textContent();
     await expect(marks.nth(index)).toHaveAccessibleName(`Perf de ${name?.trim()}`);
   }
-  await expect(
-    page.getByRole("switch", { name: "🃏 Joker : points × 2" }),
-  ).toHaveAccessibleDescription("Un seul par compétition.");
 
   // A mark that is not a time is refused.
   await marks.nth(0).fill("vite");

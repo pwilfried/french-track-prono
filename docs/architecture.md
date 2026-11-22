@@ -65,7 +65,7 @@ Numérotées pour la planification. F11 et F12, d'abord repoussées, arrivent av
 | F5 | Classements de ligue et général, avec départage | Se comparer |
 | F6 | Back-office admin : créer compétitions et épreuves, saisir listes de départ et résultats | Faire vivre le jeu sans toucher à la base |
 | F7 | Calcul automatique des points (barème modifiable) et détail lisible (« +9 pts, vainqueur trouvé ») | Comprendre son score |
-| F8 | Joker (un par compétition, double les points d'une épreuve) | Un choix stratégique |
+| F8 | Jokers de ligue : plusieurs jokers par ligue (Double, Tout ou rien, Filet, Espion, Outsider), chacun joué une fois dans la ligue, un par épreuve, comptés au classement de la ligue seulement (v0.24, #1090 ; le joker d'une compétition, ×2, a disparu) | Un choix stratégique |
 | F9 | Bonus « coup de flair » (points en plus si on trouve un vainqueur peu choisi) | Récompenser l'audace |
 | F10 | Pronos des autres révélés après verrouillage, plus réactions emoji | Suspense et chambrage |
 | F11 | Séries en feu et badges, avec leur progression dans le profil (v0.11) | Des raisons de revenir |
@@ -82,7 +82,8 @@ Numérotées pour la planification. F11 et F12, d'abord repoussées, arrivent av
 
 Barème (modifiable en base) : 3 points par athlète à la bonne place, 1 point pour un athlète sur
 le podium mais à la mauvaise place, +3 pour un podium parfait, +2 de bonus coup de flair
-(vainqueur choisi par moins de 15 % des joueurs, avec au moins 10 pronos), joker x2.
+(vainqueur choisi par moins de 15 % des joueurs, avec au moins 10 pronos). Les jokers de ligue
+ne changent que le classement de leur ligue (voir « Jokers de ligue »).
 
 Ex æquo : les athlètes partagent la place (décision du 07/11/2026). Forfait : l'athlète ne rapporte
 rien. Reste à trancher : relais pronostiqués par équipe (pays).
@@ -197,11 +198,28 @@ Conséquences :
 
 **Pronostics (v0.3).** On compose son podium en touchant les athlètes dans l'ordre (pas de
 glisser-déposer) ; le compte à rebours passe à l'orange à 1 h et au rouge à 10 min du
-verrouillage. La base refuse un prono après `lock_at`, un athlète hors liste de départ, un
-deuxième joker dans la compétition, et la suppression d'un prono après le verrouillage.
-Un joueur n'écrit que `p1`, `p2`, `p3`, `use_joker`, `m1`, `m2` et `m3` de ses pronos (droits
+verrouillage. La base refuse un prono après `lock_at`, un athlète hors liste de départ, et la
+suppression d'un prono après le verrouillage.
+Un joueur n'écrit que `p1`, `p2`, `p3`, `m1`, `m2` et `m3` de ses pronos (droits
 colonne par colonne, #911) : l'épreuve, les points et les dates restent écrits par le serveur, et
 le verrouillage couvre aussi un changement d'épreuve.
+
+**Jokers de ligue (v0.24, #1090, décision du propriétaire du 22 nov. 2026).** Le joker devient une
+ressource de ligue. Le catalogue `jokers` (par jeu : `predictions`, `manager`, avec `active`) se
+règle dans Back-office › Jokers ; une nouvelle ligue reçoit tous les jokers actifs de son jeu à sa
+création (`league_jokers`, instantané figé), une ligue existante garde les siens ; un nouveau type
+de joker demande du code. Ligues de pronos : Double (×2), Tout ou rien (×3 sur un podium parfait,
+0 sinon), Filet (un athlète du podium mal placé compte bien placé, points et cote ; le bonus podium
+parfait reste pour un vrai), Espion (avant le verrou, la tendance des pronos des membres de la
+ligue sur l'épreuve, `event_consensus` filtré à la ligue ; sans effet sur les points, joué dès qu'il
+est activé) et Outsider (points de cote de « Autre athlète » ×2). Un joker se pose par (prono,
+ligue) dans `league_joker_plays` : une seule fois dans la ligue, un par épreuve (l'Espion compte),
+sur un prono ajouté à la ligue (#1068, sauf l'Espion), changé ou retiré jusqu'au verrou
+(`play_league_joker()`, `remove_league_joker()`), vu des autres membres après le verrou. Le calcul
+des points écrit dans `score_events.detail.jokers` ce que chaque joker fait des points
+(`jokerPoints()`, `src/domain/league-jokers.ts`) ; le classement de la ligue compte les points du
+joker posé (`withLeagueJokers()` dans `getLeagueRanking`), le général compte `points`, sans joker.
+Les fils de ligue et les trophées comptent encore sans joker.
 
 **Résultats et points (v0.4, puis #665).** L'admin saisit une seule feuille de résultats par
 épreuve (`/admin/<épreuve>/performances`) : le podium officiel des pronos en est tiré (places 1
@@ -251,9 +269,9 @@ défi ouvert qui verrouille le premier, sinon le dernier joué) : avant le verro
 dévoilé au verrouillage » ; après le résultat, les deux podiums côte à côte avec leurs points, le
 verdict (« Tu as battu FrenchTrack », « FrenchTrack gagne », « Égalité », pas de prono), la part
 des joueurs qui l'ont battu et « Partager ». Les points de FrenchTrack sont calculés avec ceux des
-joueurs (même barème, même champ pour le coup de flair, jamais de joker ni de marque :
+joueurs (même barème, même champ pour le coup de flair, jamais de marque :
 `frenchTrackScore()` dans `src/domain/frenchtrack.ts`) ; le verdict compare les points du joueur
-sur l'épreuve, joker compris. `/classement/frenchtrack` classe la saison (année civile, heure de
+sur l'épreuve au général, sans joker de ligue. `/classement/frenchtrack` classe la saison (année civile, heure de
 Paris) : victoires sur défis joués, puis points cumulés sur ces défis, ex æquo à la même place. Une fois les points calculés, le
 défi devient un moment de « Dans ma communauté », sous « FrenchTrack » (#877) : l'épreuve, la part
 des joueurs qui ont battu FrenchTrack et mon verdict, la carte mène à l'épreuve. Le moment est daté
@@ -364,11 +382,11 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 | Communauté (v0.19) | `league_moments`, `manager_moments`, `moment_reactions`, `moment_reaction_reports`, `frenchtrack_picks`, `announcements`, `polls`, `poll_votes` |
 | Notifications | `push_subscriptions`, `reminder_settings`, `reminder_log`, `program_alerts` |
 | Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_round_done`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `manager_lineup_entries`, `manager_lineup_carry_overs`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
-| Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()`, `raise_my_badge_levels()`, `event_consensus()`, `save_reminder_settings()`, `admin_replace_trophies()`, `set_prediction_leagues()` |
+| Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()`, `raise_my_badge_levels()`, `event_consensus()`, `save_reminder_settings()`, `admin_replace_trophies()`, `set_prediction_leagues()`, `play_league_joker()`, `remove_league_joker()`, `set_joker_active()` |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers` |
 
 Garanties portées par la base : pronostic impossible après `lock_at`, pronos des autres
-illisibles avant verrouillage, un seul joker par joueur et par compétition, un pronostic
+illisibles avant verrouillage, chaque joker de ligue joué une fois par ligue et un par épreuve, un pronostic
 par joueur et par épreuve, seuls les athlètes engagés sont pronostiquables.
 
 Ligues (v0.5, décisions du propriétaire dans l'issue #112) : code d'invitation de 6 caractères sans
@@ -826,7 +844,8 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 ## Cas de test du cœur
 
 Listes de cas chiffrés, référence des tests. Barème : 3 par athlète bien placé, 1 par athlète sur
-le podium mal placé, +3 podium parfait, +2 coup de flair, joker x2 (appliqué en dernier).
+le podium mal placé, +3 podium parfait, +2 coup de flair. Plus de joker au général (#1090) : les
+jokers de ligue sont plus bas (J1 à J6).
 Le schéma et le seed ont été exécutés sur Supabase local et sont couverts par des tests pgTAP. S1 à S11 sont des tests Vitest purs, S12 et S13 se testent au niveau du cas d'usage.
 
 **Calcul des points (`src/domain/scoring.ts`, tests Vitest)**
@@ -838,11 +857,11 @@ Le schéma et le seed ont été exécutés sur Supabase local et sont couverts p
 | S3 | Vainqueur trouvé, 2e et 3e inversés | 5 |
 | S4 | Trois bons athlètes, tous mal placés (rotation) | 3 |
 | S5 | Aucun athlète sur le podium | 0 |
-| S6 | Podium parfait avec joker | 24 |
+| S6 | Podium parfait, Double joué dans une ligue | 12 au général, 24 dans la ligue (J1) |
 | S7 | Vainqueur trouvé, choisi par 1 joueur sur 20, autres hors podium | 5 (3 + flair 2) |
 | S8 | Même cas que S7 avec seulement 9 pronos sur l'épreuve | 3 (pas de flair sous 10 pronos) |
 | S9 | Vainqueur choisi par exactement 15 % des joueurs | pas de flair (seuil strict) |
-| S10 | Podium parfait + flair + joker | 28 (maximum possible) |
+| S10 | Podium parfait + flair | 14 (maximum sans cotes ni perfs) |
 | S11 | Ex æquo à la 3e place : le prono place l'un ou l'autre des deux en 3e | 3 points de place pour les deux cas : les ex æquo partagent la place (décision du 07/11/2026, #112) |
 | S12 | Enregistrer deux fois le même calcul | mêmes points, aucune ligne en double |
 | S13 | Calculer une épreuve sans résultat saisi | erreur explicite |
@@ -851,7 +870,7 @@ Le schéma et le seed ont été exécutés sur Supabase local et sont couverts p
 proposé (ou « Autre athlète ») sur le podium rapporte sa cote × 3 à la bonne place, × 2 à une place
 d'écart, × 1 à deux places, arrondi au point. « Autre athlète » est juste quand un athlète non
 proposé finit à cette place. Une perf rapporte 5 dans la tolérance de la discipline, 2 dans le
-double. Le joker double le tout. Ces valeurs sont des lignes de `scoring_rules`, modifiables dans
+double. Ces valeurs sont des lignes de `scoring_rules`, modifiables dans
 `/admin/bareme`. Cas : cotes A 2, B 3, C 1,5, autre 8 ; résultat A 1er (10.79), B 2e (10.87),
 X 3e non proposé, C 4e ; tolérance 0,05.
 
@@ -861,7 +880,20 @@ X 3e non proposé, C 4e ; tolérance 0,05.
 | S15 | C, A, autre athlète | 32 (1 + 3, cotes 2 × 2 + 8 × 3) |
 | S16 | B, C, A avec A seul proposé à 1,8 | 4 (1 + 1, cote 1,8 × 1 = 2) |
 | S17 | A, B, C avec perfs 10.81 et 10.95 | 28 (21 + 5 + 2) |
-| S18 | A, B, C, joker, perf 10.81 | 52 ((21 + 5) × 2) |
+| S18 | A, B, C, perf 10.81, Double joué dans une ligue | 26 au général, 52 dans la ligue ((21 + 5) × 2) |
+
+**Jokers de ligue (v0.24, #1090, `src/domain/league-jokers.ts`, tests Vitest).** Ce que chaque joker
+fait des points d'une épreuve, dans le classement de sa ligue seulement. Résultat A, B, C, D ; pour
+J4 et J5, le cas des cotes ci-dessus (A 2, B 3, C 1,5, autre 8 ; X non proposé 3e, C 4e).
+
+| # | Situation | Points dans la ligue |
+|---|---|---|
+| J1 | Podium parfait, Double | 24 |
+| J2 | Tout ou rien : podium parfait ; A, C, B | 36 ; 0 |
+| J3 | Filet : A, C, B ; B, C, A ; podium parfait | 9 ; 9 (sans bonus podium parfait) ; 12 |
+| J4 | Filet : C, A, autre athlète | 36 (A 3 + 2 × 3, autre 3 + 8 × 3) |
+| J5 | Outsider : C, A, autre athlète ; A, B, C | 56 (1 + 3 + 4 + 24 × 2) ; 21 (rien ne change) |
+| J6 | Espion : A, C, B | 5 (sans effet) |
 
 **Points Manager (v0.15, tests Vitest).** Tables World Athletics, édition 2025
 (`src/domain/world-athletics-points.ts`, #428) ; bonus (`src/domain/manager-bonus.ts`, #430) et
@@ -945,11 +977,11 @@ résultats (`src/domain/result-import.ts`, #666).
 | R4 | Lire le prono d'un autre joueur après verrouillage | visible |
 | R5 | Pronostiquer un athlète non engagé dans l'épreuve | refusé |
 | R6 | Même athlète à deux places du podium | refusé |
-| R7 | Deuxième joker dans la même compétition | refusé |
+| R7 | Le même joker de ligue joué deux fois dans la ligue | refusé (FT045) ; un autre joker sur la même épreuve remplace le premier, l'Espion ne se retire pas (FT046) |
 | R8 | Rejoindre une ligue avec un code inconnu | erreur |
 | R9 | Départage : égalité de points | podiums parfaits, puis vainqueurs trouvés |
 | R10 | Résultat enregistré (`set_results` ou feuille de résultats) avant `lock_at` | l'épreuve se verrouille tout de suite (`lock_at = now()`, ligne `lock_event` au journal admin) : plus aucun prono, ceux des autres visibles ; un résultat effacé ne verrouille rien (#1063) |
 
-**Domaine TypeScript** : aperçu des points possibles (mêmes cas que S1 à S6), état d'une épreuve
+**Domaine TypeScript** : aperçu des points possibles (mêmes cas que S1 à S5), état d'une épreuve
 selon l'heure (ouverte, verrouillée, terminée), compte à rebours (limites : 1 s avant, pile
 au verrouillage, après).

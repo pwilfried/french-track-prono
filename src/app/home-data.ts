@@ -21,6 +21,7 @@ import {
   createSupabaseConsensusRepository,
   createSupabaseFrenchTrackRepository,
   createSupabaseFunFactRepository,
+  createSupabaseLeagueJokerRepository,
   createSupabaseLeagueRepository,
   createSupabaseManagerBids,
   createSupabaseManagerLeagueRepository,
@@ -116,7 +117,11 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
         id: league.id,
         rows:
           (await safely(() =>
-            getLeagueRanking({ ranking, leagues: leagueRepository }).execute({
+            getLeagueRanking({
+              ranking,
+              leagues: leagueRepository,
+              jokers: createSupabaseLeagueJokerRepository(client),
+            }).execute({
               leagueId: league.id,
               competitionSlugs: league.competitionSlugs,
               families: league.families,

@@ -13,7 +13,6 @@ type Row = {
   p1: string | null;
   p2: string | null;
   p3: string | null;
-  use_joker: boolean;
   profiles: { pseudo: string; bib_number: number; bib_color: string };
   reactions: { user_id: string; emoji: string }[];
 };
@@ -28,7 +27,7 @@ export function createSupabaseRevealRepository(client: SupabaseClient): RevealRe
 
       const { data, error } = await client
         .from("predictions")
-        .select("id, user_id, p1, p2, p3, use_joker, profiles!predictions_user_id_fkey!inner(pseudo, bib_number, bib_color), reactions(user_id, emoji)")
+        .select("id, user_id, p1, p2, p3, profiles!predictions_user_id_fkey!inner(pseudo, bib_number, bib_color), reactions(user_id, emoji)")
         .eq("event_id", eventId)
         .returns<Row[]>();
       if (error) throw new UseCaseError("REVEAL_UNAVAILABLE");
@@ -54,7 +53,6 @@ export function createSupabaseRevealRepository(client: SupabaseClient): RevealRe
             pseudo: row.profiles.pseudo,
             bib: bibOf(row.profiles.bib_number, row.profiles.bib_color),
             podium: { first: slotFromRow(row.p1), second: slotFromRow(row.p2), third: slotFromRow(row.p3) },
-            useJoker: row.use_joker,
             flair: flair.has(row.user_id),
             reactions: row.reactions.flatMap((r) =>
               isReaction(r.emoji) ? [{ userId: r.user_id, reaction: r.emoji }] : [],

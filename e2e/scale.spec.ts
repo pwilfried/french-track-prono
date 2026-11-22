@@ -31,13 +31,14 @@ test("an admin adjusts the points of a mark within the tolerance", async ({ page
   // On a phone, the menu is a drop-down that names the current section.
   await expect(adminMenu(page).locator("summary")).toHaveText("Tableau de bord");
   await adminMenu(page).locator("summary").click();
-  // 15 with « Joueurs démo »: the e2e app plays pre-production (#637, playwright.config.ts).
+  // 16 with « Joueurs démo »: the e2e app plays pre-production (#637, playwright.config.ts).
   // Each link is named after its page (#950).
   const sections = [
     "Tableau de bord",
     "Compétitions",
     "Résultats",
     "Barème",
+    "Jokers",
     "Manager",
     "Trophées",
     "Athlètes",

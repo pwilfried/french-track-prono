@@ -94,24 +94,19 @@ select ('00000000-0000-4000-9000-' || lpad(n::text, 12, '0'))::uuid, pseudo, bib
 from demo;
 
 -- 3. Predictions on every event of the championship: each player picks one of twelve podium
--- patterns, deterministic so the leaderboard is reproducible. One joker per player, on the first
--- event of their list. The podium letters a/b/c name the first three athletes of the start list
+-- patterns, deterministic so the leaderboard is reproducible. The podium letters a/b/c name the first three athletes of the start list
 -- (by athlete_id).
 create temp table podium_patterns (k int, pattern text) on commit drop;
 insert into podium_patterns values
   (1, 'abc'), (2, 'bac'), (3, 'cab'), (4, 'bca'), (5, 'cba'), (6, 'bac'),
   (7, 'cab'), (8, 'bca'), (9, 'cba'), (10, 'bac'), (11, 'cab'), (12, 'bca');
 
-insert into predictions (user_id, event_id, competition_id, p1, p2, p3, use_joker)
+insert into predictions (user_id, event_id, competition_id, p1, p2, p3)
 select ('00000000-0000-4000-9000-' || lpad(d.n::text, 12, '0'))::uuid,
        e.id, e.competition_id,
        x.a[ascii(substr(p.pattern, 1, 1)) - 96],
        x.a[ascii(substr(p.pattern, 2, 1)) - 96],
-       x.a[ascii(substr(p.pattern, 3, 1)) - 96],
-       -- Joker on the first event of the championship (earliest starts_at).
-       e.id = (select id from events
-               where competition_id = e.competition_id
-               order by starts_at, slug limit 1)
+       x.a[ascii(substr(p.pattern, 3, 1)) - 96]
 from demo d
 join podium_patterns p on p.k = d.n
 join events e on e.competition_id = (select id from competitions where slug = 'ultimate-championship-2026')
@@ -131,7 +126,7 @@ with ranked as (
 ),
 -- Each slot is exact (e), or on the podium at another place (o), or neither.
 per_slot as (
-  select pr.user_id, pr.event_id, pr.competition_id, pr.use_joker,
+  select pr.user_id, pr.event_id, pr.competition_id,
          coalesce(pr.p1 = r1.athlete_id, false) as e1,
          coalesce(pr.p2 = r2.athlete_id, false) as e2,
          coalesce(pr.p3 = r3.athlete_id, false) as e3,
@@ -153,15 +148,13 @@ per_pred as (
 ),
 scored as (
   select user_id, event_id, competition_id,
-         (exact * 3 + wrong_place + case when exact = 3 then 4 else 0 end)
-         * case when use_joker then 2 else 1 end as points,
+         exact * 3 + wrong_place + case when exact = 3 then 4 else 0 end as points,
          -- The reasons as the scoring domain writes them (ScoreReason), so the pages explain the
          -- points like they do for real ones (#491).
          (case when e1 then '[{"kind":"exact","slot":1}]' when o1 then '[{"kind":"on_podium","slot":1}]' else '[]' end)::jsonb
       || (case when e2 then '[{"kind":"exact","slot":2}]' when o2 then '[{"kind":"on_podium","slot":2}]' else '[]' end)::jsonb
       || (case when e3 then '[{"kind":"exact","slot":3}]' when o3 then '[{"kind":"on_podium","slot":3}]' else '[]' end)::jsonb
-      || (case when exact = 3 then '[{"kind":"perfect_podium"}]' else '[]' end)::jsonb
-      || (case when use_joker then '[{"kind":"joker"}]' else '[]' end)::jsonb as reasons
+      || (case when exact = 3 then '[{"kind":"perfect_podium"}]' else '[]' end)::jsonb as reasons
   from per_pred
 )
 insert into score_events (user_id, event_id, competition_id, source, points, reason, detail)
@@ -188,22 +181,16 @@ from (
        + case when (case when pr.p1 = r1.athlete_id then 1 else 0 end
                   + case when pr.p2 = r2.athlete_id then 1 else 0 end
                   + case when pr.p3 = r3.athlete_id then 1 else 0 end) = 3 then 4 else 0 end
-         as raw_points,
-         pr.use_joker
+         as raw_points
   from predictions pr
   join events e on e.id = pr.event_id and e.status = 'finished'
   left join ranked r1 on r1.event_id = pr.event_id and r1.rank = 1
   left join ranked r2 on r2.event_id = pr.event_id and r2.rank = 2
   left join ranked r3 on r3.event_id = pr.event_id and r3.rank = 3
-) s (user_id, event_id, points, use_joker)
+) s (user_id, event_id, points)
 where pr.user_id = s.user_id and pr.event_id = s.event_id
   and s.points > 0
   and pr.user_id::text like '00000000-0000-4000-9000-%';
-
-update predictions
-set points_awarded = points_awarded * 2
-where use_joker and points_awarded is not null
-  and user_id::text like '00000000-0000-4000-9000-%';
 
 -- 5. One demo prono league, twelve members, Démo Gazelle owns it, covers the Ultimate Championship.
 with league as (

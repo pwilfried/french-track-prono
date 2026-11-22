@@ -244,6 +244,40 @@ describe("getLeagueRanking", () => {
     ]);
   });
 
+  it("counts the points of the joker a member played in the league, never in the general ranking", async () => {
+    // Given Ana's perfect podium (12) with the Double played in the league, Bob's 15 without joker
+    const lines = [
+      {
+        ...line("ana", 12, true, "e1"),
+        jokers: { double: 24, all_or_nothing: 36, safety_net: 12, spy: 12, outsider: 12 },
+      },
+      line("bob", 15, false, "e1"),
+    ];
+    const jokers = {
+      plays: async () => [{ userId: "ana", eventId: "e1", joker: "double" as const }],
+    };
+
+    // When the league and the general rankings are read
+    const league = await getLeagueRanking({
+      ranking: ranking(lines),
+      leagues: leagues([member("ana"), member("bob")]),
+      jokers,
+    }).execute({ leagueId: "l1", competitionSlugs: ["c"] });
+    const general = await getGeneralRanking({ ranking: ranking(lines) }).execute({
+      competitionSlugs: ["c"],
+    });
+
+    // Then Ana leads the league with 24, and stays behind Bob in the general ranking with 12
+    expect(league.map((r) => [r.userId, r.points])).toEqual([
+      ["ana", 24],
+      ["bob", 15],
+    ]);
+    expect(general.map((r) => [r.userId, r.points])).toEqual([
+      ["bob", 15],
+      ["ana", 12],
+    ]);
+  });
+
   it("adds up the points of all the league's competitions", async () => {
     const result = await getLeagueRanking({
       ranking: ranking([], {

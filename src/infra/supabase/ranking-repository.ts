@@ -4,13 +4,14 @@ import { UseCaseError } from "@/application/errors";
 import type { RankingLine, RankingRepository } from "@/application/rankings";
 import { bibOf } from "@/domain/bib";
 import type { DisciplineFamily } from "@/domain/discipline";
+import type { JokerPoints } from "@/domain/league-jokers";
 import type { ScoreReason } from "@/domain/scoring";
 
 type Row = {
   user_id: string;
   event_id: string;
   points: number;
-  detail: { reasons?: ScoreReason[] };
+  detail: { reasons?: ScoreReason[]; jokers?: JokerPoints };
   profiles: {
     pseudo: string;
     bib_number: number;
@@ -43,6 +44,7 @@ export function createSupabaseRankingRepository(client: SupabaseClient): Ranking
           ...(row.profiles.club ? { club: row.profiles.club.name, clubId: row.profiles.club.id } : {}),
           points: row.points,
           reasons: row.detail.reasons ?? [],
+          ...(row.detail.jokers ? { jokers: row.detail.jokers } : {}),
           eventId: row.event_id,
           eventStartsAt: new Date(row.events.starts_at).toISOString(),
           eventLockAt: new Date(row.events.lock_at).toISOString(),

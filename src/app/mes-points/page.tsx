@@ -119,14 +119,10 @@ function MyPointsList({ mine, events }: { mine: MyPoints; events: EventSummary[]
                     <span className="flex flex-wrap gap-1.5">
                       {pointsReasonLabels(line.reasons).map((label) => (
                         <span
-                          key={label.text}
-                          className={
-                            label.joker
-                              ? "rounded-full bg-secondary/50 px-2.5 py-0.5 text-xs font-bold"
-                              : "rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold"
-                          }
+                          key={label}
+                          className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold"
                         >
-                          {label.text}
+                          {label}
                         </span>
                       ))}
                     </span>

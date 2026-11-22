@@ -9,7 +9,7 @@ export interface ScoringRuleRepository {
   set(key: string, value: number): Promise<"saved" | "not_admin" | "unknown">;
 }
 
-/** The order the back-office shows the scale in: the podium, the flair and joker, then v0.9. */
+/** The order the back-office shows the scale in: the podium, the flair, then v0.9. */
 export const RULE_ORDER = [
   "exact_slot",
   "wrong_place",
@@ -17,7 +17,6 @@ export const RULE_ORDER = [
   "flair_bonus",
   "flair_threshold",
   "flair_min_players",
-  "joker_multiplier",
   "odds_exact",
   "odds_one_off",
   "odds_two_off",

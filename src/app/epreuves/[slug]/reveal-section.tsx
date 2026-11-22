@@ -18,8 +18,10 @@ import { RevealedPredictionCard } from "@/components/reveal/revealed-prediction-
 import type { EventDetail } from "@/domain/event";
 import { OTHER_ATHLETE } from "@/domain/podium-draft";
 import { reactionCounts, type Reaction } from "@/domain/reveal";
+import type { PredictionJoker } from "@/domain/league-jokers";
 import {
   createSupabaseConsensusRepository,
+  createSupabaseLeagueJokerRepository,
   createSupabaseLeagueRepository,
   createSupabaseRevealRepository,
   type CurrentUser,
@@ -33,14 +35,23 @@ import { reactAction } from "./react-action";
 async function load(
   event: EventDetail,
   requested: string | undefined,
-): Promise<(EventReveal & EventConsensus & { leagues: League[]; leagueId?: string }) | "error"> {
+): Promise<
+  | (EventReveal &
+      EventConsensus & {
+        leagues: League[];
+        leagueId?: string;
+        /** The joker each member played on the event in the league shown (#1090). */
+        jokers: Map<string, PredictionJoker>;
+      })
+  | "error"
+> {
   try {
     const client = await getSessionClient();
     const leagueRepository = createSupabaseLeagueRepository(client);
     const leagues = await listMyLeagues({ leagues: leagueRepository }).execute();
     const leagueIds = leagues.map((league) => league.id);
     const leagueId = revealFilter(requested, leagueIds);
-    const [reveal, consensus] = await Promise.all([
+    const [reveal, consensus, plays] = await Promise.all([
       listEventPredictions({
         reveal: createSupabaseRevealRepository(client),
         leagues: leagueRepository,
@@ -53,8 +64,12 @@ async function load(
         leagueIds,
         official: event.results,
       }),
+      leagueId ? createSupabaseLeagueJokerRepository(client).plays(leagueId) : [],
     ]);
-    return { ...reveal, ...consensus, leagues, leagueId };
+    const jokers = new Map(
+      plays.filter((p) => p.eventId === event.id).map((p) => [p.userId, p.joker] as const),
+    );
+    return { ...reveal, ...consensus, leagues, leagueId, jokers };
   } catch (error) {
     if (error instanceof UseCaseError) return "error";
     throw error;
@@ -91,7 +106,7 @@ export async function RevealSection({
     );
   }
 
-  const { predictions, others, consensus, counts, leagues, leagueId } = loaded;
+  const { predictions, others, consensus, counts, leagues, leagueId, jokers } = loaded;
   const names = new Map(event.entries.map((entry) => [entry.athleteId, entry.name]));
   names.set(OTHER_ATHLETE, messages.picker.other);
   const nameOf = (athleteId: string) => names.get(athleteId) ?? "?";
@@ -164,7 +179,13 @@ export async function RevealSection({
       ) : (
         <>
           {predictions.length > 0 && (
-            <PredictionList predictions={predictions} slug={slug} user={user} nameOf={nameOf} />
+            <PredictionList
+              predictions={predictions}
+              slug={slug}
+              user={user}
+              nameOf={nameOf}
+              jokers={jokers}
+            />
           )}
           {others.length > 0 && (
             <details className="group">
@@ -175,7 +196,13 @@ export async function RevealSection({
                 <span className="hidden group-open:inline">{messages.reveal.hideOthers}</span>
               </summary>
               <div className="mt-2.5">
-                <PredictionList predictions={others} slug={slug} user={user} nameOf={nameOf} />
+                <PredictionList
+                  predictions={others}
+                  slug={slug}
+                  user={user}
+                  nameOf={nameOf}
+                  jokers={jokers}
+                />
               </div>
             </details>
           )}
@@ -191,16 +218,19 @@ function PredictionList({
   slug,
   user,
   nameOf,
+  jokers,
 }: {
   predictions: RevealedPrediction[];
   slug: string;
   user: CurrentUser;
   nameOf: (athleteId: string) => string;
+  jokers: Map<string, PredictionJoker>;
 }) {
   return (
     <ul className="mx-4 flex flex-col gap-2.5">
       {predictions.map((prediction) => {
         const mine = prediction.userId === user.userId;
+        const joker = jokers.get(prediction.userId);
         const counts = reactionCounts(prediction.reactions.map((r) => r.reaction));
         const myReaction: Reaction | null =
           prediction.reactions.find((r) => r.userId === user.userId)?.reaction ?? null;
@@ -210,7 +240,7 @@ function PredictionList({
             pseudo={prediction.pseudo}
             bib={prediction.bib}
             podium={prediction.podium}
-            useJoker={prediction.useJoker}
+            joker={joker ? messages.leagueJokers.name[joker] : null}
             mine={mine}
             flair={prediction.flair}
             nameOf={nameOf}

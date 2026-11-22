@@ -2,20 +2,18 @@ import { describe, expect, it } from "vitest";
 
 import { pointsReasonLabels } from "./points-labels";
 
-const texts = (...args: Parameters<typeof pointsReasonLabels>) =>
-  pointsReasonLabels(...args).map((label) => label.text);
+const texts = pointsReasonLabels;
 
 describe("pointsReasonLabels", () => {
-  it("shows a perfect podium as one label, with the joker", () => {
+  it("shows a perfect podium as one label", () => {
     expect(
       texts([
         { kind: "exact", slot: 1 },
         { kind: "exact", slot: 2 },
         { kind: "exact", slot: 3 },
         { kind: "perfect_podium" },
-        { kind: "joker" },
       ]),
-    ).toEqual(["Podium parfait", "Joker ×2"]);
+    ).toEqual(["Podium parfait"]);
   });
 
   it("sums the points won with the odds and with the marks", () => {
@@ -42,12 +40,5 @@ describe("pointsReasonLabels", () => {
 
   it("explains zero points", () => {
     expect(texts([])).toEqual(["Aucun athlète sur le podium"]);
-  });
-
-  it("marks the joker label", () => {
-    expect(pointsReasonLabels([{ kind: "joker" }]).at(-1)).toEqual({
-      text: "Joker ×2",
-      joker: true,
-    });
   });
 });

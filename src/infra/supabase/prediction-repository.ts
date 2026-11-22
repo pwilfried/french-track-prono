@@ -11,7 +11,6 @@ type Row = {
   p1: string | null;
   p2: string | null;
   p3: string | null;
-  use_joker: boolean;
   m1: number | string | null;
   m2: number | string | null;
   m3: number | string | null;
@@ -28,7 +27,6 @@ function toPrediction(row: Row): Prediction {
     userId: row.user_id,
     eventId: row.event_id,
     podium: { first: slotFromRow(row.p1), second: slotFromRow(row.p2), third: slotFromRow(row.p3) },
-    useJoker: row.use_joker,
     // Postgres numeric may come back as a string.
     ...(row.m1 !== null || row.m2 !== null || row.m3 !== null
       ? { marks: { first: num(row.m1), second: num(row.m2), third: num(row.m3) } }
@@ -42,7 +40,7 @@ export function createSupabasePredictionRepository(client: SupabaseClient): Pred
     async find(userId, eventId) {
       const { data, error } = await client
         .from("predictions")
-        .select("user_id, event_id, p1, p2, p3, use_joker, m1, m2, m3")
+        .select("user_id, event_id, p1, p2, p3, m1, m2, m3")
         .eq("user_id", userId)
         .eq("event_id", eventId)
         .maybeSingle<Row>();
@@ -53,7 +51,7 @@ export function createSupabasePredictionRepository(client: SupabaseClient): Pred
     async listForCompetition(userId, competitionSlug) {
       const { data, error } = await client
         .from("predictions")
-        .select("user_id, event_id, p1, p2, p3, use_joker, m1, m2, m3, events!inner(competitions!inner(slug))")
+        .select("user_id, event_id, p1, p2, p3, m1, m2, m3, events!inner(competitions!inner(slug))")
         .eq("user_id", userId)
         .eq("events.competitions.slug", competitionSlug)
         .returns<Row[]>();
@@ -62,13 +60,12 @@ export function createSupabasePredictionRepository(client: SupabaseClient): Pred
     },
 
     async save(prediction) {
-      // A player may only update the podium, the joker and the marks (#911): an upsert would also
+      // A player may only update the podium and the marks (#911): an upsert would also
       // rewrite user_id and event_id, so the row is updated first, and created when it is missing.
       const picks = {
         p1: slotToRow(prediction.podium.first),
         p2: slotToRow(prediction.podium.second),
         p3: slotToRow(prediction.podium.third),
-        use_joker: prediction.useJoker,
         m1: prediction.marks?.first ?? null,
         m2: prediction.marks?.second ?? null,
         m3: prediction.marks?.third ?? null,
@@ -104,8 +101,6 @@ export function createSupabasePredictionRepository(client: SupabaseClient): Pred
       if (error.code === "FT006") return "athlete_not_proposed";
       // 23503: a foreign key to `entries` (event, athlete) failed.
       if (error.code === "23503" && where.includes("entries")) return "athlete_not_in_event";
-      // 23505: the unique index of the single joker.
-      if (error.code === "23505" && where.includes("one_joker_per_competition")) return "joker_already_used";
       // FT031: a mark outside the plausible range of the event's discipline (#702); 23514 on the
       // bounds of a stored mark, 22003 for a number too long for the column.
       if (error.code === "FT031" || error.code === "22003") return "mark_out_of_range";

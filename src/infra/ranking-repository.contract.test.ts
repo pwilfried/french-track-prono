@@ -29,8 +29,9 @@ const lines = (
     userId: ana,
     pseudo: anaPseudo,
     bib: { number: 7, color: "blue" },
-    points: 24,
-    reasons: [{ kind: "perfect_podium" }, { kind: "joker" }],
+    points: 12,
+    reasons: [{ kind: "perfect_podium" }],
+    jokers: { double: 24, all_or_nothing: 36, safety_net: 12, spy: 12, outsider: 12 },
     eventId,
     eventStartsAt,
     eventLockAt,
@@ -105,7 +106,7 @@ if (url && key) {
         where id = '${l.userId}'`);
       sql(`insert into score_events (user_id, competition_id, event_id, source, points, reason, detail)
         select '${l.userId}', competition_id, id, 'prediction', ${l.points}, 'prediction',
-               '${JSON.stringify({ reasons: l.reasons })}'::jsonb
+               '${JSON.stringify({ reasons: l.reasons, ...(l.jokers ? { jokers: l.jokers } : {}) })}'::jsonb
         from events where id = '${eventId}'`);
     }
     return { competitionSlug, expected, reader: readerOf(bob.client) };

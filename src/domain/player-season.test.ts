@@ -23,18 +23,17 @@ describe("season stats of the profile", () => {
   const lines = [
     line("a", 1, 12, [{ kind: "exact", slot: 1 }, { kind: "perfect_podium" }]),
     line("b", 2, 0, [], "middle"),
-    line("c", 3, 5, [{ kind: "exact", slot: 1 }, { kind: "joker" }], "middle"),
+    line("c", 3, 5, [{ kind: "exact", slot: 1 }], "middle"),
     line("d", 4, 3, [{ kind: "odds", slot: 1, odds: 6, multiplier: 2, points: 3 }], "throws"),
   ];
 
-  it("counts perfect podiums, winners, success and the joker", () => {
+  it("counts perfect podiums, winners and success", () => {
     expect(seasonStats(lines, 6)).toMatchObject({
       predictions: 6,
       perfectPodiums: 1,
       winners: 2,
       successRate: 75,
       bestStreak: 2,
-      jokerPlayed: true,
     });
   });
 
@@ -59,7 +58,6 @@ describe("season stats of the profile", () => {
       winners: 0,
       successRate: 0,
       bestStreak: 0,
-      jokerPlayed: false,
       curve: [],
       bestShot: null,
     });

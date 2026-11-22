@@ -6,18 +6,16 @@ import { OTHER_ATHLETE } from "@/domain/podium-draft";
 import type { EventReader } from "./list-events";
 import {
   countPredictions,
-  findMyJokerElsewhere,
   getMyPredictionHistory,
   listMyEventMarks,
   listMyPredictions,
 } from "./list-my-predictions";
 import type { Prediction, PredictionRepository } from "./save-prediction";
 
-const prediction = (userId: string, eventId: string, useJoker = false): Prediction => ({
+const prediction = (userId: string, eventId: string): Prediction => ({
   userId,
   eventId,
   podium: { first: "a", second: "b", third: "c" },
-  useJoker,
 });
 
 function repositoryWith(all: Prediction[]): PredictionRepository {
@@ -29,8 +27,8 @@ function repositoryWith(all: Prediction[]): PredictionRepository {
 }
 
 describe("listMyPredictions", () => {
-  it("returns the predictions of the player with the joker flag", async () => {
-    const mine = [prediction("me", "e1", true), prediction("me", "e2")];
+  it("returns the predictions of the player", async () => {
+    const mine = [prediction("me", "e1"), prediction("me", "e2")];
     const useCase = listMyPredictions({ predictions: repositoryWith(mine) });
 
     expect(await useCase.execute({ userId: "me", competitionSlug: "c" })).toEqual(mine);
@@ -50,10 +48,10 @@ describe("listMyPredictions", () => {
 const noNames = { namesOf: async () => [] };
 
 describe("listMyEventMarks", () => {
-  it("gives each of my predicted events its joker and its points once they are computed", async () => {
+  it("gives each of my predicted events its points once they are computed", async () => {
     // Given two predictions of mine, the points computed for the first event only
     const useCase = listMyEventMarks({
-      predictions: repositoryWith([prediction("me", "e1", true), prediction("me", "e2")]),
+      predictions: repositoryWith([prediction("me", "e1"), prediction("me", "e2")]),
       points: {
         listMine: async () => [{ userId: "me", eventId: "e1", points: 12, reasons: [] }],
       },
@@ -67,12 +65,11 @@ describe("listMyEventMarks", () => {
     expect(marks).toEqual([
       {
         eventId: "e1",
-        joker: true,
         points: 12,
         hits: { exact: 0, onPodium: 0, perfect: false },
         podium: [null, null, null],
       },
-      { eventId: "e2", joker: false, points: null, hits: null, podium: [null, null, null] },
+      { eventId: "e2", points: null, hits: null, podium: [null, null, null] },
     ]);
   });
 
@@ -114,7 +111,6 @@ describe("listMyEventMarks", () => {
           userId: "me",
           eventId: "e1",
           podium: { first: "a", second: "b", third: OTHER_ATHLETE },
-          useJoker: false,
         },
       ]),
       points: { listMine: async () => [] },
@@ -221,7 +217,7 @@ describe("getMyPredictionHistory", () => {
     predictions: {
       ...repositoryWith([]),
       listForCompetition: async (_: string, slug: string) =>
-        (byCompetition[slug] ?? []).map((e) => prediction("me", e.id, e.id === "e1")),
+        (byCompetition[slug] ?? []).map((e) => prediction("me", e.id)),
     },
     events,
     points: {
@@ -243,7 +239,6 @@ describe("getMyPredictionHistory", () => {
     ]);
     expect(lines[2]).toMatchObject({
       competitionSlug: "c1",
-      joker: true,
       picks: [
         { name: "Athlète A", hit: "exact" },
         { name: "Athlète B", hit: "missed" },
@@ -263,67 +258,5 @@ describe("getMyPredictionHistory", () => {
 
     expect(lines.map((l) => l.eventSlug)).toEqual(["e3-slug"]);
     expect(reads).toEqual(["e3-slug"]);
-  });
-});
-
-describe("findMyJokerElsewhere", () => {
-  const event = (id: string, lockAt: string): EventSummary => ({
-    id,
-    slug: `${id}-slug`,
-    discipline: "200 m",
-    gender: "M",
-    startsAt: lockAt,
-    lockAt,
-    isFeatured: false,
-    status: "upcoming",
-    round: "final",
-  });
-  const events = (list: EventSummary[]) => ({ listByCompetition: async () => list });
-  const now = new Date("2026-11-15T12:00:00Z");
-
-  it("names the other event of the competition where the joker is played, still movable before its lock", async () => {
-    // Given my joker on e1, still open, and a prediction without joker on e2
-    const useCase = findMyJokerElsewhere({
-      predictions: repositoryWith([prediction("me", "e1", true), prediction("me", "e2")]),
-      events: events([event("e1", "2026-11-16T10:00:00Z"), event("e2", "2026-11-16T12:00:00Z")]),
-    });
-
-    // When I open e2
-    const found = await useCase.execute({ userId: "me", competitionSlug: "c", eventId: "e2", now });
-
-    // Then the joker is said to be on e1, and it can be moved
-    expect(found).toEqual({
-      eventSlug: "e1-slug",
-      discipline: "200 m",
-      gender: "M",
-      movable: true,
-    });
-  });
-
-  it("says the joker can no longer move once its event is locked", async () => {
-    const useCase = findMyJokerElsewhere({
-      predictions: repositoryWith([prediction("me", "e1", true)]),
-      events: events([event("e1", "2026-11-14T10:00:00Z")]),
-    });
-
-    const found = await useCase.execute({ userId: "me", competitionSlug: "c", eventId: "e2", now });
-
-    expect(found?.movable).toBe(false);
-  });
-
-  it("finds nothing when the joker is on this event or not played", async () => {
-    const list = events([event("e1", "2026-11-16T10:00:00Z")]);
-    const onThisOne = findMyJokerElsewhere({
-      predictions: repositoryWith([prediction("me", "e1", true)]),
-      events: list,
-    });
-    const notPlayed = findMyJokerElsewhere({
-      predictions: repositoryWith([prediction("me", "e1")]),
-      events: list,
-    });
-
-    const input = { userId: "me", competitionSlug: "c", eventId: "e1", now };
-    expect(await onThisOne.execute(input)).toBeNull();
-    expect(await notPlayed.execute(input)).toBeNull();
   });
 });

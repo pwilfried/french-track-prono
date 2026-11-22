@@ -13,12 +13,11 @@ import { UseCaseError } from "./errors";
 const NOW = new Date("2026-09-12T20:00:00Z");
 const LOCKED = "2026-09-12T19:00:00Z";
 
-const pick = (userId: string, first: string, second: string, third: string, useJoker = false) => ({
+const pick = (userId: string, first: string, second: string, third: string) => ({
   userId,
   first,
   second,
   third,
-  useJoker,
 });
 
 function repository(event: EventToScore | null, outcome: "saved" | "not_admin" = "saved") {
@@ -44,7 +43,7 @@ const scoredEvent = (overrides: Partial<EventToScore> = {}): EventToScore => ({
     { athleteId: "C", rank: 3 },
   ],
   predictions: [
-    pick("anna", "A", "B", "C", true),
+    pick("anna", "A", "B", "C"),
     pick("bob", "A", "C", "X"),
     pick("cleo", "X", "Y", "Z"),
   ],
@@ -62,18 +61,27 @@ const codeOf = async (promise: Promise<unknown>) => {
 };
 
 describe("computeEventPoints", () => {
-  it("stores one score line per prediction, with the reasons", async () => {
+  it("stores one score line per prediction, with the reasons and the points of each league joker", async () => {
     const { points, stored } = repository(scoredEvent());
 
     await computeEventPoints({ points, now: () => NOW }).execute({ eventId: "e1" });
 
     const lines = stored.get("e1")!;
     expect(lines.map((l) => [l.userId, l.points])).toEqual([
-      ["anna", 24],
+      ["anna", 12],
       ["bob", 4],
       ["cleo", 0],
     ]);
-    expect(lines[0]!.reasons).toContainEqual({ kind: "joker" });
+    expect(lines[0]!.reasons).toContainEqual({ kind: "perfect_podium" });
+    // The general ranking counts the points; a league counts the joker played there (#1090).
+    expect(lines[0]!.jokers).toEqual({
+      double: 24,
+      all_or_nothing: 36,
+      safety_net: 12,
+      spy: 12,
+      outsider: 12,
+    });
+    expect(lines[1]!.jokers).toMatchObject({ double: 8, all_or_nothing: 0, safety_net: 6 });
   });
 
   it("refuses a podium of two ranks with RESULT_INCOMPLETE, and stores nothing", async () => {

@@ -31,7 +31,13 @@ test("a player reads the rules over the event page and keeps the podium being bu
   await help.click();
   const sheet = page.getByRole("dialog", { name: "Comment jouer" });
   await expect(sheet).toBeVisible();
-  for (const title of ["Le podium", "Les cotes", "Les perfs", "Le joker", "Le coup de flair"]) {
+  for (const title of [
+    "Le podium",
+    "Les cotes",
+    "Les perfs",
+    "Les jokers de ligue",
+    "Le coup de flair",
+  ]) {
     await expect(sheet.getByRole("heading", { name: title })).toBeVisible();
   }
   await expect(sheet.getByText(/podium parfait = 3 × \d+ \+ \d+ = \d+ points/)).toBeVisible();

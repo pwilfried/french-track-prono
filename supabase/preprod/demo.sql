@@ -11,8 +11,8 @@
 --   * 4 test accounts demo-21..24@example.test, each in the state a user test needs (#944), signed
 --     in from the back-office with « Se connecter en tant que » (#637), never admins:
 --     Démo Nouveau (nothing yet), Démo Mercato (a mercato round under way), Démo Direct (a Manager
---     head-to-head and a locked prediction event under way), Démo Joker (points, a badge, a joker
---     spent on the ongoing competition);
+--     head-to-head and a locked prediction event under way), Démo Joker (points, a badge, a league
+--     joker, the Double, spent on the ongoing competition, #1090);
 --   * 3 prediction leagues, and 3 Manager leagues: « Démo Manager » (mercato closed 12 days ago,
 --     first matchday scored, so the standings show), « Démo Direct » (season started on the
 --     ongoing competition, its first points in) and « Démo Mercato » (mercato open).
@@ -336,35 +336,30 @@ on conflict do nothing;
 -- ---------- Predictions ----------
 -- Every player on competitions 1 and 2, players 1 to 12 on the 3rd, 1 to 6 on the 4th. The podium
 -- letters a, b, c, d are the four strongest athletes of the start list; the pattern turns with the
--- player and the event. One joker per competition for the even players. Only open events: a later
--- load never writes on a locked one.
+-- player and the event. Only open events: a later load never writes on a locked one.
 with patterns (i, p) as (
   select row_number() over () - 1, p from unnest(array[
     'abc', 'bac', 'acb', 'bca', 'cab', 'cba', 'abd', 'bad', 'adb', 'bda', 'dab', 'dba',
     'acd', 'cad', 'adc', 'cda', 'dac', 'dca', 'bcd', 'cbd', 'bdc', 'cdb', 'dbc', 'dcb']) as p
 )
-insert into predictions (user_id, event_id, p1, p2, p3, use_joker)
+insert into predictions (user_id, event_id, p1, p2, p3)
 select pl.id, e.id,
        s.s[ascii(substr(pt.p, 1, 1)) - 96], s.s[ascii(substr(pt.p, 2, 1)) - 96],
-       s.s[ascii(substr(pt.p, 3, 1)) - 96],
-       pl.n % 2 = 0 and e.ord = pl.n % e.of_count + 1
+       s.s[ascii(substr(pt.p, 3, 1)) - 96]
 from demo_player_ids pl
 join demo_event_ids e on e.k = 1 or e.k = 2 or (e.k = 3 and pl.n <= 12) or (e.k = 4 and pl.n <= 6)
 join demo_starts s on s.event_id = e.id
 join patterns pt on pt.i = (pl.n * 7 + e.ord * 5) % 24
 where e.lock_at > now()
-  and not exists (select 1 from predictions x where x.user_id = pl.id and x.event_id = e.id)
-  and not (pl.n % 2 = 0 and e.ord = pl.n % e.of_count + 1
-           and exists (select 1 from predictions x
-                       where x.user_id = pl.id and x.competition_id = e.competition_id and x.use_joker));
+  and not exists (select 1 from predictions x where x.user_id = pl.id and x.event_id = e.id);
 
 -- ---------- Test accounts (#944) ----------
 -- Démo Nouveau (21): a profile and nothing else (no prediction, no league).
 -- Démo Direct (23): predicts the whole ongoing competition, as its friends of « Démo Club du
 -- jeudi » do, so the running event shows their podiums.
 -- Démo Joker (24): predicts the finished and the ongoing competitions on the three strongest of
--- each start list (the winner is always found, see « Results »), its joker on the first event of
--- the ongoing one, already finished; and the badge those winners give.
+-- each start list (the winner is always found, see « Results »), its Double on the first event of
+-- the ongoing one, already finished, in « Démo Les Sprinteurs »; and the badge those winners give.
 -- Their predictions and lineups go on locked events: the events of the finished and the ongoing
 -- competitions are opened for the time of the load, and get their dates back in « Dates of the
 -- day ». The 20 players still only add rows on events that were open (demo_event_ids.lock_at).
@@ -373,13 +368,10 @@ set starts_at = now() + interval '400 days', lock_at = now() + interval '400 day
 from demo_event_ids e
 where ev.id = e.id and e.k in (1, 2);
 
-insert into predictions (user_id, event_id, p1, p2, p3, use_joker)
+insert into predictions (user_id, event_id, p1, p2, p3)
 select t.id, e.id,
        case when t.n = 23 then s.s[2] else s.s[1] end,
-       case when t.n = 23 then s.s[1] else s.s[2] end, s.s[3],
-       t.n = 24 and e.k = 2 and e.ord = 1
-         and not exists (select 1 from predictions x
-                         where x.user_id = t.id and x.competition_id = e.competition_id and x.use_joker)
+       case when t.n = 23 then s.s[1] else s.s[2] end, s.s[3]
 from demo_account_ids t
 join demo_event_ids e on (t.n = 23 and e.k = 2) or (t.n = 24 and e.k in (1, 2))
 join demo_starts s on s.event_id = e.id
@@ -394,6 +386,19 @@ join demo_event_ids e on e.id = p.event_id
 join league_members lm on lm.user_id = p.user_id
 join league_competitions lc on lc.league_id = lm.league_id and lc.competition_id = p.competition_id
 where p.user_id::text like '00000000-0000-4000-9000-%'
+on conflict do nothing;
+
+-- League jokers (#1090): the even players play their Double on one event of the finished
+-- competition in each demo league it counts in; Démo Joker (24) on the first event of the ongoing
+-- one. Written as the app would before the lock (play_league_joker); a joker already played stays.
+insert into league_joker_plays (league_id, user_id, event_id, kind)
+select lp.league_id, lp.user_id, lp.event_id, 'double'
+from league_predictions lp
+join demo_event_ids e on e.id = lp.event_id
+join demo_account_ids pl on pl.id = lp.user_id
+join league_jokers lj on lj.league_id = lp.league_id and lj.kind = 'double'
+where (pl.n <= 20 and pl.n % 2 = 0 and e.k = 1 and e.ord = pl.n % e.of_count + 1)
+   or (pl.n = 24 and e.k = 2 and e.ord = 1)
 on conflict do nothing;
 
 -- Kept by the app once won (raise_my_badge_levels only raises it): bronze of « Chasseur ».
@@ -621,7 +626,8 @@ on conflict do nothing;
 -- ---------- Points of the demo players ----------
 -- The rules of src/domain/scoring.ts with the scoring_rules of the database: exact place, on the
 -- podium at another place, perfect podium, flair (winner found by less than 15 % of at least 10
--- players), joker. Written again at each load, for the demo accounts only.
+-- players), and what each league joker makes of them (#1090, no odds in the demo). Written again
+-- at each load, for the demo accounts only.
 create temp table demo_scores on commit drop as
 with rules as (
   select max(value) filter (where key = 'exact_slot') as exact_slot,
@@ -629,8 +635,7 @@ with rules as (
          max(value) filter (where key = 'perfect_podium') as perfect_podium,
          max(value) filter (where key = 'flair_bonus') as flair_bonus,
          max(value) filter (where key = 'flair_threshold') as flair_threshold,
-         max(value) filter (where key = 'flair_min_players') as flair_min_players,
-         max(value) filter (where key = 'joker_multiplier') as joker_multiplier
+         max(value) filter (where key = 'flair_min_players') as flair_min_players
   from scoring_rules
 ),
 podium as (
@@ -648,7 +653,7 @@ field as (
   group by pr.event_id
 ),
 slots as (
-  select pr.user_id, pr.event_id, pr.competition_id, pr.use_joker, f.players, f.winner_picks,
+  select pr.user_id, pr.event_id, pr.competition_id, f.players, f.winner_picks,
          pr.p1 = po.r1 as e1, pr.p2 = po.r2 as e2, pr.p3 = po.r3 as e3,
          coalesce(pr.p1 in (po.r2, po.r3), false) as o1,
          coalesce(pr.p2 in (po.r1, po.r3), false) as o2,
@@ -663,21 +668,34 @@ counted as (
          s.e1 and s.players >= ru.flair_min_players
            and s.winner_picks::numeric / s.players < ru.flair_threshold as flair,
          (s.e1::int + s.e2::int + s.e3::int) * ru.exact_slot
-           + (s.o1::int + s.o2::int + s.o3::int) * ru.wrong_place as base_points
+           + (s.o1::int + s.o2::int + s.o3::int) * ru.wrong_place as base_points,
+         -- « Filet »: on the podium at the wrong place counts as at the right place.
+         (s.e1::int + s.e2::int + s.e3::int + s.o1::int + s.o2::int + s.o3::int) * ru.exact_slot
+           as net_points
   from slots s, rules ru
+),
+totals as (
+  select c.*,
+         (c.base_points + case when c.perfect then ru.perfect_podium else 0 end
+                        + case when c.flair then ru.flair_bonus else 0 end)::int as points,
+         (c.net_points + case when c.perfect then ru.perfect_podium else 0 end
+                       + case when c.flair then ru.flair_bonus else 0 end)::int as net
+  from counted c, rules ru
 )
-select c.user_id, c.event_id, c.competition_id,
-       ((c.base_points + case when c.perfect then ru.perfect_podium else 0 end
-                       + case when c.flair then ru.flair_bonus else 0 end)
-        * case when c.use_joker then ru.joker_multiplier else 1 end)::int as points,
-       jsonb_build_object('reasons',
+select c.user_id, c.event_id, c.competition_id, c.points,
+       jsonb_build_object('jokers', jsonb_build_object(
+         'double', c.points * 2,
+         'all_or_nothing', case when c.perfect then c.points * 3 else 0 end,
+         'safety_net', c.net,
+         'spy', c.points,
+         'outsider', c.points),
+       'reasons',
          (case when c.e1 then '[{"kind":"exact","slot":1}]' when c.o1 then '[{"kind":"on_podium","slot":1}]' else '[]' end)::jsonb
       || (case when c.e2 then '[{"kind":"exact","slot":2}]' when c.o2 then '[{"kind":"on_podium","slot":2}]' else '[]' end)::jsonb
       || (case when c.e3 then '[{"kind":"exact","slot":3}]' when c.o3 then '[{"kind":"on_podium","slot":3}]' else '[]' end)::jsonb
       || (case when c.perfect then '[{"kind":"perfect_podium"}]' else '[]' end)::jsonb
-      || (case when c.flair then '[{"kind":"flair"}]' else '[]' end)::jsonb
-      || (case when c.use_joker then '[{"kind":"joker"}]' else '[]' end)::jsonb) as detail
-from counted c, rules ru;
+      || (case when c.flair then '[{"kind":"flair"}]' else '[]' end)::jsonb) as detail
+from totals c;
 
 delete from score_events s
 using demo_event_ids e

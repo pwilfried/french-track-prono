@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { RankingLine, RankingRepository } from "@/application/rankings";
 
-/** A competition of its own with two score lines: Ana 24 (perfect, joker), Bob 3 (winner). */
+/** A competition of its own with two score lines: Ana 12 (perfect, with the points of each league joker), Bob 3 (winner). */
 export type RankingWorld = {
   competitionSlug: string;
   expected: RankingLine[];
@@ -15,7 +15,7 @@ export function rankingRepositoryContract(name: string, world: () => Promise<Ran
     [...lines].sort((a, b) => a.userId.localeCompare(b.userId));
 
   describe(`RankingRepository contract: ${name}`, () => {
-    it("reads every score line of a competition with the pseudos", async () => {
+    it("reads every score line of a competition with the pseudos and the points of the league jokers", async () => {
       const w = await world();
 
       expect(byUser(await w.reader.competitionLines(w.competitionSlug))).toEqual(

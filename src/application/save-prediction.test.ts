@@ -34,7 +34,6 @@ const input = {
   first: "a1",
   second: "a2",
   third: "a3",
-  useJoker: false,
 };
 
 async function codeOf(promise: Promise<unknown>) {
@@ -51,16 +50,12 @@ describe("SavePrediction", () => {
   it("saves a valid podium and returns it", async () => {
     const { repo, saved } = repository();
 
-    const prediction = await savePrediction({ predictions: repo }).execute({
-      ...input,
-      useJoker: true,
-    });
+    const prediction = await savePrediction({ predictions: repo }).execute(input);
 
     expect(prediction).toEqual({
       userId: "u1",
       eventId: "e1",
       podium: { first: "a1", second: "a2", third: "a3" },
-      useJoker: true,
     });
     expect(saved).toEqual([prediction]);
   });
@@ -207,7 +202,6 @@ describe("SavePrediction", () => {
     ["locked", "PREDICTION_LOCKED"],
     ["athlete_not_in_event", "ATHLETE_NOT_IN_EVENT"],
     ["athlete_not_proposed", "ATHLETE_NOT_PROPOSED"],
-    ["joker_already_used", "JOKER_ALREADY_USED"],
   ] as const)("turns the repository outcome %s into the code %s", async (outcome, code) => {
     const { repo } = repository(outcome);
 

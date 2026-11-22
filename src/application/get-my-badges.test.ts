@@ -62,7 +62,6 @@ const prediction = (eventId: string, first: string): Prediction => ({
   userId: "me",
   eventId,
   podium: { first, second: "x", third: "y" },
-  useJoker: false,
 });
 const predictions = (list: Prediction[]): PredictionRepository => ({
   find: async () => null,
