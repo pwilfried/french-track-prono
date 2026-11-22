@@ -4,6 +4,12 @@ import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal, useFormStatus } from "react-dom";
 
+import type { PredictionLeague } from "@/application/prediction-leagues";
+import {
+  PredictionLeaguesBlock,
+  PredictionLeaguesSheet,
+  type SavePredictionLeagues,
+} from "@/components/leagues/prediction-leagues";
 import { buttonVariants } from "@/components/ui/button";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
 import { ScaleRules } from "@/components/rules/scale-rules";
@@ -28,6 +34,14 @@ import { forgetPodium, keepPodium, readKeptPodium } from "./kept-podium";
 /** The other event of the competition where the player's joker is played (#981). */
 export type JokerSpot = { name: string; href: string; movable: boolean };
 
+/** The player's leagues counting the competition, where the podium may count too (#1068). */
+export type FormLeagues = {
+  list: PredictionLeague[];
+  /** « samedi 23 novembre à 19:00 », Paris time. */
+  lockLabel: string;
+  save: SavePredictionLeagues;
+};
+
 /** The podium of a signed-in player on an open event: compose, joker, save. */
 export function PredictionForm({
   eventId,
@@ -40,6 +54,7 @@ export function PredictionForm({
   tolerance,
   scale,
   jokerElsewhere,
+  leagues,
 }: {
   eventId: string;
   slug: string;
@@ -54,6 +69,8 @@ export function PredictionForm({
   scale: Record<string, number>;
   /** The joker is played on another event: the switch is off and says where. */
   jokerElsewhere?: JokerSpot | null;
+  /** None, or not readable: neither sheet nor block, the podium still counts in the general. */
+  leagues?: FormLeagues | null;
 }) {
   const [state, action] = useActionState(savePredictionAction, initial);
   const [draft, setDraft] = useState(initial.draft);
@@ -103,8 +120,16 @@ export function PredictionForm({
   // The notice at the top of the screen, for each answer of a save (#700).
   const [notice, setNotice] = useState<Notice | null>(null);
   const [answered, setAnswered] = useState(state);
+  // After the first save of a podium, the sheet offers the leagues once (#1068); later changes
+  // go through the block under the podium.
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetOffered, setSheetOffered] = useState(isComplete(initial.draft));
   if (answered !== state) {
     setAnswered(state);
+    if (state.saved && !sheetOffered && leagues && leagues.list.length > 0) {
+      setSheetOffered(true);
+      if (!leagues.list.some((l) => l.counted)) setSheetOpen(true);
+    }
     setNotice(
       state.saved
         ? { kind: "saved", text: messages.prediction.savedShort }
@@ -124,70 +149,91 @@ export function PredictionForm({
     else action(data);
   };
 
+  const hasPodium = isComplete(initial.draft) || state.saved === true;
+
   return (
-    <form action={submit} onChange={edited} className="flex flex-col gap-4">
-      <input type="hidden" name="eventId" value={eventId} />
-      <input type="hidden" name="slug" value={slug} />
-      {markUnit && <input type="hidden" name="markUnit" value={markUnit} />}
-      {markFamily && <input type="hidden" name="markFamily" value={markFamily} />}
-      {markUnit && <input type="hidden" name="markDiscipline" value={discipline} />}
-      {/* Once a podium is saved the tips only push it down (#493). */}
-      {!isComplete(initial.draft) && <FirstPredictionTips />}
-      {/* Stays for a player who comes back; the notice is what announces a save. */}
-      {/* A refused save hides it: the podium shown is not the one saved (#981). */}
-      {!state.error && (state.saved || isComplete(initial.draft)) && (
-        <p className="mx-4 rounded-2xl bg-success/15 px-3.5 py-3 text-sm font-semibold text-success-text">
-          {messages.prediction.saved}
-        </p>
-      )}
-      <div ref={podiumRef} id="podium" className="scroll-mt-4">
-        <PodiumPicker
-          key={restored}
-          athletes={athletes}
-          initialDraft={draft}
-          error={error}
-          disabled={locked}
-          onChange={(next: PodiumDraft) => {
-            setDraft(next);
-            keep({ draft: next });
-            edited();
-          }}
-          helpHref="/regles"
-          help={<ScaleRules scale={scale} level={3} idPrefix="rules-" />}
-          athleteHref={(athlete) => athleteHref(athlete.slug, `/epreuves/${slug}`)}
-          onOpenAthlete={() => keep({ openedAthlete: true })}
-        />
-      </div>
-      {markUnit && !locked && (
-        <MarkFields
-          draft={draft}
-          athletes={athletes}
-          unit={markUnit}
-          family={markFamily}
-          discipline={discipline}
-          tolerance={tolerance}
-          initialDraft={initial.draft}
-          initial={initial.marks}
-          serverError={markError}
-        />
-      )}
-      {!locked && (
-        <>
-          <JokerSwitch
-            checked={joker && !jokerElsewhere}
-            elsewhere={jokerElsewhere ?? undefined}
-            onChange={(checked) => {
-              setJoker(checked);
-              keep({ joker: checked });
+    <>
+      <form action={submit} onChange={edited} className="flex flex-col gap-4">
+        <input type="hidden" name="eventId" value={eventId} />
+        <input type="hidden" name="slug" value={slug} />
+        {markUnit && <input type="hidden" name="markUnit" value={markUnit} />}
+        {markFamily && <input type="hidden" name="markFamily" value={markFamily} />}
+        {markUnit && <input type="hidden" name="markDiscipline" value={discipline} />}
+        {/* Once a podium is saved the tips only push it down (#493). */}
+        {!isComplete(initial.draft) && <FirstPredictionTips />}
+        {/* Stays for a player who comes back; the notice is what announces a save. */}
+        {/* A refused save hides it: the podium shown is not the one saved (#981). */}
+        {!state.error && (state.saved || isComplete(initial.draft)) && (
+          <p className="mx-4 rounded-2xl bg-success/15 px-3.5 py-3 text-sm font-semibold text-success-text">
+            {messages.prediction.saved}
+          </p>
+        )}
+        <div ref={podiumRef} id="podium" className="scroll-mt-4">
+          <PodiumPicker
+            key={restored}
+            athletes={athletes}
+            initialDraft={draft}
+            error={error}
+            disabled={locked}
+            onChange={(next: PodiumDraft) => {
+              setDraft(next);
+              keep({ draft: next });
+              edited();
             }}
+            helpHref="/regles"
+            help={<ScaleRules scale={scale} level={3} idPrefix="rules-" />}
+            athleteHref={(athlete) => athleteHref(athlete.slug, `/epreuves/${slug}`)}
+            onOpenAthlete={() => keep({ openedAthlete: true })}
           />
-          <div className="px-4">
-            <SaveButton complete={complete} saved={justSaved} />
-          </div>
+        </div>
+        {markUnit && !locked && (
+          <MarkFields
+            draft={draft}
+            athletes={athletes}
+            unit={markUnit}
+            family={markFamily}
+            discipline={discipline}
+            tolerance={tolerance}
+            initialDraft={initial.draft}
+            initial={initial.marks}
+            serverError={markError}
+          />
+        )}
+        {!locked && (
+          <>
+            <JokerSwitch
+              checked={joker && !jokerElsewhere}
+              elsewhere={jokerElsewhere ?? undefined}
+              onChange={(checked) => {
+                setJoker(checked);
+                keep({ joker: checked });
+              }}
+            />
+            <div className="px-4">
+              <SaveButton complete={complete} saved={justSaved} />
+            </div>
+          </>
+        )}
+        <SaveNotice notice={notice} dismiss={setNotice} />
+      </form>
+      {leagues && leagues.list.length > 0 && hasPodium && !locked && (
+        <>
+          <PredictionLeaguesBlock
+            leagues={leagues.list}
+            locked={false}
+            lockLabel={leagues.lockLabel}
+            save={leagues.save}
+          />
+          <PredictionLeaguesSheet
+            open={sheetOpen}
+            onClose={() => setSheetOpen(false)}
+            leagues={leagues.list}
+            lockLabel={leagues.lockLabel}
+            save={leagues.save}
+          />
         </>
       )}
-      <SaveNotice notice={notice} dismiss={setNotice} />
-    </form>
+    </>
   );
 }
 

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { joinLeagueFor, newPlayer, signUp } from "./players";
+import { joinLeagueFor, newPlayer, signUp, skipLeagueSheet } from "./players";
 
 /** The first open final of the Ultimate Championship whose discipline matches. */
 function openFinal(where: string) {
@@ -51,6 +51,7 @@ test("a player predicts a podium with a mark for each of his three athletes", as
     await marks.nth(index).fill(mark);
   }
   await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
+  await skipLeagueSheet(page);
   await expect(page.getByRole("status")).toContainText("Podium enregistré");
 
   await page.reload();
@@ -99,6 +100,7 @@ test("a 300-digit triple jump mark is refused next to its field, a plausible one
 
   await first.fill("14,85");
   await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
+  await skipLeagueSheet(page);
   await expect(page.getByRole("status")).toContainText("Podium enregistré");
   expect(
     sql(`select m1 from predictions p join auth.users u on u.id = p.user_id
@@ -134,6 +136,7 @@ test("a 1500 m mark typed the French way saves in minutes, the format under the 
   await marks.nth(0).fill("4,02");
   await marks.nth(1).fill(`3'58"50`);
   await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
+  await skipLeagueSheet(page);
   await expect(page.getByRole("status")).toContainText("Podium enregistré");
   expect(
     sql(`select m1 || ' ' || m2 from predictions p join auth.users u on u.id = p.user_id

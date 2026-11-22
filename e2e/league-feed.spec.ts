@@ -55,6 +55,9 @@ test("a result entered tells « podium parfait » in the feed of the player's le
   // The player predicts Alpha, Bravo, Charlie; then the event starts.
   sql(`insert into predictions (user_id, event_id, p1, p2, p3)
        values ('${playerId}', '${event}', '${ids[0]}', '${ids[1]}', '${ids[2]}')`);
+  // … and adds it to the league, as from the sheet after a save (#1068).
+  sql(`insert into league_predictions (league_id, user_id, event_id)
+       values ('${league}', '${playerId}', '${event}')`);
   sql(`update events set starts_at = now() - interval '1 hour', lock_at = now() - interval '1 hour'
        where id = '${event}'`);
 

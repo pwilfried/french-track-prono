@@ -3220,6 +3220,36 @@ export const messages = {
     leagueJoin: "Rejoindre une ligue publique",
     leagueAdd: (name: string) => `Ajouter à ma ligue « ${name} »`,
   },
+  /** The leagues a prediction counts in (#1068): the sheet after a save, the block of the event. */
+  predictionLeagues: {
+    sheetTitle: "Ajouter ce prono à mes ligues",
+    sheetText: "Ton podium compte déjà au classement général. Coche les ligues où il compte aussi.",
+    general: "Classement général",
+    always: "Toujours",
+    /** « 8 joueurs · tu es 3e », or no points yet. */
+    standing: (members: number, rank: number | null) =>
+      `${playersCount(members)} · ${rank === null ? "pas encore de points" : `tu es ${ordinal(rank)}`}`,
+    sheetNote: (when: string) => `Modifiable depuis la page de l'épreuve jusqu'au verrou, ${when}.`,
+    pickOne: "Coche au moins une ligue",
+    add: (n: number) => `Ajouter à ${n} ${n <= 1 ? "ligue" : "ligues"}`,
+    adding: "Ajout en cours…",
+    later: "Plus tard",
+    done: (names: string[]) =>
+      names.length === 1
+        ? `C'est fait : ton prono compte dans « ${names[0]} » et au général.`
+        : `C'est fait : ton prono compte dans ${names.length} ligues et au général.`,
+    seeMine: "Voir mon prono",
+    blockTitle: "Ce prono compte dans",
+    blockText: "Allume une ligue pour que ton podium y compte.",
+    switchLabel: (name: string) => `Compter ce prono dans ${name}`,
+    saving: "Enregistrement en cours…",
+    openFoot: (when: string) => `Tu peux changer jusqu'au verrou, ${when}.`,
+    counts: "Compte",
+    notCounted: "Ne compte pas",
+    lockedText: (n: number) =>
+      n === 0 ? "Au général seulement." : `Au général et dans ${n} ${n <= 1 ? "ligue" : "ligues"}.`,
+    lockedFoot: "Épreuve verrouillée : plus de changement.",
+  },
   adminLeagues: {
     feedReports: {
       title: "Signalements du fil",

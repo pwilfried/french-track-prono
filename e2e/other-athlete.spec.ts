@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { joinLeagueFor, newPlayer, signUp } from "./players";
+import { joinLeagueFor, newPlayer, signUp, skipLeagueSheet } from "./players";
 
 test("a player predicts with the odds and puts « autre athlète » on the podium", async ({
   page,
@@ -40,6 +40,7 @@ test("a player predicts with the odds and puts « autre athlète » on the podiu
   await page.getByRole("button", { name: /^Autre athlète/ }).click();
   await choices.nth(1).click();
   await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
+  await skipLeagueSheet(page);
   await expect(page.getByRole("status")).toContainText("Podium enregistré");
   await expect(page.getByRole("button", { name: "2e place : Autre athlète" })).toBeVisible();
 

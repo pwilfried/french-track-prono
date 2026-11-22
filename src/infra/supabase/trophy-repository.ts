@@ -12,7 +12,7 @@ type FactsJson = {
   leagues: {
     id: string;
     name: string;
-    members: { user_id: string; joined_at: string }[];
+    members: { user_id: string; joined_at: string; counted?: string[] }[];
     competitions: { slug: string; ends_on: string; added_at: string | null }[];
     families: { family: LeagueFamilyRule["family"]; added_at: string | null }[];
   }[];
@@ -42,7 +42,11 @@ const toFacts = (json: FactsJson): SeasonFacts => ({
   leagues: json.leagues.map((l) => ({
     id: l.id,
     name: l.name,
-    members: l.members.map((m) => ({ userId: m.user_id, joinedAt: iso(m.joined_at)! })),
+    members: l.members.map((m) => ({
+      userId: m.user_id,
+      joinedAt: iso(m.joined_at)!,
+      countedEvents: m.counted ?? [],
+    })),
     competitions: l.competitions.map((c) => ({
       slug: c.slug,
       endsOn: c.ends_on,

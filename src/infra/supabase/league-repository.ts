@@ -120,13 +120,14 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
       const { data, error } = await client
         .from("league_members")
         .select(
-          "user_id, joined_at, profiles!inner(pseudo, bib_number, bib_color, club:clubs(name))",
+          "user_id, joined_at, profiles!inner(pseudo, bib_number, bib_color, club:clubs(name)), league_predictions(event_id)",
         )
         .eq("league_id", leagueId)
         .returns<
           {
             user_id: string;
             joined_at: string;
+            league_predictions: { event_id: string }[];
             profiles: {
               pseudo: string;
               bib_number: number;
@@ -145,6 +146,8 @@ export function createSupabaseLeagueRepository(client: SupabaseClient): LeagueRe
           bib: bibOf(row.profiles.bib_number, row.profiles.bib_color),
           club: row.profiles.club?.name ?? null,
           joinedAt: new Date(row.joined_at).toISOString(),
+          // Only the predictions they added to the league count in it (#1068).
+          countedEvents: row.league_predictions.map((lp) => lp.event_id),
         }),
       );
     },

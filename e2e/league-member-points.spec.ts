@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { newPlayer, signUp } from "./players";
+import { countInLeagues, newPlayer, signUp } from "./players";
 
 test("a league counts only the points scored once the player joined", async ({ page }) => {
   const tag = `${Date.now() % 1000000}`;
@@ -40,6 +40,8 @@ test("a league counts only the points scored once the player joined", async ({ p
     c as (insert into league_competitions (league_id, competition_id)
           select l.id, c.id from l, competitions c where c.slug = '${competition}')
     select id from l`);
+  // Even added to the league (#1068), a podium of before the friend joined does not count there.
+  countInLeagues(competition);
 
   await page.goto(`/ligues/${league}`);
   const row = page

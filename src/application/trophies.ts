@@ -24,7 +24,8 @@ import { leagueLines, linesOf, type RankingRepository } from "./rankings";
 export type TrophyLeague = {
   id: string;
   name: string;
-  members: { userId: string; joinedAt?: string }[];
+  /** `countedEvents`: the predictions each member added to the league (#1068). */
+  members: { userId: string; joinedAt?: string; countedEvents?: string[] }[];
   /** Its competitions, with when each entered the league (#614; null: from the start). */
   competitions: (SeasonCompetition & { addedAt: string | null })[];
   families: LeagueFamilyRule[];
