@@ -15,8 +15,12 @@ test("the admin recomputes the Manager points and the participant reads them, su
     `Charlie Points ${tag}`,
   ];
   for (const [n, name] of [winner, dropout, substitute].entries()) {
-    sql(`insert into athletes (slug, name, country_code, gender)
-         values ('mpts-${n}-${tag}', '${name}', 'FRA', 'F')`);
+    // On the Manager catalogue (a price and a main discipline), like any athlete of a team: the
+    // names of « Mes points » come from it.
+    sql(`insert into athletes (slug, name, country_code, gender, manager_price)
+         values ('mpts-${n}-${tag}', '${name}', 'FRA', 'F', 10)`);
+    sql(`insert into athlete_disciplines (athlete_id, discipline, is_primary)
+         select id, '100 m', true from athletes where slug = 'mpts-${n}-${tag}'`);
   }
   const slug = `mpts-${tag}`;
   const competition = sql(`insert into competitions (slug, name, starts_on, ends_on)
