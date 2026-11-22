@@ -177,7 +177,7 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   athlète libre du catalogue convient à une équipe si elle est sous le minimum (`minTeamSize`), si
   son prix de référence tient dans le budget restant et si sa famille Manager a un quota
   (`quotas`) dont le maximum de son sexe (`maxPerSex`) n'est pas atteint (une famille sans quota
-  ne se recrute pas ; `fitsQuotas`, `src/domain/manager-team.ts`). Les équipes
+  ne se recrute pas ; `private.manager_complement_candidates`). Les équipes
   reçoivent un athlète chacune à tour de rôle (ordre des identifiants), tiré au hasard parmi ceux
   qui leur conviennent, jusqu'à ce qu'aucune ne puisse plus en recevoir. Les athlètes donnés
   forment un dernier tour (`manager_rounds`), au prix de référence. Puis chaque équipe reçoit
