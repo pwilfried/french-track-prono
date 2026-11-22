@@ -46,6 +46,12 @@ test("a player cannot see a podium before the lock, unfolds it after and reacts 
   // Bob has a league of his own, without Anna: her podium will be folded (#949).
   joinLeagueFor(bob.email, "ultimate-championship-2026");
 
+  // Anna adds her podium to her league (#1068): the reveal opens on it, her reactions show there.
+  sql(`insert into league_predictions (league_id, user_id, event_id)
+    select lm.league_id, lm.user_id, e.id
+    from league_members lm, auth.users u, events e
+    where lm.user_id = u.id and u.email = '${anna.email}' and e.slug = '${slug}'`);
+
   // After the lock, he sees it.
   sql(`update events set lock_at = now() - interval '1 second' where slug = '${slug}'`);
   await bobPage.reload();

@@ -48,8 +48,8 @@ test("a podium composed from the home counts only in the league the player ticks
     // The sheet: the general ranking always, both leagues, nothing ticked.
     const sheet = page.getByRole("dialog", { name: "Ajouter ce prono à mes ligues" });
     await expect(sheet).toBeVisible();
-    await expect(sheet.getByText("Classement général")).toBeVisible();
-    await expect(sheet.getByText("Toujours")).toBeVisible();
+    await expect(sheet.getByText("Classement général", { exact: true })).toBeVisible();
+    await expect(sheet.getByText("Toujours", { exact: true })).toBeVisible();
     const amisBox = sheet.getByRole("checkbox", { name: new RegExp(amis) });
     const clubBox = sheet.getByRole("checkbox", { name: new RegExp(club) });
     await expect(amisBox).not.toBeChecked();
