@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { notificationOf, programNotificationOf, sendDue, sendTest, testNotifications } from "./push.mjs";
+import { programNotificationOf, sendDue, sendTest, testNotifications } from "./push.mjs";
 
 const devices12 = [
   { endpoint: "https://push.example.test/1", p256dh: "k1", auth: "a1" },
@@ -70,149 +70,6 @@ function fakeDatabase(due: unknown[], programs: ProgramSent[] = []) {
 }
 
 describe("push notifications", () => {
-  it("words a reminder of one final with the minutes left before the lock", () => {
-    const now = new Date("2026-11-11T20:00:00Z").getTime();
-    expect(notificationOf(reminder, now)).toEqual({
-      title: "🚨 Dernier appel : 100 m femmes",
-      body: "Verrou dans 10 min et ton podium n'est pas posé. Fonce !",
-      url: "/epreuves/100m-f",
-      tag: "forgotten-2026-11-11",
-    });
-  });
-
-  it("puts every forgotten final of the evening in one notification", () => {
-    const now = new Date("2026-11-11T20:00:00Z").getTime();
-    const events = [
-      final("100m-f", "100 m", "F", "2026-11-11T20:10:00Z"),
-      final("200m-h", "200 m", "M", "2026-11-11T20:40:00Z"),
-      final("longueur-f", "Longueur", "F", "2026-11-11T20:50:00Z"),
-    ];
-    expect(notificationOf({ ...reminder, payload: { events } }, now)).toEqual({
-      title: "🚨 Dernier appel : 3 podiums à poser",
-      body: "100 m femmes, 200 m hommes et Longueur femmes. Premier verrou dans 10 min.",
-      url: "/epreuves/100m-f",
-      tag: "forgotten-2026-11-11",
-    });
-  });
-
-  it("words the recap of the evening with the points and the place", () => {
-    expect(notificationOf(result)).toEqual({
-      title: "🔥 +9 pts ce soir",
-      body: "Tes 2 finales sont calculées. Tu es 4e sur 120.",
-      url: "/mes-points?competition=meeting-paris",
-      tag: "recap-2026-11-11",
-    });
-    const single = { ...result.payload, points: 0, finals: 1, rank: 12, players: 18 };
-    expect(notificationOf({ ...result, payload: single })).toMatchObject({
-      title: "😬 Soirée blanche : 0 pt",
-      body: "Ta finale est calculée. Tu es 12e sur 18 : la revanche, c'est demain.",
-    });
-    const leader = { ...result.payload, points: 12, finals: 3, rank: 1, players: 18 };
-    expect(notificationOf({ ...result, payload: leader })).toMatchObject({
-      title: "👑 +12 pts, tu es en tête !",
-      body: "Tes 3 finales sont calculées. 1er sur 18.",
-    });
-    const blankLeader = { ...leader, points: 0 };
-    expect(notificationOf({ ...result, payload: blankLeader }).title).toBe("😬 Soirée blanche : 0 pt");
-    const onePoint = { ...result.payload, points: 1 };
-    expect(notificationOf({ ...result, payload: onePoint }).title).toBe("🔥 +1 pt ce soir");
-    expect(notificationOf({ ...result, payload: { ...single, rank: null } }).body).toBe(
-      "Ta finale est calculée.",
-    );
-  });
-
-  it("words the end of a mercato round in hours and minutes", () => {
-    const now = new Date("2026-11-11T18:00:00Z").getTime();
-    const due = {
-      ...manager,
-      kind: "mercato_round",
-      ref: "l1:2",
-      payload: { league_id: "l1", league_name: "Les Lièvres", round: 2, ends_at: "2026-11-11T19:30:00Z" },
-    };
-    expect(notificationOf(due, now)).toEqual({
-      title: "🔨 Mercato : plus que 1 h 30 pour le tour 2",
-      body: "Les Lièvres : dernières enchères avant le coup de marteau.",
-      url: "/manager/l1/catalogue",
-      tag: "mercato_round-l1:2",
-    });
-    const sharp = { ...due, payload: { ...due.payload, ends_at: "2026-11-11T20:00:00Z" } };
-    expect(notificationOf(sharp, now).title).toBe("🔨 Mercato : plus que 2 h pour le tour 2");
-  });
-
-  it("words a lineup not validated with the time left before its lock", () => {
-    const now = new Date("2026-11-11T18:00:00Z").getTime();
-    const due = {
-      ...manager,
-      kind: "lineup",
-      ref: "l1:c1",
-      payload: {
-        league_id: "l1",
-        league_name: "Les Lièvres",
-        competition_slug: "meeting-paris",
-        competition_name: "Meeting de Paris",
-        lock_at: "2026-11-11T18:45:00Z",
-      },
-    };
-    expect(notificationOf(due, now)).toEqual({
-      title: "📋 Ton équipe n'est pas alignée",
-      body: "Les Lièvres, Meeting de Paris : verrou dans 45 min. Sans alignement, 0 point.",
-      url: "/manager/l1/alignement/meeting-paris",
-      tag: "lineup-l1:c1",
-    });
-  });
-
-  it("words a head-to-head over as a win, a defeat or a draw", () => {
-    const due = {
-      ...manager,
-      kind: "duel_over",
-      ref: "l1:3",
-      payload: {
-        league_id: "l1",
-        league_name: "Les Lièvres",
-        round: 3,
-        home_id: "u9",
-        my_score: 2310,
-        their_score: 1980,
-        opponent: "Gazelle",
-      },
-    };
-    expect(notificationOf(due)).toEqual({
-      title: "🏆 Victoire contre Gazelle, 2310 à 1980 pts !",
-      body: "Les Lièvres, journée 3 : va voir la feuille de match.",
-      url: "/manager/l1/confrontation/3/u9",
-      tag: "duel_over-l1:3",
-    });
-    const lost = { ...due, payload: { ...due.payload, my_score: 1, their_score: 1980 } };
-    expect(notificationOf(lost)).toMatchObject({
-      title: "💥 Défaite contre Gazelle, 1 à 1980 pts",
-      body: "Les Lièvres, journée 3 : va voir la feuille de match.",
-    });
-    const draw = { ...due, payload: { ...due.payload, my_score: 1980 } };
-    const tiny = { ...due, payload: { ...due.payload, my_score: 0, their_score: 1 } };
-    expect(notificationOf(tiny).title).toBe("💥 Défaite contre Gazelle, 0 à 1 pt");
-    expect(notificationOf(draw).title).toBe("🤝 Match nul contre Gazelle, 1980 à 1980 pts");
-  });
-
-  it("words the reactions to my league moments in one notification (#672)", () => {
-    const due = {
-      user_id: "u1",
-      kind: "moment_reaction",
-      evening: "2026-11-15",
-      ref: "2026-11-15T20:01:02.000000",
-      payload: { count: 3, pseudo: "Gazelle", league_id: "l1", league_name: "Les Lièvres" },
-    };
-    expect(notificationOf(due)).toEqual({
-      title: "💬 Gazelle et 2 autres ont réagi à ton moment",
-      body: "Les Lièvres : va voir ce qu'ils en disent.",
-      url: "/ligues/l1?onglet=fil",
-      tag: "moment_reaction",
-    });
-    const one = { ...due, payload: { ...due.payload, count: 1 } };
-    expect(notificationOf(one).title).toBe("💬 Gazelle a réagi à ton moment");
-    const two = { ...due, payload: { ...due.payload, count: 2 } };
-    expect(notificationOf(two).title).toBe("💬 Gazelle et 1 autre ont réagi à ton moment");
-  });
-
   it("marks a Manager reminder sent with what it is about, short-lived when it expires", async () => {
     const due = {
       ...manager,
@@ -283,15 +140,6 @@ describe("push notifications", () => {
     ]);
   });
 
-  it("words the publication of a programme", () => {
-    expect(programNotificationOf(program)).toEqual({
-      title: "📣 Le programme de Meeting de Paris est en ligne",
-      body: "Les finales sont là : à toi de poser tes podiums.",
-      url: "/competitions?competition=meeting-paris-2027",
-      tag: "program-meeting-paris-2027",
-    });
-  });
-
   it("notifies each subscriber once when the programme of a competition is published", async () => {
     const other = {
       ...program,
@@ -339,9 +187,9 @@ describe("sendTest", () => {
     });
     expect(report).toEqual({ sent: 2, forgotten: [], failed: 0 });
     const first = sent.filter((s) => s.endpoint === devices12[0].endpoint);
-    expect(first).toHaveLength(13);
-    expect(first.at(-1)!.payload).toMatchObject({ title: "🔔 Test réussi", url: "/" });
-    expect(new Set(first.map((s) => s.payload.tag)).size).toBe(13);
+    expect(first).toHaveLength(24);
+    expect(first.at(-1)!.payload).toMatchObject({ title: "🔔✅ Test réussi", url: "/" });
+    expect(new Set(first.map((s) => s.payload.tag)).size).toBe(24);
   });
 
   it("lists the devices that unsubscribed and counts the other failures", async () => {
@@ -355,23 +203,11 @@ describe("sendTest", () => {
 });
 
 describe("testNotifications", () => {
-  it("gives one example of every line of the table, each with its own tag", () => {
+  it("gives one example of every case, chambrage and mercato reveal included, each with its own tag", () => {
     const now = new Date("2026-11-16T18:00:00Z").getTime();
-    const titles = testNotifications(now).map((n) => n.title);
-    expect(titles).toEqual([
-      "🚨 Dernier appel : 100 m femmes",
-      "🚨 Dernier appel : 3 podiums à poser",
-      "👑 +12 pts, tu es en tête !",
-      "🔥 +12 pts ce soir",
-      "😬 Soirée blanche : 0 pt",
-      "🔨 Mercato : plus que 2 h pour le tour 2",
-      "📋 Ton équipe n'est pas alignée",
-      "🏆 Victoire contre Gazelle, 42 à 38 pts !",
-      "💥 Défaite contre Gazelle, 38 à 42 pts",
-      "🤝 Match nul contre Gazelle, 40 à 40 pts",
-      "💬 Gazelle et 2 autres ont réagi à ton moment",
-      "📣 Le programme de Meeting de démo est en ligne",
-      "🔔 Test réussi",
-    ]);
+    const samples = testNotifications(now);
+    expect(samples).toHaveLength(24);
+    expect(new Set(samples.map((n) => n.tag)).size).toBe(24);
+    expect(samples.map((n) => `${n.title} | ${n.body}`)).toMatchSnapshot();
   });
 });

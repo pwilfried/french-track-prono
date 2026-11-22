@@ -1,0 +1,30 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`testNotifications > gives one example of every case, chambrage and mercato reveal included, each with its own tag 1`] = `
+[
+  "🚨⏱️ Verrou dans 45 min ! | Podium du 100 m F vide. Les starters s'impatientent 🧦",
+  "📢🚨 Chambre d'appel : 3 podiums | 100 m F, 400 m haies H + 1 autre. Premier verrou dans 45 min 🧦",
+  "👑🏁 +12 pts, premier à la corde ! | 1er sur 18, 3 finales. Les autres regardent ton dos 😎",
+  "📈⏱️ +12 pts, le chrono progresse | 4e sur 18, 3 finales. Le lièvre est devant, accroche-toi 🐇",
+  "🥶⛔ 0 pt. Barre tombée | 12e sur 18, 3 finales. Ça arrive aux meilleurs, revanche demain 🔁",
+  "🔨⏳ Mercato : plus que 2 h | Tour 2. Dernière cloche avant le marteau 🔔 Les Lièvres",
+  "🚨📋 Équipe pas alignée : 1 h | Meeting de démo : tes athlètes poireautent ❌ Les Lièvres",
+  "🥇🎉 Victoire 42-38, journée 3 | Gazelle voit ton dossard s'éloigner 🏃 Les Lièvres",
+  "😤📸 Défaite 38-42, journée 3 | Gazelle a gagné au finish 📸 Les Lièvres",
+  "🤝🔁 Nul 40-40, journée 3 | Revanche avec Gazelle ? 🔁 Les Lièvres",
+  "🧹🥶 Raclée 18-52, journée 3 | Gazelle a fait le tour d'honneur 🏟️ Les Lièvres",
+  "🔨🎯 Mercato : 3 sur 3, carton ! | Tour 2 : aucune enchère soufflée 😎 Les Lièvres",
+  "🔨😤 Mercato : 2 sur 4 | Athlète Démo part chez Gazelle (+3 cr.). Radin 😤 Les Lièvres",
+  "🔨🥶 Mercato : 0 sur 3 | Tour 2 : sors le chéquier au prochain 💸 Les Lièvres",
+  "🔨🍿 Tour 2 révélé | Zéro enchère. Va voir qui a pris qui 👀 Les Lièvres",
+  "🏁📋 Mercato bouclé ! | 1 sur 2 au dernier tour. Ton équipe est prête 🏃 Les Lièvres",
+  "👀🏃 Gazelle te passe devant | 4e sur 8 désormais. T'as raté la cloche ? 🔔 Les Lièvres",
+  "😏🏃 Gazelle est derrière toi | 3e sur 8 désormais. Fais coucou dans le rétro 👋 Les Lièvres",
+  "🐌🔴 Lanterne rouge ! | 8e sur 8, 0 pt. La voiture-balai t'attend 🧹 Les Lièvres",
+  "🙈🔫 Faux départ en solo | 800 m H : seul à rater l'or 🤡 Les Lièvres",
+  "🔮🏁 Tu l'avais vu venir ! | 800 m H : seul à avoir l'or 🤓 Les Lièvres",
+  "🔥💬 Gazelle +2 ont réagi | Ton moment fait parler dans les gradins 📣 Les Lièvres",
+  "📣📅 Programme en ligne ! | Meeting de démo : chambre d'appel ouverte pour tes podiums 🎯",
+  "🔔✅ Test réussi | Les notifications French Track Prono marchent sur cet appareil 📱",
+]
+`;

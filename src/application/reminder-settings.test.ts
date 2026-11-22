@@ -50,6 +50,7 @@ describe("reminder settings (#681)", () => {
         eveningResults: false,
         manager: false,
         league: false,
+        trashTalk: false,
         frenchtrack: true,
       },
       leadMinutes: 180,
@@ -64,7 +65,7 @@ describe("reminder settings (#681)", () => {
 
     // When they switch off « Ma ligue » only
     await saveReminderSettings(store).execute({
-      families: ["forgotten", "eveningResults", "manager"],
+      families: ["forgotten", "eveningResults", "manager", "trashTalk"],
       lead: "60",
       quietFrom: "23",
       quietTo: "8",
@@ -74,6 +75,25 @@ describe("reminder settings (#681)", () => {
     expect(store.saved()?.families).toEqual({
       ...DEFAULT_REMINDER_SETTINGS.families,
       league: false,
+    });
+  });
+
+  it("switches off « Chambrage », which stops the trash talk, and keeps the rest (#1093)", async () => {
+    // Given a player with the default settings
+    const store = settingsStore(DEFAULT_REMINDER_SETTINGS);
+
+    // When they switch off « Chambrage » only
+    await saveReminderSettings(store).execute({
+      families: ["forgotten", "eveningResults", "manager", "league"],
+      lead: "60",
+      quietFrom: "23",
+      quietTo: "8",
+    });
+
+    // Then « Chambrage » is off (the cron reads it), the rest is unchanged
+    expect(store.saved()?.families).toEqual({
+      ...DEFAULT_REMINDER_SETTINGS.families,
+      trashTalk: false,
     });
   });
 

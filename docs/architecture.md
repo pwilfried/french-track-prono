@@ -747,10 +747,24 @@ les clés VAPID, des rappels groupés (#681, règles de référence dans `src/do
 - « Manager » (#836, règles dans `src/domain/manager-reminders.ts`) : fin du tour de mercato
   dans 2 h (aux participants qui peuvent encore recruter et n'ont pas fini le tour, #1084) ; alignement non validé quand le verrou
   de la journée tombe dans le délai avant verrou ; duel terminé (toutes les épreuves de la
-  compétition finies et les scores Manager calculés depuis moins de 24 h), aux deux joueurs.
+  compétition finies et les scores Manager calculés depuis moins de 24 h), aux deux joueurs ;
+  révélation d'un tour de mercato (#1093, `mercato_reveal`) : à chaque participant qui n'a pas
+  encore vu la révélation, une fois par tour, y compris quand le tour se clôt plus tôt (#1084) ;
+  combien de ses enchères il a gagnées, qui lui a soufflé l'athlète le plus cher et de combien,
+  ou la fin du mercato (elle remplace le chambrage « Enchère soufflée ») ;
+- « Chambrage » (#1093, `private.trash_talk_due()`, active par défaut) : une fois la soirée d'une
+  ligue terminée (toutes ses épreuves finies, les derniers points calculés depuis moins de 24 h),
+  dans une ligue où le joueur a au moins un adversaire, au plus un message par soirée, le plus fort
+  gagnant : doublé par un membre, a doublé un membre, lanterne rouge (dernier avec 0 pt sur ses
+  finales de la ligue alors que tous les autres ont marqué), seul à rater le vainqueur d'une
+  finale, seul à le trouver (deux autres au moins dans les deux cas). Les points de ligue se
+  comptent comme son classement (`admin_league_members` : pronos ajoutés à la ligue, jokers
+  compris) ; le message ne nomme qu'un membre de la ligue, jamais un joueur bloqué. Il parle de la
+  ligue, jamais du classement général : il ne répète pas « Résultats du soir ».
 
 « Mes rappels » (`/profil/rappels`) : un interrupteur par famille (Pronos oubliés, Résultats du
-soir, Manager, Ma ligue — les réactions d'autres joueurs à mes moments du fil, #903 ; « FrenchTrack »
+soir, Manager, Ma ligue — les réactions d'autres joueurs à mes moments du fil, #903 —, Chambrage,
+#1093 ; « FrenchTrack »
 est stockée mais masquée tant qu'aucune notification ne l'utilise ; une famille masquée garde sa
 valeur à l'enregistrement), le
 délai avant verrou, les heures calmes (23 h–8 h par défaut, heure de Paris). Rien ne part pendant
@@ -766,13 +780,22 @@ s'abonne (`program_alerts`, écrite seulement par `turn_on_program_alert()` et
 notification par joueur et par compétition (« 📣 Le programme de … est en ligne », lien vers
 l'onglet), notée par `private.program_mark_sent()` ; rien pour un joueur bloqué ou sans appareil.
 
-Textes des notifications (#1016, direction « speaker du stade » : un emoji par famille, le chiffre clé
-dans le titre, tutoiement ; `supabase/functions/_shared/push.mjs`) : pronos oubliés « 🚨 Dernier appel :
-100 m femmes » ou « … : 3 podiums à poser » ; résultats « 👑 +12 pts, tu es en tête ! » (1er avec des
-points), « 🔥 +12 pts ce soir », « 😬 Soirée blanche : 0 pt » (0 point, toujours) ; mercato « 🔨 Mercato :
-plus que 2 h pour le tour 2 » ; alignement « 📋 Ton équipe n'est pas alignée » ; duel « 🏆 Victoire contre
-X, 42 à 38 pts ! », « 💥 Défaite … », « 🤝 Match nul … » ; fil « 💬 X et 2 autres ont réagi à ton moment » ;
-programme « 📣 Le programme de … est en ligne ». Le service worker passe `badge`
+Textes des notifications (#1093, ton « chambrage » pour toutes les familles, remplace la direction
+« speaker du stade » de #1016 ; `supabase/functions/_shared/push.mjs`) : titre de 35 caractères au plus,
+qui commence par deux emojis (l'émotion, puis le contexte) et porte la vanne ou l'info clé ; corps de
+80 caractères au plus, l'info utile (temps restant, points, place, score) en tête, un emoji en fin,
+puis le nom de la ligue, jamais en premier ; au-delà de deux épreuves, « + n autres ». Trois ou
+quatre variantes par cas, choisies par un hash du joueur et de ce dont parle la notification (le même
+message relu donne le même texte) ; un nom trop long pour la ligne (pseudo, ligue, athlète, épreuve)
+est raccourci avec « … ». Vocabulaire de piste (starter, faux départ, corde, ligne droite,
+photo-finish, chambre d'appel, DQ, planche, lièvre, cloche, SB/PB, tour d'honneur), taquin entre amis,
+jamais blessant, on ne vise que le jeu. Exemples : « 🚨⏱️ Verrou dans 45 min ! » / « Podium du 100 m F
+vide. Les starters s'impatientent 🧦 » ; « 👑🔥 +12 pts, t'es en tête ! » / « 1er sur 18, 3 finales.
+Tour d'honneur, drapeau sur les épaules 🇫🇷 » ; « 🧹😵 Raclée 18-52, journée 4 » (le gagnant a au moins
+une fois et demie les points de l'autre) ; « 🔨😏 Mercato : 2 sur 4 » / « X t'a soufflé Y pour +3 cr. 💸
+Ma Ligue » ; « 🏃💨 X t'a doublé ! » / « Te voilà 4e sur 8. Tu dormais à la corde ? 😴 Ma Ligue ».
+Un test vérifie toutes les variantes avec un pseudo de 20 caractères et une ligue de 30
+(`push-texts.test.ts`). Le service worker passe `badge`
 (`public/icons/badge-96.png`, silhouette blanche du lapin) et tient la pastille de l'icône de l'app à jour
 (`setAppBadge` = notifications affichées, effacée à l'ouverture de l'app ; sans l'API, rien). Le test du
 workflow envoie un exemple de chaque (`testNotifications`, un `tag` chacun).

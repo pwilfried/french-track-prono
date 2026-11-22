@@ -30,6 +30,17 @@ Les pronos des autres joueurs ne deviennent visibles **qu'après verrouillage**.
 
 Départage : points, puis podiums parfaits, puis vainqueurs trouvés.
 
+### Notifications
+Le joueur choisit ses familles dans « Mes rappels » : pronos oubliés, résultats du soir, Manager,
+ma ligue et **chambrage** (#1093, active par défaut). Toutes parlent sur le ton du chambrage entre
+amis, avec le vocabulaire de la piste, sans jamais viser autre chose que le jeu. Le chambrage part
+après les points d'une soirée, dans une ligue où l'on a au moins un adversaire, une fois par soirée
+au plus : un ami vient de te doubler (ou tu l'as doublé), tu finis lanterne rouge avec 0 pt, tu es
+le seul à avoir raté (ou trouvé) le vainqueur d'une finale. Côté Manager, la révélation de chaque
+tour de mercato dit combien d'athlètes tu as eus et qui t'en a soufflé un ; une confrontation
+perdue ou gagnée de loin devient une « raclée ». Heures calmes respectées, jamais deux fois le même
+message. Détails : `docs/architecture.md`, « Notifications push ».
+
 ### Prévu après la V1
 Série en feu (+1 après 3 épreuves de suite avec des points), questions bonus (record battu,
 médailles françaises), badges (Nostradamus, Chasseur d'outsiders, Fan des Bleus).
