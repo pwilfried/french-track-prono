@@ -1421,6 +1421,28 @@ export const messages = {
   },
   leagues: {
     title: "Mes ligues",
+    /** The « Pronostiquer » block on top of a league (#1069). */
+    predict: {
+      label: "Pronostiquer dans cette ligue",
+      next: "Ton prochain prono",
+      nextMany: "Tes prochains pronos",
+      open: "Ouvert",
+      openCount: (n: number) => `${n} ouvertes`,
+      today: "Aujourd'hui",
+      tomorrow: "Demain",
+      startsAt: (day: string, time: string, left: string) => `${day} ${time} · ferme dans ${left}`,
+      manyFinals: (day: string, n: number) => `${day}, ${n} finales à pronostiquer`,
+      firstLocksIn: (left: string) => `La première ferme dans ${left}`,
+      play: "Pronostiquer",
+      doneTitle: "Mes pronos sont posés",
+      done: (n: number, until: string) =>
+        `${n} ${n === 1 ? "podium" : "podiums"} sur ${n} · ${n === 1 ? "modifiable" : "modifiables"} jusqu'${until}`,
+      untilTime: (time: string) => `à ${time}`,
+      untilDay: (day: string, time: string) => `au ${day} à ${time}`,
+      see: "Voir",
+      seeLabel: "Voir mes pronos",
+      none: "Aucun prono ouvert. Prochaine ouverture",
+    },
     back: "Mes ligues",
     players: playersCount,
     createdByMe: "créée par toi",

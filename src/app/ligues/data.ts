@@ -1,11 +1,14 @@
 import { redirect } from "next/navigation";
 
+import { UseCaseError } from "@/application/errors";
 import { listLeagueEvents } from "@/application/league-events";
+import { getLeaguePredict } from "@/application/league-predict";
 import type { LeagueFamily, LeagueFamilyRule } from "@/domain/league-families";
 import {
   createSupabaseLeagueMomentRepository,
   createSupabaseLeagueRepository,
   createSupabaseMomentReactionRepository,
+  createSupabasePredictionRepository,
 } from "@/infra";
 
 import { messages } from "../messages.fr";
@@ -51,4 +54,26 @@ export async function loadLeagueEvents(input: {
     startsAt: e.startsAt,
     counts: e.counts,
   }));
+}
+
+/**
+ * The « Pronostiquer » block of a league (#1069) for the signed-in player; null, so no block, when
+ * it cannot be read.
+ */
+export async function loadLeaguePredict<C extends { slug: string; startsOn: string }>(input: {
+  userId: string;
+  competitionSlugs: string[];
+  families: LeagueFamilyRule[];
+  competitions: C[];
+}) {
+  try {
+    return await getLeaguePredict({
+      events: publicEventReader(),
+      disciplines: publicDisciplines(),
+      predictions: createSupabasePredictionRepository(await getSessionClient()),
+    }).execute({ ...input, now: new Date() });
+  } catch (error) {
+    if (error instanceof UseCaseError) return null;
+    throw error;
+  }
 }
