@@ -4,7 +4,7 @@
 // supabase/migrations/20261114060000_reminder_settings.sql, the Manager ones (#836),
 // supabase/migrations/20261114070000_manager_reminders.sql, the reactions to a league moment
 // (#672): supabase/migrations/20261115040000_moment_reactions.sql, the trash talk and the mercato
-// reveal (#1093): supabase/migrations/20261122150000_trash_talk.sql, and for the programme of a
+// reveal (#1093): supabase/migrations/20261122160000_trash_talk.sql, and for the programme of a
 // competition (#659): supabase/migrations/20261113120000_program_alerts.sql.
 // Plain JavaScript with no import, so that Deno and Node both load it.
 //

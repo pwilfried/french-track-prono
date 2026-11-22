@@ -219,7 +219,7 @@ sur un prono ajouté à la ligue (#1068, sauf l'Espion), changé ou retiré jusq
 des points écrit dans `score_events.detail.jokers` ce que chaque joker fait des points
 (`jokerPoints()`, `src/domain/league-jokers.ts`) ; le classement de la ligue compte les points du
 joker posé (`withLeagueJokers()` dans `getLeagueRanking`), le général compte `points`, sans joker.
-Les fils de ligue et les trophées comptent encore sans joker.
+Les fils de ligue (moments) et les trophées comptent le joker posé (#1114).
 
 **Jokers Manager (v0.24, #1091, décision du propriétaire du 22 nov. 2026).** Même catalogue (jeu
 `manager`) : une ligue Manager reçoit ses jokers actifs à sa création (`manager_league_jokers`).
@@ -879,6 +879,7 @@ Chaque version livre quelque chose d'utilisable et devient un milestone GitHub.
 | v0.21 Feuille de match | Quatre familles Manager (deux places chacune), score = points des tables ÷ 10 plus bonus sans pronos, feuille de match (8 titulaires, 4 remplaçants rangés, discipline choisie, remplaçant désigné et seuil tactique), remplacement des DNS, DNF, DQ et des titulaires sous leur seuil, dernier alignement reporté, tables indoor, prix proposé sur la fiche athlète, premiers pas guidés (mercato et alignement) | …dans une ligue Manager, un joueur aligne 8 titulaires et 4 remplaçants rangés, choisit la discipline de chacun et son remplaçant désigné ; son score vaut les points des tables ÷ 10 plus les bonus, sans pronos, avec les remplacements montrés dans la confrontation et « Mes points » |
 | v0.22 Retours de recette | Résultat saisi avant le verrouillage = épreuve verrouillée (#1063), choix des ligues où compte un prono (#1068), bloc « Pronostiquer » en tête d'une ligue de pronos (#1069), changements du back-office visibles sur les pages publiques (#1070), carte tendance de la communauté sur l'accueil (#1080) | …un joueur choisit les ligues où son prono compte, trouve le bouton Pronostiquer dans sa ligue et voit la tendance du dernier verrouillage sur l'accueil |
 | v0.23 Retours de recette (2) | Tour du mercato terminé en avance par chaque joueur (#1084), prix Manager suggéré appliqué à tous les athlètes depuis le back-office (#1086), catalogue trié par prix avec des filtres simplifiés (#1087), récap des enchères par famille et enchères comptées dans l'équipe en construction (#1088), mercato terminé relu tour par tour (#1089), code d'invitation des ligues publiques masqué, lien seul partagé (#1098) | …un joueur finit son tour de mercato sans attendre, relit le mercato terminé et partage une ligue publique par son lien |
+| v0.24 Jokers de ligue | Jokers de ligue en pronos (Double, Tout ou rien, Filet, Espion, Outsider, #1090) et jokers Manager (#1091), catalogue réglable au back-office, jokers comptés dans les classements de ligue, les moments et les trophées (#1114), ton chambrage des notifications (#1093) | …un joueur joue chacun de ses jokers une fois dans sa ligue, et seul le classement de cette ligue change |
 | Plus tard | Carte « Mon podium du 100 m », questions bonus, connexion Google / Apple | à planifier |
 
 ## Cas de test du cœur
