@@ -58,8 +58,8 @@ if (url && key) {
         insert into leagues (name, owner_id) values ('Amis', '${anna.userId}') returning id
       ), m as (
         insert into league_members (league_id, user_id, role)
-        select id, '${anna.userId}', 'owner' from l
-        union all select id, '${bob.userId}', 'member' from l
+        select id, '${anna.userId}'::uuid, 'owner'::league_role from l
+        union all select id, '${bob.userId}'::uuid, 'member'::league_role from l
       ), c as (
         insert into league_competitions (league_id, competition_id)
         select l.id, c.id from l, competitions c where c.slug = '${competitionSlug}'
