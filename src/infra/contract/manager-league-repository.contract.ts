@@ -184,6 +184,7 @@ export function managerLeagueRepositoryContract(
         startsAt: null,
         openedAt: null,
         roundMode: "auto",
+        closedRounds: [],
       });
 
       expect(await w.other.join(code)).toEqual({ outcome: "joined", leagueId: created.id });
@@ -199,6 +200,7 @@ export function managerLeagueRepositoryContract(
         startsAt: "2027-01-10T19:00:00.000Z",
         openedAt: null,
         roundMode: "custom",
+        closedRounds: [],
       });
       expect(set?.rules.rounds).toEqual({ firstHours: 48, longRounds: 1, nextHours: 12 });
 

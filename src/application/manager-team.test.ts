@@ -55,6 +55,7 @@ const bids = (mine: MyManagerBids | "not_member"): ManagerBidRepository => ({
   place: async () => "placed",
   withdraw: async () => "withdrawn",
   close: async () => "closed",
+  finishRound: async () => "finished",
 });
 
 const closed = (team: MyManagerBids["team"]): MyManagerBids => ({
@@ -63,6 +64,7 @@ const closed = (team: MyManagerBids["team"]): MyManagerBids => ({
   mercatoClosed: true,
   canClose: false,
   roundEndsAt: null,
+  round: null,
   team,
   bids: [],
 });

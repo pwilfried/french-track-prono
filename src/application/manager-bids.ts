@@ -13,9 +13,16 @@ import type { ManagerLeagueRepository } from "./manager-leagues";
 export type WonAthlete = { athleteId: string; amount: number; round: number };
 
 /**
+ * The open round of the mercato (#1084): its number, whether the player finished it, and how many
+ * of the participants did.
+ */
+export type RoundProgress = { round: number; done: boolean; finished: number; members: number };
+
+/**
  * The player's own bids in a league, the athletes they won, the budget of the league, whether bids
  * are open, when the open round ends (null before the mercato opens and once it is closed), whether
- * the mercato is closed (#424) and whether the player may close it as the last bidder.
+ * the mercato is closed (#424), whether the player may close it as the last bidder, and the open
+ * round (null outside the mercato).
  */
 export type MyManagerBids = {
   budget: number;
@@ -23,6 +30,7 @@ export type MyManagerBids = {
   mercatoClosed: boolean;
   canClose: boolean;
   roundEndsAt: string | null;
+  round: RoundProgress | null;
   team: WonAthlete[];
   bids: ManagerBid[];
 };
@@ -32,6 +40,7 @@ export type BidOutcome =
   | "not_member"
   | "mercato_closed"
   | "round_closing"
+  | "round_done"
   | "not_in_catalogue"
   | "taken"
   | "below_price"
@@ -48,12 +57,18 @@ export interface ManagerBidRepository {
   withdraw(
     leagueId: string,
     athleteId: string,
-  ): Promise<"withdrawn" | "not_member" | "mercato_closed" | "round_closing">;
+  ): Promise<"withdrawn" | "not_member" | "mercato_closed" | "round_closing" | "round_done">;
   /** The last participant who can still recruit closes the mercato (#424). */
   close(leagueId: string): Promise<CloseOutcome>;
+  /**
+   * The player finished the open round: no more bids from them until the next one. Once every
+   * participant did, the round closes at once (#1084).
+   */
+  finishRound(leagueId: string): Promise<FinishRoundOutcome>;
 }
 
 export type CloseOutcome = "closed" | "not_member" | "mercato_closed" | "not_last_bidder";
+export type FinishRoundOutcome = "finished" | "not_member" | "mercato_closed" | "round_closing";
 
 type Named = { name: string; price: number };
 export type MyBidLine = ManagerBid & Named;
@@ -69,6 +84,7 @@ export type MyBidsView = {
   mercatoClosed: boolean;
   canClose: boolean;
   roundEndsAt: string | null;
+  round: RoundProgress | null;
   /** By athlete name. */
   team: MyAthleteLine[];
   /** By athlete name. */
@@ -79,6 +95,7 @@ const refused: Record<Exclude<BidOutcome | CloseOutcome, "placed" | "closed">, E
   not_member: "LEAGUE_NOT_FOUND",
   mercato_closed: "MERCATO_NOT_OPEN",
   round_closing: "ROUND_CLOSING",
+  round_done: "ROUND_DONE",
   not_in_catalogue: "ATHLETE_NOT_IN_CATALOGUE",
   taken: "ATHLETE_TAKEN",
   below_price: "MANAGER_BID_BELOW_PRICE",
@@ -121,6 +138,7 @@ export function getMyManagerBids(ports: {
         mercatoClosed: mine.mercatoClosed,
         canClose: mine.canClose,
         roundEndsAt: mine.roundEndsAt,
+        round: mine.round,
         team: mine.team.map((a) => ({ ...a, name: named(a.athleteId).name })).sort(byName),
         bids: mine.bids.map((b) => ({ ...b, ...named(b.athleteId) })).sort(byName),
       };
@@ -128,7 +146,6 @@ export function getMyManagerBids(ports: {
   };
 }
 
-/** Places or changes a secret bid; the amount comes from the form, in whole credits. */
 /** Whether one of the player's Manager leagues takes bids now: the home says so (#526). */
 export function isMercatoOpenForMe(ports: {
   managerLeagues: Pick<ManagerLeagueRepository, "listMine">;
@@ -143,6 +160,7 @@ export function isMercatoOpenForMe(ports: {
   };
 }
 
+/** Places or changes a secret bid; the amount comes from the form, in whole credits. */
 export function placeManagerBid(ports: { bids: ManagerBidRepository }) {
   return {
     async execute(input: { leagueId: string; athleteId: string; amount: string }): Promise<void> {
@@ -162,6 +180,16 @@ export function withdrawManagerBid(ports: { bids: ManagerBidRepository }) {
     async execute(input: { leagueId: string; athleteId: string }): Promise<void> {
       const outcome = await ports.bids.withdraw(input.leagueId, input.athleteId);
       if (outcome !== "withdrawn") throw new UseCaseError(refused[outcome]);
+    },
+  };
+}
+
+/** The player finished the open round of the mercato (« J'ai fini ce tour », #1084). */
+export function finishManagerRound(ports: { bids: ManagerBidRepository }) {
+  return {
+    async execute(input: { leagueId: string }): Promise<void> {
+      const outcome = await ports.bids.finishRound(input.leagueId);
+      if (outcome !== "finished") throw new UseCaseError(refused[outcome]);
     },
   };
 }

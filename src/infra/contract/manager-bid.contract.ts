@@ -136,6 +136,48 @@ export function managerBidContract(name: string, world: () => Promise<ManagerBid
       }
     });
 
+    it("closes a round at once when every participant has finished it (#1084)", async () => {
+      const w = await world();
+      try {
+        expect(await w.first.place(w.leagueId, w.cheap, 30)).toBe("placed");
+        const before = await w.first.mine(w.leagueId);
+        if (before === "not_member") throw new Error("a participant");
+        expect(before.round).toEqual({ round: 1, done: false, finished: 0, members: 2 });
+        expect(await w.outsider.finishRound(w.leagueId)).toBe("not_member");
+        expect(await w.first.finishRound(w.closedLeagueId)).toBe("mercato_closed");
+
+        expect(await w.first.finishRound(w.leagueId)).toBe("finished");
+        expect(await w.first.finishRound(w.leagueId)).toBe("finished");
+        expect(await w.first.place(w.leagueId, w.dear, 20)).toBe("round_done");
+        expect(await w.first.withdraw(w.leagueId, w.cheap)).toBe("round_done");
+        const waiting = await w.first.mine(w.leagueId);
+        const theirs = await w.second.mine(w.leagueId);
+        if (waiting === "not_member" || theirs === "not_member") throw new Error("participants");
+        expect(waiting.round).toEqual({ round: 1, done: true, finished: 1, members: 2 });
+        expect(waiting.team).toEqual([]);
+        expect(theirs.round).toEqual({ round: 1, done: false, finished: 1, members: 2 });
+        expect(await w.reveals.first.bidRounds(w.leagueId)).toEqual([]);
+
+        expect(await w.second.finishRound(w.leagueId)).toBe("finished");
+
+        const after = await w.first.mine(w.leagueId);
+        if (after === "not_member") throw new Error("a participant");
+        expect(after.team).toEqual([{ athleteId: w.cheap, amount: 30, round: 1 }]);
+        expect(after.round).toEqual({ round: 2, done: false, finished: 0, members: 2 });
+        expect(after.mercatoOpen).toBe(true);
+        // Round 2 lasts its 48 hours from the early close, not from the planned end of round 1.
+        const planned = Date.parse(before.roundEndsAt!) + 48 * 3_600_000;
+        expect(Date.parse(after.roundEndsAt!)).toBeLessThan(planned);
+        expect(Date.parse(after.roundEndsAt!)).toBeGreaterThan(
+          Date.parse(before.roundEndsAt!) - 3_600_000,
+        );
+        expect(await w.reveals.first.bidRounds(w.leagueId)).toEqual([{ round: 1, seen: false }]);
+        expect(await w.first.place(w.leagueId, w.dear, 20)).toBe("placed");
+      } finally {
+        await w.restore();
+      }
+    });
+
     it("lets the last participant who can still recruit close the mercato (#424)", async () => {
       const w = await world();
       try {

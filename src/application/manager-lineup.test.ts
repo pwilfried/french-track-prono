@@ -65,6 +65,7 @@ const bids: ManagerBidRepository = {
     mercatoClosed: true,
     canClose: false,
     roundEndsAt: null,
+    round: null,
     team: [
       { athleteId: "a1", amount: 30, round: 1 },
       { athleteId: "a2", amount: 20, round: 1 },
@@ -75,6 +76,7 @@ const bids: ManagerBidRepository = {
   place: async () => "placed",
   withdraw: async () => "withdrawn",
   close: async () => "closed",
+  finishRound: async () => "finished",
 };
 
 const meeting = (over: Partial<LineupCompetition> = {}): LineupCompetition => ({

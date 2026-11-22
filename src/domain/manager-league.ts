@@ -50,14 +50,18 @@ export const plannedMercatoEnd = (start: string, rounds: RoundRules) =>
 export type MercatoStatus =
   { phase: "waiting" } | { phase: "round"; round: number; endsAt: string } | { phase: "over" };
 
-/** The status of a mercato opened at `openedAt` (null: not yet), after its planned rounds. */
+/**
+ * The status of a mercato opened at `openedAt` (null: not yet), after its planned rounds.
+ * `closed` holds the real closes of the rounds already closed, in order (#1084).
+ */
 export function mercatoStatus(
   openedAt: string | null,
   rounds: RoundRules,
   now: string,
+  closed: readonly string[] = [],
 ): MercatoStatus {
   if (openedAt === null) return { phase: "waiting" };
-  const current = currentRound(openedAt, rounds, now);
+  const current = currentRound(openedAt, rounds, now, closed);
   return current.round <= PLANNED_ROUNDS ? { phase: "round", ...current } : { phase: "over" };
 }
 
@@ -70,21 +74,30 @@ export type CalendarRound = {
 
 /**
  * The planned rounds of a mercato starting at `start`, each passed, under way or upcoming at
- * `now` (#925). Before the mercato is `open`, every round is upcoming.
+ * `now` (#925). Before the mercato is `open`, every round is upcoming. A round closed early ends at
+ * its real close (`closed`, in order) and the next ones move with it (#1084).
  */
 export function mercatoCalendar(
   start: string,
   rounds: RoundRules,
   now: string,
   open: boolean,
+  closed: readonly string[] = [],
 ): CalendarRound[] {
   const at = Date.parse(now);
   let begins = Date.parse(start);
   return Array.from({ length: PLANNED_ROUNDS }, (_, i) => {
     const round = i + 1;
-    const endsAt = roundEndsAt(start, rounds, round);
+    const endsAt = roundEndsAt(start, rounds, round, closed);
     const ends = Date.parse(endsAt);
-    const state = !open || at < begins ? "upcoming" : at < ends ? "current" : "past";
+    const state =
+      open && round <= closed.length
+        ? "past"
+        : !open || at < begins
+          ? "upcoming"
+          : at < ends
+            ? "current"
+            : "past";
     begins = ends;
     return { round, hours: roundHours(rounds, round), endsAt, state };
   });

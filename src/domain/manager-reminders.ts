@@ -24,8 +24,17 @@ export type ManagerReminderCandidate = {
 const listens = (c: ManagerReminderCandidate, now: Date) =>
   c.settings.families.manager && !isQuietTime(now, c.settings);
 
-/** The open round of a league's mercato and the participants who can still recruit. */
-export type OpenRound = { leagueId: string; round: number; endsAt: Date; recruiters: string[] };
+/**
+ * The open round of a league's mercato, the participants who can still recruit and those who
+ * already finished the round (#1084).
+ */
+export type OpenRound = {
+  leagueId: string;
+  round: number;
+  endsAt: Date;
+  recruiters: string[];
+  finished: string[];
+};
 
 export type MercatoRoundReminder = { userId: string; leagueId: string; round: number };
 
@@ -34,8 +43,8 @@ export const mercatoRoundKey = (leagueId: string, round: number) =>
   `mercato_round:${leagueId}:${round}`;
 
 /**
- * Who hears that a mercato round ends in 2 h: the participants who can still recruit, the round
- * ending within the next 2 hours, once per round.
+ * Who hears that a mercato round ends in 2 h: the participants who can still recruit and have not
+ * finished the round (#1084), the round ending within the next 2 hours, once per round.
  */
 export function mercatoRoundReminders(
   candidates: ManagerReminderCandidate[],
@@ -47,7 +56,8 @@ export function mercatoRoundReminders(
   for (const r of rounds) {
     if (r.endsAt.getTime() <= now.getTime() || r.endsAt.getTime() > until) continue;
     for (const c of candidates) {
-      if (!r.recruiters.includes(c.userId) || !listens(c, now)) continue;
+      if (!r.recruiters.includes(c.userId) || r.finished.includes(c.userId)) continue;
+      if (!listens(c, now)) continue;
       if (c.sent.includes(mercatoRoundKey(r.leagueId, r.round))) continue;
       reminders.push({ userId: c.userId, leagueId: r.leagueId, round: r.round });
     }

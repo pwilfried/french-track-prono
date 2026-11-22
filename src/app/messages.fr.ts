@@ -843,6 +843,15 @@ export const messages = {
       "Plus personne d'autre ne peut recruter : tu peux clore le mercato. Tes offres en cours seront traitées, puis le mercato sera clos pour tout le monde.",
     closeMercato: "Clore le mercato",
     closing: "Clôture…",
+    /** « J'ai fini ce tour » (#1084): the round closes once every participant is done. */
+    finishRound: "J'ai fini ce tour",
+    finishRoundHint: "Fini avant l'heure ? Dis-le : le tour se clôt dès que tout le monde a fini.",
+    finishConfirm:
+      "Tu ne pourras plus enchérir ni changer tes offres pendant ce tour. Le tour se clôt quand tout le monde a fini, ou à l'heure prévue.",
+    finishYes: "Oui, j'ai fini",
+    finishing: "Envoi en cours…",
+    roundDone: (finished: number, members: number) =>
+      `Tour terminé, en attente des autres (${finished}/${members})`,
     myBid: (n: number) => `Mon offre : ${n} cr.`,
     bidLabel: (name: string) => `Mon offre sur ${name}, en crédits`,
     less: "Baisser mon offre d'un crédit",
@@ -3673,6 +3682,7 @@ export const messages = {
       "Le tour d'enchères se termine : les offres rouvrent dans quelques minutes, avec le tour suivant (ou le mercato se clôt).",
     MERCATO_NOT_LAST_BIDDER:
       "Tu ne peux pas clore le mercato : un autre participant peut encore recruter.",
+    ROUND_DONE: "Tu as fini ce tour : tes offres sont fixées jusqu'au tour suivant.",
     MANAGER_BIDS_UNAVAILABLE: "Tes offres n'ont pas pu être chargées ou enregistrées. Réessaie.",
     MERCATO_NOT_OVER:
       "Le mercato n'est pas fini : tu aligneras ton équipe une fois qu'il sera clos.",

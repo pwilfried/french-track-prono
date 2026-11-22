@@ -211,6 +211,32 @@ describe("mercatoStatus", () => {
     expect(mercatoStatus(opened, rules, "2027-01-04T08:00:00.000Z")).toEqual({ phase: "over" });
     expect(mercatoStatus(opened, rules, "2027-02-01T00:00:00.000Z")).toEqual({ phase: "over" });
   });
+
+  it("opens the next round at the early close of a round, for its planned length (#1084)", () => {
+    // Round 1 closed on Jan 1 20:00, everyone done: round 2 lasts its 12 hours from there.
+    const closed = ["2027-01-01T20:00:00.000Z"];
+    expect(mercatoStatus(opened, rules, "2027-01-01T20:00:00.000Z", closed)).toEqual({
+      phase: "round",
+      round: 2,
+      endsAt: "2027-01-02T08:00:00.000Z",
+    });
+    expect(mercatoStatus(opened, rules, "2027-01-02T08:00:00.000Z", closed)).toEqual({
+      phase: "round",
+      round: 3,
+      endsAt: "2027-01-02T20:00:00.000Z",
+    });
+  });
+
+  it("is over once the last planned round closed early (#1084)", () => {
+    const closed = [
+      "2027-01-01T20:00:00.000Z",
+      "2027-01-01T21:00:00.000Z",
+      "2027-01-01T22:00:00.000Z",
+    ];
+    expect(mercatoStatus(opened, rules, "2027-01-01T22:00:00.000Z", closed)).toEqual({
+      phase: "over",
+    });
+  });
 });
 
 describe("mercatoCalendar", () => {
@@ -224,6 +250,15 @@ describe("mercatoCalendar", () => {
       { round: 1, hours: 48, endsAt: "2027-01-03T08:00:00.000Z", state: "current" },
       { round: 2, hours: 12, endsAt: "2027-01-03T20:00:00.000Z", state: "upcoming" },
       { round: 3, hours: 12, endsAt: "2027-01-04T08:00:00.000Z", state: "upcoming" },
+    ]);
+  });
+
+  it("shows the real end of a round closed early and moves the next ones (#1084)", () => {
+    const closed = ["2027-01-01T20:00:00.000Z"];
+    expect(mercatoCalendar(opened, rules, "2027-01-01T21:00:00.000Z", true, closed)).toEqual([
+      { round: 1, hours: 48, endsAt: "2027-01-01T20:00:00.000Z", state: "past" },
+      { round: 2, hours: 12, endsAt: "2027-01-02T08:00:00.000Z", state: "current" },
+      { round: 3, hours: 12, endsAt: "2027-01-02T20:00:00.000Z", state: "upcoming" },
     ]);
   });
 

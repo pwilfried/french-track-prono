@@ -261,16 +261,19 @@ export default async function CataloguePage({
                       athlete={athlete}
                       href={athleteHref(athlete.slug, pageHref(view.page))}
                     >
-                      {mine !== "error" && mine.mercatoOpen && athlete.available && (
-                        <BidForm
-                          leagueId={id}
-                          athleteId={athlete.athleteId}
-                          name={athlete.name}
-                          price={athlete.price}
-                          current={bidOf.get(athlete.athleteId) ?? null}
-                          credits={mine.available + (bidOf.get(athlete.athleteId) ?? 0)}
-                        />
-                      )}
+                      {mine !== "error" &&
+                        mine.mercatoOpen &&
+                        !mine.round?.done &&
+                        athlete.available && (
+                          <BidForm
+                            leagueId={id}
+                            athleteId={athlete.athleteId}
+                            name={athlete.name}
+                            price={athlete.price}
+                            current={bidOf.get(athlete.athleteId) ?? null}
+                            credits={mine.available + (bidOf.get(athlete.athleteId) ?? 0)}
+                          />
+                        )}
                     </CatalogueCard>
                   </li>
                 ))}

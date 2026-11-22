@@ -2,6 +2,7 @@ import type { ManagerBidRepository, WonAthlete } from "@/application/manager-bid
 import type { ManagerRevealRepository } from "@/application/manager-reveal";
 import { bidProblem, type ManagerBid } from "@/domain/manager-bid";
 import { mayCloseMercato, mercatoCloseReason, type Recruiter } from "@/domain/manager-mercato";
+import { PLANNED_ROUNDS } from "@/domain/manager-league";
 import type { RoundBid } from "@/domain/manager-reveal";
 import { awardBids, roundEndsAt, type RoundRules } from "@/domain/manager-round";
 import type { MercatoCloseMode } from "@/domain/manager-rules";
@@ -14,6 +15,7 @@ const ROUNDS: RoundRules = { firstHours: 48, longRounds: 2, nextHours: 24 };
  * participants by league. `closeRound` does what the scheduled job does in the database (#423),
  * then closes the mercato when no participant can recruit any more, if the rules allow it (#424).
  * `reveals` is a player's view of the bids of the closed rounds (#604): everyone's, once closed.
+ * A round closes early once every participant has finished it (#1084).
  */
 export function createInMemoryManagerBidStore(input: {
   budget: number;
@@ -25,8 +27,14 @@ export function createInMemoryManagerBidStore(input: {
   const bids = new Map<string, ManagerBid[]>();
   /** League → athlete → its owner and what it cost. */
   const awards = new Map<string, Map<string, WonAthlete & { userId: string }>>();
-  /** League → when its mercato opened, how many rounds are closed, whether it is closed. */
-  const mercato = new Map<string, { openedAt: string; closed: number; over: boolean }>();
+  /**
+   * League → when its mercato opened, how many rounds are closed and their real closes, who
+   * finished the open round, whether the mercato is closed.
+   */
+  const mercato = new Map<
+    string,
+    { openedAt: string; closed: number; ends: string[]; done: Set<string>; over: boolean }
+  >();
   /** League → the bids of each closed round, kept at its close (#604). */
   const history = new Map<string, (RoundBid & { round: number })[]>();
   /** League/player → the last round whose reveal they saw. */
@@ -63,11 +71,16 @@ export function createInMemoryManagerBidStore(input: {
     const state = mercato.get(leagueId);
     return state !== undefined && !state.over ? state : undefined;
   };
-  /** The highest bid on each athlete wins, the other bids are freed. */
-  const award = (leagueId: string) => {
+  /** When the open round of a league ends. */
+  const openRoundEnds = (state: { openedAt: string; closed: number; ends: string[] }) =>
+    roundEndsAt(state.openedAt, ROUNDS, state.closed + 1, state.ends);
+  /** The round closes at `endsAt`: the highest bid on each athlete wins, the others are freed. */
+  const award = (leagueId: string, endsAt: string) => {
     const state = mercato.get(leagueId)!;
     const won = awards.get(leagueId)!;
     state.closed += 1;
+    state.ends.push(endsAt);
+    state.done.clear();
     const all = members(leagueId).flatMap((userId) =>
       (bids.get(key(leagueId, userId)) ?? []).map((b) => ({ ...b, userId })),
     );
@@ -89,13 +102,19 @@ export function createInMemoryManagerBidStore(input: {
   /** The bids under way are resolved as a last round, then the mercato is closed. */
   const finish = (leagueId: string) => {
     if (members(leagueId).some((userId) => (bids.get(key(leagueId, userId)) ?? []).length > 0)) {
-      award(leagueId);
+      award(leagueId, new Date(tick).toISOString());
     }
     mercato.get(leagueId)!.over = true;
   };
   return {
     openMercato(leagueId: string) {
-      mercato.set(leagueId, { openedAt: new Date(tick).toISOString(), closed: 0, over: false });
+      mercato.set(leagueId, {
+        openedAt: new Date(tick).toISOString(),
+        closed: 0,
+        ends: [],
+        done: new Set(),
+        over: false,
+      });
       awards.set(leagueId, new Map());
     },
     reveals(userId: string): ManagerRevealRepository {
@@ -124,8 +143,9 @@ export function createInMemoryManagerBidStore(input: {
     },
     /** Closes the open round of a league, then its mercato if nobody can recruit any more. */
     closeRound(leagueId: string) {
-      if (!open(leagueId)) throw new Error("the mercato of the league is not open");
-      award(leagueId);
+      const state = open(leagueId);
+      if (!state) throw new Error("the mercato of the league is not open");
+      award(leagueId, openRoundEnds(state));
       const now = new Date(tick).toISOString();
       if (mercatoCloseReason({ ...situation(leagueId), closesAt: null, now })) finish(leagueId);
     },
@@ -137,13 +157,21 @@ export function createInMemoryManagerBidStore(input: {
         async mine(leagueId) {
           if (!member(leagueId)) return "not_member";
           const state = mercato.get(leagueId);
+          const current = open(leagueId);
           return {
             budget: input.budget,
-            mercatoOpen: open(leagueId) !== undefined,
+            mercatoOpen: current !== undefined,
             mercatoClosed: state?.over ?? false,
             canClose: mayClose(leagueId),
-            roundEndsAt:
-              state && !state.over ? roundEndsAt(state.openedAt, ROUNDS, state.closed + 1) : null,
+            roundEndsAt: current ? openRoundEnds(current) : null,
+            round: current
+              ? {
+                  round: current.closed + 1,
+                  done: current.done.has(userId),
+                  finished: current.done.size,
+                  members: members(leagueId).length,
+                }
+              : null,
             team: wonBy(leagueId, userId),
             bids: structuredClone(bids.get(key(leagueId, userId)) ?? []),
           };
@@ -151,6 +179,7 @@ export function createInMemoryManagerBidStore(input: {
         async place(leagueId, athleteId, amount) {
           if (!member(leagueId)) return "not_member";
           if (!open(leagueId)) return "mercato_closed";
+          if (open(leagueId)!.done.has(userId)) return "round_done";
           const price = input.prices[athleteId];
           if (price === undefined) return "not_in_catalogue";
           if (awards.get(leagueId)?.has(athleteId)) return "taken";
@@ -175,12 +204,27 @@ export function createInMemoryManagerBidStore(input: {
         async withdraw(leagueId, athleteId) {
           if (!member(leagueId)) return "not_member";
           if (!open(leagueId)) return "mercato_closed";
+          if (open(leagueId)!.done.has(userId)) return "round_done";
           const mine = bids.get(key(leagueId, userId)) ?? [];
           bids.set(
             key(leagueId, userId),
             mine.filter((b) => b.athleteId !== athleteId),
           );
           return "withdrawn";
+        },
+        async finishRound(leagueId) {
+          if (!member(leagueId)) return "not_member";
+          const state = open(leagueId);
+          if (!state) return "mercato_closed";
+          state.done.add(userId);
+          if (state.done.size < members(leagueId).length) return "finished";
+          // Everyone is done: the round closes now; the mercato ends after the last planned one.
+          tick += 1;
+          const now = new Date(tick).toISOString();
+          award(leagueId, now);
+          const reason = mercatoCloseReason({ ...situation(leagueId), closesAt: null, now });
+          if (state.closed >= PLANNED_ROUNDS || reason) finish(leagueId);
+          return "finished";
         },
         async close(leagueId) {
           if (!member(leagueId)) return "not_member";

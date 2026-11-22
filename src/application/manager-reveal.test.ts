@@ -58,6 +58,7 @@ const mine: MyManagerBids = {
   mercatoClosed: false,
   canClose: false,
   roundEndsAt: null,
+  round: null,
   team: [{ athleteId: "a1", amount: 30, round: 1 }],
   bids: [],
 };

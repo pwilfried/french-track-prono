@@ -363,7 +363,7 @@ Le schéma complet est dans `supabase/migrations/20261106000000_init.sql`.
 | Jeu | `predictions`, `score_events`, `scoring_rules`, `reactions`, `badges`, `user_badges` (niveau de badge gagné, #821), `trophies` et `trophy_settings` (trophées de saison et compte FrenchTrack du Témoin d'or, #822), `fun_facts` et `fun_fact_settings` (« Le saviez-vous ? », #766) |
 | Communauté (v0.19) | `league_moments`, `manager_moments`, `moment_reactions`, `moment_reaction_reports`, `frenchtrack_picks`, `announcements`, `polls`, `poll_votes` |
 | Notifications | `push_subscriptions`, `reminder_settings`, `reminder_log`, `program_alerts` |
-| Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `manager_lineup_entries`, `manager_lineup_carry_overs`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
+| Manager (v0.12 à v0.16) | `manager_rules`, `manager_leagues`, `manager_members`, `manager_competitions`, `manager_bids`, `manager_rounds`, `manager_round_done`, `manager_awards`, `manager_round_bids`, `manager_lineups`, `manager_lineup_entries`, `manager_lineup_carry_overs`, `event_performances`, `manager_scores`, `manager_matchdays`, `manager_fixtures`, `manager_honours` (détail : `docs/decisions/french-track-manager.md`) |
 | Fonctions | `create_league()`, `add_league_family()`, `join_league()`, `leave_league()`, `transfer_league()`, `enforce_prediction_lock()` (trigger), `can_react()`, `delete_my_account()`, `raise_my_badge_levels()`, `event_consensus()`, `save_reminder_settings()`, `admin_replace_trophies()`, `set_prediction_leagues()` |
 | Prévues, hors v0.x en cours | `bonus_questions`, `bonus_answers` |
 
@@ -526,7 +526,8 @@ de `currentRound` dans `src/domain/manager-round.ts`, rang, verrou d'alignement)
 montre « Ma saison » de cette ligue (journée, rang, prochaine confrontation, action du moment ;
 pas de rang avant la 1re journée notée, #936) et l'état du mercato tiré de son calendrier prévu
 (`mercatoStatus` et `mercatoCalendar`, `src/domain/manager-league.ts`, #925 : tour N en cours,
-puis « Mercato terminé » après le dernier tour) ;
+puis « Mercato terminé » après le dernier tour ; un tour clos en avance, tout le monde ayant fini,
+décale les suivants, #1084) ;
 l'étape du déroulé vient de
 `currentSeasonStep` (`src/domain/manager-home.ts`). Le tutoriel est un composant client
 (`ManagerTutorial`) : ouvert seul à la première visite (mémorisé sur l'appareil, rien en base),
@@ -726,7 +727,7 @@ les clés VAPID, des rappels groupés (#681, règles de référence dans `src/do
 - « Résultats du soir » : un récap quand toutes les finales pronostiquées de la soirée ont leurs
   points (points de la soirée, place dans la compétition) ;
 - « Manager » (#836, règles dans `src/domain/manager-reminders.ts`) : fin du tour de mercato
-  dans 2 h (aux participants qui peuvent encore recruter) ; alignement non validé quand le verrou
+  dans 2 h (aux participants qui peuvent encore recruter et n'ont pas fini le tour, #1084) ; alignement non validé quand le verrou
   de la journée tombe dans le délai avant verrou ; duel terminé (toutes les épreuves de la
   compétition finies et les scores Manager calculés depuis moins de 24 h), aux deux joueurs.
 

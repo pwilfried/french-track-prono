@@ -147,6 +147,20 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   « Libre » dans le catalogue. Dans `manager_awards`, un joueur lit ses propres athlètes ; ceux
   des autres et leur prix se lisent depuis #604 dans la révélation de fin de tour ; le panneau « Mon budget » montre le dépensé, la fin du tour et « Mes
   athlètes ».
+- **Tour fini avant l'heure** (recette du propriétaire du 22 nov. 2026, #1084) : pendant un tour,
+  « J'ai fini ce tour » dans « Mon budget », après confirmation (`finish_manager_round`) ; le
+  joueur n'enchérit plus et ne change plus ses offres jusqu'au tour suivant (FT044) et voit
+  « Tour terminé, en attente des autres (x/n) » (`manager_round_progress`). Qui a fini quel tour :
+  `manager_round_done`, écrit seulement par la fonction, pour l'appelant, pendant le tour ; lu par
+  les participants. Quand tous les participants ont fini, le tour se clôt tout de suite, comme à
+  sa fin (attribution, révélation, tour suivant) ; les tours suivants gardent leur durée à partir
+  de cette clôture : l'avance gagnée s'ajoute à `manager_leagues.mercato_advance` et chaque fin de
+  tour se calcule depuis `mercato_opened_at - mercato_advance`. Côté TypeScript, statut et
+  calendrier lisent les clôtures réelles des tours clos (`closedRounds`, `currentRound`,
+  `mercatoStatus`, `mercatoCalendar`). Après le 3e tour (`PLANNED_ROUNDS`) fini par tous, le
+  mercato se clôt (`private.finish_manager_mercato`). Le rappel « fin du tour dans 2 h » ne va
+  plus à un joueur qui a fini le tour. Un joueur qui n'a pas fini garde le tour jusqu'à l'heure
+  prévue.
 - **Clôture du mercato**, de trois façons : plus aucun participant n'a de budget (après
   résolution des offres en cours) ; le dernier participant qui a encore du budget décide d'y
   mettre fin ; date programmée par les règles.

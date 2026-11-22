@@ -94,7 +94,10 @@ async function seasonOf(ports: Ports, leagueId: string, now: string): Promise<My
         scored: false,
         over: false,
       }),
-      mercato: openedAt === null ? null : currentRound(openedAt, league.rules.rounds, now),
+      mercato:
+        openedAt === null
+          ? null
+          : currentRound(openedAt, league.rules.rounds, now, league.mercato.closedRounds),
     };
   }
 

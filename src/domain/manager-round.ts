@@ -12,26 +12,40 @@ export type RoundRules = ManagerRules["rounds"];
 export const roundHours = (rules: RoundRules, n: number) =>
   n <= rules.longRounds ? rules.firstHours : rules.nextHours;
 
-/** When round `n` closes, as an ISO time. */
-export function roundEndsAt(openedAt: string, rules: RoundRules, n: number): string {
-  let hours = 0;
-  for (let round = 1; round <= n; round += 1) hours += roundHours(rules, round);
-  return new Date(Date.parse(openedAt) + hours * 3_600_000).toISOString();
+const HOUR = 3_600_000;
+
+/**
+ * When round `n` closes, as an ISO time. `closed` holds the real closes of the rounds already
+ * closed, in order (#1084): a round closes early once every participant has finished it, and the
+ * next rounds keep their length from there. A closed round ends at its real close.
+ */
+export function roundEndsAt(
+  openedAt: string,
+  rules: RoundRules,
+  n: number,
+  closed: readonly string[] = [],
+): string {
+  if (n <= closed.length) return closed[n - 1]!;
+  let ends = Date.parse(closed.at(-1) ?? openedAt);
+  for (let round = closed.length + 1; round <= n; round += 1)
+    ends += roundHours(rules, round) * HOUR;
+  return new Date(ends).toISOString();
 }
 
 /**
  * The round open at `now` in a mercato opened at `openedAt`, and when it ends (ISO): the first
- * round that has not ended yet (#774).
+ * round that has not ended yet (#774), after the closed ones (`closed`, their real closes, #1084).
  */
 export function currentRound(
   openedAt: string,
   rules: RoundRules,
   now: string,
+  closed: readonly string[] = [],
 ): { round: number; endsAt: string } {
   const at = Date.parse(now);
-  let ends = Date.parse(openedAt);
-  for (let round = 1; ; round += 1) {
-    ends += roundHours(rules, round) * 3_600_000;
+  let ends = Date.parse(closed.at(-1) ?? openedAt);
+  for (let round = closed.length + 1; ; round += 1) {
+    ends += roundHours(rules, round) * HOUR;
     if (ends > at) return { round, endsAt: new Date(ends).toISOString() };
   }
 }

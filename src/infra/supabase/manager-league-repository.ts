@@ -133,13 +133,14 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
       const { data, error } = await client
         .from("manager_leagues")
         .select(
-          "id, name, is_public, invite_code, owner_id, rules, player_target, mercato_starts_at, mercato_opened_at, round_mode, manager_members(user_id, joined_at, profiles!inner(pseudo, bib_number, bib_color))",
+          "id, name, is_public, invite_code, owner_id, rules, player_target, mercato_starts_at, mercato_opened_at, round_mode, manager_rounds(round, ends_at), manager_members(user_id, joined_at, profiles!inner(pseudo, bib_number, bib_color))",
         )
         .eq("id", id)
         .returns<
           (LeagueRow &
             MercatoRow & {
             rules: ManagerRules;
+            manager_rounds: { round: number; ends_at: string }[];
             manager_members: {
               user_id: string;
               joined_at: string;
@@ -165,6 +166,10 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
           startsAt: iso(row.mercato_starts_at),
           openedAt: iso(row.mercato_opened_at),
           roundMode: row.round_mode,
+          // Their real closes, in order: a round closes early once everyone finished it (#1084).
+          closedRounds: [...row.manager_rounds]
+            .sort((a, b) => a.round - b.round)
+            .map((r) => new Date(r.ends_at).toISOString()),
         },
         participants: members.map((m) => ({
           userId: m.user_id,
