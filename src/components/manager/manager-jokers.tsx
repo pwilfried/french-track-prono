@@ -358,6 +358,22 @@ function CoachForm({ starters, offSheet, coach }: MatchdayJokersProps) {
   );
 }
 
+/**
+ * What a joker changed, in points: the extended bench and the coaching say what their athlete
+ * brought (already in the score), the others what they added or took; 0 is « sans effet ».
+ */
+function EffectPoints({ kind, points }: { kind: ManagerJoker; points: number }) {
+  return (
+    <span className="shrink-0 font-mono text-sm font-extrabold tabular-nums">
+      {points === 0
+        ? text.noEffect
+        : kind === "extended_bench" || kind === "coaching"
+          ? text.brought(points)
+          : text.effectPoints(points)}
+    </span>
+  );
+}
+
 /** What the jokers of a head-to-head did to a score (#1091), with the athlete they aimed at. */
 export function JokerEffects({
   effects,
@@ -372,7 +388,6 @@ export function JokerEffects({
       </h2>
       <ul aria-labelledby="joker-effects" className="flex flex-col gap-1.5">
         {effects.map((e) => {
-          const lineup = e.kind === "extended_bench" || e.kind === "coaching";
           return (
             <li
               key={`${e.by}-${e.kind}`}
@@ -381,13 +396,7 @@ export function JokerEffects({
               <span className="min-w-0 break-words text-sm font-semibold">
                 🃏 {text.effect(text.name[e.kind], e.by, e.name ?? null)}
               </span>
-              <span className="shrink-0 font-mono text-sm font-extrabold tabular-nums">
-                {e.points === 0
-                  ? text.noEffect
-                  : lineup
-                    ? text.brought(e.points)
-                    : text.effectPoints(e.points)}
-              </span>
+              <EffectPoints kind={e.kind} points={e.points} />
             </li>
           );
         })}
@@ -414,7 +423,6 @@ export function DuelJokers({ sides }: { sides: DuelJokerSide[] }) {
       <ul aria-labelledby="duel-jokers" className="flex flex-col gap-1.5">
         {played.map(({ pseudo, joker }) => {
           const { kind, athleteName, points } = joker!;
-          const lineup = kind === "extended_bench" || kind === "coaching";
           return (
             <li
               key={pseudo}
@@ -423,15 +431,7 @@ export function DuelJokers({ sides }: { sides: DuelJokerSide[] }) {
               <span className="min-w-0 break-words text-sm font-semibold">
                 🃏 {text.duelLine(pseudo, text.name[kind], athleteName)}
               </span>
-              {points !== null && (
-                <span className="shrink-0 font-mono text-sm font-extrabold tabular-nums">
-                  {points === 0
-                    ? text.noEffect
-                    : lineup
-                      ? text.brought(points)
-                      : text.effectPoints(points)}
-                </span>
-              )}
+              {points !== null && <EffectPoints kind={kind} points={points} />}
             </li>
           );
         })}
