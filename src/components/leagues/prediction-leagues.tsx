@@ -367,7 +367,9 @@ function LeagueCard({
 
   const spent = new Set(hand?.used.map((u) => u.joker).filter((j) => j !== hand.onEvent));
   const cards: HandCard[] = hand
-    ? PREDICTION_JOKERS.filter((j) => hand.remaining.includes(j) || spent.has(j)).map((j) => ({
+    ? PREDICTION_JOKERS.filter(
+        (j) => hand.remaining.includes(j) || spent.has(j) || j === hand.onEvent,
+      ).map((j) => ({
         id: j,
         emoji: jokerText.emoji[j],
         name: jokerText.name[j],

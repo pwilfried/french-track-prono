@@ -116,12 +116,23 @@ export const SwitchOffAsks: Story = {
   args: {
     leagues: [{ ...amis, counted: true }],
     jokers: withJokers({
-      l1: { hand: hand({ used: [{ joker: "double", eventId: "e1" }], onEvent: "double" }) },
+      l1: {
+        hand: hand({
+          remaining: PREDICTION_JOKERS.filter((j) => j !== "double"),
+          used: [{ joker: "double", eventId: "e1" }],
+          onEvent: "double",
+        }),
+      },
     }),
     play: fn(async () => ({})),
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
+    // The card on this event is in the hand, put down, even though it is no longer « remaining ».
+    await expect(canvas.getByRole("button", { name: /Double/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     const toggle = canvas.getByRole("switch", { name: text.switchLabel(amis.name) });
     await userEvent.click(canvas.getByText(amis.name));
     await expect(canvas.getByText(text.offConfirm("🔥", "Double"))).toBeVisible();
@@ -147,7 +158,12 @@ export const SpyDark: Story = {
     jokers: withJokers({
       l1: { hand: hand() },
       l2: {
-        hand: hand({ used: [{ joker: "spy", eventId: "e1" }], onEvent: "spy", canChange: false }),
+        hand: hand({
+          remaining: PREDICTION_JOKERS.filter((j) => j !== "spy"),
+          used: [{ joker: "spy", eventId: "e1" }],
+          onEvent: "spy",
+          canChange: false,
+        }),
         spy: {
           total: 4,
           places: [

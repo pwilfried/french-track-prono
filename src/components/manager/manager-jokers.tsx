@@ -243,7 +243,7 @@ function MatchdayHand(props: MatchdayJokersProps & { home: boolean }) {
         </div>
       )}
       {placed === "coaching" && <p className="text-sm font-semibold">{text.coachingWaits}</p>}
-      {saved === `${placed}:${target}` && hasTarget(placed) && target && (
+      {!pending && saved === `${placed}:${target}` && hasTarget(placed) && target && (
         <p role="status" className="text-sm font-semibold">
           {text.targetDone(text.name[placed], props.names[target] ?? "?")}
         </p>
