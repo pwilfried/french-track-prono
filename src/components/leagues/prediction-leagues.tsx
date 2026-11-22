@@ -17,7 +17,7 @@ const text = messages.predictionLeagues;
 export type SavePredictionLeagues = (leagueIds: string[]) => Promise<{ error?: ErrorCode }>;
 
 /** The id of the block on the page of the event: « Voir mon prono » leads there. */
-export const PREDICTION_LEAGUES_ID = "ce-prono-compte";
+const PREDICTION_LEAGUES_ID = "ce-prono-compte";
 
 const kindLabel: Record<LeagueKind, string> = {
   private: messages.leagues.privateBadge,

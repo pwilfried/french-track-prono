@@ -32,7 +32,7 @@ export type PredictFinal = {
   lockAt: string;
 };
 
-export type LeaguePredictProps = {
+type LeaguePredictProps = {
   call: Call<PredictFinal, { startsOn: string }> | null;
   now: Date;
 };
