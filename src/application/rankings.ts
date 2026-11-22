@@ -11,6 +11,7 @@ import {
   totalsOf,
   type RankedPlayer,
 } from "@/domain/ranking";
+import type { JokerPoints } from "@/domain/league-jokers";
 import type { ScoreReason } from "@/domain/scoring";
 
 import { UseCaseError } from "./errors";
@@ -26,6 +27,8 @@ export type RankingLine = {
   clubId?: string | null;
   points: number;
   reasons: ScoreReason[];
+  /** What each league joker makes of the points (#1090); absent on a line computed before. */
+  jokers?: JokerPoints;
   eventId: string;
   /** Start of the event, ISO 8601: orders the events to find the last computed one. */
   eventStartsAt: string;

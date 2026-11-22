@@ -27,7 +27,7 @@ export async function loadFamilies(): Promise<Map<string, DisciplineFamily>> {
 }
 
 /**
- * The signed-in player's predictions in a competition by event id: joker, points won, podium
+ * The signed-in player's predictions in a competition by event id: points won, podium
  * (#800). Throws a UseCaseError when they cannot be read.
  */
 export async function loadMyEventStates(

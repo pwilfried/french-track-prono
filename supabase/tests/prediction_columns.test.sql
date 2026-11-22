@@ -1,4 +1,4 @@
--- pgTAP: a player writes only the podium, the joker and the marks of his predictions (#911).
+-- pgTAP: a player writes only the podium and the marks of his predictions (#911).
 -- Run with `supabase test db`. Everything is rolled back at the end.
 begin;
 select plan(13);
@@ -41,17 +41,17 @@ select set_config('request.jwt.claims',
   '{"sub":"cccccccc-0911-0000-0000-000000000001","role":"authenticated"}', true);
 
 select lives_ok(
-  $$insert into predictions (user_id, event_id, p1, p2, p3, use_joker, m1)
+  $$insert into predictions (user_id, event_id, p1, p2, p3, m1)
     select 'cccccccc-0911-0000-0000-000000000001', e, test_athlete(e, 1), test_athlete(e, 2),
-           test_athlete(e, 3), true, 11.10
+           test_athlete(e, 3), 11.10
     from (select 'eeeeeeee-0911-0000-0000-00000000000a'::uuid as e) x$$,
-  'a player creates a prediction with his podium, joker and marks');
+  'a player creates a prediction with his podium and marks');
 
 select lives_ok(
   $$update predictions set p1 = test_athlete(event_id, 2), p2 = test_athlete(event_id, 1),
-           use_joker = false, m1 = null, m2 = 11.20, m3 = 11.30
+           m1 = null, m2 = 11.20, m3 = 11.30
     where event_id = 'eeeeeeee-0911-0000-0000-00000000000a'$$,
-  'a player changes his podium, joker and marks');
+  'a player changes his podium and marks');
 
 select throws_ok(
   $$update predictions set event_id = 'eeeeeeee-0911-0000-0000-00000000000b'

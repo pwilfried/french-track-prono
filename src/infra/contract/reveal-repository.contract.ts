@@ -4,7 +4,7 @@ import type { RevealRepository } from "@/application/reveal";
 
 /**
  * Two events of their own: `openEventId` still open and `lockedEventId` locked, each predicted by
- * Anna (a b c, joker) and Bob (b a c). `bob` reads as Bob; on the locked event, Bob reacted 🔥 to
+ * Anna (a b c) and Bob (b a c). `bob` reads as Bob; on the locked event, Bob reacted 🔥 to
  * Anna's prediction, and Anna's computed points include the "coup de flair".
  */
 export type RevealWorld = {
@@ -28,7 +28,7 @@ export function revealRepositoryContract(name: string, world: () => Promise<Reve
       expect(open.predictions.filter((p) => p.userId !== w.bobId)).toEqual([]);
     });
 
-    it("reveals every prediction of a locked event, with pseudo, podium, joker and reactions", async () => {
+    it("reveals every prediction of a locked event, with pseudo, podium and reactions", async () => {
       const w = await world();
       const [a, b, c] = w.athleteIds as [string, string, string];
 
@@ -37,7 +37,6 @@ export function revealRepositoryContract(name: string, world: () => Promise<Reve
       expect(locked.locked).toBe(true);
       const anna = locked.predictions.find((p) => p.userId === w.annaId)!;
       expect(anna.podium).toEqual({ first: a, second: b, third: c });
-      expect(anna.useJoker).toBe(true);
       expect(anna.pseudo).not.toBe("");
       expect(anna.reactions).toEqual([{ userId: w.bobId, reaction: "🔥" }]);
       expect(anna.flair).toBe(true);

@@ -23,7 +23,6 @@ export type SeasonStats = {
   successRate: number;
   /** The longest run of computed predictions in a row that gave points. */
   bestStreak: number;
-  jokerPlayed: boolean;
   /** Cumulative points after each computed event, in order. */
   curve: number[];
   /** The line that gave the most points (the earliest when tied). */
@@ -67,7 +66,6 @@ export function seasonStats(lines: readonly SeasonLine[], predictions: number): 
       .length,
     successRate: ordered.length ? Math.round((scored / ordered.length) * 100) : 0,
     bestStreak,
-    jokerPlayed: ordered.some((l) => has(l, "joker")),
     curve,
     bestShot: best ? { ...best, perfect: has(best, "perfect_podium"), odds: oddsOf(best) } : null,
   };

@@ -227,11 +227,7 @@ export default async function CompetitionsPage({
                       event={event}
                       family={families.get(event.discipline)}
                       now={now}
-                      mine={
-                        mine
-                          ? (mine.get(event.id) ?? { predicted: false, joker: false })
-                          : undefined
-                      }
+                      mine={mine ? (mine.get(event.id) ?? { predicted: false }) : undefined}
                     />
                   ))}
                 </ul>

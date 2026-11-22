@@ -27,7 +27,7 @@ export type PredictionWorld = {
  * adapter. The real one needs open events: run `npm run db:open-events` first.
  */
 export function predictionRepositoryContract(name: string, world: () => Promise<PredictionWorld>) {
-  const prediction = (player: Player, event: EventFixture, useJoker = false): Prediction => ({
+  const prediction = (player: Player, event: EventFixture): Prediction => ({
     userId: player.userId,
     eventId: event.eventId,
     podium: {
@@ -35,7 +35,6 @@ export function predictionRepositoryContract(name: string, world: () => Promise<
       second: event.athleteIds[1]!,
       third: event.athleteIds[2]!,
     },
-    useJoker,
   });
 
   describe(`PredictionRepository contract: ${name}`, () => {
@@ -49,7 +48,7 @@ export function predictionRepositoryContract(name: string, world: () => Promise<
     it("saves a prediction and finds it again", async () => {
       const w = await world();
       const player = await w.newPlayer();
-      const wanted = prediction(player, w.openEvents[0]!, true);
+      const wanted = prediction(player, w.openEvents[0]!);
 
       expect(await player.predictions.save(wanted)).toBe("saved");
 
@@ -114,21 +113,18 @@ export function predictionRepositoryContract(name: string, world: () => Promise<
       expect(await player.predictions.find(player.userId, event.eventId)).toEqual(changed);
     });
 
-    it("lists only the player's own predictions of the competition, with the joker flag", async () => {
+    it("lists only the player's own predictions of the competition", async () => {
       const w = await world();
       const player = await w.newPlayer();
       const other = await w.newPlayer();
-      await player.predictions.save(prediction(player, w.openEvents[0]!, true));
+      await player.predictions.save(prediction(player, w.openEvents[0]!));
       await player.predictions.save(prediction(player, w.openEvents[1]!));
       await other.predictions.save(prediction(other, w.openEvents[0]!));
 
       const mine = await player.predictions.listForCompetition(player.userId, w.competitionSlug);
 
-      expect(mine.map((p) => [p.eventId, p.useJoker]).sort()).toEqual(
-        [
-          [w.openEvents[0]!.eventId, true],
-          [w.openEvents[1]!.eventId, false],
-        ].sort(),
+      expect(mine.map((p) => p.eventId).sort()).toEqual(
+        [w.openEvents[0]!.eventId, w.openEvents[1]!.eventId].sort(),
       );
     });
 
@@ -155,25 +151,6 @@ export function predictionRepositoryContract(name: string, world: () => Promise<
       wanted.podium.second = event.outsiderId;
 
       expect(await player.predictions.save(wanted)).toBe("athlete_not_in_event");
-    });
-
-    it("refuses a second joker in the same competition", async () => {
-      const w = await world();
-      const player = await w.newPlayer();
-      await player.predictions.save(prediction(player, w.openEvents[0]!, true));
-
-      expect(await player.predictions.save(prediction(player, w.openEvents[1]!, true))).toBe(
-        "joker_already_used",
-      );
-    });
-
-    it("lets the player move the joker to the same event again", async () => {
-      const w = await world();
-      const player = await w.newPlayer();
-      const event = w.openEvents[0]!;
-      await player.predictions.save(prediction(player, event, true));
-
-      expect(await player.predictions.save(prediction(player, event, true))).toBe("saved");
     });
 
     it("refuses a round before the final as not open yet", async () => {

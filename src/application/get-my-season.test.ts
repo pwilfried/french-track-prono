@@ -47,7 +47,6 @@ describe("my season on the profile", () => {
             userId: "me",
             eventId: e.id,
             podium: { first: "a", second: "b", third: "c" },
-            useJoker: false,
           })),
         save: async () => "saved",
       },

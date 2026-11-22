@@ -20,7 +20,7 @@ export type PredictionEventFixture = {
 
 /**
  * Test double of the PredictionRepository port, with the rules of the database: locked after
- * `lockAt`, only athletes of the start list, one joker per player, only from a league of the
+ * `lockAt`, only athletes of the start list, only from a league of the
  * competition. All the events given belong to one competition.
  */
 export function createInMemoryPredictionRepository(options: {
@@ -58,12 +58,6 @@ export function createInMemoryPredictionRepository(options: {
       const d = event.discipline;
       const range = d && markRange(d.unit, d.family, d.name);
       if (range && !marks.every((m) => isInRange(m, range))) return "mark_out_of_range";
-      if (prediction.useJoker) {
-        const otherJoker = [...stored.values()].some(
-          (p) => p.userId === prediction.userId && p.eventId !== prediction.eventId && p.useJoker,
-        );
-        if (otherJoker) return "joker_already_used";
-      }
       stored.set(key(prediction.userId, prediction.eventId), prediction);
       return "saved";
     },

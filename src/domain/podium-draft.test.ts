@@ -144,13 +144,13 @@ describe("isValidPodium", () => {
 describe("parseKeptPodium", () => {
   const known = ["a", "b", "c"];
 
-  it("reads back a podium being built, its joker and where the player went", () => {
-    const kept = { draft: draft("a", null, "c"), joker: true, openedAthlete: true };
+  it("reads back a podium being built and where the player went", () => {
+    const kept = { draft: draft("a", null, "c"), openedAthlete: true };
     expect(parseKeptPodium(JSON.stringify(kept), known)).toEqual(kept);
   });
 
   it("drops an athlete who is no longer in the event", () => {
-    const kept = { draft: draft("a", "x", null), joker: false, openedAthlete: false };
+    const kept = { draft: draft("a", "x", null), openedAthlete: false };
     expect(parseKeptPodium(JSON.stringify(kept), known)).toBeNull();
   });
 

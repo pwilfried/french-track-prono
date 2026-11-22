@@ -15,7 +15,6 @@ const prediction = (userId: string, pseudo: string): RevealedPrediction => ({
   pseudo,
   bib: { number: 7, color: "blue" },
   podium: { first: "a", second: "b", third: "c" },
-  useJoker: false,
   reactions: [],
   flair: false,
 });

@@ -31,10 +31,7 @@ export function PredictionLineCard({ line }: { line: MyPredictionLine }) {
           <span className="block break-words font-extrabold">
             {messages.events.name(line.discipline, line.gender)}
           </span>
-          <span className="text-xs text-muted-foreground">
-            {date}
-            {line.joker ? ` · ${text.joker}` : ""}
-          </span>
+          <span className="text-xs text-muted-foreground">{date}</span>
         </span>
         <span
           className={`shrink-0 text-lg font-extrabold ${

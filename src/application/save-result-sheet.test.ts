@@ -54,8 +54,8 @@ const bonuses: Record<ManagerBonus, number> = {
 };
 
 type Pick = ScoringPrediction & { userId: string };
-const pick = (userId: string, first: string, second: string, third: string, useJoker = false) =>
-  ({ userId, first, second, third, useJoker }) satisfies Pick;
+const pick = (userId: string, first: string, second: string, third: string) =>
+  ({ userId, first, second, third }) satisfies Pick;
 
 /**
  * One women's 100 m final of the « meeting » competition, and the fakes of the three ports sharing
@@ -239,7 +239,7 @@ describe("saveResultSheet", () => {
 
   it("only needs the podium when no Manager league plays the competition", async () => {
     // Given a final nobody plays in the Manager
-    const w = world({ predictions: [pick("zoe", "a1", "a2", "a3", true)] });
+    const w = world({ predictions: [pick("zoe", "a1", "a2", "a3")] });
     const sheet = await getPerformanceSheet(w.admin).execute({
       eventId: EVENT,
       competitionSlug: "meeting",
@@ -250,7 +250,7 @@ describe("saveResultSheet", () => {
     const saved = await save(w.admin, podium);
 
     // Then the predictions are scored and no Manager score is stored
-    expect(w.eventPoints("zoe")).toBe(24);
+    expect(w.eventPoints("zoe")).toBe(12);
     expect(saved.manager).toEqual([]);
     expect(w.calls).toEqual(["sheet", "predictions", "moments"]);
   });
@@ -364,9 +364,8 @@ describe("saveResultSheet, places 1 to 3 only: the same prediction points as bef
     ["S3 winner found, 2nd and 3rd swapped", pick("me", "a1", "a3", "a2"), [], 5],
     ["S4 three right athletes, all misplaced", pick("me", "a2", "a3", "a1"), [], 3],
     ["S5 nobody on the podium", pick("me", "a4", "a5", "a6"), [], 0],
-    ["S6 perfect podium with the joker", pick("me", "a1", "a2", "a3", true), [], 24],
     ["S7 winner found by 1 player in 20", pick("me", "a1", "a4", "a5"), crowd, 5],
-    ["S10 perfect podium + flair + joker", pick("me", "a1", "a2", "a3", true), crowd, 28],
+    ["S10 perfect podium + flair", pick("me", "a1", "a2", "a3"), crowd, 14],
   ];
 
   it.each(cases)("%s", async (_, prediction, others, expected) => {
@@ -400,13 +399,8 @@ describe("saveResultSheet, places 1 to 3 only: the same prediction points as bef
   it("scores any podium exactly like the podium entered on its own, and again gives the same", async () => {
     const athlete = fc.constantFrom(...START_LIST);
     const prediction = fc
-      .tuple(fc.uniqueArray(athlete, { minLength: 3, maxLength: 3 }), fc.boolean())
-      .map(([[first, second, third], useJoker]) => ({
-        first: first!,
-        second: second!,
-        third: third!,
-        useJoker,
-      }));
+      .uniqueArray(athlete, { minLength: 3, maxLength: 3 })
+      .map(([first, second, third]) => ({ first: first!, second: second!, third: third! }));
     // A valid podium: athletes in order, each tied with the previous one or placed by their rank.
     const sheet = fc
       .tuple(

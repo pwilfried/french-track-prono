@@ -186,7 +186,7 @@ describe("computeEventPoints on a challenge", () => {
           { athleteId: "c", rank: 2 },
           { athleteId: "b", rank: 3 },
         ],
-        predictions: [{ userId: "bob", first: "a", second: "c", third: "b", useJoker: false }],
+        predictions: [{ userId: "bob", first: "a", second: "c", third: "b" }],
         rules: DEFAULT_RULES,
       }),
       findEventScores: async () => [],

@@ -11,7 +11,6 @@ const line = (
   discipline: string,
   points: number | null,
   picks: MyPredictionLine["picks"],
-  joker = false,
 ): MyPredictionLine => ({
   competitionSlug: "demo",
   eventSlug,
@@ -19,7 +18,6 @@ const line = (
   gender: "F",
   startsAt: "2026-09-12T18:00:00Z",
   picks,
-  joker,
   points,
 });
 const lines = [
@@ -28,17 +26,11 @@ const lines = [
     { name: "Démo Foulée", hit: "pending" },
     { name: null, hit: "pending" },
   ]),
-  line(
-    "100m",
-    "100 m",
-    24,
-    [
-      { name: "Démo Sprint", hit: "exact" },
-      { name: "Démo Éclair", hit: "exact" },
-      { name: "Démo Fusée", hit: "exact" },
-    ],
-    true,
-  ),
+  line("100m", "100 m", 12, [
+    { name: "Démo Sprint", hit: "exact" },
+    { name: "Démo Éclair", hit: "exact" },
+    { name: "Démo Fusée", hit: "exact" },
+  ]),
   line("hauteur", "Saut en hauteur", 1, [
     { name: "Démo Perche", hit: "missed" },
     { name: "Démo Envol", hit: "misplaced" },
@@ -62,12 +54,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** A coming event, a perfect podium with the joker, a near miss. */
+/** A coming event, a perfect podium, a near miss. */
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("En attente")).toBeInTheDocument();
-    await expect(canvas.getByText("+24 pts")).toBeInTheDocument();
+    await expect(canvas.getByText("+12 pts")).toBeInTheDocument();
     await expect(canvas.getAllByText("bonne place")).toHaveLength(3);
     await expect(canvas.getByText("Autre athlète")).toBeInTheDocument();
     await expect(canvas.getByRole("link", { name: /Tous mes pronos/ })).toHaveAttribute(

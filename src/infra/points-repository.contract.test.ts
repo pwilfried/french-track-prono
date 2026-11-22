@@ -15,8 +15,8 @@ pointsRepositoryContract("in-memory fake", async () => {
       lockAt: new Date(Date.now() - 60_000).toISOString(),
       results: athleteIds.slice(0, 3).map((athleteId, i) => ({ athleteId, rank: i + 1 })),
       predictions: [
-        { userId: adminId, first: "a1", second: "a2", third: "a3", useJoker: true },
-        { userId: playerId, first: "a1", second: "a4", third: "a2", useJoker: false },
+        { userId: adminId, first: "a1", second: "a2", third: "a3" },
+        { userId: playerId, first: "a1", second: "a4", third: "a2" },
       ],
       rules: DEFAULT_RULES,
     },
@@ -43,9 +43,9 @@ if (url && key) {
     // An event of its own: open while the predictions are written, then locked, then its result.
     const { competitionSlug, eventId, athleteIds: ids } = createTestEvent();
     const [a1, a2, a3, a4] = ids as [string, string, string, string];
-    sql(`insert into predictions (user_id, event_id, p1, p2, p3, use_joker) values
-      ('${admin.userId}', '${eventId}', '${a1}', '${a2}', '${a3}', true),
-      ('${player.userId}', '${eventId}', '${a1}', '${a4}', '${a2}', false)`);
+    sql(`insert into predictions (user_id, event_id, p1, p2, p3) values
+      ('${admin.userId}', '${eventId}', '${a1}', '${a2}', '${a3}'),
+      ('${player.userId}', '${eventId}', '${a1}', '${a4}', '${a2}')`);
     sql(
       `update events set lock_at = now() - interval '1 minute', starts_at = now() where id = '${eventId}'`,
     );

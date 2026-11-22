@@ -6,7 +6,6 @@ export type MyEventPoints = {
   eventId: string;
   points: number;
   reasons: ScoreReason[];
-  joker: boolean;
 };
 export type MyPoints = { total: number; events: MyEventPoints[] };
 
@@ -19,7 +18,6 @@ export function getMyPoints(ports: { points: PointsRepository }) {
         eventId: line.eventId,
         points: line.points,
         reasons: line.reasons,
-        joker: line.reasons.some((reason) => reason.kind === "joker"),
       }));
       return { total: events.reduce((sum, e) => sum + e.points, 0), events };
     },

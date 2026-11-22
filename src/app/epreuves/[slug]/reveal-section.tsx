@@ -210,7 +210,6 @@ function PredictionList({
             pseudo={prediction.pseudo}
             bib={prediction.bib}
             podium={prediction.podium}
-            useJoker={prediction.useJoker}
             mine={mine}
             flair={prediction.flair}
             nameOf={nameOf}

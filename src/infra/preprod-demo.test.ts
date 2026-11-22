@@ -70,8 +70,9 @@ const states = `select json_build_object(
                   where f.event_id = e.id and f.user_id <> ${tester(23)})),
   'jokerPoints', (select coalesce(sum(points), 0) from score_events where user_id = ${tester(24)}),
   'jokerBadges', (select count(*) from user_badges where user_id = ${tester(24)}),
-  'jokerOnLive', exists (select 1 from predictions p join competitions c on c.id = p.competition_id
-                         where p.user_id = ${tester(24)} and p.use_joker and c.status = 'live'),
+  'jokerOnLive', exists (select 1 from league_joker_plays j join events e on e.id = j.event_id
+                         join competitions c on c.id = e.competition_id
+                         where j.user_id = ${tester(24)} and j.kind = 'double' and c.status = 'live'),
   'testerAdmins', (select count(*) from profiles
                    where id in (${[21, 22, 23, 24].map(tester).join(", ")}) and is_admin)
 )::text;`;

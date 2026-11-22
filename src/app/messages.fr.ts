@@ -153,8 +153,6 @@ export const messages = {
       exactSlot: number;
       wrongPlace: number;
       perfectPodium: number;
-      perfectWithJoker: number;
-      jokerMultiplier: number;
       markExact: number;
     }) =>
       [
@@ -164,9 +162,9 @@ export const messages = {
           body: `Les trois athlètes à la bonne place : ${points(f.perfectPodium)} pour une seule épreuve, bonus du podium parfait compris.`,
         },
         {
-          id: "game-joker",
-          title: "Le joker au bon moment",
-          body: `Une fois par compétition, le joker multiplie par ${f.jokerMultiplier} les points d'une épreuve : un podium parfait joué avec lui rapporte ${points(f.perfectWithJoker)}.`,
+          id: "game-league-jokers",
+          title: "Les jokers de ligue",
+          body: `Dans une ligue, chaque joker ne se joue qu'une fois : un podium parfait rapporte ${points(2 * f.perfectPodium)} avec le Double, ${points(3 * f.perfectPodium)} avec le Tout ou rien.`,
         },
         {
           id: "game-wrong-place",
@@ -537,7 +535,6 @@ export const messages = {
       flair: "Coup de flair",
       odds: (points: number) => `Cotes +${points}`,
       marks: (points: number) => `Perf juste +${points}`,
-      joker: "Joker ×2",
       none: "Aucun athlète sur le podium",
     },
   },
@@ -2233,6 +2230,65 @@ export const messages = {
     promoted: "✓ Qualifiés ajoutés à la liste de départ du tour suivant.",
     previousLinks: "Tours précédents",
   },
+  /** The league jokers (#1090): their names and what they do, one way of saying each. */
+  leagueJokers: {
+    name: {
+      double: "Double",
+      all_or_nothing: "Tout ou rien",
+      safety_net: "Filet",
+      spy: "Espion",
+      outsider: "Outsider",
+    },
+    explain: {
+      double: "Les points de l'épreuve × 2.",
+      all_or_nothing: "Les points × 3 si ton podium est parfait, 0 sinon.",
+      safety_net:
+        "Un athlète sur le podium mais à la mauvaise place compte comme bien placé (le bonus podium parfait reste pour un vrai podium parfait).",
+      spy: "Avant le verrouillage, montre la tendance des pronos de la ligue sur l'épreuve. Sans effet sur les points, et joué dès que tu l'actives.",
+      outsider: "Les points de cote de « Autre athlète » sont doublés.",
+    },
+    /** The block of the league page and the event page. */
+    title: "Mes jokers",
+    remaining: "À jouer",
+    used: "Joués",
+    noneLeft: "Tous tes jokers sont joués.",
+    noneUsed: "Aucun joker joué pour l'instant.",
+    usedOn: (event: string) => `sur ${event}`,
+    /** The jokers of a league being created, read only. */
+    createTitle: "Les jokers de la ligue",
+    createText: "Chaque joueur reçoit ces jokers, à jouer chacun une fois dans la ligue.",
+    createEmpty: "Aucun joker dans cette ligue.",
+    /** On the event page, under the leagues the podium counts in. */
+    eventTitle: "Jokers de ligue",
+    eventHint: "Un joker par épreuve et par ligue. Il ne compte que dans la ligue.",
+    choose: (league: string) => `Joker dans ${league}`,
+    none: "Aucun joker",
+    play: "Jouer",
+    playing: "En cours…",
+    remove: "Retirer le joker",
+    removing: "Retrait en cours…",
+    played: (name: string) => `✓ ${name} joué`,
+    removed: "✓ Joker retiré",
+    addFirst: "Ajoute ton podium à cette ligue pour y jouer un joker.",
+    fixed: "L'épreuve est verrouillée : le joker ne change plus.",
+    spySpent: "Espion joué : il reste sur cette épreuve.",
+    spyConfirm: "L'Espion se joue dès que tu l'actives : tu ne pourras plus le retirer.",
+    spyTitle: (league: string) => `Tendance dans ${league}`,
+    spyEmpty: "Personne d'autre dans la ligue n'a encore pronostiqué cette épreuve.",
+    spyPick: (name: string, percent: number) => `${name} · ${percent} %`,
+    other: "Autre athlète",
+    /** Back-office › Jokers. */
+    adminTitle: "Jokers",
+    adminSubtitle:
+      "Une nouvelle ligue reçoit les jokers actifs de son jeu au moment de sa création ; une ligue existante garde les siens.",
+    adminGame: { predictions: "Ligues de pronos", manager: "Ligues Manager" },
+    adminActive: "Actif",
+    adminOff: "Retiré",
+    adminTurnOn: (name: string) => `Activer ${name}`,
+    adminTurnOff: (name: string) => `Retirer ${name}`,
+    adminSaving: "Enregistrement…",
+    adminEmpty: "Aucun joker pour ce jeu pour l'instant.",
+  },
   rules: {
     title: "Comment jouer",
     intro:
@@ -2260,9 +2316,9 @@ export const messages = {
     marks: (exact: number, near: number) =>
       `Tu peux aussi pronostiquer la perf de chacun de tes athlètes : ${exact} points si tu es dans la tolérance de la discipline, ${near} dans le double. C'est facultatif.`,
     tolerancesTitle: "Quelques tolérances",
-    jokerTitle: "Le joker",
-    joker: (multiplier: number) =>
-      `Une fois par compétition, ton joker multiplie par ${multiplier} tous les points d'une épreuve. Choisis-la bien.`,
+    jokerTitle: "Les jokers de ligue",
+    joker:
+      "Dans chaque ligue, tu as plusieurs jokers : chacun se joue une seule fois pendant toute la ligue, un seul par épreuve, jusqu'au verrouillage. Ils ne comptent que dans le classement de la ligue, jamais au général.",
     flairTitle: "Le coup de flair",
     flair: (bonus: number, share: number, players: number) =>
       `Tu trouves le vainqueur alors que moins de ${Math.round(share * 100)} % des joueurs l'avaient choisi ? +${bonus} points, dès ${players} pronos sur l'épreuve.`,
@@ -2301,7 +2357,7 @@ export const messages = {
     steps: [
       "Touche un athlète : il monte sur la marche en surbrillance, le 1er d'abord.",
       "Touche une marche pour la choisir, ou un athlète placé pour le retirer.",
-      "Le joker double tes points sur une épreuve par compétition. Enregistre, tu peux changer jusqu'au départ.",
+      "Enregistre, tu peux changer jusqu'au départ. Dans une ligue, tu peux aussi jouer un joker.",
     ],
     count: (index: number, total: number) => `${index} / ${total}`,
     next: "Suivant",
@@ -2312,7 +2368,7 @@ export const messages = {
     title: "Barème",
     subtitle:
       "Les points de chaque pronostic. Un changement compte pour les calculs lancés ensuite, pas pour les points déjà donnés.",
-    groups: { podium: "Podium", bonus: "Coup de flair et joker", odds: "Cotes", marks: "Perfs" },
+    groups: { podium: "Podium", bonus: "Coup de flair", odds: "Cotes", marks: "Perfs" },
     rules: {
       exact_slot: "Bon athlète à la bonne place",
       wrong_place: "Athlète sur le podium, mauvaise place",
@@ -2320,7 +2376,6 @@ export const messages = {
       flair_bonus: "Bonus coup de flair",
       flair_threshold: "Coup de flair : part maximale des joueurs (0 à 1)",
       flair_min_players: "Coup de flair : pronos minimum sur l'épreuve",
-      joker_multiplier: "Multiplicateur du joker",
       odds_exact: "Cote × … à la bonne place",
       odds_one_off: "Cote × … à une place d'écart",
       odds_two_off: "Cote × … à deux places d'écart",
@@ -2724,9 +2779,6 @@ export const messages = {
       emptyStartList: "Saisis d'abord la liste de départ.",
     },
   },
-  myPredictions: {
-    joker: "🃏 Joker",
-  },
   event: {
     back: "Compétitions",
     title: (discipline: string) => `${discipline} — Finale`,
@@ -2886,7 +2938,6 @@ export const messages = {
     empty: "Pas encore de prono : choisis une épreuve et compose ton podium.",
     emptyCompetition: "Aucun prono sur cette compétition.",
     pending: "En attente",
-    joker: "Joker",
     other: "Autre athlète",
     chooseCompetition: "Choisir la compétition",
     hit: {
@@ -2962,10 +3013,8 @@ export const messages = {
       winners: "vainqueurs",
       success: "pronos qui rapportent",
       streak: "meilleure série",
-      joker: "joker joué",
+      points: "points",
     },
-    jokerYes: "Oui",
-    jokerNo: "Non",
     mySeason: "Ma saison",
     curve: (events: number, total: number) =>
       `Points cumulés : de 0 à ${total} en ${events} ${events <= 1 ? "épreuve" : "épreuves"}`,
@@ -3218,7 +3267,8 @@ export const messages = {
     tabCount: (n: number) => ` · ${n}`,
     count: (n: number) => (n <= 1 ? `${n} prono` : `${n} pronos`),
     me: "Toi",
-    joker: "🃏 Joker",
+    /** The league joker played on a podium (#1090), shown when the reveal shows one league. */
+    joker: (name: string) => `🃏 ${name}`,
     flair: "🎯 Coup de flair",
     flairLine: "Vu venir quand personne ne regardait.",
     hiddenTitle: "Les pronos des autres se dévoilent au verrouillage.",
@@ -3267,18 +3317,11 @@ export const messages = {
         : `Réagir : ${name}, ${count} ${count === 1 ? "réaction" : "réactions"}`,
   },
   prediction: {
-    joker: "🃏 Joker : points × 2",
-    jokerHint: "Un seul par compétition.",
-    /** Followed by a link to the event where the joker is played (#981). */
-    jokerPlayedOn: "Joker joué sur",
-    jokerMovable: "Pour le jouer ici, retire-le d'abord de là-bas.",
-    jokerFixed: "Cette épreuve est verrouillée : il y reste.",
     save: "Enregistrer mon podium",
     saving: "Enregistrement…",
     saved: "✓ Podium enregistré. Tu peux le modifier jusqu'au verrouillage.",
     /** The save, on the button and in the notice at the top of the screen. */
     savedShort: "✓ Podium enregistré",
-    jokerUsedHere: "🃏 Joker utilisé sur cette épreuve",
     none: "Tu n'avais pas pronostiqué cette épreuve : 0 point.",
     visitorTitle: "Connecte-toi pour pronostiquer",
     visitorText: "Il faut un compte pour enregistrer ton podium.",
@@ -3651,9 +3694,15 @@ export const messages = {
       "Les cotes de cette épreuve arrivent bientôt : les pronos s'ouvriront avec elles.",
     ROUND_NOT_READY: "Les pronos ouvrent quand les tours précédents sont terminés.",
     ROUND_UNAVAILABLE: "La qualification n'a pas pu être faite. Réessaie.",
-    JOKER_ALREADY_USED: "Tu as déjà utilisé ton joker dans cette compétition.",
     PREDICTION_UNAVAILABLE:
       "Ton prono n'est pas disponible pour le moment. Réessaie dans un instant.",
+    JOKER_NOT_AVAILABLE:
+      "Ce joker n'est plus dans ta main : chacun ne se joue qu'une fois par ligue.",
+    JOKER_SPY_SPENT: "L'Espion est déjà joué sur cette épreuve : il y reste.",
+    JOKER_NOT_IN_LEAGUE: "Ajoute d'abord ton podium à cette ligue pour y jouer un joker.",
+    JOKER_LOCKED: "Trop tard : l'épreuve est verrouillée, le joker ne change plus.",
+    JOKERS_UNAVAILABLE:
+      "Les jokers ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     DELETION_NOT_CONFIRMED: "Coche la case pour confirmer la suppression.",
     START_LIST_INVALID: "Choisis entre 1 et 24 athlètes, chacun une seule fois.",
     START_LIST_IN_USE:

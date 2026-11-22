@@ -13,16 +13,10 @@ import { OTHER_ATHLETE } from "./podium-draft";
 const official = (...lines: [string, number][]): OfficialLine[] =>
   lines.map(([athleteId, rank]) => ({ athleteId, rank }));
 const standard = official(["A", 1], ["B", 2], ["C", 3], ["D", 4]);
-const pick = (
-  first: string,
-  second: string,
-  third: string,
-  useJoker = false,
-): ScoringPrediction => ({
+const pick = (first: string, second: string, third: string): ScoringPrediction => ({
   first,
   second,
   third,
-  useJoker,
 });
 const crowd = (predictionCount: number, winnerPicks: Record<string, number> = {}) => ({
   predictionCount,
@@ -54,10 +48,6 @@ describe("scorePrediction", () => {
     expect(points(pick("X", "Y", "Z"))).toBe(0);
   });
 
-  it("doubles a perfect podium with the joker", () => {
-    expect(points(pick("A", "B", "C", true))).toBe(24);
-  });
-
   it("adds the flair bonus when the winner was picked by 1 player out of 20", () => {
     expect(points(pick("A", "X", "Y"), standard, crowd(20, { A: 1 }))).toBe(5);
   });
@@ -70,8 +60,8 @@ describe("scorePrediction", () => {
     expect(points(pick("A", "X", "Y"), standard, crowd(20, { A: 3 }))).toBe(3);
   });
 
-  it("reaches 28 points with a perfect podium, flair and joker", () => {
-    expect(points(pick("A", "B", "C", true), standard, crowd(20, { A: 1 }))).toBe(28);
+  it("reaches 14 points with a perfect podium and flair", () => {
+    expect(points(pick("A", "B", "C"), standard, crowd(20, { A: 1 }))).toBe(14);
   });
 
   it("counts a tie for third place for either tied athlete", () => {
@@ -108,9 +98,7 @@ describe("flairContext", () => {
     const athlete = fc.constantFrom("A", "B", "C", "D", "E");
     const prediction = fc
       .uniqueArray(athlete, { minLength: 3, maxLength: 3 })
-      .chain(([first, second, third]) =>
-        fc.boolean().map((useJoker) => pick(first!, second!, third!, useJoker)),
-      );
+      .chain(([first, second, third]) => fc.constant(pick(first!, second!, third!)));
 
     fc.assert(
       fc.property(fc.array(prediction, { maxLength: 30 }), (predictions) => {
@@ -121,16 +109,14 @@ describe("flairContext", () => {
 });
 
 describe("scorePrediction properties", () => {
-  it("always gives between 0 and 28 points", () => {
+  it("always gives between 0 and 14 points", () => {
     const athlete = fc.constantFrom("A", "B", "C", "D", "E", "F");
     const lines = fc
       .uniqueArray(athlete, { minLength: 3, maxLength: 6 })
       .map((ids) => ids.map((athleteId, index) => ({ athleteId, rank: index + 1 })));
     const prediction = fc
       .uniqueArray(athlete, { minLength: 3, maxLength: 3 })
-      .chain(([first, second, third]) =>
-        fc.boolean().map((useJoker) => pick(first!, second!, third!, useJoker)),
-      );
+      .chain(([first, second, third]) => fc.constant(pick(first!, second!, third!)));
     const context = fc
       .nat({ max: 60 })
       .chain((predictionCount) =>
@@ -143,7 +129,7 @@ describe("scorePrediction properties", () => {
       fc.property(prediction, lines, context, (p, o, c) => {
         const result = points(p, o, c);
         expect(result).toBeGreaterThanOrEqual(0);
-        expect(result).toBeLessThanOrEqual(28);
+        expect(result).toBeLessThanOrEqual(14);
       }),
     );
   });
@@ -224,26 +210,15 @@ describe("scorePrediction with odds and marks (v0.9)", () => {
     ).toBe(21);
   });
 
-  it("doubles everything with the joker", () => {
-    expect(
-      score({ ...pick("A", "B", "C", true), marks: { first: 10.81, second: null, third: null } })
-        .points,
-    ).toBe(52);
-  });
-
   it("is never negative and stays the same when run again", () => {
     const ids = fc.constantFrom("A", "B", "C", "X", OTHER_ATHLETE);
     fc.assert(
-      fc.property(
-        fc.uniqueArray(ids, { minLength: 3, maxLength: 3 }),
-        fc.boolean(),
-        (picked, useJoker) => {
-          const p = pick(picked[0]!, picked[1]!, picked[2]!, useJoker);
-          const first = score(p);
-          expect(first.points).toBeGreaterThanOrEqual(0);
-          expect(score(p)).toEqual(first);
-        },
-      ),
+      fc.property(fc.uniqueArray(ids, { minLength: 3, maxLength: 3 }), (picked) => {
+        const p = pick(picked[0]!, picked[1]!, picked[2]!);
+        const first = score(p);
+        expect(first.points).toBeGreaterThanOrEqual(0);
+        expect(score(p)).toEqual(first);
+      }),
     );
   });
 });

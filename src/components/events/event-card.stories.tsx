@@ -49,7 +49,7 @@ export const Visitor: Story = {
 
 /** To do: the name with its gender, when it locks, « + Prono »; no « Finale » nor initial (#546). */
 export const ToDo: Story = {
-  args: { event: baseEvent, mine: { predicted: false, joker: false } },
+  args: { event: baseEvent, mine: { predicted: false } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("100 m femmes")).toBeInTheDocument();
@@ -65,7 +65,7 @@ export const ToDo: Story = {
 export const ToDoUrgent: Story = {
   args: {
     event: { ...baseEvent, lockAt: inSeconds(42 * 60), startsAt: inSeconds(47 * 60) },
-    mine: { predicted: false, joker: false },
+    mine: { predicted: false },
   },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText("Verrouille dans 42 min")).toHaveClass(
@@ -82,7 +82,7 @@ export const ToDoLater: Story = {
       lockAt: inSeconds(3 * 86_400 + 4 * 3600),
       startsAt: inSeconds(3 * 86_400 + 4 * 3600 + 300),
     },
-    mine: { predicted: false, joker: false },
+    mine: { predicted: false },
   },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText("Verrouille dans 3 j 4 h")).toBeInTheDocument();
@@ -97,7 +97,7 @@ const myPodium = [
 
 /** Posed: my podium in short names instead of the lock line, still « modifiable » (#800). */
 export const AlreadyPredicted: Story = {
-  args: { event: baseEvent, mine: { predicted: true, joker: false, podium: myPodium } },
+  args: { event: baseEvent, mine: { predicted: true, podium: myPodium } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Léa F. · Ana E. · autre · modifiable")).toBeInTheDocument();
@@ -109,19 +109,11 @@ export const AlreadyPredicted: Story = {
   },
 };
 
-/** Prediction + joker spent on this event. */
-export const PredictedWithJoker: Story = {
-  args: { event: baseEvent, mine: { predicted: true, joker: true, podium: myPodium } },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText(/Joker/)).toBeInTheDocument();
-  },
-};
-
 /** Locked, not run yet, no podium: nothing left to do. */
 export const Locked: Story = {
   args: {
     event: { ...baseEvent, lockAt: inSeconds(-60), startsAt: inSeconds(240) },
-    mine: { predicted: false, joker: false },
+    mine: { predicted: false },
   },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText("🔒 Verrouillé")).toBeInTheDocument();
@@ -161,7 +153,6 @@ export const FinishedWithPoints: Story = {
     event: finishedEvent,
     mine: {
       predicted: true,
-      joker: false,
       points: 6,
       hits: { exact: 2, onPodium: 0, perfect: false },
     },
@@ -183,7 +174,6 @@ export const PerfectPodium: Story = {
     event: finishedEvent,
     mine: {
       predicted: true,
-      joker: false,
       points: 12,
       hits: { exact: 3, onPodium: 0, perfect: true },
     },
@@ -197,7 +187,7 @@ export const PerfectPodium: Story = {
 
 /** Finished without my podium: « Pas joué », nothing on the right, never a lone dash (#707). */
 export const FinishedWithoutPrediction: Story = {
-  args: { event: finishedEvent, mine: { predicted: false, joker: false } },
+  args: { event: finishedEvent, mine: { predicted: false } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Pas joué")).toBeVisible();
@@ -211,7 +201,7 @@ export const FinishedWithoutPrediction: Story = {
 
 /** Finished, predicted, points not computed yet: « Terminé », not « ✓ Posé » (#488). */
 export const FinishedPointsPending: Story = {
-  args: { event: finishedEvent, mine: { predicted: true, joker: false, points: null } },
+  args: { event: finishedEvent, mine: { predicted: true, points: null } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Terminé")).toBeInTheDocument();
@@ -229,7 +219,6 @@ export const LongName: Story = {
     },
     mine: {
       predicted: true,
-      joker: true,
       podium: [
         { athleteId: "a1", name: "Marie-Charlotte Exemple-Fictive", countryCode: "FRA" },
         { athleteId: "a2", name: "Anne-Sophie Démonstration", countryCode: "BEL" },
@@ -246,7 +235,7 @@ export const LongWinnerName: Story = {
       ...finishedEvent,
       winner: { name: "Marie-Charlotte Exemple-Fictive de la Démonstration", countryCode: "FRA" },
     },
-    mine: { predicted: false, joker: false },
+    mine: { predicted: false },
   },
 };
 

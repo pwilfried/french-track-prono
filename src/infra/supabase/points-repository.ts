@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PointsRepository, ScoreLine } from "@/application/compute-event-points";
 import { UseCaseError } from "@/application/errors";
 import { parseMark, type MarkUnit } from "@/domain/discipline";
+import type { JokerPoints } from "@/domain/league-jokers";
 import type { EventOdds } from "@/domain/odds";
 import type { ScoreReason, ScoringRules } from "@/domain/scoring";
 
@@ -13,7 +14,6 @@ type PredictionRow = {
   p1: string | null;
   p2: string | null;
   p3: string | null;
-  use_joker: boolean;
   m1: number | string | null;
   m2: number | string | null;
   m3: number | string | null;
@@ -24,7 +24,7 @@ type ScoreRow = {
   user_id: string;
   event_id: string;
   points: number;
-  detail: { reasons?: ScoreReason[] };
+  detail: { reasons?: ScoreReason[]; jokers?: JokerPoints };
 };
 
 const RULE_KEYS: Record<string, keyof ScoringRules> = {
@@ -34,7 +34,6 @@ const RULE_KEYS: Record<string, keyof ScoringRules> = {
   flair_bonus: "flairBonus",
   flair_threshold: "flairThreshold",
   flair_min_players: "flairMinPlayers",
-  joker_multiplier: "jokerMultiplier",
   odds_exact: "oddsExact",
   odds_one_off: "oddsOneOff",
   odds_two_off: "oddsTwoOff",
@@ -70,7 +69,7 @@ export function createSupabasePointsRepository(client: SupabaseClient): PointsRe
           .returns<{ athlete_id: string; rank: number; mark: string | null }[]>(),
         client
           .from("predictions")
-          .select("user_id, p1, p2, p3, use_joker, m1, m2, m3")
+          .select("user_id, p1, p2, p3, m1, m2, m3")
           .eq("event_id", eventId)
           .returns<PredictionRow[]>(),
         client.from("scoring_rules").select("key, value").returns<{ key: string; value: number | string }[]>(),
@@ -111,7 +110,6 @@ export function createSupabasePointsRepository(client: SupabaseClient): PointsRe
           first: slotFromRow(p.p1),
           second: slotFromRow(p.p2),
           third: slotFromRow(p.p3),
-          useJoker: p.use_joker,
           ...(p.m1 !== null || p.m2 !== null || p.m3 !== null
             ? { marks: { first: num(p.m1), second: num(p.m2), third: num(p.m3) } }
             : {}),
@@ -133,7 +131,12 @@ export function createSupabasePointsRepository(client: SupabaseClient): PointsRe
         .returns<ScoreRow[]>();
       if (error) fail();
       return data!.map(
-        (row): ScoreLine => ({ userId: row.user_id, points: row.points, reasons: row.detail.reasons ?? [] }),
+        (row): ScoreLine => ({
+          userId: row.user_id,
+          points: row.points,
+          reasons: row.detail.reasons ?? [],
+          ...(row.detail.jokers ? { jokers: row.detail.jokers } : {}),
+        }),
       );
     },
 
@@ -181,7 +184,11 @@ export function createSupabasePointsRepository(client: SupabaseClient): PointsRe
     async replaceEventScores(eventId, lines) {
       const { error } = await client.rpc("set_event_scores", {
         p_event: eventId,
-        p_lines: lines.map((l) => ({ user_id: l.userId, points: l.points, detail: { reasons: l.reasons } })),
+        p_lines: lines.map((l) => ({
+          user_id: l.userId,
+          points: l.points,
+          detail: { reasons: l.reasons, ...(l.jokers ? { jokers: l.jokers } : {}) },
+        })),
       });
       if (!error) return "saved";
       // 42501: the session is not an admin's.

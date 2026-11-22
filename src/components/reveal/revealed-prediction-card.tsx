@@ -14,7 +14,7 @@ export function RevealedPredictionCard({
   pseudo,
   bib,
   podium,
-  useJoker,
+  joker,
   mine,
   flair = false,
   nameOf,
@@ -23,7 +23,8 @@ export function RevealedPredictionCard({
   pseudo: string;
   bib: BibValue;
   podium: Podium;
-  useJoker: boolean;
+  /** The league joker played on it (#1090), named, when the reveal shows one league. */
+  joker?: string | null;
   mine: boolean;
   flair?: boolean;
   nameOf: (athleteId: string) => string;
@@ -43,9 +44,9 @@ export function RevealedPredictionCard({
             {messages.reveal.flair}
           </span>
         )}
-        {useJoker && (
+        {joker && (
           <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs font-extrabold text-secondary-foreground">
-            {messages.reveal.joker}
+            {messages.reveal.joker(joker)}
           </span>
         )}
       </div>

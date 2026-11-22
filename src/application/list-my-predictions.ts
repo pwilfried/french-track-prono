@@ -1,4 +1,3 @@
-import { eventPhase } from "@/domain/countdown";
 import type { EventGender } from "@/domain/event";
 import { OTHER_ATHLETE } from "@/domain/podium-draft";
 import { pickHits, type PickHit } from "@/domain/prediction-history";
@@ -16,54 +15,16 @@ export function listMyPredictions(ports: { predictions: PredictionRepository }) 
   };
 }
 
-/** The other event of the competition where my joker is played (#981). */
-export type JokerElsewhere = {
-  eventSlug: string;
-  discipline: string;
-  gender: EventGender;
-  /** Its event is still open: removing the joker there frees it for another event. */
-  movable: boolean;
-};
-
-/** Where my joker of the competition is played, when it is on another event than this one. */
-export function findMyJokerElsewhere(ports: {
-  predictions: PredictionRepository;
-  events: Pick<EventReader, "listByCompetition">;
-}) {
-  return {
-    async execute(input: {
-      userId: string;
-      competitionSlug: string;
-      eventId: string;
-      now: Date;
-    }): Promise<JokerElsewhere | null> {
-      const mine = await ports.predictions.listForCompetition(input.userId, input.competitionSlug);
-      const joker = mine.find((p) => p.useJoker && p.eventId !== input.eventId);
-      if (!joker) return null;
-      const events = await ports.events.listByCompetition(input.competitionSlug);
-      const event = events.find((e) => e.id === joker.eventId);
-      if (!event) return null;
-      return {
-        eventSlug: event.slug,
-        discipline: event.discipline,
-        gender: event.gender,
-        movable: eventPhase(input.now, event.lockAt) === "open",
-      };
-    },
-  };
-}
-
 /** What a scored podium got right: athletes in their place, on the podium, all three. */
 export type PodiumHits = { exact: number; onPodium: number; perfect: boolean };
 
 /**
- * My mark on one event of the list: predicted, with or without the joker, the points won with
+ * My mark on one event of the list: predicted, the points won with
  * what the podium got right, null until computed, and my podium, 1st to 3rd (#800); null for
  * « autre athlète » or an athlete no longer listed.
  */
 export type MyEventMark = {
   eventId: string;
-  joker: boolean;
   points: number | null;
   hits: PodiumHits | null;
   podium: (AthleteName | null)[];
@@ -95,7 +56,6 @@ export function listMyEventMarks(ports: {
         const count = (kind: string) => line?.reasons.filter((r) => r.kind === kind).length ?? 0;
         return {
           eventId: p.eventId,
-          joker: p.useJoker,
           points: line?.points ?? null,
           hits: line
             ? {
@@ -139,7 +99,6 @@ export type MyPredictionLine = {
   startsAt: string;
   /** 1st, 2nd, 3rd; a null name for « autre athlète » or an athlete no longer listed. */
   picks: { name: string | null; hit: PickHit }[];
-  joker: boolean;
   /** Null until the points of the event are computed. */
   points: number | null;
 };
@@ -206,7 +165,6 @@ export function getMyPredictionHistory(ports: {
               name: names.get(id) ?? null,
               hit: hits[i]!,
             })),
-            joker: prediction.useJoker,
             points,
           };
         }),

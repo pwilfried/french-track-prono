@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { messages } from "@/app/messages.fr";
 import type { Discipline } from "@/domain/discipline";
+import { PREDICTION_JOKERS } from "@/domain/league-jokers";
 
 const t = messages.rules;
 const ODDS_EXAMPLE = 2.5;
@@ -33,7 +34,7 @@ export function RulesSection({
 }
 
 /**
- * The scale explained (#263, #703): podium, odds, marks, joker, coup de flair, with the current
+ * The scale explained (#263, #703): podium, odds, marks, league jokers, coup de flair, with the current
  * points. One source for the « Comment jouer » page and the rules sheet of the podium picker.
  */
 export function ScaleRules({
@@ -97,7 +98,15 @@ export function ScaleRules({
       </RulesSection>
 
       <RulesSection id={id("joker")} title={t.jokerTitle} level={level}>
-        <p>{t.joker(r("joker_multiplier"))}</p>
+        <p>{t.joker}</p>
+        <dl className="flex flex-col gap-1.5 text-sm">
+          {PREDICTION_JOKERS.map((joker) => (
+            <div key={joker}>
+              <dt className="inline font-bold">{messages.leagueJokers.name[joker]} : </dt>
+              <dd className="inline">{messages.leagueJokers.explain[joker]}</dd>
+            </div>
+          ))}
+        </dl>
       </RulesSection>
 
       <RulesSection id={id("flair")} title={t.flairTitle} level={level}>

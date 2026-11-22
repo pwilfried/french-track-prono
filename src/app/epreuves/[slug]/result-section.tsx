@@ -78,7 +78,7 @@ export async function ResultSection({
           </span>
           <div>
             <p className="font-mono text-3xl font-bold">{text.points(points.points)}</p>
-            <p className="text-sm">{labels.map((l) => l.text).join(" · ")}</p>
+            <p className="text-sm">{labels.join(" · ")}</p>
           </div>
         </div>
       ) : (

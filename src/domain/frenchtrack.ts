@@ -20,7 +20,7 @@ export type ChallengeVerdict = "won" | "lost" | "tie" | "no_prediction";
 
 /**
  * FrenchTrack's points: its podium scored with the same scale as the players' (and the same field
- * for the « coup de flair »), never with a joker nor a mark.
+ * for the « coup de flair »), never with a mark.
  */
 export function frenchTrackScore(
   podium: Podium,
@@ -29,7 +29,7 @@ export function frenchTrackScore(
   context: FlairContext,
   bets?: EventBets,
 ): Score {
-  return scorePrediction({ ...podium, useJoker: false }, official, rules, context, bets);
+  return scorePrediction(podium, official, rules, context, bets);
 }
 
 /** The player's points on the event (null: no prediction) against FrenchTrack's. */

@@ -30,7 +30,6 @@ const posed = (userId: string, eventId: string): Prediction => ({
   userId,
   eventId,
   podium: { first: "a", second: "b", third: "c" },
-  useJoker: false,
 });
 
 function ports(bySlug: Record<string, EventSummary[]>, predictions: Prediction[]) {

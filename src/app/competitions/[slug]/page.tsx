@@ -150,11 +150,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ sl
                 event={event}
                 family={families.get(event.discipline)}
                 now={now}
-                mine={
-                  player
-                    ? (player.mine.get(event.id) ?? { predicted: false, joker: false })
-                    : undefined
-                }
+                mine={player ? (player.mine.get(event.id) ?? { predicted: false }) : undefined}
               />
             ))}
           </ul>

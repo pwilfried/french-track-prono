@@ -20,7 +20,6 @@ export type MarkTexts = { first: string; second: string; third: string };
 
 export type PredictionState = {
   draft: PodiumDraft;
-  useJoker: boolean;
   /** The marks as typed, kept when the save fails. */
   marks: MarkTexts;
   saved?: boolean;
@@ -35,7 +34,6 @@ export async function savePredictionAction(
   const text = (name: string) => formText(data, name) || null;
   const state: PredictionState = {
     draft: { first: text("first"), second: text("second"), third: text("third") },
-    useJoker: data.get("joker") === "on",
     marks: {
       first: formText(data, "m1"),
       second: formText(data, "m2"),
@@ -61,7 +59,6 @@ export async function savePredictionAction(
       first: formText(data, "first"),
       second: formText(data, "second"),
       third: formText(data, "third"),
-      useJoker: state.useJoker,
       marks: state.marks,
       markUnit,
       markFamily,
