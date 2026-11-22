@@ -55,14 +55,33 @@ export function ShareInvite({
   leagueName,
   path = `/rejoindre/${code}`,
   shareText = messages.leagues.shareText(leagueName),
+  isPublic = false,
 }: {
   code: string;
   leagueName: string;
+  /** A public league is joined from « Découvrir »: only the link is shared, never the code (#1098). */
+  isPublic?: boolean;
   /** Where the link leads: the prediction leagues by default, `/manager/rejoindre…` for Manager. */
   path?: string;
   shareText?: string;
 }) {
   const { copied, share, copy } = useInviteShare({ path, title: leagueName, text: shareText });
+
+  if (isPublic) {
+    return (
+      <div className="flex flex-col gap-3">
+        <button type="button" onClick={share} className={`${buttonVariants()} w-full`}>
+          {messages.leagues.share}
+        </button>
+        <p role="status" className="text-center text-sm font-semibold empty:hidden">
+          {copied ? messages.leagues.linkCopied : ""}
+        </p>
+        <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
+          {messages.leagues.publicLinkNote}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3">

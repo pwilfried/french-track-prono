@@ -34,6 +34,16 @@ export const Alone: Story = {
   },
 };
 
+/** Public league: the link only, the code is not shown (#1098). */
+export const Public: Story = {
+  args: { isPublic: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("button", { name: text.inviteFriends })).toBeVisible();
+    await expect(canvas.queryByText(text.orGiveCode("K7M 2QX"))).toBeNull();
+  },
+};
+
 /** Without a share sheet, the link is copied and the player is told so. */
 export const CopiesTheLink: Story = {
   play: async ({ canvasElement }) => {

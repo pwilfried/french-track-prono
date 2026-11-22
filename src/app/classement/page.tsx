@@ -241,7 +241,11 @@ export default async function RankingPage({
             </div>
           ) : league && league.memberCount <= 1 ? (
             // Alone in the league: no ranking of one, bring friends in first (#710).
-            <InviteBanner code={league.inviteCode} leagueName={league.name} />
+            <InviteBanner
+              code={league.inviteCode}
+              leagueName={league.name}
+              isPublic={league.isPublic}
+            />
           ) : rows === "error" ? (
             <ErrorNotice retryHref={here} message={messages.errors.RANKING_UNAVAILABLE} />
           ) : rows === null ? null : start ? (
