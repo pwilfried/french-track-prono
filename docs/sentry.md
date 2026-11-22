@@ -13,6 +13,15 @@ filtrer sur la page (`GET /classement`…) : la durée de la transaction est le 
 spans `http.client` vers `…supabase.co` sont les lectures en base (`/rest/v1/…`) et à l'auth
 (`/auth/v1/user`).
 
+**Environnement.** `NEXT_PUBLIC_SENTRY_ENVIRONMENT` (pas un secret, lue à la construction) donne
+l'environnement Sentry ; absente, c'est `production`. La préprod est un projet Vercel à part
+déployé en « production » : on y met `preprod` pour la distinguer de la prod.
+
+**Bruit ignoré.** `ignoreErrors` (`IGNORED_ERRORS`, `src/infra/sentry.ts`) écarte deux bruits
+réseau d'iPhone que l'appli ne peut pas corriger : `Load failed` (connexion tombée) et
+`sw.js load failed` (service worker, retenté au chargement suivant). Les autres échecs de
+`register()` restent signalés.
+
 Sans DSN, rien n'est envoyé ; en local et en mode fake (`FTP_FAKE_DB=1`) non plus.
 
 ## Données personnelles
