@@ -18,7 +18,8 @@ import {
 } from "@/domain/trophies";
 
 import { UseCaseError } from "./errors";
-import { leagueLines, linesOf, type RankingRepository } from "./rankings";
+import type { LeagueJokerPlay } from "./league-jokers";
+import { leagueLines, linesOf, withLeagueJokers, type RankingRepository } from "./rankings";
 
 /** A predictions league as the trophies need it. */
 export type TrophyLeague = {
@@ -29,6 +30,8 @@ export type TrophyLeague = {
   /** Its competitions, with when each entered the league (#614; null: from the start). */
   competitions: (SeasonCompetition & { addedAt: string | null })[];
   families: LeagueFamilyRule[];
+  /** The jokers played in the league (#1114), counted like in its ranking; absent: none. */
+  jokerPlays?: LeagueJokerPlay[];
 };
 
 /** Everything the trophies of a season are drawn from, but the score lines. */
@@ -93,15 +96,18 @@ export function awardSeasonTrophies(ports: {
             season: leagueSeason(league.competitions),
             memberIds: league.members.map((m) => m.userId),
             competitions: league.competitions,
-            lines: leagueLines(
-              lines.filter((l) => league.competitions.some((c) => c.slug === l.competitionSlug)),
-              {
-                members: league.members,
-                families: league.families,
-                competitionAddedAt: Object.fromEntries(
-                  league.competitions.flatMap((c) => (c.addedAt ? [[c.slug, c.addedAt]] : [])),
-                ),
-              },
+            lines: withLeagueJokers(
+              leagueLines(
+                lines.filter((l) => league.competitions.some((c) => c.slug === l.competitionSlug)),
+                {
+                  members: league.members,
+                  families: league.families,
+                  competitionAddedAt: Object.fromEntries(
+                    league.competitions.flatMap((c) => (c.addedAt ? [[c.slug, c.addedAt]] : [])),
+                  ),
+                },
+              ),
+              league.jokerPlays ?? [],
             ),
           }),
         ),

@@ -5,6 +5,7 @@ import type { LeagueMomentRepository, MomentLeague } from "@/application/league-
 import { BADGE_LEVELS, BADGES, type Badge, type BadgeLevel } from "@/domain/badges";
 import { bibOf } from "@/domain/bib";
 import { inScreenOrder, type LeagueFamily } from "@/domain/league-families";
+import { isPredictionJoker } from "@/domain/league-jokers";
 import { isMomentKind, type FeedMoment } from "@/domain/league-moments";
 
 type LeagueRow = {
@@ -12,6 +13,7 @@ type LeagueRow = {
   competitions: { slug: string; added_at: string | null }[] | null;
   families: { family: LeagueFamily; added_at: string | null }[];
   members: { user_id: string; joined_at: string | null; counted?: string[] }[] | null;
+  jokers?: { user_id: string; event_id: string; kind: string }[];
 };
 
 /** A moment as the database gives it; the Manager feed (#875) gives no event, nor other player. */
@@ -61,6 +63,9 @@ function leagueOf(row: LeagueRow): MomentLeague {
       ...(m.joined_at ? { joinedAt: iso(m.joined_at) } : {}),
       countedEvents: m.counted ?? [],
     })),
+    jokerPlays: (row.jokers ?? []).flatMap((j) =>
+      isPredictionJoker(j.kind) ? [{ userId: j.user_id, eventId: j.event_id, joker: j.kind }] : [],
+    ),
   };
 }
 
