@@ -85,6 +85,7 @@ export function createInMemoryManagerLeagueStore(
               target: format.players,
               startsAt: null,
               openedAt: null,
+              closedAt: null,
               roundMode: "auto",
             },
             members: [{ ...player }],
