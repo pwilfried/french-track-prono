@@ -3,6 +3,7 @@ import Link from "next/link";
 import { listDisciplines } from "@/application/disciplines";
 import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { listAthletes } from "@/application/list-athletes";
+import { SubmitButton } from "@/components/account/submit-button";
 import { ErrorNotice } from "@/components/error-notice";
 import { ChipStatus } from "@/components/ui/chip-status";
 import { flagOf } from "@/domain/flag";
@@ -14,7 +15,7 @@ import { createSupabaseAthleteAdminRepository, createSupabaseDisciplineRepositor
 import { messages } from "../../messages.fr";
 import { AdminShell } from "../competitions/admin-shell";
 import { adminOnly } from "../guard";
-import { createAthleteAction } from "./actions";
+import { applySuggestedPricesAction, createAthleteAction } from "./actions";
 
 const field = "min-h-11 w-full rounded-xl border-2 border-border bg-background px-2.5 text-base";
 
@@ -27,6 +28,8 @@ export default async function AdminAthletesPage({
     sexe?: string;
     pays?: string;
     erreur?: string;
+    prix?: string;
+    sans?: string;
   }>;
 }) {
   const { client } = await adminOnly();
@@ -41,6 +44,8 @@ export default async function AdminAthletesPage({
     search.erreur && search.erreur in messages.errors
       ? messages.errors[search.erreur as ErrorCode]
       : null;
+  const taken = search.prix && /^\d{1,5}$/.test(search.prix) ? Number(search.prix) : null;
+  const skippedNames = taken === null || !search.sans ? [] : search.sans.split("|").slice(0, 200);
   let athletes;
   let disciplines: Discipline[] = [];
   try {
@@ -67,6 +72,33 @@ export default async function AdminAthletesPage({
           {error}
         </p>
       )}
+      {taken !== null && (
+        <div role="status" className="rounded-2xl bg-muted px-3.5 py-3 text-sm">
+          <p className="font-semibold">{messages.adminAthletes.allPricesTaken(taken)}</p>
+          {skippedNames.length > 0 && (
+            <>
+              <p className="mt-1">{messages.adminAthletes.allPricesSkipped(skippedNames.length)}</p>
+              <p className="break-words text-muted-foreground">{skippedNames.join(", ")}</p>
+            </>
+          )}
+        </div>
+      )}
+      <details className="rounded-card border border-border bg-card p-3.5">
+        <summary className="flex min-h-11 cursor-pointer items-center font-bold">
+          {messages.adminAthletes.takeAllPrices}
+        </summary>
+        <form action={applySuggestedPricesAction} className="mt-2 flex flex-col gap-3">
+          <p className="text-sm text-muted-foreground">
+            {messages.adminAthletes.takeAllPricesHint}
+          </p>
+          <SubmitButton
+            pendingLabel={messages.adminAthletes.takingAllPrices}
+            className="min-h-11 rounded-full bg-primary px-4 font-bold text-primary-foreground"
+          >
+            {messages.adminAthletes.takeAllPricesConfirm}
+          </SubmitButton>
+        </form>
+      </details>
       <details className="rounded-card border border-border bg-card p-3.5" open={!!error}>
         <summary className="flex min-h-11 cursor-pointer items-center font-bold">
           {messages.adminAthletes.create}
