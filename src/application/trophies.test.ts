@@ -267,6 +267,58 @@ describe("awardSeasonTrophies", () => {
     ]);
   });
 
+  it("counts the jokers played in the league: a double puts a member on the top step", async () => {
+    // Given the June meeting: without a joker ana has 32 points, bob 25
+    const league = (jokerPlays: SeasonFacts["leagues"][number]["jokerPlays"]) =>
+      createInMemoryTrophyStore({
+        players,
+        admins: ["adm"],
+        facts: {
+          2026: {
+            competitions: [{ slug: "meeting-juin", endsOn: "2026-06-14" }],
+            leagues: [
+              {
+                id: "L",
+                name: "Les lanceurs",
+                members: ["ana", "bob", "cyd", "dan"].map((id) => member(id)),
+                competitions: [{ slug: "meeting-juin", endsOn: "2026-06-14", addedAt: null }],
+                families: [],
+                jokerPlays,
+              },
+            ],
+            manager: [],
+          },
+        },
+      });
+    const bobLine = { ...line("bob", 25, "2026-06-14"), jokers: { double: 50 } };
+    const draw = async (store: ReturnType<typeof league>) => {
+      await awardSeasonTrophies({
+        trophies: store.session("adm"),
+        ranking: createInMemoryRankingRepository({
+          "meeting-juin": [
+            line("ana", 20, "2026-06-13"),
+            line("ana", 12, "2026-06-14"),
+            bobLine as RankingLine,
+            line("cyd", 10, "2026-06-13"),
+            line("dan", 2, "2026-06-13"),
+          ],
+        }),
+        today: () => "2026-11-14",
+      }).execute({ season: 2026 });
+      return summary(store.all().filter((t) => t.kind === "league"));
+    };
+
+    // When bob played his double on his 25 points, then when no joker was played
+    const withJoker = await draw(
+      league([{ userId: "bob", eventId: bobLine.eventId, joker: "double" }]),
+    );
+    const without = await draw(league(undefined));
+
+    // Then bob wins the league only with the joker
+    expect(withJoker).toEqual(["ana league silver L", "bob league gold L", "cyd league bronze L"]);
+    expect(without).toEqual(["ana league gold L", "bob league silver L", "cyd league bronze L"]);
+  });
+
   it("refuses a player who is not an admin", async () => {
     const { store } = world();
     await expect(

@@ -8,7 +8,14 @@ import {
 } from "@/domain/league-moments";
 
 import { UseCaseError } from "./errors";
-import { leagueLines, linesOf, type RankingLine, type RankingRepository } from "./rankings";
+import type { LeagueJokerPlay } from "./league-jokers";
+import {
+  leagueLines,
+  linesOf,
+  withLeagueJokers,
+  type RankingLine,
+  type RankingRepository,
+} from "./rankings";
 
 /** A league as the publication of its moments needs it: what its ranking counts. */
 export type MomentLeague = {
@@ -18,6 +25,8 @@ export type MomentLeague = {
   families?: LeagueFamilyRule[];
   /** `countedEvents`: the predictions each member added to the league (#1068). */
   members: { userId: string; joinedAt?: string; countedEvents?: string[] }[];
+  /** The jokers played in the league (#1114), counted like in its ranking; absent: none. */
+  jokerPlays?: LeagueJokerPlay[];
 };
 
 /**
@@ -57,7 +66,9 @@ export function publishLeagueMoments(ports: {
       let published = 0;
       for (const league of leagues) {
         const lines = (await Promise.all(league.competitionSlugs.map(linesOfCompetition))).flat();
-        const moments = leagueMoments(leagueLines(lines, league));
+        const moments = leagueMoments(
+          withLeagueJokers(leagueLines(lines, league), league.jokerPlays ?? []),
+        );
         if (moments.length === 0) continue;
         const count = await ports.moments.publish(league.id, moments);
         if (count === "not_admin") throw new UseCaseError("NOT_ADMIN");

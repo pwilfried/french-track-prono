@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { UseCaseError } from "@/application/errors";
 import type { SeasonFacts, TrophyRepository } from "@/application/trophies";
+import { isPredictionJoker } from "@/domain/league-jokers";
 import type { LeagueFamilyRule } from "@/domain/league-families";
 import type { Animal } from "@/domain/band";
 import type { Metal, Trophy, TrophyKind } from "@/domain/trophies";
@@ -15,6 +16,7 @@ type FactsJson = {
     members: { user_id: string; joined_at: string; counted?: string[] }[];
     competitions: { slug: string; ends_on: string; added_at: string | null }[];
     families: { family: LeagueFamilyRule["family"]; added_at: string | null }[];
+    jokers?: { user_id: string; event_id: string; kind: string }[];
   }[];
   manager: {
     league_id: string;
@@ -53,6 +55,9 @@ const toFacts = (json: FactsJson): SeasonFacts => ({
       addedAt: iso(c.added_at),
     })),
     families: l.families.map((f) => ({ family: f.family, addedAt: iso(f.added_at) })),
+    jokerPlays: (l.jokers ?? []).flatMap((j) =>
+      isPredictionJoker(j.kind) ? [{ userId: j.user_id, eventId: j.event_id, joker: j.kind }] : [],
+    ),
   })),
   manager: json.manager.map((h) => ({
     leagueId: h.league_id,
