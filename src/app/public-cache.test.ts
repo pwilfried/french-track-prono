@@ -132,6 +132,11 @@ describe("public data cache", () => {
     expect(STALE_AFTER.player).toContain("rankings");
   });
 
+  it("makes the event lists stale when an athlete is corrected, the rankings when a club is", () => {
+    expect(STALE_AFTER.athlete).toContain("events");
+    expect(STALE_AFTER.club).toContain("rankings");
+  });
+
   it("only knows public tags", () => {
     for (const tags of Object.values(STALE_AFTER))
       for (const tag of tags) expect(PUBLIC_TAGS).toContain(tag);

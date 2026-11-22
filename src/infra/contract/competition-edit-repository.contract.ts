@@ -80,6 +80,24 @@ export function competitionEditRepositoryContract(
       await w.admin.remove(slug);
     });
 
+    it("moves every event of a competition by whole days, at the same Paris time", async () => {
+      const w = await world();
+      const { slug, free, predicted } = await setUp(w);
+      await w.predict(predicted);
+
+      expect(await w.player.shiftEvents(slug, 7)).toBe("not_admin");
+      expect(await w.admin.shiftEvents(`${slug}-none`, 7)).toBe("unknown");
+      expect(await w.admin.shiftEvents(slug, 7)).toBe("saved");
+
+      const moved = (await w.admin.find(slug))?.eventList.map((e) => [e.slug, e.startsAt]);
+      expect(new Map(moved as [string, string][])).toEqual(
+        new Map([
+          [free, "2099-06-17T18:35:00.000Z"],
+          [predicted, "2099-06-17T18:35:00.000Z"],
+        ]),
+      );
+    });
+
     it("keeps what was predicted, deletes the rest, and refuses a player", async () => {
       const w = await world();
       const { slug, free, predicted } = await setUp(w);

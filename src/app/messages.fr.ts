@@ -2477,6 +2477,11 @@ export const messages = {
     edit: "Modifier",
     editTitle: "Modifier la compétition",
     editSubmit: "Enregistrer les modifications",
+    shiftEvents: "Décaler aussi les épreuves",
+    shiftEventsHint: (n: number) =>
+      n <= 1
+        ? "Si la date de début change, l'épreuve suit, à la même heure ; son verrouillage aussi."
+        : `Si la date de début change, les ${n} épreuves suivent, à la même heure ; leur verrouillage aussi.`,
     deleteTitle: "Supprimer la compétition",
     deleteHint:
       "Possible tant que personne n'a pronostiqué : ses épreuves, engagés et cotes partent avec elle.",

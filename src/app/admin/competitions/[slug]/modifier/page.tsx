@@ -43,6 +43,24 @@ export default async function EditCompetitionPage({
       <form action={editCompetitionAction} className="flex flex-col gap-4">
         <input type="hidden" name="slug" value={slug} />
         <CompetitionFields initial={file} />
+        {file.eventList.length > 0 && (
+          <label className="flex min-h-12 items-start gap-3 rounded-xl border-2 border-border bg-card px-3.5 py-3">
+            <input type="hidden" name="previousStartsOn" value={file.startsOn} />
+            <input
+              type="checkbox"
+              name="shiftEvents"
+              value="1"
+              defaultChecked
+              className="mt-0.5 size-5 shrink-0 accent-brand"
+            />
+            <span className="flex min-w-0 flex-col gap-0.5">
+              <span className="font-semibold">{t.shiftEvents}</span>
+              <span className="text-sm text-muted-foreground">
+                {t.shiftEventsHint(file.eventList.length)}
+              </span>
+            </span>
+          </label>
+        )}
         <button
           type="submit"
           className="min-h-12 rounded-full bg-primary font-bold text-primary-foreground"

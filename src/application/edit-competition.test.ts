@@ -30,6 +30,10 @@ function repository(outcome: Outcome = "saved") {
       calls.push(["removeEvent", slug]);
       return outcome;
     },
+    shiftEvents: async (...args) => {
+      calls.push(["shiftEvents", ...args]);
+      return outcome === "has_predictions" ? "saved" : outcome;
+    },
   };
   return { competitions, calls };
 }
@@ -82,6 +86,46 @@ describe("editCompetition", () => {
     });
 
     expect(calls[0]).toEqual(["update", "meeting", expect.objectContaining({ venue: "indoor" })]);
+  });
+
+  it("moves the events with the competition when the admin asks for it", async () => {
+    // Given a competition starting on 10 June, moved to 17 June, events to move too
+    const { competitions, calls } = repository();
+
+    // When the admin saves the new dates
+    await editCompetition({ competitions }).execute({
+      slug: "meeting",
+      ...fields,
+      startsOn: "2027-06-17",
+      endsOn: "2027-06-17",
+      shiftEventsFrom: "2027-06-10",
+    });
+
+    // Then the competition is saved, then its events move a week later
+    expect(calls.map((c) => c[0])).toEqual(["update", "shiftEvents"]);
+    expect(calls[1]).toEqual(["shiftEvents", "meeting", 7]);
+  });
+
+  it("leaves the events where they are when the start date does not change or nobody asks", async () => {
+    const same = repository();
+    await editCompetition(same).execute({
+      slug: "meeting",
+      ...fields,
+      shiftEventsFrom: fields.startsOn,
+    });
+    const unasked = repository();
+    await editCompetition(unasked).execute({ slug: "meeting", ...fields, startsOn: "2027-06-08" });
+
+    expect(same.calls.map((c) => c[0])).toEqual(["update"]);
+    expect(unasked.calls.map((c) => c[0])).toEqual(["update"]);
+  });
+
+  it("refuses a previous date that is not one with COMPETITION_INVALID", async () => {
+    expect(
+      await codeOf(
+        editCompetition(repository()).execute({ slug: "m", ...fields, shiftEventsFrom: "hier" }),
+      ),
+    ).toBe("COMPETITION_INVALID");
   });
 
   it("refuses dates the wrong way round with COMPETITION_INVALID, an unknown one with COMPETITION_NOT_FOUND", async () => {

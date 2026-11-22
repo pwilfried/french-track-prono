@@ -310,7 +310,15 @@ reste est relu à chaque page, comme avant.
   discipline → `disciplines`, `events` ; barème → `scale`. La feuille de résultats (points
   calculés) expire aussi `rankings`, comme un changement de ce qu'une ligne montre d'un joueur
   (`player` : profil modifié, club choisi, compte supprimé, joueur bloqué ou supprimé par
-  l'admin). Un changement fait en SQL directement (scripts `db:*`) attend au plus 120 s.
+  l'admin). Athlète corrigé (nom, pays : les podiums des listes d'épreuves) → `events` ; club
+  (créé, renommé, validé, fusionné, supprimé : le club d'une ligne) → `rankings` (#1070). Les
+  autres sections (ligues, communauté, trophées, Manager, « Le saviez-vous ? ») ne lisent pas ce
+  cache. Un changement fait en SQL directement (scripts `db:*`) attend au plus 120 s.
+- Dates d'une compétition (#1070) : la ligue, l'accueil et la compétition montrent le jour de
+  chaque **épreuve**. Changer les dates de la compétition ne les déplace que si l'admin laisse
+  cochée « Décaler aussi les épreuves » (cochée par défaut, décision du propriétaire du 22 nov.
+  2026) : chaque épreuve avance ou recule d'autant de jours que le début, à la même heure de Paris,
+  verrouillage compris (`admin_shift_competition_events`).
 - Jamais en cache : une épreuve seule (`findBySlug` : sa liste de départ, ses résultats, son
   verrouillage), les pronos, les points du joueur, les ligues et leurs membres, le profil, le
   Manager, et tout ce qui dépend du joueur. Le refus d'un prono après le verrouillage reste décidé
