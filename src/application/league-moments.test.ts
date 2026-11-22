@@ -110,6 +110,42 @@ describe("league feed", () => {
     expect(published.get("friends") ?? []).toEqual([]);
   });
 
+  it("counts the jokers played in the league: a double makes a member take the lead", async () => {
+    // Given Ana leading after the 100 m, and Bob 3 points behind her after the long jump
+    const later = (l: RankingLine, day: string, jokers?: RankingLine["jokers"]): RankingLine => ({
+      ...l,
+      eventStartsAt: `2026-11-${day}T19:00:00.000Z`,
+      eventLockAt: `2026-11-${day}T19:00:00.000Z`,
+      ...(jokers ? { jokers } : {}),
+    });
+    const lines = {
+      meeting: [
+        line("ana", "100m", 10),
+        line("bob", "100m", 4),
+        later(line("ana", "long", 2), "16"),
+        later(line("bob", "long", 5), "16", { double: 10 } as RankingLine["jokers"]),
+      ],
+    };
+    const publishedWith = async (league: MomentLeague) => {
+      const { repository, published } = store([league]);
+      await publishLeagueMoments({ moments: repository, ranking: ranking(lines) }).execute({
+        competitionSlug: "meeting",
+      });
+      return (published.get("friends") ?? []).filter((m) => m.kind === "new_leader");
+    };
+
+    // When Bob played his double on the long jump, then when nobody played a joker
+    const withJoker = await publishedWith({
+      ...friends,
+      jokerPlays: [{ userId: "bob", eventId: "long", joker: "double" }],
+    });
+    const without = await publishedWith(friends);
+
+    // Then Bob takes the lead (14 against 12) only with the joker, as in the ranking
+    expect(withJoker.map((m) => m.userId)).toEqual(["ana", "bob"]);
+    expect(without.map((m) => m.userId)).toEqual(["ana"]);
+  });
+
   it("refuses a player who is not an admin", async () => {
     const { repository } = store([friends], { admin: false });
     await expect(

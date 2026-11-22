@@ -3,7 +3,7 @@
 -- them again never duplicates one) and sets the FrenchTrack account of the TÃ©moin d'or.
 -- Run with `supabase test db`. Everything is rolled back at the end.
 begin;
-select plan(17);
+select plan(18);
 
 insert into auth.users (id, email) values
   ('7a0f0000-0000-0000-0000-000000000001', 'admin-trophies@example.test'),
@@ -26,6 +26,16 @@ insert into league_members (league_id, user_id, role) values
 insert into league_competitions (league_id, competition_id) values
   ('7a0f1000-0000-0000-0000-000000000001', '7a0fc000-0000-0000-0000-000000000001');
 
+-- A double played by Bob on an event of the league (#1114).
+insert into events (id, competition_id, slug, discipline, gender, starts_at, lock_at)
+values ('7a0fe000-0000-0000-0000-000000000001', '7a0fc000-0000-0000-0000-000000000001', '100m',
+        '100 m', 'F', '2031-07-10 18:00+00', '2031-07-10 17:00+00');
+insert into league_jokers (league_id, kind)
+values ('7a0f1000-0000-0000-0000-000000000001', 'double') on conflict do nothing;
+insert into league_joker_plays (league_id, user_id, event_id, kind)
+values ('7a0f1000-0000-0000-0000-000000000001', '7a0f0000-0000-0000-0000-000000000003',
+        '7a0fe000-0000-0000-0000-000000000001', 'double');
+
 -- The admin awards the 2031 trophies.
 set local role authenticated;
 select set_config('request.jwt.claims',
@@ -41,6 +51,10 @@ select is((admin_trophy_facts(2031) -> 'leagues' -> 0 ->> 'name'), 'Ligue TrophÃ
   'the facts of a season list the leagues whose last competition ends in it');
 select is(jsonb_array_length(admin_trophy_facts(2031) -> 'leagues' -> 0 -> 'members'), 2,
   'the facts list the members of a league');
+select is(admin_trophy_facts(2031) -> 'leagues' -> 0 -> 'jokers',
+  '[{"user_id": "7a0f0000-0000-0000-0000-000000000003", "kind": "double",
+     "event_id": "7a0fe000-0000-0000-0000-000000000001"}]'::jsonb,
+  'the facts carry the jokers played in a league');
 select is((admin_trophy_facts(2031) ->> 'witness_id')::uuid,
   '7a0f0000-0000-0000-0000-000000000002'::uuid, 'the facts carry the FrenchTrack account');
 

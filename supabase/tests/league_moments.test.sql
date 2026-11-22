@@ -2,7 +2,7 @@
 -- reads nothing; nobody writes them but the admin's publication, which keeps a fact once.
 -- Run with `supabase test db`. Everything is rolled back at the end.
 begin;
-select plan(12);
+select plan(13);
 
 insert into auth.users (id, email) values
   ('f6710000-0000-0000-0000-000000000001', 'owner@example.test'),
@@ -48,6 +48,14 @@ select set_config('request.jwt.claims',
 select is(
   (select jsonb_array_length(admin_moment_leagues('test-moments'))), 1,
   'the admin reads the leagues counting the competition');
+reset role;
+insert into league_jokers (league_id, kind) select league, 'double' from ctx on conflict do nothing;
+insert into league_joker_plays (league_id, user_id, event_id, kind)
+select league, 'f6710000-0000-0000-0000-000000000001', event, 'double' from ctx;
+set local role authenticated;
+select is(
+  (select admin_moment_leagues('test-moments') -> 0 -> 'jokers' -> 0 ->> 'kind'), 'double',
+  'the admin reads the jokers played in each league');
 select is(
   (select admin_publish_league_moments(league, jsonb_build_array(
      jsonb_build_object('key', 'perfect_podium:' || event || ':f6710000-0000-0000-0000-000000000001',
