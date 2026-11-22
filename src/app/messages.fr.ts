@@ -817,6 +817,9 @@ export const messages = {
       won: (n: number) => `${n} gagné${n > 1 ? "s" : ""}`,
       bids: (n: number) => `${n} enchère${n > 1 ? "s" : ""}`,
       none: "Aucune enchère pour l'instant : choisis des athlètes dans le catalogue.",
+      /** Why a family is not done: a sex under its minimum, or above its maximum (#1119). */
+      missingSex: { M: "il manque un homme", F: "il manque une femme" },
+      tooManySex: { M: "trop d'hommes", F: "trop de femmes" },
       committed: (engaged: number, budget: number) => `Budget engagé : ${engaged} / ${budget} cr.`,
       overBudget: "Budget dépassé : retire une offre.",
     },

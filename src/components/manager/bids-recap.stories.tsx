@@ -59,6 +59,38 @@ export const FamilyComplete: Story = {
   },
 };
 
+/** Athletes won, no bid running: the « no bid yet » line stays away. */
+export const WonNoBid: Story = {
+  args: {
+    build: teamBuild(rules, [won("sprint", "F"), won("sprint", "M"), won("throws", "M")], 60),
+    engaged: 0,
+    budget: 100,
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).queryByText(/Aucune enchère pour l'instant/)).toBeNull();
+  },
+};
+
+/** The count is reached but one sex is missing: the card says so. */
+export const SexMissing: Story = {
+  args: {
+    build: teamBuild(
+      rules,
+      [won("horizontal_jumps", "M"), won("horizontal_jumps", "M"), won("horizontal_jumps", "M")],
+      60,
+    ),
+    engaged: 0,
+    budget: 100,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("il manque une femme")).toBeVisible();
+    await expect(
+      canvas.getByLabelText(/Sauts et épreuves combinées.*il manque une femme/),
+    ).toBeVisible();
+  },
+};
+
 /** The athletes and the bids together exceed the budget. */
 export const OverBudget: Story = {
   args: {
