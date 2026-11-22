@@ -32,7 +32,7 @@ export type PredictionLeague = {
 };
 
 /** No player is in that many leagues: a longer list is not a choice made on the screen. */
-export const MAX_PREDICTION_LEAGUES = 100;
+const MAX_PREDICTION_LEAGUES = 100;
 
 const kindOf = (league: League): LeagueKind =>
   league.isOfficial ? "official" : league.isPublic ? "public" : "private";
