@@ -9,19 +9,22 @@ export const REMINDER_FAMILIES = [
   "eveningResults",
   "manager",
   "league",
+  "trashTalk",
   "frenchtrack",
 ] as const;
 export type ReminderFamily = (typeof REMINDER_FAMILIES)[number];
 
 /**
- * The families shown today. « Ma ligue » sends the reactions push (#672, #903); « FrenchTrack »
- * stays hidden until a notification uses it.
+ * The families shown today. « Ma ligue » sends the reactions push (#672, #903), « Chambrage » the
+ * trash talk of an evening in a league (#1093); « FrenchTrack » stays hidden until a notification
+ * uses it.
  */
 export const SHOWN_REMINDER_FAMILIES: readonly ReminderFamily[] = [
   "forgotten",
   "eveningResults",
   "manager",
   "league",
+  "trashTalk",
 ];
 
 /** How long before a lock « Pronos oubliés » may be sent, in minutes. */
@@ -43,6 +46,7 @@ export const DEFAULT_REMINDER_SETTINGS: ReminderSettings = {
     eveningResults: true,
     manager: true,
     league: true,
+    trashTalk: true,
     frenchtrack: true,
   },
   leadMinutes: 60,

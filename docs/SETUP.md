@@ -663,7 +663,7 @@ La clé privée ne va jamais dans Vercel ni dans le dépôt ; aucun secret dans 
 marchent qu'une fois l'appli ajoutée à l'écran d'accueil (iOS 16.4 ou plus).
 
 **Tester une notification** (#977) : Actions > « Push notifications » > Run workflow, `test` coché,
-`target` = production ou preprod. Le workflow envoie un exemple de chaque notification (13 au total, données fictives, chacune avec son `tag` : « 🚨 Dernier appel », « 👑 +12 pts, tu es en tête ! », « 🔨 Mercato », « 🏆 Victoire contre … », …, puis « 🔔 Test réussi ») à chaque appareil
+`target` = production ou preprod. Le workflow envoie un exemple de chaque notification (24 au total, données fictives, chacune avec son `tag` : pronos oubliés, résultats du soir, Manager dont la raclée et chaque révélation de tour de mercato, chaque chambrage, réactions, programme, puis « 🔔✅ Test réussi ») à chaque appareil
 abonné du compte dont l'e-mail est dans le secret `PUSH_TEST_EMAIL` de cet environnement (en
 préprod, `PREPROD_OWNER_EMAIL` suffit). Aucun appareil abonné : avertissement « Aucun appareil
 abonné pour ce compte ». En préprod, il faut d'abord les clés VAPID : `NEXT_PUBLIC_VAPID_PUBLIC_KEY`

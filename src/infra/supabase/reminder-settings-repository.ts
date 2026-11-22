@@ -14,7 +14,7 @@ export function createSupabaseReminderSettingsRepository(
       const { data, error } = await client
         .from("reminder_settings")
         .select(
-          "forgotten, evening_results, manager, league, frenchtrack, lead_minutes, quiet_from, quiet_to",
+          "forgotten, evening_results, manager, league, trash_talk, frenchtrack, lead_minutes, quiet_from, quiet_to",
         )
         .maybeSingle();
       if (error) throw new UseCaseError("REMINDER_SETTINGS_UNAVAILABLE");
@@ -26,6 +26,7 @@ export function createSupabaseReminderSettingsRepository(
           eveningResults: data.evening_results,
           manager: data.manager,
           league: data.league,
+          trashTalk: data.trash_talk,
           frenchtrack: data.frenchtrack,
         },
         leadMinutes: lead as ReminderLead,
@@ -39,6 +40,7 @@ export function createSupabaseReminderSettingsRepository(
         p_evening_results: settings.families.eveningResults,
         p_manager: settings.families.manager,
         p_league: settings.families.league,
+        p_trash_talk: settings.families.trashTalk,
         p_frenchtrack: settings.families.frenchtrack,
         p_lead_minutes: settings.leadMinutes,
         p_quiet_from: settings.quietFrom,

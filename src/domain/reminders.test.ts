@@ -39,6 +39,7 @@ describe("reminder settings", () => {
         eveningResults: true,
         manager: true,
         league: true,
+        trashTalk: true,
         frenchtrack: true,
       },
       leadMinutes: 60,
@@ -62,6 +63,7 @@ describe("reminder settings", () => {
         eveningResults: false,
         manager: false,
         league: false,
+        trashTalk: false,
         frenchtrack: false,
       },
       leadMinutes: 180,
@@ -73,6 +75,11 @@ describe("reminder settings", () => {
   it("shows « Ma ligue », which sends the reactions push, but keeps « FrenchTrack » hidden", () => {
     expect(SHOWN_REMINDER_FAMILIES).toContain("league");
     expect(SHOWN_REMINDER_FAMILIES).not.toContain("frenchtrack");
+  });
+
+  it("shows « Chambrage », on by default (#1093)", () => {
+    expect(SHOWN_REMINDER_FAMILIES).toContain("trashTalk");
+    expect(DEFAULT_REMINDER_SETTINGS.families.trashTalk).toBe(true);
   });
 
   it.each([

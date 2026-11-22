@@ -19,15 +19,18 @@ test("a player sets their reminders, reloads, and finds them again", async ({ pa
   const manager = page.getByRole("switch", { name: text.family.manager.label });
   await expect(manager).toBeChecked();
   await expect(page.getByRole("switch", { name: text.family.league.label })).toBeChecked();
-  await expect(page.getByRole("switch")).toHaveCount(4);
+  const trashTalk = page.getByRole("switch", { name: text.family.trashTalk.label });
+  await expect(trashTalk).toBeChecked();
+  await expect(page.getByRole("switch")).toHaveCount(5);
   const quietFrom = page.getByRole("combobox", { name: text.quietFrom, exact: true });
   const quietTo = page.getByRole("combobox", { name: text.quietTo, exact: true });
   await expect(page.getByRole("radio", { name: "1 h" })).toBeChecked();
   await expect(quietFrom).toHaveValue("23");
   await expect(quietTo).toHaveValue("8");
 
-  // Manager off, three hours before, quiet from 22 h to 7 h.
+  // Manager and Chambrage off, three hours before, quiet from 22 h to 7 h.
   await page.locator("label", { has: manager }).click();
+  await page.locator("label", { has: trashTalk }).click();
   await page.locator("label", { has: page.getByRole("radio", { name: "3 h" }) }).click();
   await quietFrom.selectOption("22");
   await quietTo.selectOption("7");
@@ -36,6 +39,7 @@ test("a player sets their reminders, reloads, and finds them again", async ({ pa
 
   await page.reload();
   await expect(manager).not.toBeChecked();
+  await expect(trashTalk).not.toBeChecked();
   await expect(page.getByRole("switch", { name: text.family.forgotten.label })).toBeChecked();
   await expect(page.getByRole("radio", { name: "3 h" })).toBeChecked();
   await expect(quietFrom).toHaveValue("22");

@@ -57,30 +57,30 @@ select pg_temp.predict('abab0000-0000-0000-0000-00000000000b', 2);
 -- Settings, saved by each player for themself. No quiet hours (0 to 0) except for D.
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"abab0000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
-select lives_ok($$select save_reminder_settings(true, true, true, true, true, 60, 0, 0)$$,
+select lives_ok($$select save_reminder_settings(true, true, true, true, true, 60, 0, 0, true)$$,
   'a player saves their reminder settings');
-select lives_ok($$select save_reminder_settings(true, true, true, true, true, 60, 0, 0)$$,
+select lives_ok($$select save_reminder_settings(true, true, true, true, true, 60, 0, 0, true)$$,
   'saving again replaces them');
-select throws_ok($$select save_reminder_settings(true, true, true, true, true, 5, 0, 0)$$,
+select throws_ok($$select save_reminder_settings(true, true, true, true, true, 5, 0, 0, true)$$,
   '23514', null, 'a lead not offered is refused');
-select throws_ok($$select save_reminder_settings(true, true, true, true, true, 60, 24, 0)$$,
+select throws_ok($$select save_reminder_settings(true, true, true, true, true, 60, 24, 0, true)$$,
   '23514', null, 'an hour that does not exist is refused');
 select throws_ok($$insert into reminder_settings (user_id) values (auth.uid())$$,
   '42501', null, 'the table is not written directly');
 select throws_ok($$select * from private.reminder_due()$$, '42501', null,
   'the app cannot read what is due');
 select set_config('request.jwt.claims', '{"sub":"abab0000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
-select save_reminder_settings(true, true, true, true, true, 60, 0, 0);
+select save_reminder_settings(true, true, true, true, true, 60, 0, 0, true);
 select is((select count(*)::int from reminder_settings), 1, 'a player only reads their own settings');
 select set_config('request.jwt.claims', '{"sub":"abab0000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
-select save_reminder_settings(false, true, true, true, true, 60, 0, 0);
+select save_reminder_settings(false, true, true, true, true, 60, 0, 0, true);
 select set_config('request.jwt.claims', '{"sub":"abab0000-0000-0000-0000-00000000000d","role":"authenticated"}', true);
 -- Quiet from the hour of the test clock in Paris to the next one.
 select save_reminder_settings(true, true, true, true, true, 60,
   extract(hour from (select t0 from clock) at time zone 'Europe/Paris')::int,
-  (extract(hour from (select t0 from clock) at time zone 'Europe/Paris')::int + 1) % 24);
+  (extract(hour from (select t0 from clock) at time zone 'Europe/Paris')::int + 1) % 24, true);
 select set_config('request.jwt.claims', '{"sub":"abab0000-0000-0000-0000-00000000000e","role":"authenticated"}', true);
-select save_reminder_settings(true, true, true, true, true, 30, 0, 0);
+select save_reminder_settings(true, true, true, true, true, 30, 0, 0, true);
 reset role;
 
 create temp view due as

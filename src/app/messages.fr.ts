@@ -3139,6 +3139,10 @@ export const messages = {
         label: "Ma ligue",
         hint: "Quand d'autres réagissent à tes moments dans le fil de tes ligues.",
       },
+      trashTalk: {
+        label: "Chambrage",
+        hint: "Un ami te double, tu finis lanterne rouge… Au plus un message par soirée.",
+      },
       frenchtrack: { label: "FrenchTrack", hint: "Les nouveautés de FrenchTrack." },
     },
     lead: "Prévenir avant le verrou",
