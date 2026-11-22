@@ -10,12 +10,17 @@ import { getMyManagerTeam } from "@/application/manager-team";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { CatalogueCard } from "@/components/manager/catalogue-card";
+import { CatalogueFilters } from "@/components/manager/catalogue-filters";
 import { FirstMercatoGate } from "@/components/manager/first-mercato";
 import { MercatoBanner } from "@/components/manager/mercato-banner";
 import { TeamBuildCard } from "@/components/manager/team-build-card";
-import { CompetitionChips } from "@/components/events/competition-chips";
 import { buttonVariants } from "@/components/ui/button";
 import { SEARCH_MAX_LENGTH } from "@/domain/list-view";
+import {
+  CATALOGUE_SORTS,
+  DEFAULT_CATALOGUE_SORT,
+  type CatalogueSort,
+} from "@/domain/manager-catalogue";
 import { teamBuild } from "@/domain/manager-build";
 import { athleteHref } from "@/domain/redirect";
 import { MANAGER_FAMILIES, MANAGER_SEXES, type ManagerSex } from "@/domain/manager-rules";
@@ -40,6 +45,10 @@ type Params = {
   sexe?: string;
   famille?: string;
   libres?: string;
+  tri?: string;
+  epreuve?: string;
+  budget?: string;
+  encheres?: string;
   page?: string;
 };
 
@@ -70,22 +79,35 @@ export default async function CataloguePage({
     ? (search.sexe as ManagerSex)
     : null;
   const family = MANAGER_FAMILIES.find((f) => f === search.famille) ?? null;
-  const availableOnly = search.libres === "1";
+  // Available athletes show by default; « libres=0 » shows the taken ones too (#1087).
+  const availableOnly = search.libres !== "0";
+  const sort = CATALOGUE_SORTS.find((t) => t === search.tri) ?? DEFAULT_CATALOGUE_SORT;
+  const discipline = family ? (search.epreuve?.slice(0, 60) ?? null) : null;
+  const inBudget = search.budget === "1";
+  const myBids = search.encheres === "1";
   const query = search.q ?? "";
 
   const client = await getSessionClient();
   const catalogue = createSupabaseManagerCatalogue(client);
-  const [view, mine, reveals, league, team] = await Promise.all([
+  const mine = await getMyManagerBids({ bids: createSupabaseManagerBids(client), catalogue })
+    .execute({ leagueId: id })
+    .catch(caught);
+  const [view, reveals, league, team] = await Promise.all([
     browseManagerCatalogue({ catalogue })
       .execute({
         leagueId: id,
         query,
-        filter: { sex, family, availableOnly },
+        filter: {
+          sex,
+          family,
+          discipline,
+          availableOnly,
+          maxPrice: inBudget && mine !== "error" ? mine.available : null,
+          onlyIds: myBids && mine !== "error" ? new Set(mine.bids.map((b) => b.athleteId)) : null,
+        },
+        sort,
         page: Number(search.page) || 1,
       })
-      .catch(caught),
-    getMyManagerBids({ bids: createSupabaseManagerBids(client), catalogue })
-      .execute({ leagueId: id })
       .catch(caught),
     getManagerRevealRounds({ reveals: createSupabaseManagerReveals(client) })
       .execute({ leagueId: id })
@@ -105,27 +127,52 @@ export default async function CataloguePage({
   }
   const bidOf = new Map(mine === "error" ? [] : mine.bids.map((b) => [b.athleteId, b.amount]));
 
+  type Change = Partial<{
+    sex: ManagerSex | null;
+    family: (typeof MANAGER_FAMILIES)[number] | null;
+    discipline: string | null;
+    availableOnly: boolean;
+    inBudget: boolean;
+    myBids: boolean;
+    sort: CatalogueSort;
+    page: number;
+  }>;
   /** The address of the catalogue with some filters changed; a new filter starts at page 1. */
-  const href = (
-    change: Partial<{
-      sex: ManagerSex | null;
-      family: (typeof MANAGER_FAMILIES)[number] | null;
-      availableOnly: boolean;
-      page: number;
-    }>,
-  ) => {
-    const next = { sex, family, availableOnly, page: 1, ...change };
+  const href = (change: Change) => {
+    const next = {
+      sex,
+      family,
+      discipline,
+      availableOnly,
+      inBudget,
+      myBids,
+      sort,
+      page: 1,
+      ...change,
+    };
+    // Another family has other disciplines.
+    if (change.family !== undefined && !("discipline" in change)) next.discipline = null;
     const params = new URLSearchParams({
       ...(query && { q: query }),
       ...(next.sex && { sexe: next.sex }),
       ...(next.family && { famille: next.family }),
-      ...(next.availableOnly && { libres: "1" }),
+      ...(next.family && next.discipline && { epreuve: next.discipline }),
+      ...(!next.availableOnly && { libres: "0" }),
+      ...(next.inBudget && { budget: "1" }),
+      ...(next.myBids && { encheres: "1" }),
+      ...(next.sort !== DEFAULT_CATALOGUE_SORT && { tri: next.sort }),
       ...(next.page > 1 && { page: String(next.page) }),
     }).toString();
     return `/manager/${id}/catalogue${params && `?${params}`}`;
   };
   const pageHref = (page: number) => href({ page });
-  const filtered = Boolean(query || sex || family || availableOnly);
+  const filtered = Boolean(
+    query || sex || family || discipline || !availableOnly || inBudget || myBids,
+  );
+  const build =
+    league !== "error" && team !== "error"
+      ? teamBuild(league.rules, team.athletes, team.left)
+      : null;
 
   return (
     <main id="main" className="flex flex-1 flex-col">
@@ -211,31 +258,94 @@ export default async function CataloguePage({
           />
           {sex && <input type="hidden" name="sexe" value={sex} />}
           {family && <input type="hidden" name="famille" value={family} />}
-          {availableOnly && <input type="hidden" name="libres" value="1" />}
+          {discipline && <input type="hidden" name="epreuve" value={discipline} />}
+          {!availableOnly && <input type="hidden" name="libres" value="0" />}
+          {inBudget && <input type="hidden" name="budget" value="1" />}
+          {myBids && <input type="hidden" name="encheres" value="1" />}
+          {sort !== DEFAULT_CATALOGUE_SORT && <input type="hidden" name="tri" value={sort} />}
         </form>
-        <CompetitionChips
-          label={text.filters}
-          chips={[
-            { key: "all", name: text.all, active: !family, href: href({ family: null }) },
-            ...MANAGER_FAMILIES.map((f) => ({
-              key: f,
-              name: messages.team.groups[f],
-              active: family === f,
-              href: href({ family: family === f ? null : f }),
+        <CatalogueFilters
+          sort={{
+            label: text.sortLabel,
+            options: CATALOGUE_SORTS.map((t) => ({
+              key: t,
+              name: text.sorts[t],
+              active: sort === t,
+              href: href({ sort: t }),
             })),
-            ...MANAGER_SEXES.map((s) => ({
+          }}
+          families={{
+            label: text.familyLabel,
+            chips: MANAGER_FAMILIES.map((f) => {
+              const missing = build?.families.find((b) => b.family === f)?.missing ?? 0;
+              return {
+                key: f,
+                name: text.familyMissing(text.families[f], missing),
+                active: family === f,
+                href: href({ family: family === f ? null : f }),
+              };
+            }),
+          }}
+          disciplines={{
+            label: text.disciplineLabel,
+            chips:
+              view === "error"
+                ? []
+                : view.disciplines.map((d) => ({
+                    key: d,
+                    name: d,
+                    active: discipline === d,
+                    href: href({ discipline: discipline === d ? null : d }),
+                  })),
+          }}
+          sexes={{
+            label: text.sexLabel,
+            chips: MANAGER_SEXES.map((s) => ({
               key: s,
-              name: text.sexes[s],
+              name: text.sexShort[s],
               active: sex === s,
               href: href({ sex: sex === s ? null : s }),
             })),
-            {
-              key: "available",
-              name: text.availableOnly,
-              active: availableOnly,
-              href: href({ availableOnly: !availableOnly }),
-            },
-          ]}
+          }}
+          toggles={{
+            label: text.filters,
+            chips: [
+              ...(mine !== "error" && mine.mercatoOpen
+                ? [
+                    {
+                      key: "budget",
+                      name: text.inBudget,
+                      active: inBudget,
+                      href: href({ inBudget: !inBudget }),
+                    },
+                  ]
+                : []),
+              {
+                key: "available",
+                name: text.availableOnly,
+                active: availableOnly,
+                href: href({ availableOnly: !availableOnly }),
+              },
+              ...(mine !== "error" && (mine.mercatoOpen || mine.mercatoClosed)
+                ? [
+                    {
+                      key: "bids",
+                      name: text.bidsOnly,
+                      active: myBids,
+                      href: href({ myBids: !myBids }),
+                    },
+                  ]
+                : []),
+            ],
+          }}
+          clear={
+            filtered
+              ? {
+                  name: text.clearFilters,
+                  href: `/manager/${id}/catalogue${sort !== DEFAULT_CATALOGUE_SORT ? `?tri=${sort}` : ""}`,
+                }
+              : null
+          }
         />
 
         {view === "error" ? (
@@ -304,11 +414,8 @@ export default async function CataloguePage({
           </>
         )}
         {/* Under the catalogue: the first athlete stays in view on a phone (#497). */}
-        {league !== "error" && team !== "error" && !team.mercatoClosed && (
-          <TeamBuildCard
-            build={teamBuild(league.rules, team.athletes, team.left)}
-            left={team.left}
-          />
+        {build && team !== "error" && !team.mercatoClosed && (
+          <TeamBuildCard build={build} left={team.left} />
         )}
       </div>
     </main>
