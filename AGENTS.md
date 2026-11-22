@@ -52,8 +52,9 @@ Pourquoi : chaque lecture coûte sur la limite hebdomadaire du plan Claude (#101
    préprod (https://french-track-preprod.vercel.app), quelle que soit la version, correctifs
    `vX.Y.Z` compris : migrations sur la base de préprod, jeu de démo, puis déploiement et test de
    fumée (`preprod.yml`, `docs/SETUP.md`, « Préproduction »). La suite e2e complète ne tourne pas
-   à chaque fusion : une fois par version avant le tag, et chaque matin (décision du propriétaire
-   du 15 nov. 2026, #743 : elle épuisait la base gratuite de préprod).
+   à chaque fusion : une fois par version, avant le tag (décision du propriétaire du 15 nov. 2026,
+   #743 : elle épuisait la base gratuite de préprod). Plus de passage quotidien (décision du
+   propriétaire du 22 nov. 2026).
 5. Quand toutes les issues d'un milestone sont fermées (`refactor-check` et `docs-check` comprises)
    et que `main` est vert, `agents-merge` pose le tag `vX.Y.0` (décision du propriétaire du
    11 nov. 2026), ou `vX.Y.Z` pour un milestone correctif `vX.Y.Z …` (décision du 12 nov. 2026).

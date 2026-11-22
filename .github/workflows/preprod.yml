@@ -6,7 +6,8 @@ name: Pre-production
 # it still follows the vX.Y.Z tags (migrations.yml), set automatically by ci/agents/release.sh once
 # a milestone is finished; a failed run of this workflow on main's commit makes the tag wait.
 # Each merge: migrations, demo set, deploy and smoke test only. The full e2e suite runs once per
-# version (e2e=true, started by ci/agents/release.sh before the tag) and every morning (#743).
+# version (e2e=true, started by ci/agents/release.sh before the tag, #743); no daily run since
+# 22 Nov 2026 (owner's decision).
 # Secrets (GitHub > Settings > Environments > preprod, never the production ones):
 #   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, SUPABASE_PROJECT_REF,
 #   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (docs/SETUP.md, « Préproduction »).

@@ -46,12 +46,11 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
    suite rouge n'est pas relancée : le correctif fusionné fait un nouveau commit, donc un nouveau
    passage. Même chose si la CI de `main` est rouge.
 
-### Test quotidien de la préprod (#636)
+### Suite e2e de la préprod avant le tag (#636, #743)
 
-Chaque matin (04 h 23 UTC, 5 h 23 ou 6 h 23 à Paris), et à la main par « Run workflow »,
-`.github/workflows/preprod-daily.yml` lance la suite `e2e/` contre la préprod (le même job que
-avant un tag, `.github/workflows/preprod-e2e.yml`, #743),
-sans relance d'un test qui échoue. Il attend un déploiement en cours (même file que `preprod.yml`).
+Une fois par version, avant le tag, `release.sh` lance la suite `e2e/` contre la préprod
+(`.github/workflows/preprod-e2e.yml`), sans relance d'un test qui échoue. Plus de passage
+quotidien depuis le 22 nov. 2026 (décision du propriétaire).
 
 - **Rouge** : `ci/preprod/regression-report.sh` ouvre une issue `bug` dans le milestone en cours,
   avec les tests en échec, le lien du run et du rapport Playwright (captures et traces), et une

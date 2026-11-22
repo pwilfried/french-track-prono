@@ -77,8 +77,8 @@ function sqlOnLocal(statement: string): string {
 }
 
 /**
- * The end-to-end tests run against pre-production (after each deploy and every morning, #695,
- * #636) when E2E_BASE_URL is set. Never set locally nor in the CI of a PR.
+ * The end-to-end tests run against pre-production (once per version, before the tag, #695,
+ * #743) when E2E_BASE_URL is set. Never set locally nor in the CI of a PR.
  */
 export function onPreprod(): boolean {
   return Boolean(process.env.E2E_BASE_URL);

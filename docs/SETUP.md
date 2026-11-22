@@ -474,8 +474,8 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
 - **Tests e2e contre la préprod** (#695, #743) : pas à chaque fusion (la suite épuisait la base
   gratuite de préprod, décision du propriétaire du 15 nov. 2026) mais une fois par version, avant
   le tag (`release.sh` lance `preprod.yml` avec `e2e=true` : run « Pre-production e2e », sans
-  migrations ni déploiement), et chaque matin (`preprod-daily.yml`). Les deux appellent le même
-  job, `.github/workflows/preprod-e2e.yml`, qui lance toute la suite `e2e/` contre l'adresse de préprod (`E2E_BASE_URL`,
+  migrations ni déploiement). Plus de passage quotidien depuis le 22 nov. 2026 (décision du
+  propriétaire). Le run appelle le job `.github/workflows/preprod-e2e.yml`, qui lance toute la suite `e2e/` contre l'adresse de préprod (`E2E_BASE_URL`,
   sans serveur local). Le SQL des tests passe par l'API de gestion Supabase (renvoyé jusqu'à 6 fois, une trentaine de secondes, sur une erreur de
   passerelle 502, 503 ou 504, #871, ou quand l'API n'arrive plus un moment à vérifier le jeton :
   500 « Failed to check user auth status », 401 « Invalid access token », #888), la connexion des
@@ -503,9 +503,7 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   quand c'est rouge) ; rien n'est signalé quand tout passe. Une suite d'avant tag rouge fait
   attendre le tag jusqu'au commit suivant. Tant que les secrets e2e ci-dessous
   manquent, les tests sont sautés avec un avertissement, sans bloquer la chaîne (#741). Le changement
-  d'e-mail (`profile-edit.spec.ts`) est sauté en préprod : aucune API ne donne son code. Le test
-  quotidien (`.github/workflows/preprod-daily.yml`) passe par les mêmes aides et les mêmes
-  secrets. Un agent ne peut pas pousser de workflow : il décrit dans sa PR le changement, que le
+  d'e-mail (`profile-edit.spec.ts`) est sauté en préprod : aucune API ne donne son code. Un agent ne peut pas pousser de workflow : il décrit dans sa PR le changement, que le
   propriétaire (ou une session locale) applique dans `.github/workflows/`.
 - **Compte du propriétaire** (#769) : `ci/preprod/owner.sh` (SQL dans `ci/preprod/owner.sql`)
   crée ou retrouve le compte de l'e-mail `PREPROD_OWNER_EMAIL` (secret de l'environnement
@@ -517,7 +515,7 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   mercato pas ouvert et sous le nombre de joueurs prévu par leurs compétitions (#781). Il retire
   le compte des ligues Manager qu'un passage précédent avait fait déborder.
   `ci/preprod/load-sql.sh` le lance après le seed et le jeu de démo,
-  et après le nettoyage des comptes e2e (déploiement et test quotidien) : idempotent, sans
+  et après le nettoyage des comptes e2e (déploiement et suite e2e d'avant tag) : idempotent, sans
   doublon. Les ligues créées par les tests pendant un passage le sont après lui et supprimées à la
   fin : le compte n'entre ni dans leurs membres ni dans leurs classements. Sans le secret, l'étape
   est sautée avec un avertissement ; un `SUPABASE_PROJECT_REF` autre que celui de la préprod est
