@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import { UseCaseError } from "@/application/errors";
 import { getManagerDuel, type ManagerDuelView } from "@/application/manager-duel";
 import { ErrorNotice } from "@/components/error-notice";
+import { ChipStatus } from "@/components/ui/chip-status";
 import { LeagueHero } from "@/components/leagues/league-hero";
+import { DuelPlaces } from "@/components/manager/duel-places";
 import { DuelStadium } from "@/components/manager/duel-stadium";
 import {
   createSupabaseManagerCatalogue,
@@ -21,9 +23,10 @@ const championship = messages.managerChampionship;
 
 /**
  * « Une confrontation » (#605), as in the validated mock-up « Confrontation stade contre stade »
- * (#775): back to the matchday under the league's name, the matchday live or over and the events
- * still to come, the two stadiums with each athlete's points, then the result, the leg and the
- * predictions. Every participant of the league reads it once the competition is locked; the
+ * (#775) and « Manager · feuille de match » (#1036): back to the matchday under the league's name,
+ * the matchday live or over, both scores (the player's in gold) and the result, the two stadiums
+ * with each athlete's points (« ↻ » / « ⏱ » on a substitute who counted), then « Place par
+ * place », the result and the leg. Every participant of the league reads it once the competition is locked; the
  * lineups stay secret before.
  */
 export default async function ManagerDuelPage({
@@ -73,6 +76,20 @@ export default async function ManagerDuelPage({
     view.competitionName,
   ].filter(Boolean);
   const live = bottom.score === null;
+  const sides = {
+    top: {
+      pseudo: top.participant.pseudo,
+      linedUp: top.linedUp,
+      score: top.score,
+      cards: top.cards,
+    },
+    bottom: {
+      pseudo: bottom.participant.pseudo,
+      linedUp: bottom.linedUp,
+      score: bottom.score,
+      cards: bottom.cards,
+    },
+  };
   const toCome = new Set(
     [...top.cards, ...bottom.cards]
       .filter((c) => c !== null && c.points === null)
@@ -101,29 +118,35 @@ export default async function ManagerDuelPage({
               </span>
             )}
           </p>
+          {top.score !== null && bottom.score !== null && (
+            <p
+              aria-label={text.scores}
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-2xl font-extrabold tabular-nums"
+            >
+              <span className="text-nuit dark:text-foreground">{top.score}</span>
+              <span aria-hidden className="text-muted-foreground">
+                –
+              </span>
+              <span className="text-gold-ink">{bottom.score}</span>
+              {view.outcome && (
+                <ChipStatus tone={view.outcome.outcome === "win" ? "gold" : "neutral"}>
+                  {text.result[view.outcome.outcome]}
+                </ChipStatus>
+              )}
+            </p>
+          )}
         </header>
 
         {view.locked ? (
-          <DuelStadium
-            places={view.places}
-            mine={view.mine}
-            top={{
-              pseudo: top.participant.pseudo,
-              linedUp: top.linedUp,
-              score: top.score,
-              cards: top.cards,
-            }}
-            bottom={{
-              pseudo: bottom.participant.pseudo,
-              linedUp: bottom.linedUp,
-              score: bottom.score,
-              cards: bottom.cards,
-            }}
-          />
+          <DuelStadium places={view.places} mine={view.mine} divisor={view.divisor} {...sides} />
         ) : (
           <p role="status" className="rounded-card bg-muted p-4 text-sm font-semibold">
             🔒 {text.secret}
           </p>
+        )}
+
+        {!live && bottom.linedUp && (
+          <DuelPlaces places={view.places} mine={sides.bottom} theirs={sides.top} />
         )}
 
         <section

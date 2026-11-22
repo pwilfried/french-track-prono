@@ -6,7 +6,9 @@ import {
   type DuelResult,
 } from "@/domain/manager-championship";
 import { lineupPlaces, placeLineup, type LineupPlace } from "@/domain/manager-lineup";
-import type { ManagerSex } from "@/domain/manager-rules";
+import type { ManagerBonus, ManagerSex } from "@/domain/manager-rules";
+import type { AthleteScore, Substitution, SubstitutionReason } from "@/domain/manager-score";
+import type { PerformanceStatus } from "@/domain/performance";
 
 import { UseCaseError } from "./errors";
 import { legOf, loadSeason, type ManagerSeasonRepository } from "./manager-championship";
@@ -21,11 +23,7 @@ export type DuelLineups = {
 };
 
 /** The stored Manager score of a participant for a competition, as the league reads it. */
-export type DuelScore = {
-  userId: string;
-  total: number;
-  athletes: { athleteId: string; total: number; bonusPoints: number }[];
-};
+export type DuelScore = { userId: string; total: number; athletes: AthleteScore[] };
 
 /**
  * Port: what a head-to-head shows (#605). Real adapter = Supabase (the database keeps every
@@ -37,7 +35,25 @@ export interface ManagerDuelRepository {
   scores(leagueId: string, competitionId: string): Promise<DuelScore[]>;
 }
 
-/** An athlete on their place of the stadium, with their points once the competition is scored. */
+/**
+ * A substitute counting for the place (#1036): whom they replaced and why, what the starter did
+ * (unknown for the scores stored before #1036) and what the change brought, in points.
+ */
+export type DuelReplacement = {
+  reason: SubstitutionReason;
+  starterName: string;
+  starterMark: string | null;
+  starterStatus: PerformanceStatus | null;
+  /** The tactical threshold, in the unit of the discipline. */
+  threshold: NonNullable<Substitution["starter"]>["threshold"];
+  /** The substitute's points minus the starter's; null when the starter's are unknown. */
+  gain: number | null;
+};
+
+/**
+ * An athlete on their place of the stadium, with their points once the competition is scored: the
+ * starter, or the substitute who counted for them (#1036).
+ */
 export type DuelCard = {
   athleteId: string;
   name: string;
@@ -48,6 +64,11 @@ export type DuelCard = {
   points: number | null;
   /** The sporting bonuses within the points. */
   bonus: number;
+  /** The mark and status kept, null until scored or without a performance. */
+  mark: string | null;
+  status: PerformanceStatus | null;
+  bonuses: { bonus: ManagerBonus; points: number }[];
+  replaced: DuelReplacement | null;
 };
 
 export type DuelSide = {
@@ -67,6 +88,8 @@ export type ManagerDuelView = {
   round: number;
   competitionName: string | null;
   leg: "first" | "return";
+  /** The table points are divided by it (the league rules, #1031). */
+  divisor: number;
   locked: boolean;
   /** The signed-in player plays it: they sit at the bottom. */
   mine: boolean;
@@ -78,6 +101,14 @@ export type ManagerDuelView = {
   /** The head-to-head as the player at the bottom sees it, when it is theirs. */
   outcome: { outcome: DuelOutcome; points: number } | null;
 };
+
+/** The line that counted for a starter's place: theirs, or the substitute's who came in. */
+function countedFor(athletes: AthleteScore[], starterId: string): AthleteScore | undefined {
+  return (
+    athletes.find((a) => a.substitution?.starterId === starterId) ??
+    athletes.find((a) => a.athleteId === starterId && !a.substitution)
+  );
+}
 
 /**
  * A head-to-head of the league, read by every participant: the two lineups once the competition
@@ -136,17 +167,33 @@ export function getManagerDuel(ports: {
           score: scored ? (score?.total ?? 0) : null,
           linedUp: !lineups.locked || lineup !== undefined,
           cards: placed.map((id) => {
-            const a = id ? athletes.get(id) : undefined;
-            if (!a) return null;
-            const points = score?.athletes.find((s) => s.athleteId === a.athleteId);
+            const starter = id ? athletes.get(id) : undefined;
+            if (!starter) return null;
+            const counted = score && countedFor(score.athletes, starter.athleteId);
+            const a = (counted?.substitution && athletes.get(counted.athleteId)) || starter;
+            const done = counted?.substitution?.starter;
             return {
               athleteId: a.athleteId,
               name: a.name,
-              discipline: a.discipline,
+              discipline: counted?.discipline ?? a.discipline,
               family: a.family,
               sex: a.sex,
-              points: scored ? (points?.total ?? 0) : null,
-              bonus: points?.bonusPoints ?? 0,
+              points: scored ? (counted?.total ?? 0) : null,
+              bonus: counted?.bonusPoints ?? 0,
+              mark: counted?.mark ?? null,
+              status: counted?.status ?? null,
+              bonuses: counted?.bonuses ?? [],
+              replaced:
+                a === starter || !counted?.substitution
+                  ? null
+                  : {
+                      reason: counted.substitution.reason,
+                      starterName: starter.name,
+                      starterMark: done?.mark ?? null,
+                      starterStatus: done?.status ?? null,
+                      threshold: done?.threshold ?? null,
+                      gain: done ? counted.total - done.total : null,
+                    },
             };
           }),
         };
@@ -164,6 +211,7 @@ export function getManagerDuel(ports: {
         round: matchday.round,
         competitionName: matchday.competitionName,
         leg,
+        divisor: league.rules.tablesDivisor,
         locked: lineups.locked,
         mine,
         places,

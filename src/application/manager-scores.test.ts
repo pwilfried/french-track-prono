@@ -5,6 +5,8 @@ import type { CompetitionPerformance, ScoringLineup } from "@/domain/manager-sco
 import { worldAthleticsPoints } from "@/domain/world-athletics-points";
 
 import { UseCaseError } from "./errors";
+import type { ManagerCatalogueRepository } from "./manager-catalogue";
+import type { ManagerLeagueFile, ManagerLeagueRepository } from "./manager-leagues";
 import type { LineupCompetition, ManagerLineupRepository } from "./manager-lineup";
 import {
   computeManagerScores,
@@ -52,22 +54,31 @@ const run = (athleteId: string, mark: string, extra: Partial<CompetitionPerforma
     ...extra,
   }) satisfies CompetitionPerformance;
 
-/** One competition, one league of two participants: Zoé lined up two athletes, Max none. */
-function world() {
+/**
+ * One competition, one league of two participants: Zoé lined up two athletes (or `lineup`), Max
+ * none; Alice wins with a personal best, Berthe does not finish, Chloé runs 11.20.
+ */
+function world(lineup: ScoringLineup = starters("a1", "a2")) {
   const sheet: ManagerScoringSheet = {
     competitionId: "meeting-id",
     lockAt: LOCK,
     indoor: false,
     participants: [
-      { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup: starters("a1", "a2") },
+      { leagueId: "L", userId: "zoe", bonuses, tablesDivisor: 10, lineup },
       { leagueId: "L", userId: "max", bonuses, tablesDivisor: 10, lineup: null },
     ],
     performances: [
       run("a1", "10.90", { place: 1, records: ["pb"] }),
       run("a2", "", { status: "dnf", mark: null }),
+      run("a3", "11.20"),
     ],
   };
-  const names: Record<string, string> = { a1: "Alice Fictive", a2: "Berthe Démo" };
+  const names: Record<string, string> = {
+    a1: "Alice Fictive",
+    a2: "Berthe Démo",
+    a3: "Chloé Exemple",
+    a4: "Diane Essai",
+  };
   let stored: ManagerScoreLine[] = [];
   const scores = (who: { isAdmin: boolean; userId?: string }): ManagerScoreRepository => ({
     sheet: async (slug) =>
@@ -95,10 +106,48 @@ function world() {
   };
   const lineups: ManagerLineupRepository = {
     mine: async (leagueId) => (leagueId === "L" ? [competition] : "not_member"),
-    sheet: async () => ({ disciplines: {}, sheet: null }),
+    sheet: async () => ({
+      disciplines: {},
+      sheet: {
+        starters: lineup.starters.map(({ athleteId, substituteId }) => ({
+          athleteId,
+          substituteId,
+        })),
+        bench: lineup.bench.map(({ athleteId }) => ({ athleteId })),
+      },
+    }),
     save: async () => "saved",
   };
-  return { sheet, scores, lineups, stored: () => stored };
+  const catalogue: ManagerCatalogueRepository = {
+    list: async (leagueId) =>
+      leagueId === "L"
+        ? Object.entries(names).map(([athleteId, name]) => ({
+            athleteId,
+            slug: athleteId,
+            name,
+            countryCode: "FRA",
+            sex: "F" as const,
+            discipline: "100 m",
+            family: "sprint" as const,
+            pb: null,
+            sb: null,
+            price: 10,
+            available: false,
+          }))
+        : "not_member",
+  };
+  const managerLeagues: Pick<ManagerLeagueRepository, "find"> = {
+    find: async (id) =>
+      id === "L" ? ({ id, rules: { tablesDivisor: 10 } } as unknown as ManagerLeagueFile) : null,
+  };
+  /** What « Mes points » needs, as the player signed in. */
+  const reader = (userId: string, own: ManagerLineupRepository = lineups) => ({
+    lineups: own,
+    scores: scores({ isAdmin: false, userId }),
+    catalogue,
+    managerLeagues,
+  });
+  return { sheet, scores, lineups, reader, stored: () => stored };
 }
 
 const after = () => new Date("2026-07-11T08:00:00Z");
@@ -211,17 +260,19 @@ describe("computeManagerScores", () => {
 describe("getMyManagerScore", () => {
   it("shows no score before the admin computes it", async () => {
     const w = world();
-    const mine = await getMyManagerScore({
-      lineups: w.lineups,
-      scores: w.scores({ isAdmin: false, userId: "zoe" }),
-    }).execute({ leagueId: "L", slug: "meeting" });
+    const mine = await getMyManagerScore(w.reader("zoe")).execute({
+      leagueId: "L",
+      slug: "meeting",
+    });
 
     expect(mine).toEqual({
       slug: "meeting",
       name: "Meeting Fictif",
       lockAt: LOCK,
       carriedFrom: null,
+      divisor: 10,
       score: null,
+      bench: { replaced: [], unused: [] },
     });
   });
 
@@ -245,10 +296,10 @@ describe("getMyManagerScore", () => {
     };
 
     // When she opens « Mes points »
-    const mine = await getMyManagerScore({
-      lineups,
-      scores: w.scores({ isAdmin: false, userId: "zoe" }),
-    }).execute({ leagueId: "L", slug: "meeting" });
+    const mine = await getMyManagerScore(w.reader("zoe", lineups)).execute({
+      leagueId: "L",
+      slug: "meeting",
+    });
 
     // Then the page can say where her lineup comes from
     expect(mine.carriedFrom).toBe("Meeting Précédent");
@@ -260,18 +311,66 @@ describe("getMyManagerScore", () => {
       competitionSlug: "meeting",
     });
 
-    const mine = await getMyManagerScore({
-      lineups: w.lineups,
-      scores: w.scores({ isAdmin: false, userId: "zoe" }),
-    }).execute({ leagueId: "L", slug: "meeting" });
+    const mine = await getMyManagerScore(w.reader("zoe")).execute({
+      leagueId: "L",
+      slug: "meeting",
+    });
 
     expect(mine.score?.total).toBe(points + 70);
     expect(mine.score?.athletes.map((a) => a.name)).toEqual(["Alice Fictive", "Berthe Démo"]);
+    expect(mine.divisor).toBe(10);
+    expect(mine.bench).toEqual({ replaced: [], unused: [] });
+  });
+
+  it("tells who came in for whom and who stayed on the bench (#1036)", async () => {
+    // Given Berthe did not finish: Chloé, her designated substitute, came in; Diane stayed out
+    const lineup: ScoringLineup = {
+      starters: [
+        { ...starters("a1").starters[0]! },
+        { ...starters("a2").starters[0]!, substituteId: "a3" },
+      ],
+      bench: [
+        { athleteId: "a3", family: "sprint", discipline: "100 m" },
+        { athleteId: "a4", family: "sprint", discipline: "100 m" },
+      ],
+    };
+    const w = world(lineup);
+    await computeManagerScores({ scores: w.scores({ isAdmin: true }), now: after }).execute({
+      competitionSlug: "meeting",
+    });
+
+    // When Zoé opens « Mes points »
+    const mine = await getMyManagerScore(w.reader("zoe")).execute({
+      leagueId: "L",
+      slug: "meeting",
+    });
+
+    // Then Chloé counts in Berthe's place, Berthe sits on the bench with why, Diane too
+    const chloe = Math.floor(worldAthleticsPoints("100 m", "F", 11.2)! / 10);
+    expect(mine.score?.total).toBe(points + 70 + chloe);
+    expect(mine.score?.athletes[1]).toMatchObject({
+      name: "Chloé Exemple",
+      starterName: "Berthe Démo",
+      total: chloe,
+    });
+    expect(mine.bench).toEqual({
+      replaced: [
+        {
+          athleteId: "a2",
+          name: "Berthe Démo",
+          reason: "forfeit",
+          mark: null,
+          status: "dnf",
+          substituteName: "Chloé Exemple",
+        },
+      ],
+      unused: [{ athleteId: "a4", name: "Diane Essai" }],
+    });
   });
 
   it("does not show a league the player is not in, nor a competition it does not play", async () => {
     const w = world();
-    const ports = { lineups: w.lineups, scores: w.scores({ isAdmin: false, userId: "zoe" }) };
+    const ports = w.reader("zoe");
 
     await expect(
       getMyManagerScore(ports).execute({ leagueId: "other", slug: "meeting" }),

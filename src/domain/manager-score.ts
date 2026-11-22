@@ -1,4 +1,4 @@
-import { parseMark, type MarkUnit } from "./discipline";
+import { formatMark, parseMark, type MarkUnit } from "./discipline";
 import {
   managerBonusesEarned,
   managerBonusPoints,
@@ -43,6 +43,23 @@ export type ScoringLineup = { starters: ScoringStarter[]; bench: ScoringSubstitu
  */
 export type SubstitutionReason = "tactical" | "forfeit" | "bench";
 
+/**
+ * A substitute counting for a place (#1033): whose place, why, and what the starter did (#1036):
+ * their mark and status (nulls without any performance), the points they would have brought and,
+ * for a tactical one, the threshold written in the unit of the discipline. `starter` is absent from
+ * the scores stored before.
+ */
+export type Substitution = {
+  starterId: string;
+  reason: SubstitutionReason;
+  starter?: {
+    mark: string | null;
+    status: PerformanceStatus | null;
+    total: number;
+    threshold: { mark: string; unit: MarkUnit } | null;
+  };
+};
+
 export type ManagerScoreInput = {
   /** The validated match sheet of the participant at the lock; null without one. */
   lineup: ScoringLineup | null;
@@ -63,6 +80,8 @@ export type AthleteScore = {
   discipline: string | null;
   mark: string | null;
   status: PerformanceStatus | null;
+  /** The World Athletics points before the division (#1036); absent from the scores stored before. */
+  tablePoints?: number;
   /** The World Athletics points divided by the league's divisor, rounded down. */
   points: number;
   /** The bonuses earned with their value in the league, place first then records. */
@@ -70,7 +89,7 @@ export type AthleteScore = {
   bonusPoints: number;
   total: number;
   /** When a substitute counts for the place: whose place, and why. Absent when the starter counts. */
-  substitution?: { starterId: string; reason: SubstitutionReason };
+  substitution?: Substitution;
 };
 
 /** The Manager score of a participant for a competition, with its detail (#431). */
@@ -97,6 +116,7 @@ const nothing = (athleteId: string, discipline: string): AthleteScore => ({
   discipline,
   mark: null,
   status: null,
+  tablePoints: 0,
   points: 0,
   bonuses: [],
   bonusPoints: 0,
@@ -133,13 +153,15 @@ function scorePerformance(
         }
       : { place: null, records: [] };
   const bonuses = managerBonusesEarned(result).map((bonus) => ({ bonus, points: values[bonus] }));
-  const points = managerTablePoints(tablePoints(p, input.indoor), input.tablesDivisor);
+  const table = tablePoints(p, input.indoor);
+  const points = managerTablePoints(table, input.tablesDivisor);
   const bonusPoints = managerBonusPoints(result, values);
   return {
     athleteId: p.athleteId,
     discipline: p.discipline,
     mark: p.mark,
     status: p.status,
+    tablePoints: table,
     points,
     bonuses,
     bonusPoints,
@@ -217,9 +239,18 @@ export function managerCompetitionScore(input: ManagerScoreInput): ManagerCompet
     }
     if (!substitute) return { place, score: own?.score ?? nothing(s.athleteId, s.discipline) };
     entered.add(substitute.id);
+    const line = own?.score ?? nothing(s.athleteId, s.discipline);
+    const threshold =
+      substitute.reason === "tactical" && own && s.threshold !== null
+        ? { mark: formatMark(s.threshold, own.unit), unit: own.unit }
+        : null;
     const score: AthleteScore = {
       ...lines.get(substitute.id)!.score,
-      substitution: { starterId: s.athleteId, reason: substitute.reason },
+      substitution: {
+        starterId: s.athleteId,
+        reason: substitute.reason,
+        starter: { mark: line.mark, status: line.status, total: line.total, threshold },
+      },
     };
     return { place, score };
   });

@@ -331,6 +331,20 @@ les quotas, les 2 places par famille, la taille du banc et le diviseur sont livr
   (`carried_from_name`) et « Mes points » affiche « Alignement repris de … ». Les compétitions déjà
   verrouillées à la migration ne sont pas reprises.
 
+### Confrontation, « Mes points » et règles (#1036)
+
+- Chaque ligne de `manager_scores.athletes` garde aussi les points des tables avant la division
+  (`table_points`) et, pour un remplaçant, ce qu'a fait le titulaire (`substitution.starter` :
+  marque, statut, points, seuil tactique écrit dans l'unité de la discipline). Pas de migration :
+  les scores stockés avant restent lisibles, sans le calcul ni la note (prochain « Recalculer »).
+- Confrontation : la carte d'une place remplacée est celle du remplaçant (↻ forfait, ⏱ tactique) ;
+  « Place par place » donne marque, bonus et points des deux côtés, et sous une place remplacée ou
+  restée à 0, ce qui s'est passé. « Mes points » : « Tables ÷ 10 », « Bonus », « Total », le
+  calcul par athlète et « Sur le banc » (titulaires remplacés, remplaçants pas entrés, lus dans la
+  feuille de match). Les règles de la ligue s'ouvrent dans une feuille, en quatre parties.
+- Décision de l'agent : le gain affiché sous un remplacement tactique (« +9 pts ») est l'écart
+  entre les points du remplaçant et ceux qu'aurait apportés le titulaire ; il peut être négatif.
+
 ### Règles Manager à 4 familles (#1030)
 
 - Familles Manager (`ManagerFamily`, `managerFamilyOf` dans `src/domain/manager-rules.ts` ; en

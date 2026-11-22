@@ -17,6 +17,7 @@ import { LeagueFeed } from "@/components/leagues/league-feed";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { LeagueTabs } from "@/components/leagues/league-tabs";
 import { ShareInvite } from "@/components/leagues/share-invite";
+import { LeagueRulesSheet } from "@/components/manager/league-rules-sheet";
 import { MySeasonCard } from "@/components/manager/manager-home";
 import { managerPhase } from "@/components/manager/manager-league-card";
 import { Bib } from "@/components/profile/bib";
@@ -326,23 +327,25 @@ export default async function ManagerLeaguePage({
               >
                 {text.rules}
               </h2>
-              <ul className="flex flex-col gap-1 rounded-card bg-muted p-4 text-sm">
-                <li>{text.budget(rules.budget)}</li>
-                <li>{text.minTeamSize(rules.minTeamSize)}</li>
-                <li>{text.lineup(rules.lineup.max, rules.lineup.perFamily, rules.lineup.bench)}</li>
-                <li>{text.scoring(rules.bonuses.first)}</li>
-                <li>{text.duels}</li>
-                <li>
-                  {format
+              <LeagueRulesSheet
+                rules={{
+                  budget: rules.budget,
+                  minTeamSize: rules.minTeamSize,
+                  lineup: rules.lineup,
+                  tablesDivisor: rules.tablesDivisor,
+                  bonuses: rules.bonuses,
+                }}
+                season={
+                  format
                     ? text.seasonFormat(
                         league.competitions.length,
                         format.players,
                         format.duelDays,
                         format.bonusDays,
                       )
-                    : text.competitions(league.competitions.length)}
-                </li>
-              </ul>
+                    : text.competitions(league.competitions.length)
+                }
+              />
             </section>
           </>
         )}

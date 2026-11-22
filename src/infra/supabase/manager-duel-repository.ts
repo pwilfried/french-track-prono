@@ -3,12 +3,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { UseCaseError } from "@/application/errors";
 import type { ManagerDuelRepository } from "@/application/manager-duel";
 
+import { athleteScoreOf, type AthleteScoreRow } from "./manager-score-row";
+
 type LineupsJson = { locked: boolean; lineups: { user_id: string; athlete_ids: string[] }[] };
-type ScoreRow = {
-  user_id: string;
-  total: number;
-  athletes: { athlete_id: string; total: number; bonus_points: number }[];
-};
+type ScoreRow = { user_id: string; total: number; athletes: AthleteScoreRow[] };
 
 /**
  * The lineups come from manager_duel_lineups (secret until the lock); the participants read the
@@ -41,11 +39,7 @@ export function createSupabaseManagerDuelRepository(client: SupabaseClient): Man
       return ((data ?? []) as ScoreRow[]).map((s) => ({
         userId: s.user_id,
         total: s.total,
-        athletes: s.athletes.map((a) => ({
-          athleteId: a.athlete_id,
-          total: a.total,
-          bonusPoints: a.bonus_points,
-        })),
+        athletes: s.athletes.map(athleteScoreOf),
       }));
     },
   };

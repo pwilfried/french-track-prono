@@ -14,7 +14,19 @@ const card = (
   family: DuelCard["family"],
   points: number | null,
   bonus = 0,
-): DuelCard => ({ athleteId: name, name, discipline, family, sex: "F", points, bonus });
+): DuelCard => ({
+  athleteId: name,
+  name,
+  discipline,
+  family,
+  sex: "F",
+  points,
+  bonus,
+  mark: points === null ? null : "10.90",
+  status: points === null ? null : "ok",
+  bonuses: bonus > 0 ? [{ bonus: "personal_best", points: bonus }] : [],
+  replaced: null,
+});
 
 /** The default rules: two places per family (#1017). */
 const places = [
@@ -97,7 +109,7 @@ export const Scored: Story = {
       }),
     ).not.toHaveTextContent(text.won);
     await expect(within(bottom).getAllByText(text.toCome)).toHaveLength(2);
-    await expect(canvas.getByText(text.legend)).toBeVisible();
+    await expect(canvas.getByText(text.legend(10))).toBeVisible();
   },
 };
 
@@ -161,5 +173,37 @@ export const Dark: Story = {
   ],
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getAllByRole("article")).toHaveLength(15);
+  },
+};
+
+/** A substitute counted for a place (#1036): « ⏱ » on their card, named in its label. */
+export const Substitute: Story = {
+  args: {
+    bottom: {
+      pseudo: "Moi",
+      linedUp: true,
+      score: 41,
+      cards: mine.map((c, i) =>
+        i === 0 && c
+          ? {
+              ...c,
+              name: "Zia Remplaçante",
+              replaced: {
+                reason: "tactical",
+                starterName: "Sue Exemple",
+                starterMark: "10.58",
+                starterStatus: "ok",
+                threshold: { mark: "10.50", unit: "time" },
+                gain: 9,
+              },
+            }
+          : c,
+      ),
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const card = within(canvasElement).getByRole("article", { name: /Zia Remplaçante/ });
+    await expect(card).toHaveTextContent(text.replacedMark.tactical);
+    await expect(card).toHaveAccessibleName(new RegExp(text.replacedLabel("Sue Exemple")));
   },
 };

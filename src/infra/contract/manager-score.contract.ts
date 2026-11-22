@@ -41,6 +41,7 @@ const score = (w: ManagerScoreWorld, total: number): ManagerCompetitionScore => 
       discipline: "100 m",
       mark: "10.90",
       status: "ok",
+      tablePoints: (total - 50) * 10 + 4,
       points: total - 50,
       bonuses: [{ bonus: "first", points: 50 }],
       bonusPoints: 50,
@@ -55,7 +56,11 @@ const score = (w: ManagerScoreWorld, total: number): ManagerCompetitionScore => 
       bonuses: [],
       bonusPoints: 0,
       total: 0,
-      substitution: { starterId: w.athleteIds[1]!, reason: "forfeit" },
+      substitution: {
+        starterId: w.athleteIds[1]!,
+        reason: "forfeit",
+        starter: { mark: null, status: null, total: 0, threshold: null },
+      },
     },
   ],
 });
@@ -132,7 +137,10 @@ export function managerScoreContract(name: string, world: () => Promise<ManagerS
 
       expect(score.athletes.map((a) => [a.athleteId, a.substitution ?? null])).toEqual([
         [w.athleteIds[0], null],
-        [w.athleteIds[2], { starterId: w.athleteIds[1], reason: "forfeit" }],
+        [
+          w.athleteIds[2],
+          expect.objectContaining({ starterId: w.athleteIds[1], reason: "forfeit" }),
+        ],
       ]);
     });
 
