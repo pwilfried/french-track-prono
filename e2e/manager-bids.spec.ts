@@ -124,8 +124,10 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     sql(`select private.close_manager_rounds()`);
 
     // The first visit to the mercato after the close opens the reveal of the round, once (#604):
-    // the player's cards face down, turned over, their tally, then every bid of the round.
-    await ownerPage.goto(catalogue + search);
+    // the player's cards face down, turned over, their tally, then every bid of the round. The
+    // player comes from the league by its link, as on a phone: the browser keeps that answer (#1120).
+    await ownerPage.goto(catalogue.replace(/\/catalogue$/, ""));
+    await ownerPage.getByRole("link", { name: "Catalogue du mercato" }).first().click();
     await ownerPage.waitForURL(/\/tour\/1$/);
     await expect(ownerPage.getByRole("heading", { level: 1 })).toHaveText("L'heure de vérité");
     await expect(ownerPage.getByRole("article", { name: "Offre cachée" })).toContainText(
@@ -146,8 +148,16 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await expect(rivalBid).toContainText("seule offre");
     await expect(rivalBid).toContainText(rival.pseudo);
     await expect(rivalBid).toContainText("30 cr.");
-    await ownerPage.getByRole("link", { name: "Retour au mercato · tour suivant" }).click();
+    // Back to the mercato of the next round, without the reveal again (#1120).
+    await ownerPage.getByRole("button", { name: "Retour au mercato · tour suivant" }).click();
     await ownerPage.waitForURL(/\/catalogue$/);
+    await expect(budget).toBeVisible();
+    await expect(ownerPage).toHaveURL(/\/catalogue$/);
+    // The league's link to the mercato does not open the reveal again either.
+    await ownerPage.getByRole("link", { name: league }).first().click();
+    await ownerPage.getByRole("link", { name: "Catalogue du mercato" }).first().click();
+    await ownerPage.waitForURL(/\/catalogue$/);
+    await expect(budget).toBeVisible();
     await ownerPage.goto(catalogue + search + "&libres=0");
     await expect(ownerPage).toHaveURL(/\/catalogue\?/);
     await expect(ownerPage.getByRole("link", { name: "Tour 1" })).toBeVisible();
@@ -184,6 +194,10 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await ownerPage.waitForURL(/\/tour\/2$/);
     await ownerPage.getByRole("button", { name: "Tout révéler" }).click();
     await expect(ownerPage.getByRole("article", { name: `${third} : gagné` })).toBeVisible();
+    // After the last round, « back » goes to the team: the mercato is over (#1120).
+    await ownerPage.getByRole("button", { name: "Voir toutes les enchères du tour" }).click();
+    await ownerPage.getByRole("button", { name: "Retour au mercato · tour suivant" }).click();
+    await ownerPage.waitForURL(/\/equipe$/);
     await ownerPage.goto(catalogue + search);
     await expect(budget.getByRole("status")).toContainText("Le mercato de cette ligue est clos");
     await expect(budget.getByRole("list", { name: "Mes athlètes" })).toContainText(third);

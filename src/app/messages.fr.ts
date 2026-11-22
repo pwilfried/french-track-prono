@@ -914,6 +914,7 @@ export const messages = {
     offers: (n: number) => (n <= 1 ? "seule offre" : `${n} offres`),
     empty: "Personne n'a fait d'offre pendant ce tour.",
     backToMercato: "Retour au mercato · tour suivant",
+    backingToMercato: "Retour au mercato en cours…",
     seeTeam: "Voir mon équipe",
     roundsTitle: "Résultats des tours",
     roundLink: (round: number) => `Tour ${round}`,

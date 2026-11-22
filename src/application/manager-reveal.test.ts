@@ -11,6 +11,7 @@ import {
   getManagerMercatoReview,
   getManagerRevealRounds,
   getManagerRoundReveal,
+  leaveManagerRoundReveal,
   markManagerRoundRevealed,
   type ManagerRevealRepository,
 } from "./manager-reveal";
@@ -173,6 +174,46 @@ describe("the reveal shows once per round and per player", () => {
     ).rejects.toEqual(new UseCaseError("ROUND_NOT_FOUND"));
     await expect(
       markManagerRoundRevealed({ reveals: outsider }).execute({ leagueId: "l1", round: 1 }),
+    ).rejects.toEqual(new UseCaseError("LEAGUE_NOT_FOUND"));
+  });
+});
+
+describe("leaveManagerRoundReveal", () => {
+  it("marks the round seen before going back to the mercato of the next round", async () => {
+    // Given a closed round the player has not seen yet, while the mercato goes on
+    const mineToSee = reveals(true);
+
+    // When the player leaves its reveal
+    const next = await leaveManagerRoundReveal({ reveals: mineToSee, bids: bids(true) }).execute({
+      leagueId: "l1",
+      round: 1,
+    });
+
+    // Then the reveal does not show again, and the mercato opens
+    expect(next).toBe("mercato");
+    expect(
+      await getManagerRevealRounds({ reveals: mineToSee }).execute({ leagueId: "l1" }),
+    ).toEqual({ rounds: [1], toReveal: null });
+  });
+
+  it("goes to the team once the mercato is closed", async () => {
+    const closed: Pick<ManagerBidRepository, "mine"> = {
+      mine: async () => ({ ...mine, mercatoOpen: false, mercatoClosed: true }),
+    };
+    expect(
+      await leaveManagerRoundReveal({ reveals: reveals(true), bids: closed }).execute({
+        leagueId: "l1",
+        round: 1,
+      }),
+    ).toBe("team");
+  });
+
+  it("refuses a player who is not in the league", async () => {
+    await expect(
+      leaveManagerRoundReveal({ reveals: reveals(false), bids: bids(false) }).execute({
+        leagueId: "l1",
+        round: 1,
+      }),
     ).rejects.toEqual(new UseCaseError("LEAGUE_NOT_FOUND"));
   });
 });
