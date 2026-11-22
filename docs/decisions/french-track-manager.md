@@ -551,6 +551,11 @@ les scores déjà stockés (tables ÷ diviseur, pronos à 0).
   sans vide jusqu'au bas de l'écran, et le tutoriel s'ouvre sans focus visible sur « Passer »
   (#709).
 
+## 7. Jokers Manager (v0.24, #1091)
+
+Un joker par confrontation, chacun une fois dans la saison, choisi avec l'alignement, découvert par
+l'adversaire au verrou. Règles et calcul : `docs/architecture.md`, « Jokers Manager » et cas M24.
+
 ## Réponses du propriétaire (#416, 10 novembre 2026)
 
 - **DNS, DNF, DQ**, performance invalide ou résultat officiel manquant : l'athlète reste aligné et
