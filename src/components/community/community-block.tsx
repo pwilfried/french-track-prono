@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import type { Community } from "@/application/community";
+import type { CommunityTrend } from "@/application/community-trend";
 import { messages } from "@/app/messages.fr";
 import { ErrorNotice } from "@/components/error-notice";
 import { MomentCard } from "@/components/leagues/moment-card";
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { AnnouncementCard } from "./announcement-card";
 import { ChallengeMomentCard } from "./challenge-moment-card";
 import { PollCard, type VoteAction } from "./poll-card";
+import { TrendCard } from "./trend-card";
 
 const text = messages.community;
 
@@ -27,18 +29,21 @@ const HOME = { announcements: 1, challenges: 1, polls: 1 };
  * « Dans ma communauté » (#673): the latest moments of all my leagues (each with its league), the
  * FrenchTrack announcements and computed challenges (#877), and the polls. On the home (`compact`), the latest of each and « Tout
  * voir »; on its page, everything. Null: it could not be read. Empty: what will come, and the
- * next thing to do.
+ * next thing to do. `trend` (the home only): « La communauté », the prediction trend of the last
+ * locked event, next to the polls (#1080).
  */
 export function CommunityBlock({
   community,
   now,
   vote,
   compact = false,
+  trend = null,
 }: {
   community: Community | null;
   now: Date;
   vote: VoteAction;
   compact?: boolean;
+  trend?: CommunityTrend | null;
 }) {
   const header = compact ? (
     <div className="flex items-baseline justify-between gap-2">
@@ -91,7 +96,8 @@ export function CommunityBlock({
     announcements.length === 0 &&
     challenges.length === 0 &&
     shownPolls.length === 0 &&
-    moments.length === 0
+    moments.length === 0 &&
+    !trend
   ) {
     return frame(
       <div className="flex flex-col gap-3">
@@ -133,6 +139,13 @@ export function CommunityBlock({
             </li>
           )),
         ])}
+      {trend && (
+        <ul className="flex flex-col gap-2">
+          <li>
+            <TrendCard trend={trend} />
+          </li>
+        </ul>
+      )}
       {shownPolls.length > 0 &&
         part(
           "community-polls",
