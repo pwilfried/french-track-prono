@@ -88,7 +88,7 @@ export function MatchdayJokers(props: MatchdayJokersProps) {
         {duel && <p className="text-sm text-muted-foreground">{text.hint}</p>}
       </div>
       {!duel ? (
-        <p role="status" className="rounded-card bg-muted p-4 text-sm font-semibold">
+        <p className="rounded-card bg-muted p-4 text-sm font-semibold">
           {text.bonusDay}
         </p>
       ) : locked ? (
