@@ -9,11 +9,12 @@
 # Every merge into main is deployed to pre-production with a smoke test only (preprod.yml); the
 # full e2e suite runs once per version, started here when the rest is green (preprod.yml with
 # e2e=true), and nowhere else: running it at every merge wore the free pre-production database
-# out (owner's decision, 15 Nov 2026), and the daily run was dropped (owner's decision, 22 Nov 2026). No human go before the tag (owner's
-# decision, 13 Nov 2026): a failed pre-production deploy or e2e pass of that commit makes it wait.
+# out (owner's decision, 15 Nov 2026), and the daily run was dropped (owner's decision, 22 Nov 2026).
+# A failed pre-production deploy or e2e pass of that commit makes it wait. Then the owner gives the
+# go (decision of 22 Nov 2026): an issue « Go prod vX.Y.Z » lists what to check in pre-production,
+# and closing it as completed tags the commit of the green pass.
 # The tag is made with AGENTS_PAT: a tag made with github.token would start no workflow.
-# Then a GitHub release lists the PRs (its notification tells the owners), a needs-human issue
-# « Vérifier vX.Y.Z en prod » lists the screens to look at, and the milestone closes.
+# Then a GitHub release lists the PRs (its notification tells the owners) and the milestone closes.
 # main red: no tag, a warning in the run; the hourly sweep tries again.
 # Env: BOT_TOKEN, PAT_TOKEN.
 set -euo pipefail
@@ -119,16 +120,6 @@ if [ "$passed" = false ]; then
   fi
 fi
 
-echo "Tagging $tag on ${sha:0:7}"
-message="$tag
-
-$(as_bot gh api "repos/$repo/compare/$latest...$sha" --jq '.commits[].commit.message | split("\n")[0]' |
-  grep -v '^Merge ' | sed 's/^/- /')"
-object=$(as_owner gh api -X POST "repos/$repo/git/tags" -f "tag=$tag" -f "message=$message" \
-  -f "object=$sha" -f type=commit --jq .sha)
-as_owner gh api -X POST "repos/$repo/git/refs" -f "ref=refs/tags/$tag" -f "sha=${object:-$sha}" >/dev/null
-as_owner gh api -X POST "repos/$repo/releases" -f "tag_name=$tag" -f "name=$tag" \
-  -F generate_release_notes=true >/dev/null
 # One check list for the owners (decision of 12 Nov 2026): the version's criterion, then one box
 # per PR of the version that touches the interface.
 criterion=$(as_bot gh api "repos/$repo/milestones/$number" --jq '.description // ""')
@@ -141,15 +132,56 @@ for pr in $(as_bot gh api "repos/$repo/compare/$latest...$sha" --jq '.commits[].
 - [ ] #$pr $(as_bot gh api "repos/$repo/pulls/$pr" --jq .title)"
   fi
 done
-as_bot gh issue create -R "$repo" --label needs-human --title "Vérifier $tag en prod" \
-  --body "$tag est en production. Regarde-la sur ton téléphone, en clair et en sombre.
+
+# The owner's go (decision of 22 Nov 2026, replaces the one of 13 Nov): a finished version waits in
+# pre-production. An issue « Go prod vX.Y.Z » lists what to check there; closing it as completed is
+# the go, closing it as not planned keeps the version out of production. Its marker holds the
+# commit of the green pass, the one that is tagged.
+marker="<!-- release-go:$tag -->"
+go=$(as_bot gh api --paginate "repos/$repo/issues?state=all&labels=release-go&per_page=100" \
+  --jq ".[] | select(.body // \"\" | contains(\"$marker\"))
+    | \"\(.number)|\(.state)|\(.state_reason)|\((.body | capture(\"release-sha:(?<s>[^ >]+)\").s) // \"\")\"" |
+  head -1 || true)
+if [ -z "$go" ]; then
+  as_bot gh issue create -R "$repo" --label needs-human --label release-go --title "Go prod $tag" \
+    --body "$mention_owners $tag est prête en préprod (https://french-track-preprod.vercel.app) : suite e2e verte sur ${sha:0:7}.
 
 **Critère de la version**
 $criterion
 
-**Écrans changés**${boxes:-
+**Écrans à regarder en préprod** (téléphone, clair et sombre)${boxes:-
 - aucun}
 
-Une case qui ne va pas : ouvre une issue de correction liée ici. Tout est bon : ferme cette issue." >/dev/null
+- **Go** : ferme cette issue (« Close as completed ») : tag $tag sur ${sha:0:7}, puis migrations et déploiement en prod.
+- **Pas maintenant** : laisse-la ouverte. Une case qui ne va pas : ouvre une issue de correction ; la version attendra.
+- **Jamais** : ferme-la comme « not planned ».
+
+$marker
+<!-- release-sha:$sha -->" >/dev/null
+  echo "$version is ready in pre-production on ${sha:0:7}: waiting for the owner's go."
+  exit 0
+fi
+IFS='|' read -r go_number go_state go_reason go_sha <<< "$go"
+if [ "$go_state" = open ]; then
+  echo "$version waits for the owner's go (#$go_number)."
+  exit 0
+fi
+if [ "$go_reason" != completed ]; then
+  echo "$version: go refused (#$go_number closed as $go_reason). No tag."
+  exit 0
+fi
+sha=$go_sha
+[ -n "$sha" ] || { echo "::warning::#$go_number has no commit marker: no tag."; exit 0; }
+
+echo "Tagging $tag on ${sha:0:7} (go in #$go_number)"
+message="$tag
+
+$(as_bot gh api "repos/$repo/compare/$latest...$sha" --jq '.commits[].commit.message | split("\n")[0]' |
+  grep -v '^Merge ' | sed 's/^/- /')"
+object=$(as_owner gh api -X POST "repos/$repo/git/tags" -f "tag=$tag" -f "message=$message" \
+  -f "object=$sha" -f type=commit --jq .sha)
+as_owner gh api -X POST "repos/$repo/git/refs" -f "ref=refs/tags/$tag" -f "sha=${object:-$sha}" >/dev/null
+as_owner gh api -X POST "repos/$repo/releases" -f "tag_name=$tag" -f "name=$tag" \
+  -F generate_release_notes=true >/dev/null
 as_bot gh api -X PATCH "repos/$repo/milestones/$number" -f state=closed >/dev/null
 echo "$tag tagged: the deployment runs in migrations.yml."
