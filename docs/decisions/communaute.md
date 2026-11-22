@@ -53,7 +53,7 @@ L'admin gère les faits et peut éteindre la carte.
   l'admin traite les « Signalements du fil » depuis la page « Ligues » du back-office. Le joueur concerné reçoit une notification
   regroupée (famille « Ma ligue » de ses rappels, son interrupteur arrive avec #903).
 - « Battez FrenchTrack » (#674, #877) : posé par l'admin depuis l'épreuve, calculé avec le même
-  barème que les joueurs (sans joker), classement `/classement/frenchtrack` par année civile ; un
+  barème que les joueurs (sans joker de ligue), classement `/classement/frenchtrack` par année civile ; un
   défi calculé devient aussi un moment de « Dans ma communauté ».
 - Accueil (#673, #896) : « Dans ma communauté » garde la dernière annonce, le dernier défi, le
   sondage ouvert et trois moments, « Tout voir » ouvre `/communaute`. L'annonce d'un nouvel

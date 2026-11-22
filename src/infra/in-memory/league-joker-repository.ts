@@ -66,7 +66,7 @@ export function createInMemoryLeagueJokerStore(world: LeagueJokerWorld) {
           if (!leagueOf(leagueId)) return [];
           return plays
             .filter((p) => p.leagueId === leagueId && (p.userId === userId || !open(p.eventId)))
-            .map(({ leagueId: _, ...p }) => p);
+            .map((p) => ({ userId: p.userId, eventId: p.eventId, joker: p.joker }));
         },
         async play(leagueId, eventId, joker) {
           const refused = check(leagueId, eventId);
