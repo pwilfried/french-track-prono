@@ -5,9 +5,14 @@ import {
   type CompetitionPerformance,
   type ManagerCompetitionScore,
   type ScoringLineup,
+  type SubstitutionReason,
 } from "@/domain/manager-score";
 
+import type { PerformanceStatus } from "@/domain/performance";
+
 import { UseCaseError } from "./errors";
+import type { ManagerCatalogueRepository } from "./manager-catalogue";
+import type { ManagerLeagueRepository } from "./manager-leagues";
 import type { ManagerLineupRepository } from "./manager-lineup";
 
 /** A participant of a Manager league playing the competition, with their match sheet at the lock. */
@@ -89,6 +94,17 @@ export function computeManagerScores(ports: { scores: ManagerScoreRepository; no
   };
 }
 
+/** A starter who gave way to a substitute (#1036): what they did, and who came in. */
+export type ReplacedStarter = {
+  athleteId: string;
+  name: string;
+  reason: SubstitutionReason;
+  /** Unknown (nulls) for the scores stored before #1036. */
+  mark: string | null;
+  status: PerformanceStatus | null;
+  substituteName: string;
+};
+
 /** « Mes points » for a competition of a Manager league: null score until the admin computes it. */
 export type MyManagerScore = {
   slug: string;
@@ -96,23 +112,76 @@ export type MyManagerScore = {
   lockAt: string;
   /** The competition the lineup was carried over from (#1034), or null. */
   carriedFrom: string | null;
-  score: StoredManagerScore | null;
+  /** The table points are divided by it (#1031). */
+  divisor: number;
+  /** Each athlete who counted; a substitute with the name of the starter they replaced. */
+  score:
+    | (Omit<StoredManagerScore, "athletes"> & {
+        athletes: (StoredManagerScore["athletes"][number] & { starterName?: string })[];
+      })
+    | null;
+  /** « Sur le banc » once scored: the starters replaced, the substitutes who did not come in. */
+  bench: { replaced: ReplacedStarter[]; unused: { athleteId: string; name: string }[] };
 };
 
 export function getMyManagerScore(ports: {
   lineups: ManagerLineupRepository;
   scores: ManagerScoreRepository;
+  catalogue: ManagerCatalogueRepository;
+  managerLeagues: Pick<ManagerLeagueRepository, "find">;
 }) {
   return {
     async execute(input: { leagueId: string; slug: string }): Promise<MyManagerScore> {
-      const competitions = await ports.lineups.mine(input.leagueId);
-      if (competitions === "not_member") throw new UseCaseError("LEAGUE_NOT_FOUND");
+      const [competitions, league] = await Promise.all([
+        ports.lineups.mine(input.leagueId),
+        ports.managerLeagues.find(input.leagueId),
+      ]);
+      if (competitions === "not_member" || !league) throw new UseCaseError("LEAGUE_NOT_FOUND");
       const competition = competitions.find((c) => c.slug === input.slug);
       if (!competition) throw new UseCaseError("COMPETITION_NOT_FOUND");
       const score = await ports.scores.mine(input.leagueId, competition.competitionId);
       if (score === "not_member") throw new UseCaseError("LEAGUE_NOT_FOUND");
       const { slug, name, lockAt } = competition;
-      return { slug, name, lockAt, carriedFrom: competition.carriedFrom ?? null, score };
+      const base = {
+        slug,
+        name,
+        lockAt,
+        carriedFrom: competition.carriedFrom ?? null,
+        divisor: league.rules.tablesDivisor,
+      };
+      if (!score) return { ...base, score: null, bench: { replaced: [], unused: [] } };
+
+      const [catalogue, saved] = await Promise.all([
+        ports.catalogue.list(input.leagueId),
+        ports.lineups.sheet(input.leagueId, competition.competitionId),
+      ]);
+      const names = new Map(
+        catalogue === "not_member" ? [] : catalogue.map((a) => [a.athleteId, a.name]),
+      );
+      const nameOf = (id: string) => names.get(id) ?? "?";
+      const athletes = score.athletes.map((a) =>
+        a.substitution ? { ...a, starterName: nameOf(a.substitution.starterId) } : a,
+      );
+      const replaced = score.athletes.flatMap((a): ReplacedStarter[] =>
+        a.substitution
+          ? [
+              {
+                athleteId: a.substitution.starterId,
+                name: nameOf(a.substitution.starterId),
+                reason: a.substitution.reason,
+                mark: a.substitution.starter?.mark ?? null,
+                status: a.substitution.starter?.status ?? null,
+                substituteName: a.name,
+              },
+            ]
+          : [],
+      );
+      const counted = new Set(score.athletes.map((a) => a.athleteId));
+      const bench = typeof saved === "string" || !saved.sheet ? [] : saved.sheet.bench;
+      const unused = bench
+        .filter((b) => !counted.has(b.athleteId))
+        .map((b) => ({ athleteId: b.athleteId, name: nameOf(b.athleteId) }));
+      return { ...base, score: { ...score, athletes }, bench: { replaced, unused } };
     },
   };
 }

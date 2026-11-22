@@ -184,12 +184,21 @@ describe("managerCompetitionScore", () => {
         discipline: "100 m",
         mark: null,
         status: null,
+        tablePoints: 0,
         points: 0,
         bonuses: [],
         bonusPoints: 0,
         total: 0,
       },
     ]);
+  });
+
+  it("keeps the table points of an athlete before the division, for « Mes points » (#1036)", () => {
+    const score = managerCompetitionScore(input({ performances: [run({ mark: "10.90" })] }));
+    expect(score.athletes[0]).toMatchObject({
+      tablePoints: table100("F", 10.9),
+      points: points100("F", 10.9),
+    });
   });
 
   it("gives no table points to a discipline the tables do not cover, the bonuses still count", () => {
@@ -382,7 +391,16 @@ describe("managerCompetitionScore with substitutions (#1033)", () => {
       expect.objectContaining({
         athleteId: "s",
         mark: "10.70",
-        substitution: { starterId: "a", reason: "tactical" },
+        substitution: {
+          starterId: "a",
+          reason: "tactical",
+          starter: {
+            mark: "10.58",
+            status: "ok",
+            total: points100("F", 10.58),
+            threshold: { mark: "10.50", unit: "time" },
+          },
+        },
       }),
     ]);
     expect(score.total).toBe(points100("F", 10.7));
@@ -557,5 +575,29 @@ describe("managerCompetitionScore with substitutions (#1033)", () => {
     });
     // "s" ran the 100 m only, not the 200 m chosen for them: nobody comes in.
     expect(counted(i)).toEqual([["a", null]]);
+  });
+
+  it("tells what the starter did when their designated substitute comes in for a forfeit (#1036)", () => {
+    const i = input({
+      lineup: sheet(),
+      performances: [dnf("a"), run({ athleteId: "s", mark: "11.20" })],
+    });
+    expect(managerCompetitionScore(i).athletes[0]!.substitution).toEqual({
+      starterId: "a",
+      reason: "forfeit",
+      starter: { mark: null, status: "dnf", total: 0, threshold: null },
+    });
+  });
+
+  it("tells a starter without any performance when the bench comes in for them", () => {
+    const i = input({
+      lineup: sheet({ substituteId: null, threshold: null }),
+      performances: [run({ athleteId: "s", mark: "11.60" })],
+    });
+    expect(managerCompetitionScore(i).athletes[0]!.substitution).toEqual({
+      starterId: "a",
+      reason: "bench",
+      starter: { mark: null, status: null, total: 0, threshold: null },
+    });
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { CatalogueAthlete } from "@/domain/manager-catalogue";
+import type { AthleteScore } from "@/domain/manager-score";
 
 import { UseCaseError } from "./errors";
 import type { ManagerSeasonData, ManagerSeasonRepository } from "./manager-championship";
@@ -11,6 +12,24 @@ const participant = (userId: string, number: number) => ({
   userId,
   pseudo: `Joueur ${userId}`,
   bib: { number, color: "blue" as const },
+});
+
+/** A stored line: what an athlete brought, the bonuses within the total. */
+const line = (
+  athleteId: string,
+  total: number,
+  bonusPoints = 0,
+  over: Partial<AthleteScore> = {},
+): AthleteScore => ({
+  athleteId,
+  discipline: "100 m",
+  mark: "11.00",
+  status: "ok",
+  points: total - bonusPoints,
+  bonuses: bonusPoints > 0 ? [{ bonus: "first", points: bonusPoints }] : [],
+  bonusPoints,
+  total,
+  ...over,
 });
 
 const athlete = (athleteId: string, family: CatalogueAthlete["family"]): CatalogueAthlete => ({
@@ -38,7 +57,7 @@ function world(
   const league = {
     id: "L",
     name: "Ligue des copains",
-    rules: { lineup: { max: 4, perFamily: 1, bench: 0 } },
+    rules: { lineup: { max: 4, perFamily: 1, bench: 0 }, tablesDivisor: 10 },
     participants: [participant("zoe", 7), participant("max", 12), participant("ali", 3)],
   } as unknown as ManagerLeagueFile;
   const managerLeagues: Pick<ManagerLeagueRepository, "find"> = {
@@ -81,15 +100,12 @@ function world(
             {
               userId: "zoe",
               total: 1130,
-              athletes: [
-                { athleteId: "z1", total: 1100, bonusPoints: 20 },
-                { athleteId: "z2", total: 0, bonusPoints: 0 },
-              ],
+              athletes: [line("z1", 1100, 20), line("z2", 0, 0, { mark: null, status: "dnf" })],
             },
             {
               userId: "max",
               total: 950,
-              athletes: [{ athleteId: "m1", total: 938, bonusPoints: 0 }],
+              athletes: [line("m1", 938)],
             },
           ])
         : [],
@@ -100,6 +116,7 @@ function world(
       athlete("z2", "middle"),
       athlete("m1", "sprint"),
       athlete("m2", "middle"),
+      athlete("z3", "middle"),
     ],
   };
   return {
@@ -123,6 +140,7 @@ describe("getManagerDuel", () => {
       round: 1,
       competitionName: "Meeting 1",
       leg: "first",
+      divisor: 10,
       locked: true,
       mine: true,
       places: ["sprint", "distance", "jumps", "throws"],
@@ -152,6 +170,59 @@ describe("getManagerDuel", () => {
       null,
       null,
     ]);
+  });
+
+  it("puts the substitute who came in on the place of the starter, with what the starter did (#1036)", async () => {
+    // Given z2 did not finish and z3, her substitute, came in with 96 points
+    const scores: DuelScore[] = [
+      {
+        userId: "zoe",
+        total: 1196,
+        athletes: [
+          line("z1", 1100, 20),
+          line("z3", 96, 0, {
+            discipline: "800 m",
+            mark: "2:01.30",
+            substitution: {
+              starterId: "z2",
+              reason: "forfeit",
+              starter: { mark: null, status: "dnf", total: 0, threshold: null },
+            },
+          }),
+        ],
+      },
+      { userId: "max", total: 938, athletes: [line("m1", 938)] },
+    ];
+
+    // When zoe opens her head-to-head
+    const view = await getManagerDuel(world({ scores })).execute({
+      leagueId: "L",
+      round: 1,
+      home: "zoe",
+    });
+
+    // Then the middle-distance place holds z3 and her points, and says whom she replaced and why
+    expect(view.bottom.cards[1]).toMatchObject({
+      athleteId: "z3",
+      name: "Athlète Z3",
+      discipline: "800 m",
+      mark: "2:01.30",
+      points: 96,
+      replaced: {
+        reason: "forfeit",
+        starterName: "Athlète Z2",
+        starterMark: null,
+        starterStatus: "dnf",
+        threshold: null,
+        gain: 96,
+      },
+    });
+    expect(view.bottom.cards[0]).toMatchObject({
+      athleteId: "z1",
+      mark: "11.00",
+      bonuses: [{ bonus: "first", points: 20 }],
+      replaced: null,
+    });
   });
 
   it("shows the opponent's view the other way round", async () => {

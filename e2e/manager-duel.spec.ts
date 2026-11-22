@@ -47,6 +47,15 @@ test("a participant opens their head-to-head from the matchday and sees both lin
   };
   const mine = athletes("me");
   const theirs = athletes("rival");
+  // A substitute on the player's bench: she came in for the shot putter, who did not finish (#1036).
+  const substitute = sql(`with a as (
+      insert into athletes (slug, name, country_code, gender, manager_price)
+      values ('mduel-me-sub-${tag}', 'Duelme Remplaçante ${tag}', 'FRA', 'F', 10) returning id
+    ), ad as (
+      insert into athlete_disciplines (athlete_id, discipline, is_primary)
+      select id, 'Lancer du poids', true from a
+    )
+    select id from a`);
 
   // Two competitions a day apart: one head-to-head each way.
   const competitions = [1, 2].map((day) => {
@@ -83,10 +92,26 @@ test("a participant opens their head-to-head from the matchday and sees both lin
         bonus_points: n === 1 ? 20 : 0,
       })),
     );
+  const myDetail = JSON.parse(detail(mine, 0));
+  myDetail[2] = {
+    athlete_id: substitute,
+    discipline: "Lancer du poids",
+    mark: "15.20",
+    status: "ok",
+    points: 100,
+    bonuses: [],
+    bonus_points: 0,
+    total: 100,
+    substitution: {
+      starter_id: mine[2],
+      reason: "forfeit",
+      starter: { mark: null, status: "dnf", total: 0, threshold: null },
+    },
+  };
   sql(`insert into manager_scores (league_id, competition_id, user_id, lined_up, total, hungarian,
                                    bonus, predictions, athletes)
        values ('${league}', '${competitions[0]}', '${playerId}', true, 930, 910, 20, 0,
-               '${detail(mine, 0)}'),
+               '${JSON.stringify(myDetail)}'),
               ('${league}', '${competitions[0]}', '${rivalId}', true, 812, 792, 20, 0,
                '${detail(theirs, 100)}')`);
 
@@ -133,6 +158,25 @@ test("a participant opens their head-to-head from the matchday and sees both lin
       .filter({ hasText: "▲" }),
   ).toHaveCount(1);
   await expect(myCards.filter({ hasText: "▲" })).toHaveCount(0);
+
+  // The header gives both scores and the result; the substitute stands on the shot putter's place,
+  // « ↻ » on her card, and « Place par place » says what happened (#1036).
+  const scores = page.getByLabel("Scores de la confrontation");
+  await expect(scores).toContainText("812");
+  await expect(scores).toContainText("930");
+  await expect(scores).toContainText("Victoire");
+  await expect(
+    stadium.getByText("Tables ÷ 10 + bonus. ▲ : duel gagné à cette place."),
+  ).toBeVisible();
+  const substituteCard = myList.getByRole("article", {
+    name: new RegExp(`^Duelme Remplaçante ${tag}.*entré·e à la place de Duelme Athlete2 ${tag}$`),
+  });
+  await expect(substituteCard).toContainText("↻");
+  const places = page.getByRole("list", { name: "Place par place" }).getByRole("listitem");
+  await expect(places).toHaveCount(8);
+  await expect(places.filter({ hasText: `Duelme Remplaçante ${tag}` })).toContainText(
+    `↻ Duelme Athlete2 ${tag} n'a pas terminé (DNF). Duelme Remplaçante ${tag}, son remplaçant, est entré·e.`,
+  );
 
   await page.getByRole("link", { name: "Classement ›" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Classement");

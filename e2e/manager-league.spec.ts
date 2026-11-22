@@ -60,17 +60,28 @@ test("a player creates a private French Track Manager league that keeps its rule
       "Encore 3 joueurs attendus.",
     );
 
-    // The rules were copied at creation: a later change does not touch the league.
-    await expect(page.getByText("130 crédits de budget")).toBeVisible();
-    // The detail of the mode lives in the rules of the league (#802).
-    const rules = page.getByRole("region", { name: "Règles de la ligue" });
-    await expect(rules).toContainText("barème World Athletics");
+    // The rules were copied at creation, read in a sheet (#802, #1036): a later change does not
+    // touch the league.
+    const openRules = async () => {
+      await page.getByRole("button", { name: /Voir les règles de la ligue/ }).click();
+      return page.getByRole("dialog", { name: "Règles de la ligue" });
+    };
+    let rules = await openRules();
+    await expect(rules).toContainText("130 crédits de budget");
+    await expect(rules).toContainText("tables World Athletics, puis divisée par 10");
+    await expect(rules).toContainText("Les pronos ne comptent pas dans le Manager.");
     await expect(rules).toContainText("victoire 3 points, nul 1, défaite 0");
     await expect(rules).toContainText("8 titulaires (2 par famille");
-    await expect(rules).toContainText("et 4 remplaçants");
+    await expect(rules).toContainText("et 4 remplaçants rangés");
+    await expect(rules.getByRole("region", { name: "Remplacements" })).toContainText(
+      "Remplacement tactique",
+    );
+    await rules.getByRole("button", { name: "Fermer" }).click();
     sql(`update manager_rules set rules = jsonb_set(rules, '{budget}', '999')`);
     await page.reload();
-    await expect(page.getByText("130 crédits de budget")).toBeVisible();
+    rules = await openRules();
+    await expect(rules).toContainText("130 crédits de budget");
+    await rules.getByRole("button", { name: "Fermer" }).click();
 
     await page.getByRole("link", { name: "French Track Manager" }).click();
     // The card is a link named after the league, its participants as description (#495).

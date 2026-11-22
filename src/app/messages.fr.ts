@@ -21,6 +21,30 @@ const credits = (n: number) => `${n} ${n <= 1 ? "crédit" : "crédits"}`;
 const athletesCount = (n: number) => `${n} ${n <= 1 ? "athlète" : "athlètes"}`;
 const playersCount = (n: number) => `${n} ${n <= 1 ? "joueur" : "joueurs"}`;
 const GENDER = { F: "Femmes", M: "Hommes", X: "Mixte" } as const;
+/** A performance without a mark, in a word. */
+const statusWord = (status: string) =>
+  ({ dns: "Non-partant", dnf: "Abandon", dq: "Disqualifié·e" })[status] ?? status;
+/** What a starter without a mark did, in a sentence (#1036). */
+const forfeitWhy = (status: string | null) =>
+  ({
+    dns: "n'a pas pris le départ (DNS)",
+    dnf: "n'a pas terminé (DNF)",
+    dq: "a été disqualifié·e (DQ)",
+  })[status ?? ""] ?? "n'a pas de marque";
+/** A bonus of the Manager on its golden tag: « Or +10 », « RP +5 » (#1036). */
+const BONUS_TAGS = {
+  first: "Or",
+  second: "Argent",
+  third: "Bronze",
+  personal_best: "RP",
+  season_best: "MPS",
+  national_record: "RN",
+  area_record: "RC",
+  world_record: "RM",
+} as const;
+/** How a substitute came in for a place (#1036): « ⏱ » tactical, « ↻ » a starter without a mark. */
+const SUBSTITUTION_MARK = { tactical: "⏱", forfeit: "↻", bench: "↻" } as const;
+type SubstitutionKind = keyof typeof SUBSTITUTION_MARK;
 /** The contact address published on the site: written here only. */
 const CONTACT_EMAIL = "frenchtrackprono@gmail.com";
 /** Competition levels with a name of their own (#647). */
@@ -596,13 +620,43 @@ export const messages = {
     launchWaiting: (n: number) =>
       n <= 1 ? "Encore 1 joueur attendu" : `Encore ${n} joueurs attendus`,
     rules: "Règles de la ligue",
+    /** The rules of the league in a sheet (#1036), read in the rules frozen at its creation. */
+    rulesOpen: "Voir les règles de la ligue",
+    rulesSections: {
+      competition: "À chaque compétition",
+      substitutions: "Remplacements",
+      points: "Points",
+      season: "Saison",
+    },
     budget: (n: number) => `${n} crédits de budget`,
     minTeamSize: (n: number) => `Équipes d'au moins ${n} athlètes, sans maximum`,
     lineup: (starters: number, perFamily: number, bench: number) =>
-      `Par compétition : ${starters} titulaires (${perFamily} par famille : sprint, demi-fond et fond, sauts, lancers) et ${bench} remplaçants`,
-    /** The scale of the Manager, in the rules of the league (#802). */
-    scoring: (winBonus: number) =>
-      `Points : barème World Athletics, bonus sportifs (+${winBonus} pour une victoire) et tes pronos de la compétition`,
+      `${starters} titulaires (${perFamily} par famille : sprint, demi-fond et fond, sauts, lancers) et ${bench} remplaçants rangés`,
+    reserve: "Le reste de l'équipe est en réserve : il ne joue pas, même en dernier recours.",
+    discipline: "Une discipline par athlète aligné : seule celle-là compte.",
+    forgotten:
+      "Oubli d'alignement : ton dernier alignement est repris, avec les athlètes engagés ; sans alignement précédent, 0 point.",
+    forfeitRule:
+      "↻ Un titulaire DNS, DNF ou DQ laisse sa place à son remplaçant désigné, sinon au premier remplaçant de sa famille sur le banc ; sinon 0 point.",
+    tacticalRule:
+      "⏱ Remplacement tactique : si le titulaire fait moins bien que son seuil, son remplaçant entre et c'est sa marque qui compte.",
+    substituteRule:
+      "Un remplaçant ne sert qu'à un titulaire de la même famille, homme ou femme ; un réserviste ne remplace jamais.",
+    tables: (divisor: number) =>
+      `Chaque marque est convertie par les tables World Athletics, puis divisée par ${divisor} (arrondi en dessous).`,
+    bonusTable: "Bonus, ajoutés tout seuls",
+    bonusName: {
+      first: "1re place en finale",
+      second: "2e place en finale",
+      third: "3e place en finale",
+      personal_best: "Record personnel (RP)",
+      season_best: "Meilleure perf. de la saison (MPS)",
+      national_record: "Record national (RN)",
+      area_record: "Record continental (RC)",
+      world_record: "Record du monde (RM)",
+    },
+    bonusValue: (n: number) => `+${pts(n)}`,
+    noPredictions: "Les pronos ne comptent pas dans le Manager.",
     duels: "Confrontations aller-retour : victoire 3 points, nul 1, défaite 0",
     competitions: (n: number) =>
       `${n} ${n <= 1 ? "compétition éligible" : "compétitions éligibles"}`,
@@ -1025,16 +1079,36 @@ export const messages = {
     summary: "Mon score de la compétition",
     total: "Total de la compétition",
     points: pts,
-    hungarian: "Barème hongrois",
-    bonus: "Bonus sportifs",
+    hungarian: (divisor: number) => `Tables ÷ ${divisor}`,
+    bonus: "Bonus",
+    explain: (divisor: number) =>
+      `Chaque marque est convertie par les tables World Athletics, puis divisée par ${divisor} (arrondi en dessous). Les bonus s'ajoutent tout seuls.`,
     starters: "Mes titulaires",
+    /** How the points of an athlete were worked out (#1036). */
+    calculation: (table: number, divisor: number, points: number) =>
+      `${table.toLocaleString("fr-FR")} ÷ ${divisor} = ${points}`,
+    cameIn: (starter: string, reason: SubstitutionKind) =>
+      `entré·e à la place de ${starter} ${SUBSTITUTION_MARK[reason]}`,
+    bench: "Sur le banc",
+    replaced: (
+      reason: SubstitutionKind,
+      status: string | null,
+      mark: string | null,
+      substitute: string,
+    ) =>
+      `Remplacé·e par ${substitute} ${SUBSTITUTION_MARK[reason]} : ${
+        reason === "tactical"
+          ? `${mark ? `${mark}, ` : ""}moins bien que son seuil.`
+          : `${forfeitWhy(status)}.`
+      }`,
+    unused: "Remplaçant·e pas entré·e",
     athletePoints: pts,
     performance: (a: { discipline: string | null; mark: string | null; status: string | null }) =>
       a.status === null
         ? "Pas de performance saisie"
         : a.status === "ok"
           ? `${a.discipline} · ${a.mark}`
-          : `${a.discipline} · ${{ dns: "Non-partant", dnf: "Abandon", dq: "Disqualifié·e" }[a.status] ?? a.status}`,
+          : `${a.discipline} · ${statusWord(a.status)}`,
     bonusTag: (
       bonus:
         | "first"
@@ -1059,11 +1133,11 @@ export const messages = {
           world_record: "Record du monde",
         }[bonus]
       } +${points}`,
-    help: "La performance donne les points, quelle que soit la place ; les bonus s'ajoutent.",
     notYet: "Les points de cette compétition ne sont pas encore calculés.",
     noLineup: "Pas d'alignement validé avant le verrouillage : 0 point pour cette compétition.",
     carriedFrom: (competition: string) =>
       `Alignement repris de ${competition} : tu n'avais pas aligné avant le verrouillage.`,
+    benchEmpty: "Personne sur le banc pour cette compétition.",
     lineupLink: "Mon alignement",
   },
   managerChampionship: {
@@ -1208,7 +1282,48 @@ export const messages = {
     scoreLine: (top: string, bottom: string) => `${top} - ${bottom}`,
     toCome: "à venir",
     won: "▲",
-    legend: "Mêmes places que l'alignement. ▲ : duel gagné à cette épreuve.",
+    legend: (divisor: number) => `Tables ÷ ${divisor} + bonus. ▲ : duel gagné à cette place.`,
+    /** The tag of the result in the header (#1036). */
+    result: { win: "Victoire", draw: "Nul", loss: "Défaite" } as Record<
+      "win" | "draw" | "loss",
+      string
+    >,
+    scores: "Scores de la confrontation",
+    /** On the card of a substitute who counted for the place (#1036). */
+    replacedMark: SUBSTITUTION_MARK,
+    replacedLabel: (starter: string) => `entré·e à la place de ${starter}`,
+    places: "Place par place",
+    placeMine: (name: string, points: number) => `${name} : ${pts(points)}`,
+    placeTheirs: (pseudo: string, points: number) => `${pseudo} : ${pts(points)}`,
+    /** The mark of the place, or why there is none. */
+    mark: (mark: string | null, status: string | null) =>
+      mark ?? (status && status !== "ok" ? statusWord(status) : "Pas de marque"),
+    emptyPlace: "Place vide",
+    bonusTag: (bonus: keyof typeof BONUS_TAGS, points: number) => `${BONUS_TAGS[bonus]} +${points}`,
+    /** Under a place where a substitute counted, or where nobody could replace the starter. */
+    tacticalNote: (
+      starter: string,
+      mark: string | null,
+      threshold: { mark: string; unit: "time" | "distance" | "points" } | null,
+      substitute: string,
+      change: number | null,
+    ) =>
+      `⏱ Remplacement tactique : ${starter}${
+        mark && threshold
+          ? threshold.unit === "time"
+            ? ` a couru ${mark}, plus lent que ${threshold.mark}.`
+            : ` a fait ${mark}, moins bien que ${threshold.mark}.`
+          : " a fait moins bien que son seuil."
+      } ${substitute} est entré·e${change === null ? "" : ` (${gain(change)})`}.`,
+    forfeitNote: (
+      starter: string,
+      status: string | null,
+      substitute: string,
+      designated: boolean,
+    ) =>
+      `↻ ${starter} ${forfeitWhy(status)}. ${substitute}, ${designated ? "son remplaçant" : "premier remplaçant de sa famille sur le banc"}, est entré·e.`,
+    nobodyNote: (starter: string, status: string | null) =>
+      `↻ ${starter} ${forfeitWhy(status)}. Personne pour le remplacer : 0 point.`,
     day: (round: number, live: boolean) => `Journée ${round} · ${live ? "en direct" : "terminée"}`,
     eventsToCome: (n: number) => (n <= 1 ? `${n} épreuve à venir` : `${n} épreuves à venir`),
   },

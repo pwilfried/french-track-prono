@@ -5,7 +5,7 @@ import type { ManagerDuelRepository } from "@/application/manager-duel";
 /**
  * A Manager league of two players: `locked` is a competition whose lineups are locked, both
  * players lined up (`first` with `firstLineup`) and scored (`first` 900,
- * `firstLineup[0]` 850 with a bonus of 20); `open` is a competition not locked yet, where both
+ * `firstLineup[0]` 850 on the 100 m in 10.90, with the bonus of a win, 20); `open` is a competition not locked yet, where both
  * players lined up too.
  */
 export type ManagerDuelWorld = {
@@ -49,7 +49,19 @@ export function managerDuelContract(name: string, world: () => Promise<ManagerDu
       expect(scores.find((s) => s.userId === w.firstId)).toEqual({
         userId: w.firstId,
         total: 900,
-        athletes: [{ athleteId: w.firstLineup[0], total: 850, bonusPoints: 20 }],
+        athletes: [
+          {
+            athleteId: w.firstLineup[0],
+            discipline: "100 m",
+            mark: "10.90",
+            status: "ok",
+            tablePoints: 8305,
+            points: 830,
+            bonuses: [{ bonus: "first", points: 20 }],
+            bonusPoints: 20,
+            total: 850,
+          },
+        ],
       });
       expect(await w.player.scores(w.leagueId, w.open)).toEqual([]);
     });

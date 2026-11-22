@@ -55,7 +55,13 @@ function Stadium({
         athlete={card}
         points={card.points}
         won={other.linedUp && wins(card, other.cards[i])}
-        label={messages.team.scoredCardLabel(card.name, card.discipline, card.points, card.bonus)}
+        note={card.replaced ? text.replacedMark[card.replaced.reason] : undefined}
+        label={[
+          messages.team.scoredCardLabel(card.name, card.discipline, card.points, card.bonus),
+          card.replaced && text.replacedLabel(card.replaced.starterName),
+        ]
+          .filter(Boolean)
+          .join(", ")}
       />
     ) : (
       <EmptySpot label={label} fillable={false}>
@@ -71,19 +77,23 @@ function Stadium({
  * stadium at the top with their score in night blue, the player's below (« Mon stade », the score in red when it leads), the score between the
  * two on a night blue pill. Both stadiums have the same places as the lineup: races on gold
  * cards, field events on white ones, each with the athlete's points or « à venir »; « ▲ » and a
- * thick frame for the card that wins the duel of its place.
+ * thick frame for the card that wins the duel of its place; « ↻ » (a starter without a mark) or
+ * « ⏱ » (tactical) on the card of a substitute who counted for the place (#1036).
  */
 export function DuelStadium({
   places,
   top,
   bottom,
   mine = false,
+  divisor = 10,
 }: {
   places: LineupPlace[];
   top: DuelStadiumSide;
   bottom: DuelStadiumSide;
   /** The player plays it: the bottom stadium is « Mon stade ». */
   mine?: boolean;
+  /** The table points are divided by it (the league rules, #1031). */
+  divisor?: number;
 }) {
   const topScore = top.score ?? null;
   const bottomScore = bottom.score ?? null;
@@ -105,7 +115,7 @@ export function DuelStadium({
         value={score(bottomScore)}
         leads={leads(bottomScore, topScore)}
       />
-      <p className="text-sm text-muted-foreground">{text.legend}</p>
+      <p className="text-sm text-muted-foreground">{text.legend(divisor)}</p>
     </section>
   );
 }

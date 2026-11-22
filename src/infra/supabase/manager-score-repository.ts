@@ -4,13 +4,10 @@ import { UseCaseError } from "@/application/errors";
 import type { ManagerScoreRepository, StoredManagerScore } from "@/application/manager-scores";
 import type { MarkUnit } from "@/domain/discipline";
 import { MANAGER_BONUSES, type ManagerBonus, type ManagerFamily } from "@/domain/manager-rules";
-import type {
-  AthleteScore,
-  CompetitionPerformance,
-  ScoringLineup,
-  SubstitutionReason,
-} from "@/domain/manager-score";
+import type { CompetitionPerformance, ScoringLineup } from "@/domain/manager-score";
 import type { PerformanceStatus, RecordFlag } from "@/domain/performance";
+
+import { athleteScoreOf, athleteScoreRow, type AthleteScoreRow } from "./manager-score-row";
 
 type SubstituteRow = { athlete_id: string; family: ManagerFamily; discipline: string };
 type LineupRow = {
@@ -42,24 +39,12 @@ type SheetRow = {
   }[];
 };
 
-type AthleteRow = {
-  athlete_id: string;
-  discipline: string | null;
-  mark: string | null;
-  status: PerformanceStatus | null;
-  points: number;
-  bonuses: { bonus: ManagerBonus; points: number }[];
-  bonus_points: number;
-  total: number;
-  substitution?: { starter_id: string; reason: SubstitutionReason };
-};
-
 type ScoreRow = {
   lined_up: boolean;
   total: number;
   hungarian: number;
   bonus: number;
-  athletes: (AthleteRow & { name: string })[];
+  athletes: (AthleteScoreRow & { name: string })[];
 };
 
 /** A league created before a bonus existed scores 0 for it. */
@@ -68,20 +53,6 @@ const bonusValues = (stored: Partial<Record<ManagerBonus, number>>) =>
     ManagerBonus,
     number
   >;
-
-const athleteRow = (a: AthleteScore): AthleteRow => ({
-  athlete_id: a.athleteId,
-  discipline: a.discipline,
-  mark: a.mark,
-  status: a.status,
-  points: a.points,
-  bonuses: a.bonuses,
-  bonus_points: a.bonusPoints,
-  total: a.total,
-  ...(a.substitution && {
-    substitution: { starter_id: a.substitution.starterId, reason: a.substitution.reason },
-  }),
-});
 
 const lineup = (row: LineupRow | null): ScoringLineup | null =>
   row && {
@@ -149,7 +120,7 @@ export function createSupabaseManagerScoreRepository(
           total: l.total,
           hungarian: l.hungarian,
           bonus: l.bonus,
-          athletes: l.athletes.map(athleteRow),
+          athletes: l.athletes.map(athleteScoreRow),
         })),
       });
       if (!error) return "saved";
@@ -172,20 +143,7 @@ export function createSupabaseManagerScoreRepository(
         hungarian: row.hungarian,
         bonus: row.bonus,
         athletes: row.athletes.map(
-          (a): StoredManagerScore["athletes"][number] => ({
-            athleteId: a.athlete_id,
-            name: a.name,
-            discipline: a.discipline,
-            mark: a.mark,
-            status: a.status,
-            points: a.points,
-            bonuses: a.bonuses,
-            bonusPoints: a.bonus_points,
-            total: a.total,
-            ...(a.substitution && {
-              substitution: { starterId: a.substitution.starter_id, reason: a.substitution.reason },
-            }),
-          }),
+          (a): StoredManagerScore["athletes"][number] => ({ ...athleteScoreOf(a), name: a.name }),
         ),
       };
     },
