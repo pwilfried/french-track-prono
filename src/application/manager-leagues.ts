@@ -45,7 +45,9 @@ export function participantLookup(participants: readonly ManagerParticipant[]) {
 /**
  * The mercato of a league, as its creator set it (#619): the players it waits for (derived from
  * its competitions, #644), when it opens by itself (ISO, null: only when launched), when it
- * opened and closed, and whether its rounds follow French Track rules. The durations are in `rules.rounds`.
+ * opened and closed, and whether its rounds follow French Track rules. The durations are in
+ * `rules.rounds`. `closedRounds` holds the real closes of its closed rounds, in order: a round
+ * closes early once every participant has finished it (#1084).
  */
 export type ManagerMercato = {
   target: number;
@@ -54,6 +56,7 @@ export type ManagerMercato = {
   /** When the mercato closed (ISO, null: not yet), its rounds over or its participants done (#1089). */
   closedAt: string | null;
   roundMode: RoundMode["mode"];
+  closedRounds: string[];
 };
 
 export type MercatoSettings = { startsAt: string | null; rounds: RoundMode };

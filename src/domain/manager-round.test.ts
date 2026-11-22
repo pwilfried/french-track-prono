@@ -16,6 +16,14 @@ describe("round durations", () => {
     expect(roundEndsAt(opened, rounds, 2)).toBe("2027-01-05T12:00:00.000Z");
     expect(roundEndsAt(opened, rounds, 3)).toBe("2027-01-06T12:00:00.000Z");
   });
+
+  it("starts the rounds after a round closed early at its real close (#1084)", () => {
+    const opened = "2027-01-01T12:00:00.000Z";
+    const closed = ["2027-01-01T18:00:00.000Z"];
+    expect(roundEndsAt(opened, rounds, 1, closed)).toBe("2027-01-01T18:00:00.000Z");
+    expect(roundEndsAt(opened, rounds, 2, closed)).toBe("2027-01-03T18:00:00.000Z");
+    expect(roundEndsAt(opened, rounds, 3, closed)).toBe("2027-01-04T18:00:00.000Z");
+  });
 });
 
 describe("currentRound", () => {
@@ -36,6 +44,15 @@ describe("currentRound", () => {
     expect(currentRound(opened, rounds, "2027-01-05T13:00:00.000Z")).toEqual({
       round: 3,
       endsAt: "2027-01-06T12:00:00.000Z",
+    });
+  });
+
+  it("is the round after the closed ones, from the real close of the last one (#1084)", () => {
+    expect(
+      currentRound(opened, rounds, "2027-01-01T18:00:00.000Z", ["2027-01-01T18:00:00.000Z"]),
+    ).toEqual({
+      round: 2,
+      endsAt: "2027-01-03T18:00:00.000Z",
     });
   });
 

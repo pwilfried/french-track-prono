@@ -104,9 +104,15 @@ export default async function ManagerLeaguePage({
   const isOwner = league.ownerId === ports.userId;
   const open = mercato.openedAt !== null;
   const calendarStart = mercato.openedAt ?? mercato.startsAt;
-  const status = mercatoStatus(mercato.openedAt, rules.rounds, now.toISOString());
+  // A round closed early, everyone done, moves the next ones (#1084).
+  const status = mercatoStatus(
+    mercato.openedAt,
+    rules.rounds,
+    now.toISOString(),
+    mercato.closedRounds,
+  );
   const calendar = calendarStart
-    ? mercatoCalendar(calendarStart, rules.rounds, now.toISOString(), open)
+    ? mercatoCalendar(calendarStart, rules.rounds, now.toISOString(), open, mercato.closedRounds)
     : null;
   const format = seasonFormat(league.competitions.length);
   // The creator may add competitions still available until the mercato opens.

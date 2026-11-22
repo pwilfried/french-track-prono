@@ -6,12 +6,14 @@ import type { CatalogueAthlete } from "@/domain/manager-catalogue";
 import { UseCaseError } from "./errors";
 import {
   closeManagerMercato,
+  finishManagerRound,
   getMyManagerBids,
   isMercatoOpenForMe,
   placeManagerBid,
   withdrawManagerBid,
   type BidOutcome,
   type CloseOutcome,
+  type FinishRoundOutcome,
   type ManagerBidRepository,
   type MyManagerBids,
 } from "./manager-bids";
@@ -35,8 +37,13 @@ const catalogue: ManagerCatalogueRepository = {
   list: async () => [athlete("a1", "Zoé Fictive", 10), athlete("a2", "Anna Fictive", 15)],
 };
 
-function bids(mine: MyManagerBids | "not_member", answer: BidOutcome = "placed") {
+function bids(
+  mine: MyManagerBids | "not_member",
+  answer: BidOutcome = "placed",
+  finish: FinishRoundOutcome = "finished",
+) {
   const placed: [string, string, number][] = [];
+  const finished: string[] = [];
   const withdrawn: [string, string][] = [];
   const repository: ManagerBidRepository = {
     mine: async () => mine,
@@ -53,8 +60,12 @@ function bids(mine: MyManagerBids | "not_member", answer: BidOutcome = "placed")
           : "mercato_closed";
     },
     close: async () => "closed",
+    finishRound: async (leagueId) => {
+      finished.push(leagueId);
+      return finish;
+    },
   };
-  return { repository, placed, withdrawn };
+  return { repository, placed, withdrawn, finished };
 }
 
 const open: MyManagerBids = {
@@ -63,6 +74,7 @@ const open: MyManagerBids = {
   mercatoClosed: false,
   canClose: false,
   roundEndsAt: "2027-01-03T10:00:00.000Z",
+  round: { round: 1, done: false, finished: 0, members: 2 },
   team: [],
   bids: [
     { athleteId: "a1", amount: 30, bidAt: "2027-01-02T10:00:00.000Z" },
@@ -162,6 +174,7 @@ describe("placeManagerBid", () => {
     ["not_member", "LEAGUE_NOT_FOUND"],
     ["taken", "ATHLETE_TAKEN"],
     ["round_closing", "ROUND_CLOSING"],
+    ["round_done", "ROUND_DONE"],
   ] as const)("turns a refused bid (%s) into %s", async (answer, code) => {
     const { repository } = bids(open, answer);
 
@@ -265,5 +278,27 @@ describe("isMercatoOpenForMe", () => {
     expect(
       await isMercatoOpenForMe({ managerLeagues: leagues(["l1", "l2"]), bids: closed }).execute(),
     ).toBe(false);
+  });
+});
+
+describe("finishManagerRound", () => {
+  it("tells the league the player finished the open round (#1084)", async () => {
+    const { repository, finished } = bids(open);
+
+    await finishManagerRound({ bids: repository }).execute({ leagueId: "l1" });
+
+    expect(finished).toEqual(["l1"]);
+  });
+
+  it.each([
+    ["not_member", "LEAGUE_NOT_FOUND"],
+    ["mercato_closed", "MERCATO_NOT_OPEN"],
+    ["round_closing", "ROUND_CLOSING"],
+  ] as const)("turns a refused finish (%s) into %s", async (answer, code) => {
+    const { repository } = bids(open, "placed", answer);
+
+    await expect(
+      finishManagerRound({ bids: repository }).execute({ leagueId: "l1" }),
+    ).rejects.toEqual(new UseCaseError(code));
   });
 });

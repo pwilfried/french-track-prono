@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { UseCaseError, type ErrorCode } from "@/application/errors";
 import {
   closeManagerMercato,
+  finishManagerRound,
   placeManagerBid,
   withdrawManagerBid,
 } from "@/application/manager-bids";
@@ -54,5 +55,22 @@ export async function closeMercatoAction(_: BidFormState, data: FormData): Promi
   }
   revalidatePath(`/manager/${leagueId}/catalogue`);
   // The bids under way became a last round: the mercato opens its reveal (#604).
+  redirect(`/manager/${leagueId}/catalogue`);
+}
+
+/** The player finished the open round (#1084); the last one to finish closes it. */
+export async function finishRoundAction(_: BidFormState, data: FormData): Promise<BidFormState> {
+  const leagueId = formText(data, "league");
+  await managerPorts(`/manager/${leagueId}/catalogue`);
+  const ports = { bids: createSupabaseManagerBids(await getSessionClient()) };
+  try {
+    await finishManagerRound(ports).execute({ leagueId });
+  } catch (error) {
+    if (error instanceof UseCaseError) return { error: error.code };
+    throw error;
+  }
+  revalidatePath(`/manager/${leagueId}`);
+  revalidatePath(`/manager/${leagueId}/catalogue`);
+  // If the round closed, the catalogue opens its reveal (#604).
   redirect(`/manager/${leagueId}/catalogue`);
 }

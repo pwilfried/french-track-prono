@@ -2,7 +2,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { UseCaseError } from "@/application/errors";
 import type { BidOutcome, ManagerBidRepository } from "@/application/manager-bids";
-import { roundEndsAt, type RoundRules } from "@/domain/manager-round";
 
 /**
  * The answers of place_manager_bid, withdraw_manager_bid and close_manager_mercato
@@ -13,13 +12,14 @@ const refusals: Record<string, Exclude<BidOutcome, "placed">> = {
   "22P02": "not_member",
   FT016: "mercato_closed",
   FT020: "round_closing",
+  FT044: "round_done",
   P0002: "not_in_catalogue",
   FT019: "taken",
   FT017: "below_price",
   FT018: "over_budget",
 };
 
-type LeagueRules = { budget: number; rounds?: RoundRules };
+type RoundRow = { round: number; ends_at: string; done: boolean; finished: number; members: number };
 
 /**
  * The player's session. Row level security shows a player their own bids and athletes only; the
@@ -36,7 +36,7 @@ export function createSupabaseManagerBids(client: SupabaseClient): ManagerBidRep
       if (league.error?.code === "22P02") return "not_member";
       if (league.error) throw new UseCaseError("MANAGER_BIDS_UNAVAILABLE");
       if (!league.data) return "not_member";
-      const [bids, awards, rounds, canClose] = await Promise.all([
+      const [bids, awards, progress, canClose] = await Promise.all([
         client
           .from("manager_bids")
           .select("athlete_id, amount, bid_at")
@@ -47,27 +47,26 @@ export function createSupabaseManagerBids(client: SupabaseClient): ManagerBidRep
           .select("athlete_id, amount, round")
           .eq("league_id", leagueId)
           .order("round"),
-        client.from("manager_rounds").select("round", { count: "exact", head: true }).eq(
-          "league_id",
-          leagueId,
-        ),
+        // The open round, its end and who finished it, as the database computes them (#1084).
+        client.rpc("manager_round_progress", { p_league: leagueId }),
         client.rpc("can_close_manager_mercato", { p_league: leagueId }),
       ]);
-      if (bids.error || awards.error || rounds.error || canClose.error) {
+      if (bids.error || awards.error || progress.error || canClose.error) {
         throw new UseCaseError("MANAGER_BIDS_UNAVAILABLE");
       }
-      const rules = league.data.rules as LeagueRules;
+      const rules = league.data.rules as { budget: number };
       const opened = league.data.mercato_opened_at as string | null;
       const closed = league.data.mercato_closed_at !== null;
+      const open = (progress.data as RoundRow[] | null)?.[0];
       return {
         budget: Number(rules.budget),
         mercatoOpen: opened !== null && Date.parse(opened) <= Date.now() && !closed,
         mercatoClosed: closed,
         canClose: canClose.data === true,
-        roundEndsAt:
-          opened !== null && !closed && rules.rounds
-            ? roundEndsAt(opened, rules.rounds, (rounds.count ?? 0) + 1)
-            : null,
+        roundEndsAt: open ? new Date(open.ends_at).toISOString() : null,
+        round: open
+          ? { round: open.round, done: open.done, finished: open.finished, members: open.members }
+          : null,
         team: awards.data.map((a) => ({
           athleteId: a.athlete_id as string,
           amount: a.amount as number,
@@ -97,6 +96,20 @@ export function createSupabaseManagerBids(client: SupabaseClient): ManagerBidRep
         p_athlete: athleteId,
       });
       if (!error) return "withdrawn";
+      const refusal = refusals[error.code];
+      if (
+        refusal === "not_member" ||
+        refusal === "mercato_closed" ||
+        refusal === "round_closing" ||
+        refusal === "round_done"
+      ) {
+        return refusal;
+      }
+      throw new UseCaseError("MANAGER_BIDS_UNAVAILABLE");
+    },
+    async finishRound(leagueId) {
+      const { error } = await client.rpc("finish_manager_round", { p_league: leagueId });
+      if (!error) return "finished";
       const refusal = refusals[error.code];
       if (refusal === "not_member" || refusal === "mercato_closed" || refusal === "round_closing") {
         return refusal;

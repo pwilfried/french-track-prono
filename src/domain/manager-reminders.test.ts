@@ -36,6 +36,7 @@ describe("mercato round reminders", () => {
     round: 2,
     endsAt: at("2026-11-14T19:30:00Z"),
     recruiters: ["u1", "u2"],
+    finished: [],
     ...change,
   });
 
@@ -54,6 +55,12 @@ describe("mercato round reminders", () => {
 
   it("leaves out a participant who can no longer recruit", () => {
     expect(mercatoRoundReminders([manager("u3")], [round()], now)).toEqual([]);
+  });
+
+  it("leaves out a participant who finished the round (#1084)", () => {
+    expect(
+      mercatoRoundReminders([manager("u1"), manager("u2")], [round({ finished: ["u1"] })], now),
+    ).toEqual([{ userId: "u2", leagueId: "l1", round: 2 }]);
   });
 
   it("sends nothing with the Manager family off, during the quiet hours, nor twice", () => {
