@@ -4,6 +4,13 @@ type Options = NonNullable<Parameters<typeof init>[0]>;
 type TransactionEvent = Parameters<NonNullable<Options["beforeSendTransaction"]>>[0];
 
 /**
+ * iPhone network noise the app cannot fix: a dropped connection ("Load failed") and a service
+ * worker script that failed to load (retried on the next page load, see service-worker.tsx).
+ * Strings match as substrings of the message.
+ */
+export const IGNORED_ERRORS = ["Load failed", "sw.js load failed"];
+
+/**
  * Sentry (#195), EU region, errors only, no replay. Off without a DSN, in development and in fake
  * mode. An event never carries an e-mail or a pseudo: only the Supabase user id.
  *
@@ -14,9 +21,12 @@ type TransactionEvent = Parameters<NonNullable<Options["beforeSendTransaction"]>
 export function sentryOptions(
   dsn = process.env.NEXT_PUBLIC_SENTRY_DSN,
   tracesRate = process.env.SENTRY_TRACES_SAMPLE_RATE,
+  environment = process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT,
 ) {
   return {
     dsn,
+    environment: environment || "production",
+    ignoreErrors: IGNORED_ERRORS,
     enabled:
       Boolean(dsn) && process.env.NODE_ENV === "production" && process.env.FTP_FAKE_DB !== "1",
     sendDefaultPii: false,

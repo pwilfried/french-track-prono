@@ -20,6 +20,19 @@ describe("Sentry options (#195)", () => {
     expect(sentryOptions("https://key@o1.ingest.de.sentry.io/1").enabled).toBe(false); // tests run in "test"
   });
 
+  it("tags the environment, production by default", () => {
+    expect(sentryOptions("dsn", undefined, "preprod").environment).toBe("preprod");
+    expect(sentryOptions("dsn", undefined, undefined).environment).toBe("production");
+    expect(sentryOptions("dsn", undefined, "").environment).toBe("production");
+  });
+
+  it("ignores iPhone network noise but not other TypeErrors", () => {
+    const { ignoreErrors } = sentryOptions("dsn");
+    expect(ignoreErrors).toContain("Load failed");
+    expect(ignoreErrors).toContain("sw.js load failed");
+    expect(ignoreErrors.some((text) => "TypeError: x is undefined".includes(text))).toBe(false);
+  });
+
   it("reports a service outage, not a player's mistake", () => {
     const reported: string[] = [];
     onUnavailable((code) => reported.push(code));
