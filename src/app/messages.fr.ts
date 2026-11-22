@@ -1601,6 +1601,8 @@ export const messages = {
     copied: "✓ Copié",
     shareText: (name: string) => `Rejoins ma ligue « ${name} » sur French Track Prono`,
     linkNote: "Le lien ouvre la ligue directement après connexion.",
+    publicLinkNote:
+      "Cette ligue est publique : elle se trouve aussi dans « Découvrir ». Partage le lien pour y inviter tes amis.",
     tabs: { ranking: "Classement", members: "Membres", feed: "Fil" },
     /** The feed of a league (#671): the app tells the moments, nobody writes in it. */
     feed: {
