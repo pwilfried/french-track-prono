@@ -4,6 +4,8 @@ import { viewList } from "./list-view";
 import {
   inCatalogueFilter,
   matchesCatalogueSearch,
+  catalogueDisciplines,
+  compareCatalogue,
   missesCatalogueForMainDiscipline,
   type CatalogueAthlete,
   type CatalogueFilter,
@@ -43,7 +45,14 @@ const names = (query: string, filter: CatalogueFilter) =>
     pageSize: 50,
   }).rows.map((a) => a.name);
 
-const none: CatalogueFilter = { sex: null, family: null, availableOnly: false };
+const none: CatalogueFilter = {
+  sex: null,
+  family: null,
+  discipline: null,
+  availableOnly: false,
+  maxPrice: null,
+  onlyIds: null,
+};
 
 describe("the mercato catalogue", () => {
   it("finds an athlete by name without accents, by country or by discipline", () => {
@@ -60,6 +69,49 @@ describe("the mercato catalogue", () => {
 
   it("filters by Manager family: hurdlers are sprinters", () => {
     expect(names("", { ...none, family: "sprint" })).toEqual(["Élodie Sprint", "Marc Haies"]);
+  });
+});
+
+describe("the catalogue sort and the new filters (#1087)", () => {
+  const priced = [
+    athlete("Bea", { price: 20 }),
+    athlete("Ada", { price: 20, discipline: "200 m" }),
+    athlete("Cléo", { price: 35 }),
+    athlete("Dan", { price: 5, sex: "M", family: "throws", discipline: "Disque" }),
+  ];
+  const order = (sort: Parameters<typeof compareCatalogue>[0]) =>
+    [...priced].sort(compareCatalogue(sort)).map((a) => a.name);
+
+  it("sorts by price, dearest first, equal prices by name", () => {
+    expect(order("price_desc")).toEqual(["Cléo", "Ada", "Bea", "Dan"]);
+  });
+
+  it("sorts by price, cheapest first, or by name", () => {
+    expect(order("price_asc")).toEqual(["Dan", "Ada", "Bea", "Cléo"]);
+    expect(order("name")).toEqual(["Ada", "Bea", "Cléo", "Dan"]);
+  });
+
+  it("keeps the athletes within the budget, at the price itself included", () => {
+    const within = priced.filter((a) => inCatalogueFilter(a, { ...none, maxPrice: 20 }));
+    expect(within.map((a) => a.name)).toEqual(["Bea", "Ada", "Dan"]);
+  });
+
+  it("keeps the athletes of one discipline", () => {
+    const f = { ...none, family: "sprint" as const, discipline: "200 m" };
+    expect(priced.filter((a) => inCatalogueFilter(a, f)).map((a) => a.name)).toEqual(["Ada"]);
+  });
+
+  it("keeps only the athletes of the player's bids", () => {
+    const f = { ...none, onlyIds: new Set(["Cléo", "Dan"]) };
+    expect(priced.filter((a) => inCatalogueFilter(a, f)).map((a) => a.name)).toEqual([
+      "Cléo",
+      "Dan",
+    ]);
+  });
+
+  it("lists the disciplines of a family once each", () => {
+    expect(catalogueDisciplines(priced, "sprint")).toEqual(["100 m", "200 m"]);
+    expect(catalogueDisciplines(priced, "jumps")).toEqual([]);
   });
 });
 
