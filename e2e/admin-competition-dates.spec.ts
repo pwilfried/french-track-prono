@@ -51,8 +51,8 @@ test("a competition moved in the back-office moves its events in the league (#10
   // The admin moves the competition a week later; its events follow (ticked by default).
   await page.goto(`/admin/competitions/${slug}/modifier`);
   await expect(page.getByLabel("Décaler aussi les épreuves")).toBeChecked();
-  await page.getByLabel("Début").fill(movedTo);
-  await page.getByLabel("Fin").fill(movedTo);
+  await page.getByLabel("Début", { exact: true }).fill(movedTo);
+  await page.getByLabel("Fin", { exact: true }).fill(movedTo);
   await page.getByRole("button", { name: "Enregistrer les modifications" }).click();
   await expect(page).toHaveURL(new RegExp(`/admin/competitions/${slug}\\?enregistre=1$`));
 
