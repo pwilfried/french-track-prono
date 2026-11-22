@@ -5,7 +5,7 @@ import { messages } from "@/app/messages.fr";
 import type { CommunityMoment } from "@/domain/community";
 
 import { CommunityBlock } from "./community-block";
-import { challenge, competitionOpen, episode, NOW, poll } from "./fixtures";
+import { challenge, competitionOpen, episode, NOW, poll, trend } from "./fixtures";
 
 const text = messages.community;
 
@@ -88,6 +88,26 @@ export const ChallengeOnly: Story = {
     await expect(
       canvas.getByRole("link", { name: new RegExp(messages.challenge.verdict.won) }),
     ).toHaveAttribute("href", `/epreuves/${challenge.slug}`);
+  },
+};
+
+/** On the home, « La communauté » shows the trend of the last locked event next to the poll. */
+export const WithTrend: Story = {
+  args: { trend },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(text.trend.label)).toBeVisible();
+    await expect(canvas.getByText(poll.question)).toBeVisible();
+  },
+};
+
+/** Only the trend: the block is not empty. */
+export const TrendOnly: Story = {
+  args: { community: { announcements: [], polls: [], moments: [], challenges: [] }, trend },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.queryByText(text.empty)).toBeNull();
+    await expect(canvas.getByText(text.trend.label)).toBeVisible();
   },
 };
 

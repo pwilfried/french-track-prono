@@ -13,6 +13,7 @@ import { CountryFlag } from "@/components/athletes/country-flag";
 import { buttonVariants } from "@/components/ui/button";
 import { LockBanner } from "@/components/countdown/lock-banner";
 import { ErrorNotice } from "@/components/error-notice";
+import { REVEAL_ANCHOR } from "@/components/community/trend-card";
 import { AddToMyLeagueForm } from "@/components/leagues/league-forms";
 import { PodiumMedals } from "@/components/podium/podium-medals";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
@@ -520,7 +521,7 @@ export default async function EventPage({
           )}
 
           {user && (
-            <section className="mx-auto w-full max-w-md pt-6">
+            <section id={REVEAL_ANCHOR} className="mx-auto w-full max-w-md scroll-mt-4 pt-6">
               {open ? (
                 <RevealHidden />
               ) : (
