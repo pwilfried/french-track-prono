@@ -793,6 +793,23 @@ export const messages = {
         return `Il te manque au moins ${list}.${credits}`;
       },
       complete: "Ton équipe est complète.",
+      /** Bids count in the team under construction, apart from the athletes won (#1088). */
+      withBids: (bidding: number) =>
+        bidding === 1 ? "dont 1 enchère en cours" : `dont ${bidding} enchères en cours`,
+      bidding: "enchère en cours",
+      full: (name: string) => `${name} : trop d'athlètes du même sexe`,
+      overBudget: "Tes enchères et tes athlètes dépassent le budget.",
+    },
+    /** Recap of the round's bids by family, on top of the mercato (#1088). */
+    bidsRecap: {
+      title: "Mes enchères par famille",
+      row: (name: string, won: number, bidding: number, need: number) =>
+        `${name} : ${won} gagné${won > 1 ? "s" : ""}, ${bidding} enchère${bidding > 1 ? "s" : ""} en cours, minimum ${need}`,
+      won: (n: number) => `${n} gagné${n > 1 ? "s" : ""}`,
+      bids: (n: number) => `${n} enchère${n > 1 ? "s" : ""}`,
+      none: "Aucune enchère pour l'instant : choisis des athlètes dans le catalogue.",
+      committed: (engaged: number, budget: number) => `Budget engagé : ${engaged} / ${budget} cr.`,
+      overBudget: "Budget dépassé : retire une offre.",
     },
     /** The four cards of the first mercato (#1037); then on demand from « Comment ça marche ? ». */
     firstMercato: {
