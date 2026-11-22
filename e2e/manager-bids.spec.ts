@@ -195,6 +195,24 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await expect(rivalPage.getByRole("article", { name: third })).toContainText(owner.pseudo);
     await rivalPage.goto(catalogue + search);
     await expect(theirs.getByRole("status")).toContainText("Le mercato de cette ligue est clos");
+
+    // The mercato is over (#1089): the league links to it, read again round by round.
+    await rivalPage.goto(catalogue.replace(/\/catalogue$/, ""));
+    await rivalPage.getByRole("link", { name: "Revoir le mercato" }).click();
+    await rivalPage.waitForURL(/\/mercato$/);
+    await expect(
+      rivalPage.getByRole("heading", { name: "Toutes les enchères du tour 1" }),
+    ).toBeVisible();
+    await expect(rivalPage.getByRole("article", { name: second })).toContainText("30 cr.");
+    await expect(rivalPage.getByRole("article", { name: third })).toHaveCount(0);
+    await rivalPage
+      .getByRole("navigation", { name: "Tours du mercato" })
+      .getByRole("link", { name: "Tour 2" })
+      .click();
+    await rivalPage.waitForURL(/\/mercato\?tour=2$/);
+    const lastRound = rivalPage.getByRole("article", { name: third });
+    await expect(lastRound).toContainText(owner.pseudo);
+    await expect(lastRound).toContainText("10 cr.");
   } finally {
     sql(`delete from manager_leagues where name = '${league}'`);
     sql(`delete from athletes where slug in ('${slugs.join("', '")}')`);
