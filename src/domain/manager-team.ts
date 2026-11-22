@@ -49,14 +49,3 @@ export function unmetQuotas(quotas: TeamQuota[], team: TeamMember[]): UnmetQuota
     ...(count(team, q.family) < q.min ? [{ family: q.family, sex: null }] : []),
   ]);
 }
-
-/**
- * Whether an athlete may join a team: their family has a quota and the team holds fewer than
- * `maxPerSex` athletes of their sex in it. The complement at the close of the mercato follows the
- * same rule (private.manager_complement_candidates).
- */
-export function fitsQuotas(quotas: TeamQuota[], team: TeamMember[], athlete: TeamMember): boolean {
-  const family = managerFamilyOf(athlete.family);
-  const quota = quotas.find((q) => q.family === family);
-  return !!quota && count(team, quota.family, athlete.sex) < quota.maxPerSex;
-}
