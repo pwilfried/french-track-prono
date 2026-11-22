@@ -12,7 +12,16 @@ const text = messages.leagues;
  * Shown in a league where the player is still alone (#552): one big button shares the invite link
  * (or copies it), the code stays readable underneath for friends told out loud.
  */
-export function InviteBanner({ code, leagueName }: { code: string; leagueName: string }) {
+export function InviteBanner({
+  code,
+  leagueName,
+  isPublic = false,
+}: {
+  code: string;
+  leagueName: string;
+  /** A public league shows no code: it is found in « Découvrir » and shared by link (#1098). */
+  isPublic?: boolean;
+}) {
   const { copied, share } = useInviteShare({
     path: `/rejoindre/${code}`,
     title: leagueName,
@@ -33,7 +42,9 @@ export function InviteBanner({ code, leagueName }: { code: string; leagueName: s
       <p role="status" className="text-center text-sm font-semibold empty:hidden">
         {copied ? text.linkCopied : ""}
       </p>
-      <p className="text-center text-sm">{text.orGiveCode(formatInviteCode(code))}</p>
+      {!isPublic && (
+        <p className="text-center text-sm">{text.orGiveCode(formatInviteCode(code))}</p>
+      )}
     </section>
   );
 }
