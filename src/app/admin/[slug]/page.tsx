@@ -24,6 +24,7 @@ import { ActionNotice, AdminBand } from "../competitions/admin-shell";
 import { adminOnly } from "../guard";
 import { ComputeForm } from "./compute-form";
 import { EventEdit } from "./event-edit";
+import { LockWarning } from "./lock-warning";
 import { PromoteForm } from "./promote-form";
 import { ScoreTable, type Scored } from "./score-table";
 
@@ -174,11 +175,11 @@ export default async function AdminEventPage({
       </header>
 
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 py-6">
-        {!locked ? (
-          <p className="mx-4 rounded-card bg-muted p-4">{messages.errors.EVENT_NOT_LOCKED}</p>
-        ) : !hasResult ? (
+        {!hasResult ? (
           <div className="flex flex-col gap-3 px-4">
             <p className="rounded-card bg-muted p-4 text-sm">{messages.admin.noSheet}</p>
+            {/* #1063: saving a result before the lock locks the event at once. */}
+            {!locked && <LockWarning />}
             <Link href={`/admin/${slug}/performances`} className={`${buttonVariants()} w-full`}>
               {messages.admin.enterSheet}
             </Link>

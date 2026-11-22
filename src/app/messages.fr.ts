@@ -1826,7 +1826,10 @@ export const messages = {
       scored: "Points calculés",
     },
     empty: "Aucune épreuve dans cet état.",
-    lockedOnly: "Seules les épreuves verrouillées peuvent recevoir un résultat.",
+    lockedOnly:
+      "Une épreuve encore ouverte se verrouille quand on enregistre son résultat : les pronos se ferment et se dévoilent.",
+    lockOnSave:
+      "Cette épreuve n'est pas encore verrouillée : enregistrer le résultat la verrouille maintenant.",
     noSheet:
       "Aucun résultat pour l'instant : une seule feuille par épreuve donne le podium des pronos et les points du Manager.",
     enterSheet: "Saisir la feuille de résultats",
@@ -2062,6 +2065,7 @@ export const messages = {
       set_manager_rules: "Règles Manager modifiées",
       set_performances: "Feuille de résultats saisie",
       run_manager_scoring: "Points Manager calculés",
+      lock_event: "Épreuve verrouillée par le résultat",
     },
     noEvent: "Épreuve supprimée",
     size: (
@@ -2080,32 +2084,35 @@ export const messages = {
         | "moderate_club"
         | "set_manager_rules"
         | "set_performances"
-        | "run_manager_scoring",
+        | "run_manager_scoring"
+        | "lock_event",
       n: number,
     ) =>
-      kind === "set_rule" || kind === "set_manager_rules"
-        ? "barème"
-        : kind === "moderate_league"
-          ? "ligue publique"
-          : kind === "moderate_player"
-            ? "compte joueur"
-            : kind === "create_discipline"
-              ? "discipline"
-              : kind === "moderate_club"
-                ? "club"
-                : kind === "set_tolerance"
-                  ? "barème"
-                  : kind === "edit_athlete"
-                    ? "fiche athlète"
-                    : kind === "edit_competition"
-                      ? "compétition"
-                      : kind === "set_odds"
-                        ? `${n} cotes`
-                        : kind === "run_scoring" || kind === "run_manager_scoring"
-                          ? playersCount(n)
-                          : kind === "set_results"
-                            ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
-                            : athletesCount(n),
+      kind === "lock_event"
+        ? "verrou avancé"
+        : kind === "set_rule" || kind === "set_manager_rules"
+          ? "barème"
+          : kind === "moderate_league"
+            ? "ligue publique"
+            : kind === "moderate_player"
+              ? "compte joueur"
+              : kind === "create_discipline"
+                ? "discipline"
+                : kind === "moderate_club"
+                  ? "club"
+                  : kind === "set_tolerance"
+                    ? "barème"
+                    : kind === "edit_athlete"
+                      ? "fiche athlète"
+                      : kind === "edit_competition"
+                        ? "compétition"
+                        : kind === "set_odds"
+                          ? `${n} cotes`
+                          : kind === "run_scoring" || kind === "run_manager_scoring"
+                            ? playersCount(n)
+                            : kind === "set_results"
+                              ? `${n} ${n <= 1 ? "ligne" : "lignes"}`
+                              : athletesCount(n),
     by: (pseudo: string | null) => (pseudo ? `par ${pseudo}` : "par un compte supprimé"),
   },
   import: {

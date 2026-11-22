@@ -11,6 +11,7 @@ import { createPublicSupabaseClient, createSupabaseEventReader } from "@/infra";
 import { messages } from "../../../messages.fr";
 import { AdminBand } from "../../competitions/admin-shell";
 import { adminOnly } from "../../guard";
+import { LockWarning } from "../lock-warning";
 import { sheetPorts } from "../sheet-ports";
 import { PerformanceForm, type PerformanceRow } from "./performance-form";
 
@@ -100,17 +101,22 @@ export default async function PerformancesPage({ params }: { params: Promise<{ s
               message={messages.errors.PERFORMANCES_UNAVAILABLE}
             />
           </div>
-        ) : eventPhase(new Date(), loaded.event.lockAt) !== "locked" ? (
-          <p className="mx-4 rounded-card bg-muted p-4">{messages.errors.EVENT_NOT_LOCKED}</p>
         ) : (
-          <PerformanceForm
-            eventId={loaded.event.id}
-            slug={slug}
-            manager={loaded.sheet.manager}
-            unit={loaded.event.markUnit ?? "time"}
-            family={loaded.event.markFamily}
-            initial={rows}
-          />
+          <>
+            {eventPhase(new Date(), loaded.event.lockAt) !== "locked" && (
+              <div className="px-4">
+                <LockWarning />
+              </div>
+            )}
+            <PerformanceForm
+              eventId={loaded.event.id}
+              slug={slug}
+              manager={loaded.sheet.manager}
+              unit={loaded.event.markUnit ?? "time"}
+              family={loaded.event.markFamily}
+              initial={rows}
+            />
+          </>
         )}
       </div>
     </main>
