@@ -99,7 +99,7 @@ export default async function Home() {
     );
   }
 
-  const { clubNotices, completeProfile, funFacts, ...home } = player;
+  const { clubNotices, completeProfile, funFacts, trend, ...home } = player;
   return (
     <main id="main" className="flex flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6 lg:max-w-5xl">
@@ -110,7 +110,13 @@ export default async function Home() {
           {...stepPoints(scale)}
           {...home}
           community={
-            <CommunityBlock community={community} now={now} vote={votePollAction} compact />
+            <CommunityBlock
+              community={community}
+              now={now}
+              vote={votePollAction}
+              trend={trend}
+              compact
+            />
           }
           episode={latestEpisode(community?.announcements ?? [])}
           funFact={<FunFactCard facts={funFacts} />}

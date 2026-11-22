@@ -1,3 +1,4 @@
+import type { CommunityTrend } from "@/application/community-trend";
 import type { Announcement, Poll } from "@/domain/community";
 import type { ChallengeMoment } from "@/domain/frenchtrack";
 
@@ -43,4 +44,20 @@ export const challenge: ChallengeMoment = {
   happenedAt: "2026-11-14T21:00:00.000Z",
   beaten: { count: 42, percent: 42 },
   verdict: "won",
+};
+
+/** The prediction trend of the last locked event, before its result (#1080). */
+export const trend: CommunityTrend = {
+  slug: "meeting-de-paris-100m-f",
+  discipline: "100 m",
+  gender: "F",
+  total: 128,
+  favourite: { athleteId: "a1", name: "Alpha Bravo", percent: 62 },
+  result: null,
+};
+
+/** The same trend once the result is in. */
+export const trendWithResult: CommunityTrend = {
+  ...trend,
+  result: { favouriteWon: true, perfectPercent: 8 },
 };

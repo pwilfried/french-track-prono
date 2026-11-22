@@ -1,4 +1,5 @@
 import { getClubNotices, type ClubNotice } from "@/application/club-notices";
+import { getCommunityTrend, type CommunityTrend } from "@/application/community-trend";
 import { UseCaseError } from "@/application/errors";
 import { getHomeChallenge } from "@/application/frenchtrack";
 import { getFunFacts } from "@/application/fun-facts";
@@ -17,6 +18,7 @@ import type { FunFact } from "@/domain/fun-facts";
 import { leagueStanding, nextAction } from "@/domain/home";
 import {
   createSupabaseClubNoticeRepository,
+  createSupabaseConsensusRepository,
   createSupabaseFrenchTrackRepository,
   createSupabaseFunFactRepository,
   createSupabaseLeagueRepository,
@@ -52,6 +54,8 @@ export type PlayerHome = Omit<
    * « Plus tard » hides it; the card stays mounted so its confirmation survives the save (#889).
    */
   completeProfile: { ask: boolean; firstPodium: boolean; bib: Bib; pseudo: string };
+  /** « La communauté » (#1080): the trend of the last locked final; null without one. */
+  trend: CommunityTrend | null;
 };
 
 async function safely<T>(load: () => Promise<T>): Promise<T | null> {
@@ -91,6 +95,7 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
     askProfile,
     scale,
     challenge,
+    trend,
   ] = await Promise.all([
     safely(() =>
       listEvents({ events: publicEventReader() }).execute({
@@ -146,6 +151,12 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
         now,
       }),
     ),
+    safely(() =>
+      getCommunityTrend({
+        events: publicEventReader(),
+        consensus: createSupabaseConsensusRepository(client),
+      }).execute({ competitionSlug: competition.slug, now }),
+    ),
   ]);
 
   const day = competitionDay(now.toISOString());
@@ -173,6 +184,7 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
   return {
     clubNotices: clubNotices ?? [],
     funFacts: funFacts ?? [],
+    trend,
     pseudo: profile.pseudo,
     // When it cannot be read, the steps stay hidden rather than shown to a seasoned player.
     isNew: predictionCount === 0,
