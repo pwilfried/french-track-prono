@@ -5,7 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 /**
  * End-to-end tests: the Next.js build against a local Supabase (see docs/SETUP.md), or a deployed
- * site when E2E_BASE_URL is set (pre-production, after each deploy and every morning: #695, #636):
+ * site when E2E_BASE_URL is set (pre-production, once per version before the tag: #695, #743):
  * no local server then, and SQL and sign-in codes go through the pre-production APIs (onPreprod).
  * The global teardown deletes what the run made (e2e/teardown.ts).
  * No retry: a failing test is fixed or removed, never run again until it passes.

@@ -52,8 +52,9 @@ Pourquoi : chaque lecture coûte sur la limite hebdomadaire du plan Claude (#101
    préprod (https://french-track-preprod.vercel.app), quelle que soit la version, correctifs
    `vX.Y.Z` compris : migrations sur la base de préprod, jeu de démo, puis déploiement et test de
    fumée (`preprod.yml`, `docs/SETUP.md`, « Préproduction »). La suite e2e complète ne tourne pas
-   à chaque fusion : une fois par version avant le tag, et chaque matin (décision du propriétaire
-   du 15 nov. 2026, #743 : elle épuisait la base gratuite de préprod).
+   à chaque fusion : une fois par version, avant le tag (décision du propriétaire du 15 nov. 2026,
+   #743 : elle épuisait la base gratuite de préprod). Plus de passage quotidien (décision du
+   propriétaire du 22 nov. 2026).
 5. Quand toutes les issues d'un milestone sont fermées (`refactor-check` et `docs-check` comprises)
    et que `main` est vert, `agents-merge` pose le tag `vX.Y.0` (décision du propriétaire du
    11 nov. 2026), ou `vX.Y.Z` pour un milestone correctif `vX.Y.Z …` (décision du 12 nov. 2026).
@@ -144,7 +145,9 @@ Français seul en v1. Tous les textes visibles sont dans un seul fichier de mess
 Sur chaque PR (runners GitHub, pas de machine dédiée) : formatage, lint, types, règle d'import
 des couches, tests Vitest, tests pgTAP (Supabase local), build, puis Storybook (tests des
 play functions dans Chromium et build). Le job base de données lance aussi les tests Playwright
-de bout en bout (`e2e/`) sur le build, contre Supabase local, sans relance automatique. Une PR
+de bout en bout (`e2e/`) sur le build, contre Supabase local, sans relance automatique, seulement
+quand la PR (ou le push sur `main`) touche l'app, la base ou les tests (`src/`, `supabase/`, `e2e/`,
+`public/`, dépendances, config : `ci/e2e-scope.sh`, décision du propriétaire du 22 nov. 2026). Une PR
 n'est mergeable que si tout est vert, tests de bout en bout compris. Un test instable est corrigé
 ou supprimé dans la semaine, jamais relancé automatiquement.
 
@@ -236,7 +239,7 @@ Les agents suivent ce tableau sans qu'on le leur demande.
 | Bug | Un test qui le reproduit **au plus bas niveau possible**, écrit avant le correctif | selon la couche |
 | Invariants | Property tests : un score est toujours entre 0 et 28 ; l'ordre d'arrivée des pronos ne change pas le classement ; relancer le calcul ne change rien | Vitest + fast-check |
 | Sorties texte | Snapshots, seulement pour des textes générés qui doivent rester stables | Vitest |
-| Parcours principal | Tests de bout en bout dans `e2e/` : inscription → prono → résultat saisi → points, et deux amis dans une ligue → même classement. Lancés sur chaque PR ; toute PR qui change un parcours les complète | Playwright |
+| Parcours principal | Tests de bout en bout dans `e2e/` : inscription → prono → résultat saisi → points, et deux amis dans une ligue → même classement. Lancés sur chaque PR qui touche l'app ou la base ; toute PR qui change un parcours les complète | Playwright |
 
 Règles complémentaires :
 

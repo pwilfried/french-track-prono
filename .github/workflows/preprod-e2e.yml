@@ -1,8 +1,8 @@
 name: Pre-production e2e
 
 # The e2e suite against https://french-track-preprod.vercel.app on the demo set (#695), in one
-# place (#743): called by preprod.yml (once per version, before the tag) and preprod-daily.yml
-# (every morning). A failing test opens a `bug` issue that mentions the owner, a green pass again
+# place (#743): called by preprod.yml once per version, before the tag (no daily run since
+# 22 Nov 2026, owner's decision). A failing test opens a `bug` issue that mentions the owner, a green pass again
 # says so (ci/preprod/regression-report.sh). No retry (AGENTS.md). The e2e-… accounts of the pass
 # are deleted, failed or not. No concurrency block here: the callers hold the `preprod` group.
 
