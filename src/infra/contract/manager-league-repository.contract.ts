@@ -183,6 +183,7 @@ export function managerLeagueRepositoryContract(
         target: 4,
         startsAt: null,
         openedAt: null,
+        closedAt: null,
         roundMode: "auto",
       });
 
@@ -198,6 +199,7 @@ export function managerLeagueRepositoryContract(
         target: 4,
         startsAt: "2027-01-10T19:00:00.000Z",
         openedAt: null,
+        closedAt: null,
         roundMode: "custom",
       });
       expect(set?.rules.rounds).toEqual({ firstHours: 48, longRounds: 1, nextHours: 12 });

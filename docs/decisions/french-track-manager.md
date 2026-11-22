@@ -133,6 +133,10 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   athlète, offres de la plus haute à la plus basse, la gagnante en doré). Un tour sans offre n'a
   pas de révélation. Le résumé de chaque tour reste consultable depuis le catalogue
   (« Résultats des tours », `?vue=toutes`). Règles pures : `src/domain/manager-reveal.ts`.
+  Une fois le mercato clos (`mercato_closed_at`), la ligue mène à « Revoir le mercato »
+  (`/manager/<id>/mercato?tour=<n>`, #1089) : un sélecteur des tours clos avec des offres, et
+  pour le tour choisi (le premier par défaut) chaque athlète disputé avec toutes ses offres et le
+  gagnant ; les athlètes sans offre n'y sont pas. Rien de plus n'est lisible pendant le mercato.
 - **Tours** : en durée « automatique », celle des règles French Track (au départ 48 h pour les
   tours 1 et 2, 24 h ensuite) ; en durée « personnalisée », celle choisie par le créateur (#619).
 - Clôture des tours (#423) : les tours s'enchaînent depuis `mercato_opened_at`, durées prises dans
