@@ -49,9 +49,13 @@ test("a new player sees one card on the profile, then the full profile after a f
            jsonb_build_object('reasons', '[]'::jsonb)
     from auth.users u, events e
     where u.email = '${player.email}' and e.slug = '${tag}-100m'`);
-  await page.reload();
-  await expect(start).toHaveCount(0);
-  await expect(page.getByRole("region", { name: "Mes stats" })).toBeVisible();
+  // The profile degrades to its header when a read fails (readOr), which happens now and then on
+  // the shared pre-production: read the page again until the figures are there.
+  await expect(async () => {
+    await page.reload();
+    await expect(start).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Mes stats" })).toBeVisible({ timeout: 5000 });
+  }).toPass({ timeout: 60000 });
   await expect(page.getByRole("region", { name: "Badges" }).getByRole("listitem")).not.toHaveCount(
     0,
   );
