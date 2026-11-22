@@ -7,6 +7,7 @@ import { getEvent } from "@/application/get-event";
 import { getEventOdds } from "@/application/set-event-odds";
 import { listMyLeagues, type League } from "@/application/leagues";
 import { findMyJokerElsewhere } from "@/application/list-my-predictions";
+import { listPredictionLeagues, type PredictionLeague } from "@/application/prediction-leagues";
 import { getMyPrediction, type Prediction } from "@/application/save-prediction";
 import { Animal } from "@/components/band/animal";
 import { CountryFlag } from "@/components/athletes/country-flag";
@@ -15,6 +16,7 @@ import { LockBanner } from "@/components/countdown/lock-banner";
 import { ErrorNotice } from "@/components/error-notice";
 import { REVEAL_ANCHOR } from "@/components/community/trend-card";
 import { AddToMyLeagueForm } from "@/components/leagues/league-forms";
+import { PredictionLeaguesBlock } from "@/components/leagues/prediction-leagues";
 import { PodiumMedals } from "@/components/podium/podium-medals";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
 import { animalOrHare } from "@/domain/band";
@@ -31,6 +33,7 @@ import {
   createPublicSupabaseClient,
   createSupabaseLeagueRepository,
   createSupabaseOddsRepository,
+  createSupabasePredictionLeagueRepository,
   createSupabasePredictionRepository,
   type CurrentUser,
 } from "@/infra";
@@ -39,12 +42,13 @@ import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
 import { loadScale } from "../../scale";
 import { getCurrentUser, getSessionClient } from "../../session";
+import { savePredictionLeaguesAction } from "./actions";
 import { ChallengeSection } from "./challenge-section";
 import { ForgetPodium } from "./forget-podium";
 import { PredictionForm, type JokerSpot } from "./prediction-form";
 import { ResultSection } from "./result-section";
 import { RevealHidden, RevealSection } from "./reveal-section";
-import { publicEventReader } from "../../public-data";
+import { publicEventReader, publicRanking } from "../../public-data";
 
 async function loadEvent(slug: string): Promise<EventDetail | "error"> {
   try {
@@ -138,6 +142,41 @@ async function loadMyLeagues(): Promise<League[] | "error"> {
 }
 
 /**
+ * The player's leagues counting the competition, with whether the podium counts there (#1068);
+ * null when they cannot be read: the podium still counts in the general ranking.
+ */
+async function loadPredictionLeagues(
+  userId: string,
+  competitionSlug: string,
+  eventId: string,
+  hasPrediction: boolean,
+): Promise<PredictionLeague[] | null> {
+  try {
+    const client = await getSessionClient();
+    return await listPredictionLeagues({
+      leagues: createSupabaseLeagueRepository(client),
+      predictionLeagues: createSupabasePredictionLeagueRepository(client),
+      ranking: publicRanking(),
+    }).execute({ userId, competitionSlug, eventId, hasPrediction });
+  } catch (error) {
+    if (error instanceof UseCaseError) return null;
+    throw error;
+  }
+}
+
+/** « samedi 23 novembre à 19:00 », Paris time: the start of the event, its lock. */
+const parisDateTime = new Intl.DateTimeFormat("fr-FR", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: TIME_ZONE,
+});
+/** Until when the leagues of a podium change (#1068). */
+const lockLabel = (lockAt: string) => parisDateTime.format(new Date(lockAt));
+
+/**
  * A suggestion under the podium for a player in no league of the competition (#375): create a
  * private or public one, join a public one, or add the competition to a league he created.
  * Predicting never waits for it.
@@ -200,6 +239,7 @@ async function PredictionSection({
   leagues,
   mine,
   jokerElsewhere: jokerElsewhereRead,
+  predictionLeagues,
 }: {
   event: EventDetail;
   slug: string;
@@ -214,6 +254,8 @@ async function PredictionSection({
   mine: Prediction | null | "error";
   /** Where the joker is played when on another event, read with the prediction. */
   jokerElsewhere: JokerSpot | null;
+  /** The player's leagues counting the competition (#1068); null when unreadable. */
+  predictionLeagues: PredictionLeague[] | null;
 }) {
   const back = `/epreuves/${slug}`;
 
@@ -283,6 +325,13 @@ async function PredictionSection({
           tolerance={event.tolerance}
           scale={scale}
           jokerElsewhere={jokerElsewhere}
+          leagues={
+            predictionLeagues && {
+              list: predictionLeagues,
+              lockLabel: lockLabel(event.lockAt),
+              save: savePredictionLeaguesAction.bind(null, slug, event.id),
+            }
+          }
         />
         {suggestion}
       </div>
@@ -315,6 +364,13 @@ async function PredictionSection({
         <p className="mx-4 rounded-2xl bg-secondary/20 px-3.5 py-3 font-extrabold">
           {messages.prediction.jokerUsedHere}
         </p>
+      )}
+      {predictionLeagues && predictionLeagues.length > 0 && (
+        <PredictionLeaguesBlock
+          leagues={predictionLeagues}
+          locked
+          lockLabel={lockLabel(event.lockAt)}
+        />
       )}
     </div>
   );
@@ -360,15 +416,13 @@ export default async function EventPage({
       ? loadJokerElsewhere(user.userId, competition.slug, event.id)
       : null,
   ]);
+  // Where the podium counts (#1068): offered while open, told once locked.
+  const predictionLeagues =
+    user && readsPrediction && !winner && mine !== "error" && (open || mine)
+      ? await loadPredictionLeagues(user.userId, competition.slug, event.id, !!mine)
+      : null;
   const showStartList = !(user && open);
-  const when = new Intl.DateTimeFormat("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: TIME_ZONE,
-  }).format(new Date(event.startsAt));
+  const when = parisDateTime.format(new Date(event.startsAt));
   const markOf = new Map(event.results.map((result) => [result.athleteId, result.mark]));
   const startList = sortStartList(event.entries, event.markUnit);
   const bySeasonBest = !!event.markUnit && startList.some((entry) => entry.seasonBest);
@@ -510,6 +564,7 @@ export default async function EventPage({
                 leagues={leagues}
                 mine={mine}
                 jokerElsewhere={jokerElsewhere}
+                predictionLeagues={predictionLeagues}
               />
             )}
           </section>

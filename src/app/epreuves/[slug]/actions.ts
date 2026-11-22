@@ -4,10 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { UseCaseError, type ErrorCode } from "@/application/errors";
+import { savePredictionLeagues } from "@/application/prediction-leagues";
 import { savePrediction } from "@/application/save-prediction";
 import { DISCIPLINE_FAMILIES } from "@/domain/discipline";
 import type { PodiumDraft } from "@/domain/podium-draft";
-import { createSupabasePredictionRepository } from "@/infra";
+import {
+  createSupabasePredictionLeagueRepository,
+  createSupabasePredictionRepository,
+} from "@/infra";
 
 import { formText } from "../../form-data";
 import { getCurrentUser, getSessionClient } from "../../session";
@@ -70,4 +74,27 @@ export async function savePredictionAction(
   }
   revalidatePath("/competitions");
   return { ...state, saved: true };
+}
+
+/**
+ * Sets the leagues the player's prediction of the event counts in (#1068), from the sheet after a
+ * save or the switches of the event page. The page and the leagues are read again.
+ */
+export async function savePredictionLeaguesAction(
+  slug: string,
+  eventId: string,
+  leagueIds: string[],
+): Promise<{ error?: ErrorCode }> {
+  const user = await getCurrentUser();
+  if (!user) redirect(`/connexion?next=${encodeURIComponent(`/epreuves/${slug}`)}`);
+  try {
+    await savePredictionLeagues({
+      predictionLeagues: createSupabasePredictionLeagueRepository(await getSessionClient()),
+    }).execute({ eventId, leagueIds });
+  } catch (error) {
+    if (error instanceof UseCaseError) return { error: error.code };
+    throw error;
+  }
+  revalidatePath(`/epreuves/${slug}`);
+  return {};
 }

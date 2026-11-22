@@ -347,6 +347,69 @@ describe("a league counts only the predictions made as a member (#376)", () => {
   });
 });
 
+describe("a league counts only the predictions its players added to it (#1068)", () => {
+  it("counts a prediction in the league it was added to and not in the other one", async () => {
+    // given Ana's 100 m and 200 m, the 100 m added to « Amis » only, Bob's 100 m added to both
+    const lines = [
+      line("ana", 10, false, "100m"),
+      line("ana", 4, false, "200m"),
+      line("bob", 6, false, "100m"),
+    ];
+    const amis = [
+      { ...member("ana"), countedEvents: ["100m"] },
+      { ...member("bob"), countedEvents: ["100m"] },
+    ];
+    const club = [
+      { ...member("ana"), countedEvents: [] },
+      { ...member("bob"), countedEvents: ["100m"] },
+    ];
+    const rows = (members: LeagueMember[]) =>
+      getLeagueRanking({ ranking: ranking(lines), leagues: leagues(members) })
+        .execute({ leagueId: "l", competitionSlugs: ["c"] })
+        .then((result) => result.map((r) => [r.pseudo, r.points]));
+    // when each league ranking is read
+    // then Ana's 100 m counts in « Amis » only, her 200 m nowhere, Bob's 100 m in both
+    expect(await rows(amis)).toEqual([
+      ["ANA", 10],
+      ["BOB", 6],
+    ]);
+    expect(await rows(club)).toEqual([
+      ["BOB", 6],
+      ["ANA", 0],
+    ]);
+  });
+
+  it("still counts every prediction in the general ranking", async () => {
+    const lines = [line("ana", 10, false, "100m"), line("ana", 4, false, "200m")];
+    const result = await getGeneralRanking({ ranking: ranking(lines) }).execute({
+      competitionSlugs: ["c"],
+    });
+    expect(result.map((r) => [r.pseudo, r.points])).toEqual([["ANA", 14]]);
+  });
+
+  it("never gives a league more points than the general ranking", async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(fc.record({ event: fc.constantFrom("a", "b", "c"), points: fc.nat(28) }), {
+          maxLength: 6,
+        }),
+        fc.subarray(["a", "b", "c"]),
+        async (scored, added) => {
+          const lines = scored.map((s) => line("ana", s.points, false, s.event));
+          const general = await getGeneralRanking({ ranking: ranking(lines) }).execute({
+            competitionSlugs: ["c"],
+          });
+          const league = await getLeagueRanking({
+            ranking: ranking(lines),
+            leagues: leagues([{ ...member("ana"), countedEvents: added }]),
+          }).execute({ leagueId: "l", competitionSlugs: ["c"] });
+          expect(league[0]!.points).toBeLessThanOrEqual(general[0]?.points ?? 0);
+        },
+      ),
+    );
+  });
+});
+
 describe("a league counts only the events locked after its competition entered it (#614)", () => {
   const at = (iso: string, l: RankingLine): RankingLine => ({ ...l, eventLockAt: iso });
 

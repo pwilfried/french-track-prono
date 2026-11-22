@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
 import { comingCompetition, deleteCompetition } from "./competitions";
-import { newPlayer, signUp } from "./players";
+import { countInLeagues, newPlayer, signUp } from "./players";
 
 test("two friends in the same league see the same ranking", async ({ browser }) => {
   const anna = newPlayer("anna");
@@ -46,6 +46,8 @@ test("two friends in the same league see the same ranking", async ({ browser }) 
       from auth.users u, events e
       where u.email = '${email}' and e.slug = '${competition}-100m'`);
   }
+  // Both added their podium to the league (#1068).
+  countInLeagues(competition);
 
   // Both see the same ranking: Anna first, Bob second.
   await annaPage.goto(leagueUrl);

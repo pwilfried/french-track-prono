@@ -100,3 +100,30 @@ export function joinLeagueFor(email: string, competitionSlug: string) {
     insert into league_competitions (league_id, competition_id)
     select l.id, c.id from l, competitions c where c.slug = '${competitionSlug}'`);
 }
+
+/**
+ * Adds the scored predictions of a competition to the leagues of their players that count it
+ * (SQL), as each player would from the sheet after a save (#1068): only then do they count in
+ * a league. `competitionSlug` may hold `%` (SQL like).
+ */
+export function countInLeagues(competitionSlug: string) {
+  sql(`insert into league_predictions (league_id, user_id, event_id)
+    select lm.league_id, s.user_id, s.event_id
+    from score_events s
+    join competitions c on c.id = s.competition_id and c.slug like '${competitionSlug}'
+    join league_members lm on lm.user_id = s.user_id
+    join league_competitions lc on lc.league_id = lm.league_id
+                               and lc.competition_id = s.competition_id
+    where s.event_id is not null
+    on conflict do nothing`);
+}
+
+/**
+ * Closes « Ajouter ce prono à mes ligues » with « Plus tard » (#1068): a player in a league of
+ * the competition sees it after a save; the podium still counts in the general ranking.
+ */
+export async function skipLeagueSheet(page: Page) {
+  const sheet = page.getByRole("dialog", { name: "Ajouter ce prono à mes ligues" });
+  await sheet.getByRole("button", { name: "Plus tard" }).click();
+  await sheet.waitFor({ state: "hidden" });
+}

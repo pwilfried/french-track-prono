@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
-import { joinLeagueFor, newPlayer, signUp } from "./players";
+import { joinLeagueFor, newPlayer, signUp, skipLeagueSheet } from "./players";
 
 test("a player cannot see a podium before the lock, unfolds it after and reacts to it", async ({
   browser,
@@ -28,6 +28,7 @@ test("a player cannot see a podium before the lock, unfolds it after and reacts 
   const athletes = annaPage.locator("li > button[aria-pressed]");
   for (const index of [0, 1, 2]) await athletes.nth(index).click();
   await annaPage.getByRole("button", { name: "Enregistrer mon podium" }).click();
+  await skipLeagueSheet(annaPage);
   await expect(annaPage.getByRole("status")).toContainText("Podium enregistré");
   // Before the lock, no consensus: nothing may influence a prediction (#680).
   await expect(
@@ -44,6 +45,12 @@ test("a player cannot see a podium before the lock, unfolds it after and reacts 
   await expect(bobPage.getByText(anna.pseudo)).toHaveCount(0);
   // Bob has a league of his own, without Anna: her podium will be folded (#949).
   joinLeagueFor(bob.email, "ultimate-championship-2026");
+
+  // Anna adds her podium to her league (#1068): the reveal opens on it, her reactions show there.
+  sql(`insert into league_predictions (league_id, user_id, event_id)
+    select lm.league_id, lm.user_id, e.id
+    from league_members lm, auth.users u, events e
+    where lm.user_id = u.id and u.email = '${anna.email}' and e.slug = '${slug}'`);
 
   // After the lock, he sees it.
   sql(`update events set lock_at = now() - interval '1 second' where slug = '${slug}'`);

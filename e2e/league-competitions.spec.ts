@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { sql } from "../src/infra/contract/database";
 import { comingCompetition, deleteCompetition } from "./competitions";
-import { addFriendTo, newPlayer, signUp } from "./players";
+import { addFriendTo, countInLeagues, newPlayer, signUp } from "./players";
 
 test("a player picks two French competitions in the season picker and his league adds up both", async ({
   page,
@@ -62,6 +62,8 @@ test("a player picks two French competitions in the season picker and his league
       from auth.users u, events e
       where u.email = '${player.email}' and e.slug = '${tag}-${i}-100m'`);
   }
+  // The player added their podiums to the league (#1068).
+  countInLeagues(`${tag}-%`);
 
   // The ranking shows once a friend is in the league (alone, the player is asked to invite).
   const friend = addFriendTo(leagueUrl, tag);
@@ -125,6 +127,8 @@ test("a league needs a competition; on one under way, only the events locked aft
   // Members as if they joined long ago: only the entry of the competition leaves an event out.
   sql(`update league_members set joined_at = now() - interval '3 days'
        where league_id = '${leagueUrl.split("/").pop()}'`);
+  // Both podiums added to the league (#1068): the entry of the competition still leaves one out.
+  countInLeagues(tag);
   await page.goto(leagueUrl);
   const rows = page.getByRole("list", { name: "Classement" }).getByRole("listitem");
   await expect(rows).toHaveCount(2);
@@ -143,6 +147,7 @@ test("a league needs a competition; on one under way, only the events locked aft
     "Compétition ajoutée",
   );
   score(`${coming}-100m`, 7);
+  countInLeagues(coming);
   await page.reload();
   await expect(rows.first()).toContainText("11 points");
 
