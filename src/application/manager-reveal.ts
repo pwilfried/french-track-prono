@@ -222,3 +222,22 @@ export function markManagerRoundRevealed(ports: { reveals: ManagerRevealReposito
     },
   };
 }
+
+/**
+ * The player leaves the reveal of a round (#1120): the round is marked seen first, so the mercato
+ * does not open it again, then the player goes back to the mercato, or to their team once the
+ * mercato is closed.
+ */
+export function leaveManagerRoundReveal(ports: {
+  reveals: ManagerRevealRepository;
+  bids: Pick<ManagerBidRepository, "mine">;
+}) {
+  return {
+    async execute(input: { leagueId: string; round: number }): Promise<"mercato" | "team"> {
+      await markManagerRoundRevealed(ports).execute(input);
+      const mine = await ports.bids.mine(input.leagueId);
+      if (mine === "not_member") throw new UseCaseError("LEAGUE_NOT_FOUND");
+      return mine.mercatoClosed ? "team" : "mercato";
+    },
+  };
+}
