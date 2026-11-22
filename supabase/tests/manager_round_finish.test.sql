@@ -80,6 +80,11 @@ set local role authenticated;
 select pg_temp.as_player(1);
 select throws_ok($$select finish_manager_round('f1d00000-0000-0000-0000-0000000000f2')$$,
   'FT020', null, 'nobody finishes a round whose time is over: the job closes it');
+-- Back to not open, so the job run below only sees the rounds of f1.
+reset role;
+update manager_leagues set mercato_opened_at = null
+where id = 'f1d00000-0000-0000-0000-0000000000f2';
+set local role authenticated;
 
 -- A player marks themselves only, through the function.
 select throws_ok($$insert into manager_round_done (league_id, round, user_id)
