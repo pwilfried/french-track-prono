@@ -11,7 +11,12 @@ import {
   type AthleteAdminRepository,
 } from "./edit-athlete";
 import { UseCaseError } from "./errors";
-import { athletePriceSuggestion, getAthleteFile, listAthletes } from "./list-athletes";
+import {
+  applySuggestedPrices,
+  athletePriceSuggestion,
+  getAthleteFile,
+  listAthletes,
+} from "./list-athletes";
 import { setAthleteRecord } from "./set-athlete-record";
 
 function repository(isAdmin = true) {
@@ -344,5 +349,71 @@ describe("athletePriceSuggestion", () => {
     expect(
       athletePriceSuggestion({ file, disciplines: [], pricing, today: "2026-11-16" }),
     ).toBeNull();
+  });
+});
+
+describe("applySuggestedPrices", () => {
+  const pricing = {
+    grid: [
+      { minPoints: 1200, price: 20 },
+      { minPoints: 0, price: 2 },
+    ],
+    oldMarkPenalty: 0.05,
+    unfitFactor: 0.5,
+    rarelyFactor: 0.6,
+  };
+  const hundred: Discipline = { ...sprint, name: "100 m" };
+
+  function catalogue(isAdmin = true) {
+    const { athletes, calls } = repository(isAdmin);
+    const withRecord = {
+      athleteId: "1",
+      slug: "a",
+      name: "Julien Alfred",
+      countryCode: "LCA",
+      gender: "F" as const,
+      disciplines: [{ discipline: "100 m", isPrimary: true }],
+      records: [
+        {
+          discipline: "100 m",
+          kind: "pr" as const,
+          mark: "10.70",
+          date: "2026-07-01",
+          meeting: null,
+        },
+      ],
+      managerPrice: 3,
+      condition: "fit" as const,
+      presence: "often" as const,
+    };
+    athletes.find = async (slug) =>
+      slug === "a" ? withRecord : { ...withRecord, athleteId: "2", slug: "b", records: [] };
+    return { athletes, calls };
+  }
+
+  it("overwrites existing prices and leaves an athlete without a suggestion unchanged", async () => {
+    const { athletes, calls } = catalogue();
+
+    const result = await applySuggestedPrices({ athletes }).execute({
+      disciplines: [hundred],
+      pricing,
+      today: "2026-11-16",
+    });
+
+    expect(result.updated).toBe(1);
+    expect(result.skipped).toEqual(["Sha'Carri Richardson"]);
+    expect(calls).toEqual([["setPrice", "1", expect.any(Number)]]);
+  });
+
+  it("refuses a non-admin", async () => {
+    const { athletes } = catalogue(false);
+
+    await expect(
+      applySuggestedPrices({ athletes }).execute({
+        disciplines: [hundred],
+        pricing,
+        today: "2026-11-16",
+      }),
+    ).rejects.toEqual(new UseCaseError("NOT_ADMIN"));
   });
 });

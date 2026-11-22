@@ -12,9 +12,16 @@ import {
   setAthletePrice,
 } from "@/application/edit-athlete";
 import { UseCaseError } from "@/application/errors";
+import { applySuggestedPrices } from "@/application/list-athletes";
+import { getManagerRules } from "@/application/manager-rules";
 import { setAthleteRecord } from "@/application/set-athlete-record";
-import { createSupabaseAthleteAdminRepository, createSupabaseDisciplineRepository } from "@/infra";
+import {
+  createSupabaseAthleteAdminRepository,
+  createSupabaseDisciplineRepository,
+  createSupabaseManagerRuleRepository,
+} from "@/infra";
 
+import { currentDay } from "../../competition";
 import { formText } from "../../form-data";
 import { publicDataChanged } from "../../public-data";
 import { adminOnly } from "../guard";
@@ -117,6 +124,27 @@ export async function createAthleteAction(data: FormData) {
       discipline: formText(data, "discipline"),
     });
     target = `/admin/athletes/${slug}?enregistre=1`;
+  } catch (error) {
+    if (!(error instanceof UseCaseError)) throw error;
+    target = `/admin/athletes?erreur=${error.code}`;
+  }
+  revalidatePath("/admin/athletes");
+  redirect(target);
+}
+
+/** Applies the suggested price to every athlete, then comes back to the list with the count. */
+export async function applySuggestedPricesAction() {
+  const { client } = await adminOnly();
+  let target: string;
+  try {
+    const [disciplines, rules] = await Promise.all([
+      listDisciplines({ disciplines: createSupabaseDisciplineRepository(client) }).execute(),
+      getManagerRules({ rules: createSupabaseManagerRuleRepository(client) }).execute(),
+    ]);
+    const { updated, skipped } = await applySuggestedPrices({
+      athletes: createSupabaseAthleteAdminRepository(client),
+    }).execute({ disciplines, pricing: rules.rules.pricing, today: currentDay() });
+    target = `/admin/athletes?prix=${updated}&sans=${encodeURIComponent(skipped.join("|").slice(0, 1500))}`;
   } catch (error) {
     if (!(error instanceof UseCaseError)) throw error;
     target = `/admin/athletes?erreur=${error.code}`;
