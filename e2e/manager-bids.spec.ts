@@ -148,13 +148,14 @@ test("a participant bids secretly within the budget, changes and withdraws a bid
     await expect(rivalBid).toContainText("30 cr.");
     await ownerPage.getByRole("link", { name: "Retour au mercato · tour suivant" }).click();
     await ownerPage.waitForURL(/\/catalogue$/);
-    await ownerPage.goto(catalogue + search);
+    await ownerPage.goto(catalogue + search + "&libres=0");
     await expect(ownerPage).toHaveURL(/\/catalogue\?/);
     await expect(ownerPage.getByRole("link", { name: "Tour 1" })).toBeVisible();
     await expect(budget.getByRole("list", { name: "Mes athlètes" })).toContainText(first);
     await expect(budget).toContainText("Dépensé35 cr.");
     await expect(budget).toContainText("Disponible65 cr.");
     await expect(budget).toContainText("Aucune offre pour l'instant.");
+    // The taken athletes only show once the "Disponibles" filter is off (#1087).
     await expect(firstCard).toContainText("Recruté");
     await expect(firstCard.getByRole("button", { name: "Enchérir" })).toHaveCount(0);
     await rivalPage.goto(catalogue + search);

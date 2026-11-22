@@ -19,7 +19,14 @@ const athlete = (name: string, sex: "F" | "M" = "F"): CatalogueAthlete => ({
   available: true,
 });
 
-const noFilter = { sex: null, family: null, availableOnly: false };
+const noFilter = {
+  sex: null,
+  family: null,
+  discipline: null,
+  availableOnly: false,
+  maxPrice: null,
+  onlyIds: null,
+};
 
 describe("browseManagerCatalogue", () => {
   it("shows the men of the catalogue by name, a page at a time", async () => {
@@ -32,6 +39,7 @@ describe("browseManagerCatalogue", () => {
       leagueId: "l1",
       query: "",
       filter: { ...noFilter, sex: "M" },
+      sort: "name" as const,
       page: 2,
     });
 
@@ -47,6 +55,7 @@ describe("browseManagerCatalogue", () => {
         leagueId: "l1",
         query: "",
         filter: noFilter,
+        sort: "name" as const,
         page: 1,
       }),
     ).rejects.toEqual(new UseCaseError("LEAGUE_NOT_FOUND"));
