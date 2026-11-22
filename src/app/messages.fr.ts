@@ -2275,7 +2275,6 @@ export const messages = {
     spyConfirm: "L'Espion se joue dès que tu l'actives : tu ne pourras plus le retirer.",
     spyTitle: (league: string) => `Tendance dans ${league}`,
     spyEmpty: "Personne d'autre dans la ligue n'a encore pronostiqué cette épreuve.",
-    spyPick: (name: string, percent: number) => `${name} · ${percent} %`,
     other: "Autre athlète",
     /** Back-office › Jokers. */
     adminTitle: "Jokers",
@@ -2626,6 +2625,7 @@ export const messages = {
       results: "Résultats",
       disciplines: "Disciplines",
       scale: "Barème",
+      jokers: "Jokers",
       manager: "Manager",
       leagues: "Ligues",
       players: "Joueurs",

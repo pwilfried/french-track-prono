@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { UseCaseError } from "@/application/errors";
 import { getEvent } from "@/application/get-event";
 import { getEventOdds } from "@/application/set-event-odds";
+import { getEventLeagueJokers, getSpyTrend } from "@/application/league-jokers";
 import { listMyLeagues, type League } from "@/application/leagues";
 import { listPredictionLeagues, type PredictionLeague } from "@/application/prediction-leagues";
 import { getMyPrediction, type Prediction } from "@/application/save-prediction";
@@ -15,6 +16,7 @@ import { LockBanner } from "@/components/countdown/lock-banner";
 import { ErrorNotice } from "@/components/error-notice";
 import { REVEAL_ANCHOR } from "@/components/community/trend-card";
 import { AddToMyLeagueForm } from "@/components/leagues/league-forms";
+import { EventLeagueJokers, type EventLeagueJokersView } from "@/components/leagues/league-jokers";
 import { PredictionLeaguesBlock } from "@/components/leagues/prediction-leagues";
 import { PodiumMedals } from "@/components/podium/podium-medals";
 import { PodiumPicker, type PickerAthlete } from "@/components/podium/podium-picker";
@@ -26,10 +28,11 @@ import { formatMark, tidyMark } from "@/domain/discipline";
 import { pickChoices } from "@/domain/odds";
 import { sortStartList } from "@/domain/start-list";
 import { canPredictRound } from "@/domain/rounds";
-import { draftFromPodium, emptyDraft } from "@/domain/podium-draft";
+import { draftFromPodium, emptyDraft, OTHER_ATHLETE } from "@/domain/podium-draft";
 import { athleteHref } from "@/domain/redirect";
 import {
   createPublicSupabaseClient,
+  createSupabaseConsensusRepository,
   createSupabaseLeagueJokerRepository,
   createSupabaseLeagueRepository,
   createSupabaseOddsRepository,
@@ -42,7 +45,7 @@ import { currentCompetition } from "../../competition";
 import { messages } from "../../messages.fr";
 import { loadScale } from "../../scale";
 import { getCurrentUser, getSessionClient } from "../../session";
-import { savePredictionLeaguesAction } from "./actions";
+import { playLeagueJokerAction, savePredictionLeaguesAction } from "./actions";
 import { ChallengeSection } from "./challenge-section";
 import { ForgetPodium } from "./forget-podium";
 import { PredictionForm } from "./prediction-form";
@@ -131,6 +134,56 @@ async function loadPredictionLeagues(
     }).execute({ userId, competitionSlug, eventId, hasPrediction });
   } catch (error) {
     if (error instanceof UseCaseError) return null;
+    throw error;
+  }
+}
+
+/**
+ * My jokers of the open event in each league counting it (#1090), with the trend of a spy played
+ * there; empty when they cannot be read: the podium still saves.
+ */
+async function loadEventJokers(
+  userId: string,
+  eventId: string,
+  leagues: PredictionLeague[],
+  choices: PickerAthlete[],
+): Promise<EventLeagueJokersView[]> {
+  try {
+    const client = await getSessionClient();
+    const found = await getEventLeagueJokers({
+      jokers: createSupabaseLeagueJokerRepository(client),
+    }).execute({ userId, leagueIds: leagues.map((l) => l.id), event: { id: eventId, open: true } });
+    const nameOf = (id: string) =>
+      id === OTHER_ATHLETE
+        ? messages.leagueJokers.other
+        : (choices.find((c) => c.athleteId === id)?.name ?? messages.leagueJokers.other);
+    return await Promise.all(
+      found.map(async ({ leagueId, hand }) => {
+        const league = leagues.find((l) => l.id === leagueId)!;
+        const trend =
+          hand.onEvent === "spy"
+            ? await getSpyTrend({ consensus: createSupabaseConsensusRepository(client) }).execute({
+                leagueId,
+                eventId,
+              })
+            : null;
+        return {
+          leagueId,
+          name: league.name,
+          counted: league.counted,
+          hand,
+          spy: trend && {
+            total: trend.total,
+            places: (["first", "second", "third"] as const).flatMap((place) => {
+              const top = trend.places[place][0];
+              return top ? [{ name: nameOf(top.athleteId), percent: top.percent }] : [];
+            }),
+          },
+        };
+      }),
+    );
+  } catch (error) {
+    if (error instanceof UseCaseError) return [];
     throw error;
   }
 }
@@ -278,7 +331,12 @@ async function PredictionSection({
   };
 
   if (open) {
-    const scale = await loadScale();
+    const [scale, jokers] = await Promise.all([
+      loadScale(),
+      mine && predictionLeagues && predictionLeagues.length > 0
+        ? loadEventJokers(user.userId, event.id, predictionLeagues, choices)
+        : [],
+    ]);
     return (
       <div className="flex flex-col gap-5">
         <PredictionForm
@@ -297,6 +355,12 @@ async function PredictionSection({
               lockLabel: lockLabel(event.lockAt),
               save: savePredictionLeaguesAction.bind(null, slug, event.id),
             }
+          }
+          jokers={
+            <EventLeagueJokers
+              leagues={jokers}
+              play={playLeagueJokerAction.bind(null, slug, event.id)}
+            />
           }
         />
         {suggestion}

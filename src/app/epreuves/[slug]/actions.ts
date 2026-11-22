@@ -4,11 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { UseCaseError, type ErrorCode } from "@/application/errors";
+import { playLeagueJoker } from "@/application/league-jokers";
 import { savePredictionLeagues } from "@/application/prediction-leagues";
 import { savePrediction } from "@/application/save-prediction";
 import { DISCIPLINE_FAMILIES } from "@/domain/discipline";
+import { isPredictionJoker, type PredictionJoker } from "@/domain/league-jokers";
 import type { PodiumDraft } from "@/domain/podium-draft";
 import {
+  createSupabaseLeagueJokerRepository,
   createSupabasePredictionLeagueRepository,
   createSupabasePredictionRepository,
 } from "@/infra";
@@ -88,6 +91,31 @@ export async function savePredictionLeaguesAction(
     await savePredictionLeagues({
       predictionLeagues: createSupabasePredictionLeagueRepository(await getSessionClient()),
     }).execute({ eventId, leagueIds });
+  } catch (error) {
+    if (error instanceof UseCaseError) return { error: error.code };
+    throw error;
+  }
+  revalidatePath(`/epreuves/${slug}`);
+  return {};
+}
+
+/**
+ * Plays a league joker on the player's prediction of the event, or takes it back (`joker` null),
+ * from the « Jokers de ligue » block (#1090). The page is read again.
+ */
+export async function playLeagueJokerAction(
+  slug: string,
+  eventId: string,
+  leagueId: string,
+  joker: PredictionJoker | null,
+): Promise<{ error?: ErrorCode }> {
+  const user = await getCurrentUser();
+  if (!user) redirect(`/connexion?next=${encodeURIComponent(`/epreuves/${slug}`)}`);
+  if (joker !== null && !isPredictionJoker(joker)) return { error: "JOKER_NOT_AVAILABLE" };
+  try {
+    await playLeagueJoker({
+      jokers: createSupabaseLeagueJokerRepository(await getSessionClient()),
+    }).execute({ leagueId, eventId, joker });
   } catch (error) {
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
