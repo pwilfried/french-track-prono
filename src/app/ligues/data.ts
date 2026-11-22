@@ -5,6 +5,7 @@ import { listLeagueEvents } from "@/application/league-events";
 import { getLeaguePredict } from "@/application/league-predict";
 import type { LeagueFamily, LeagueFamilyRule } from "@/domain/league-families";
 import {
+  createSupabaseLeagueJokerRepository,
   createSupabaseLeagueMomentRepository,
   createSupabaseLeagueRepository,
   createSupabaseMomentReactionRepository,
@@ -25,6 +26,8 @@ export async function leaguePorts(back: string) {
     userId: user.userId,
     leagues: createSupabaseLeagueRepository(client),
     ranking: publicRanking(),
+    // The jokers played count in the league rankings (#1090).
+    jokers: createSupabaseLeagueJokerRepository(client),
     moments: createSupabaseLeagueMomentRepository(client),
     reactions: createSupabaseMomentReactionRepository(client),
   };

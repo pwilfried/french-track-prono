@@ -1,4 +1,5 @@
 import { UseCaseError } from "./errors";
+import type { LeagueJokerRepository } from "./league-jokers";
 import type { League, LeagueRepository } from "./leagues";
 import { getLeagueRanking, standingIn, type RankingLine, type RankingRepository } from "./rankings";
 
@@ -45,6 +46,8 @@ export function listPredictionLeagues(ports: {
   leagues: LeagueRepository;
   predictionLeagues: PredictionLeagueRepository;
   ranking: RankingRepository;
+  /** The jokers played count in each league's ranking (#1090). */
+  jokers?: Pick<LeagueJokerRepository, "plays">;
 }) {
   return {
     async execute(input: {
@@ -73,7 +76,11 @@ export function listPredictionLeagues(ports: {
       };
       return Promise.all(
         leagues.map(async (league): Promise<PredictionLeague> => {
-          const rows = await getLeagueRanking({ ranking, leagues: ports.leagues }).execute({
+          const rows = await getLeagueRanking({
+            ranking,
+            leagues: ports.leagues,
+            jokers: ports.jokers,
+          }).execute({
             leagueId: league.id,
             competitionSlugs: league.competitionSlugs,
             families: league.families,

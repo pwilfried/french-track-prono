@@ -30,6 +30,7 @@ import { draftFromPodium, emptyDraft } from "@/domain/podium-draft";
 import { athleteHref } from "@/domain/redirect";
 import {
   createPublicSupabaseClient,
+  createSupabaseLeagueJokerRepository,
   createSupabaseLeagueRepository,
   createSupabaseOddsRepository,
   createSupabasePredictionLeagueRepository,
@@ -126,6 +127,7 @@ async function loadPredictionLeagues(
       leagues: createSupabaseLeagueRepository(client),
       predictionLeagues: createSupabasePredictionLeagueRepository(client),
       ranking: publicRanking(),
+      jokers: createSupabaseLeagueJokerRepository(client),
     }).execute({ userId, competitionSlug, eventId, hasPrediction });
   } catch (error) {
     if (error instanceof UseCaseError) return null;
