@@ -60,19 +60,26 @@ test("the admin prices an athlete, who then shows in the catalogue of a Manager 
     // The search applies on Enter; each filter chip applies at once and keeps the others.
     await page.getByLabel("Rechercher un athlète").fill(`lanceuse ${tag}`);
     await page.getByLabel("Rechercher un athlète").press("Enter");
-    const filters = page.getByRole("navigation", { name: "Filtres du catalogue" });
-    await filters.getByRole("link", { name: "Lancers" }).click();
-    await expect(filters.getByRole("link", { name: "Lancers" })).toHaveAttribute(
+    const families = page.getByRole("navigation", { name: "Famille" });
+    const sexes = page.getByRole("navigation", { name: "Sexe" });
+    // The chip of a family says what the team still lacks in it (#1087).
+    await families.getByRole("link", { name: /^Lancers/ }).click();
+    await expect(families.getByRole("link", { name: /^Lancers/ })).toHaveAttribute(
       "aria-current",
       "page",
     );
-    await filters.getByRole("link", { name: "Femmes" }).click();
-    await expect(filters.getByRole("link", { name: "Femmes" })).toHaveAttribute(
+    await sexes.getByRole("link", { name: "F", exact: true }).click();
+    await expect(sexes.getByRole("link", { name: "F", exact: true })).toHaveAttribute(
       "aria-current",
       "page",
     );
-    await filters.getByRole("link", { name: "Libres" }).click();
-    await expect(page).toHaveURL(/q=lanceuse.*sexe=F&famille=throws&libres=1/);
+    // The available athletes show by default.
+    await expect(
+      page
+        .getByRole("navigation", { name: "Filtres du catalogue" })
+        .getByRole("link", { name: "Disponibles" }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(page).toHaveURL(/q=lanceuse.*sexe=F&famille=throws/);
     const card = page.getByRole("article", { name });
     await expect(card).toContainText("14 cr.");
     // A free athlete shows no status label since #503: only a taken one says "Recruté".
@@ -86,7 +93,7 @@ test("the admin prices an athlete, who then shows in the catalogue of a Manager 
     await expect(card).toContainText("PB—");
     await expect(page.getByRole("button", { name: "Enchérir" })).toHaveCount(0);
 
-    await filters.getByRole("link", { name: "Hommes" }).click();
+    await sexes.getByRole("link", { name: "H", exact: true }).click();
     await expect(page.getByText("Aucun athlète ne correspond.")).toBeVisible();
 
     // The back link is named after the league and leads to its page (#987).
