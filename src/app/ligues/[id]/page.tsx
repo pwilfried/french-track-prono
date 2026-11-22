@@ -200,7 +200,13 @@ export default async function LeaguePage({
                   {messages.leagues.familyAdded(messages.leagues.family[f.family], f.addedAt!)}
                 </p>
               ))}
-            {alone && <InviteBanner code={league.inviteCode} leagueName={league.name} />}
+            {alone && (
+              <InviteBanner
+                code={league.inviteCode}
+                leagueName={league.name}
+                isPublic={league.isPublic}
+              />
+            )}
             <LeagueCompetitions
               competitions={counted}
               addableCount={addable.length}
@@ -297,7 +303,11 @@ export default async function LeaguePage({
                 {messages.leagues.created}
               </p>
             )}
-            <ShareInvite code={league.inviteCode} leagueName={league.name} />
+            <ShareInvite
+              code={league.inviteCode}
+              leagueName={league.name}
+              isPublic={league.isPublic}
+            />
           </>
         )}
       </div>
