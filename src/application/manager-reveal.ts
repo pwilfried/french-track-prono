@@ -1,4 +1,5 @@
 import type { Bib } from "@/domain/bib";
+import type { CatalogueAthlete } from "@/domain/manager-catalogue";
 import type { ManagerSex } from "@/domain/manager-rules";
 import {
   bidsByAthlete,
@@ -11,7 +12,7 @@ import {
 import { UseCaseError } from "./errors";
 import type { ManagerBidRepository } from "./manager-bids";
 import type { ManagerCatalogueRepository } from "./manager-catalogue";
-import type { ManagerLeagueRepository } from "./manager-leagues";
+import type { ManagerLeagueFile, ManagerLeagueRepository } from "./manager-leagues";
 
 /**
  * Port: the bids of the closed rounds of a league, which every participant reads once the round is
@@ -102,28 +103,7 @@ export function getManagerRoundReveal(ports: {
       }
       if (bids.length === 0) throw new UseCaseError("ROUND_NOT_FOUND");
 
-      const athletes = new Map(catalogue.map((a) => [a.athleteId, a]));
-      const athlete = (athleteId: string): Athlete => {
-        const a = athletes.get(athleteId);
-        return {
-          athleteId,
-          name: a?.name ?? "",
-          discipline: a?.discipline ?? "",
-          sex: a?.sex ?? "F",
-        };
-      };
-      const players = new Map(league.participants.map((p) => [p.userId, p]));
-      const groups = bidsByAthlete(bids).map((group) => ({
-        ...athlete(group.athleteId),
-        offers: group.bids.map((b) => ({
-          userId: b.userId,
-          pseudo: players.get(b.userId)?.pseudo ?? "",
-          bib: players.get(b.userId)?.bib ?? null,
-          amount: b.amount,
-          won: b.won,
-          mine: b.userId === input.userId,
-        })),
-      }));
+      const groups = revealAthletes(bids, catalogue, league.participants, input.userId);
       const cards = groups.flatMap((group) => {
         const own = group.offers.find((o) => o.mine);
         if (!own) return [];
@@ -153,6 +133,83 @@ export function getManagerRoundReveal(ports: {
       };
     },
   };
+}
+
+/** The finished mercato read again (#1089): the rounds with bids, and every bid of one of them. */
+export type ManagerMercatoReview = {
+  /** The closed rounds in which somebody bid, in order. */
+  rounds: number[];
+  /** The round shown, or null when nobody bid in a closed round. */
+  round: number | null;
+  /** Every athlete bid on in the round shown, by their best bid; none without a bid. */
+  athletes: RevealAthlete[];
+};
+
+/**
+ * The mercato read again round by round (#1089): every bid of a closed round, who placed it, how
+ * much, and who won. The round asked, or the first one; a round still open is never shown, row level
+ * security keeps its bids secret.
+ */
+export function getManagerMercatoReview(ports: {
+  reveals: Pick<ManagerRevealRepository, "bidRounds" | "roundBids">;
+  catalogue: ManagerCatalogueRepository;
+  managerLeagues: Pick<ManagerLeagueRepository, "find">;
+}) {
+  return {
+    async execute(input: {
+      leagueId: string;
+      round?: number;
+      userId: string;
+    }): Promise<ManagerMercatoReview> {
+      const found = await ports.reveals.bidRounds(input.leagueId);
+      if (found === "not_member") throw new UseCaseError("LEAGUE_NOT_FOUND");
+      const rounds = found.map((r) => r.round);
+      const round = rounds.find((r) => r === input.round) ?? rounds[0];
+      if (round === undefined) return { rounds, round: null, athletes: [] };
+
+      const [bids, league, catalogue] = await Promise.all([
+        ports.reveals.roundBids(input.leagueId, round),
+        ports.managerLeagues.find(input.leagueId),
+        ports.catalogue.list(input.leagueId),
+      ]);
+      if (bids === "not_member" || !league || catalogue === "not_member") {
+        throw new UseCaseError("LEAGUE_NOT_FOUND");
+      }
+      return {
+        rounds,
+        round,
+        athletes: revealAthletes(bids, catalogue, league.participants, input.userId),
+      };
+    },
+  };
+}
+
+/** Every athlete bid on in a round, with its bids from the highest, by who placed them. */
+function revealAthletes(
+  bids: RoundBid[],
+  catalogue: CatalogueAthlete[],
+  participants: ManagerLeagueFile["participants"],
+  userId: string,
+): RevealAthlete[] {
+  const athletes = new Map(catalogue.map((a) => [a.athleteId, a]));
+  const players = new Map(participants.map((p) => [p.userId, p]));
+  return bidsByAthlete(bids).map((group) => {
+    const a = athletes.get(group.athleteId);
+    return {
+      athleteId: group.athleteId,
+      name: a?.name ?? "",
+      discipline: a?.discipline ?? "",
+      sex: a?.sex ?? "F",
+      offers: group.bids.map((b) => ({
+        userId: b.userId,
+        pseudo: players.get(b.userId)?.pseudo ?? "",
+        bib: players.get(b.userId)?.bib ?? null,
+        amount: b.amount,
+        won: b.won,
+        mine: b.userId === userId,
+      })),
+    };
+  });
 }
 
 /** The player saw the reveal of a round: it does not show again (#604). */

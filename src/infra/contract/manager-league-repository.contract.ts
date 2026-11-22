@@ -183,6 +183,7 @@ export function managerLeagueRepositoryContract(
         target: 4,
         startsAt: null,
         openedAt: null,
+        closedAt: null,
         roundMode: "auto",
         closedRounds: [],
       });
@@ -199,6 +200,7 @@ export function managerLeagueRepositoryContract(
         target: 4,
         startsAt: "2027-01-10T19:00:00.000Z",
         openedAt: null,
+        closedAt: null,
         roundMode: "custom",
         closedRounds: [],
       });

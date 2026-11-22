@@ -8,6 +8,7 @@ import type { ManagerBidRepository, MyManagerBids } from "./manager-bids";
 import type { ManagerCatalogueRepository } from "./manager-catalogue";
 import type { ManagerLeagueFile, ManagerLeagueRepository } from "./manager-leagues";
 import {
+  getManagerMercatoReview,
   getManagerRevealRounds,
   getManagerRoundReveal,
   markManagerRoundRevealed,
@@ -172,6 +173,84 @@ describe("the reveal shows once per round and per player", () => {
     ).rejects.toEqual(new UseCaseError("ROUND_NOT_FOUND"));
     await expect(
       markManagerRoundRevealed({ reveals: outsider }).execute({ leagueId: "l1", round: 1 }),
+    ).rejects.toEqual(new UseCaseError("LEAGUE_NOT_FOUND"));
+  });
+});
+
+describe("getManagerMercatoReview", () => {
+  /** Round 1 and round 2 of league l1 are closed; round 3 is still open. */
+  const finished: ManagerRevealRepository = {
+    bidRounds: async (leagueId) =>
+      leagueId === "l1"
+        ? [
+            { round: 1, seen: true },
+            { round: 2, seen: true },
+          ]
+        : "not_member",
+    roundBids: async (leagueId, round) =>
+      leagueId !== "l1"
+        ? "not_member"
+        : round === 1
+          ? round1
+          : round === 2
+            ? [{ userId: "u1", athleteId: "a3", amount: 5, won: true }]
+            : [],
+    markRevealed: async () => "marked",
+  };
+  const review = (input: { round?: number; reveals?: ManagerRevealRepository }) =>
+    getManagerMercatoReview({
+      reveals: input.reveals ?? finished,
+      catalogue,
+      managerLeagues,
+    }).execute({ leagueId: "l1", round: input.round, userId: "u2" });
+
+  it("shows every bid of the chosen round of the finished mercato, and who won", async () => {
+    // Given a finished mercato of two rounds
+    // When a participant reviews round 2
+    const shown = await review({ round: 2 });
+
+    // Then they see the rounds to choose from, and every athlete bid on in round 2 with its bids
+    expect(shown.rounds).toEqual([1, 2]);
+    expect(shown.round).toBe(2);
+    expect(
+      shown.athletes.map((a) => [a.name, a.offers.map((o) => [o.pseudo, o.amount, o.won])]),
+    ).toEqual([["Zoé Exemple", [["Flèche", 5, true]]]]);
+  });
+
+  it("opens on the first round when none or an unknown one is asked", async () => {
+    // Given a finished mercato
+    // When the participant asks for no round, then for a round still open
+    const first = await review({});
+    const open = await review({ round: 3 });
+
+    // Then both show round 1, its athletes only, from their best bid
+    for (const shown of [first, open]) {
+      expect(shown.round).toBe(1);
+      expect(shown.athletes.map((a) => a.name)).toEqual([
+        "Inès Démo",
+        "Léa Fictive",
+        "Zoé Exemple",
+      ]);
+      expect(shown.athletes[0]!.offers.map((o) => [o.pseudo, o.won, o.mine])).toEqual([
+        ["Comète", true, true],
+        ["Flèche", false, false],
+      ]);
+    }
+  });
+
+  it("shows no round when nobody bid in a closed round", async () => {
+    const shown = await review({ reveals: { ...finished, bidRounds: async () => [] } });
+
+    expect(shown).toEqual({ rounds: [], round: null, athletes: [] });
+  });
+
+  it("refuses a player who is not in the league", async () => {
+    await expect(
+      getManagerMercatoReview({
+        reveals: { ...finished, bidRounds: async () => "not_member" },
+        catalogue,
+        managerLeagues,
+      }).execute({ leagueId: "l1", userId: "u3" }),
     ).rejects.toEqual(new UseCaseError("LEAGUE_NOT_FOUND"));
   });
 });

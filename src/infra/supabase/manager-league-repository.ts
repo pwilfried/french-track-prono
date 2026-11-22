@@ -22,6 +22,7 @@ type LeagueRow = {
 type MercatoRow = {
   mercato_starts_at: string | null;
   mercato_opened_at: string | null;
+  mercato_closed_at: string | null;
   round_mode: "auto" | "custom";
 };
 
@@ -133,7 +134,7 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
       const { data, error } = await client
         .from("manager_leagues")
         .select(
-          "id, name, is_public, invite_code, owner_id, rules, player_target, mercato_starts_at, mercato_opened_at, round_mode, manager_rounds(round, ends_at), manager_members(user_id, joined_at, profiles!inner(pseudo, bib_number, bib_color))",
+          "id, name, is_public, invite_code, owner_id, rules, player_target, mercato_starts_at, mercato_opened_at, mercato_closed_at, round_mode, manager_rounds(round, ends_at), manager_members(user_id, joined_at, profiles!inner(pseudo, bib_number, bib_color))",
         )
         .eq("id", id)
         .returns<
@@ -165,6 +166,7 @@ export function createSupabaseManagerLeagueRepository(client: SupabaseClient): M
           target: row.player_target,
           startsAt: iso(row.mercato_starts_at),
           openedAt: iso(row.mercato_opened_at),
+          closedAt: iso(row.mercato_closed_at),
           roundMode: row.round_mode,
           // Their real closes, in order: a round closes early once everyone finished it (#1084).
           closedRounds: [...row.manager_rounds]
