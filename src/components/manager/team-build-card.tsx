@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 const text = messages.catalogue.build;
 
 /** The sentence under the families: what is missing and what the credits left allow (#1037). */
-export function buildSentence(build: TeamBuild, left: number): string {
+function buildSentence(build: TeamBuild, left: number): string {
   const gaps = build.families
     .filter((f) => !f.done)
     .map((f) => ({

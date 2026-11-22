@@ -35,16 +35,6 @@ export type CatalogueFilter = {
   onlyIds: ReadonlySet<string> | null;
 };
 
-/** The filters of an untouched catalogue, but the available athletes, which show by default. */
-export const DEFAULT_CATALOGUE_FILTER: CatalogueFilter = {
-  sex: null,
-  family: null,
-  discipline: null,
-  availableOnly: true,
-  maxPrice: null,
-  onlyIds: null,
-};
-
 /** Whether an athlete passes the filters of the catalogue. */
 export const inCatalogueFilter = (a: CatalogueAthlete, f: CatalogueFilter) =>
   (!f.sex || a.sex === f.sex) &&
