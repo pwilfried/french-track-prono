@@ -49,6 +49,11 @@ export function PointsBreakdown({
           ))}
         </dl>
         <p className="text-xs text-white/80">{text.explain(divisor)}</p>
+        {score.jokers ? (
+          <p className="text-xs font-semibold text-white">
+            {messages.managerJokers.inTotal(score.jokers)}
+          </p>
+        ) : null}
       </section>
 
       {!score.linedUp ? (

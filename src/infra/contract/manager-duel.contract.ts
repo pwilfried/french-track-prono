@@ -62,6 +62,7 @@ export function managerDuelContract(name: string, world: () => Promise<ManagerDu
             total: 850,
           },
         ],
+        jokerEffects: [],
       });
       expect(await w.player.scores(w.leagueId, w.open)).toEqual([]);
     });

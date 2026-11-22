@@ -2231,6 +2231,65 @@ export const messages = {
     previousLinks: "Tours précédents",
   },
   /** The league jokers (#1090): their names and what they do, one way of saying each. */
+  /** The jokers of the Manager leagues (#1091). */
+  managerJokers: {
+    name: {
+      captain: "Capitaine",
+      false_start: "Faux départ",
+      extended_bench: "Banc élargi",
+      coaching: "Coaching",
+      home_advantage: "Avantage terrain",
+    },
+    explain: {
+      captain:
+        "Un titulaire voit ses points × 2 (tables et bonus). S'il est remplacé, son remplaçant n'en profite pas.",
+      false_start:
+        "Vise à l'aveugle un athlète de l'équipe adverse : s'il marque pour l'adversaire cette journée, ses points sont divisés par 2. Sinon, le joker est perdu.",
+      extended_bench: "Un 9e titulaire, de n'importe quelle famille, compte cette journée.",
+      coaching:
+        "Après le verrou, une seule fois : remplace un titulaire dont l'épreuve n'a pas commencé par un athlète non aligné de la même famille.",
+      home_advantage: "+5 % du total de la journée. À domicile seulement.",
+    },
+    /** On the lineup of a matchday. */
+    title: "Joker de la journée",
+    hint: "Un joker par confrontation, chacun une fois dans la saison. Ton adversaire le découvre au verrou, avec ton équipe.",
+    bonusDay: "Journée bonus : pas de confrontation, donc pas de joker.",
+    choose: "Ton joker",
+    target: {
+      captain: "Ton capitaine",
+      false_start: "Athlète adverse visé",
+      extended_bench: "Ton 9e titulaire",
+    },
+    pickAthlete: "Choisis un athlète",
+    noTarget: "Aucun athlète possible pour ce joker.",
+    fixed: "Le verrou est passé : le joker de la journée ne change plus.",
+    mine: (joker: string) => `Ton joker : ${joker}`,
+    on: (athlete: string) => `sur ${athlete}`,
+    opponent: (joker: string) => `Joker de l'adversaire : ${joker}`,
+    opponentNone: "Ton adversaire n'a pas joué de joker.",
+    coachTitle: "Coaching",
+    coachHint:
+      "Fais entrer un athlète non aligné de la même famille, avant le départ de l'épreuve du titulaire. Une seule fois.",
+    coachOut: "Titulaire qui sort",
+    coachIn: "Athlète qui entre",
+    coachSend: "Faire entrer",
+    coachSending: "En cours…",
+    coachDone: (inName: string, outName: string) => `${inName} remplace ${outName}.`,
+    coachNone: "Aucun athlète non aligné de la même famille.",
+    /** In « Mes points » and the head-to-head: what each joker did. */
+    effectsTitle: "Jokers",
+    effect: (joker: string, by: "me" | "opponent", athlete: string | null) =>
+      `${by === "me" ? joker : `${joker} de l'adversaire`}${athlete ? ` · ${athlete}` : ""}`,
+    effectPoints: (points: number) => (points > 0 ? `+${pts(points)}` : pts(points)),
+    duelLine: (pseudo: string, joker: string, athlete: string | null) =>
+      `${pseudo} · ${joker}${athlete ? ` · ${athlete}` : ""}`,
+    noEffect: "sans effet",
+    brought: (points: number) => `${pts(points)} apportés`,
+    inTotal: (points: number) =>
+      `Jokers : ${points > 0 ? "+" : ""}${pts(points)}, compris dans le total.`,
+    /** The jokers of a Manager league being created, read only. */
+    createText: "Chaque joueur reçoit ces jokers, à jouer chacun une fois dans la saison.",
+  },
   leagueJokers: {
     name: {
       double: "Double",

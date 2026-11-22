@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
 import { getMyLineup, type MyLineup } from "@/application/manager-lineup";
+import { getMyManagerJokers, type MyManagerJokers } from "@/application/manager-jokers";
 import { LockLine } from "@/components/countdown/lock-line";
 import { ErrorNotice } from "@/components/error-notice";
 import { LeagueHero } from "@/components/leagues/league-hero";
@@ -10,12 +11,14 @@ import { cn } from "@/lib/utils";
 import {
   createSupabaseManagerBids,
   createSupabaseManagerCatalogue,
+  createSupabaseManagerJokerRepository,
   createSupabaseManagerLineups,
 } from "@/infra";
 
 import { messages } from "../../../../messages.fr";
 import { getSessionClient } from "../../../../session";
 import { managerPorts } from "../../../data";
+import { JokerPanel } from "./joker-panel";
 import { LineupForm } from "./lineup-form";
 
 const text = messages.lineup;
@@ -46,6 +49,19 @@ export default async function LineupPage({
     if (!(error instanceof UseCaseError)) throw error;
     if (error.code === "LEAGUE_NOT_FOUND" || error.code === "COMPETITION_NOT_FOUND") notFound();
     lineup = "error";
+  }
+  // The jokers of the matchday (#1091): the lineup stays usable when they cannot be read.
+  let jokers: MyManagerJokers | "error" | null = null;
+  if (lineup !== "error" && lineup.mercatoClosed) {
+    try {
+      jokers = await getMyManagerJokers({
+        jokers: createSupabaseManagerJokerRepository(client),
+        userId: ports.userId,
+      }).execute({ leagueId: id, competitionId: lineup.competitionId });
+    } catch (error) {
+      if (!(error instanceof UseCaseError)) throw error;
+      jokers = "error";
+    }
   }
 
   return (
@@ -106,6 +122,19 @@ export default async function LineupPage({
               divisor={lineup.divisor}
               status={lineup.status}
             />
+            {jokers === "error" ? (
+              <ErrorNotice retryHref={path} message={messages.errors.JOKERS_UNAVAILABLE} />
+            ) : (
+              jokers && (
+                <JokerPanel
+                  leagueId={id}
+                  competitionId={lineup.competitionId}
+                  slug={lineup.slug}
+                  lineup={lineup}
+                  jokers={jokers}
+                />
+              )
+            )}
           </>
         )}
       </div>

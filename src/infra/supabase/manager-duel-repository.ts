@@ -2,11 +2,22 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { UseCaseError } from "@/application/errors";
 import type { ManagerDuelRepository } from "@/application/manager-duel";
+import type { ManagerJokerEffect } from "@/domain/manager-jokers";
 
 import { athleteScoreOf, type AthleteScoreRow } from "./manager-score-row";
 
 type LineupsJson = { locked: boolean; lineups: { user_id: string; athlete_ids: string[] }[] };
-type ScoreRow = { user_id: string; total: number; athletes: AthleteScoreRow[] };
+type ScoreRow = {
+  user_id: string;
+  total: number;
+  athletes: AthleteScoreRow[];
+  joker_effects: {
+    kind: ManagerJokerEffect["kind"];
+    by: ManagerJokerEffect["by"];
+    athlete_id: string | null;
+    points: number;
+  }[];
+};
 
 /**
  * The lineups come from manager_duel_lineups (secret until the lock); the participants read the
@@ -31,7 +42,7 @@ export function createSupabaseManagerDuelRepository(client: SupabaseClient): Man
       // One line per participant of the league: one page is enough.
       const { data, error } = await client
         .from("manager_scores")
-        .select("user_id, total, athletes")
+        .select("user_id, total, athletes, joker_effects")
         .eq("league_id", leagueId)
         .eq("competition_id", competitionId)
         .order("user_id");
@@ -40,6 +51,12 @@ export function createSupabaseManagerDuelRepository(client: SupabaseClient): Man
         userId: s.user_id,
         total: s.total,
         athletes: s.athletes.map(athleteScoreOf),
+        jokerEffects: (s.joker_effects ?? []).map((e) => ({
+          kind: e.kind,
+          by: e.by,
+          athleteId: e.athlete_id,
+          points: e.points,
+        })),
       }));
     },
   };

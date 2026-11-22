@@ -8,9 +8,11 @@ import { ChipStatus } from "@/components/ui/chip-status";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { DuelPlaces } from "@/components/manager/duel-places";
 import { DuelStadium } from "@/components/manager/duel-stadium";
+import { DuelJokers } from "@/components/manager/manager-jokers";
 import {
   createSupabaseManagerCatalogue,
   createSupabaseManagerDuelRepository,
+  createSupabaseManagerJokerRepository,
   createSupabaseManagerSeasonRepository,
 } from "@/infra";
 
@@ -47,6 +49,7 @@ export default async function ManagerDuelPage({
       season: createSupabaseManagerSeasonRepository(client),
       duels: createSupabaseManagerDuelRepository(client),
       catalogue: createSupabaseManagerCatalogue(client),
+      jokers: createSupabaseManagerJokerRepository(client),
     }).execute({ leagueId: id, round, home });
   } catch (error) {
     if (!(error instanceof UseCaseError)) throw error;
@@ -143,6 +146,15 @@ export default async function ManagerDuelPage({
           <p role="status" className="rounded-card bg-muted p-4 text-sm font-semibold">
             🔒 {text.secret}
           </p>
+        )}
+
+        {view.locked && (
+          <DuelJokers
+            sides={[
+              { pseudo: top.participant.pseudo, joker: top.joker },
+              { pseudo: bottom.participant.pseudo, joker: bottom.joker },
+            ]}
+          />
         )}
 
         {!live && bottom.linedUp && (
