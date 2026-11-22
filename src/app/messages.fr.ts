@@ -900,6 +900,14 @@ export const messages = {
     roundsTitle: "Résultats des tours",
     roundLink: (round: number) => `Tour ${round}`,
   },
+  /** The finished mercato read again, round by round (#1089); its title is also the league's link. */
+  mercatoReview: {
+    title: "Revoir le mercato",
+    subtitle: "Qui a enchéri sur quel athlète, combien, à chaque tour.",
+    rounds: "Tours du mercato",
+    empty: "Personne n'a fait d'offre pendant le mercato.",
+    toTeam: "Voir mon équipe",
+  },
   team: {
     title: "Mon équipe",
     subtitle: "Tes athlètes pour toute la saison.",

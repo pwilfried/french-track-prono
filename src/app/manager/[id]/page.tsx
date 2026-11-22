@@ -280,18 +280,20 @@ export default async function ManagerLeaguePage({
 
             <nav aria-label={text.screens}>
               <ul className="flex flex-col gap-2">
-                {leagueScreens(league.id, open, season === "error" ? null : season.lastPoints).map(
-                  (screen, i) => (
-                    <li key={screen.href}>
-                      <Link
-                        href={screen.href}
-                        className={`${buttonVariants(i === 0 ? {} : { variant: "muted" })} w-full`}
-                      >
-                        {screen.label}
-                      </Link>
-                    </li>
-                  ),
-                )}
+                {leagueScreens(league.id, {
+                  open,
+                  over: mercato.closedAt !== null,
+                  lastPoints: season === "error" ? null : season.lastPoints,
+                }).map((screen, i) => (
+                  <li key={screen.href}>
+                    <Link
+                      href={screen.href}
+                      className={`${buttonVariants(i === 0 ? {} : { variant: "muted" })} w-full`}
+                    >
+                      {screen.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </nav>
 
@@ -356,12 +358,12 @@ export default async function ManagerLeaguePage({
 
 /**
  * The screens of the league, each one a link (#926): the mercato catalogue first, the matchday
- * and the standings once the mercato opened, the last points once there are some.
+ * and the standings once the mercato opened, the last points once there are some, the mercato
+ * read again round by round once it is over (#1089).
  */
 function leagueScreens(
   leagueId: string,
-  open: boolean,
-  lastPoints: string | null,
+  { open, over, lastPoints }: { open: boolean; over: boolean; lastPoints: string | null },
 ): { href: string; label: string }[] {
   const base = `/manager/${leagueId}`;
   return [
@@ -377,6 +379,7 @@ function leagueScreens(
     ...(lastPoints
       ? [{ href: `${base}/points/${lastPoints}`, label: messages.managerHome.lastPoints }]
       : []),
+    ...(over ? [{ href: `${base}/mercato`, label: messages.mercatoReview.title }] : []),
   ];
 }
 
