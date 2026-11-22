@@ -8,8 +8,8 @@
 #     moved on since (#967). To start that pass, main's last commit must be green (CI, deploy).
 # Every merge into main is deployed to pre-production with a smoke test only (preprod.yml); the
 # full e2e suite runs once per version, started here when the rest is green (preprod.yml with
-# e2e=true), and every morning (preprod-daily.yml): running it at every merge wore the free
-# pre-production database out (owner's decision, 15 Nov 2026). No human go before the tag (owner's
+# e2e=true), and nowhere else: running it at every merge wore the free pre-production database
+# out (owner's decision, 15 Nov 2026), and the daily run was dropped (owner's decision, 22 Nov 2026). No human go before the tag (owner's
 # decision, 13 Nov 2026): a failed pre-production deploy or e2e pass of that commit makes it wait.
 # The tag is made with AGENTS_PAT: a tag made with github.token would start no workflow.
 # Then a GitHub release lists the PRs (its notification tells the owners), a needs-human issue

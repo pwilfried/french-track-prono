@@ -53,7 +53,7 @@ while IFS= read -r test; do
   [ -n "${commented[$n]:-}" ] && continue
   commented[$n]=1
   echo "Test still failing, commenting #$n: $test"
-  comment as_bot "$n" "<!-- preprod-regression:red -->Toujours en échec en préprod ce matin : \`$test\`.
+  comment as_bot "$n" "<!-- preprod-regression:red -->Toujours en échec en préprod : \`$test\`.
 
 [Rapport Playwright]($report) (captures et traces) · [run]($run_url)"
 done <<< "$failing"
@@ -64,8 +64,8 @@ if [ -n "$new_list" ]; then
     [.[] | select(.title | test("^v[0-9]"))
       | {number, v: (.title | capture("^v(?<v>[0-9.]+)").v | split(".") | map(select(. != "") | tonumber))}]
     | sort_by(.v) | first | .number // empty')
-  title="Préprod : le test quotidien échoue ($(date -u +%F))"
-  body="$mention_owners le test quotidien de la préprod (https://french-track-preprod.vercel.app) échoue :
+  title="Préprod : les tests e2e échouent ($(date -u +%F))"
+  body="$mention_owners la suite e2e de la préprod (https://french-track-preprod.vercel.app) échoue :
 
 ${new_list}
 [Rapport Playwright]($report) (captures et traces) · [run]($run_url)
@@ -85,5 +85,5 @@ for n in $open_issues; do
   last=$(comments_of "$n" | grep -oE '<!-- preprod-regression:(red|green) -->' | tail -n 1 || true)
   [ "$last" = "<!-- preprod-regression:green -->" ] && continue
   echo "Green again: #$n"
-  comment as_bot "$n" "<!-- preprod-regression:green -->De nouveau vert en préprod ce matin ([run]($run_url)). Tu peux fermer cette issue si c'est réglé."
+  comment as_bot "$n" "<!-- preprod-regression:green -->De nouveau vert en préprod ([run]($run_url)). Tu peux fermer cette issue si c'est réglé."
 done
