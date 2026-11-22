@@ -56,14 +56,12 @@ Pourquoi : chaque lecture coûte sur la limite hebdomadaire du plan Claude (#101
    #743 : elle épuisait la base gratuite de préprod). Plus de passage quotidien (décision du
    propriétaire du 22 nov. 2026).
 5. Quand toutes les issues d'un milestone sont fermées (`refactor-check` et `docs-check` comprises)
-   et que `main` est vert, `agents-merge` pose le tag `vX.Y.0` (décision du propriétaire du
-   11 nov. 2026), ou `vX.Y.Z` pour un milestone correctif `vX.Y.Z …` (décision du 12 nov. 2026).
-   Le tag met la version en prod : migrations, puis déploiement Vercel (`docs/SETUP.md`). Tout
-   est automatique, sans feu vert humain (décision du propriétaire du 13 nov. 2026). Seul
-   garde-fou : `release.sh` lance alors la suite e2e complète contre la préprod sur ce commit et
-   pose le tag sur le commit de ce passage vert, même si `main` a avancé depuis (#967) ; si le
-   déploiement ou cette suite échoue, le tag attend un nouveau commit (pas de relance automatique). Le propriétaire vérifie le critère « It works when… » en production ; un correctif
-   sans milestone reste tagué à la main.
+   et que `main` est vert, `release.sh` lance la suite e2e complète contre la préprod ; si le
+   déploiement ou cette suite échoue, la version attend un nouveau commit (pas de relance
+   automatique). Sur le passage vert, le propriétaire donne le go (décision du 22 nov. 2026, remplace celle du 13 nov.) : `release.sh` ouvre l'issue « Go prod vX.Y.Z » (labels `needs-human`, `release-go`) qui liste le critère et les écrans à regarder en préprod ; la fermer comme terminée pose le tag, la fermer comme « not planned » garde la version hors de la prod. Le tag (`vX.Y.0`, ou `vX.Y.Z` pour un
+   milestone correctif `vX.Y.Z …`) va sur le commit de ce passage vert, même si `main` a avancé
+   depuis (#967), et met la version en prod : migrations, puis déploiement Vercel
+   (`docs/SETUP.md`). Un correctif sans milestone reste tagué à la main.
 
 ## Screenshots in PRs
 
@@ -72,8 +70,8 @@ sombre. Pas de données personnelles dans les captures. Les captures vivent sur 
 orpheline `boards` (`boards/<issue>/*.png`) et sont liées dans la description de la PR. Le
 workflow `ui-shots` capture en plus les pages touchées par chaque PR (`boards/issue-<n>/shots/`)
 et les montre dans un commentaire tenu à jour ; un agent n'en produit pas d'autre, et l'issue
-« Vérifier vX.Y.Z en prod », ouverte par `release.sh` après le tag (une case par PR qui touche
-l'interface), reste la vérification humaine.
+« Go prod vX.Y.Z », ouverte par `release.sh` avant le tag (une case par PR qui touche
+l'interface, à regarder en préprod), reste la vérification humaine.
 
 ## Issues and milestones
 
@@ -173,8 +171,8 @@ Claude Code tourne sur les issues et les PR depuis GitHub Actions (`agents.yml`,
 - Modèle : Opus pour `p1`, `p2`, `zone:db`, `c:scoring`, `milestone-plan` ou le label `model:opus` ;
   Sonnet pour le reste (`p3`, refactor-check, docs-check), pour ménager la limite hebdomadaire.
 - Milestone fini et `main` vert (préprod comprise) : tag `vX.Y.0` (ou `vX.Y.Z` pour un milestone
-  correctif) posé avec `AGENTS_PAT` (sinon il ne déclencherait pas le déploiement), sans attendre
-  de go ; release GitHub qui liste les PR, milestone fermé (`ci/agents/release.sh`). Un déploiement
+  correctif) posé avec `AGENTS_PAT` (sinon il ne déclencherait pas le déploiement), après le go
+  du propriétaire (issue « Go prod vX.Y.Z » fermée comme terminée) ; release GitHub qui liste les PR, milestone fermé (`ci/agents/release.sh`). Un déploiement
   préprod en échec sur ce commit fait attendre le tag jusqu'au passage suivant.
 
 Quand tu tournes là-bas :

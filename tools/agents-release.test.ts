@@ -15,12 +15,28 @@ type Pass = {
   state?: "success" | "failure" | "running";
 };
 
+/** The owner's go (#…, 22 Nov 2026): the « Go prod » issue, or none yet. */
+type Go = { state: "open" | "completed" | "not_planned"; sha?: string } | null;
+
 /**
  * Runs ci/agents/release.sh against a fake gh that answers the GitHub API from these fixtures
  * (through the same --jq filters); writes are only printed (DRY_RUN). v0.17 is finished, its last
  * issue closed at 18:00. A run name ending with "!" failed, one ending with "…" is still going.
  */
-function release({ runs, e2e }: { runs?: string[]; e2e?: Pass[] } = {}) {
+function release({ runs, e2e, go }: { runs?: string[]; e2e?: Pass[]; go?: Go } = {}) {
+  // By default the owner has given the go on the commit of the first green pass.
+  const passed = (e2e ?? [{}]).filter((pass) => (pass.state ?? "success") === "success").at(-1);
+  const goes =
+    go === null
+      ? []
+      : [
+          {
+            number: 90,
+            state: (go?.state ?? "completed") === "open" ? "open" : "closed",
+            state_reason: go?.state === "open" ? null : (go?.state ?? "completed"),
+            body: `ready\n<!-- release-go:v0.17.0 -->\n<!-- release-sha:${go?.sha ?? passed?.sha ?? sha} -->`,
+          },
+        ];
   const dir = mkdtempSync(join(tmpdir(), "agents-release-"));
   const api: Record<string, unknown> = {
     "repos/owner/repo/tags?per_page=100": [{ name: "v0.16.0" }],
@@ -63,6 +79,7 @@ function release({ runs, e2e }: { runs?: string[]; e2e?: Pass[] } = {}) {
     "repos/owner/repo/pulls/42/files?per_page=100": [{ filename: "ci/agents/lib.sh" }],
     "repos/owner/repo/pulls/41": { title: "feat: add a screen" },
     "repos/owner/repo/milestones/7": { description: "It works when the league is themed." },
+    "repos/owner/repo/issues?state=all&labels=release-go&per_page=100": goes,
   };
   writeFileSync(join(dir, "api.json"), JSON.stringify(api));
   writeFileSync(
@@ -100,13 +117,35 @@ jq -c --arg p "$path" '.[$p] // error("no fixture for " + $p)' "${dir}/api.json"
   return run.stdout + run.stderr;
 }
 
-it("tags a finished version once main is green, pre-production included, without waiting for a go", () => {
-  const out = release();
-  expect(out).toContain("Tagging v0.17.0 on abcdef1");
-  expect(out).toContain("refs/tags/v0.17.0");
-  expect(out).toContain("Vérifier v0.17.0 en prod");
+it("asks the owner for a go once the version is green in pre-production, without tagging", () => {
+  const out = release({ go: null });
+  expect(out).toContain("Go prod v0.17.0");
+  expect(out).toContain("--label release-go");
   expect(out).toContain("- [ ] #41 feat: add a screen");
   expect(out).not.toContain("#42 ");
+  expect(out).toContain("release-sha:abcdef1234567890");
+  expect(out).toContain("waiting for the owner's go");
+  expect(out).not.toContain("Tagging");
+});
+
+it("keeps waiting while the go issue is open", () => {
+  const out = release({ go: { state: "open" } });
+  expect(out).toContain("waits for the owner's go (#90)");
+  expect(out).not.toContain("issue create");
+  expect(out).not.toContain("Tagging");
+});
+
+it("does not tag a version whose go was refused", () => {
+  const out = release({ go: { state: "not_planned" } });
+  expect(out).toContain("go refused");
+  expect(out).not.toContain("Tagging");
+});
+
+it("tags the commit of the go once the owner closed the go issue", () => {
+  const out = release();
+  expect(out).toContain("Tagging v0.17.0 on abcdef1 (go in #90)");
+  expect(out).toContain("refs/tags/v0.17.0");
+  expect(out).not.toContain("issue create");
   expect(out).toContain("milestones/7 -f state=closed");
   expect(out).toContain("v0.17.0 tagged");
 });
