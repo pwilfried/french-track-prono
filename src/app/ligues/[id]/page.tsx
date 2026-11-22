@@ -19,6 +19,7 @@ import { LeagueEventList } from "@/components/leagues/league-event-list";
 import { LeagueFeed } from "@/components/leagues/league-feed";
 import { InviteBanner } from "@/components/leagues/invite-banner";
 import { LeagueHero } from "@/components/leagues/league-hero";
+import { LeaguePredict } from "@/components/leagues/league-predict";
 import { LeagueTabs } from "@/components/leagues/league-tabs";
 import { ShareInvite } from "@/components/leagues/share-invite";
 import { Bib } from "@/components/profile/bib";
@@ -28,7 +29,7 @@ import { addableFamilies } from "@/domain/league-families";
 
 import { currentCompetitionDay, loadCompetitions } from "../../competition";
 import { messages } from "../../messages.fr";
-import { leaguePorts, loadLeagueEvents } from "../data";
+import { leaguePorts, loadLeagueEvents, loadLeaguePredict } from "../data";
 import {
   reactToMomentAction,
   reportMomentReactionAction,
@@ -126,6 +127,16 @@ export default async function LeaguePage({
     .filter(Boolean)
     .join(" · ");
   const alone = league.memberCount <= 1;
+  // Not on « Inviter »: it is about the friends, not my predictions (#1069).
+  const predict =
+    tab === "inviter"
+      ? null
+      : await loadLeaguePredict({
+          userId: ports.userId,
+          competitionSlugs: league.competitionSlugs,
+          families,
+          competitions: competitions.coming,
+        });
 
   return (
     <main id="main" className="flex flex-1 flex-col">
@@ -145,6 +156,7 @@ export default async function LeaguePage({
         }
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
+        {tab !== "inviter" && <LeaguePredict call={predict} now={new Date()} />}
         <LeagueTabs
           label={league.name}
           tabs={BAR.map(({ tab: t, label }) => ({
