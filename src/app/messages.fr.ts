@@ -2396,6 +2396,14 @@ export const messages = {
     },
     suggestedFactors: "État et présence en France compris.",
     takeSuggestedPrice: "Reprendre ce prix",
+    takeAllPrices: "Reprendre les prix proposés",
+    takeAllPricesHint:
+      "Applique le prix proposé à tous les athlètes et écrase les prix existants. Ceux sans prix proposé gardent le leur.",
+    takeAllPricesConfirm: "Écraser tous les prix",
+    takingAllPrices: "Reprise en cours…",
+    allPricesTaken: (count: number) =>
+      `✓ Prix repris pour ${count} athlète${count > 1 ? "s" : ""}.`,
+    allPricesSkipped: (count: number) => `Sans prix proposé, prix inchangé (${count}) :`,
     takingSuggestedPrice: "Reprise…",
     noSuggestedPrice:
       "Pas de prix proposé : il faut une marque dans la discipline principale, couverte par les tables World Athletics.",

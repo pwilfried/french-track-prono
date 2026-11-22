@@ -63,3 +63,33 @@ export function athletePriceSuggestion(input: {
     input.pricing,
   );
 }
+
+/**
+ * The admin applies the suggested Manager price to every athlete at once. It overwrites existing
+ * prices; an athlete without a suggestion keeps theirs and is named in `skipped`.
+ */
+export function applySuggestedPrices(ports: { athletes: AthleteAdminRepository }) {
+  return {
+    async execute(input: {
+      disciplines: Discipline[];
+      pricing: ManagerPricing;
+      today: string;
+    }): Promise<{ updated: number; skipped: string[] }> {
+      let updated = 0;
+      const skipped: string[] = [];
+      for (const item of await listAthletes(ports).execute()) {
+        const file = await ports.athletes.find(item.slug);
+        const suggestion = file ? athletePriceSuggestion({ file, ...input }) : null;
+        if (!file || !suggestion) {
+          skipped.push(item.name);
+          continue;
+        }
+        if ((await ports.athletes.setPrice(file.athleteId, suggestion.price)) === "not_admin") {
+          throw new UseCaseError("NOT_ADMIN");
+        }
+        updated += 1;
+      }
+      return { updated, skipped };
+    },
+  };
+}
