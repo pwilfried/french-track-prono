@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read # ci/e2e-scope.sh reads the files of the PR
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -144,15 +145,30 @@ jobs:
           psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/demo_players.sql
           psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/dev/lock_demo_events.sql
 
+      # The e2e journey only when the app, the database or the tests change (owner's decision,
+      # 22 Nov 2026): a PR of docs, agents or scripts skips it (ci/e2e-scope.sh).
+      - name: Does this change need the e2e suite?
+        id: scope
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          PR: ${{ github.event.pull_request.number }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: ci/e2e-scope.sh
+
       # End-to-end journey (Playwright) on the production build. The events are open after the
       # reopen script above. No retry: see playwright.config.ts.
       # No --with-deps: ubuntu-latest already has every system lib headless Chromium needs,
       # and apt-get on the runner is flaky when the Ubuntu mirrors are down (see #461).
       - name: Install Chromium for Playwright
+        if: steps.scope.outputs.e2e == 'true'
         run: npx playwright install chromium
 
       # A test push key (its private half was thrown away): the notifications button shows up.
       - name: Build the app
+        if: steps.scope.outputs.e2e == 'true'
         env:
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: BLPG-ATns5ecNrsztBZUK5mdAxlPfYsSMPkz24H7SBxl4RTTpZHGYMLX60hboJ2uWQhiXiZCv68QAg-x8V4TjqA
         run: npm run build
@@ -160,6 +176,7 @@ jobs:
       # The pages follow the next competition by date; the tests create competitions of their own,
       # so the journeys are pinned on the seeded Ultimate Championship.
       - name: End-to-end test
+        if: steps.scope.outputs.e2e == 'true'
         env:
           COMPETITION_SLUG: ultimate-championship-2026
         run: npm run test:e2e
