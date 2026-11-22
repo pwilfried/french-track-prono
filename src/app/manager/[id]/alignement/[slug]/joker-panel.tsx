@@ -8,7 +8,7 @@ import { managerFamilyOf } from "@/domain/manager-rules";
 import { coachManagerLineupAction, playManagerJokerAction } from "../../../joker-actions";
 
 /**
- * « Joker de la journée » under the match sheet (#1091), wired to the database: the starters of
+ * « Ta carte de la journée » under the match sheet (#1091, #1121), wired to the database: the starters of
  * the sheet saved, the athletes of the team off it, the opponent's team for the false start.
  */
 export function JokerPanel({

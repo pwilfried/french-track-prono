@@ -49,16 +49,40 @@ test("a joker played on a podium of a league counts in that league only, and sho
     await sheet.getByRole("button", { name: "Ajouter à 1 ligue" }).click();
     await sheet.getByRole("button", { name: "Voir mon prono" }).click();
 
-    // Under the podium, the jokers of the league: the Double is played on this event.
-    const jokers = page.getByRole("region", { name: "Jokers de ligue" });
+    // Under the podium, one block: the league is on, its hand of cards. The Double is put down.
+    const jokers = page.getByRole("region", { name: "🃏 Sors tes jokers" });
     await expect(jokers).toBeVisible();
-    await jokers.getByLabel(`Joker dans ${league}`).selectOption({ label: "Double" });
-    await expect(jokers.getByText("Les points de l'épreuve × 2.")).toBeVisible();
-    await jokers.getByRole("button", { name: "Jouer" }).click();
-    await expect(jokers.getByRole("status")).toHaveText("✓ Double joué");
+    const double = jokers.getByRole("button", { name: /Double/ });
+    await double.click();
+    await expect(double).toHaveAttribute("aria-pressed", "true");
+    await expect(jokers.getByText("Double posé !")).toBeVisible();
     await page.reload();
-    await expect(page.getByLabel(`Joker dans ${league}`)).toHaveValue("double");
-    await expect(page.getByRole("button", { name: "Retirer le joker" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Double/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    // Switching the league off asks first, and gives the card back; the league shows no card.
+    const toggle = page.getByRole("switch", { name: `Compter ce prono dans ${league}` });
+    await jokers.getByText(league, { exact: true }).click();
+    await expect(page.getByText("🔥 Ton Double est posé ici.", { exact: false })).toBeVisible();
+    await page.getByRole("button", { name: "↩️ Reprendre la carte" }).click();
+    await expect(toggle).not.toBeChecked();
+    await expect(page.getByRole("button", { name: /Double/ })).toHaveCount(0);
+    await expect(jokers.getByText(/Ligue éteinte/)).toBeVisible();
+
+    // On again, the Double is back in the hand: put it down for the points.
+    await jokers.getByText(league, { exact: true }).click();
+    await expect(toggle).toBeChecked();
+    const again = page.getByRole("button", { name: /Double/ });
+    await expect(again).toHaveAttribute("aria-pressed", "false");
+    await again.click();
+    await expect(again).toHaveAttribute("aria-pressed", "true");
+    await page.reload();
+    await expect(page.getByRole("button", { name: /Double/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
 
     // The event locks and its points are computed: 12 in general, 24 with the Double.
     sql(`update events set lock_at = now() - interval '1 second' where slug = '${tag}-100m'`);

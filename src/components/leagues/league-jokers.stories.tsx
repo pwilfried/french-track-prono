@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, within } from "storybook/test";
 
 import { messages } from "@/app/messages.fr";
 import { PREDICTION_JOKERS } from "@/domain/league-jokers";
 
-import { EventLeagueJokers, MyJokers, type EventLeagueJokersView } from "./league-jokers";
+import { MyJokers } from "./league-jokers";
 
 const text = messages.leagueJokers;
 const all = [...PREDICTION_JOKERS];
@@ -61,83 +61,5 @@ export const AllPlayedDark: Story = {
       "href",
       "/epreuves/x",
     );
-  },
-};
-
-const league = (over: Partial<EventLeagueJokersView> = {}): EventLeagueJokersView => ({
-  leagueId: "l1",
-  name: "Les Gazelles du jeudi soir, ligue au nom vraiment très long",
-  counted: true,
-  hand: { remaining: all, used: [], onEvent: null, canChange: true },
-  ...over,
-});
-
-/** On the page of an event: the joker chosen says what it does; a refusal is said in place. */
-export const OnTheEventRefused: StoryObj<typeof EventLeagueJokers> = {
-  render: (args) => <EventLeagueJokers {...args} />,
-  args: {
-    leagues: [league({ counted: false })],
-    play: async () => ({ error: "JOKER_NOT_IN_LEAGUE" }),
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await userEvent.selectOptions(canvas.getByRole("combobox"), "double");
-    await expect(canvas.getByText(text.addFirst)).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: text.play }));
-    await expect(await canvas.findByRole("alert")).toHaveTextContent(
-      messages.errors.JOKER_NOT_IN_LEAGUE,
-    );
-  },
-};
-
-/** The spy played: it stays, and the trend of the league shows; none yet in another league. */
-export const SpyPlayed: StoryObj<typeof EventLeagueJokers> = {
-  render: (args) => <EventLeagueJokers {...args} />,
-  args: {
-    leagues: [
-      league({
-        hand: {
-          remaining: ["double", "all_or_nothing", "safety_net", "outsider"],
-          used: [{ joker: "spy", eventId: "e1" }],
-          onEvent: "spy",
-          canChange: false,
-        },
-        spy: {
-          total: 4,
-          places: [
-            { name: "Démo Gazelle", percent: 75 },
-            { name: "Démo Foulée", percent: 50 },
-            { name: text.other, percent: 25 },
-          ],
-        },
-      }),
-      league({
-        leagueId: "l2",
-        name: "Club",
-        hand: {
-          remaining: [],
-          used: [{ joker: "spy", eventId: "e1" }],
-          onEvent: "spy",
-          canChange: false,
-        },
-        spy: { total: 0, places: [] },
-      }),
-    ],
-    play: async () => ({}),
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(canvas.getAllByText(`🃏 ${text.spySpent}`)).toHaveLength(2);
-    await expect(canvas.getByText("75 %")).toBeVisible();
-    await expect(canvas.getByText(text.spyEmpty)).toBeVisible();
-  },
-};
-
-/** Nothing to show: no league of the event has jokers. */
-export const NoLeague: StoryObj<typeof EventLeagueJokers> = {
-  render: (args) => <EventLeagueJokers {...args} />,
-  args: { leagues: [], play: async () => ({}) },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).queryByRole("region")).toBeNull();
   },
 };

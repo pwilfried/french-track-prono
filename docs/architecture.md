@@ -214,7 +214,7 @@ parfait reste pour un vrai), Espion (avant le verrou, la tendance des pronos des
 ligue sur l'épreuve, `event_consensus` filtré à la ligue ; sans effet sur les points, joué dès qu'il
 est activé) et Outsider (points de cote de « Autre athlète » ×2). Un joker se pose par (prono,
 ligue) dans `league_joker_plays` : une seule fois dans la ligue, un par épreuve (l'Espion compte),
-sur un prono ajouté à la ligue (#1068, sauf l'Espion), changé ou retiré jusqu'au verrou
+sur un prono ajouté à la ligue (#1068 ; l'Espion aussi depuis #1121), changé ou retiré jusqu'au verrou
 (`play_league_joker()`, `remove_league_joker()`), vu des autres membres après le verrou. Le calcul
 des points écrit dans `score_events.detail.jokers` ce que chaque joker fait des points
 (`jokerPoints()`, `src/domain/league-jokers.ts`) ; le classement de la ligue compte les points du

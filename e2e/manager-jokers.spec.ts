@@ -65,20 +65,23 @@ test("a participant plays a joker with their lineup and both sides see it from t
     where md.league_id = '${league}' and md.round = 1`).split(",");
   const slug = sql(`select slug from competitions where id = '${competition}'`);
 
-  // On the lineup of the first matchday: the false start, aimed at an athlete of the rival.
+  // On the lineup of the first matchday: the false start card, aimed at an athlete of the rival.
   await page.goto(`/manager/${league}/alignement/${slug}`);
-  const jokers = page.getByRole("region", { name: "Joker de la journée" });
-  await expect(jokers).toContainText("Un joker par confrontation");
-  await jokers.getByLabel("Ton joker").selectOption({ label: "Faux départ" });
-  await jokers.getByLabel("Athlète adverse visé").selectOption({ label: target });
-  await jokers.getByRole("button", { name: "Jouer" }).click();
-  await expect(jokers.getByRole("status")).toHaveText("✓ Faux départ joué");
-  await page.reload();
-  await expect(page.getByRole("region", { name: "Joker de la journée" })).toContainText(
-    "Faux départ",
+  const jokers = page.getByRole("region", { name: "🃏 Ta carte de la journée" });
+  await expect(jokers).toContainText("Une carte par confrontation");
+  await jokers.getByRole("button", { name: /Faux départ/ }).click();
+  await jokers.getByRole("button", { name: `❓ ${target}` }).click();
+  await expect(jokers.getByRole("status")).toHaveText(
+    `✅ Faux départ sur ${target}. Enregistré avec ton alignement.`,
   );
+  await page.reload();
+  await expect(
+    page
+      .getByRole("region", { name: "🃏 Ta carte de la journée" })
+      .getByRole("button", { name: /Faux départ/ }),
+  ).toHaveAttribute("aria-pressed", "true");
 
-  // The lineups lock: the joker no longer changes, and both sides read it.
+  // The lineups lock: both cards face up.
   const uuids = (ids: string[]) => `array['${ids.join("','")}']::uuid[]`;
   sql(`insert into manager_lineups (league_id, competition_id, user_id, athlete_ids)
        values ('${league}', '${competition}', '${playerId}', ${uuids(mine)}),
@@ -86,9 +89,10 @@ test("a participant plays a joker with their lineup and both sides see it from t
   sql(`update events set lock_at = now() - interval '1 hour', starts_at = now() - interval '1 hour'
        where competition_id = '${competition}'`);
   await page.reload();
-  await expect(page.getByRole("region", { name: "Joker de la journée" })).toContainText(
-    `Ton joker : Faux départ sur ${target}`,
-  );
+  const revealed = page.getByRole("region", { name: "🃏 Ta carte de la journée" });
+  await expect(revealed).toContainText("🔒 Verrou passé · cartes révélées");
+  await expect(revealed).toContainText("Faux départ");
+  await expect(revealed).toContainText(target);
 
   await page.goto(`/manager/${league}/confrontation/1/${home}`);
   await expect(page.getByRole("region", { name: "Jokers" })).toContainText(

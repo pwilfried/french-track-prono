@@ -1,12 +1,14 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal, useFormStatus } from "react-dom";
 
 import type { PredictionLeague } from "@/application/prediction-leagues";
 import {
   PredictionLeaguesBlock,
   PredictionLeaguesSheet,
+  type LeagueJokersView,
+  type PlayLeagueJoker,
   type SavePredictionLeagues,
 } from "@/components/leagues/prediction-leagues";
 import { buttonVariants } from "@/components/ui/button";
@@ -36,6 +38,9 @@ export type FormLeagues = {
   /** « samedi 23 novembre à 19:00 », Paris time. */
   lockLabel: string;
   save: SavePredictionLeagues;
+  /** My jokers of the event in each league that has some (#1090), by league id. */
+  jokers: Record<string, LeagueJokersView>;
+  play: PlayLeagueJoker;
 };
 
 /** The podium of a signed-in player on an open event: compose, save. */
@@ -50,7 +55,6 @@ export function PredictionForm({
   tolerance,
   scale,
   leagues,
-  jokers,
 }: {
   eventId: string;
   slug: string;
@@ -65,8 +69,6 @@ export function PredictionForm({
   scale: Record<string, number>;
   /** None, or not readable: neither sheet nor block, the podium still counts in the general. */
   leagues?: FormLeagues | null;
-  /** The league jokers of the event (#1090), under the leagues the podium counts in. */
-  jokers?: ReactNode;
 }) {
   const [state, action] = useActionState(savePredictionAction, initial);
   const [draft, setDraft] = useState(initial.draft);
@@ -207,6 +209,8 @@ export function PredictionForm({
             locked={false}
             lockLabel={leagues.lockLabel}
             save={leagues.save}
+            jokers={leagues.jokers}
+            play={leagues.play}
           />
           <PredictionLeaguesSheet
             open={sheetOpen}
@@ -215,7 +219,6 @@ export function PredictionForm({
             lockLabel={leagues.lockLabel}
             save={leagues.save}
           />
-          {jokers}
         </>
       )}
     </>
