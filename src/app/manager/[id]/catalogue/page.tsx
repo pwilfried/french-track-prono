@@ -103,6 +103,21 @@ export default async function CataloguePage({
   if (reveals !== "error" && reveals.toReveal !== null) {
     redirect(`/manager/${id}/tour/${reveals.toReveal}`);
   }
+  // The team under construction counts the bids too, apart from the athletes won (#1088).
+  const build =
+    league === "error" || team === "error" || mine === "error"
+      ? null
+      : teamBuild(
+          league.rules,
+          [
+            ...team.athletes,
+            ...mine.bids.flatMap((b) =>
+              b.sex && b.family ? [{ sex: b.sex, family: b.family, pending: true }] : [],
+            ),
+          ],
+          mine.available,
+          { spent: mine.spent + mine.reserved, budget: mine.budget },
+        );
   const bidOf = new Map(mine === "error" ? [] : mine.bids.map((b) => [b.athleteId, b.amount]));
 
   /** The address of the catalogue with some filters changed; a new filter starts at page 1. */
@@ -157,7 +172,7 @@ export default async function CataloguePage({
             message={messages.errors.MANAGER_BIDS_UNAVAILABLE}
           />
         ) : mine.mercatoOpen || mine.mercatoClosed ? (
-          <MyBidsPanel leagueId={id} bids={mine} />
+          <MyBidsPanel leagueId={id} bids={mine} build={build ?? undefined} />
         ) : league === "error" ? (
           <ErrorNotice
             retryHref={`/manager/${id}/catalogue`}
@@ -307,11 +322,8 @@ export default async function CataloguePage({
           </>
         )}
         {/* Under the catalogue: the first athlete stays in view on a phone (#497). */}
-        {league !== "error" && team !== "error" && !team.mercatoClosed && (
-          <TeamBuildCard
-            build={teamBuild(league.rules, team.athletes, team.left)}
-            left={team.left}
-          />
+        {build && team !== "error" && !team.mercatoClosed && mine !== "error" && (
+          <TeamBuildCard build={build} left={mine.available} />
         )}
       </div>
     </main>

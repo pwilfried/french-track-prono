@@ -1,5 +1,7 @@
 import type { MyBidsView } from "@/application/manager-bids";
 import { messages } from "@/app/messages.fr";
+import { BidsRecap } from "@/components/manager/bids-recap";
+import type { TeamBuild } from "@/domain/manager-build";
 import { CountdownBadge } from "@/components/countdown/countdown-badge";
 import { ChipStatus } from "@/components/ui/chip-status";
 
@@ -73,7 +75,16 @@ const share = (part: number, whole: number) => `${whole > 0 ? (100 * part) / who
  * the mercato is closed, a notice; to the last participant who can still recruit, the button that
  * closes it (#424). During a round, « J'ai fini ce tour », then who is still awaited (#1084).
  */
-export function MyBidsPanel({ leagueId, bids }: { leagueId: string; bids: MyBidsView }) {
+export function MyBidsPanel({
+  leagueId,
+  bids,
+  build,
+}: {
+  leagueId: string;
+  bids: MyBidsView;
+  /** The team with the bids, for the recap by family (#1088). */
+  build?: TeamBuild;
+}) {
   return (
     <section
       aria-labelledby="my-budget"
@@ -120,6 +131,9 @@ export function MyBidsPanel({ leagueId, bids }: { leagueId: string; bids: MyBids
           <span aria-hidden>🔒</span>
           {text.secret}
         </p>
+      )}
+      {build && bids.mercatoOpen && (
+        <BidsRecap build={build} engaged={bids.spent + bids.reserved} budget={bids.budget} />
       )}
       <Group
         id="my-team"

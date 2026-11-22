@@ -84,3 +84,29 @@ export const Complete: Story = {
     await expect(canvas.getByText(/Ton équipe est complète/)).toBeVisible();
   },
 };
+
+const bid = (family: DisciplineFamily, sex: ManagerSex) => ({ family, sex, pending: true });
+
+/** Bids running count in the team, marked apart from the athletes won. */
+export const WithBids: Story = {
+  args: {
+    build: teamBuild(rules, [a("sprint", "F"), bid("sprint", "M"), bid("middle", "F")], 70),
+    left: 70,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("3/12")).toBeVisible();
+    await expect(canvas.getByText("dont 2 enchères en cours")).toBeVisible();
+  },
+};
+
+/** The bids and the athletes together go over the budget. */
+export const OverBudget: Story = {
+  args: {
+    build: teamBuild(rules, [a("sprint", "F"), bid("sprint", "M")], 0, { spent: 120, budget: 100 }),
+    left: 0,
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole("alert")).toBeVisible();
+  },
+};

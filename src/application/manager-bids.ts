@@ -1,3 +1,5 @@
+import type { DisciplineFamily } from "@/domain/discipline";
+import type { ManagerSex } from "@/domain/manager-rules";
 import {
   availableCredits,
   MAX_BID_DIGITS,
@@ -70,7 +72,13 @@ export interface ManagerBidRepository {
 export type CloseOutcome = "closed" | "not_member" | "mercato_closed" | "not_last_bidder";
 export type FinishRoundOutcome = "finished" | "not_member" | "mercato_closed" | "round_closing";
 
-type Named = { name: string; price: number };
+type Named = {
+  name: string;
+  price: number;
+  /** Of the catalogue, for the team under construction (#1088). */
+  sex: ManagerSex | null;
+  family: DisciplineFamily | null;
+};
 export type MyBidLine = ManagerBid & Named;
 export type MyAthleteLine = WonAthlete & { name: string };
 
@@ -126,7 +134,12 @@ export function getMyManagerBids(ports: {
       const byId = new Map(athletes.map((a) => [a.athleteId, a]));
       const named = (athleteId: string): Named => {
         const athlete = byId.get(athleteId);
-        return { name: athlete?.name ?? "", price: athlete?.price ?? 0 };
+        return {
+          name: athlete?.name ?? "",
+          price: athlete?.price ?? 0,
+          sex: athlete?.sex ?? null,
+          family: athlete?.family ?? null,
+        };
       };
       const spent = mine.team.reduce((sum, a) => sum + a.amount, 0);
       return {
