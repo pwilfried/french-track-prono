@@ -5,6 +5,7 @@ import {
   competitionVenue,
   competitionsForPlayer,
   rankingStart,
+  daysBetween,
   daysUntil,
   competitionSlug,
   eventSlug,
@@ -106,6 +107,18 @@ describe("nextCompetition", () => {
       "b",
     );
     expect(nextCompetition([], "2027-01-10")).toBeNull();
+  });
+});
+
+describe("daysBetween", () => {
+  it("counts the days a competition moved, back or forth", () => {
+    expect(daysBetween("2026-11-20", "2026-11-27")).toBe(7);
+    expect(daysBetween("2026-11-20", "2026-11-18")).toBe(-2);
+    expect(daysBetween("2026-11-20", "2026-11-20")).toBe(0);
+  });
+
+  it("is not fooled by a change of daylight saving time either", () => {
+    expect(daysBetween("2026-10-24", "2026-10-31")).toBe(7);
   });
 });
 

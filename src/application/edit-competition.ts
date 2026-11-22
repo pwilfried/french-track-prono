@@ -1,5 +1,6 @@
 import {
   competitionVenue,
+  daysBetween,
   isValidCompetition,
   parisToUtc,
   type CompetitionScope,
@@ -33,6 +34,11 @@ export interface CompetitionEditRepository {
     change: { round: Round; startsAt: string; lockAt: string },
   ): Promise<Outcome>;
   removeEvent(eventSlug: string): Promise<Outcome>;
+  /**
+   * Moves every event of a competition by whole days (#1070): each keeps its Paris time, its lock
+   * moves with it.
+   */
+  shiftEvents(slug: string, days: number): Promise<"saved" | "not_admin" | "unknown">;
 }
 
 function check(outcome: Outcome, notFound: "COMPETITION_NOT_FOUND" | "EVENT_NOT_FOUND") {
@@ -41,7 +47,11 @@ function check(outcome: Outcome, notFound: "COMPETITION_NOT_FOUND" | "EVENT_NOT_
   if (outcome === "has_predictions") throw new UseCaseError("HAS_PREDICTIONS");
 }
 
-/** The admin corrects a competition: name, kind, venue, place, dates. */
+/**
+ * The admin corrects a competition: name, kind, venue, place, dates. With `shiftEventsFrom` (the
+ * start date before the change, « Décaler aussi les épreuves », #1070), its events move as many
+ * days as its start did.
+ */
 export function editCompetition(ports: { competitions: CompetitionEditRepository }) {
   return {
     async execute(input: {
@@ -54,9 +64,14 @@ export function editCompetition(ports: { competitions: CompetitionEditRepository
       countryCode: string;
       startsOn: string;
       endsOn: string;
+      shiftEventsFrom?: string;
     }): Promise<void> {
       const countryCode = input.countryCode.trim().toUpperCase();
-      if (!isValidCompetition(input) || (countryCode && !/^[A-Z]{3}$/.test(countryCode))) {
+      if (
+        !isValidCompetition(input) ||
+        (countryCode && !/^[A-Z]{3}$/.test(countryCode)) ||
+        (input.shiftEventsFrom !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(input.shiftEventsFrom))
+      ) {
         throw new UseCaseError("COMPETITION_INVALID");
       }
       check(
@@ -71,6 +86,10 @@ export function editCompetition(ports: { competitions: CompetitionEditRepository
         }),
         "COMPETITION_NOT_FOUND",
       );
+      const days = input.shiftEventsFrom ? daysBetween(input.shiftEventsFrom, input.startsOn) : 0;
+      if (days !== 0) {
+        check(await ports.competitions.shiftEvents(input.slug, days), "COMPETITION_NOT_FOUND");
+      }
     },
   };
 }

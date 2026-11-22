@@ -26,7 +26,8 @@ export const PUBLIC_CACHE_SECONDS = 120;
 /**
  * What each change makes stale. A competition counts its events, finals and entered athletes, so
  * event changes stale the competitions too. Computed points stale the rankings; so does a change
- * of what a ranking line shows of a player (pseudo, bib, club, blocked, account deleted).
+ * of what a ranking line shows of a player (pseudo, bib, club, blocked, account deleted), or of
+ * the name of their club. The podiums of the event lists show an athlete's name and country (#1070).
  */
 export const STALE_AFTER = {
   competition: ["competitions", "events"],
@@ -37,6 +38,8 @@ export const STALE_AFTER = {
   discipline: ["disciplines", "events"],
   scale: ["scale"],
   player: ["rankings"],
+  athlete: ["events"],
+  club: ["rankings"],
 } as const satisfies Record<string, readonly PublicTag[]>;
 
 export type PublicChange = keyof typeof STALE_AFTER;

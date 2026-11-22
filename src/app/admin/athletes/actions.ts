@@ -16,18 +16,21 @@ import { setAthleteRecord } from "@/application/set-athlete-record";
 import { createSupabaseAthleteAdminRepository, createSupabaseDisciplineRepository } from "@/infra";
 
 import { formText } from "../../form-data";
+import { publicDataChanged } from "../../public-data";
 import { adminOnly } from "../guard";
 
 /** Runs one change, then comes back to the athlete page with "saved" or the error code. */
 async function change(
   data: FormData,
   run: (client: Awaited<ReturnType<typeof adminOnly>>["client"]) => Promise<void>,
+  stale?: "athlete",
 ) {
   const { client } = await adminOnly();
   const slug = formText(data, "slug");
   let outcome = "enregistre=1";
   try {
     await run(client);
+    if (stale) publicDataChanged(stale);
   } catch (error) {
     if (!(error instanceof UseCaseError)) throw error;
     outcome = `erreur=${error.code}`;
@@ -37,13 +40,17 @@ async function change(
 }
 
 export async function editAthleteAction(data: FormData) {
-  await change(data, (client) =>
-    editAthlete({ athletes: createSupabaseAthleteAdminRepository(client) }).execute({
-      athleteId: formText(data, "athleteId"),
-      name: formText(data, "name"),
-      countryCode: formText(data, "countryCode"),
-      gender: formText(data, "gender"),
-    }),
+  await change(
+    data,
+    (client) =>
+      editAthlete({ athletes: createSupabaseAthleteAdminRepository(client) }).execute({
+        athleteId: formText(data, "athleteId"),
+        name: formText(data, "name"),
+        countryCode: formText(data, "countryCode"),
+        gender: formText(data, "gender"),
+      }),
+    // The podiums of the cached event lists show the athlete's name and country (#1070).
+    "athlete",
   );
 }
 

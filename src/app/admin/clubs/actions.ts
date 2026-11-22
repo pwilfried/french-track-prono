@@ -7,7 +7,14 @@ import { UseCaseError, type ErrorCode } from "@/application/errors";
 import { createSupabaseClubAdminRepository } from "@/infra";
 
 import { formText } from "../../form-data";
+import { publicDataChanged } from "../../public-data";
 import { adminOnly } from "../guard";
+
+/** The ranking lines in cache show each player's club (#1070): they expire with the admin page. */
+function clubsChanged() {
+  publicDataChanged("club");
+  revalidatePath("/admin/clubs");
+}
 
 export type ClubActionState = { error?: ErrorCode; done?: boolean };
 
@@ -23,7 +30,7 @@ async function run(work: () => Promise<unknown>): Promise<ClubActionState> {
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;
   }
-  revalidatePath("/admin/clubs");
+  clubsChanged();
   return { done: true };
 }
 
@@ -45,7 +52,7 @@ export type ClubListResult = { error?: ErrorCode; count?: number };
 async function runList(work: () => Promise<number>): Promise<ClubListResult> {
   try {
     const count = await work();
-    revalidatePath("/admin/clubs");
+    clubsChanged();
     return { count };
   } catch (error) {
     if (error instanceof UseCaseError) return { error: error.code };

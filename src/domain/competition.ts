@@ -163,9 +163,12 @@ export function rankingStart(
   return { startsOn, days: daysUntil(startsOn, today) };
 }
 
+/** Whole days from one date to another (YYYY-MM-DD), negative when `to` comes first. */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
+}
+
 /** Whole days before a competition starts (dates as YYYY-MM-DD); 0 once it is under way. */
 export function daysUntil(startsOn: string, today: string): number {
-  const days =
-    (Date.parse(`${startsOn}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000;
-  return Math.max(0, Math.round(days));
+  return Math.max(0, daysBetween(today, startsOn));
 }

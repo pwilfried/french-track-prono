@@ -114,6 +114,9 @@ export async function editCompetitionAction(data: FormData) {
       countryCode: formText(data, "countryCode"),
       startsOn: formText(data, "startsOn"),
       endsOn: formText(data, "endsOn"),
+      // « Décaler aussi les épreuves » (#1070): the start date the page was opened with.
+      shiftEventsFrom:
+        formText(data, "shiftEvents") === "1" ? formText(data, "previousStartsOn") : undefined,
     });
     return `/admin/competitions/${slug}?enregistre=1`;
   });

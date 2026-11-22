@@ -46,6 +46,14 @@ export function createSupabaseCompetitionEditRepository(
       });
       return outcomeOf(error);
     },
+    async shiftEvents(slug, days) {
+      const { error } = await client.rpc("admin_shift_competition_events", {
+        p_slug: slug,
+        p_days: days,
+      });
+      const outcome = outcomeOf(error);
+      return outcome === "has_predictions" ? "saved" : outcome;
+    },
     async removeEvent(eventSlug) {
       const { error } = await client.rpc("admin_delete_event", { p_slug: eventSlug });
       return outcomeOf(error);

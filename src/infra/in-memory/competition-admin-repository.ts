@@ -4,6 +4,14 @@ import type {
   EnteredAthlete,
 } from "@/application/create-competition";
 import type { CompetitionEditRepository } from "@/application/edit-competition";
+import { parisToUtc, utcToParis } from "@/domain/competition";
+
+/** The same Paris time, `days` later (or earlier). */
+const shiftDays = (iso: string, days: number) => {
+  const local = utcToParis(iso);
+  const day = new Date(Date.parse(`${local.slice(0, 10)}T00:00:00Z`) + days * 86_400_000);
+  return parisToUtc(`${day.toISOString().slice(0, 10)}${local.slice(10)}`);
+};
 
 /** Test double of the CompetitionAdminRepository port: one store, a session per player. */
 export function createInMemoryCompetitionAdminStore(athletes: EnteredAthlete[]) {
@@ -110,6 +118,13 @@ export function createInMemoryCompetitionAdminStore(athletes: EnteredAthlete[]) 
           if (change.round !== event.round && predicted.has(eventSlug)) return "has_predictions";
           event.round = change.round;
           event.startsAt = change.startsAt;
+          return "saved";
+        },
+        async shiftEvents(slug, days) {
+          if (!options.isAdmin) return "not_admin";
+          const found = find(slug);
+          if (!found) return "unknown";
+          for (const event of found.eventList) event.startsAt = shiftDays(event.startsAt, days);
           return "saved";
         },
         async removeEvent(eventSlug) {
