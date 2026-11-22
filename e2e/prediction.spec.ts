@@ -41,8 +41,11 @@ test("a new player predicts a perfect podium, the admin enters the results sheet
   await expect(notice).toContainText("Podium enregistré");
   await expect(notice).toBeInViewport();
   // A new change brings the button back: the winner taken off and put back.
-  await athletes.nth(0).click();
-  await athletes.nth(0).click();
+  // The list can be reordered by the save: take the placed winner by its label, not its index.
+  const winner = page.getByRole("button", { name: /placé 1er/ });
+  const winnerName = ((await winner.textContent()) ?? "").trim();
+  await winner.click();
+  await page.getByRole("button", { name: new RegExp(`^${winnerName}(,|$)`) }).click();
   await expect(save).toBeVisible();
 
   // Reopening the page shows the saved podium and its confirmation, without the tips (#493).
