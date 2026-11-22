@@ -125,6 +125,21 @@ export default async function CataloguePage({
   if (reveals !== "error" && reveals.toReveal !== null) {
     redirect(`/manager/${id}/tour/${reveals.toReveal}`);
   }
+  // The team under construction counts the bids too, apart from the athletes won (#1088).
+  const build =
+    league === "error" || team === "error" || mine === "error"
+      ? null
+      : teamBuild(
+          league.rules,
+          [
+            ...team.athletes,
+            ...mine.bids.flatMap((b) =>
+              b.sex && b.family ? [{ sex: b.sex, family: b.family, pending: true }] : [],
+            ),
+          ],
+          mine.available,
+          { spent: mine.spent + mine.reserved, budget: mine.budget },
+        );
   const bidOf = new Map(mine === "error" ? [] : mine.bids.map((b) => [b.athleteId, b.amount]));
 
   type Change = Partial<{
@@ -169,10 +184,6 @@ export default async function CataloguePage({
   const filtered = Boolean(
     query || sex || family || discipline || !availableOnly || inBudget || myBids,
   );
-  const build =
-    league !== "error" && team !== "error"
-      ? teamBuild(league.rules, team.athletes, team.left)
-      : null;
 
   return (
     <main id="main" className="flex flex-1 flex-col">
@@ -204,7 +215,7 @@ export default async function CataloguePage({
             message={messages.errors.MANAGER_BIDS_UNAVAILABLE}
           />
         ) : mine.mercatoOpen || mine.mercatoClosed ? (
-          <MyBidsPanel leagueId={id} bids={mine} />
+          <MyBidsPanel leagueId={id} bids={mine} build={build ?? undefined} />
         ) : league === "error" ? (
           <ErrorNotice
             retryHref={`/manager/${id}/catalogue`}
@@ -414,8 +425,8 @@ export default async function CataloguePage({
           </>
         )}
         {/* Under the catalogue: the first athlete stays in view on a phone (#497). */}
-        {build && team !== "error" && !team.mercatoClosed && (
-          <TeamBuildCard build={build} left={team.left} />
+        {build && team !== "error" && !team.mercatoClosed && mine !== "error" && (
+          <TeamBuildCard build={build} left={mine.available} />
         )}
       </div>
     </main>

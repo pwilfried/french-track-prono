@@ -104,3 +104,49 @@ describe("firstLineupSteps", () => {
     expect(steps.current).toBeNull();
   });
 });
+
+describe("teamBuild with bids", () => {
+  const bid = (family: DisciplineFamily, sex: ManagerSex) => ({ family, sex, pending: true });
+
+  it("counts won athletes and bids running together, by family", () => {
+    const build = teamBuild(
+      rules,
+      [athlete("sprint", "F"), athlete("hurdles", "M"), bid("sprint", "F"), bid("middle", "M")],
+      80,
+    );
+    const sprint = build.families.find((f) => f.family === "sprint")!;
+    expect(sprint).toMatchObject({ have: 3, won: 2, bidding: 1, done: true });
+    expect(build.families.find((f) => f.family === "distance")).toMatchObject({
+      have: 1,
+      won: 0,
+      bidding: 1,
+    });
+    expect(build).toMatchObject({ count: 4, bidding: 2, missing: 8 });
+  });
+
+  it("starts with no bid at all", () => {
+    expect(teamBuild(rules, [], 100).bidding).toBe(0);
+  });
+
+  it("flags a sex above its maximum in a family, bids included", () => {
+    const build = teamBuild(
+      rules,
+      [
+        athlete("throws", "F"),
+        athlete("throws", "F"),
+        athlete("throws", "F"),
+        athlete("throws", "F"),
+        bid("throws", "F"),
+      ],
+      10,
+    );
+    const throws = build.families.find((f) => f.family === "throws")!;
+    expect(throws.fullSexes).toEqual(["F"]);
+    expect(throws.done).toBe(false);
+  });
+
+  it("flags a budget exceeded by the athletes and the bids", () => {
+    expect(teamBuild(rules, [], 0, { spent: 101, budget: 100 }).overBudget).toBe(true);
+    expect(teamBuild(rules, [], 0, { spent: 100, budget: 100 }).overBudget).toBe(false);
+  });
+});

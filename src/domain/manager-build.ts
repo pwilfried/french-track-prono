@@ -11,24 +11,39 @@ import {
 export type BuildRules = Pick<ManagerRules, "minTeamSize" | "quotas">;
 
 /** One athlete of the team under construction. */
-export type BuildMember = { sex: ManagerSex; family: DisciplineFamily };
+export type BuildMember = {
+  sex: ManagerSex;
+  family: DisciplineFamily;
+  /** A bid still running (#1088), not an athlete won; it counts in the team under construction. */
+  pending?: boolean;
+};
 
 /** Where a family stands: what the team holds, what it needs, the sexes still missing. */
 export type FamilyBuild = {
   family: ManagerFamily;
+  /** Athletes won plus bids running. */
   have: number;
+  won: number;
+  /** Bids running on athletes of the family. */
+  bidding: number;
   /** The fewest athletes the family needs: its minimum, or a minimum of each sex. */
   need: number;
   /** How many athletes are still to recruit in it. */
   missing: number;
   /** The sexes under their minimum in the family. */
   missingSexes: ManagerSex[];
+  /** The sexes above their maximum in the family, bids included. */
+  fullSexes: ManagerSex[];
   done: boolean;
 };
 
 export type TeamBuild = {
-  /** Athletes of the team that count (relays do not belong to a family). */
+  /** Athletes of the team that count, bids included (relays do not belong to a family). */
   count: number;
+  /** Of `count`, the bids still running. */
+  bidding: number;
+  /** Whether the team and the bids together are within `rules.budget` (#1088). */
+  overBudget: boolean;
   /** The athletes to aim for: the minimum team. */
   target: number;
   /** How many are still to recruit to reach `target`. */
@@ -44,7 +59,12 @@ export type TeamBuild = {
  * The team a player is building at the mercato (#1037): per family what is held and what is
  * missing, how many athletes to aim for, and what the credits left allow for each missing one.
  */
-export function teamBuild(rules: BuildRules, team: BuildMember[], left: number): TeamBuild {
+export function teamBuild(
+  rules: BuildRules,
+  team: BuildMember[],
+  left: number,
+  committed?: { spent: number; budget: number },
+): TeamBuild {
   const members = team.filter((a) => managerFamilyOf(a.family) !== null);
   const families = rules.quotas.map((q): FamilyBuild => {
     const own = members.filter((a) => managerFamilyOf(a.family) === q.family);
@@ -53,18 +73,26 @@ export function teamBuild(rules: BuildRules, team: BuildMember[], left: number):
       (sex) => own.filter((a) => a.sex === sex).length < q.minPerSex,
     );
     const missing = Math.max(need - own.length, missingSexes.length);
+    const fullSexes = MANAGER_SEXES.filter(
+      (sex) => own.filter((a) => a.sex === sex).length > q.maxPerSex,
+    );
     return {
       family: q.family,
       have: own.length,
+      won: own.filter((a) => !a.pending).length,
+      bidding: own.filter((a) => a.pending).length,
       need,
       missing,
       missingSexes,
-      done: missing === 0,
+      fullSexes,
+      done: missing === 0 && fullSexes.length === 0,
     };
   });
   const missing = Math.max(rules.minTeamSize - members.length, 0);
   return {
     count: members.length,
+    bidding: members.filter((a) => a.pending).length,
+    overBudget: committed !== undefined && committed.spent > committed.budget,
     target: rules.minTeamSize,
     missing,
     perMissing: missing === 0 ? null : Math.floor(Math.max(left, 0) / missing),

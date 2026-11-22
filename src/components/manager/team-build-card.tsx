@@ -35,6 +35,11 @@ export function TeamBuildCard({ build, left }: { build: TeamBuild; left: number 
           {text.count(build.count, build.target)}
         </p>
       </div>
+      {build.bidding > 0 && (
+        <p className="-mt-2 text-xs font-semibold text-muted-foreground">
+          {text.withBids(build.bidding)}
+        </p>
+      )}
       <div
         role="progressbar"
         aria-label={text.progress(build.count, build.target)}
@@ -58,13 +63,25 @@ export function TeamBuildCard({ build, left }: { build: TeamBuild; left: number 
             <span aria-hidden="true" className="font-bold">
               {f.done ? "✓" : "○"}
             </span>
-            <span className="min-w-0 flex-1 break-words">{messages.team.groups[f.family]}</span>
+            <span className="min-w-0 flex-1 break-words">
+              {messages.team.groups[f.family]}
+              {f.bidding > 0 && (
+                <span className="block font-normal text-muted-foreground">
+                  {text.withBids(f.bidding)}
+                </span>
+              )}
+            </span>
             <span aria-hidden="true" className="font-mono tabular-nums">
               {f.have}/{f.need}
             </span>
           </li>
         ))}
       </ul>
+      {build.overBudget && (
+        <p role="alert" className="break-words text-sm font-semibold text-accent-text">
+          {text.overBudget}
+        </p>
+      )}
       <p className="break-words text-sm text-muted-foreground">{buildSentence(build, left)}</p>
     </section>
   );
