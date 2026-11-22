@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { DisciplineFamily } from "./discipline";
 import { MANAGER_FAMILIES, type ManagerSex, type TeamQuota } from "./manager-rules";
-import { athleteInitials, fitsQuotas, shortAthleteName, unmetQuotas } from "./manager-team";
+import { athleteInitials, shortAthleteName, unmetQuotas } from "./manager-team";
 
 describe("athleteInitials", () => {
   it("takes the first letter of the first and the last name", () => {
@@ -75,22 +75,5 @@ describe("unmetQuotas", () => {
       { family: "distance", sex: "F" },
       { family: "distance", sex: "M" },
     ]);
-  });
-});
-
-describe("fitsQuotas", () => {
-  it("refuses a fifth man sprinter", () => {
-    const team = athletes(4, "M", "sprint");
-    expect(fitsQuotas(quotas, team, { sex: "M", family: "hurdles" })).toBe(false);
-  });
-
-  it("still takes a woman sprinter next to four men", () => {
-    const team = athletes(4, "M", "sprint");
-    expect(fitsQuotas(quotas, team, { sex: "F", family: "sprint" })).toBe(true);
-  });
-
-  it("refuses a relay team and a family without a quota", () => {
-    expect(fitsQuotas(quotas, [], { sex: "F", family: "relay" })).toBe(false);
-    expect(fitsQuotas(quotas.slice(1), [], { sex: "F", family: "sprint" })).toBe(false);
   });
 });

@@ -556,8 +556,8 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   vers Supabase. Le vidage du cache des tests (`/api/public-cache`) envoie le même en-tête. Sans le
   secret, rien ne change (prod, CI des PR, local). « Se connecter en tant que » (#637) marche
   derrière la protection : c'est le même site, une fois passé la page Vercel.
-- **Mise en prod** : la prod suit toujours les tags, posés automatiquement quand un milestone est
-  fini et `main` vert, sans feu vert humain (décision du propriétaire du 13 nov. 2026,
+- **Mise en prod** : la prod suit toujours les tags, posés quand un milestone est fini, `main`
+  vert, et que le propriétaire a fermé l'issue « Go prod vX.Y.Z » (décision du 22 nov. 2026,
   `ci/agents/README.md`, étape 6). Seul garde-fou : un run « Pre-production » en échec sur le
   commit de `main` (migrations, déploiement, test de fumée, ou la suite e2e lancée avant le tag)
   fait attendre le tag.
