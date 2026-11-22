@@ -20,7 +20,14 @@ type Pass = {
  * (through the same --jq filters); writes are only printed (DRY_RUN). v0.17 is finished, its last
  * issue closed at 18:00. A run name ending with "!" failed, one ending with "…" is still going.
  */
-function release({ runs, e2e }: { runs?: string[]; e2e?: Pass[] } = {}) {
+/** The go issue « Mettre v0.17.0 en prod » (#90): absent, waiting, or labelled release:go by someone. */
+type Gate = { go?: boolean; by?: string } | null;
+
+function release({
+  runs,
+  e2e,
+  gate = { go: true, by: "boss" },
+}: { runs?: string[]; e2e?: Pass[]; gate?: Gate } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "agents-release-"));
   const api: Record<string, unknown> = {
     "repos/owner/repo/tags?per_page=100": [{ name: "v0.16.0" }],
@@ -63,6 +70,18 @@ function release({ runs, e2e }: { runs?: string[]; e2e?: Pass[] } = {}) {
     "repos/owner/repo/pulls/42/files?per_page=100": [{ filename: "ci/agents/lib.sh" }],
     "repos/owner/repo/pulls/41": { title: "feat: add a screen" },
     "repos/owner/repo/milestones/7": { description: "It works when the league is themed." },
+    "repos/owner/repo/issues?labels=release&state=open&per_page=100": gate
+      ? [
+          {
+            number: 90,
+            title: "Mettre v0.17.0 en prod",
+            labels: [{ name: "release" }, ...(gate.go ? [{ name: "release:go" }] : [])],
+          },
+        ]
+      : [],
+    "repos/owner/repo/issues/90/events?per_page=100": gate?.go
+      ? [{ event: "labeled", label: { name: "release:go" }, actor: { login: gate.by ?? "boss" } }]
+      : [],
   };
   writeFileSync(join(dir, "api.json"), JSON.stringify(api));
   writeFileSync(
@@ -100,15 +119,35 @@ jq -c --arg p "$path" '.[$p] // error("no fixture for " + $p)' "${dir}/api.json"
   return run.stdout + run.stderr;
 }
 
-it("tags a finished version once main is green, pre-production included, without waiting for a go", () => {
+it("tags a finished, green version once an owner gave the go (#1076)", () => {
   const out = release();
   expect(out).toContain("Tagging v0.17.0 on abcdef1");
   expect(out).toContain("refs/tags/v0.17.0");
-  expect(out).toContain("Vérifier v0.17.0 en prod");
-  expect(out).toContain("- [ ] #41 feat: add a screen");
-  expect(out).not.toContain("#42 ");
+  expect(out).toContain("issue close -R owner/repo 90");
   expect(out).toContain("milestones/7 -f state=closed");
   expect(out).toContain("v0.17.0 tagged");
+});
+
+it("opens the go issue with what to check on pre-production, and does not tag (#1076)", () => {
+  const out = release({ gate: null });
+  expect(out).toContain("issue create -R owner/repo --label release --label needs-human");
+  expect(out).toContain("Mettre v0.17.0 en prod");
+  expect(out).toContain("- [ ] #41 feat: add a screen");
+  expect(out).not.toContain("#42 ");
+  expect(out).toContain("release:go");
+  expect(out).not.toContain("Tagging");
+});
+
+it("waits while the go issue has no release:go (#1076)", () => {
+  const out = release({ gate: { go: false } });
+  expect(out).toContain("waiting for an owner to add release:go to #90");
+  expect(out).not.toContain("Tagging");
+});
+
+it("ignores a release:go added by someone who is not an owner (#1076)", () => {
+  const out = release({ gate: { go: true, by: "stranger" } });
+  expect(out).toContain("waiting for an owner to add release:go to #90");
+  expect(out).not.toContain("Tagging");
 });
 
 it("waits for the next sweep when the pre-production deploy of main's commit failed", () => {

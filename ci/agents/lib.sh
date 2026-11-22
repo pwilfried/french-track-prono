@@ -18,7 +18,7 @@ run_url="${GITHUB_SERVER_URL:-https://github.com}/$repo/actions/runs/${GITHUB_RU
 quota_re='usage limit|rate.?limit|limit reached|hit your .*limit|quota|credit balance|too many requests|(^|[^0-9])429([^0-9]|$)|resets? (at|in)|try again (later|in)|out of (credits|usage)'
 
 # DRY_RUN=1: writes (merges, comments, labels) are printed instead of done.
-is_write() { [[ " $* " =~ " "(-X|merge|create|edit|comment|rerun)" " || " $* " == *" -f body="* ]]; }
+is_write() { [[ " $* " =~ " "(-X|merge|create|edit|comment|rerun|close)" " || " $* " == *" -f body="* ]]; }
 as_bot() { if [ -n "${DRY_RUN:-}" ] && is_write "$@"; then echo "DRY bot: $*" >&2; else env ${BOT_TOKEN:+"GH_TOKEN=$BOT_TOKEN"} "$@"; fi; }
 as_owner() { if [ -n "${DRY_RUN:-}" ] && is_write "$@"; then echo "DRY owner: $*" >&2; else env ${PAT_TOKEN:+"GH_TOKEN=$PAT_TOKEN"} "$@"; fi; }
 has_pat() { [ "$PAT_TOKEN" != "$BOT_TOKEN" ]; }

@@ -556,11 +556,12 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   vers Supabase. Le vidage du cache des tests (`/api/public-cache`) envoie le même en-tête. Sans le
   secret, rien ne change (prod, CI des PR, local). « Se connecter en tant que » (#637) marche
   derrière la protection : c'est le même site, une fois passé la page Vercel.
-- **Mise en prod** : la prod suit toujours les tags, posés automatiquement quand un milestone est
-  fini et `main` vert, sans feu vert humain (décision du propriétaire du 13 nov. 2026,
-  `ci/agents/README.md`, étape 6). Seul garde-fou : un run « Pre-production » en échec sur le
-  commit de `main` (migrations, déploiement, test de fumée, ou la suite e2e lancée avant le tag)
-  fait attendre le tag.
+- **Mise en prod** : la prod suit toujours les tags. Quand un milestone est fini, `main` vert et la
+  suite e2e complète verte sur la préprod, l'issue « Mettre vX.Y.Z en prod » attend le go du
+  propriétaire : le label `release:go` sur cette issue fait poser le tag au passage suivant
+  (décision du propriétaire du 22 nov. 2026, #1076, `ci/agents/README.md`, étape 6). Un run
+  « Pre-production » en échec sur le commit de `main` (migrations, déploiement, test de fumée, ou
+  la suite e2e lancée avant le tag) fait attendre.
 
 Secrets de l'environnement GitHub `preprod` (Settings → Environments → preprod), ceux du projet
 de préprod, jamais ceux de la prod : `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`,

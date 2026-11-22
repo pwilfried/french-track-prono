@@ -33,13 +33,16 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
 6. Quand le milestone qui suit le dernier tag n'a plus d'issue ouverte et que tous les
    runs du dernier commit de `main` sont verts (CI et préprod), `release.sh` lance la suite e2e
    complète contre la préprod sur ce commit (`preprod.yml` avec `e2e=true`, run « Pre-production
-   e2e », une seule fois, #743) ; quand elle est verte, il pose le tag annoté sur le commit de ce
-   passage, même si `main` a avancé depuis (#967) :
-   `vX.Y.0` pour un milestone `vX.Y …`, `vX.Y.Z` pour un milestone correctif `vX.Y.Z …`. Il le pose
-   avec `AGENTS_PAT`, ce qui lance la mise en prod (`migrations.yml`). Aucun feu vert humain
-   (décision du propriétaire du 13 nov. 2026). Une release GitHub liste les PR (sa notification
-   prévient les propriétaires), l'issue `needs-human` « Vérifier vX.Y.Z en prod » liste le critère
-   et une case par PR qui touche l'interface, et le milestone est fermé. Seul garde-fou : si le
+   e2e », une seule fois, #743) ; quand elle est verte, il ouvre l'issue « Mettre vX.Y.Z en prod »
+   (labels `release` et `needs-human`, sans milestone) : le critère de la version et une case par
+   PR qui touche l'interface, à vérifier sur la préprod. **Le go du propriétaire est obligatoire**
+   (décision du 22 nov. 2026, #1076) : il ajoute le label `release:go` à cette issue (depuis
+   l'application GitHub du téléphone), et le passage suivant (lancer `agents-merge` à la main pour
+   ne pas attendre) pose le tag annoté sur le commit du passage vert, même si `main` a avancé
+   depuis (#967) : `vX.Y.0` pour un milestone `vX.Y …`, `vX.Y.Z` pour un milestone correctif
+   `vX.Y.Z …`. Il le pose avec `AGENTS_PAT`, ce qui lance la mise en prod (`migrations.yml`). Un
+   `release:go` posé par quelqu'un qui n'est pas dans `AGENTS_OWNER` ne compte pas. Une release
+   GitHub liste les PR, l'issue est fermée avec un commentaire, et le milestone est fermé. Seul garde-fou : si le
    déploiement en préprod de ce commit a échoué, pas de tag, un avertissement dans le run, nouvel
    essai à la vérification suivante (au plus une heure). « Échoué » couvre tout le run
    « Pre-production » : migrations, déploiement, test de fumée, ou la suite e2e d'avant tag. Une
@@ -127,8 +130,8 @@ des heures (#736).
 ## Ce qui n'est pas automatique
 
 - Les captures d'écran 390 px (clair et sombre) : Claude ne les produit pas sur le runner ; l'issue
-  « Vérifier vX.Y.Z en prod » sert à regarder les écrans une fois la version en production (la
-  préprod permet de les voir avant, sans rien bloquer).
+  « Mettre vX.Y.Z en prod » sert à regarder les écrans sur la préprod avant le go.
+- La mise en prod : le label `release:go` du propriétaire sur l'issue « Mettre vX.Y.Z en prod ».
 - La base Supabase locale (pgTAP, adaptateurs, e2e) : Claude ne la lance pas, la CI de la PR le fait.
 - Un tag de correctif sans milestone : à la main, comme avant. Avec un milestone `vX.Y.Z …`, il est
   posé automatiquement.

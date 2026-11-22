@@ -137,7 +137,8 @@ if [ "$EVENT" = schedule ] || [ "$EVENT" = workflow_dispatch ]; then
   done
 fi
 
-# A finished milestone on a green main is tagged, which deploys it (release.sh).
+# A finished milestone on a green main waits for the owner's go, then is tagged, which deploys it
+# (release.sh, #1076).
 "$here/release.sh" || echo "::warning::The release check failed; the next sweep tries again."
 
 "$here/next.sh"
