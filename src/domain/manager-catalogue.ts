@@ -26,14 +26,58 @@ export type CatalogueFilter = {
   sex: ManagerSex | null;
   /** One of the four Manager families (#1017). */
   family: ManagerFamily | null;
+  /** One discipline, e.g. « 200 m »; the page offers it once a family is chosen (#1087). */
+  discipline: string | null;
   availableOnly: boolean;
+  /** Only athletes priced at most this (what the player has left); null keeps all. */
+  maxPrice: number | null;
+  /** Only these athletes (the player's bids); null keeps all. */
+  onlyIds: ReadonlySet<string> | null;
+};
+
+/** The filters of an untouched catalogue, but the available athletes, which show by default. */
+export const DEFAULT_CATALOGUE_FILTER: CatalogueFilter = {
+  sex: null,
+  family: null,
+  discipline: null,
+  availableOnly: true,
+  maxPrice: null,
+  onlyIds: null,
 };
 
 /** Whether an athlete passes the filters of the catalogue. */
 export const inCatalogueFilter = (a: CatalogueAthlete, f: CatalogueFilter) =>
   (!f.sex || a.sex === f.sex) &&
   (!f.family || managerFamilyOf(a.family) === f.family) &&
-  (!f.availableOnly || a.available);
+  (!f.discipline || a.discipline === f.discipline) &&
+  (!f.availableOnly || a.available) &&
+  (f.maxPrice === null || a.price <= f.maxPrice) &&
+  (!f.onlyIds || f.onlyIds.has(a.athleteId));
+
+/** How the catalogue is ordered: dearest first by default (#1087). */
+export const CATALOGUE_SORTS = ["price_desc", "price_asc", "name"] as const;
+export type CatalogueSort = (typeof CATALOGUE_SORTS)[number];
+export const DEFAULT_CATALOGUE_SORT: CatalogueSort = "price_desc";
+
+const byName = (a: CatalogueAthlete, b: CatalogueAthlete) =>
+  a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
+
+/** The comparison of a sort; equal prices fall back to the name so the order is stable. */
+export const compareCatalogue =
+  (sort: CatalogueSort) => (a: CatalogueAthlete, b: CatalogueAthlete) =>
+    sort === "price_desc"
+      ? b.price - a.price || byName(a, b)
+      : sort === "price_asc"
+        ? a.price - b.price || byName(a, b)
+        : byName(a, b);
+
+/** The disciplines of a family in the catalogue, in alphabetical order, each once. */
+export const catalogueDisciplines = (athletes: CatalogueAthlete[], family: ManagerFamily) =>
+  [
+    ...new Set(
+      athletes.filter((a) => managerFamilyOf(a.family) === family).map((a) => a.discipline),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "fr", { numeric: true, sensitivity: "base" }));
 
 /**
  * A priced athlete the catalogue still leaves out: it lists athletes by their main discipline, so
