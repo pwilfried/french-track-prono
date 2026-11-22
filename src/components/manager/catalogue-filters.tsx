@@ -6,11 +6,8 @@ export type FilterChip = { key: string; name: string; href: string; active: bool
 
 function Chips({ label, chips }: { label: string; chips: FilterChip[] }) {
   return (
-    <nav aria-label={label} className="flex flex-col gap-1">
-      <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-        {label}
-      </span>
-      <ul className="flex flex-wrap gap-2">
+    <nav aria-label={label}>
+      <ul className="flex gap-2 overflow-x-auto pb-1">
         {chips.map((chip) => (
           <li key={chip.key}>
             <Link
@@ -35,7 +32,7 @@ function Chips({ label, chips }: { label: string; chips: FilterChip[] }) {
 
 /**
  * The filters of the mercato catalogue (#1087): sort, family, discipline (once a family is
- * chosen), sex, then the toggles, as chips that wrap on a phone. Plain links, so they work
+ * chosen), sex, then the toggles, as chips in one scrollable row each, so the first athlete stays in view on a phone. Plain links, so they work
  * without script.
  */
 export function CatalogueFilters({
@@ -62,7 +59,7 @@ export function CatalogueFilters({
       {disciplines.chips.length > 0 && (
         <Chips label={disciplines.label} chips={disciplines.chips} />
       )}
-      <div className="flex flex-wrap gap-x-4 gap-y-3">
+      <div className="flex gap-4 overflow-x-auto">
         <Chips label={sexes.label} chips={sexes.chips} />
         <Chips label={toggles.label} chips={toggles.chips} />
       </div>
