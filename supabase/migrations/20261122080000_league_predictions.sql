@@ -50,6 +50,14 @@ language sql stable security definer set search_path = public as $$
                  where lc.league_id = p_league and e.id = p_event)
 $$;
 
+-- The policies and set_prediction_leagues call these helpers as the signed-in player.
+revoke execute on function private.event_open(uuid) from public, anon;
+revoke execute on function private.my_prediction(uuid) from public, anon;
+revoke execute on function private.league_counts_event(uuid, uuid) from public, anon;
+grant execute on function private.event_open(uuid) to authenticated;
+grant execute on function private.my_prediction(uuid) to authenticated;
+grant execute on function private.league_counts_event(uuid, uuid) to authenticated;
+
 -- The members of a league read what counts in it: its ranking is the same for each of them.
 create policy members_read on league_predictions for select to authenticated
   using (is_league_member(league_id));
