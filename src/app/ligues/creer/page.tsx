@@ -55,11 +55,6 @@ export default async function CreateLeaguePage({
         back={{ href: "/ligues", label: messages.leagues.back }}
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
-        <CreateLeagueForm
-          competitions={competitions}
-          chosen={chosen}
-          isPublic={params.publique === "1"}
-        />
         {jokers && (
           <section aria-labelledby="league-jokers" className="flex flex-col gap-2">
             <h2 id="league-jokers" className="font-display text-xl font-extrabold">
@@ -69,6 +64,11 @@ export default async function CreateLeaguePage({
             <JokerList jokers={jokers} />
           </section>
         )}
+        <CreateLeagueForm
+          competitions={competitions}
+          chosen={chosen}
+          isPublic={params.publique === "1"}
+        />
       </div>
     </main>
   );
