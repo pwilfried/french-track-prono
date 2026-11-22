@@ -21,28 +21,41 @@ export function BidsRecap({
   return (
     <div className="flex flex-col gap-2 border-t border-border pt-3">
       <h3 className="text-sm font-bold">{text.title}</h3>
-      {build.bidding === 0 && <p className="text-sm text-muted-foreground">{text.none}</p>}
+      {build.bidding === 0 && build.families.every((f) => f.won === 0) && (
+        <p className="text-sm text-muted-foreground">{text.none}</p>
+      )}
       <ul className="grid grid-cols-2 gap-2">
-        {build.families.map((f) => (
-          <li
-            key={f.family}
-            aria-label={text.row(messages.team.groups[f.family], f.won, f.bidding, f.need)}
-            className={cn(
-              "flex min-h-11 flex-col justify-center rounded-xl px-2.5 py-1.5 text-xs font-semibold",
-              f.done ? "bg-success-soft text-success-ink" : "bg-muted",
-            )}
-          >
-            <span className="flex items-baseline justify-between gap-2">
-              <span className="min-w-0 break-words">{messages.team.groups[f.family]}</span>
-              <span aria-hidden="true" className="font-mono tabular-nums">
-                {f.have}/{f.need}
+        {build.families.map((f) => {
+          const why = [
+            ...f.missingSexes.map((s) => text.missingSex[s]),
+            ...f.fullSexes.map((s) => text.tooManySex[s]),
+          ].join(", ");
+          return (
+            <li
+              key={f.family}
+              aria-label={`${text.row(messages.team.groups[f.family], f.won, f.bidding, f.need)}${why ? `, ${why}` : ""}`}
+              className={cn(
+                "flex min-h-11 flex-col justify-center rounded-xl px-2.5 py-1.5 text-xs font-semibold",
+                f.done ? "bg-success-soft text-success-ink" : "bg-muted",
+              )}
+            >
+              <span className="flex items-baseline justify-between gap-2">
+                <span className="min-w-0 break-words">{messages.team.groups[f.family]}</span>
+                <span aria-hidden="true" className="font-mono tabular-nums">
+                  {f.have}/{f.need}
+                </span>
               </span>
-            </span>
-            <span aria-hidden="true" className="font-normal text-muted-foreground">
-              {text.won(f.won)} · {text.bids(f.bidding)}
-            </span>
-          </li>
-        ))}
+              <span aria-hidden="true" className="font-normal text-muted-foreground">
+                {text.won(f.won)} · {text.bids(f.bidding)}
+              </span>
+              {why && (
+                <span aria-hidden="true" className="break-words font-normal text-accent-text">
+                  {why}
+                </span>
+              )}
+            </li>
+          );
+        })}
       </ul>
       <p
         role={over ? "alert" : undefined}
