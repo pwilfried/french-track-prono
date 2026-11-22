@@ -15,7 +15,8 @@ export type AdminActionKind =
   | "moderate_club"
   | "set_manager_rules"
   | "set_performances"
-  | "run_manager_scoring";
+  | "run_manager_scoring"
+  | "lock_event";
 
 /** One line of the admin log. */
 export type AdminAction = {

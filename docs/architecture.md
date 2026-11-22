@@ -922,6 +922,7 @@ résultats (`src/domain/result-import.ts`, #666).
 | R7 | Deuxième joker dans la même compétition | refusé |
 | R8 | Rejoindre une ligue avec un code inconnu | erreur |
 | R9 | Départage : égalité de points | podiums parfaits, puis vainqueurs trouvés |
+| R10 | Résultat enregistré (`set_results` ou feuille de résultats) avant `lock_at` | l'épreuve se verrouille tout de suite (`lock_at = now()`, ligne `lock_event` au journal admin) : plus aucun prono, ceux des autres visibles ; un résultat effacé ne verrouille rien (#1063) |
 
 **Domaine TypeScript** : aperçu des points possibles (mêmes cas que S1 à S6), état d'une épreuve
 selon l'heure (ouverte, verrouillée, terminée), compte à rebours (limites : 1 s avant, pile
