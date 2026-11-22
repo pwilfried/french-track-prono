@@ -3703,6 +3703,11 @@ export const messages = {
     JOKER_LOCKED: "Trop tard : l'épreuve est verrouillée, le joker ne change plus.",
     JOKERS_UNAVAILABLE:
       "Les jokers ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+    MANAGER_JOKER_NO_DUEL: "Pas de joker sur cette journée : elle n'a pas de confrontation.",
+    MANAGER_JOKER_AWAY: "L'Avantage terrain se joue seulement à domicile.",
+    MANAGER_JOKER_BAD_TARGET: "Ce choix ne va pas avec ce joker. Choisis un autre athlète.",
+    MANAGER_JOKER_NO_COACHING:
+      "Le coaching n'est plus possible : il sert une fois, avant le départ de l'épreuve.",
     DELETION_NOT_CONFIRMED: "Coche la case pour confirmer la suppression.",
     START_LIST_INVALID: "Choisis entre 1 et 24 athlètes, chacun une seule fois.",
     START_LIST_IN_USE:

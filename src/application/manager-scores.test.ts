@@ -211,6 +211,51 @@ describe("computeManagerScores", () => {
     expect(w.stored()[0]!.hungarian).toBe(sixty);
   });
 
+  it("counts the jokers of a head-to-head in both scores", async () => {
+    // Given Zoé at home against Max: she makes Alice her captain, he lines up Chloé and plays a
+    // false start on Alice
+    const w = world();
+    const [zoe, max] = w.sheet.participants;
+    zoe!.joker = { kind: "captain", athleteId: "a1" };
+    max!.lineup = starters("a3");
+    max!.joker = { kind: "false_start", athleteId: "a1" };
+    w.sheet.duels = [{ leagueId: "L", homeId: "zoe", awayId: "max" }];
+
+    // When the admin runs the computation
+    await computeManagerScores({ scores: w.scores({ isAdmin: true }), now: after }).execute({
+      competitionSlug: "meeting",
+    });
+
+    // Then Alice's doubled points are halved again; both sides see both jokers
+    const alice = points + 70;
+    const [zoeLine, maxLine] = w.stored();
+    expect(zoeLine).toMatchObject({ hungarian: points, bonus: 70, jokers: 0, total: alice });
+    expect(zoeLine!.jokerEffects).toEqual([
+      { kind: "captain", by: "me", athleteId: "a1", points: alice },
+      { kind: "false_start", by: "opponent", athleteId: "a1", points: -alice },
+    ]);
+    expect(maxLine!.jokerEffects).toEqual([
+      { kind: "false_start", by: "me", athleteId: "a1", points: -alice },
+    ]);
+  });
+
+  it("ignores a joker outside a head-to-head and counts the 9th starter of the extended bench", async () => {
+    const w = world(starters("a2"));
+    const zoe = w.sheet.participants[0]!;
+    zoe.joker = { kind: "extended_bench", athleteId: "a1", family: "sprint", discipline: "100 m" };
+
+    // A bonus matchday: no head-to-head, the joker does nothing
+    const compute = computeManagerScores({ scores: w.scores({ isAdmin: true }), now: after });
+    await compute.execute({ competitionSlug: "meeting" });
+    expect(w.stored()[0]).toMatchObject({ total: 0 });
+    expect(w.stored()[0]!.jokers).toBeUndefined();
+
+    // A head-to-head: Alice counts as a 9th starter
+    w.sheet.duels = [{ leagueId: "L", homeId: "max", awayId: "zoe" }];
+    await compute.execute({ competitionSlug: "meeting" });
+    expect(w.stored()[0]).toMatchObject({ total: points + 70, jokers: 0 });
+  });
+
   it("stores nothing when no Manager league plays the competition", async () => {
     const w = world();
     w.sheet.participants = [];

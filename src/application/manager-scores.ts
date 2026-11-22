@@ -1,3 +1,9 @@
+import {
+  lineupWithJoker,
+  managerDuelJokers,
+  type ManagerJokerEffect,
+  type ManagerJokerPlay,
+} from "@/domain/manager-jokers";
 import type { ManagerBonus } from "@/domain/manager-rules";
 import {
   managerCompetitionScore,
@@ -25,7 +31,12 @@ export type ScoringParticipant = {
   tablesDivisor: number;
   /** The match sheet at the lock (#1032); null without a validated lineup. */
   lineup: ScoringLineup | null;
+  /** The joker played on the matchday (#1091); absent or null without one. */
+  joker?: ManagerJokerPlay | null;
 };
+
+/** A head-to-head of a Manager league on the competition (never on a bonus matchday). */
+export type ScoringDuel = { leagueId: string; homeId: string; awayId: string };
 
 /** Everything the admin needs to score a competition for every Manager league. */
 export type ManagerScoringSheet = {
@@ -36,14 +47,33 @@ export type ManagerScoringSheet = {
   indoor: boolean;
   participants: ScoringParticipant[];
   performances: CompetitionPerformance[];
+  /** The head-to-heads of the matchday: the jokers count in them only (#1091). */
+  duels?: ScoringDuel[];
 };
 
-/** One stored score: a participant of a league, for the competition. */
-export type ManagerScoreLine = ManagerCompetitionScore & { leagueId: string; userId: string };
+/** What the jokers of a head-to-head changed in a score (#1091); absent from the scores before. */
+export type JokerPart = {
+  /** Added to the total of the matchday, negative after a false start. */
+  jokers?: number;
+  /** The jokers played by the player and against them. */
+  jokerEffects?: ManagerJokerEffect[];
+};
 
-/** A stored score as the player reads it: the athletes with their names. */
+/**
+ * One stored score: a participant of a league, for the competition. `total` counts the jokers:
+ * hungarian + bonus + jokers.
+ */
+export type ManagerScoreLine = ManagerCompetitionScore &
+  JokerPart & {
+    leagueId: string;
+    userId: string;
+  };
+
+/** A stored score as the player reads it: the athletes and the targets of the jokers named. */
 export type StoredManagerScore = Omit<ManagerCompetitionScore, "athletes"> & {
   athletes: (AthleteScore & { name: string })[];
+  jokers?: number;
+  jokerEffects?: (ManagerJokerEffect & { name?: string | null })[];
 };
 
 /**
@@ -76,20 +106,47 @@ export function computeManagerScores(ports: { scores: ManagerScoreRepository; no
       if (now().getTime() < Date.parse(sheet.lockAt)) {
         throw new UseCaseError("COMPETITION_NOT_STARTED");
       }
-      const lines = sheet.participants.map((p) => ({
-        leagueId: p.leagueId,
-        userId: p.userId,
-        ...managerCompetitionScore({
-          lineup: p.lineup,
+      const duels = sheet.duels ?? [];
+      const key = (leagueId: string, userId: string) => `${leagueId}|${userId}`;
+      const inDuel = new Set(
+        duels.flatMap((d) => [key(d.leagueId, d.homeId), key(d.leagueId, d.awayId)]),
+      );
+      const plays = new Map<string, ManagerJokerPlay | null>();
+      const lines = new Map<string, ManagerScoreLine>();
+      for (const p of sheet.participants) {
+        const k = key(p.leagueId, p.userId);
+        // A joker counts in a head-to-head only (never on a bonus matchday).
+        const play = inDuel.has(k) ? (p.joker ?? null) : null;
+        plays.set(k, play);
+        const score = managerCompetitionScore({
+          lineup: p.lineup && lineupWithJoker(p.lineup, play),
           performances: sheet.performances,
           indoor: sheet.indoor,
           tablesDivisor: p.tablesDivisor,
           bonuses: p.bonuses,
-        }),
-      }));
-      const outcome = await ports.scores.replace(sheet.competitionId, lines);
+        });
+        lines.set(k, { leagueId: p.leagueId, userId: p.userId, ...score });
+      }
+      for (const d of duels) {
+        const [homeKey, awayKey] = [key(d.leagueId, d.homeId), key(d.leagueId, d.awayId)];
+        const home = lines.get(homeKey);
+        const away = lines.get(awayKey);
+        if (!home || !away) continue;
+        const outcome = managerDuelJokers(
+          { score: home, play: plays.get(homeKey) ?? null },
+          { score: away, play: plays.get(awayKey) ?? null },
+        );
+        for (const [line, o] of [
+          [home, outcome.home],
+          [away, outcome.away],
+        ] as const) {
+          Object.assign(line, { total: o.total, jokers: o.jokers, jokerEffects: o.effects });
+        }
+      }
+      const scored = [...lines.values()];
+      const outcome = await ports.scores.replace(sheet.competitionId, scored);
       if (outcome === "not_admin") throw new UseCaseError("NOT_ADMIN");
-      return lines;
+      return scored;
     },
   };
 }

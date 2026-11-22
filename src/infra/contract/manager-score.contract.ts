@@ -166,6 +166,31 @@ export function managerScoreContract(name: string, world: () => Promise<ManagerS
       expect(await w.player.mine(w.leagueId, w.competitionId)).toEqual({
         ...stored,
         athletes: stored.athletes.map((a) => ({ ...a, name: w.names[a.athleteId] })),
+        jokers: 0,
+        jokerEffects: [],
+      });
+    });
+
+    it("keeps what the jokers changed, with the name of their target (#1091)", async () => {
+      const w = await world();
+      const captain = w.athleteIds[0]!;
+      const played: ManagerScoreLine = {
+        ...line(w, 900),
+        total: 1800,
+        jokers: 900,
+        jokerEffects: [{ kind: "captain", by: "me", athleteId: captain, points: 900 }],
+      };
+
+      expect(await w.admin.replace(w.competitionId, [played])).toBe("saved");
+
+      expect(await w.player.mine(w.leagueId, w.competitionId)).toMatchObject({
+        total: 1800,
+        hungarian: 850,
+        bonus: 50,
+        jokers: 900,
+        jokerEffects: [
+          { kind: "captain", by: "me", athleteId: captain, points: 900, name: w.names[captain] },
+        ],
       });
     });
 
