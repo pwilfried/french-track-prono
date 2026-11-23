@@ -33,14 +33,13 @@ test("a podium composed from the home counts only in the league the player ticks
   ];
 
   try {
-    // From the home, the next action opens the final to predict.
-    await page.goto("/");
-    await page
-      .getByRole("region", { name: "Ta prochaine action" })
-      .getByRole("link", { name: "Faire mon podium" })
-      .click();
-    await page.waitForURL(/\/epreuves\/[^/]+$/);
-    const slug = new URL(page.url()).pathname.split("/").pop()!;
+    // The home may put another competition's final first (#1149): open one of this competition.
+    const slug = sql(
+      `select e.slug from events e join competitions c on c.id = e.competition_id
+       where c.slug = '${competition}' and e.round = 'final' and e.lock_at > now() + interval '1 minute'
+       order by e.lock_at, e.starts_at, e.slug limit 1`,
+    );
+    await page.goto(`/epreuves/${slug}`);
     const athletes = page.locator("li > button[aria-pressed]");
     for (const index of [0, 1, 2]) await athletes.nth(index).click();
     await page.getByRole("button", { name: "Enregistrer mon podium" }).click();

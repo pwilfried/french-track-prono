@@ -5,7 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { ChipStatus } from "@/components/ui/chip-status";
 import { TIME_ZONE } from "@/domain/competition";
 import { countdown, splitDuration } from "@/domain/countdown";
-import type { NextAction } from "@/domain/home";
+import { sameDayWhen, type NextAction } from "@/domain/home";
 import { cn } from "@/lib/utils";
 
 const text = messages.playerHome.action;
@@ -19,6 +19,11 @@ const day = new Intl.DateTimeFormat("fr-FR", {
   month: "long",
   timeZone: TIME_ZONE,
 });
+const laterDay = new Intl.DateTimeFormat("fr-FR", {
+  weekday: "long",
+  day: "numeric",
+  timeZone: "UTC",
+});
 const time = new Intl.DateTimeFormat("fr-FR", {
   hour: "2-digit",
   minute: "2-digit",
@@ -31,7 +36,7 @@ export type NextActionCardProps = {
   action: NextAction<ActionCompetition>;
   /** The player has never predicted: « Ton premier prono » instead of « À toi de jouer ». */
   firstPrediction: boolean;
-  /** The competition of the final, for the link to its other finals. */
+  /** The competition of the shown final, for the link to its other finals. */
   competitionSlug: string;
   now: Date;
 };
@@ -81,6 +86,11 @@ function Predict({
 }) {
   const left = countdown(now, final.lockAt);
   const starts = new Date(final.startsAt);
+  const when = sameDayWhen(final.startsAt, now);
+  const whenText =
+    when.when === "later"
+      ? text.sameDayWhen.later(laterDay.format(new Date(`${when.day}T12:00:00Z`)))
+      : text.sameDayWhen[when.when];
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -105,7 +115,7 @@ function Predict({
           href={`/competitions?competition=${encodeURIComponent(competitionSlug)}`}
           className="inline-flex min-h-11 items-center self-center text-sm font-bold text-white underline underline-offset-4"
         >
-          {text.sameDay(sameDay)}
+          {text.sameDay(sameDay, whenText)}
         </Link>
       ) : null}
     </>

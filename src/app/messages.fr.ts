@@ -201,8 +201,14 @@ export const messages = {
       startsAt: (day: string, time: string) =>
         `Départ ${day} à ${time} (heure de Paris). Choisis ton 1er, ton 2e et ton 3e avant le verrou.`,
       play: "Faire mon podium",
-      sameDay: (count: number) =>
-        count === 1 ? "1 autre finale ce soir" : `${count} autres finales ce soir`,
+      sameDay: (count: number, when: string) =>
+        `${count === 1 ? "1 autre finale" : `${count} autres finales`} ${when}`,
+      sameDayWhen: {
+        evening: "ce soir",
+        today: "aujourd'hui",
+        tomorrow: "demain",
+        later: (day: string) => day,
+      },
       nextCompetition: "Prochaine compétition",
       finals: (count: number) => (count <= 1 ? `${count} finale` : `${count} finales`),
       programme: "Voir le programme",

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { EventSummary } from "./event";
-import { firstFinalToPredict, leagueStanding, nextAction, openFinals } from "./home";
+import { firstFinalToPredict, leagueStanding, nextAction, openFinals, sameDayWhen } from "./home";
 
 const event = (
   id: string,
@@ -101,6 +101,55 @@ describe("nextAction", () => {
     expect(action).toMatchObject({ kind: "predict", final: { id: "a" }, sameDay: 1 });
   });
 
+  it("falls back on a final outside the player's leagues when their competitions have none open", () => {
+    const action = nextAction({
+      events: [],
+      otherEvents: [event("today", "2026-11-23T18:00:00Z")],
+      predicted: new Set(),
+      competitions: [competition("28-nov", "2026-11-28")],
+      now,
+    });
+    expect(action).toMatchObject({ kind: "predict", final: { id: "today" } });
+  });
+
+  it("prefers a final of the player's leagues over one outside them that locks earlier", () => {
+    const action = nextAction({
+      events: [event("mine", "2026-11-25T18:00:00Z")],
+      otherEvents: [event("other", "2026-11-23T18:00:00Z")],
+      predicted: new Set(),
+      competitions: [],
+      now,
+    });
+    expect(action).toMatchObject({ kind: "predict", final: { id: "mine" } });
+  });
+
+  it("shows the next competition once everything is predicted, leagues or not", () => {
+    const action = nextAction({
+      events: [event("a", "2026-11-23T18:00:00Z")],
+      otherEvents: [event("b", "2026-11-23T19:00:00Z")],
+      predicted: new Set(["a", "b"]),
+      competitions: [competition("next", "2026-12-10")],
+      now,
+    });
+    expect(action).toMatchObject({ kind: "competition", competition: { slug: "next" } });
+  });
+
+  it("counts the other finals of the shown final's competition only", () => {
+    const action = nextAction({
+      events: [],
+      otherEvents: [
+        event("a", "2026-11-23T18:00:00Z"),
+        event("b", "2026-11-23T19:00:00Z"),
+        event("c", "2026-11-23T20:00:00Z"),
+      ],
+      competitionOf: (id) => (id === "c" ? "elsewhere" : "here"),
+      predicted: new Set(),
+      competitions: [],
+      now,
+    });
+    expect(action).toMatchObject({ kind: "predict", final: { id: "a" }, sameDay: 1 });
+  });
+
   it("leaves heats and locked finals out", () => {
     const action = nextAction({
       events: [
@@ -193,5 +242,25 @@ describe("leagueStanding", () => {
         ?.leagueId,
     ).toBe("one");
     expect(leagueStanding([league("l", [row("a", 1, 3)])], "me")).toBeNull();
+  });
+});
+
+describe("sameDayWhen", () => {
+  const now = new Date("2026-11-23T12:00:00Z");
+
+  it("says tonight for a start from 18:00 Paris time today", () => {
+    expect(sameDayWhen("2026-11-23T18:00:00Z", now)).toEqual({ when: "evening" });
+  });
+
+  it("says today for a start before 18:00 Paris time", () => {
+    expect(sameDayWhen("2026-11-23T14:00:00Z", now)).toEqual({ when: "today" });
+  });
+
+  it("says tomorrow for the next competition day", () => {
+    expect(sameDayWhen("2026-11-24T14:00:00Z", now)).toEqual({ when: "tomorrow" });
+  });
+
+  it("gives the day for a later one", () => {
+    expect(sameDayWhen("2026-11-28T14:00:00Z", now)).toEqual({ when: "later", day: "2026-11-28" });
   });
 });
