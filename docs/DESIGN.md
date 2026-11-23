@@ -85,7 +85,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
 | Ligues (#662) | « Créer une ligue » et « J'ai un code », puis deux onglets **Mes ligues · N** / **Découvrir** (`?onglet=decouvrir`). Mes ligues : cartes résumées (**LeagueCard**). Découvrir : tant que le joueur n'en est pas membre, le bloc bleu nuit de la Ligue FrenchTrack (**OfficialLeague**, #553) ; puis les ligues publiques (**DiscoverLeagues**) : recherche par nom, puces de famille (Toutes + celles présentes), tri (places restantes par défaut, plus de joueurs, plus récentes), une **PublicLeagueRow** par ligue. Une fois membre, la ligue officielle rejoint Mes ligues avec le badge « Officielle ». Un visiteur voit à la place ce que l'onglet contient (**VisitorTeaser**, #934) |
 | Classement général | Top de la communauté, ma progression ; lien vers `/classement/frenchtrack` (#674 : « Qui bat FrenchTrack le plus souvent ? », victoires puis points, pseudo et dossard) |
 | Communauté (`/communaute`, #673) | Tout le bloc « Dans ma communauté » : annonces, défis « Battez FrenchTrack » calculés, sondages (vote puis parts en pourcentages), moments de mes ligues avec le nom de la ligue |
-| Profil | Célébration du lièvre (niveaux gagnés), changement d'animal ; dossard (grand format, avec le pseudo), club ; avant la première épreuve calculée, un seul encart à la place des stats et de la grille de badges (**ProfileStart**, #799 : « Fais ton premier prono… » ou les pronos en attente, le prochain badge, un bouton vers la prochaine finale ouverte, sinon vers les compétitions) ; ma bande (mon animal) ; vitrine des trophées (une étagère par saison) ; saison (tuiles, courbe), derniers pronos, badges et leur progression, classement des clubs, carte à partager ; « Mes rappels » (`/profil/rappels`, #681) ; palmarès Manager (une ligne par saison finie, en or si champion, #434) ; « C'est quoi ? » sous l'animal ouvre par-dessus la feuille « L'animal et les badges » (#940 : d'où vient l'animal, comment se gagnent les badges, ce que dit « Prochain ») |
+| Profil | Célébration du lièvre (niveaux gagnés), changement d'animal ; dossard (grand format, avec le pseudo), club ; avant la première épreuve calculée, un seul encart à la place des stats et de la grille de badges (**ProfileStart**, #799 : « Fais ton premier prono… » ou les pronos en attente, le prochain badge, un bouton vers la prochaine finale ouverte, sinon vers les compétitions) ; ma bande (mon animal) ; vitrine des trophées (une étagère par saison) ; saison (tuiles, courbe), derniers pronos, badges et leur progression, lien « 🏟️ Classement des clubs » vers l'onglet Classement (#1132), carte à partager ; « Mes rappels » (`/profil/rappels`, #681) ; palmarès Manager (une ligne par saison finie, en or si champion, #434) ; « C'est quoi ? » sous l'animal ouvre par-dessus la feuille « L'animal et les badges » (#940 : d'où vient l'animal, comment se gagnent les badges, ce que dit « Prochain ») |
 | Back-office (toi) | Tableau de bord (choses à faire, préparation), compétitions (filtres portée, lieu, niveau, statut, #647) et épreuves, une feuille de résultats par épreuve qui calcule tout (collage du tableau World Athletics, #665, #666), listes des clubs, joueurs et ligues (« Signalements du fil » en tête des ligues : masquer ou classer, #672), « Communauté » (annonces et sondages, #673), « Le saviez-vous ? » (faits et carte, #766), défi FrenchTrack d'une épreuve (#674) |
 
 ## Composants clés
@@ -206,7 +206,12 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   compétition (les années de la saison vont de la première compétition à la dernière déjà
   commencée, jamais une compétition lointaine « 2099 », #924). Une ligne de contexte dessous :
   « <ligue> · 8 joueurs », « 🌍 Tous les joueurs · toute la saison 2026 · 1 243 joueurs ». « Ce
-  soir » affiche « Points des finales de ce soir · <compétition>, <jour> ». En tête, une seule
+  soir » se lit par ligue (une puce par ligue, puis « 🌍 Tous », #1132) et affiche « Points des
+  finales de ce soir · <compétition>, <jour> » ; un jour sans finale, « 😴 Pas de finale ce soir ·
+  dernière soirée : <jour> » et les points de la dernière soirée qui en a. « Général » ajoute la
+  puce « 🏟️ Clubs » : **ClubRanking** (carte « Ton club » avec sa place, ce que le joueur apporte,
+  puis une ligne **ClubRow** par club : moyenne des points, 3 joueurs au moins ; toucher un club
+  montre ses joueurs). En tête, une seule
   carte **MyPlaceCard** « Ta place » (fond foreground : rang en grand, médaille 👑🥈🥉🔥💪, points,
   puis deux pavés : « 🚀 +2 places » / « 📉 -2 places » / « ➡️ Même place », et « 🎯 6 pts du 2e »
   ou « 😎 7 pts d'avance » si 1er), masquée pour un visiteur ou un joueur sans points. La liste
@@ -216,8 +221,7 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   « · · · 36 joueurs · · · ». « 🎙️ Battez FrenchTrack » est une carte cliquable en bas (Général).
   Seul dans sa ligue, le joueur voit le bandeau « Tu es seul pour l'instant » (inviter ses amis) au
   lieu d'un classement à une ligne ; avant la première compétition, un
-  bandeau bleu « Le classement démarre » remplace le classement vide. Le jour de compétition va de
-  Un visiteur voit « Général » seul, sans barre fixe, avec « Se connecter » (#573).
+  bandeau bleu « Le classement démarre » remplace le classement vide. Un visiteur voit « Général » seul, sans barre fixe, avec « Se connecter » (#573).
 - **LeagueCard** (#552, résumée en #662) : une de mes ligues ; nom sur deux lignes au plus,
   étiquette « Privée », « Publique » ou « Officielle », badge de familles (#613), « 12 compétitions ·
   déc. 2026 → avr. 2027 » (jamais leurs noms, qui restent sur la page de la ligue), « Prochaine :
