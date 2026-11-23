@@ -107,7 +107,10 @@ export type ForgottenEvent = { slug: string; label: string; lockAt: Date };
 export type ReminderCandidate = {
   userId: string;
   settings: ReminderSettings;
-  /** Predictable finals without their podium, in a competition they play. */
+  /**
+   * Predictable finals without their podium, in a competition they play (at least one
+   * prediction) or one of their leagues counts (#1151).
+   */
   missing: ForgottenEvent[];
   /** Evenings already reminded (at most one « Pronos oubliés » per evening). */
   remindedEvenings: string[];
