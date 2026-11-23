@@ -3,7 +3,7 @@
 --                      matchday. A league is full at its target; the creator may change it while
 --                      the mercato is not open, never under the players already in.
 --   mercato_starts_at  the mercato opens by itself at that time if and only if the target is
---                      reached (private.open_manager_mercatos, run by the Manager rounds job);
+--                      reached (private.open_manager_mercatos, run by the manager-rounds pg_cron job);
 --                      otherwise it waits.
 --   round_mode         'auto': the rounds of French Track rules (set by its admin, copied into
 --                      rules.rounds); 'custom': the creator picks the first round and the next ones

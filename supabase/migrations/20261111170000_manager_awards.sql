@@ -1,7 +1,7 @@
 -- French Track Manager, v0.13 (#423): closing a bidding round and awarding the athletes.
 -- Rounds follow each other from the opening of the mercato: the first `rounds.longRounds` last
 -- `rounds.firstHours`, the next ones `rounds.nextHours` (rules of the league; 48 h, 48 h, then
--- 24 h). The « Manager rounds » workflow runs private.close_manager_rounds() every 5 minutes: for
+-- 24 h). The pg_cron job manager-rounds (#1158) runs private.close_manager_rounds() every minute: for
 -- each round due, the highest bid on each athlete wins; a tie goes to the bid placed first at that
 -- amount (bid_at). The winning amount is spent, every other bid of the league is freed, and an
 -- athlete belongs to one team of the league only (primary key). Running it again closes nothing

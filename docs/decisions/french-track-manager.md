@@ -55,7 +55,7 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   choix et recalculent la cible. `set_manager_mercato` enregistre les réglages (créateur seul) et
   récrit `rules.rounds` : en `auto`, les tours des règles French Track ; en `custom`, le 1er tour
   puis les suivants (`longRounds = 1`). `launch_manager_mercato` ouvre le mercato tout de suite ;
-  `private.open_manager_mercatos`, lancé par le job « Manager rounds », ouvre ceux dont la date est
+  `private.open_manager_mercatos`, lancé chaque minute par le job pg_cron `manager-rounds`, ouvre ceux dont la date est
   passée ; tous deux exigent la cible atteinte et assez de compétitions après la fin prévue
   (`private.manager_season_fits`). Codes : FT015 mercato déjà ouvert, FT026 joueurs manquants,
   FT027 compétitions refusées (moins de 6, indisponibles, ou moins de joueurs que d'inscrits),
@@ -140,8 +140,8 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
 - **Tours** : en durée « automatique », celle des règles French Track (au départ 48 h pour les
   tours 1 et 2, 24 h ensuite) ; en durée « personnalisée », celle choisie par le créateur (#619).
 - Clôture des tours (#423) : les tours s'enchaînent depuis `mercato_opened_at`, durées prises dans
-  les règles de la ligue (`rounds`). Le workflow « Manager rounds » lance
-  `private.close_manager_rounds()` toutes les 5 minutes (comme les notifications push) : pour
+  les règles de la ligue (`rounds`). Le job pg_cron `manager-rounds` lance
+  `private.close_manager_rounds()` chaque minute (comme les notifications push, #1158) : pour
   chaque tour échu, l'offre la plus haute gagne, à égalité la plus ancienne à ce montant
   (`awardBids`, `src/domain/manager-round.ts`, même règle en SQL) ; toutes les offres de la ligue
   sont ensuite effacées (les gagnantes deviennent des `manager_awards`, les perdantes sont
@@ -178,7 +178,7 @@ Le budget est en crédits virtuels, sans lien avec de l'argent réel : pas d'ach
   recruter » : le budget restant (budget moins les athlètes
   gagnés, les offres en cours ne comptent pas) paie l'athlète libre le moins cher du catalogue
   (`canRecruit`, `src/domain/manager-mercato.ts` ; même règle en SQL,
-  `private.manager_recruiters`). Le job « Manager rounds » clôt, après les tours échus, le mercato
+  `private.manager_recruiters`). Le job `manager-rounds` clôt, après les tours échus, le mercato
   d'une ligue dont la date `mercato_closes_at` est passée (`scheduled`) ou dont plus personne ne
   peut recruter (`budgets_spent`). Le dernier participant qui peut recruter voit « Clore le
   mercato » dans « Mon budget » (`close_manager_mercato`, `last_bidder`). Clôture collective :

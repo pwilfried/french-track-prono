@@ -631,10 +631,13 @@ personne n'est prévenu, donc personne n'est supprimé.
 
 ## Tours d'enchères du Manager
 
-Le workflow « Manager rounds » (toutes les 5 minutes, ou à la main) clôt les tours d'enchères
-du mercato French Track Manager dont l'heure est passée et attribue les athlètes (règles dans
-`supabase/migrations/20261111170000_manager_awards.sql`). Il rejoue sans double attribution. Pas
-de secret en plus de ceux des migrations (`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`).
+Le job pg_cron `manager-rounds` (chaque minute, posé par la migration
+`20261123100000_manager_rounds_cron.sql`, #1158) lance `private.close_manager_rounds()` : il ouvre
+les mercatos dont la date de début est passée et la cible atteinte, clôt les tours d'enchères du
+mercato French Track Manager dont l'heure est passée et attribue les athlètes (règles dans
+`supabase/migrations/20261111170000_manager_awards.sql`), puis clôt les mercatos à leur heure. Il
+rejoue sans double attribution. Aucun workflow ni secret : la migration suffit, en préprod comme
+en prod. Pour le lancer à la main : `select private.close_manager_rounds();` dans l'éditeur SQL.
 
 ## Notifications push
 
