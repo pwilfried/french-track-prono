@@ -357,6 +357,11 @@ lance le test de fumée. Le code ne tourne donc jamais en prod avant son schéma
   branches de travail (`feat/`, `fix/`, `claude/`…), ni la branche `boards`. Le plan
   gratuit limite le nombre de déploiements par jour : le 9 novembre 2026, les prévisualisations de
   chaque PR l'ont épuisé et la mise en prod de #373 a été refusée (« Deployment rate limited »).
+- En prod, l'adresse Vercel du projet (`french-track-prono.vercel.app`) redirige (308) vers la même
+  page sur `NEXT_PUBLIC_SITE_URL` (`src/app/canonical-host.ts`, #1145) : le widget Turnstile n'y est
+  pas autorisé (erreur 110200), personne ne pourrait s'y connecter. La préprod, dont
+  `NEXT_PUBLIC_SITE_URL` est sa propre adresse `.vercel.app`, et les prévisualisations
+  (`VERCEL_ENV=preview`) ne sont pas redirigées.
 - Redéployer `main` à la main : onglet Actions → « Database migrations » → Run workflow.
 - Secrets de l'environnement GitHub `production` (Settings → Environments → production), en plus
   de ceux de Supabase :

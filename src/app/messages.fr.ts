@@ -2885,6 +2885,7 @@ export const messages = {
   },
   captcha: {
     label: "Vérification anti-robot",
+    retry: "Réessayer",
   },
   signIn: {
     title: "Connexion ou inscription",
@@ -3713,6 +3714,8 @@ export const messages = {
     CODE_INVALID: "Code incorrect ou expiré. Vérifie-le ou demande-en un nouveau.",
     AUTH_UNAVAILABLE: "La connexion ne marche pas pour le moment. Réessaie dans un instant.",
     CAPTCHA_FAILED: "La vérification anti-robot n'a pas abouti. Coche-la à nouveau puis réessaie.",
+    CAPTCHA_UNAVAILABLE:
+      "La vérification anti-robot ne s'affiche pas. Réessaie ; si ça bloque encore, recharge la page.",
     ACCOUNT_BLOCKED:
       "Ton compte est bloqué par l'équipe : tu ne peux plus pronostiquer ni rejoindre de ligue. Écris-nous pour en savoir plus.",
     PLAYER_UNKNOWN: "Ce joueur n'existe plus (ou c'est un admin).",

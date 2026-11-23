@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Profile } from "@/application/create-profile";
 import type { CurrentUser } from "@/infra";
@@ -85,5 +85,31 @@ describe("proxy", () => {
     );
 
     expect(readProxiedSession(forwardedTo(response))).toBeUndefined();
+  });
+
+  describe("on the production Vercel address", () => {
+    beforeEach(() => {
+      vi.stubEnv("VERCEL_ENV", "production");
+      vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://www.frenchtrackprono.com");
+    });
+    afterEach(() => vi.unstubAllEnvs());
+
+    it("redirects to the same page on the site address, before checking the user", async () => {
+      const response = await proxy(
+        new NextRequest("https://french-track-prono.vercel.app/connexion?next=%2Fligues"),
+      );
+
+      expect(response.status).toBe(308);
+      expect(response.headers.get("location")).toBe(
+        "https://www.frenchtrackprono.com/connexion?next=%2Fligues",
+      );
+      expect(auth.userChecks).toBe(0);
+    });
+
+    it("serves the site address as usual", async () => {
+      const response = await proxy(new NextRequest("https://www.frenchtrackprono.com/connexion"));
+
+      expect(response.status).toBe(200);
+    });
   });
 });
