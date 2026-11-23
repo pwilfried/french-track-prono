@@ -10,7 +10,7 @@ export function LeagueHero({
   action,
 }: {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   back?: { href: string; label: string };
   /** Emoji in a rounded square left of the title (board 05: 🏆 for a league). */
   icon?: string;
@@ -41,7 +41,9 @@ export function LeagueHero({
             <h1 className="break-words font-display text-3xl font-extrabold leading-none">
               {title}
             </h1>
-            <p className="mt-1 break-words text-sm text-muted-foreground">{subtitle}</p>
+            {subtitle && (
+              <p className="mt-1 break-words text-sm text-muted-foreground">{subtitle}</p>
+            )}
           </div>
           {action && <div className="shrink-0 self-start">{action}</div>}
         </div>

@@ -13,9 +13,9 @@ const meta = {
       points: 112,
       change: 3,
       ahead: { pseudo: "Démo Gazelle", rank: 3, gap: 18 },
+      lead: null,
       topPercent: 18,
     },
-    showTop: true,
   },
   decorators: [
     (Story) => (
@@ -29,46 +29,55 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Rank, points, move since the last competition, gap with the player ahead, top percent. */
-export const General: Story = {
+/** Rank, medal, points, then the move and the gap with the player ahead. */
+export const Default: Story = {
   play: async ({ canvasElement }) => {
     const card = within(canvasElement).getByRole("region", { name: "Ta place" });
     await expect(card).toHaveTextContent("4e");
+    await expect(card).toHaveTextContent("🔥");
     await expect(card).toHaveTextContent("112 pts");
-    await expect(card).toHaveTextContent("gagne 3 places");
-    await expect(card).toHaveTextContent("depuis la dernière compétition");
-    await expect(card).toHaveTextContent("18 pts derrière Démo Gazelle (3e)");
-    await expect(card).toHaveTextContent("Top 18 %");
+    await expect(card).toHaveTextContent("🚀 +3 places");
+    await expect(card).toHaveTextContent("🎯 18 pts du 3e");
   },
 };
 
-/** In a league: no top percent; a lost place. */
-export const League: Story = {
-  args: { showTop: false, place: { ...meta.args.place, change: -1 } },
+/** A lost place. */
+export const Down: Story = {
+  args: { place: { ...meta.args.place, rank: 14, change: -2 } },
   play: async ({ canvasElement }) => {
     const card = within(canvasElement).getByRole("region", { name: "Ta place" });
-    await expect(card).toHaveTextContent("perd 1 place");
-    await expect(card).not.toHaveTextContent("Top");
+    await expect(card).toHaveTextContent("📉 -2 places");
+    await expect(card).toHaveTextContent("💪");
   },
 };
 
-/** Empty: first, nobody ahead, and no previous ranking (no arrow). */
+/** The same place as before. */
+export const Same: Story = {
+  args: { place: { ...meta.args.place, change: 0 } },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText("➡️ Même place")).toBeVisible();
+  },
+};
+
+/** First: the crown and the lead; no previous ranking, so no move tile. */
 export const First: Story = {
-  args: { place: { rank: 1, points: 40, change: null, ahead: null, topPercent: 1 } },
+  args: {
+    place: { rank: 1, points: 47, change: null, ahead: null, lead: 7, topPercent: 1 },
+  },
   play: async ({ canvasElement }) => {
     const card = within(canvasElement).getByRole("region", { name: "Ta place" });
-    await expect(card).toHaveTextContent("Personne devant toi");
-    await expect(card).not.toHaveTextContent("depuis la dernière compétition");
+    await expect(card).toHaveTextContent("1er");
+    await expect(card).toHaveTextContent("👑");
+    await expect(card).toHaveTextContent("😎 7 pts d'avance");
+    await expect(card).not.toHaveTextContent("places");
   },
 };
 
-/** Behind on the tie-breakers only. */
+/** Tied on points with the player ahead: behind on the tie-breakers only. */
 export const Tie: Story = {
   args: { place: { ...meta.args.place, ahead: { pseudo: "Démo Gazelle", rank: 3, gap: 0 } } },
   play: async ({ canvasElement }) => {
-    await expect(
-      within(canvasElement).getByText("À égalité de points avec Démo Gazelle (3e)"),
-    ).toBeVisible();
+    await expect(within(canvasElement).getByText("🎯 À égalité avec le 3e")).toBeVisible();
   },
 };
 
@@ -90,19 +99,19 @@ export const Error: Story = {
   },
 };
 
-/** A long pseudo ahead wraps inside the card. */
+/** A big rank and a big gap fit the card. */
 export const LongText: Story = {
   args: {
     place: {
       ...meta.args.place,
       rank: 1234,
       points: 1088,
-      ahead: { pseudo: "Démo Sprinteuse Infatigable Des Hauts De Fictiville", rank: 1233, gap: 1 },
+      ahead: { pseudo: "Démo Sprinteuse Infatigable", rank: 1233, gap: 1088 },
     },
   },
   play: async ({ canvasElement }) => {
     const card = within(canvasElement).getByRole("region", { name: "Ta place" });
-    await expect(card).toHaveTextContent("1 pt derrière Démo Sprinteuse");
+    await expect(card).toHaveTextContent("1234e");
     await expect(card.scrollWidth).toBeLessThanOrEqual(card.clientWidth);
   },
 };

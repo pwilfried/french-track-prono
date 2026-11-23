@@ -51,7 +51,7 @@ export const Default: Story = {
     const items = canvas.getAllByRole("listitem");
     await expect(items).toHaveLength(6);
     await expect(items[1]).toHaveAttribute("aria-current", "true");
-    await expect(items[1]).toHaveTextContent("Toi · 1 podium parfait");
+    await expect(items[1]).toHaveTextContent("Toi · 🎯 1 podium parfait");
     await expect(items[2]).toHaveTextContent("3e");
     await expect(items[3]).toHaveTextContent("3e");
     await expect(canvas.getAllByText("ex æquo")).toHaveLength(2);
@@ -73,7 +73,7 @@ export const WithChanges: Story = {
     await expect(canvas.getByText("gagne 2 places")).toBeInTheDocument();
     await expect(canvas.getByText("perd 1 place")).toBeInTheDocument();
     await expect(items[0]).toHaveTextContent("▲2");
-    await expect(items[2]).toHaveTextContent("=");
+    await expect(items[2]).toHaveTextContent("–");
     await expect(items[4]).not.toHaveTextContent(/[▲▼=]/);
     await expect(canvasElement).not.toHaveTextContent("🔥");
   },
@@ -90,7 +90,7 @@ const many: LeaderboardRow[] = rankPlayers(
   })),
 ).map((p, i) => ({ ...p, bib: bibs[i % bibs.length]! }));
 
-/** A long ranking: the first ten, « ··· », then me and two neighbours on each side. */
+/** A long ranking: the first ten, « · · · N joueurs · · · », then me and two neighbours on each side. */
 export const AroundMe: Story = {
   args: { rows: many, meId: "p20", aroundMe: true },
   play: async ({ canvasElement }) => {
@@ -99,8 +99,22 @@ export const AroundMe: Story = {
     await expect(items).toHaveLength(15);
     await expect(items[12]).toHaveAttribute("aria-current", "true");
     await expect(items[12]).toHaveAttribute("id", "moi");
-    await expect(canvas.getByText("···")).toBeInTheDocument();
+    await expect(canvas.getByText(/^· · · \d+ joueurs · · ·$/)).toBeInTheDocument();
     await expect(canvas.queryByText("Démo 15")).toBeNull();
+  },
+};
+
+/** After the podium: the list starts at the 4th; the last of a league carries the lantern. */
+export const AfterPodium: Story = {
+  args: { rows: many.slice(0, 6), skip: 3, lantern: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const items = canvas.getAllByRole("listitem");
+    // The 4th, 5th and 6th.
+    await expect(items).toHaveLength(3);
+    await expect(items[0]).toHaveTextContent("4");
+    await expect(items[2]).toHaveTextContent("🏮 Lanterne rouge");
+    await expect(items[0]).not.toHaveTextContent("Lanterne");
   },
 };
 

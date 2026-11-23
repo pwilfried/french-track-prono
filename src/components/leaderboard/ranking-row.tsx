@@ -1,5 +1,4 @@
 import { messages } from "@/app/messages.fr";
-import { Bib } from "@/components/profile/bib";
 import type { Bib as BibValue } from "@/domain/bib";
 import type { RankedPlayer } from "@/domain/ranking";
 import { cn } from "@/lib/utils";
@@ -15,14 +14,14 @@ export type LeaderboardRow = RankedPlayer & {
   change?: number | null;
 };
 
-/** ▲ won, ▼ lost, « = » same place as in the previous ranking (#551, #661). */
+/** ▲ won, ▼ lost, – same place as in the previous ranking (#551, #661). */
 export function Change({ change, className }: { change: number; className?: string }) {
   const [symbol, style] =
     change > 0
       ? [`▲${change}`, "text-success-text"]
       : change < 0
         ? [`▼${-change}`, "text-accent-text"]
-        : ["=", "text-muted-foreground"];
+        : ["–", "text-muted-foreground"];
   return (
     <span className={cn("w-8 shrink-0 text-center font-mono text-xs font-bold", style, className)}>
       <span aria-hidden>{symbol}</span>
@@ -32,8 +31,9 @@ export function Change({ change, className }: { change: number; className?: stri
 }
 
 /** What decided a player's place, shown under the pseudo. */
-function detailOf(row: LeaderboardRow, me: boolean): string {
+function detailOf(row: LeaderboardRow, me: boolean, lantern: boolean): string {
   const parts: string[] = me ? [messages.leaderboard.me] : [];
+  if (lantern) parts.push(messages.ranking.lantern);
   // No « Pas encore de points » here: the points column already says 0 (#706).
   if (row.perfectPodiums > 0) parts.push(messages.leaderboard.perfect(row.perfectPodiums));
   else if (row.winnersFound > 0) parts.push(messages.leaderboard.winners(row.winnersFound));
@@ -49,14 +49,17 @@ export function RankingRow({
   me = false,
   tied = false,
   total,
+  lantern = false,
 }: {
   row: LeaderboardRow;
   me?: boolean;
   tied?: boolean;
   /** Players in the whole ranking, for the player's card. */
   total: number;
+  /** The last of a league: « Lanterne rouge ». */
+  lantern?: boolean;
 }) {
-  const detail = detailOf(row, me);
+  const detail = detailOf(row, me, lantern);
   return (
     <RankingItem
       id={me ? "moi" : undefined}
@@ -74,7 +77,7 @@ export function RankingRow({
       }
       className={cn(
         "flex scroll-mt-24 flex-col rounded-xl px-2 py-1.5",
-        me && "bg-brand-soft text-brand-ink",
+        me && "border border-(--medal-gold-from) bg-gold-soft text-gold-ink",
       )}
     >
       <span className="w-8 shrink-0 text-center font-mono text-lg font-bold">
@@ -86,14 +89,13 @@ export function RankingRow({
           </span>
         )}
       </span>
-      <Bib bib={row.bib} />
       <span className="min-w-0 flex-1 font-bold [overflow-wrap:anywhere]">
         <PlayerName pseudo={row.pseudo}>{row.pseudo}</PlayerName>
         {detail && (
           <span
             className={cn(
               "block text-xs font-semibold",
-              me ? "text-brand-ink/80" : "text-muted-foreground",
+              me ? "text-gold-ink/80" : "text-muted-foreground",
             )}
           >
             {detail}

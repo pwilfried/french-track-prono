@@ -6,25 +6,23 @@ import {
   getGeneralRanking,
   getLeagueRanking,
   getTonightRanking,
-  standingIn,
   type RankingRow,
 } from "@/application/rankings";
 import { ErrorNotice } from "@/components/error-notice";
 import { Leaderboard } from "@/components/leaderboard/leaderboard";
 import { MyPlaceCard } from "@/components/leaderboard/my-place-card";
-import { MyRankBar } from "@/components/leaderboard/my-rank-bar";
 import { Podium } from "@/components/leaderboard/podium";
 import {
   RANKING_VIEWS,
   rankingHref,
   type RankingView,
 } from "@/components/leaderboard/ranking-href";
-import type { ScopeLeague } from "@/components/leaderboard/scope-sheet";
-import { ScopeSwitcher } from "@/components/leaderboard/scope-switcher";
+import { RankingTabs } from "@/components/leaderboard/ranking-tabs";
+import { ScopeChips, type ScopeChip } from "@/components/leaderboard/scope-chips";
 import { InviteBanner } from "@/components/leagues/invite-banner";
 import { LeagueHero } from "@/components/leagues/league-hero";
 import { buttonVariants } from "@/components/ui/button";
-import { ViewTabs, tabPanelProps } from "@/components/ui/view-tabs";
+import { tabPanelProps } from "@/components/ui/view-tabs";
 import { rankingStart } from "@/domain/competition";
 import { seasonYears } from "@/domain/competition-search";
 import { placeOf, previousCompetitionSlugs } from "@/domain/ranking";
@@ -87,21 +85,17 @@ export default async function RankingPage({
       all.filter((c) => slugs.includes(c.slug)),
       day,
     );
-  // The player's leagues in the scope sheet, with their rank: one ranking per league, fine for
-  // the few leagues a player is in. « error » when they cannot be read.
-  const readLeagueRankings = async (): Promise<RankingRow[][] | "error"> => {
+  // Only the league shown is ranked: the chips of the others need no rank.
+  const readLeagueRanking = async (): Promise<RankingRow[] | "error" | null> => {
+    if (!league) return null;
     try {
-      return await Promise.all(
-        leagues.map((l) =>
-          leagueRanking.execute({
-            leagueId: l.id,
-            competitionSlugs: l.competitionSlugs,
-            families: l.families,
-            competitionAddedAt: l.competitionAddedAt,
-            previousSlugs: previousOf(l.competitionSlugs),
-          }),
-        ),
-      );
+      return await leagueRanking.execute({
+        leagueId: league.id,
+        competitionSlugs: league.competitionSlugs,
+        families: league.families,
+        competitionAddedAt: league.competitionAddedAt,
+        previousSlugs: previousOf(league.competitionSlugs),
+      });
     } catch (error) {
       if (!(error instanceof UseCaseError)) throw error;
       return "error";
@@ -128,55 +122,54 @@ export default async function RankingPage({
       return "error";
     }
   };
-  // The league rankings and the general or tonight one do not depend on each other: read together.
-  const [leagueRankings, otherRows] = await Promise.all([readLeagueRankings(), readRows()]);
-  const scopeLeagues: ScopeLeague[] = leagues.map((l, i) => ({
-    id: l.id,
-    name: l.name,
-    memberCount: l.memberCount,
-    rank:
-      user && leagueRankings !== "error"
-        ? (standingIn(leagueRankings[i]!, user.userId)?.rank ?? null)
-        : null,
-    competitions: l.competitionSlugs.length,
-  }));
-
-  const rows: RankingRow[] | "error" | null =
-    view === "ligue" && league
-      ? leagueRankings === "error"
-        ? "error"
-        : leagueRankings[leagues.indexOf(league)]!
-      : otherRows;
+  // The league ranking and the general or tonight one do not depend on each other: read together.
+  const [leagueRows, otherRows] = await Promise.all([readLeagueRanking(), readRows()]);
+  const rows: RankingRow[] | "error" | null = view === "ligue" ? leagueRows : otherRows;
   const meId = user?.userId;
   const me = Array.isArray(rows) ? rows.find((p) => p.userId === meId) : undefined;
   const place = Array.isArray(rows) && !start ? placeOf(rows, meId) : null;
   const text = messages.ranking;
   const live = all.find((c) => c.startsOn <= today && c.endsOn >= today);
   const seasonLabel = text.scope.season(seasonYears(all, day));
-  const sheet = {
-    competitions: all,
-    competition: view === "general" ? (chosen?.slug ?? null) : undefined,
-    seasonLabel,
-    today: day,
-    leagues: user ? scopeLeagues : undefined,
-    league: league?.id,
-  };
-  const subtitle =
+  const players = Array.isArray(rows) ? rows.length : null;
+  const context =
+    view === "soir"
+      ? text.scope.tonight(live?.name ?? null, today)
+      : view === "ligue"
+        ? league
+          ? text.context.league(league.name, league.memberCount)
+          : text.context.noLeague
+        : text.context.general(chosen?.name ?? seasonLabel.toLowerCase(), players);
+  const chips: ScopeChip[] =
     view === "ligue"
-      ? league
-        ? text.leagueSubtitle(league.name)
-        : text.noLeagueSubtitle
-      : view === "soir"
-        ? text.tonightSubtitle
-        : chosen
-          ? text.competitionSubtitle(chosen.name)
-          : text.subtitle;
+      ? leagues.map((l) => ({
+          id: l.id,
+          label: text.chips.league(l.name),
+          href: rankingHref("ligue", { ligue: l.id }),
+          selected: l.id === league?.id,
+        }))
+      : [
+          {
+            id: "season",
+            label: text.chips.season,
+            href: rankingHref("general"),
+            selected: !chosen,
+          },
+          ...all.map((c) => ({
+            id: c.slug,
+            label: c.name,
+            href: rankingHref("general", { competition: c.slug }),
+            selected: c.slug === chosen?.slug,
+          })),
+        ];
+  // The podium takes the first three with points; the list goes on after them.
+  const podiumCount = Array.isArray(rows) ? rows.slice(0, 3).filter((r) => r.points > 0).length : 0;
 
   return (
     <main id="main" className="flex flex-1 flex-col">
-      <LeagueHero title={text.title} subtitle={subtitle} />
+      <LeagueHero title={text.title} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
-        <ViewTabs
+        <RankingTabs
           label={text.viewLabel}
           tabs={views.map((v) => ({ id: v, label: text.view[v], href: rankingHref(v) }))}
           selected={view}
@@ -188,30 +181,17 @@ export default async function RankingPage({
           {...tabPanelProps(views.length, "vue", view)}
           className="flex flex-col gap-4"
         >
-          {view === "soir" ? (
-            <p className="text-sm font-semibold text-muted-foreground">
-              {text.scope.tonight(live?.name ?? null, today)}
-            </p>
-          ) : view === "ligue" ? (
-            league && (
-              <ScopeSwitcher
-                key={view}
-                label={text.scope.league}
-                value={league.name}
-                detail={text.scope.players(league.memberCount)}
-                tab="leagues"
-                {...sheet}
-              />
-            )
-          ) : (
-            <ScopeSwitcher
-              key={view}
-              label={text.scope.general}
-              value={chosen?.name ?? seasonLabel}
-              tab="competitions"
-              {...sheet}
+          {view !== "soir" && (
+            <ScopeChips
+              chips={chips}
+              extra={
+                view === "ligue" ? { label: text.chips.createOrJoin, href: "/ligues" } : undefined
+              }
             />
           )}
+          <p className="text-sm font-semibold text-muted-foreground [overflow-wrap:anywhere]">
+            {context}
+          </p>
 
           {start && (
             <section className="flex flex-col gap-3 rounded-card bg-brand p-4 text-brand-foreground">
@@ -256,9 +236,16 @@ export default async function RankingPage({
             <p className="rounded-card bg-muted p-4 text-muted-foreground">{text.tonightEmpty}</p>
           ) : (
             <>
-              {place && <MyPlaceCard place={place} showTop={view === "general"} />}
+              {place && <MyPlaceCard place={place} />}
               <Podium rows={rows} meId={meId} />
-              <Leaderboard rows={rows} meId={meId} retryHref={here} aroundMe={view !== "ligue"} />
+              <Leaderboard
+                rows={rows}
+                meId={meId}
+                retryHref={here}
+                aroundMe={view !== "ligue"}
+                skip={podiumCount}
+                lantern={view === "ligue"}
+              />
               {!user ? (
                 <section className="flex flex-col gap-3 rounded-card bg-muted p-4">
                   <p>{text.visitor}</p>
@@ -269,9 +256,8 @@ export default async function RankingPage({
                     {messages.account.signIn}
                   </Link>
                 </section>
-              ) : me ? (
-                <MyRankBar rank={me.rank} points={me.points} />
               ) : (
+                !me &&
                 rows.length > 0 && (
                   <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
                     {view === "soir" ? text.notRankedTonight : text.notRanked}
@@ -289,9 +275,10 @@ export default async function RankingPage({
           {user && view === "general" && (
             <Link
               href="/classement/frenchtrack"
-              className="inline-flex min-h-11 items-center self-center text-sm font-bold underline underline-offset-4"
+              className="flex min-h-14 flex-col justify-center rounded-card border border-border bg-card px-4 py-2"
             >
-              {messages.challenge.seasonLink}
+              <span className="font-display text-lg font-extrabold">{text.challenge}</span>
+              <span className="text-sm text-muted-foreground">{text.challengeHint}</span>
             </Link>
           )}
         </div>

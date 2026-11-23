@@ -28,9 +28,9 @@ test("the ranking opens on my league, and the general one adds up every competit
     await signUp(page, player);
     await page.waitForURL(/\/classement$/);
 
-    // The tab opens on « Ma ligue » (#551): without a league, create or join one.
+    // The tab opens on « Ligues » (#551): without a league, create or join one.
     const views = page.getByRole("tablist", { name: "Vue du classement" });
-    await expect(views.getByRole("tab", { name: "Ma ligue" })).toHaveAttribute(
+    await expect(views.getByRole("tab", { name: "👥 Ligues" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
@@ -58,7 +58,6 @@ test("the ranking opens on my league, and the general one adds up every competit
     const invite = page.getByRole("region", { name: "Tu es seul pour l'instant" });
     await expect(invite.getByRole("button", { name: "Inviter mes amis" })).toBeVisible();
     await expect(page.getByRole("list", { name: "Classement" })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Autour de moi" })).toHaveCount(0);
 
     // A friend joins: the ranking shows.
     const leagueId = sql(`select l.id from leagues l join auth.users u on u.id = l.owner_id
@@ -66,71 +65,58 @@ test("the ranking opens on my league, and the general one adds up every competit
     friend = addFriendTo(leagueId, tag);
     await page.reload();
 
-    // « Ma ligue »: the league's competition only, the player's line highlighted, the bar below.
-    await expect(page.getByText("Ta ligue · Ligue E2E")).toBeVisible();
-    const inLeague = page
-      .getByRole("list", { name: "Classement" })
+    // « Ligues »: the league's competition only; the player on the podium, outlined, the friend
+    // without points in the list, last of the league (#1131).
+    await expect(page.getByText("Ligue E2E · 2 joueurs")).toBeVisible();
+    const onPodium = page
+      .getByRole("list", { name: "Podium" })
       .getByRole("listitem")
       .filter({ hasText: player.pseudo });
-    await expect(inLeague).toHaveAttribute("aria-current", "true");
-    await expect(inLeague).toContainText("40");
-    await expect(page.getByText("Tu es 1er · 40 pts")).toBeVisible();
-    // « Ta place » heads the list (#661): first of the league, nobody ahead.
+    await expect(onPodium).toHaveAttribute("aria-current", "true");
+    await expect(onPodium).toContainText("40");
+    await expect(page.getByRole("list", { name: "Classement" })).toContainText("Lanterne rouge");
+    // « Ta place » is the one place card (#661): first of the league, with the lead.
     const myPlace = page.getByRole("region", { name: "Ta place" });
     await expect(myPlace).toContainText("1er");
-    await expect(myPlace).toContainText("Personne devant toi");
+    await expect(myPlace).toContainText("😎 40 pts d'avance");
 
-    // Another league: the scope sheet switches to it (#661).
+    // Another league: its chip switches to it (#1131).
     const other = sql(`with u as (select id from auth.users where email = '${player.email}'),
       l as (insert into leagues (name, owner_id) select 'Une autre ligue ${tag}', id from u returning id, owner_id),
       m as (insert into league_members (league_id, user_id, role) select id, owner_id, 'owner' from l)
     select id from l`);
     await page.reload();
-    await page.getByRole("button", { name: /Changer de classement \(Ligue E2E/ }).click();
-    const sheet = page.getByRole("dialog", { name: "Choisir le classement" });
-    await expect(sheet.getByRole("tab", { name: "Mes ligues" })).toHaveAttribute(
-      "aria-selected",
-      "true",
+    const scopes = page.getByRole("navigation", { name: "Choisir le classement" });
+    await expect(scopes.getByRole("link", { name: /Ligue E2E/ })).toHaveAttribute(
+      "aria-current",
+      "page",
     );
-    await expect(sheet.locator('[aria-current="page"]')).toContainText("Ligue E2E");
-    await sheet.getByRole("link", { name: new RegExp(`Une autre ligue ${tag}`) }).click();
+    await scopes.getByRole("link", { name: `🏆 Une autre ligue ${tag}` }).click();
     await expect(page).toHaveURL(new RegExp(`ligue=${other}`));
-    await expect(page.getByText(`Ta ligue · Une autre ligue ${tag}`)).toBeVisible();
+    await expect(page.getByText(`Une autre ligue ${tag} · 1 joueur`)).toBeVisible();
 
-    // « Général » shows the player's line, whatever their place, under a single scope button.
-    await views.getByRole("tab", { name: "Général" }).click();
+    // « Général » shows the player's place, whatever it is, and no sheet to open.
+    await views.getByRole("tab", { name: "🌍 Général" }).click();
     await expect(page).toHaveURL(/vue=general/);
-    // The subtitle under the title; the scope card repeats it in the tab panel.
     await expect(
-      page.getByRole("paragraph").filter({ hasText: "Tous les joueurs · toutes les compétitions" }),
+      page.getByText(/Tous les joueurs · toute la saison .* · [\d\s\u202f\u00a0]+ joueurs?/),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: /Changer de classement/ })).toHaveCount(1);
-    await expect(page.getByRole("navigation", { name: "Choisir le classement" })).toHaveCount(0);
-    await expect(page.getByRole("region", { name: "Ta place" })).toContainText(/Top \d+ %/);
-    const mine = page
-      .getByRole("list", { name: "Classement" })
-      .getByRole("listitem")
-      .filter({ hasText: player.pseudo });
-    await expect(mine).toContainText("73");
-    await expect(mine).toHaveAttribute("id", "moi");
+    await expect(page.getByRole("button", { name: /Changer de classement/ })).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Ta place" })).toContainText("73");
+    await expect(page.getByRole("link", { name: /Battez FrenchTrack/ })).toBeVisible();
 
-    // The ranking of one finished competition, chosen in the sheet, counts its points only (#376).
-    await page.getByRole("button", { name: /Changer de classement/ }).click();
-    const scopes = page.getByRole("dialog", { name: "Choisir le classement" });
-    await scopes.getByRole("searchbox").fill(tag);
-    await scopes.getByRole("link", { name: new RegExp(`Test général ${tag} 0`) }).click();
+    // The ranking of one finished competition, chosen with its chip, counts its points only (#376).
+    await page
+      .getByRole("navigation", { name: "Choisir le classement" })
+      .getByRole("link", { name: new RegExp(`Test général ${tag} 0`) })
+      .click();
     await expect(page).toHaveURL(new RegExp(`competition=${tag}-0$`));
-    await expect(
-      page
-        .getByRole("list", { name: "Classement" })
-        .getByRole("listitem")
-        .filter({ hasText: player.pseudo }),
-    ).toContainText("40");
+    await expect(page.getByRole("region", { name: "Ta place" })).toContainText("40");
 
     // Touching the pseudo shows the minimal card: club and rank, no e-mail (#342).
     sql(`update profiles set club_id = (select id from clubs where name = 'Athlé Club des Tests')
        where pseudo = '${player.pseudo}'`);
-    await page.reload();
+    await page.goto(`/ligues/${leagueId}`);
     await page.getByRole("button", { name: `Voir la fiche de ${player.pseudo}` }).click();
     const card = page.getByRole("region", { name: `Fiche de ${player.pseudo}` });
     await expect(card).toContainText("Athlé Club des Tests");
@@ -174,10 +160,10 @@ test("a visitor sees the general ranking alone, and signs in to play", async ({ 
   await expect(page).toHaveURL(/\/classement\?/);
   // « Général » alone is no choice: no view switch (#939).
   await expect(page.getByRole("tablist", { name: "Vue du classement" })).toHaveCount(0);
-  const ranking = page.getByRole("list", { name: "Classement" });
+  // Alone with points, the player stands on the podium (#1131).
+  const ranking = page.getByRole("list", { name: "Podium" });
   await expect(ranking.getByText(shown.pseudo)).toBeVisible();
   await expect(page.getByText(blocked.pseudo)).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Autour de moi" })).toHaveCount(0);
 
   await page.locator("main").getByRole("link", { name: "Se connecter" }).click();
   await expect(page).toHaveURL(/\/connexion\?next=/);

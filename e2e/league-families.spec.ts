@@ -68,10 +68,10 @@ test("a sprint league counts the 100 m and not the javelin, until its creator ad
   await page.goto(`/classement?vue=general&competition=${tag}`);
   await expect(
     page
-      .getByRole("list", { name: "Classement" })
+      .getByRole("list", { name: "Podium" })
       .getByRole("listitem")
       .filter({ hasText: player.pseudo }),
-  ).toContainText("14 points");
+  ).toContainText("14");
 
   // The creator adds the throws: the javelin has not started, so it counts from now on.
   await page.goto(leagueUrl);
