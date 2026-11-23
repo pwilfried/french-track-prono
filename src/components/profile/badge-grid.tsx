@@ -66,6 +66,10 @@ export function BadgeGrid({ progress }: { progress: BadgeProgress[] }) {
       <h2 id="badges" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
         {text.badges}
       </h2>
+      <p className="rounded-card bg-brand-ink p-3 text-sm font-semibold text-brand-foreground dark:bg-card dark:text-foreground">
+        <span aria-hidden="true">{text.nextBanner} </span>
+        {nextBadgeText(progress)}
+      </p>
       <ul aria-labelledby="badges" className="grid grid-cols-3 gap-2">
         {game.map((p, i) => (
           <BadgeTile key={p.badge} p={p} number={i + 1} />
@@ -87,7 +91,6 @@ export function BadgeGrid({ progress }: { progress: BadgeProgress[] }) {
           </ul>
         </>
       )}
-      <p className="rounded-card bg-muted p-3 text-sm font-semibold">{nextBadgeText(progress)}</p>
     </section>
   );
 }

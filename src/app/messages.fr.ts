@@ -3147,6 +3147,22 @@ export const messages = {
     title: "Mon profil",
     season: "Saison",
     clubRanking: "🏟️ Classement des clubs",
+    /** The athlete card and the three tabs of the profile showcase (#1138). */
+    card: {
+      editBib: "Modifier mon dossard",
+      edit: "✏️ Modifier",
+      share: "📸 Partager",
+      points: "points",
+      rank: (rank: number) => ordinal(rank),
+      outOf: (players: number) => `sur ${players.toLocaleString("fr-FR")} joueurs`,
+      notRanked: "Pas encore classé",
+      since: (club: string | null, date: string) =>
+        `${club ? `🏟️ ${club} · ` : ""}depuis le ${date}`,
+    },
+    tabsLabel: "Mon profil",
+    tabs: { saison: "📊 Saison", badges: "🏅 Badges", vitrine: "🏆 Vitrine" },
+    unavailable: "Cette partie est momentanément indisponible.",
+    nextBanner: "🎯",
     account: "Compte",
     pseudo: "Pseudo",
     email: "E-mail",
@@ -3184,10 +3200,6 @@ export const messages = {
     signOut: "Se déconnecter",
     signingOut: "Déconnexion en cours…",
     deleteLink: "Supprimer mon compte",
-    joined: (club: string | null, date: string) =>
-      `${club ? `${club} · ` : ""}joueur depuis le ${date}`,
-    rankOf: (rank: number, players: number) => `${ordinal(rank)} sur ${players}`,
-    notRanked: "pas encore classé",
     myStats: "Mes stats",
     stat: {
       predictions: "pronos",

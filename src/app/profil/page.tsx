@@ -9,20 +9,19 @@ import { getPlayerDetails } from "@/application/player-details";
 import { getMySeason } from "@/application/get-my-season";
 import { getMyManagerHonours } from "@/application/manager-honours";
 import { getNewTrophies, getTrophyShowcase } from "@/application/trophies";
-import { ShareSeasonCard } from "@/components/profile/share-season-card";
 import { getMyPredictionHistory } from "@/application/list-my-predictions";
+import { rankingHref } from "@/components/leaderboard/ranking-href";
+import { RankingTabs } from "@/components/leaderboard/ranking-tabs";
+import { AthleteCard } from "@/components/profile/athlete-card";
+import { tabPanelProps } from "@/components/ui/view-tabs";
 import { BadgeCelebration } from "@/components/profile/badge-celebration";
 import { BadgeGrid } from "@/components/profile/badge-grid";
-import { ProfileHelp } from "@/components/profile/profile-help";
 import { ProfileStart } from "@/components/profile/profile-start";
 import { TrophyCelebration } from "@/components/profile/trophy-celebration";
 import { TrophyShowcase } from "@/components/profile/trophy-showcase";
-import { Bib } from "@/components/profile/bib";
 import { ClubNotices } from "@/components/account/club-notices";
-import { rankingHref } from "@/components/leaderboard/ranking-href";
 import { LatestPredictions } from "@/components/profile/prediction-history";
 import { BestShot, SeasonCurve, SeasonTiles } from "@/components/profile/season-blocks";
-import { Animal } from "@/components/band/animal";
 import { AnimalChange } from "@/components/band/animal-change";
 import { BandPoints } from "@/components/band/band-points";
 import { TIME_ZONE } from "@/domain/competition";
@@ -45,6 +44,8 @@ import { badgePorts } from "./badge-ports";
 import { markTrophiesSeenAction } from "./trophy-actions";
 import { publicEventReader, publicDisciplines, publicRanking } from "../public-data";
 import { readOr } from "../read-or";
+
+const PROFILE_VIEWS = ["saison", "badges", "vitrine"] as const;
 
 /**
  * The season and the badges over every competition, the latest predictions: each read on its own, so one that fails only hides its own block (#763).
@@ -94,13 +95,13 @@ async function nextOpenFinal(): Promise<string | null> {
 }
 
 /**
- * The Profile tab (#768): the player's animal, pseudo and season at the top, the band, the
- * figures, the badges as bibs, the trophies, the account.
+ * The Profile tab (#768, #1138): the athlete card, then three tabs kept in the URL (`?vue=`):
+ * the season, the badges, the showcase of trophies.
  */
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ enregistre?: string; email?: string }>;
+  searchParams: Promise<{ enregistre?: string; email?: string; vue?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) redirect(`/connexion?next=${encodeURIComponent("/profil")}`);
@@ -167,6 +168,9 @@ export default async function ProfilePage({
   const starting = season !== null && season.stats.curve.length === 0;
   const finalSlug = starting ? await nextOpenFinal() : null;
   const hasTrophies = shelves !== null && shelves.length > 0;
+  // A new player sees no tabs, unless a trophy was already awarded: then the showcase is theirs.
+  const showTabs = !starting || hasTrophies || honours.length > 0;
+  const view = PROFILE_VIEWS.find((v) => v === params.vue) ?? PROFILE_VIEWS[0];
   return (
     <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-6">
       <div className="flex items-center justify-between gap-3">
@@ -188,101 +192,139 @@ export default async function ProfilePage({
         </p>
       ) : null}
       <AnimalChange animal={season?.animal ?? null} />
-      <section
-        aria-labelledby="me"
-        className="flex items-center gap-4 rounded-card bg-brand-ink px-4 py-5 text-brand-foreground dark:bg-card dark:text-foreground"
-      >
-        <Animal kind={animal ?? "locked"} size="large" label className="size-24" />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <p id="me" className="flex min-w-0 items-center gap-2">
-            <Bib bib={profile.bib} />
-            <span className="min-w-0 break-words font-display text-xl font-extrabold">
-              {profile.pseudo}
-            </span>
-          </p>
-          <p className="font-semibold text-secondary">
-            {animal
-              ? `${messages.band.animals[animal]} · ${messages.band.families[animal]}`
-              : messages.band.noAnimal}
-          </p>
-          <ProfileHelp className="-my-2" />
-          {season && !starting && (
-            <p className="flex flex-wrap items-baseline gap-x-2">
-              <span className="font-mono text-3xl font-bold">{season.points}</span>
-              <span className="text-sm">
-                {messages.format.ptsUnit(season.points)} ·{" "}
-                <strong>
-                  {season.rank ? text.rankOf(season.rank, season.players) : text.notRanked}
-                </strong>
-              </span>
-            </p>
-          )}
-          <p className="text-xs opacity-80">
-            {text.joined(details?.club?.validated ? details.club.name : null, since)}
-          </p>
-        </div>
-      </section>
+      <AthleteCard
+        pseudo={profile.pseudo}
+        bib={profile.bib}
+        animal={animal}
+        club={details?.club?.validated ? details.club.name : null}
+        since={since}
+        figures={
+          season && !starting
+            ? { points: season.points, rank: season.rank, players: season.players }
+            : null
+        }
+      />
 
-      {season && starting && (
+      {season && starting && !showTabs && (
         <ProfileStart
           predictions={season.stats.predictions}
           finalSlug={finalSlug}
           progress={badges?.progress ?? null}
         />
       )}
-      {season && !starting && (
+      {showTabs && (
         <>
-          <BandPoints band={season.band} animal={season.animal} toReach={season.toReach} />
-          <SeasonTiles stats={season.stats} />
-          <SeasonCurve curve={season.stats.curve} />
-          <BestShot best={season.stats.bestShot} />
+          <RankingTabs
+            label={text.tabsLabel}
+            tabs={PROFILE_VIEWS.map((v) => ({
+              id: v,
+              label: text.tabs[v],
+              href: v === "saison" ? "/profil" : `/profil?vue=${v}`,
+            }))}
+            selected={view}
+            idPrefix="vue"
+            panelId="profil-vue"
+          />
+          <div
+            id="profil-vue"
+            {...tabPanelProps(PROFILE_VIEWS.length, "vue", view)}
+            className="flex flex-col gap-5"
+          >
+            {view === "saison" &&
+              (season ? (
+                starting ? (
+                  <ProfileStart
+                    predictions={season.stats.predictions}
+                    finalSlug={finalSlug}
+                    progress={badges?.progress ?? null}
+                  />
+                ) : (
+                  <>
+                    <SeasonTiles stats={season.stats} />
+                    <BandPoints
+                      band={season.band}
+                      animal={season.animal}
+                      toReach={season.toReach}
+                    />
+                    <SeasonCurve curve={season.stats.curve} />
+                    <BestShot best={season.stats.bestShot} />
+                    {latest && latest.length > 0 && <LatestPredictions lines={latest} />}
+                    {/* The club ranking lives in the rankings tab (#1132): one way to see it. */}
+                    {details?.club?.validated && (
+                      <Link
+                        href={rankingHref("general", { clubs: true })}
+                        className="flex min-h-14 flex-col justify-center rounded-card border border-border bg-card px-4 py-2"
+                      >
+                        <span className="font-bold">{text.clubRanking}</span>
+                        <span className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
+                          {details.club.name}
+                        </span>
+                      </Link>
+                    )}
+                  </>
+                )
+              ) : (
+                <Unavailable />
+              ))}
+            {view === "badges" &&
+              (badges ? <BadgeGrid progress={badges.progress} /> : <Unavailable />)}
+            {view === "vitrine" && (
+              <>
+                {shelves ? (
+                  <TrophyShowcase shelves={shelves} fresh={newTrophies.map(trophyKey)} />
+                ) : (
+                  <Unavailable />
+                )}
+                {honours.length > 0 && <Honours honours={honours} />}
+              </>
+            )}
+          </div>
         </>
       )}
-      {badges && !starting && <BadgeGrid progress={badges.progress} />}
-      {shelves && (!starting || hasTrophies) && (
-        <TrophyShowcase shelves={shelves} fresh={newTrophies.map(trophyKey)} />
-      )}
-
-      {honours.length > 0 && (
-        <section aria-labelledby="honours" className="flex flex-col gap-2">
-          <h2
-            id="honours"
-            className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
-          >
-            {messages.managerSeasonEnd.honoursTitle}
-          </h2>
-          <ul aria-labelledby="honours" className="flex flex-col gap-1.5">
-            {honours.map((h) => (
-              <li key={h.leagueId}>
-                <Link
-                  href={`/manager/${h.leagueId}/fin-de-saison`}
-                  className={`flex min-h-12 items-center justify-between gap-3 rounded-card border px-4 py-2 font-semibold ${h.champion ? "border-transparent bg-gold-soft text-gold-ink" : "border-border bg-card"}`}
-                >
-                  <span className="min-w-0 break-words">{h.leagueName}</span>
-                  <span className="shrink-0 text-sm">
-                    {messages.managerSeasonEnd.honourPlace(h.champion, h.rank, h.players)}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {season && !starting && <ShareSeasonCard />}
-      {latest && latest.length > 0 && <LatestPredictions lines={latest} />}
-      {/* The club ranking lives in the rankings tab (#1132): one way to see it. */}
-      {details?.club?.validated && !starting && (
-        <Link
-          href={rankingHref("general", { clubs: true })}
-          className="flex min-h-14 flex-col justify-center rounded-card border border-border bg-card px-4 py-2"
-        >
-          <span className="font-bold">{text.clubRanking}</span>
-          <span className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
-            {details.club.name}
-          </span>
-        </Link>
-      )}
     </main>
+  );
+}
+
+function Unavailable() {
+  return (
+    <p className="rounded-card bg-muted p-4 text-sm text-muted-foreground">
+      {messages.profile.unavailable}
+    </p>
+  );
+}
+
+/** « Palmarès Manager »: the finished manager seasons, the champion on gold. */
+function Honours({
+  honours,
+}: {
+  honours: {
+    leagueId: string;
+    leagueName: string;
+    champion: boolean;
+    rank: number;
+    players: number;
+  }[];
+}) {
+  return (
+    <section aria-labelledby="honours" className="flex flex-col gap-2">
+      <h2 id="honours" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        {messages.managerSeasonEnd.honoursTitle}
+      </h2>
+      <ul aria-labelledby="honours" className="flex flex-col gap-1.5">
+        {honours.map((h) => (
+          <li key={h.leagueId}>
+            <Link
+              href={`/manager/${h.leagueId}/fin-de-saison`}
+              className={`flex min-h-12 items-center justify-between gap-3 rounded-card border px-4 py-2 font-semibold ${h.champion ? "border-transparent bg-gold-soft text-gold-ink" : "border-border bg-card"}`}
+            >
+              <span className="min-w-0 break-words">{h.leagueName}</span>
+              <span className="shrink-0 text-sm">
+                {messages.managerSeasonEnd.honourPlace(h.champion, h.rank, h.players)}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

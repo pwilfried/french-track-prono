@@ -33,7 +33,13 @@ test("a new player sees one card on the profile, then the full profile after a f
   for (const name of ["Badges", "Mes stats", "Ma saison", "Mon meilleur coup", "Ma bande"])
     await expect(page.getByRole("region", { name, exact: true })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Vitrine", exact: true })).toHaveCount(0);
-  await expect(page.locator("main")).not.toContainText("pas encore classé");
+  await expect(page.locator("main")).not.toContainText(/pas encore classé/i);
+  // No tabs for a new player: the card, then the start card.
+  await expect(page.getByRole("tablist")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Modifier mon dossard" })).toHaveAttribute(
+    "href",
+    "/profil/modifier",
+  );
   await expect(page.locator("main")).not.toContainText(/\b0\spt/);
 
   // « C'est quoi ? » explains the animal and the badges in a sheet, over the profile (#940).
@@ -52,10 +58,12 @@ test("a new player sees one card on the profile, then the full profile after a f
   // The profile degrades to its header when a read fails (readOr), which happens now and then on
   // the shared pre-production: read the page again until the figures are there.
   await expect(async () => {
-    await page.reload();
+    await page.goto("/profil");
     await expect(start).toHaveCount(0);
     await expect(page.getByRole("region", { name: "Mes stats" })).toBeVisible({ timeout: 5000 });
   }).toPass({ timeout: 60000 });
+  await page.getByRole("tab", { name: "Badges" }).click();
+  await page.waitForURL(/\/profil\?vue=badges$/);
   await expect(page.getByRole("region", { name: "Badges" }).getByRole("listitem")).not.toHaveCount(
     0,
   );

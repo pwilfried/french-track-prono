@@ -57,7 +57,7 @@ test("an admin sets the FrenchTrack account and draws the trophies; a player see
   sql(`insert into trophies (user_id, season, kind, metal, league_id, league_name, animal) values
     ('${userId}', 2099, 'league', 'gold', gen_random_uuid(), 'Ligue des lanceurs', 'ours'),
     ('${userId}', 2099, 'chrono', null, gen_random_uuid(), 'Ligue des lanceurs', null)`);
-  await page.goto("/profil");
+  await page.goto("/profil?vue=vitrine");
   const shelf = showcase.getByRole("group", { name: /Saison 2099/ });
   await expect(shelf).toContainText("2 trophées");
   // Drawn statuettes (#856): the bear of the league, the stopwatch; the feats not won yet keep
