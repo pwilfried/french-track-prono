@@ -758,7 +758,8 @@ les clés VAPID, des rappels groupés (#681, règles de référence dans `src/do
 
 - « Pronos oubliés » : un seul message pour toutes les finales de la soirée (date de Paris du
   verrou) qui verrouillent dans le délai choisi (30 min, 1 h ou 3 h ; 1 h par défaut) sans podium
-  du joueur, seulement dans une compétition où il a déjà fait un prono ; au plus un par soirée ;
+  du joueur, seulement dans une compétition où il a déjà fait un prono ou qu'une de ses ligues
+  compte (#1151) ; au plus un par soirée ;
 - « Résultats du soir » : un récap quand toutes les finales pronostiquées de la soirée ont leurs
   points (points de la soirée, place dans la compétition) ;
 - « Manager » (#836, règles dans `src/domain/manager-reminders.ts`) : fin du tour de mercato
