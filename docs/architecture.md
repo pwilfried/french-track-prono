@@ -492,6 +492,14 @@ retire ses lignes. Chaque membre lu porte ses épreuves ajoutées (`LeagueMember
 de la compétition et de familles. La migration a repris tous les pronos déjà posés dans les ligues
 de leur joueur qui comptaient leur compétition.
 
+Depuis v0.30 (#1147) : venu d'une ligue (`?ligue=`), le prono y compte par défaut, sans question ;
+la feuille propose seulement les autres ligues (« Ajouter à « X » » pour une seule, une liste
+sinon), puis mène aux jokers de la ligue d'origine. Hors ligue, la feuille ne vient que tant que
+le prono ne compte nulle part. La règle vit dans `leagueOffer()` (`src/domain/prediction-league-offer.ts`).
+La carte « Ta prochaine action » de l'accueil (#1149) regarde toutes les compétitions, pas
+seulement celles des ligues du joueur, et nomme le jour des autres finales (« ce soir »,
+« demain », jour de la semaine ; `src/domain/home.ts`).
+
 Ajouts nécessaires au schéma (à faire dans la version indiquée) :
 
 - `profiles.age_confirmed_at` : case « 15 ans ou plus » (v0.2, fait : obligatoire en base). Le pseudo est unique sans tenir compte de la casse.
