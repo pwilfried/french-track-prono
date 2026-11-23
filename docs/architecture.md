@@ -770,7 +770,11 @@ les clés VAPID, des rappels groupés (#681, règles de référence dans `src/do
   du joueur, seulement dans une compétition où il a déjà fait un prono ou qu'une de ses ligues
   compte (#1151) ; au plus un par soirée ;
 - « Résultats du soir » : un récap quand toutes les finales pronostiquées de la soirée ont leurs
-  points (points de la soirée, place dans la compétition) ;
+  points (points de la soirée, place dans la compétition, lien vers « Mes points »). Avec une
+  ligue principale (#1156) — celle qui compte la compétition, où il a ajouté un prono de la
+  soirée, avec le plus de membres, la plus ancienne à égalité — la place dans la ligue sur la
+  soirée (parmi les membres qui y ont marqué, points comptés comme son classement) remplace celle
+  de la compétition, et le lien mène au résultat de la ligue pour sa dernière finale de la soirée ;
 - « Manager » (#836, règles dans `src/domain/manager-reminders.ts`) : fin du tour de mercato
   dans 2 h (aux participants qui peuvent encore recruter et n'ont pas fini le tour, #1084) ; alignement non validé quand le verrou
   de la journée tombe dans le délai avant verrou ; duel terminé (toutes les épreuves de la
