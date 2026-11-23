@@ -58,6 +58,26 @@ const WORST: Due[] = [
     evening: "e",
     payload: { points: 0, rank: null, finals: 1, players: 0, competition_slug: "m" },
   },
+  // #1156: in the main league, the evening won, on the podium, far, 0 pt.
+  ...[
+    { points: 128, league_rank: 1 },
+    { points: 128, league_rank: 3 },
+    { points: 128, league_rank: 1204 },
+    { points: 0, league_rank: 1204 },
+  ].map((p) => ({
+    kind: "recap",
+    evening: "e",
+    payload: {
+      ...league,
+      ...p,
+      rank: 1204,
+      finals: 12,
+      players: 1250,
+      competition_slug: "meeting",
+      league_event_slug: "3000m-steeple-f",
+      league_players: 1250,
+    },
+  })),
   { kind: "mercato_round", evening: "e", ref: "r", payload: { ...league, round: 12, ends_at: at(90) } },
   {
     kind: "lineup",
@@ -225,6 +245,43 @@ describe("what each notification says (#1093)", () => {
     const due = { kind: "mercato_round", evening: "e", ref: "l1:2", payload: { ...league, league_name: "Les Lièvres", round: 2, ends_at: at(90) } };
     expect(notificationOf(due, now)).toMatchObject({ url: "/manager/l1/catalogue", tag: "mercato_round-l1:2" });
     for (const t of texts(due)) expect(t).toMatch(/1 h 30.*Tour 2.*Les Lièvres$/);
+  });
+
+  it("tells the place in the main league on the evening and leads to its result (#1156)", () => {
+    const recap = (p: object) => ({
+      kind: "recap",
+      evening: "2026-11-11",
+      payload: {
+        points: 9,
+        finals: 2,
+        rank: 40,
+        players: 120,
+        competition_slug: "meeting-paris",
+        league_id: "l1",
+        league_name: "Les Lièvres",
+        league_event_slug: "800m-h",
+        league_rank: 2,
+        league_players: 8,
+        ...p,
+      },
+    });
+    expect(notificationOf(recap({}))).toMatchObject({ url: "/ligues/l1/epreuves/800m-h", tag: "recap-2026-11-11" });
+    for (const t of texts(recap({}))) expect(t).toMatch(/\+9 pts.*\| 2e sur 8 ce soir.*Les Lièvres$/);
+    for (const t of texts(recap({}))) expect(t).not.toContain("40e");
+    for (const t of texts(recap({ league_rank: 1 }))) expect(t).toMatch(/^👑.*\| 1er sur 8/);
+    for (const t of texts(recap({ league_rank: 6 }))) expect(t).toMatch(/\| 6e sur 8/);
+    for (const t of texts(recap({ points: 0, league_rank: 1 }))) expect(t).toMatch(/0 pt.*\| 1er sur 8/);
+    expect(notificationOf(recap({ league_event_slug: null })).url).toBe("/ligues/l1");
+  });
+
+  it("keeps the place in the competition and « Mes points » without a league (#1156)", () => {
+    const due = {
+      kind: "recap",
+      evening: "e",
+      payload: { points: 9, finals: 2, rank: 4, players: 120, competition_slug: "m", league_id: null, league_name: null, league_event_slug: null, league_rank: null, league_players: null },
+    };
+    expect(notificationOf(due).url).toBe("/mes-points?competition=m");
+    for (const t of texts(due)) expect(t).toMatch(/\| 4e sur 120, 2 finales\. /);
   });
 
   it("tells a lineup not validated with its competition and the time left", () => {
