@@ -70,27 +70,29 @@ export const FirstPredictionWithOthers: Story = {
   },
 };
 
+// Midday in Paris, so that the same day reads « aujourd'hui », not « ce soir ».
 const startingAt = (iso: string) => ({
   kind: "predict" as const,
   final: { ...final, startsAt: iso, lockAt: iso },
   sameDay: 2,
 });
+const morning = new Date("2026-09-11T06:00:00.000Z");
 
 /** The other finals follow the day of the shown one: today, tomorrow, a later day. */
 export const SameDayLabels: Story = {
-  args: { action: startingAt("2026-09-11T17:00:00.000Z") },
+  args: { now: morning, action: startingAt("2026-09-11T10:00:00.000Z") },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText("2 autres finales aujourd'hui")).toBeVisible();
   },
 };
 export const SameDayTomorrow: Story = {
-  args: { action: startingAt("2026-09-12T17:00:00.000Z") },
+  args: { now: morning, action: startingAt("2026-09-12T10:00:00.000Z") },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText("2 autres finales demain")).toBeVisible();
   },
 };
 export const SameDayLater: Story = {
-  args: { action: startingAt("2026-09-19T17:00:00.000Z") },
+  args: { now: morning, action: startingAt("2026-09-19T10:00:00.000Z") },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText("2 autres finales samedi 19")).toBeVisible();
   },

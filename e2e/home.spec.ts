@@ -101,7 +101,6 @@ function closestFinal(competition: string, margin = "0 seconds") {
 test("a new player without a league is asked for a first podium, then for a league", async ({
   page,
 }) => {
-  const slug = closestFinal(defaultCompetitionSlug());
   const player = newPlayer("home");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/profil");
@@ -116,7 +115,8 @@ test("a new player without a league is asked for a first podium, then for a leag
   await expect(action).toContainText(/Verrouille dans/);
   await expect(action).toContainText(/heure de Paris/);
   const play = action.getByRole("link", { name: "Faire mon podium" });
-  await expect(play).toHaveAttribute("href", `/epreuves/${slug}`);
+  // Any competition counts (#1149), and other specs create their own: only the shape is fixed.
+  await expect(play).toHaveAttribute("href", /^\/epreuves\/[^/]+$/);
   await expect(play).toBeInViewport();
   // The next action is the first block (#932).
   const blocks = await page
@@ -173,7 +173,7 @@ test("a new player without a league is asked for a first podium, then for a leag
   await expect(page.getByRole("region", { name: "Comment ça marche" })).toHaveCount(0);
 
   await play.click();
-  await expect(page).toHaveURL(new RegExp(`/epreuves/${slug}$`));
+  await expect(page).toHaveURL(/\/epreuves\/[^/]+$/);
 });
 
 test("a player in a league sees their place in it and their next final after a prediction", async ({
