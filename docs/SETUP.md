@@ -421,7 +421,7 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   secret ni aucune donnée de prod : la base de préprod ne contient que des données fictives.
 - **Déploiement continu** : chaque fusion dans `main` lance « Pre-production »
   (`.github/workflows/preprod.yml`) : migrations sur la base de préprod (`supabase db push`), puis
-  `supabase/seed.sql` et le jeu de démo `supabase/preprod/demo.sql` (idempotents, voir plus bas),
+  les notifications push (#1150, plus bas), puis `supabase/seed.sql` et le jeu de démo `supabase/preprod/demo.sql` (idempotents, voir plus bas),
   puis build et déploiement Vercel, puis test de fumée sur
   l'adresse de préprod. Une migration qui échoue arrête tout : le site de préprod n'est pas
   déployé, la prod n'est jamais touchée. À la main : Actions → « Pre-production » → Run workflow
@@ -530,6 +530,14 @@ Chaque fusion dans `main` est en ligne avant la prod (#634, décision du propri�
   lancer la saison, équipe complétée à la fermeture), à garder en tête quand on teste une ligue
   Manager à la main.
 - **Pas de captcha** en préprod (pas de clé Turnstile) ; **notifications push** seulement si les clés VAPID y sont posées (#977, « Tester une notification »).
+- **Rappels push en préprod** (#1150) : avec `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY` dans
+  l'environnement GitHub `preprod` (et `SENTRY_DSN`, facultatif), « Pre-production » fait après
+  les migrations la même étape que la prod (`ci/push-deploy.sh`, « Notifications push ») : Edge
+  Function `push-notifications` déployée sur le projet de préprod, ses secrets posés, son adresse
+  et un nouveau `PUSH_CRON_SECRET` écrits dans le Vault de préprod (`push_notifications_url`,
+  `push_notifications_secret`) ; `pg_cron` l'appelle chaque minute. Les joueurs de démo n'ont
+  aucun appareil abonné : seuls les appareils abonnés en préprod reçoivent les rappels. Sans clés
+  VAPID : un `::notice::`, rien d'autre. Un échec de cette étape n'arrête pas le déploiement.
 - **Tests e2e contre la préprod** (#830) : la préprod n'épingle pas `COMPETITION_SLUG` et garde le
   jeu de démo et les restes des passages précédents. Un test vise donc sa compétition par son slug
   (ou la compétition par défaut, lue en SQL par `defaultCompetitionSlug` dans `e2e/competitions.ts`),
@@ -652,8 +660,8 @@ Mise en route, une seule fois :
 4. Poser un tag (une version) : le workflow « Database migrations », après les migrations, déploie
    l'Edge Function, lui donne ses secrets (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` et un
    `PUSH_CRON_SECRET` tiré au hasard à chaque version), puis écrit dans Supabase Vault l'adresse
-   de la fonction et ce même secret (`private.push_set_secrets`). Sans les clés VAPID, rien n'est
-   déployé et `pg_cron` n'appelle rien. Sans `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, le bouton
+   de la fonction et ce même secret (`private.push_set_secrets`), par `ci/push-deploy.sh`. Sans
+   les clés VAPID, rien n'est déployé (un `::notice::` sur le run) et `pg_cron` n'appelle rien. Sans `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, le bouton
    n'apparaît pas.
 5. Facultatif (#527) : GitHub, environnement « production », secret `SENTRY_DSN` = le DSN du
    projet Sentry (le même que `NEXT_PUBLIC_SENTRY_DSN`, `docs/sentry.md`). Le workflow le donne à
@@ -674,7 +682,8 @@ abonné du compte dont l'e-mail est dans le secret `PUSH_TEST_EMAIL` de cet envi
 préprod, `PREPROD_OWNER_EMAIL` suffit). Aucun appareil abonné : avertissement « Aucun appareil
 abonné pour ce compte ». En préprod, il faut d'abord les clés VAPID : `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
 dans le projet Vercel de préprod, `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY` dans l'environnement
-GitHub `preprod` (une paire à part ou celle de la prod), puis un déploiement de la préprod.
+GitHub `preprod` (une paire à part ou celle de la prod), puis un déploiement de la préprod (qui
+met aussi en route les rappels automatiques de la préprod, #1150, voir « Préproduction »).
 ## Sentry (erreurs en prod)
 
 Optionnel : voir `docs/sentry.md` (compte UE, `NEXT_PUBLIC_SENTRY_DSN` dans Vercel, jeton pour
