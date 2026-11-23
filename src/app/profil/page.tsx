@@ -11,7 +11,6 @@ import { getMyManagerHonours } from "@/application/manager-honours";
 import { getTrophyShowcase } from "@/application/trophies";
 import { ShareSeasonCard } from "@/components/profile/share-season-card";
 import { getMyPredictionHistory } from "@/application/list-my-predictions";
-import { getClubRanking } from "@/application/rankings";
 import { BadgeCelebration } from "@/components/profile/badge-celebration";
 import { BadgeGrid } from "@/components/profile/badge-grid";
 import { ProfileHelp } from "@/components/profile/profile-help";
@@ -21,8 +20,8 @@ import { Bib } from "@/components/profile/bib";
 import { InstallEntry } from "@/components/shell/install-prompt";
 import { NotificationOptIn } from "@/components/account/notification-opt-in";
 import { ClubNotices } from "@/components/account/club-notices";
+import { rankingHref } from "@/components/leaderboard/ranking-href";
 import { SubmitButton } from "@/components/account/submit-button";
-import { ClubRanking } from "@/components/profile/club-ranking";
 import { LatestPredictions } from "@/components/profile/prediction-history";
 import { BestShot, SeasonCurve, SeasonTiles } from "@/components/profile/season-blocks";
 import { Animal } from "@/components/band/animal";
@@ -50,13 +49,13 @@ import { publicEventReader, publicDisciplines, publicRanking } from "../public-d
 import { readOr } from "../read-or";
 
 /**
- * The season, the badges and the club ranking over every competition, the latest predictions: each read on its own, so one that fails only hides its own block (#763).
+ * The season and the badges over every competition, the latest predictions: each read on its own, so one that fails only hides its own block (#763).
  */
 async function loadSeason(userId: string) {
   const slugs = await seasonCompetitionSlugs();
   const client = await getSessionClient();
   const events = publicEventReader();
-  const [season, badges, clubs, latest] = await Promise.all([
+  const [season, badges, latest] = await Promise.all([
     readOr(
       "profile season",
       getMySeason({
@@ -73,13 +72,6 @@ async function loadSeason(userId: string) {
       null,
     ),
     readOr(
-      "profile clubs",
-      getClubRanking({ ranking: publicRanking() }).execute({
-        competitionSlugs: slugs,
-      }),
-      null,
-    ),
-    readOr(
       "profile latest predictions",
       getMyPredictionHistory({
         predictions: createSupabasePredictionRepository(client),
@@ -89,7 +81,7 @@ async function loadSeason(userId: string) {
       null,
     ),
   ]);
-  return { season, badges, clubs, latest };
+  return { season, badges, latest };
 }
 
 /** The next open final of the current competition, for the card of a new profile (#799). */
@@ -120,7 +112,7 @@ export default async function ProfilePage({
     userId: user.userId,
   });
   if (!profile) redirect(`/bienvenue?next=${encodeURIComponent("/profil")}`);
-  const [{ season, badges, clubs, latest }, details, params, clubNotices, honours, shelves] =
+  const [{ season, badges, latest }, details, params, clubNotices, honours, shelves] =
     await Promise.all([
       loadSeason(user.userId),
       readOr(
@@ -262,8 +254,17 @@ export default async function ProfilePage({
 
       {season && !starting && <ShareSeasonCard />}
       {latest && latest.length > 0 && <LatestPredictions lines={latest} />}
-      {clubs && !starting && (
-        <ClubRanking clubs={clubs} myClub={details?.club?.validated ? details.club : null} />
+      {/* The club ranking lives in the rankings tab (#1132): one way to see it. */}
+      {details?.club?.validated && !starting && (
+        <Link
+          href={rankingHref("general", { clubs: true })}
+          className="flex min-h-14 flex-col justify-center rounded-card border border-border bg-card px-4 py-2"
+        >
+          <span className="font-bold">{text.clubRanking}</span>
+          <span className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
+            {details.club.name}
+          </span>
+        </Link>
       )}
 
       <section aria-labelledby="season" className="flex flex-col gap-2">

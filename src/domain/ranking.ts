@@ -171,6 +171,40 @@ export function linesOfDay<T extends { eventStartsAt: string }>(lines: T[], day:
   return lines.filter((l) => l.eventStartsAt !== "" && competitionDay(l.eventStartsAt) === day);
 }
 
+/**
+ * The evening « Ce soir » shows when nothing is scheduled today (#1132): the last competition day,
+ * up to `today`, with points (the night up to 6 am belongs to the evening before). Null before any.
+ */
+export function lastEvening(
+  lines: { eventStartsAt: string; points: number }[],
+  today: string,
+): string | null {
+  let last: string | null = null;
+  for (const l of lines) {
+    if (l.eventStartsAt === "" || l.points <= 0) continue;
+    const day = competitionDay(l.eventStartsAt);
+    if (day <= today && (last === null || day > last)) last = day;
+  }
+  return last;
+}
+
+/**
+ * Places won (+) or lost (−) by each player over the evening `day` (#1132): the ranking up to the
+ * end of that day compared with the one before it; later days are left out. Null for a player not
+ * ranked before. A line without an event (a league member at 0) counts on both sides.
+ */
+export function movesOverEvening(
+  lines: DatedLine[],
+  pseudoOf: (userId: string) => string,
+  day: string,
+): Map<string, number | null> {
+  return movesSinceYesterday(
+    lines.filter((l) => !l.eventStartsAt || competitionDay(l.eventStartsAt) <= day),
+    pseudoOf,
+    day,
+  );
+}
+
 /** Players shown at the top of a long ranking, and on each side of the player (#551). */
 const TOP = 10;
 const NEIGHBOURS = 2;

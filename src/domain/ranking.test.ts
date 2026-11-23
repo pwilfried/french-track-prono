@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   aroundMe,
+  lastEvening,
   linesOfDay,
+  movesOverEvening,
   movesSinceCompetitions,
   movesSinceYesterday,
   placeOf,
@@ -234,6 +236,93 @@ describe("linesOfDay", () => {
     ];
 
     expect(linesOfDay(lines, "2026-11-24")).toEqual([lines[1], lines[2]]);
+  });
+});
+
+describe("lastEvening (#1132)", () => {
+  const at = (eventStartsAt: string, points = 5) => ({ eventStartsAt, points });
+
+  it("is today when tonight's events have points", () => {
+    const lines = [at("2026-11-21T19:00:00Z"), at("2026-11-23T19:00:00Z")];
+
+    expect(lastEvening(lines, "2026-11-23")).toBe("2026-11-23");
+  });
+
+  it("falls back on the last competition day with points, the night up to 6 am included", () => {
+    const lines = [
+      at("2026-11-20T19:00:00Z"),
+      at("2026-11-22T04:30:00Z"), // 05:30 in Paris: still the evening of the 21st
+      at("2026-11-21T19:00:00Z", 0),
+      at("2026-11-25T19:00:00Z"), // after today: not an evening yet
+      at(""),
+    ];
+
+    expect(lastEvening(lines, "2026-11-23")).toBe("2026-11-21");
+  });
+
+  it("skips a day whose lines have no points", () => {
+    const lines = [at("2026-11-20T19:00:00Z"), at("2026-11-22T19:00:00Z", 0)];
+
+    expect(lastEvening(lines, "2026-11-23")).toBe("2026-11-20");
+  });
+
+  it("is null before any evening with points", () => {
+    expect(lastEvening([at("", 0), at("2026-11-22T19:00:00Z", 0)], "2026-11-23")).toBeNull();
+  });
+});
+
+describe("movesOverEvening (#1132)", () => {
+  const line = (userId: string, startsAt: string, points: number) => ({
+    userId,
+    eventStartsAt: startsAt,
+    points,
+    reasons: [],
+  });
+  const before = "2026-11-20T19:00:00Z";
+  const evening = "2026-11-21T19:00:00Z";
+
+  it("tells the places won or lost in the ranking between before and after the evening", () => {
+    const lines = [
+      line("ana", before, 10),
+      line("bob", before, 6),
+      line("cid", before, 2),
+      line("cid", evening, 12),
+      // A later day changes nothing to the move of that evening.
+      line("ana", "2026-11-23T19:00:00Z", 50),
+    ];
+
+    const moves = movesOverEvening(lines, (id) => id, "2026-11-21");
+
+    expect(moves.get("cid")).toBe(2); // 3rd → 1st
+    expect(moves.get("ana")).toBe(-1); // 1st → 2nd
+    expect(moves.get("bob")).toBe(-1); // 2nd → 3rd
+  });
+
+  it("counts tied players on their shared rank", () => {
+    const lines = [
+      line("ana", before, 10),
+      line("bob", before, 10),
+      line("cid", before, 4),
+      line("cid", evening, 6),
+    ];
+
+    const moves = movesOverEvening(lines, (id) => id, "2026-11-21");
+
+    // Before: Ana 1, Bob 1, Cid 3. After: all three tied on 10 points, rank 1.
+    expect(moves.get("cid")).toBe(2);
+    expect(moves.get("ana")).toBe(0);
+    expect(moves.get("bob")).toBe(0);
+  });
+
+  it("gives no move to a player who was not ranked before the evening", () => {
+    const moves = movesOverEvening(
+      [line("ana", before, 10), line("zoe", evening, 3)],
+      (id) => id,
+      "2026-11-21",
+    );
+
+    expect(moves.get("zoe")).toBeNull();
+    expect(moves.get("ana")).toBe(0);
   });
 });
 

@@ -1,10 +1,12 @@
 import { DEFAULT_BIB, type Bib } from "@/domain/bib";
-import { rankClubs, type ClubRank } from "@/domain/club-ranking";
+import { rankClubs, type RankedClub } from "@/domain/club-ranking";
 import type { DisciplineFamily } from "@/domain/discipline";
 import { countsSinceEntry } from "@/domain/league";
 import { countsForFamilies, type LeagueFamilyRule } from "@/domain/league-families";
 import {
+  lastEvening,
   linesOfDay,
+  movesOverEvening,
   movesSinceCompetitions,
   movesSinceYesterday,
   rankPlayers,
@@ -61,17 +63,27 @@ export type RankingRow = RankedPlayer & {
  */
 type MovesInput = { today?: string; previousSlugs?: string[] | null };
 
-const rank = (lines: RankingLine[], moves: MovesInput = {}): RankingRow[] => {
+const movesOf = (
+  lines: RankingLine[],
+  pseudoOf: (id: string) => string,
+  moves: MovesInput,
+): Map<string, number | null> =>
+  moves.previousSlugs !== undefined
+    ? moves.previousSlugs
+      ? movesSinceCompetitions(lines, pseudoOf, moves.previousSlugs)
+      : new Map()
+    : moves.today
+      ? movesSinceYesterday(lines, pseudoOf, moves.today)
+      : new Map();
+
+const pseudos = (lines: RankingLine[]) => {
   const byUser = new Map(lines.map((l) => [l.userId, l]));
-  const pseudoOf = (id: string) => byUser.get(id)?.pseudo ?? "";
-  const changes =
-    moves.previousSlugs !== undefined
-      ? moves.previousSlugs
-        ? movesSinceCompetitions(lines, pseudoOf, moves.previousSlugs)
-        : new Map()
-      : moves.today
-        ? movesSinceYesterday(lines, pseudoOf, moves.today)
-        : new Map();
+  return { byUser, pseudoOf: (id: string) => byUser.get(id)?.pseudo ?? "" };
+};
+
+/** The players of the lines ranked, each with the move given (none when absent). */
+const rankWith = (lines: RankingLine[], changes: Map<string, number | null>): RankingRow[] => {
+  const { byUser, pseudoOf } = pseudos(lines);
   return rankPlayers(totalsOf(lines, pseudoOf)).map((player) => ({
     ...player,
     bib: byUser.get(player.userId)?.bib ?? DEFAULT_BIB,
@@ -79,6 +91,9 @@ const rank = (lines: RankingLine[], moves: MovesInput = {}): RankingRow[] => {
     change: changes.get(player.userId) ?? null,
   }));
 };
+
+const rank = (lines: RankingLine[], moves: MovesInput = {}): RankingRow[] =>
+  rankWith(lines, movesOf(lines, pseudos(lines).pseudoOf, moves));
 
 /** How many competitions are read together: dozens of reads at once fail now and then (#691). */
 const READ_BATCH = 4;
@@ -113,36 +128,139 @@ export function getGeneralRanking(ports: { ranking: RankingRepository }) {
   };
 }
 
+/** What a league counts (#376, #613, #614): the league ranking and « Ce soir » share it. */
+export type LeagueScope = {
+  leagueId: string;
+  /** The league's families (#613); none or absent: every event counts. */
+  families?: LeagueFamilyRule[];
+  /** When each competition entered the league (#614); absent: every event counts. */
+  competitionAddedAt?: Record<string, string>;
+};
+
+type LeaguePorts = {
+  ranking: RankingRepository;
+  leagues: Pick<LeagueRepository, "members">;
+  /** The jokers played in the league; absent: none counts. */
+  jokers?: Pick<LeagueJokerRepository, "plays">;
+};
+
 /**
- * « Ce soir » (#551): the players ranked on the points won on the events of the competition day
- * `today` only, Paris time. Nobody moves in it.
+ * The score lines of a league with its jokers, and a line at 0 for each member: a member without
+ * points yet is ranked too. LEAGUE_NOT_FOUND when the player cannot see it.
  */
-export function getTonightRanking(ports: { ranking: RankingRepository }) {
+async function leagueScoreLines(
+  ports: LeaguePorts,
+  input: LeagueScope & { competitionSlugs: string[] },
+): Promise<RankingLine[]> {
+  const [members, read, plays] = await Promise.all([
+    ports.leagues.members(input.leagueId),
+    linesOf(ports.ranking, input.competitionSlugs),
+    ports.jokers?.plays(input.leagueId) ?? [],
+  ]);
+  if (!members) throw new UseCaseError("LEAGUE_NOT_FOUND");
+  const lines = withLeagueJokers(
+    leagueLines(read, {
+      members,
+      families: input.families,
+      competitionAddedAt: input.competitionAddedAt,
+    }),
+    plays,
+  );
+  const zero = members.map((m) => ({
+    userId: m.userId,
+    pseudo: m.pseudo,
+    bib: m.bib,
+    club: m.club ?? null,
+    points: 0,
+    reasons: [],
+    eventId: "",
+    eventStartsAt: "",
+  }));
+  return [...zero, ...lines];
+}
+
+/** « Ce soir »: the evening shown and its ranking. */
+export type Tonight = {
+  /** The competition day shown, YYYY-MM-DD: today, or the last evening with points (#1132). */
+  day: string;
+  rows: RankingRow[];
+};
+
+/**
+ * « Ce soir » (#551, #1132): the players ranked on the points of the events of one competition day
+ * (Paris time, the night up to 6 am included), all players or the members of a league, then only
+ * the predictions added to the league and with its jokers. The day is today when finals are
+ * scheduled today (`finalsToday`) or have points, else the last evening with points. Each row's
+ * move is the places won or lost over that evening in the ranking it belongs to: the league's, or
+ * the general one for all players.
+ */
+export function getTonightRanking(ports: {
+  ranking: RankingRepository;
+  leagues?: Pick<LeagueRepository, "members">;
+  jokers?: Pick<LeagueJokerRepository, "plays">;
+}) {
   return {
-    async execute(input: { competitionSlugs: string[]; today: string }): Promise<RankingRow[]> {
-      return rank(linesOfDay(await linesOf(ports.ranking, input.competitionSlugs), input.today));
+    async execute(input: {
+      competitionSlugs: string[];
+      today: string;
+      finalsToday?: boolean;
+      /** A league of the player; absent: all players. */
+      league?: LeagueScope;
+    }): Promise<Tonight> {
+      const lines = input.league
+        ? await leagueScoreLines(
+            { ...ports, leagues: ports.leagues ?? noLeagues },
+            { ...input.league, competitionSlugs: input.competitionSlugs },
+          )
+        : await linesOf(ports.ranking, input.competitionSlugs);
+      const day = input.finalsToday
+        ? input.today
+        : (lastEvening(lines, input.today) ?? input.today);
+      const moves = movesOverEvening(lines, pseudos(lines).pseudoOf, day);
+      return { day, rows: rankWith(linesOfDay(lines, day), moves) };
     },
   };
 }
 
-/** Clubs ranked on the average points of their players over the competitions given (#386). */
+/** Without a league repository, no league can be read. */
+const noLeagues: Pick<LeagueRepository, "members"> = { members: async () => null };
+
+/** A player of a club, with their points (#1132). */
+export type ClubPlayer = { userId: string; pseudo: string; points: number };
+
+/**
+ * Clubs ranked on the average points of their players over the competitions given (#386), each
+ * with its players, best first, then by pseudo (#1132).
+ */
 export function getClubRanking(ports: { ranking: RankingRepository }) {
   return {
-    async execute(input: { competitionSlugs: string[] }): Promise<ClubRank[]> {
+    async execute(input: {
+      competitionSlugs: string[];
+    }): Promise<RankedClub<ClubPlayer & { clubId: string | null; club: string | null }>[]> {
       const lines = await linesOf(ports.ranking, input.competitionSlugs);
-      const clubOf = new Map(
-        lines
-          .filter((l) => l.clubId)
-          .map((l) => [l.userId, { id: l.clubId!, name: l.club ?? null }]),
-      );
-      const points = new Map<string, number>();
-      for (const l of lines) points.set(l.userId, (points.get(l.userId) ?? 0) + l.points);
+      const players = new Map<
+        string,
+        ClubPlayer & { clubId: string | null; club: string | null }
+      >();
+      for (const l of lines) {
+        const p = players.get(l.userId) ?? {
+          userId: l.userId,
+          pseudo: l.pseudo,
+          points: 0,
+          clubId: null,
+          club: null,
+        };
+        p.points += l.points;
+        if (l.clubId) {
+          p.clubId = l.clubId;
+          p.club = l.club ?? null;
+        }
+        players.set(l.userId, p);
+      }
       return rankClubs(
-        [...points].map(([userId, total]) => ({
-          clubId: clubOf.get(userId)?.id ?? null,
-          club: clubOf.get(userId)?.name ?? null,
-          points: total,
-        })),
+        [...players.values()].sort((a, b) =>
+          a.pseudo.localeCompare(b.pseudo, "fr", { sensitivity: "base" }),
+        ),
       );
     },
   };
@@ -161,49 +279,12 @@ export function countsInLeague(joinedAt: string | undefined, eventLockAt: string
  * score lines. A joker played in the league counts its points there (#1090); the scores of an event
  * exist once it is locked, when every member sees the jokers played on it.
  */
-export function getLeagueRanking(ports: {
-  ranking: RankingRepository;
-  leagues: LeagueRepository;
-  /** The jokers played in the league; absent: none counts. */
-  jokers?: Pick<LeagueJokerRepository, "plays">;
-}) {
+export function getLeagueRanking(ports: LeaguePorts) {
   return {
     async execute(
-      input: {
-        leagueId: string;
-        competitionSlugs: string[];
-        /** The league's families (#613); none or absent: every event counts. */
-        families?: LeagueFamilyRule[];
-        /** When each competition entered the league (#614); absent: every event counts. */
-        competitionAddedAt?: Record<string, string>;
-      } & MovesInput,
+      input: LeagueScope & { competitionSlugs: string[] } & MovesInput,
     ): Promise<RankingRow[]> {
-      const [members, read, plays] = await Promise.all([
-        ports.leagues.members(input.leagueId),
-        linesOf(ports.ranking, input.competitionSlugs),
-        ports.jokers?.plays(input.leagueId) ?? [],
-      ]);
-      if (!members) throw new UseCaseError("LEAGUE_NOT_FOUND");
-      const lines = withLeagueJokers(
-        leagueLines(read, {
-          members,
-          families: input.families,
-          competitionAddedAt: input.competitionAddedAt,
-        }),
-        plays,
-      );
-      // Members without any score line yet still appear, with 0 points.
-      const zero = members.map((m) => ({
-        userId: m.userId,
-        pseudo: m.pseudo,
-        bib: m.bib,
-        club: m.club ?? null,
-        points: 0,
-        reasons: [],
-        eventId: "",
-        eventStartsAt: "",
-      }));
-      return rank([...zero, ...lines], input);
+      return rank(await leagueScoreLines(ports, input), input);
     },
   };
 }

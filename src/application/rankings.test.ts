@@ -185,33 +185,138 @@ describe("rank movement since the last finished competition (#661)", () => {
 });
 
 describe("getTonightRanking", () => {
-  it("ranks the players on the points of tonight's events only", async () => {
+  it("ranks the players on the points of tonight's events only, the night before 6 am included", async () => {
     // given Ana far ahead yesterday, Bob and Cid scoring tonight (Cid after midnight in Paris)
     const lines = [
       line("ana", 40, false, "e1", "2026-11-23T19:00:00.000Z"),
       line("bob", 5, false, "e2", "2026-11-24T19:00:00.000Z"),
-      line("cid", 8, false, "e3", "2026-11-25T00:15:00.000Z"),
-      line("bob", 3, false, "e3", "2026-11-25T00:15:00.000Z"),
+      line("cid", 8, false, "e3", "2026-11-25T04:15:00.000Z"),
+      line("bob", 3, false, "e3", "2026-11-25T04:15:00.000Z"),
     ];
     // when « Ce soir » is read on the 24th
     const result = await getTonightRanking({ ranking: ranking(lines) }).execute({
       competitionSlugs: ["c"],
       today: "2026-11-24",
+      finalsToday: true,
     });
-    // then only tonight's points count, and nobody moves
-    expect(result.map((r) => [r.rank, r.userId, r.points, r.change])).toEqual([
+    // then only tonight's points count; new in the general ranking, neither moves
+    expect(result.day).toBe("2026-11-24");
+    expect(result.rows.map((r) => [r.rank, r.userId, r.points, r.change])).toEqual([
       [1, "bob", 8, null],
       [1, "cid", 8, null],
     ]);
   });
 
-  it("is empty on a day without events", async () => {
+  it("tells the places each player won over the evening in the general ranking", async () => {
+    // given Ana 1st and Bob 2nd yesterday, Bob scoring more than Ana tonight
+    const lines = [
+      line("ana", 10, false, "e1", "2026-11-23T19:00:00.000Z"),
+      line("bob", 6, false, "e1", "2026-11-23T19:00:00.000Z"),
+      line("ana", 1, false, "e2", "2026-11-24T19:00:00.000Z"),
+      line("bob", 9, false, "e2", "2026-11-24T19:00:00.000Z"),
+    ];
+    // when « Ce soir » is read
+    const { rows } = await getTonightRanking({ ranking: ranking(lines) }).execute({
+      competitionSlugs: ["c"],
+      today: "2026-11-24",
+    });
+    // then Bob, first tonight, won a place in the general ranking, and Ana lost one
+    expect(rows.map((r) => [r.userId, r.points, r.change])).toEqual([
+      ["bob", 9, 1],
+      ["ana", 1, -1],
+    ]);
+  });
+
+  it("counts in a league only the predictions added to it, with its jokers", async () => {
+    // given Ana's 12 with the Double played in the league, Bob's 15 not added to the league,
+    // and Cid, who is not a member
+    const lines = [
+      {
+        ...line("ana", 12, true, "e2", "2026-11-24T19:00:00.000Z"),
+        jokers: { double: 24, all_or_nothing: 36, safety_net: 12, spy: 12, outsider: 12 },
+      },
+      line("bob", 15, false, "e2", "2026-11-24T19:00:00.000Z"),
+      line("bob", 3, false, "e3", "2026-11-24T20:00:00.000Z"),
+      line("cid", 30, false, "e2", "2026-11-24T19:00:00.000Z"),
+    ];
+    // when the league's « Ce soir » is read
+    const { rows } = await getTonightRanking({
+      ranking: ranking(lines),
+      leagues: leagues([
+        { ...member("ana"), countedEvents: ["e2"] },
+        { ...member("bob"), countedEvents: ["e3"] },
+      ]),
+      jokers: { plays: async () => [{ userId: "ana", eventId: "e2", joker: "double" as const }] },
+    }).execute({
+      competitionSlugs: ["c"],
+      today: "2026-11-24",
+      league: { leagueId: "l1" },
+    });
+    // then Ana leads with her joker, Bob counts his added prediction only, Cid is not there
+    expect(rows.map((r) => [r.rank, r.userId, r.points])).toEqual([
+      [1, "ana", 24],
+      [2, "bob", 3],
+    ]);
+  });
+
+  it("moves the members in the league ranking, a member without points included", async () => {
+    // given Ana ahead in the league yesterday, Bob passing her tonight, Zoe without points
+    const lines = [
+      line("ana", 4, false, "e1", "2026-11-23T19:00:00.000Z"),
+      line("bob", 9, false, "e2", "2026-11-24T19:00:00.000Z"),
+    ];
+    // when the league's « Ce soir » is read
+    const { rows } = await getTonightRanking({
+      ranking: ranking(lines),
+      leagues: leagues([member("ana"), member("bob"), member("zoe")]),
+    }).execute({ competitionSlugs: ["c"], today: "2026-11-24", league: { leagueId: "l1" } });
+    // then Bob, 2nd with Zoe at 0 yesterday, is 1st of the league: one place won
+    expect(rows.map((r) => [r.userId, r.change])).toEqual([["bob", 1]]);
+  });
+
+  it("refuses a league the player cannot see", async () => {
+    const tonight = getTonightRanking({ ranking: ranking([]), leagues: leagues(null) }).execute({
+      competitionSlugs: ["c"],
+      today: "2026-11-24",
+      league: { leagueId: "l1" },
+    });
+
+    await expect(tonight).rejects.toEqual(new UseCaseError("LEAGUE_NOT_FOUND"));
+  });
+
+  it("shows the last evening with points on a day without finals", async () => {
+    // given points on the evening of Saturday 21 Nov, nothing scheduled on Monday 23
+    const lines = [
+      line("ana", 40, false, "e1", "2026-11-20T19:00:00.000Z"),
+      line("bob", 5, false, "e2", "2026-11-21T19:00:00.000Z"),
+    ];
+    // when « Ce soir » is read on the 23rd
+    const result = await getTonightRanking({ ranking: ranking(lines) }).execute({
+      competitionSlugs: ["c"],
+      today: "2026-11-23",
+    });
+    // then the evening of the 21st is shown
+    expect(result.day).toBe("2026-11-21");
+    expect(result.rows.map((r) => [r.userId, r.points])).toEqual([["bob", 5]]);
+  });
+
+  it("stays on today, empty, while tonight's finals wait for their results", async () => {
     const result = await getTonightRanking({ ranking: ranking([line("ana", 40)]) }).execute({
+      competitionSlugs: ["c"],
+      today: "2026-11-30",
+      finalsToday: true,
+    });
+
+    expect(result).toEqual({ day: "2026-11-30", rows: [] });
+  });
+
+  it("is empty on today before any evening with points", async () => {
+    const result = await getTonightRanking({ ranking: ranking([]) }).execute({
       competitionSlugs: ["c"],
       today: "2026-11-30",
     });
 
-    expect(result).toEqual([]);
+    expect(result).toEqual({ day: "2026-11-30", rows: [] });
   });
 });
 
@@ -486,7 +591,15 @@ describe("getClubRanking", () => {
     }).execute({ competitionSlugs: ["c1", "c2"] });
 
     // Club x: (15 + 4 + 1) / 3; club y has a single player and is not ranked.
-    expect(result).toEqual([{ clubId: "x", name: "Club x", players: 3, average: 6.7, rank: 1 }]);
+    expect(result.map((c) => [c.clubId, c.name, c.players, c.average, c.rank])).toEqual([
+      ["x", "Club x", 3, 6.7, 1],
+    ]);
+    // Its players, best first, with their points (#1132).
+    expect(result[0]!.members.map((m) => [m.pseudo, m.points])).toEqual([
+      ["A", 15],
+      ["B", 4],
+      ["C", 1],
+    ]);
   });
 });
 

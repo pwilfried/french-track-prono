@@ -451,7 +451,11 @@ compétitions confondues (#319), et l'onglet Classement donne aussi celui de cha
 (#376). L'évolution de rang de l'onglet Classement (#661) est recalculée, sans table : le rang
 précédent est celui du classement arrêté à la fin de l'avant-dernière compétition terminée de la
 portée (`previousCompetitionSlugs`, `movesSinceCompetitions` dans `src/domain/ranking.ts`) ; un
-nouveau joueur n'a pas de flèche, « Ce soir » non plus. Les autres pages (ligues, accueil)
+nouveau joueur n'a pas de flèche. « Ce soir » (#1132) se lit par ligue (puce par ligue du joueur,
+puis « Tous ») : points des épreuves du jour (`competitionDay`, nuit jusqu'à 6 h), pronos versés
+dans la ligue et jokers de ligue compris ; sa flèche est le mouvement de la soirée au classement de
+la ligue (ou au général pour « Tous », `movesOverEvening`). Un jour sans finale, il montre la
+dernière soirée avec des points (`lastEvening`). Les autres pages (ligues, accueil)
 gardent l'évolution depuis la veille. Une ligue de pronos est fermée aux nouveaux dès que la
 première épreuve d'une de ses compétitions est verrouillée (#780, décision du propriétaire du
 14 nov. 2026, qui remplace l'entrée en cours de route de #376) : `join_league` et
@@ -674,7 +678,8 @@ de ligue Manager et du général, plus Chrono figé, Record de ligue et Témoin 
 TypeScript (`src/domain/trophies.ts`, décision B) quand l'admin les attribue depuis
 `/admin/trophees` et stockés dans `trophies`, lisibles par le joueur et les membres de ses ligues
 (`getTrophyShowcase`, port `TrophyRepository`) ; classement des clubs (`rankClubs`, `src/domain/club-ranking.ts`, #386 : moyenne des points
-des joueurs du club, 3 joueurs au moins) ; derniers pronos et historique complet sur
+des joueurs du club, 3 joueurs au moins ; affiché dans l'onglet Classement, « Général › 🏟️ Clubs »,
+#1132, le profil n'y fait qu'un lien) ; derniers pronos et historique complet sur
 `/profil/pronos` (`pickHits`, `src/domain/prediction-history.ts`, #387) ; carte « Ma saison »
 (`/profil/carte`, image 1080×1920 via `next/og`, #388) qui ne reprend que des données publiques
 (`seasonCardOf`, `src/domain/season-card.ts` : pseudo, animal, chiffres de la saison, club validé ;
