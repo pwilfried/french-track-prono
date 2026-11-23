@@ -37,6 +37,11 @@ export type Trophy = {
   leagueName: string | null;
   /** The statuette's animal: the league's family for a predictions league, the hare for Manager. */
   animal: Animal | null;
+  /**
+   * The feat in points, told when it is announced (#1134): the best evening of a Chrono figé, the
+   * total that beat the Record de ligue. Not kept with the trophy.
+   */
+  points?: number;
 };
 
 /** A score line a trophy is drawn from. */
@@ -102,6 +107,15 @@ export function leagueOver(competitions: SeasonCompetition[], today: string): bo
 /** The season of a league: the year its last competition ends. */
 export function leagueSeason(competitions: SeasonCompetition[]): number {
   return seasonOf(competitions.reduce((max, c) => (c.endsOn > max ? c.endsOn : max), ""));
+}
+
+/**
+ * The seasons the daily draw (#1134) awards on `today` (YYYY-MM-DD, Paris time): the current one
+ * and, in January, the one just over (its general ranking is final then).
+ */
+export function seasonsToDraw(today: string): number[] {
+  const season = seasonOf(today);
+  return today.slice(5, 7) === "01" ? [season - 1, season] : [season];
 }
 
 /** The general ranking of a season is final once its year is over. */
@@ -174,7 +188,8 @@ export function leagueTrophies(league: FinishedLeague): Trophy[] {
     }
   }
   for (const userId of bestOf(perDay)) {
-    trophies.push({ ...base, userId, kind: "chrono", metal: null, animal: null });
+    const points = perDay.get(userId)!;
+    trophies.push({ ...base, userId, kind: "chrono", metal: null, animal: null, points });
   }
 
   const byCompetition = sumBy(league.lines, (l) => l.competitionSlug ?? "");
@@ -182,16 +197,19 @@ export function leagueTrophies(league: FinishedLeague): Trophy[] {
     (a, b) => a.endsOn.localeCompare(b.endsOn) || a.slug.localeCompare(b.slug),
   );
   let record: number | null = null;
-  const beaten = new Set<string>();
+  /** Each player who beat the record, with their best total doing so. */
+  const beaten = new Map<string, number>();
   for (const c of order) {
     const totals = byCompetition.get(c.slug);
     if (!totals) continue;
     const best = Math.max(0, ...totals.values());
-    if (record !== null && best > record) bestOf(totals).forEach((id) => beaten.add(id));
+    if (record !== null && best > record) {
+      bestOf(totals).forEach((id) => beaten.set(id, Math.max(beaten.get(id) ?? 0, best)));
+    }
     if (best > 0) record = Math.max(record ?? 0, best);
   }
-  for (const userId of beaten) {
-    trophies.push({ ...base, userId, kind: "record", metal: null, animal: null });
+  for (const [userId, points] of beaten) {
+    trophies.push({ ...base, userId, kind: "record", metal: null, animal: null, points });
   }
   return trophies;
 }
@@ -278,6 +296,9 @@ export function witnessTrophies(
 
 const METALS: Metal[] = ["gold", "silver", "bronze"];
 
+/** Gold first, then silver, bronze, and a feat (no metal) last. */
+const metalRank = (m: Metal | null) => (m ? METALS.indexOf(m) : METALS.length);
+
 /** One shelf of the showcase: a season's trophies, the finest first. */
 export type TrophyShelf = { season: number; trophies: Trophy[] };
 
@@ -286,7 +307,6 @@ export type TrophyShelf = { season: number; trophies: Trophy[] };
  * order of TROPHY_KINDS, then gold, silver, bronze, then the league's name.
  */
 export function trophyShelves(trophies: Trophy[]): TrophyShelf[] {
-  const metalRank = (m: Metal | null) => (m ? METALS.indexOf(m) : METALS.length);
   const seasons = [...new Set(trophies.map((t) => t.season))].sort((a, b) => b - a);
   return seasons.map((season) => ({
     season,
@@ -304,4 +324,84 @@ export function trophyShelves(trophies: Trophy[]): TrophyShelf[] {
 /** The identity of a trophy: one per player, season, kind and league (recomputing never adds). */
 export function trophyKey(t: Pick<Trophy, "userId" | "season" | "kind" | "leagueId">): string {
   return `${t.userId}|${t.season}|${t.kind}|${t.leagueId ?? ""}`;
+}
+
+/**
+ * The trophies to announce after a draw (#1134): those of `after` absent from `before`, or now in
+ * another metal. A trophy already there, or taken back by the draw, is not announced.
+ */
+export function freshTrophies(before: Trophy[], after: Trophy[]): Trophy[] {
+  const held = new Set(before.map((t) => `${trophyKey(t)}|${t.metal ?? ""}`));
+  const seen = new Set<string>();
+  return after.filter((t) => {
+    const key = `${trophyKey(t)}|${t.metal ?? ""}`;
+    if (held.has(key) || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/** A podium of a league, as its moment tells it: gold first. */
+export type PodiumStep = { userId: string; metal: Metal };
+
+/**
+ * A trophy moment (#1134), in the feed of its league: `feed` says which one (predictions or
+ * Manager). `key` names the fact, so that a draw run again publishes nothing new.
+ */
+export type TrophyMoment = {
+  feed: "league" | "manager";
+  leagueId: string;
+  key: string;
+  userId: string;
+  trophy: "league" | "manager" | "chrono" | "record";
+  season: number;
+  animal?: Animal;
+  points?: number;
+  /** The whole final podium of the league, for a podium moment. */
+  podium?: PodiumStep[];
+};
+
+/**
+ * The moments of the fresh trophies (#1134): one per league for its final podium (the whole
+ * podium, read from `all`, the trophies of the draw), one per player for a Chrono figé or a
+ * Record de ligue. The general ranking and the Témoin d'or have no league, so no moment.
+ */
+export function trophyMoments(fresh: Trophy[], all: Trophy[]): TrophyMoment[] {
+  const moments: TrophyMoment[] = [];
+  const podiums = new Set<string>();
+  for (const t of fresh) {
+    if (!t.leagueId) continue;
+    if (t.kind === "league" || t.kind === "manager") {
+      const key = `trophy:${t.season}:${t.kind}:${t.leagueId}`;
+      if (podiums.has(key)) continue;
+      podiums.add(key);
+      const podium = all
+        .filter((o) => o.kind === t.kind && o.leagueId === t.leagueId && o.season === t.season)
+        .flatMap((o) => (o.metal ? [{ userId: o.userId, metal: o.metal }] : []))
+        .sort(
+          (a, b) => metalRank(a.metal) - metalRank(b.metal) || a.userId.localeCompare(b.userId),
+        );
+      moments.push({
+        feed: t.kind === "manager" ? "manager" : "league",
+        leagueId: t.leagueId,
+        key,
+        userId: podium[0]?.userId ?? t.userId,
+        trophy: t.kind,
+        season: t.season,
+        ...(t.animal ? { animal: t.animal } : {}),
+        podium,
+      });
+    } else if (t.kind === "chrono" || t.kind === "record") {
+      moments.push({
+        feed: "league",
+        leagueId: t.leagueId,
+        key: `trophy:${t.season}:${t.kind}:${t.leagueId}:${t.userId}`,
+        userId: t.userId,
+        trophy: t.kind,
+        season: t.season,
+        ...(t.points !== undefined ? { points: t.points } : {}),
+      });
+    }
+  }
+  return moments;
 }

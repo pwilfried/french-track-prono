@@ -186,3 +186,69 @@ export const LongText: Story = {
     await expect(canvasElement.scrollWidth).toBeLessThanOrEqual(canvasElement.clientWidth + 1);
   },
 };
+
+/** The final podium of a league, told once (#1134): the three medals, then the gold statuette. */
+export const TrophyPodium: Story = {
+  args: {
+    moment: {
+      ...base,
+      key: "trophy:2026:league:L",
+      kind: "trophy",
+      trophy: {
+        kind: "league",
+        animal: "guepard",
+        podium: [
+          { pseudo: "Flèche du Nord", metal: "gold" },
+          { pseudo: "Gazelle", metal: "silver" },
+          { pseudo: "Le Lièvre", metal: "bronze" },
+        ],
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(text.label.trophy)).toBeVisible();
+    await expect(canvas.getByText(/Flèche du Nord 🥇 Gazelle 🥈 Le Lièvre 🥉/)).toBeVisible();
+    await expect(canvas.getByText(/décroche le Guépard d'or/)).toBeVisible();
+  },
+};
+
+/** The best evening of the league (#1134), with its points. */
+export const TrophyChrono: Story = {
+  args: {
+    moment: {
+      ...base,
+      key: "trophy:2026:chrono:L:u1",
+      kind: "trophy",
+      trophy: { kind: "chrono", points: 84 },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText(/84 points en une soirée/)).toBeVisible();
+    await expect(within(canvasElement).getByText(text.trophyEmoji.chrono)).toBeInTheDocument();
+  },
+};
+
+/** A Record de ligue, and a podium of long pseudos: nothing overflows on a phone. */
+export const TrophyLongText: Story = {
+  args: {
+    moment: {
+      ...base,
+      key: "trophy:2026:league:L",
+      kind: "trophy",
+      pseudo: "Supercalifragilistique du demi-fond",
+      trophy: {
+        kind: "league",
+        animal: "kangourou",
+        podium: [
+          { pseudo: "Supercalifragilistique du demi-fond", metal: "gold" },
+          { pseudo: "Gazelle des Plateaux", metal: "silver" },
+          { pseudo: "Gazelle des Plateaux 2", metal: "silver" },
+        ],
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.scrollWidth).toBeLessThanOrEqual(canvasElement.clientWidth + 1);
+  },
+};

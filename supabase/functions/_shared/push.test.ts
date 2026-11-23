@@ -187,9 +187,9 @@ describe("sendTest", () => {
     });
     expect(report).toEqual({ sent: 2, forgotten: [], failed: 0 });
     const first = sent.filter((s) => s.endpoint === devices12[0].endpoint);
-    expect(first).toHaveLength(24);
+    expect(first).toHaveLength(26);
     expect(first.at(-1)!.payload).toMatchObject({ title: "🔔✅ Test réussi", url: "/" });
-    expect(new Set(first.map((s) => s.payload.tag)).size).toBe(24);
+    expect(new Set(first.map((s) => s.payload.tag)).size).toBe(26);
   });
 
   it("lists the devices that unsubscribed and counts the other failures", async () => {
@@ -206,8 +206,8 @@ describe("testNotifications", () => {
   it("gives one example of every case, chambrage and mercato reveal included, each with its own tag", () => {
     const now = new Date("2026-11-16T18:00:00Z").getTime();
     const samples = testNotifications(now);
-    expect(samples).toHaveLength(24);
-    expect(new Set(samples.map((n) => n.tag)).size).toBe(24);
+    expect(samples).toHaveLength(26);
+    expect(new Set(samples.map((n) => n.tag)).size).toBe(26);
     expect(samples.map((n) => `${n.title} | ${n.body}`)).toMatchSnapshot();
   });
 });

@@ -1,3 +1,4 @@
+import type { Animal } from "./band";
 import type { Badge, BadgeLevel } from "./badges";
 import type { Bib } from "./bib";
 import { competitionDay } from "./competition";
@@ -12,6 +13,7 @@ export const MOMENT_KINDS = [
   "mercato_win",
   "badge",
   "streak",
+  "trophy",
 ] as const;
 export type MomentKind = (typeof MOMENT_KINDS)[number];
 
@@ -163,6 +165,17 @@ export type FeedMoment = {
   level?: BadgeLevel;
   /** A duel's scores, winner first. */
   scores?: [number, number];
+  /** A trophy won (#1134): a final podium (the whole of it, gold first) or a feat. */
+  trophy?: FeedTrophy;
+};
+
+/** The trophy of a moment: `pseudo` (the moment's player) holds the feat or the gold. */
+export type FeedTrophy = {
+  kind: "league" | "manager" | "chrono" | "record";
+  animal?: Animal;
+  /** The best evening of a Chrono figé, the total of a Record de ligue. */
+  points?: number;
+  podium?: { pseudo: string; metal: "gold" | "silver" | "bronze" }[];
 };
 
 /** How the feed titles a group of moments: tonight with its competition, yesterday, or a day. */

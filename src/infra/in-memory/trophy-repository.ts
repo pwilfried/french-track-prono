@@ -1,6 +1,6 @@
 import { UseCaseError } from "@/application/errors";
 import type { SeasonFacts, TrophyRepository } from "@/application/trophies";
-import { trophyKey, type Trophy } from "@/domain/trophies";
+import { trophyKey, type Trophy, type TrophyMoment } from "@/domain/trophies";
 
 /** What the fake knows: the facts of each season, the players, their leagues, the admins. */
 export type TrophyFixture = {
@@ -16,14 +16,21 @@ export type TrophyFixture = {
 /**
  * Test double of the TrophyRepository port, with the rules of the database: only an admin draws
  * the trophies and sets the FrenchTrack account; a player reads their trophies and those of the
- * players of their leagues; one trophy per player, season, kind and league.
+ * players of their leagues; one trophy per player, season, kind and league; the points of a feat
+ * are told, not kept; an announcement made twice is kept once (#1134).
  */
 export function createInMemoryTrophyStore(fixture: TrophyFixture) {
   let trophies: Trophy[] = structuredClone(fixture.trophies ?? []);
   let witnessId: string | null = null;
+  const moments = new Map<string, TrophyMoment>();
+  const news = new Map<string, Trophy>();
   return {
     /** Every trophy, as the database holds them. */
     all: () => structuredClone(trophies),
+    /** The trophy moments published, once each. */
+    moments: () => structuredClone([...moments.values()]),
+    /** The fresh trophies to notify, once each. */
+    news: () => structuredClone([...news.values()]),
     session(userId: string): TrophyRepository {
       const admin = () => {
         if (!fixture.admins?.includes(userId)) throw new UseCaseError("NOT_ADMIN");
@@ -37,14 +44,30 @@ export function createInMemoryTrophyStore(fixture: TrophyFixture) {
           const facts = fixture.facts?.[season] ?? { competitions: [], leagues: [], manager: [] };
           return { ...structuredClone(facts), witnessId };
         },
-        async replaceSeason(season, next) {
+        async seasonTrophies(season) {
+          admin();
+          return structuredClone(trophies.filter((t) => t.season === season));
+        },
+        async replaceSeason(season, next, announcements) {
           admin();
           const kept = new Map<string, Trophy>();
           for (const t of next) {
             if (t.season !== season || !(t.userId in fixture.players)) continue;
-            if (!kept.has(trophyKey(t))) kept.set(trophyKey(t), structuredClone(t));
+            // The points of a feat are told, not kept.
+            const stored = structuredClone(t);
+            delete stored.points;
+            if (!kept.has(trophyKey(t))) kept.set(trophyKey(t), stored);
           }
           trophies = [...trophies.filter((t) => t.season !== season), ...kept.values()];
+          for (const m of announcements.moments) {
+            const key = `${m.feed}|${m.leagueId}|${m.key}`;
+            if (!moments.has(key) && m.userId in fixture.players)
+              moments.set(key, structuredClone(m));
+          }
+          for (const t of announcements.news) {
+            const key = `${trophyKey(t)}|${t.metal ?? ""}`;
+            if (!news.has(key) && t.userId in fixture.players) news.set(key, structuredClone(t));
+          }
         },
         async ofPlayer(playerId) {
           return sees(playerId)

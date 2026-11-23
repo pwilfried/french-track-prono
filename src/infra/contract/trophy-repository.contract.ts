@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import type { TrophyRepository } from "@/application/trophies";
+import type { TrophyAnnouncements, TrophyRepository } from "@/application/trophies";
 import type { Trophy } from "@/domain/trophies";
+
+const NONE: TrophyAnnouncements = { moments: [], news: [] };
 
 /**
  * A season with one predictions league (`leagueId`, `leagueName`) of `player` and `mate`, whose
@@ -53,16 +55,51 @@ export function trophyRepositoryContract(name: string, world: () => Promise<Trop
 
     it("replaces the trophies of a season, never twice the same", async () => {
       const w = await world();
-      await w.admin.replaceSeason(w.season, [chrono(w)]);
+      await w.admin.replaceSeason(w.season, [chrono(w)], NONE);
 
-      await w.admin.replaceSeason(w.season, [gold(w), gold(w)]);
+      await w.admin.replaceSeason(w.season, [gold(w), gold(w)], NONE);
 
       expect(await w.player.ofPlayer(w.playerId)).toEqual([gold(w)]);
     });
 
+    it("gives the admin every trophy of the season, a kept one in its new metal", async () => {
+      const w = await world();
+      await w.admin.replaceSeason(w.season, [gold(w), chrono(w)], NONE);
+
+      await w.admin.replaceSeason(w.season, [{ ...gold(w), metal: "silver" }], NONE);
+
+      expect(await w.admin.seasonTrophies(w.season)).toEqual([{ ...gold(w), metal: "silver" }]);
+      await expect(w.player.seasonTrophies(w.season)).rejects.toMatchObject({ code: "NOT_ADMIN" });
+    });
+
+    it("publishes the announcements of a draw, and takes the same ones again without error", async () => {
+      const w = await world();
+      const won = { ...chrono(w), points: 84 };
+      const announcements: TrophyAnnouncements = {
+        moments: [
+          {
+            feed: "league",
+            leagueId: w.leagueId,
+            key: `trophy:${w.season}:chrono:${w.leagueId}:${w.playerId}`,
+            userId: w.playerId,
+            trophy: "chrono",
+            season: w.season,
+            points: 84,
+          },
+        ],
+        news: [won],
+      };
+
+      await w.admin.replaceSeason(w.season, [won], announcements);
+      await w.admin.replaceSeason(w.season, [won], announcements);
+
+      // The points are told, not kept with the trophy.
+      expect(await w.player.ofPlayer(w.playerId)).toEqual([chrono(w)]);
+    });
+
     it("lets the players of a league read each other's trophies, no one else", async () => {
       const w = await world();
-      await w.admin.replaceSeason(w.season, [gold(w)]);
+      await w.admin.replaceSeason(w.season, [gold(w)], NONE);
 
       expect(await w.mate.ofPlayer(w.playerId)).toEqual([gold(w)]);
       expect(await w.outsider.ofPlayer(w.playerId)).toEqual([]);
@@ -84,7 +121,7 @@ export function trophyRepositoryContract(name: string, world: () => Promise<Trop
       const w = await world();
 
       await expect(w.player.seasonFacts(w.season)).rejects.toMatchObject({ code: "NOT_ADMIN" });
-      await expect(w.player.replaceSeason(w.season, [gold(w)])).rejects.toMatchObject({
+      await expect(w.player.replaceSeason(w.season, [gold(w)], NONE)).rejects.toMatchObject({
         code: "NOT_ADMIN",
       });
       await expect(w.player.setWitness(w.playerPseudo)).rejects.toMatchObject({

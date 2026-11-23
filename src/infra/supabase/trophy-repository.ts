@@ -77,6 +77,15 @@ const toTrophy = (row: TrophyRow): Trophy => ({
   animal: row.animal,
 });
 
+const toRow = (t: Trophy) => ({
+  user_id: t.userId,
+  kind: t.kind,
+  metal: t.metal,
+  league_id: t.leagueId,
+  league_name: t.leagueName,
+  animal: t.animal,
+});
+
 /** Code 42501: the database refused a player who is not an admin. */
 const refuse = (error: { code?: string }): never => {
   throw new UseCaseError(error.code === "42501" ? "NOT_ADMIN" : "TROPHIES_UNAVAILABLE");
@@ -90,17 +99,31 @@ export function createSupabaseTrophyRepository(client: SupabaseClient): TrophyRe
       if (error) return refuse(error);
       return toFacts(data as FactsJson);
     },
-    async replaceSeason(season, trophies) {
+    async seasonTrophies(season) {
+      const { data, error } = await client.rpc("admin_season_trophies", { p_season: season });
+      if (error) return refuse(error);
+      return ((data ?? []) as TrophyRow[]).map(toTrophy);
+    },
+    async replaceSeason(season, trophies, announcements) {
       const { error } = await client.rpc("admin_replace_trophies", {
         p_season: season,
-        p_trophies: trophies.map((t) => ({
-          user_id: t.userId,
-          kind: t.kind,
-          metal: t.metal,
-          league_id: t.leagueId,
-          league_name: t.leagueName,
-          animal: t.animal,
+        p_trophies: trophies.map(toRow),
+        p_moments: announcements.moments.map((m) => ({
+          feed: m.feed,
+          league_id: m.leagueId,
+          key: m.key,
+          user_id: m.userId,
+          data: {
+            trophy: m.trophy,
+            season: m.season,
+            ...(m.animal ? { animal: m.animal } : {}),
+            ...(m.points !== undefined ? { points: m.points } : {}),
+            ...(m.podium
+              ? { podium: m.podium.map((p) => ({ user_id: p.userId, metal: p.metal })) }
+              : {}),
+          },
         })),
+        p_news: announcements.news.map((t) => ({ ...toRow(t), points: t.points ?? null })),
       });
       if (error) refuse(error);
     },

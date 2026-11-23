@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { DisciplineFamily } from "./discipline";
 import {
   competitionOver,
+  freshTrophies,
   generalMetal,
   generalTrophies,
   leagueOver,
@@ -13,7 +14,9 @@ import {
   mostPlayedAnimal,
   podiumMetal,
   seasonOver,
+  seasonsToDraw,
   trophyKey,
+  trophyMoments,
   trophyShelves,
   witnessTrophies,
   type FinishedLeague,
@@ -174,6 +177,7 @@ describe("leagueTrophies — Chrono figé", () => {
       ]),
     );
     expect(of(trophies, "chrono")).toEqual(["bob"]);
+    expect(trophies.find((t) => t.kind === "chrono")?.points).toBe(15);
   });
 
   it("goes to every player tied on the best day, never with 0 points", () => {
@@ -233,6 +237,7 @@ describe("leagueTrophies — Record de ligue", () => {
       ),
     );
     expect(of(trophies, "record")).toEqual(["bob", "cyd"]);
+    expect(trophies.filter((t) => t.kind === "record").map((t) => t.points)).toEqual([30, 15]);
   });
 });
 
@@ -324,6 +329,133 @@ describe("trophyShelves", () => {
 
   it("has no shelf without a trophy", () => {
     expect(trophyShelves([])).toEqual([]);
+  });
+});
+
+describe("seasonsToDraw (#1134)", () => {
+  it("draws the current season, and in January the one just over too", () => {
+    expect(seasonsToDraw("2026-07-12")).toEqual([2026]);
+    expect(seasonsToDraw("2026-12-31")).toEqual([2026]);
+    expect(seasonsToDraw("2027-01-01")).toEqual([2026, 2027]);
+    expect(seasonsToDraw("2027-01-31")).toEqual([2026, 2027]);
+    expect(seasonsToDraw("2027-02-01")).toEqual([2027]);
+  });
+});
+
+describe("freshTrophies (#1134)", () => {
+  const trophy = (over: Partial<Trophy>): Trophy => ({
+    userId: "ana",
+    season: 2026,
+    kind: "league",
+    metal: "gold",
+    leagueId: "L",
+    leagueName: "Les copains",
+    animal: "guepard",
+    ...over,
+  });
+
+  it("announces a trophy absent before the draw", () => {
+    const won = trophy({});
+    expect(freshTrophies([], [won])).toEqual([won]);
+  });
+
+  it("does not announce a trophy already there, even drawn twice", () => {
+    const won = trophy({});
+    expect(freshTrophies([won], [won, { ...won }])).toEqual([]);
+  });
+
+  it("announces a trophy now in another metal, never one taken back", () => {
+    const silver = trophy({ metal: "silver" });
+    const gold = trophy({ metal: "gold" });
+    expect(freshTrophies([silver], [gold])).toEqual([gold]);
+    expect(freshTrophies([gold], [])).toEqual([]);
+  });
+});
+
+describe("trophyMoments (#1134)", () => {
+  const trophy = (over: Partial<Trophy>): Trophy => ({
+    userId: "ana",
+    season: 2026,
+    kind: "league",
+    metal: "gold",
+    leagueId: "L",
+    leagueName: "Les copains",
+    animal: "guepard",
+    ...over,
+  });
+  const podium = [
+    trophy({ userId: "cyd", metal: "bronze" }),
+    trophy({ userId: "ana", metal: "gold" }),
+    trophy({ userId: "bob", metal: "silver" }),
+  ];
+
+  it("tells a whole final podium in one moment of its league, gold first", () => {
+    expect(trophyMoments(podium, podium)).toEqual([
+      {
+        feed: "league",
+        leagueId: "L",
+        key: "trophy:2026:league:L",
+        userId: "ana",
+        trophy: "league",
+        season: 2026,
+        animal: "guepard",
+        podium: [
+          { userId: "ana", metal: "gold" },
+          { userId: "bob", metal: "silver" },
+          { userId: "cyd", metal: "bronze" },
+        ],
+      },
+    ]);
+  });
+
+  it("tells the Manager podium in the feed of the Manager league", () => {
+    const manager = trophy({ kind: "manager", leagueId: "M", animal: "lievre" });
+    expect(trophyMoments([manager], [manager])).toMatchObject([
+      { feed: "manager", leagueId: "M", key: "trophy:2026:manager:M", trophy: "manager" },
+    ]);
+  });
+
+  it("tells each Chrono figé and Record de ligue with its points", () => {
+    const chrono = trophy({ kind: "chrono", metal: null, animal: null, points: 84 });
+    const record = trophy({
+      userId: "bob",
+      kind: "record",
+      metal: null,
+      animal: null,
+      points: 212,
+    });
+    expect(trophyMoments([chrono, record], [chrono, record])).toEqual([
+      {
+        feed: "league",
+        leagueId: "L",
+        key: "trophy:2026:chrono:L:ana",
+        userId: "ana",
+        trophy: "chrono",
+        season: 2026,
+        points: 84,
+      },
+      {
+        feed: "league",
+        leagueId: "L",
+        key: "trophy:2026:record:L:bob",
+        userId: "bob",
+        trophy: "record",
+        season: 2026,
+        points: 212,
+      },
+    ]);
+  });
+
+  it("has no moment for the general ranking nor the Témoin d'or", () => {
+    const general = trophy({ kind: "general", leagueId: null, leagueName: null, animal: null });
+    const witness = trophy({
+      kind: "witness",
+      metal: null,
+      leagueId: null,
+      leagueName: null,
+      animal: null,
+    });
+    expect(trophyMoments([general, witness], [general, witness])).toEqual([]);
   });
 });
 

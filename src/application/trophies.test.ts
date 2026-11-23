@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import type { DisciplineFamily } from "@/domain/discipline";
-import type { Trophy } from "@/domain/trophies";
+import { trophyKey, type Trophy, type TrophyMoment } from "@/domain/trophies";
 
 import { UseCaseError } from "./errors";
 import type { RankingLine, RankingRepository } from "./rankings";
 import {
+  awardDueTrophies,
   awardSeasonTrophies,
   getTrophyShowcase,
   setTrophyWitness,
@@ -22,16 +23,24 @@ const createInMemoryRankingRepository = (
   },
 });
 
-/** A fake of the trophy port: the facts of each season, admins only for drawing. */
+/**
+ * A fake of the trophy port: the facts of each season, admins only for drawing; an announcement
+ * (moment or news) made twice is kept once, as in the database.
+ */
 function createInMemoryTrophyStore(fixture: {
   players: Record<string, string>;
   admins: string[];
   facts: Record<number, Omit<SeasonFacts, "witnessId">>;
+  trophies?: Trophy[];
 }) {
-  let trophies: Trophy[] = [];
+  let trophies: Trophy[] = [...(fixture.trophies ?? [])];
   let witnessId: string | null = null;
+  const moments = new Map<string, TrophyMoment>();
+  const news = new Map<string, Trophy>();
   return {
     all: () => trophies,
+    moments: () => [...moments.values()],
+    news: () => [...news.values()],
     session(userId: string): TrophyRepository {
       const admin = () => {
         if (!fixture.admins.includes(userId)) throw new UseCaseError("NOT_ADMIN");
@@ -39,11 +48,24 @@ function createInMemoryTrophyStore(fixture: {
       return {
         async seasonFacts(season) {
           admin();
-          return { ...fixture.facts[season]!, witnessId };
+          const none = { competitions: [], leagues: [], manager: [] };
+          return { ...(fixture.facts[season] ?? none), witnessId };
         },
-        async replaceSeason(season, next) {
+        async seasonTrophies(season) {
+          admin();
+          return trophies.filter((t) => t.season === season);
+        },
+        async replaceSeason(season, next, announcements) {
           admin();
           trophies = [...trophies.filter((t) => t.season !== season), ...next];
+          for (const m of announcements.moments) {
+            const key = `${m.feed}|${m.leagueId}|${m.key}`;
+            if (!moments.has(key)) moments.set(key, m);
+          }
+          for (const t of announcements.news) {
+            const key = `${trophyKey(t)}|${t.metal ?? ""}`;
+            if (!news.has(key)) news.set(key, t);
+          }
         },
         async ofPlayer(playerId) {
           return trophies.filter((t) => t.userId === playerId);
@@ -102,7 +124,7 @@ const member = (userId: string, joinedAt = joined) => ({ userId, joinedAt });
  * « Ligue d'automne » plays « Meeting de décembre » too, not over on 2026-11-14. The FrenchTrack
  * account `ft` played in June. Mercato, a Manager league, ended in September.
  */
-function world() {
+function world(trophies: Trophy[] = []) {
   const june = { slug: "meeting-juin", endsOn: "2026-06-14" };
   const december = { slug: "meeting-decembre", endsOn: "2026-12-12" };
   const facts: Omit<SeasonFacts, "witnessId"> = {
@@ -142,6 +164,7 @@ function world() {
     players,
     admins: ["adm"],
     facts: { 2026: facts },
+    trophies,
   });
   const ranking = createInMemoryRankingRepository({
     "meeting-juin": [
@@ -153,13 +176,14 @@ function world() {
       line("ft", 15, "2026-06-13"),
     ],
   });
-  const award = (today: string) =>
-    awardSeasonTrophies({
-      trophies: store.session("adm"),
-      ranking,
-      today: () => today,
-    }).execute({ season: 2026 });
-  return { store, award };
+  const ports = (today: string) => ({
+    trophies: store.session("adm"),
+    ranking,
+    today: () => today,
+  });
+  const award = (today: string) => awardSeasonTrophies(ports(today)).execute({ season: 2026 });
+  const daily = (today: string) => awardDueTrophies(ports(today)).execute();
+  return { store, award, daily };
 }
 
 const summary = (
@@ -328,6 +352,104 @@ describe("awardSeasonTrophies", () => {
         today: () => "2026-11-14",
       }).execute({ season: 2026 }),
     ).rejects.toMatchObject({ code: "NOT_ADMIN" });
+  });
+});
+
+describe("announcing the fresh trophies (#1134)", () => {
+  const won = (over: Partial<Trophy>): Trophy => ({
+    userId: "ana",
+    season: 2026,
+    kind: "league",
+    metal: "gold",
+    leagueId: "L",
+    leagueName: "Les lanceurs",
+    animal: "ours",
+    ...over,
+  });
+
+  it("announces only the new trophies: not one already there, not one taken back", async () => {
+    // Given ana already holds the gold of « Les lanceurs », and dan a Chrono figé he loses
+    const { store, award } = world([
+      won({}),
+      won({ userId: "dan", kind: "chrono", metal: null, animal: null }),
+    ]);
+
+    // When the 2026 trophies are drawn on 14 Nov.
+    const { fresh } = await award("2026-11-14");
+
+    // Then the new ones are notified, not ana's gold, not dan's lost Chrono figé
+    expect(summary(fresh)).toEqual([
+      "ana manager silver M",
+      "bob chrono - L",
+      "bob league silver L",
+      "bob manager gold M",
+      "cyd league bronze L",
+    ]);
+    expect(summary(store.news())).toEqual(summary(fresh));
+    expect(store.all().some((t) => t.userId === "dan")).toBe(false);
+  });
+
+  it("tells the whole podium in one moment of the league, the feats one by one", async () => {
+    // Given the June meeting is over
+    const { store, award } = world();
+
+    // When the trophies are drawn
+    await award("2026-11-14");
+
+    // Then « Les lanceurs » gets one podium moment and the Chrono figé, Mercato its podium
+    expect(store.moments().map((m) => `${m.feed} ${m.leagueId} ${m.key}`)).toEqual([
+      "league L trophy:2026:league:L",
+      "league L trophy:2026:chrono:L:bob",
+      "manager M trophy:2026:manager:M",
+    ]);
+    expect(store.moments()[0]!.podium).toEqual([
+      { userId: "ana", metal: "gold" },
+      { userId: "bob", metal: "silver" },
+      { userId: "cyd", metal: "bronze" },
+    ]);
+    expect(store.moments()[1]!.points).toBe(25);
+  });
+
+  it("gives the general ranking and the Témoin d'or a notification but no moment", async () => {
+    const { store, award } = world();
+    await setTrophyWitness({ trophies: store.session("adm") }).execute({ pseudo: "frenchtrack" });
+
+    await award("2027-01-02");
+
+    const kinds = (list: { kind?: string; trophy?: string }[]) =>
+      new Set(list.map((t) => t.kind ?? t.trophy));
+    expect(kinds(store.news())).toContain("general");
+    expect(kinds(store.news())).toContain("witness");
+    expect(kinds(store.moments())).not.toContain("general");
+    expect(kinds(store.moments())).not.toContain("witness");
+  });
+});
+
+describe("awardDueTrophies (#1134)", () => {
+  it("draws the current season every day, and the one just over in January", async () => {
+    const { store, daily } = world();
+
+    expect((await daily("2026-11-14")).map((d) => d.season)).toEqual([2026]);
+    expect(store.all().some((t) => t.kind === "general")).toBe(false);
+
+    expect((await daily("2027-01-02")).map((d) => d.season)).toEqual([2026, 2027]);
+    expect(store.all().some((t) => t.kind === "general" && t.season === 2026)).toBe(true);
+  });
+
+  it("run twice, adds no trophy and announces nothing again", async () => {
+    // Given the daily draw ran once
+    const { store, daily } = world();
+    await daily("2026-11-14");
+    const trophies = summary(store.all());
+    const announced = { moments: store.moments().length, news: store.news().length };
+
+    // When it runs again
+    const again = await daily("2026-11-14");
+
+    // Then nothing is new
+    expect(again).toEqual([{ season: 2026, awarded: trophies.length, fresh: 0 }]);
+    expect(summary(store.all())).toEqual(trophies);
+    expect({ moments: store.moments().length, news: store.news().length }).toEqual(announced);
   });
 });
 
