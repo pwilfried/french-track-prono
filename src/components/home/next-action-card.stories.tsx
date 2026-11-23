@@ -70,6 +70,32 @@ export const FirstPredictionWithOthers: Story = {
   },
 };
 
+const startingAt = (iso: string) => ({
+  kind: "predict" as const,
+  final: { ...final, startsAt: iso, lockAt: iso },
+  sameDay: 2,
+});
+
+/** The other finals follow the day of the shown one: today, tomorrow, a later day. */
+export const SameDayLabels: Story = {
+  args: { action: startingAt("2026-09-11T17:00:00.000Z") },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText("2 autres finales aujourd'hui")).toBeVisible();
+  },
+};
+export const SameDayTomorrow: Story = {
+  args: { action: startingAt("2026-09-12T17:00:00.000Z") },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText("2 autres finales demain")).toBeVisible();
+  },
+};
+export const SameDayLater: Story = {
+  args: { action: startingAt("2026-09-19T17:00:00.000Z") },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText("2 autres finales samedi 19")).toBeVisible();
+  },
+};
+
 /** Less than an hour before the lock: the chip turns gold. */
 export const LocksSoon: Story = {
   args: {
