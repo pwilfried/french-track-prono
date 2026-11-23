@@ -138,6 +138,9 @@ export function createSupabaseTrophyRepository(client: SupabaseClient): TrophyRe
       return ((data ?? []) as TrophyRow[]).map(toTrophy);
     },
     async unseen(userId) {
+      // League mates can read each other's trophies; only the winner has unseen ones.
+      const { data: auth } = await client.auth.getUser();
+      if (auth.user?.id !== userId) return [];
       const { data, error } = await client
         .from("trophies")
         .select("user_id, season, kind, metal, league_id, league_name, animal")
