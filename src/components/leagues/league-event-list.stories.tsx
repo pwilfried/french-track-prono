@@ -111,7 +111,7 @@ export const Phases: Story = {
     await expect(canvas.getByText(text.eventFinished("Démo Fusée"))).toBeVisible();
     await expect(canvas.getByRole("link", { name: /200\sm hommes/ })).toHaveAttribute(
       "href",
-      "/epreuves/200m-h",
+      "/epreuves/200m-h?ligue=demo",
     );
     await expect(canvas.queryByText(text.outOfLeagueNote)).toBeNull();
   },
