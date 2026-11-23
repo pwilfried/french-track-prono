@@ -110,11 +110,11 @@ export const AfterPodium: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const items = canvas.getAllByRole("listitem");
-    // The header of the points column, then the 4th, 5th and 6th.
-    await expect(items).toHaveLength(4);
-    await expect(items[1]).toHaveTextContent("4");
-    await expect(items[3]).toHaveTextContent("🏮 Lanterne rouge");
-    await expect(items[1]).not.toHaveTextContent("Lanterne");
+    // The 4th, 5th and 6th.
+    await expect(items).toHaveLength(3);
+    await expect(items[0]).toHaveTextContent("4");
+    await expect(items[2]).toHaveTextContent("🏮 Lanterne rouge");
+    await expect(items[0]).not.toHaveTextContent("Lanterne");
   },
 };
 

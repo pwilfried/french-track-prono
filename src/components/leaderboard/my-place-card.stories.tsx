@@ -69,7 +69,7 @@ export const First: Story = {
     await expect(card).toHaveTextContent("1er");
     await expect(card).toHaveTextContent("👑");
     await expect(card).toHaveTextContent("😎 7 pts d'avance");
-    await expect(card).not.toHaveTextContent("place");
+    await expect(card).not.toHaveTextContent("places");
   },
 };
 
