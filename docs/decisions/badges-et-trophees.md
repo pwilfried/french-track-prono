@@ -128,3 +128,16 @@ Décision du propriétaire du 22 novembre 2026 : les trophées s'attribuent seul
   ligue » (aussi pour le général et le Témoin d'or, faute de famille plus juste), dans les
   48 heures, hors heures calmes, s'il le détient encore. Textes au format de #1093
   (`supabase/functions/_shared/push.mjs`) ; toucher ouvre le profil.
+
+## Célébration (#1135)
+
+- **Quand** : à la première visite du profil après une attribution, plein écran, un trophée par
+  écran (ordre de l'étagère). Sont concernés les trophées nouveaux, au sens de `freshTrophies`
+  (absents avant ou passés à un autre métal : le métal changé le rend de nouveau à voir).
+- **Une seule fois** : la colonne `seen_at` de `trophies` est vide tant que le joueur n'a pas
+  fermé la célébration (« Suivant » jusqu'au bout, « Plus tard » ou Échap). Les trophées déjà
+  présents à la migration sont marqués vus : pas de célébration rétroactive. Dans la vitrine, un
+  trophée non vu porte « Nouveau ✨ ».
+- **Pas de factorisation avec le lièvre** : la célébration des badges est un bandeau du profil
+  marqué vu à l'affichage ; celle des trophées est un dialogue marqué vu à la fermeture. Revue du
+  22 nov. 2026 (#1136) : aucune clé de messages inutilisée.
