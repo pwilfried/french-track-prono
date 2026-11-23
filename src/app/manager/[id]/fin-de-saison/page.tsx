@@ -157,7 +157,7 @@ export default async function ManagerSeasonEndPage({
 
             <p className="rounded-card bg-muted p-4 text-sm">{text.nextSeason}</p>
             <Link
-              href="/profil"
+              href="/profil?vue=vitrine"
               className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-4"
             >
               {text.honoursTitle} ›

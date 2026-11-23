@@ -146,7 +146,7 @@ test("a new player predicts a perfect podium, the admin enters the results sheet
       new URL(r.url()).pathname === "/profil" &&
       r.request().headers()["next-action"] !== undefined,
   );
-  await page.goto("/profil");
+  await page.goto("/profil?vue=badges");
   const celebration = page.getByRole("status").filter({ hasText: "Le lièvre a une médaille" });
   await expect(celebration).toContainText("Nostradamus : Bronze");
   const badges = page.getByRole("region", { name: "Badges" });
@@ -154,8 +154,6 @@ test("a new player predicts a perfect podium, the admin enters the results sheet
     "data-level",
     "bronze",
   );
-  // The band (#768): the seven families of the season with their points.
-  await expect(page.getByRole("region", { name: "Ma bande" }).getByRole("listitem")).toHaveCount(7);
   // The badges grid (#385): locked badges stay listed, and the next one is named.
   await expect(badges).toContainText("Prochain :");
   // Once seen, the level is stored: the next visit does not celebrate it again.
@@ -163,7 +161,11 @@ test("a new player predicts a perfect podium, the admin enters the results sheet
   await page.reload();
   await expect(page.getByRole("region", { name: "Badges" })).toBeVisible();
   await expect(celebration).toHaveCount(0);
-  // The redesigned profile (#384): the best shot and the season figures.
+  // The season tab, the default one (#1138): the band, the best shot and the season figures.
+  await page.getByRole("tab", { name: "Saison" }).click();
+  await page.waitForURL(/\/profil$/);
+  // The band (#768): the seven families of the season with their points.
+  await expect(page.getByRole("region", { name: "Ma bande" }).getByRole("listitem")).toHaveCount(7);
   await expect(page.getByRole("region", { name: "Mon meilleur coup" })).toContainText(
     "Podium parfait",
   );

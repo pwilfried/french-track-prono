@@ -49,9 +49,10 @@ export function ShareSeasonCard() {
         type="button"
         onClick={share}
         disabled={state === "busy"}
-        className={`${buttonVariants()} w-full`}
+        aria-label={state === "busy" ? undefined : text.share}
+        className={`${buttonVariants({ variant: "outline" })} w-full border-current hover:bg-white/10 dark:hover:bg-muted`}
       >
-        {state === "busy" ? text.preparing : text.share}
+        {state === "busy" ? text.preparing : messages.profile.card.share}
       </button>
       {state === "error" && (
         <p role="alert" className="text-sm font-semibold text-accent-text">
