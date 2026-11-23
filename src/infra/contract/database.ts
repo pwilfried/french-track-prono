@@ -108,25 +108,32 @@ function sqlOnPreprod(statement: string): string {
   const ref = process.env.SUPABASE_PROJECT_REF;
   if (!token || !ref) throw new Error("SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF are needed");
   // A passing error of the API (see isTransientPreprodError) sends the request again, up to 6 times
-  // in all, about 30 s (#871, #888). Any other error stops at once.
+  // in all (#871, #888); a request hanging more than 20 s is cut and sent again (#1181). Any other error stops at once.
   const script = `
     const isTransient = ${isTransientPreprodError.toString()};
     let response;
     let text;
     for (let attempt = 1; ; attempt++) {
-      response = await fetch(
-        "https://api.supabase.com/v1/projects/" + process.env.SUPABASE_PROJECT_REF + "/database/query",
-        {
-          method: "POST",
-          headers: {
-            authorization: "Bearer " + process.env.SUPABASE_ACCESS_TOKEN,
-            "content-type": "application/json",
+      try {
+        response = await fetch(
+          "https://api.supabase.com/v1/projects/" + process.env.SUPABASE_PROJECT_REF + "/database/query",
+          {
+            method: "POST",
+            headers: {
+              authorization: "Bearer " + process.env.SUPABASE_ACCESS_TOKEN,
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({ query: process.env.E2E_SQL }),
+            signal: AbortSignal.timeout(20000),
           },
-          body: JSON.stringify({ query: process.env.E2E_SQL }),
-        },
-      );
-      text = await response.text();
-      if (!isTransient(response.status, text) || attempt === 6) break;
+        );
+        text = await response.text();
+        if (!isTransient(response.status, text)) break;
+      } catch (error) {
+        // A request that hangs or breaks (timeout, network) is sent again too.
+        if (attempt === 6) throw error;
+      }
+      if (attempt === 6) break;
       await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
     }
     if (!response.ok) {
@@ -142,7 +149,7 @@ function sqlOnPreprod(statement: string): string {
   return execFileSync(process.execPath, ["--input-type=module", "-e", script], {
     encoding: "utf8",
     env: { ...process.env, E2E_SQL: statement },
-    timeout: 60_000,
+    timeout: 180_000,
   });
 }
 
