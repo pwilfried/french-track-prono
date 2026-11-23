@@ -76,6 +76,10 @@ export interface TrophyRepository {
   ): Promise<void>;
   /** The trophies of a player, any season. */
   ofPlayer(userId: string): Promise<Trophy[]>;
+  /** The player's own trophies not celebrated yet (#1135); those won before it count as seen. */
+  unseen(userId: string): Promise<Trophy[]>;
+  /** The signed-in player has closed the celebration: their trophies count as seen, only theirs. */
+  markSeen(): Promise<void>;
   /** Admin only: the pseudo of the FrenchTrack account, null when none is set. */
   witness(): Promise<string | null>;
   /** Admin only: an empty pseudo sets none. */
@@ -179,6 +183,26 @@ export function getTrophyShowcase(ports: { trophies: TrophyRepository }) {
   return {
     async execute(input: { userId: string }): Promise<TrophyShelf[]> {
       return trophyShelves(await ports.trophies.ofPlayer(input.userId));
+    },
+  };
+}
+
+/** The trophies to celebrate on the profile (#1135), in the order of the shelf. */
+export function getNewTrophies(ports: { trophies: TrophyRepository }) {
+  return {
+    async execute(input: { userId: string }): Promise<Trophy[]> {
+      return trophyShelves(await ports.trophies.unseen(input.userId)).flatMap(
+        (shelf) => shelf.trophies,
+      );
+    },
+  };
+}
+
+/** The celebration is closed: the player's trophies are not celebrated again (#1135). */
+export function markTrophiesSeen(ports: { trophies: TrophyRepository }) {
+  return {
+    async execute(): Promise<void> {
+      await ports.trophies.markSeen();
     },
   };
 }

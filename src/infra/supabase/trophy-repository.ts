@@ -137,6 +137,20 @@ export function createSupabaseTrophyRepository(client: SupabaseClient): TrophyRe
       if (error) throw new UseCaseError("TROPHIES_UNAVAILABLE");
       return ((data ?? []) as TrophyRow[]).map(toTrophy);
     },
+    async unseen(userId) {
+      const { data, error } = await client
+        .from("trophies")
+        .select("user_id, season, kind, metal, league_id, league_name, animal")
+        .eq("user_id", userId)
+        .is("seen_at", null)
+        .order("season", { ascending: false });
+      if (error) throw new UseCaseError("TROPHIES_UNAVAILABLE");
+      return ((data ?? []) as TrophyRow[]).map(toTrophy);
+    },
+    async markSeen() {
+      const { error } = await client.rpc("mark_my_trophies_seen");
+      if (error) throw new UseCaseError("TROPHIES_UNAVAILABLE");
+    },
     async witness() {
       const { data, error } = await client.rpc("admin_trophy_witness");
       if (error) return refuse(error);

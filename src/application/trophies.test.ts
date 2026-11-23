@@ -8,7 +8,9 @@ import type { RankingLine, RankingRepository } from "./rankings";
 import {
   awardDueTrophies,
   awardSeasonTrophies,
+  getNewTrophies,
   getTrophyShowcase,
+  markTrophiesSeen,
   setTrophyWitness,
   type SeasonFacts,
   type TrophyRepository,
@@ -35,6 +37,8 @@ function createInMemoryTrophyStore(fixture: {
 }) {
   let trophies: Trophy[] = [...(fixture.trophies ?? [])];
   let witnessId: string | null = null;
+  // Celebrated (#1135), as `trophyKey|metal`: the fixture's trophies were won before.
+  const seenKeys = new Set((fixture.trophies ?? []).map((t) => `${trophyKey(t)}|${t.metal ?? ""}`));
   const moments = new Map<string, TrophyMoment>();
   const news = new Map<string, Trophy>();
   return {
@@ -69,6 +73,15 @@ function createInMemoryTrophyStore(fixture: {
         },
         async ofPlayer(playerId) {
           return trophies.filter((t) => t.userId === playerId);
+        },
+        async unseen(playerId) {
+          return trophies.filter(
+            (t) => t.userId === playerId && !seenKeys.has(`${trophyKey(t)}|${t.metal ?? ""}`),
+          );
+        },
+        async markSeen() {
+          for (const t of trophies)
+            if (t.userId === userId) seenKeys.add(`${trophyKey(t)}|${t.metal ?? ""}`);
         },
         async witness() {
           return witnessId ? fixture.players[witnessId]! : null;
@@ -465,6 +478,79 @@ describe("getTrophyShowcase", () => {
     expect(shelves).toHaveLength(1);
     expect(shelves[0]!.season).toBe(2026);
     expect(shelves[0]!.trophies.map((t) => t.kind)).toEqual(["league", "manager", "chrono"]);
+  });
+});
+
+describe("the celebration of new trophies (#1135)", () => {
+  it("celebrates a fresh trophy once, then no more", async () => {
+    // Given a draw gave bob his trophies
+    const { store, award } = world();
+    await award("2026-11-14");
+    const bob = store.session("bob");
+
+    // When he opens his profile
+    const first = await getNewTrophies({ trophies: bob }).execute({ userId: "bob" });
+    // and closes the celebration
+    await markTrophiesSeen({ trophies: bob }).execute();
+    const second = await getNewTrophies({ trophies: bob }).execute({ userId: "bob" });
+
+    // Then they were told once, in the order of the shelf
+    expect(first.map((t) => t.kind)).toEqual(["league", "manager", "chrono"]);
+    expect(second).toEqual([]);
+  });
+
+  it("does not celebrate the trophies won before the celebration existed", async () => {
+    const trophy: Trophy = {
+      userId: "bob",
+      season: 2025,
+      kind: "chrono",
+      metal: null,
+      leagueId: "L",
+      leagueName: "Les copains",
+      animal: null,
+    };
+    const store = createInMemoryTrophyStore({
+      players: { bob: "Bob" },
+      admins: [],
+      facts: {},
+      trophies: [trophy],
+    });
+
+    expect(
+      await getNewTrophies({ trophies: store.session("bob") }).execute({ userId: "bob" }),
+    ).toEqual([]);
+  });
+
+  it("celebrates a trophy again when it changes metal", async () => {
+    const { store, award } = world();
+    await award("2026-11-14");
+    await markTrophiesSeen({ trophies: store.session("bob") }).execute();
+    const league = store.all().find((t) => t.userId === "bob" && t.kind === "league")!;
+
+    await store.session("adm").replaceSeason(
+      2026,
+      store.all().map((t) => (t === league ? { ...t, metal: "bronze" } : t)),
+      { moments: [], news: [] },
+    );
+
+    const again = await getNewTrophies({ trophies: store.session("bob") }).execute({
+      userId: "bob",
+    });
+    expect(again.map((t) => `${t.kind}:${t.metal}`)).toEqual(["league:bronze"]);
+  });
+
+  it("marks only the player's own trophies", async () => {
+    const { store, award } = world();
+    await award("2026-11-14");
+
+    await markTrophiesSeen({ trophies: store.session("bob") }).execute();
+
+    const others = store.all().filter((t) => t.userId !== "bob");
+    expect(others.length).toBeGreaterThan(0);
+    const owner = others[0]!.userId;
+    expect(
+      await getNewTrophies({ trophies: store.session(owner) }).execute({ userId: owner }),
+    ).not.toEqual([]);
   });
 });
 
