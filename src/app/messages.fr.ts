@@ -3146,6 +3146,7 @@ export const messages = {
   profile: {
     title: "Mon profil",
     season: "Saison",
+    clubRanking: "🏟️ Classement des clubs",
     /** The athlete card and the three tabs of the profile showcase (#1138). */
     card: {
       editBib: "Modifier mon dossard",

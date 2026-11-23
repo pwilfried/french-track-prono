@@ -10,6 +10,7 @@ import { getMySeason } from "@/application/get-my-season";
 import { getMyManagerHonours } from "@/application/manager-honours";
 import { getNewTrophies, getTrophyShowcase } from "@/application/trophies";
 import { getMyPredictionHistory } from "@/application/list-my-predictions";
+import { rankingHref } from "@/components/leaderboard/ranking-href";
 import { RankingTabs } from "@/components/leaderboard/ranking-tabs";
 import { AthleteCard } from "@/components/profile/athlete-card";
 import { tabPanelProps } from "@/components/ui/view-tabs";
@@ -168,7 +169,7 @@ export default async function ProfilePage({
   const finalSlug = starting ? await nextOpenFinal() : null;
   const hasTrophies = shelves !== null && shelves.length > 0;
   // A new player sees no tabs, unless a trophy was already awarded: then the showcase is theirs.
-  const showTabs = !starting || hasTrophies;
+  const showTabs = !starting || hasTrophies || honours.length > 0;
   const view = PROFILE_VIEWS.find((v) => v === params.vue) ?? PROFILE_VIEWS[0];
   return (
     <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-6">
@@ -204,7 +205,7 @@ export default async function ProfilePage({
         }
       />
 
-      {season && starting && !hasTrophies && (
+      {season && starting && !showTabs && (
         <ProfileStart
           predictions={season.stats.predictions}
           finalSlug={finalSlug}
@@ -248,6 +249,18 @@ export default async function ProfilePage({
                     <SeasonCurve curve={season.stats.curve} />
                     <BestShot best={season.stats.bestShot} />
                     {latest && latest.length > 0 && <LatestPredictions lines={latest} />}
+                    {/* The club ranking lives in the rankings tab (#1132): one way to see it. */}
+                    {details?.club?.validated && (
+                      <Link
+                        href={rankingHref("general", { clubs: true })}
+                        className="flex min-h-14 flex-col justify-center rounded-card border border-border bg-card px-4 py-2"
+                      >
+                        <span className="font-bold">{text.clubRanking}</span>
+                        <span className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
+                          {details.club.name}
+                        </span>
+                      </Link>
+                    )}
                   </>
                 )
               ) : (
