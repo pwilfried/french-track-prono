@@ -1,4 +1,5 @@
 import type { ScoreReason } from "@/domain/scoring";
+import type { BreakdownLine, BreakdownRules } from "@/domain/event-result";
 
 import { messages } from "./messages.fr";
 
@@ -26,4 +27,33 @@ export function pointsReasonLabels(reasons: ScoreReason[]): string[] {
   if (sum("mark") > 0) labels.push(text.marks(sum("mark")));
   if (labels.length === 0) labels.push(text.none);
   return labels;
+}
+
+/** The French label of one line of the detail of a score (#1155). */
+export function breakdownLineLabel(line: BreakdownLine): string {
+  const text = messages.breakdown;
+  switch (line.kind) {
+    case "exact":
+      return text.exact[line.slot];
+    case "on_podium":
+      return text.misplaced(line.count);
+    case "perfect_podium":
+      return text.perfect;
+    case "flair":
+      return text.flair;
+    case "odds":
+      return text.odds;
+    case "mark":
+      return text.marks;
+  }
+}
+
+/** The values of the scale the detail of a score needs, from the scale as stored. */
+export function breakdownRules(scale: Record<string, number>): BreakdownRules {
+  return {
+    exactSlot: scale.exact_slot ?? 0,
+    wrongPlace: scale.wrong_place ?? 0,
+    perfectPodium: scale.perfect_podium ?? 0,
+    flairBonus: scale.flair_bonus ?? 0,
+  };
 }

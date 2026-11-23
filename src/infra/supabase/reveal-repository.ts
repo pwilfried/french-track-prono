@@ -3,7 +3,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { UseCaseError } from "@/application/errors";
 import type { RevealedPrediction, RevealRepository } from "@/application/reveal";
 import { bibOf } from "@/domain/bib";
+import type { PredictionScore } from "@/domain/event-result";
+import type { JokerPoints } from "@/domain/league-jokers";
 import { isReaction } from "@/domain/reveal";
+import type { ScoreReason } from "@/domain/scoring";
 
 import { slotFromRow } from "./podium-slot";
 
@@ -31,18 +34,30 @@ export function createSupabaseRevealRepository(client: SupabaseClient): RevealRe
         .eq("event_id", eventId)
         .returns<Row[]>();
       if (error) throw new UseCaseError("REVEAL_UNAVAILABLE");
-      // The computed points say who earned the "coup de flair" (the rules live in the database).
+      // The computed points of each prediction, with their reasons (#1155; the rules live in the
+      // database, the points are never computed a second time here).
       const scores = await client
         .from("score_events")
-        .select("user_id, detail")
+        .select("user_id, points, detail")
         .eq("event_id", eventId)
         .eq("source", "prediction")
-        .returns<{ user_id: string; detail: { reasons?: { kind: string }[] } }[]>();
+        .returns<
+          {
+            user_id: string;
+            points: number;
+            detail: { reasons?: ScoreReason[]; jokers?: Partial<JokerPoints> };
+          }[]
+        >();
       if (scores.error) throw new UseCaseError("REVEAL_UNAVAILABLE");
-      const flair = new Set(
-        scores.data
-          .filter((s) => (s.detail.reasons ?? []).some((r) => r.kind === "flair"))
-          .map((s) => s.user_id),
+      const scoreOf = new Map(
+        scores.data.map((s): [string, PredictionScore] => [
+          s.user_id,
+          {
+            points: s.points,
+            reasons: s.detail.reasons ?? [],
+            ...(s.detail.jokers ? { jokers: s.detail.jokers } : {}),
+          },
+        ]),
       );
       return {
         locked: true,
@@ -53,7 +68,7 @@ export function createSupabaseRevealRepository(client: SupabaseClient): RevealRe
             pseudo: row.profiles.pseudo,
             bib: bibOf(row.profiles.bib_number, row.profiles.bib_color),
             podium: { first: slotFromRow(row.p1), second: slotFromRow(row.p2), third: slotFromRow(row.p3) },
-            flair: flair.has(row.user_id),
+            score: scoreOf.get(row.user_id) ?? null,
             reactions: row.reactions.flatMap((r) =>
               isReaction(r.emoji) ? [{ userId: r.user_id, reaction: r.emoji }] : [],
             ),

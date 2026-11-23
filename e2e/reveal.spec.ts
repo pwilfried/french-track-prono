@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { sql } from "../src/infra/contract/database";
 import { joinLeagueFor, newPlayer, signUp, skipLeagueSheet } from "./players";
 
-test("a player cannot see a podium before the lock, unfolds it after and reacts to it", async ({
+test("a player cannot see a podium before the lock, sees it in a shared league after and reacts to it", async ({
   browser,
 }) => {
   // An open event of its own, nobody's prediction on it yet: Anna's is then 100 % of them (#830).
@@ -43,37 +43,42 @@ test("a player cannot see a podium before the lock, unfolds it after and reacts 
     bobPage.getByText("Les pronos des autres se dévoilent au verrouillage."),
   ).toBeVisible();
   await expect(bobPage.getByText(anna.pseudo)).toHaveCount(0);
-  // Bob has a league of his own, without Anna: her podium will be folded (#949).
+  // Bob has a league of his own, without Anna.
   joinLeagueFor(bob.email, "ultimate-championship-2026");
 
-  // Anna adds her podium to her league (#1068): the reveal opens on it, her reactions show there.
+  // Anna adds her podium to her league (#1068), which Bob joins too: there, he sees it.
   sql(`insert into league_predictions (league_id, user_id, event_id)
     select lm.league_id, lm.user_id, e.id
     from league_members lm, auth.users u, events e
     where lm.user_id = u.id and u.email = '${anna.email}' and e.slug = '${slug}'`);
+  const annaLeague = sql(`select lm.league_id from league_members lm
+    join auth.users u on u.id = lm.user_id where u.email = '${anna.email}' limit 1`);
+  sql(`insert into league_members (league_id, user_id, role)
+    select '${annaLeague}', id, 'member'::league_role from auth.users where email = '${bob.email}'`);
 
   // After the lock, he sees it.
   sql(`update events set lock_at = now() - interval '1 second' where slug = '${slug}'`);
   await bobPage.reload();
   await expect(bobPage.getByRole("heading", { name: "Les pronos" })).toBeVisible();
-  // The reveal opens on his league (#984), where Anna is not.
+  // The reveal opens on one of his leagues (#984).
   const filters = bobPage.getByRole("navigation", { name: "Voir les pronos de" });
   const allPlayers = filters.getByRole("link", { name: /^Tous les joueurs/ });
   await expect(filters.locator('[aria-current="page"]')).toHaveCount(1);
   await expect(allPlayers).not.toHaveAttribute("aria-current", "page");
-  await expect(bobPage.getByText(anna.pseudo)).toHaveCount(0);
-  // On all the players, Anna is in none of his leagues: her podium waits behind
-  // « Voir tous les pronos (N) ».
+  // « Tous » shows only stats, never the list of podiums (#1155).
   await allPlayers.click();
   await expect(allPlayers).toHaveAttribute("aria-current", "page");
-  await expect(bobPage.getByText(anna.pseudo)).toBeHidden();
-  await bobPage.getByText(/^Voir tous les pronos \(\d+\)$/).click();
-  await expect(bobPage.getByText(anna.pseudo)).toBeVisible();
-  await expect(bobPage.getByText("Masquer les autres pronos")).toBeVisible();
   await expect(
     bobPage.getByRole("heading", { name: "Ce qu'ont pronostiqué les joueurs" }),
   ).toBeVisible();
   await expect(bobPage.getByText(": 100 %").first()).toBeAttached();
+  await expect(bobPage.getByText(anna.pseudo)).toHaveCount(0);
+  await expect(
+    bobPage.getByText(/Les pronos un par un se regardent dans tes ligues/),
+  ).toBeVisible();
+  // In the league he shares with Anna, her podium is there.
+  await bobPage.goto(`/epreuves/${slug}?ligue=${annaLeague}`);
+  await expect(bobPage.getByText(anna.pseudo)).toBeVisible();
 
   // Anna sees the consensus with her own choice highlighted at each place.
   await annaPage.reload();

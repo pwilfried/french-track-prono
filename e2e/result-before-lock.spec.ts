@@ -81,9 +81,9 @@ test("a result saved before the lock locks the event: predictions are refused an
     0,
   );
   await expect(page.getByRole("heading", { name: "Les pronos" })).toBeVisible();
-  // The rival is in none of the player's leagues: their podium may wait behind « Voir tous ».
-  const seeAll = page.getByText(/^Voir tous les pronos \(\d+\)$/);
-  if (await seeAll.isVisible()) await seeAll.click();
+  // The player is in no league: « Tous » shows stats, the rival among the 3 best predictions
+  // (#1155).
+  await expect(page.getByRole("heading", { name: "🏆 Les 3 meilleurs pronos" })).toBeVisible();
   await expect(page.getByText(rivalPseudo)).toBeVisible();
 
   sql(`delete from competitions where id = '${competition}'`);
