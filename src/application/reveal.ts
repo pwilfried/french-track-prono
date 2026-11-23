@@ -1,4 +1,5 @@
 import type { Bib } from "@/domain/bib";
+import type { PredictionScore } from "@/domain/event-result";
 import type { Podium } from "@/domain/podium-draft";
 import type { Reaction } from "@/domain/reveal";
 
@@ -14,25 +15,18 @@ export type RevealedPrediction = {
   bib: Bib;
   podium: Podium;
   reactions: { userId: string; reaction: Reaction }[];
-  /** True when the computed points of this prediction include the "coup de flair". */
-  flair: boolean;
+  /** Its computed points, with their reasons and joker points (#1155); null before they are. */
+  score: PredictionScore | null;
 };
 
-/**
- * The revealed podiums shown first, and the ones folded by default, only on the unfiltered view:
- * the players outside all of my leagues (#949), and every podium past the first
- * {@link REVEAL_SHOWN} (#984).
- */
-export type EventReveal = { predictions: RevealedPrediction[]; others: RevealedPrediction[] };
+/** The revealed podiums of an event, all the players' or one league's, by pseudo. */
+export type EventReveal = { predictions: RevealedPrediction[] };
 
 /** Port: the predictions of an event as the signed-in player may see them. */
 export interface RevealRepository {
   /** `locked: false` before the lock (then only the player's own prediction would be readable). */
   listForEvent(eventId: string): Promise<{ locked: boolean; predictions: RevealedPrediction[] }>;
 }
-
-/** How many podiums the unfiltered view shows before folding the rest (#984). */
-export const REVEAL_SHOWN = 20;
 
 /** The `ligue` value of the « Tous les joueurs » view, now that it is not the default (#984). */
 export const ALL_PLAYERS = "tous";
@@ -46,19 +40,12 @@ export function revealFilter(requested: string | undefined, myLeagueIds: string[
   return requested ?? myLeagueIds[0];
 }
 
-/** Shows the first podiums of `first` then of `rest`, at most {@link REVEAL_SHOWN}; folds the others. */
-const fold = (first: RevealedPrediction[], rest: RevealedPrediction[]): EventReveal => ({
-  predictions: first.slice(0, REVEAL_SHOWN),
-  others: [...first.slice(REVEAL_SHOWN), ...rest],
-});
-
 const byPseudo = (a: RevealedPrediction, b: RevealedPrediction) =>
   a.pseudo.localeCompare(b.pseudo, "fr", { sensitivity: "base" });
 
 /**
  * Everyone's podium once the event is locked, optionally only the members of one of my leagues.
- * Without a filter, the members of my leagues come first and the others are folded, as are the
- * podiums past the first {@link REVEAL_SHOWN}.
+ * Unfiltered, the screen only shows stats of them (#1155): the list is a league's.
  * Ordered by pseudo so that every player sees the same list.
  */
 export function listEventPredictions(ports: {
@@ -70,13 +57,8 @@ export function listEventPredictions(ports: {
     if (!members) throw new UseCaseError("LEAGUE_NOT_FOUND");
     return members;
   };
-  const memberIds = async (leagueId: string) => (await membersOf(leagueId)).map((m) => m.userId);
   return {
-    async execute(input: {
-      eventId: string;
-      leagueId?: string;
-      myLeagueIds?: string[];
-    }): Promise<EventReveal> {
+    async execute(input: { eventId: string; leagueId?: string }): Promise<EventReveal> {
       const { locked, predictions } = await ports.reveal.listForEvent(input.eventId);
       if (!locked) throw new UseCaseError("EVENT_NOT_LOCKED");
       const sorted = [...predictions].sort(byPseudo);
@@ -89,15 +71,9 @@ export function listEventPredictions(ports: {
             )
             .map((m) => m.userId),
         );
-        return { predictions: sorted.filter((p) => counted.has(p.userId)), others: [] };
+        return { predictions: sorted.filter((p) => counted.has(p.userId)) };
       }
-      const myLeagueIds = input.myLeagueIds ?? [];
-      if (myLeagueIds.length === 0) return fold(sorted, []);
-      const friends = new Set((await Promise.all(myLeagueIds.map(memberIds))).flat());
-      return fold(
-        sorted.filter((p) => friends.has(p.userId)),
-        sorted.filter((p) => !friends.has(p.userId)),
-      );
+      return { predictions: sorted };
     },
   };
 }

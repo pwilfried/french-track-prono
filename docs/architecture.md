@@ -260,12 +260,16 @@ rappelle que les pronos se dévoilent au verrouillage, et la base ne laisse lire
 prono. Sous le podium d'un autre joueur : six réactions fixes (🔥 😂 😮 👏 🤡 🎯, pas de texte
 libre), une par joueur et par prono, qu'on retire en la touchant à nouveau ; pas de réaction sur
 son propre prono (décisions du propriétaire, issue #16). Le badge « Coup de flair » est lu dans les points
-calculés (`score_events`, raison `flair`) : il suit toujours le barème de la base. Sur l'onglet « Tous les
-joueurs », un joueur membre d'au moins une ligue voit d'abord les podiums des membres de ses
-ligues ; ceux des autres sont repliés sous « Voir tous les pronos (N) » (#949 :
-`listEventPredictions` rend `predictions` et `others`, `src/application/reveal.ts`). Sur cet
-onglet, au plus 20 podiums sont dépliés (`REVEAL_SHOWN`), avec ou sans ligue ; les suivants
-rejoignent le même pli (#984). Un joueur membre d'une ligue ouvre la section sur sa première
+calculés (`score_events`, raison `flair`) : il suit toujours le barème de la base. Depuis #1155,
+l'onglet « Tous les joueurs » ne liste plus aucun podium : seulement des stats (le consensus, puis,
+une fois le résultat publié, la répartition des points, la moyenne, mon rang parmi tous et les
+3 meilleurs pronos ; `eventPointsStats`, `src/domain/event-result.ts`). La liste des podiums est
+celle d'une ligue, classée par points une fois le résultat publié, chaque carte dépliable sur le
+détail de ses points (`pointsBreakdown`, lu dans les raisons stockées de `score_events` : pas de
+second calcul, ni en SQL ni ailleurs ; un joker de ligue y est la différence qu'il fait). La même
+liste vit dans la ligue, sur `/ligues/[id]/epreuves/[slug]` (`getLeagueEventResult`), avec les
+membres sans prono en bas ; la ligue propose sa dernière finale terminée (« Dernier résultat »)
+et liste ses finales verrouillées ou terminées. Un joueur membre d'une ligue ouvre la section sur sa première
 ligue ; « Tous les joueurs » est l'onglet `?ligue=tous` (`revealFilter`, #984).
 
 **Consensus (v0.18, #680).** Au-dessus des podiums, le bloc « Ce qu'ont pronostiqué les joueurs »

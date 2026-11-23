@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { UseCaseError } from "@/application/errors";
+import { getLeagueEventResult } from "@/application/league-event-result";
 import { getMyLeagueJokers } from "@/application/league-jokers";
 import { getLeagueFeed } from "@/application/league-moments";
 import { getLeague } from "@/application/leagues";
@@ -16,7 +17,8 @@ import {
 } from "@/components/leagues/league-forms";
 import { FamilyBadge } from "@/components/leagues/family-badge";
 import { LeagueCompetitions } from "@/components/leagues/league-competitions";
-import { LeagueEventList } from "@/components/leagues/league-event-list";
+import { LatestResult } from "@/components/leagues/latest-result";
+import { LeagueEventList, type LeagueEventItem } from "@/components/leagues/league-event-list";
 import { LeagueFeed } from "@/components/leagues/league-feed";
 import { InviteBanner } from "@/components/leagues/invite-banner";
 import { LeagueHero } from "@/components/leagues/league-hero";
@@ -28,10 +30,12 @@ import { Bib } from "@/components/profile/bib";
 import { buttonVariants } from "@/components/ui/button";
 import { isOpenToLeagues } from "@/domain/league";
 import { addableFamilies } from "@/domain/league-families";
+import { createSupabaseRevealRepository } from "@/infra";
 
 import { currentCompetitionDay, loadCompetitions } from "../../competition";
 import { messages } from "../../messages.fr";
 import { publicEventReader } from "../../public-data";
+import { getSessionClient } from "../../session";
 import { leaguePorts, loadLeagueEvents, loadLeaguePredict } from "../data";
 import {
   reactToMomentAction,
@@ -58,12 +62,13 @@ async function load(id: string, ports: Awaited<ReturnType<typeof leaguePorts>>) 
       competitionAddedAt: found.league.competitionAddedAt,
       today: currentCompetitionDay(),
     });
-    // A league limited to families lists its events, the others greyed « Hors ligue » (#613).
+    // A league limited to families lists its events, the others greyed « Hors ligue » (#613);
+    // every league lists its finals closed or finished, each opening its result (#1155).
     const families = found.league.families ?? [];
-    const events =
-      families.length > 0
-        ? await loadLeagueEvents({ competitionSlugs: found.league.competitionSlugs, families })
-        : [];
+    const events = await loadLeagueEvents({
+      competitionSlugs: found.league.competitionSlugs,
+      families,
+    });
     return { ...found, ranking, events };
   } catch (error) {
     if (error instanceof UseCaseError) {
@@ -113,6 +118,40 @@ async function loadMyJokers(
   }
 }
 
+/**
+ * « Dernier résultat » (#1155): the last finished final that counts in the league, its first in
+ * the league, my place and the perfect podiums; null when none, or when it cannot be read.
+ */
+async function loadLatestResult(
+  leagueId: string,
+  events: LeagueEventItem[],
+  ports: Awaited<ReturnType<typeof leaguePorts>>,
+) {
+  const latest = events.findLast((e) => e.counts && e.phase === "finished");
+  if (!latest) return null;
+  try {
+    const { lines } = await getLeagueEventResult({
+      reveal: createSupabaseRevealRepository(await getSessionClient()),
+      leagues: ports.leagues,
+      jokers: ports.jokers,
+    }).execute({ leagueId, eventId: latest.id });
+    const scored = lines.filter((l) => l.rank !== null && l.points !== null);
+    const first = scored[0];
+    const mine = scored.find((l) => l.userId === ports.userId);
+    return {
+      eventName: latest.name,
+      href: `/ligues/${leagueId}/epreuves/${latest.slug}`,
+      winner: first ? { pseudo: first.pseudo, points: first.points! } : null,
+      mine: mine ? { rank: mine.rank!, points: mine.points! } : null,
+      perfect: scored.filter((l) => l.score?.reasons.some((r) => r.kind === "perfect_podium"))
+        .length,
+    };
+  } catch (error) {
+    if (error instanceof UseCaseError) return null;
+    throw error;
+  }
+}
+
 export default async function LeaguePage({
   params,
   searchParams,
@@ -147,8 +186,13 @@ export default async function LeaguePage({
   }
 
   const { league, members, ranking, events } = loaded;
-  const jokers =
-    tab === "classement" ? await loadMyJokers(id, league.competitionSlugs, ports) : null;
+  const [jokers, latest] =
+    tab === "classement"
+      ? await Promise.all([
+          loadMyJokers(id, league.competitionSlugs, ports),
+          loadLatestResult(id, events, ports),
+        ])
+      : [null, null];
   const isOwner = league.ownerId === ports.userId;
   const families = league.families ?? [];
   const canAddFamily = isOwner && addableFamilies(families).length > 0;
@@ -233,6 +277,7 @@ export default async function LeaguePage({
                 )}
               </div>
             )}
+            {latest && <LatestResult {...latest} />}
             {families
               .filter((f) => f.addedAt !== null)
               .map((f) => (
@@ -259,7 +304,7 @@ export default async function LeaguePage({
               <AddLeagueCompetitionForm leagueId={id} choices={addable} />
             </LeagueCompetitions>
             {families.length > 0 && (
-              <LeagueEventList events={events} title={messages.leagues.eventsTitle} />
+              <LeagueEventList events={events} title={messages.leagues.eventsTitle} leagueId={id} />
             )}
             {!alone && (
               <>
@@ -274,6 +319,14 @@ export default async function LeaguePage({
                   </p>
                 </details>
               </>
+            )}
+            {/* Whole competitions: only the finals closed or finished; the others are to predict. */}
+            {families.length === 0 && events.some((e) => e.phase !== "upcoming") && (
+              <LeagueEventList
+                events={events.filter((e) => e.phase !== "upcoming")}
+                title={messages.leagues.finalsTitle}
+                leagueId={id}
+              />
             )}
             {jokers && <MyJokers remaining={jokers.remaining} used={jokers.used} />}
           </>

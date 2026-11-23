@@ -50,12 +50,19 @@ export async function loadLeagueEvents(input: {
     families: input.families,
     adding: input.adding ? { family: input.adding, now: new Date().toISOString() } : undefined,
   });
+  const now = Date.now();
   return events.map((e) => ({
     id: e.id,
     slug: e.slug,
     name: messages.events.name(e.discipline, e.gender),
     startsAt: e.startsAt,
     counts: e.counts,
+    phase: e.winner
+      ? ("finished" as const)
+      : Date.parse(e.lockAt) <= now
+        ? ("locked" as const)
+        : ("upcoming" as const),
+    winner: e.winner?.name ?? null,
   }));
 }
 
