@@ -190,7 +190,16 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   gagner.
 - **TrophyShowcase** (vitrine, #822) : une étagère par saison, la plus récente en haut, une
   statuette par trophée avec son nom (« Guépard d'or », « Chrono figé ») et où il a été gagné ;
-  vide, elle dit comment gagner le premier.
+  vide, elle dit comment gagner le premier. Un trophée nouveau y porte « Nouveau ✨ » jusqu'à ce
+  qu'il soit vu.
+- **TrophyCelebration** (#1135) : plein écran (dialogue, fond bleu nuit, confettis or, rouge et
+  blanc qui s'arrêtent avec le mouvement réduit) à la première visite du profil après une
+  attribution ; un trophée par écran, dans l'ordre de l'étagère : statuette qui apparaît, la
+  raison (« 1er de Ma Ligue »), une phrase d'encouragement, compteur et pastilles d'étape ; « Suivant »,
+  puis « Poser dans ma vitrine » ; « Plus tard » ou Échap ferment aussi. Fermer enregistre les
+  trophées comme vus : elle ne revient pas. Distincte de **BadgeCelebration** (bandeau en haut
+  du profil, un seul bloc pour tous les niveaux) : formes et durées de vie différentes, rien à
+  factoriser.
 - **Leaderboard** et **RankingRow** (#551, #661) : place, dossard, pseudo, ▲ n vert / ▼ n rouge
   (« – » sinon ; lu « gagne n places »), points (chiffre seul sous l'en-tête « Pts », lu « 12 points ») ; dans l'onglet Classement, l'évolution compare au
   classement d'avant la dernière compétition terminée de la portée, ailleurs à la veille ; ex æquo signalés, ma ligne surlignée (cible `#moi` du lien « Autour de
