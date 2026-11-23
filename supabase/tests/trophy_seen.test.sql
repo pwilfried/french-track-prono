@@ -24,15 +24,15 @@ select lives_ok($$select mark_my_trophies_seen()$$, 'a player marks their trophi
 select is((select count(*)::int from trophies
            where user_id = '7c0f0000-0000-0000-0000-000000000001' and seen_at is not null), 1,
           'their trophy is seen');
-select is((select count(*)::int from trophies
-           where user_id = '7c0f0000-0000-0000-0000-000000000002' and seen_at is null), 1,
-          'the trophy of another player stays unseen');
 select throws_ok($$update trophies set seen_at = null$$, '42501', null,
                  'a player cannot write the trophies directly');
 
 select lives_ok($$select mark_my_trophies_seen()$$, 'marking twice is harmless');
 
 reset role;
+select is((select count(*)::int from trophies
+           where user_id = '7c0f0000-0000-0000-0000-000000000002' and seen_at is null), 1,
+          'the trophy of another player stays unseen');
 update trophies set metal = 'silver'
   where user_id = '7c0f0000-0000-0000-0000-000000000001';
 select is((select seen_at from trophies
