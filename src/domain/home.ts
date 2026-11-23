@@ -1,5 +1,5 @@
 // The signed-in player's home (#346): the next final to predict and the next ones after it.
-import { daysUntil, utcToParis } from "./competition";
+import { competitionDay, daysBetween, daysUntil, utcToParis } from "./competition";
 import { compareEvents, type EventSummary } from "./event";
 
 export type OpenFinal = EventSummary & { predicted: boolean };
@@ -19,6 +19,20 @@ export function openFinals(
     .map((event) => ({ ...event, predicted: predictedEventIds.has(event.id) }));
 }
 
+/** When the other finals start, relative to now, for « N autres finales … » (competition days). */
+export type SameDayWhen =
+  { when: "evening" | "today" | "tomorrow" } | { when: "later"; day: string };
+
+/** Tonight from 18:00 Paris time (the night until 6 am still belongs to the evening before). */
+export function sameDayWhen(startsAt: string, now: Date): SameDayWhen {
+  const day = competitionDay(startsAt);
+  const gap = daysBetween(competitionDay(now.toISOString()), day);
+  if (gap > 1) return { when: "later", day };
+  if (gap === 1) return { when: "tomorrow" };
+  const hour = Number(utcToParis(startsAt).slice(11, 13));
+  return { when: hour >= 18 || hour < 6 ? "evening" : "today" };
+}
+
 /** The one thing the signed-in player's home puts first (#526, « Ta prochaine action »). */
 export type NextAction<C> =
   | {
@@ -31,24 +45,45 @@ export type NextAction<C> =
 
 const parisDay = (iso: string) => utcToParis(iso).slice(0, 10);
 
+/** The open finals the player has not predicted, the closest to their lock first. */
+const finalsToPredict = (events: EventSummary[], predicted: Set<string>, now: Date) =>
+  openFinals(events, predicted, now)
+    .filter((final) => !final.predicted)
+    .sort((a, b) => Date.parse(a.lockAt) - Date.parse(b.lockAt) || compareEvents(a, b));
+
 /**
- * An open final the player has not predicted, the closest to its lock; else the next competition
- * to start; null when there is neither.
+ * An open final the player has not predicted: first among `events` (the competitions of their
+ * leagues), else among `otherEvents` (any other competition, it counts in the general ranking),
+ * the closest to its lock each time; else the next competition to start; null when there is none.
+ * `competitionOf` tells the competition of an event, so « autres finales » counts only its own.
  */
 export function nextAction<C extends { startsOn: string }>(input: {
   events: EventSummary[];
+  otherEvents?: EventSummary[];
+  competitionOf?: (eventId: string) => string;
   predicted: Set<string>;
   competitions: C[];
   now: Date;
 }): NextAction<C> | null {
-  const { events, predicted, competitions, now } = input;
-  const toPredict = openFinals(events, predicted, now)
-    .filter((final) => !final.predicted)
-    .sort((a, b) => Date.parse(a.lockAt) - Date.parse(b.lockAt) || compareEvents(a, b));
-  const [final] = toPredict;
-  if (final) {
+  const {
+    events,
+    otherEvents = [],
+    competitionOf = () => "",
+    predicted,
+    competitions,
+    now,
+  } = input;
+  for (const pool of [events, otherEvents]) {
+    const toPredict = finalsToPredict(pool, predicted, now);
+    const [final] = toPredict;
+    if (!final) continue;
     const day = parisDay(final.startsAt);
-    const sameDay = toPredict.filter((f) => f !== final && parisDay(f.startsAt) === day).length;
+    const sameDay = toPredict.filter(
+      (f) =>
+        f !== final &&
+        parisDay(f.startsAt) === day &&
+        competitionOf(f.id) === competitionOf(final.id),
+    ).length;
     return { kind: "predict", final, sameDay };
   }
 
