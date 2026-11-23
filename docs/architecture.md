@@ -605,7 +605,11 @@ seule légende sous les records. « Retour » ramène d'où l'on vient (`?from=`
 depuis une épreuve). Cas d'usage `getAthlete`, port `AthleteReader`. Enrichissement depuis
 Wikidata (identité, date de naissance, lien Wikipédia, PB quand Wikidata les connaît, jamais les
 médailles) : étudié en v0.20 (#895), décision et découpage dans
-`docs/decisions/athletes-wikidata.md`, pas encore construit.
+`docs/decisions/athletes-wikidata.md`. Construit (#1192) : port `WikidataSource` (fake en mémoire ;
+adaptateur réel `src/infra/wikidata/` : requêtes en série, une par seconde au plus, `maxlag=5`),
+cas d'usage `findWikidataMatch`, règle de correspondance `src/domain/wikidata-match.ts` et lecture
+d'un élément `src/domain/wikidata-athlete.ts` (table des disciplines Wikidata → les nôtres). Pas
+encore relié à la base ni au back-office.
 
 Disciplines (v0.9, issue #257) : la table `disciplines` porte, pour chaque discipline, sa famille,
 son unité (`time`, `distance`, `points`), le sens du classement et la tolérance du prono de
