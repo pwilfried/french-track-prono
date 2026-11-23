@@ -91,3 +91,28 @@ export const LongText: Story = {
     await expect(canvasElement.scrollWidth).toBeLessThanOrEqual(canvasElement.clientWidth + 1);
   },
 };
+
+/** In the league (#1155): a finished final opens its result in the league; the others the event. */
+export const Phases: Story = {
+  args: {
+    leagueId: "demo",
+    title: text.finalsTitle,
+    events: [
+      { ...events[0]!, phase: "finished", winner: "Démo Fusée" },
+      { ...events[0]!, id: "3", slug: "200m-h", name: "200 m hommes", phase: "locked" },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("link", { name: /100\sm hommes/ })).toHaveAttribute(
+      "href",
+      "/ligues/demo/epreuves/100m-h",
+    );
+    await expect(canvas.getByText(text.eventFinished("Démo Fusée"))).toBeVisible();
+    await expect(canvas.getByRole("link", { name: /200\sm hommes/ })).toHaveAttribute(
+      "href",
+      "/epreuves/200m-h",
+    );
+    await expect(canvas.queryByText(text.outOfLeagueNote)).toBeNull();
+  },
+};
