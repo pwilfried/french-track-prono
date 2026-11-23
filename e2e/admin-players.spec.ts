@@ -43,7 +43,8 @@ test("the admin blocks a player, who leaves the general ranking, then unblocks t
   );
   await signUp(viewerPage, viewer);
   await viewerPage.waitForURL(/\/classement\?vue=general/);
-  const ranking = viewerPage.getByRole("list", { name: "Classement" });
+  // The target is first of their competition: on the podium (#1131).
+  const ranking = viewerPage.getByRole("list", { name: "Podium" });
   await expect(ranking.getByText(target)).toBeVisible();
 
   await page.goto("/admin/joueurs");

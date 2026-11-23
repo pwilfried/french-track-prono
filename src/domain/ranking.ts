@@ -137,6 +137,8 @@ export type Place = {
   change: number | null;
   /** The player just ahead (strictly better rank) and the points between them; null when first. */
   ahead: { pseudo: string; rank: number; gap: number } | null;
+  /** First place only: the points over the best player behind (0 when tied); null otherwise. */
+  lead: number | null;
   /** « Top n % »: the rank over the players of the ranking, rounded up, at least 1. */
   topPercent: number;
 };
@@ -153,10 +155,12 @@ export function placeOf(
     .slice(0, index)
     .filter((r) => r.rank < me.rank)
     .at(-1);
+  const behind = ahead ? undefined : rows.find((r) => r.rank > me.rank);
   return {
     rank: me.rank,
     points: me.points,
     change: me.change ?? null,
+    lead: ahead ? null : behind ? me.points - behind.points : 0,
     ahead: ahead ? { pseudo: ahead.pseudo, rank: ahead.rank, gap: ahead.points - me.points } : null,
     topPercent: Math.max(1, Math.ceil((me.rank / rows.length) * 100)),
   };

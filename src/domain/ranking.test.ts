@@ -438,6 +438,17 @@ describe("placeOf", () => {
     expect(placeOf(ranked, "ana")?.ahead).toBeNull();
   });
 
+  it("gives the first their lead over the best player behind, none to the others", () => {
+    expect(placeOf(ranked, "ana")?.lead).toBe(18);
+    expect(placeOf(ranked, "dan")?.lead).toBeNull();
+  });
+
+  it("gives a lead of 0 to a first tied with the player behind", () => {
+    const list = rankPlayers([player("Ana", 20, 1), player("Bob", 20, 0)]);
+
+    expect(placeOf(list, "ana")?.lead).toBe(0);
+  });
+
   it("gives the top percent of the ranking, rounded up", () => {
     expect(placeOf(ranked, "ana")?.topPercent).toBe(20);
     expect(placeOf(ranked, "dan")?.topPercent).toBe(80);

@@ -33,14 +33,14 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** My line: highlighted, « Toi », target of « Autour de moi ». */
+/** My line: highlighted, « Toi », target of the player. */
 export const Me: Story = {
   args: { me: true },
   play: async ({ canvasElement }) => {
     const item = within(canvasElement).getByRole("listitem");
     await expect(item).toHaveAttribute("aria-current", "true");
     await expect(item).toHaveAttribute("id", "moi");
-    await expect(item).toHaveTextContent("Toi · 1 podium parfait");
+    await expect(item).toHaveTextContent("Toi · 🎯 1 podium parfait");
   },
 };
 
@@ -69,7 +69,7 @@ export const Down: Story = {
 export const Same: Story = {
   play: async ({ canvasElement }) => {
     const item = within(canvasElement).getByRole("listitem");
-    await expect(item).toHaveTextContent("=");
+    await expect(item).toHaveTextContent("–");
     await expect(item).toHaveTextContent("garde sa place");
   },
 };

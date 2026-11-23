@@ -491,13 +491,14 @@ export const messages = {
           : "garde sa place",
     label: "Classement",
     podium: "Podium",
+    medals: ["🥇", "🥈", "🥉"] as const,
     podiumPlace: (rank: number, pseudo: string, total: number) =>
       `${ordinal(rank)} : ${pseudo}, ${points(total)}`,
     me: "Toi",
     tie: "ex æquo",
     position: (rank: number) => ordinal(rank),
     points,
-    perfect: (n: number) => (n === 1 ? "1 podium parfait" : `${n} podiums parfaits`),
+    perfect: (n: number) => (n === 1 ? "🎯 1 podium parfait" : `🎯 ${n} podiums parfaits`),
     winners: (n: number) => (n === 1 ? "1 vainqueur trouvé" : `${n} vainqueurs trouvés`),
     /** Header of the points column, so the column can show bare figures (#706). */
     pointsColumn: "Pts",
@@ -1776,20 +1777,23 @@ export const messages = {
       })} : seules ses épreuves suivantes rapportent des points.`,
   },
   ranking: {
-    title: "Classement",
-    subtitle: "Tous les joueurs · toutes les compétitions",
-    competitionSubtitle: (name: string) => `Tous les joueurs · ${name}`,
-    tonightSubtitle: "Points gagnés sur les finales de ce soir · tous les joueurs",
-    leagueSubtitle: (name: string) => `Ta ligue · ${name}`,
-    noLeagueSubtitle: "Joue contre tes amis",
+    title: "🏆 Classement",
     viewLabel: "Vue du classement",
-    view: { ligue: "Ma ligue", soir: "Ce soir", general: "Général" },
+    view: { ligue: "👥 Ligues", soir: "🌙 Ce soir", general: "🌍 Général" },
+    scopeLabel: "Choisir le classement",
+    chips: {
+      createOrJoin: "＋ Créer ou rejoindre",
+      league: (name: string) => `🏆 ${name}`,
+      season: "Toute la saison",
+    },
+    /** The line under the chips: what the ranking below is made of. */
+    context: {
+      league: (name: string, members: number) => `${name} · ${playersCount(members)}`,
+      general: (scope: string, players: number | null) =>
+        `🌍 Tous les joueurs · ${scope}${players === null ? "" : ` · ${players.toLocaleString("fr-FR")} ${players <= 1 ? "joueur" : "joueurs"}`}`,
+      noLeague: "Joue contre tes amis",
+    },
     scope: {
-      league: "Ligue",
-      general: "Portée",
-      change: "Changer",
-      changeLabel: (name: string) => `Changer de classement (${name} affiché)`,
-      players: playersCount,
       season: (years: { from: number; to: number } | null) =>
         !years
           ? "Toute la saison"
@@ -1807,39 +1811,26 @@ export const messages = {
           ? `Points des finales de ce soir · ${competition}, ${date}`
           : `Points des finales de ce soir · ${date}`;
       },
-      loading: "Chargement de la portée…",
-      error: "Les classements à choisir ne sont pas disponibles pour le moment.",
-    },
-    sheet: {
-      title: "Choisir le classement",
-      tabsLabel: "Type de classement",
-      tabs: { competitions: "Saison ou compétition", leagues: "Mes ligues" },
-      live: "En cours",
-      past: "Terminées",
-      none: "Aucune compétition ne correspond.",
-      allSeason: "Tous les joueurs · toutes les compétitions",
-      leagueRank: (rank: number | null, members: number) =>
-        rank ? `${ordinal(rank)} sur ${members}` : `Pas encore classé · ${playersCount(members)}`,
-      competitions: (n: number) => `${n} ${n <= 1 ? "compétition" : "compétitions"}`,
-      noLeague: "Tu n'as pas encore de ligue : joue contre tes amis.",
-      createOrJoin: "Créer ou rejoindre une ligue",
     },
     place: {
       title: "Ta place",
       rank: (rank: number) => ordinal(rank),
       points: pts,
-      since: "depuis la dernière compétition",
-      ahead: (gap: number, pseudo: string, rank: number) =>
-        gap === 0
-          ? `À égalité de points avec ${pseudo} (${ordinal(rank)})`
-          : `${pts(gap)} derrière ${pseudo} (${ordinal(rank)})`,
-      first: "Personne devant toi",
-      top: (percent: number) => `Top ${percent} %`,
+      medal: (rank: number) =>
+        rank === 1 ? "👑" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank <= 10 ? "🔥" : "💪",
+      up: (n: number) => `🚀 +${n} ${n === 1 ? "place" : "places"}`,
+      down: (n: number) => `📉 -${n} ${n === 1 ? "place" : "places"}`,
+      same: "➡️ Même place",
+      gap: (gap: number, rank: number) =>
+        gap === 0 ? `🎯 À égalité avec le ${ordinal(rank)}` : `🎯 ${pts(gap)} du ${ordinal(rank)}`,
+      lead: (lead: number) => (lead === 0 ? "😎 À égalité en tête" : `😎 ${pts(lead)} d'avance`),
       loading: "Chargement de ta place…",
       error: "Ta place n'est pas disponible pour le moment.",
     },
-    you: (rank: number, points: number) => `Tu es ${ordinal(rank)} · ${pts(points)}`,
-    aroundMe: "Autour de moi",
+    challenge: "🎙️ Battez FrenchTrack",
+    challengeHint: "Qui bat FrenchTrack le plus souvent ?",
+    gap: (hidden: number) => `· · · ${playersCount(hidden)} · · ·`,
+    lantern: "🏮 Lanterne rouge",
     notRanked: "Tu n'as pas encore de points : fais tes pronos pour entrer au classement.",
     tonightEmpty:
       "Pas encore de points ce soir : ils arrivent dès que les résultats des finales du jour sont saisis.",

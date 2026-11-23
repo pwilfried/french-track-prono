@@ -80,7 +80,7 @@ describe("points text (#706)", () => {
 
   it("writes every points label with the same unit", () => {
     expect(messages.points.line(1)).toBe("+1\u00a0pt");
-    expect(messages.ranking.you(1, 0)).toBe("Tu es 1er · 0\u00a0pt");
+    expect(messages.ranking.place.lead(7)).toBe("😎 7\u00a0pts d'avance");
     expect(messages.playerHome.league.gap(1, "Ana")).toBe("À 1 point de Ana");
     expect(messages.managerPoints.athletePoints(5)).toBe("5\u00a0pts");
   });

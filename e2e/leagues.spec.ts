@@ -66,16 +66,17 @@ test("two friends in the same league see the same ranking", async ({ browser }) 
   await bobPage.goto("/classement");
   for (const page of [annaPage, bobPage]) {
     await expect(
-      page.getByRole("button", { name: /Changer de classement \(Les Foulées E2E/ }),
-    ).toBeVisible();
+      page.getByRole("navigation", { name: "Choisir le classement" }).getByRole("link", {
+        name: /Les Foulées E2E/,
+      }),
+    ).toHaveAttribute("aria-current", "page");
   }
-  const tabByAnna = await annaPage.getByRole("list", { name: "Classement" }).innerText();
-  const tabByBob = await bobPage.getByRole("list", { name: "Classement" }).innerText();
-  expect(tabByAnna.replace("Toi · ", "")).toBe(tabByBob.replace("Toi · ", ""));
+  // Two players: both on the podium, the same for both (#1131).
+  const tabByAnna = await annaPage.getByRole("list", { name: "Podium" }).innerText();
+  const tabByBob = await bobPage.getByRole("list", { name: "Podium" }).innerText();
+  expect(tabByAnna).toBe(tabByBob);
   // « Ta place »: Bob is 9 points behind Anna.
-  await expect(bobPage.getByRole("region", { name: "Ta place" })).toContainText(
-    `9 pts derrière ${anna.pseudo} (1er)`,
-  );
+  await expect(bobPage.getByRole("region", { name: "Ta place" })).toContainText("🎯 9 pts du 1er");
 
   deleteCompetition(competition);
 });

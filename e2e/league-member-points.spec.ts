@@ -54,11 +54,9 @@ test("a league counts only the points scored once the player joined", async ({ p
   await expect(row).not.toContainText("Pas encore de points");
   // Still counted in the general ranking.
   await page.goto(`/classement?vue=general&competition=${competition}`);
+  // He is on the podium (the list starts after it, #1131).
   await expect(
-    page
-      .getByRole("list", { name: "Classement" })
-      .getByRole("listitem")
-      .filter({ hasText: friend }),
+    page.getByRole("list", { name: "Podium" }).getByRole("listitem").filter({ hasText: friend }),
   ).toContainText("30");
 
   sql(`delete from auth.users where email = 'e2e-friend-${tag}@example.test'`);

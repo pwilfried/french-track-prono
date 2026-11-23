@@ -1,22 +1,26 @@
 import { messages } from "@/app/messages.fr";
 import type { Place } from "@/domain/ranking";
 
-import { Change } from "./ranking-row";
-
 const text = messages.ranking.place;
 
+/** The move since the last finished competition, as a tile; none when there is no earlier ranking. */
+function moveOf(change: number | null): { label: string; style: string } | null {
+  if (change === null) return null;
+  if (change > 0) return { label: text.up(change), style: "bg-success-soft text-success-ink" };
+  if (change < 0) return { label: text.down(-change), style: "bg-accent-text text-background" };
+  return { label: text.same, style: "bg-background/15" };
+}
+
 /**
- * « Ta place » (#661), at the head of the ranking: rank, points, move since the last finished
- * competition, the gap with the player just ahead and, in « Général », the top percent. The page
- * hides it for a visitor or a player not ranked.
+ * « Ta place » (#661, #1131), the one card at the head of the ranking: rank, medal and points, then
+ * two tiles: the move since the last finished competition, and the gap with the player just ahead
+ * (or the lead when first). The page hides it for a visitor or a player not ranked.
  */
 export function MyPlaceCard({
   place,
-  showTop = false,
   status = "ready",
 }: {
   place: Place;
-  showTop?: boolean;
   status?: "ready" | "loading" | "error";
 }) {
   if (status === "loading") {
@@ -24,7 +28,7 @@ export function MyPlaceCard({
       <div
         role="status"
         aria-label={text.loading}
-        className="h-[104px] animate-pulse rounded-card bg-muted motion-reduce:animate-none"
+        className="h-[148px] animate-pulse rounded-card bg-muted motion-reduce:animate-none"
       />
     );
   }
@@ -35,38 +39,43 @@ export function MyPlaceCard({
       </p>
     );
   }
+  const move = moveOf(place.change);
+  const gap = place.ahead
+    ? text.gap(place.ahead.gap, place.ahead.rank)
+    : text.lead(place.lead ?? 0);
   return (
     <section
       aria-label={text.title}
-      className="flex flex-col gap-2 rounded-card bg-brand p-4 text-brand-foreground"
+      className="flex flex-col gap-3 rounded-card bg-foreground p-4 text-background"
     >
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-xs font-bold uppercase tracking-wide opacity-80">{text.title}</h2>
-        {showTop && (
-          <span className="rounded-full bg-background/15 px-2.5 py-0.5 text-sm font-bold">
-            {text.top(place.topPercent)}
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-xs font-bold uppercase tracking-wide opacity-80">{text.title}</h2>
+          <p className="font-display text-6xl font-extrabold leading-none">
+            {text.rank(place.rank)}
+          </p>
+        </div>
+        <p className="flex shrink-0 flex-col items-end gap-1">
+          <span aria-hidden className="text-4xl leading-none">
+            {text.medal(place.rank)}
           </span>
-        )}
+          <span className="font-mono text-xl font-bold tabular-nums">
+            {text.points(place.points)}
+          </span>
+        </p>
       </div>
-      <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="font-display text-4xl font-extrabold leading-none">
-          {text.rank(place.rank)}
-        </span>
-        <span className="font-mono text-xl font-bold tabular-nums">
-          {text.points(place.points)}
-        </span>
-        {place.change !== null && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-background px-2 py-0.5 text-sm">
-            <Change change={place.change} className="w-auto" />
-            <span className="text-xs font-semibold text-muted-foreground">{text.since}</span>
-          </span>
+      <div className="flex flex-wrap gap-2">
+        {move && (
+          <p
+            className={`min-h-11 min-w-0 flex-1 basis-32 rounded-xl px-3 py-2 text-sm font-bold ${move.style}`}
+          >
+            {move.label}
+          </p>
         )}
-      </p>
-      <p className="text-sm font-semibold [overflow-wrap:anywhere]">
-        {place.ahead
-          ? text.ahead(place.ahead.gap, place.ahead.pseudo, place.ahead.rank)
-          : text.first}
-      </p>
+        <p className="min-h-11 min-w-0 flex-1 basis-32 rounded-xl bg-background/15 px-3 py-2 text-sm font-bold [overflow-wrap:anywhere]">
+          {gap}
+        </p>
+      </div>
     </section>
   );
 }

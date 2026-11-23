@@ -11,7 +11,7 @@ export type { LeaderboardRow } from "./ranking-row";
 /**
  * A ranking (league or general): position, bib, pseudo, move, points. Tied players share the
  * position and are marked "ex æquo"; the signed-in player's row is highlighted. `aroundMe` cuts a
- * long ranking to the first ten, « ··· », then the player and two neighbours on each side (#551).
+ * long ranking to the first ten, « · · · N joueurs · · · », then the player and two neighbours on each side (#551).
  */
 export function Leaderboard({
   rows,
@@ -19,12 +19,18 @@ export function Leaderboard({
   status = "ready",
   retryHref = "",
   aroundMe: cut = false,
+  skip = 0,
+  lantern = false,
 }: {
   rows: LeaderboardRow[];
   meId?: string;
   status?: "ready" | "loading" | "error";
   retryHref?: string;
   aroundMe?: boolean;
+  /** Rows already shown on the podium: the list starts after them (#1131). */
+  skip?: number;
+  /** Mark the last row « Lanterne rouge » (a league). */
+  lantern?: boolean;
 }) {
   if (status === "error") {
     return (
@@ -58,7 +64,19 @@ export function Leaderboard({
 
   const sharing = new Map<number, number>();
   for (const row of rows) sharing.set(row.rank, (sharing.get(row.rank) ?? 0) + 1);
-  const items = cut ? aroundMe(rows, meId) : rows;
+  const listed = rows.slice(skip);
+  const items = cut ? aroundMe(listed, meId) : listed;
+  const last = rows.length > 1 ? rows.at(-1) : undefined;
+
+  if (listed.length === 0) return null;
+
+  // « · · · 36 players · · · »: the rows the cut left out between two shown ones.
+  const hiddenAt = (index: number) => {
+    const before = items[index - 1];
+    const after = items[index + 1];
+    if (!before || !after || before === "gap" || after === "gap") return 0;
+    return listed.indexOf(after) - listed.indexOf(before) - 1;
+  };
 
   return (
     <ol
@@ -77,9 +95,9 @@ export function Leaderboard({
           <li
             key={`gap-${index}`}
             aria-hidden
-            className="py-1 text-center font-mono font-bold tracking-widest text-muted-foreground"
+            className="py-1 text-center text-xs font-bold text-muted-foreground"
           >
-            ···
+            {messages.ranking.gap(hiddenAt(index))}
           </li>
         ) : (
           <RankingRow
@@ -88,6 +106,7 @@ export function Leaderboard({
             me={row.userId === meId}
             tied={(sharing.get(row.rank) ?? 0) > 1}
             total={rows.length}
+            lantern={lantern && row === last}
           />
         ),
       )}

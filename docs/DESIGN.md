@@ -192,30 +192,31 @@ sur le bleu : le rouge y sert de fond, comme le mot « TRACK » du logo.
   statuette par trophée avec son nom (« Guépard d'or », « Chrono figé ») et où il a été gagné ;
   vide, elle dit comment gagner le premier.
 - **Leaderboard** et **RankingRow** (#551, #661) : place, dossard, pseudo, ▲ n vert / ▼ n rouge
-  (« = » sinon ; lu « gagne n places »), points (chiffre seul sous l'en-tête « Pts », lu « 12 points ») ; dans l'onglet Classement, l'évolution compare au
+  (« – » sinon ; lu « gagne n places »), points (chiffre seul sous l'en-tête « Pts », lu « 12 points ») ; dans l'onglet Classement, l'évolution compare au
   classement d'avant la dernière compétition terminée de la portée, ailleurs à la veille ; ex æquo signalés, ma ligne surlignée (cible `#moi` du lien « Autour de
   moi »), raison du départage sous le pseudo, pas de badge de série. Un classement long montre les
-  10 premiers, « ··· », puis le joueur et deux voisins de chaque côté.
-- **Podium** (#551) : les trois premiers sur des marches 2-1-3 (dégradés or, argent, bronze),
-  dossard, pseudo et points ; lu dans l'ordre 1-2-3 ; absent tant que personne n'a de points.
-- **Onglet Classement** (#551, #661) : sélecteur segmenté (onglets) « Ma ligue » (ouvert par
-  défaut), « Ce soir », « Général » ; dessous, un seul bouton de portée (**ScopeButton**) :
-  « Ligue · <nom> · N joueurs » ou « Portée · Toute la saison 2026-27 » (ou la compétition ; les années vont de la première
-  compétition à la dernière déjà commencée, jamais une compétition lointaine « 2099 », #924), avec
-  « Changer », qui ouvre la feuille « Choisir le classement » (**ScopeSheet**, même feuille du bas
-  que celle des Compétitions, `BottomSheet`) : onglet « Saison ou compétition » (recherche,
-  « Toute la saison » en tête, « En cours » puis « Terminées », jamais les compétitions à venir) et
-  onglet « Mes ligues » (ma place, nombre de joueurs et de compétitions, coche sur la ligue
-  affichée, « Créer ou rejoindre une ligue »). « Ce soir » affiche une ligne « Points des finales
-  de ce soir · <compétition>, <jour> ». En tête de liste, la carte **MyPlaceCard** « Ta place »
-  (rang, points, évolution depuis la dernière compétition, « 18 pts derrière <pseudo> (3e) », et
-  « Top 18 % » en Général), masquée pour un visiteur ou un joueur sans points ;
-  une barre fixe en bas **MyRankBar** « Tu es 3e · 52 pts », avec « Autour de moi » seulement
-  quand ma ligne est hors de l'écran (#710) ; seul dans sa ligue, le joueur voit le bandeau
-  « Tu es seul pour l'instant » (inviter ses amis) au lieu d'un classement à une ligne ; avant la
-  première compétition, un
+  10 premiers, « · · · N joueurs · · · », puis le joueur et deux voisins de chaque côté.
+- **Podium** (#551, #1131) : les trois premiers sur des marches 2-1-3 de hauteurs différentes
+  (or, argent, bronze), médaille 🥇🥈🥉, pseudo et points ; la marche du joueur est entourée ; lu
+  dans l'ordre 1-2-3 ; absent tant que personne n'a de points. La liste commence au 4e.
+- **Onglet Classement** (#551, #661, #1131) : titre « 🏆 Classement » ; onglets en pastilles dans un
+  rail (`RankingTabs`, l'actif plein) « 👥 Ligues » (ouvert par défaut), « 🌙 Ce soir »,
+  « 🌍 Général » ; dessous, une rangée de puces qui défile sur le côté (`ScopeChips`, sans barre) :
+  une puce par ligue puis « ＋ Créer ou rejoindre », ou « Toute la saison » puis une puce par
+  compétition (les années de la saison vont de la première compétition à la dernière déjà
+  commencée, jamais une compétition lointaine « 2099 », #924). Une ligne de contexte dessous :
+  « <ligue> · 8 joueurs », « 🌍 Tous les joueurs · toute la saison 2026 · 1 243 joueurs ». « Ce
+  soir » affiche « Points des finales de ce soir · <compétition>, <jour> ». En tête, une seule
+  carte **MyPlaceCard** « Ta place » (fond foreground : rang en grand, médaille 👑🥈🥉🔥💪, points,
+  puis deux pavés : « 🚀 +2 places » / « 📉 -2 places » / « ➡️ Même place », et « 🎯 6 pts du 2e »
+  ou « 😎 7 pts d'avance » si 1er), masquée pour un visiteur ou un joueur sans points. La liste
+  montre rang, mouvement (▲ vert, ▼ rouge, – gris), pseudo, badges (« 🎯 2 podiums parfaits »,
+  sinon « N vainqueurs trouvés »), points ; le dernier d'une ligue porte « 🏮 Lanterne rouge » ; la
+  ligne du joueur est en or doux avec une bordure dorée ; au Général, la coupure affiche
+  « · · · 36 joueurs · · · ». « 🎙️ Battez FrenchTrack » est une carte cliquable en bas (Général).
+  Seul dans sa ligue, le joueur voit le bandeau « Tu es seul pour l'instant » (inviter ses amis) au
+  lieu d'un classement à une ligne ; avant la première compétition, un
   bandeau bleu « Le classement démarre » remplace le classement vide. Le jour de compétition va de
-  6 h à 6 h, heure de Paris : une finale courue à 2 h du matin compte pour « Ce soir ».
   Un visiteur voit « Général » seul, sans barre fixe, avec « Se connecter » (#573).
 - **LeagueCard** (#552, résumée en #662) : une de mes ligues ; nom sur deux lignes au plus,
   étiquette « Privée », « Publique » ou « Officielle », badge de familles (#613), « 12 compétitions ·
