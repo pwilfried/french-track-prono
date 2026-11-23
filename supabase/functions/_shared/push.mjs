@@ -4,7 +4,8 @@
 // supabase/migrations/20261114060000_reminder_settings.sql, the Manager ones (#836),
 // supabase/migrations/20261114070000_manager_reminders.sql, the reactions to a league moment
 // (#672): supabase/migrations/20261115040000_moment_reactions.sql, the trash talk and the mercato
-// reveal (#1093): supabase/migrations/20261122160000_trash_talk.sql, and for the programme of a
+// reveal (#1093): supabase/migrations/20261122160000_trash_talk.sql, the trophies won (#1134):
+// supabase/migrations/20261123110000_trophy_announcements.sql, and for the programme of a
 // competition (#659): supabase/migrations/20261113120000_program_alerts.sql.
 // Plain JavaScript with no import, so that Deno and Node both load it.
 //
@@ -452,6 +453,77 @@ function momentReactionOf(p) {
   };
 }
 
+/** The animals of the statuettes, their emoji, and the metals (#1134), as on the profile. */
+const ANIMALS = {
+  lievre: ["Lièvre", "🐇"],
+  guepard: ["Guépard", "🐆"],
+  impala: ["Impala", "🦌"],
+  kangourou: ["Kangourou", "🦘"],
+  chat: ["Chat", "🐈"],
+  ours: ["Ours", "🐻"],
+  renard: ["Renard", "🦊"],
+};
+const METALS = { gold: "d'or", silver: "d'argent", bronze: "de bronze" };
+const MEDALS = { gold: "🥇", silver: "🥈", bronze: "🥉" };
+
+/**
+ * A trophy just won (#1134), to its winner: a final podium (predictions or Manager league), a
+ * Chrono figé, a Record de ligue, the laurel of the general ranking or the Témoin d'or. The league
+ * comes last; the general ranking and the Témoin d'or have none.
+ * @param {{ trophy: string, metal: "gold" | "silver" | "bronze" | null, animal: string | null,
+ *           season: number, league_name: string | null, points: number | null }} p
+ * @param {string} tag
+ * @returns {Variants}
+ */
+function trophyOf(p, tag) {
+  const l = name(p.league_name ?? "");
+  const metal = p.metal ?? "gold";
+  const m = MEDALS[metal];
+  /** @param {Text[]} variants @returns {Variants} */
+  const out = (variants) => ({ url: "/profil", tag, variants });
+  if (p.trophy === "league" || p.trophy === "manager") {
+    const key = /** @type {keyof typeof ANIMALS} */ (p.trophy === "league" ? p.animal : "lievre");
+    const [animal, emoji] = ANIMALS[key] ?? ANIMALS.lievre;
+    const statuette = `${animal} ${METALS[metal]}`;
+    const place = metal === "gold" ? "1er" : metal === "silver" ? "2e" : "3e";
+    const game = p.trophy === "manager" ? "de la saison Manager" : "au classement final";
+    return out([
+      text(title`🏆${emoji} ${statuette} !`, body`${place} ${game}, sur le podium ${m} ${l}`),
+      text(title`${m}${emoji} ${statuette} pour toi !`, body`${place} ${game}. Ta statuette t'attend 🏆 ${l}`),
+      text(title`🏆🎉 ${statuette} !`, body`${place} ${game}. Tour d'honneur 🏟️ ${l}`),
+    ]);
+  }
+  if (p.trophy === "chrono") {
+    const feat = p.points != null ? `${pts(p.points)} en une soirée` : "Ta meilleure soirée";
+    return out([
+      text(title`⏱️🔥 Chrono figé !`, body`${feat}, personne n'a fait mieux 🔥 ${l}`),
+      text(title`⏱️😎 Chrono figé pour toi !`, body`${feat} : la meilleure de la saison ⏱️ ${l}`),
+      text(title`🔥⏱️ Soirée de feu !`, body`${feat}, le chrono est figé 🧊 ${l}`),
+    ]);
+  }
+  if (p.trophy === "record") {
+    const feat = p.points != null ? `${pts(p.points)} sur une compétition` : "Record de la ligue";
+    return out([
+      text(title`📜🔥 Record de ligue !`, body`${feat}, record battu 📜 ${l}`),
+      text(title`📜😎 Record battu !`, body`${feat} : ton nom est gravé 🪧 ${l}`),
+      text(title`🏆📜 Nouveau record !`, body`${feat}, personne n'a fait mieux 💪 ${l}`),
+    ]);
+  }
+  if (p.trophy === "general") {
+    const place = metal === "gold" ? "1er" : metal === "silver" ? "Top 3" : "Top 10";
+    return out([
+      text(title`🌿👑 ${place} de la saison !`, body`Laurier ${METALS[metal]} du classement général ${p.season} ${m}`),
+      text(title`🌿${m} Laurier ${METALS[metal]} !`, body`${place} du classement général ${p.season} 👑`),
+      text(title`👑🎉 Saison ${p.season} bouclée !`, body`${place} du général : un laurier ${METALS[metal]} pour toi 🌿`),
+    ]);
+  }
+  return out([
+    text(title`🥇🎙️ Témoin d'or !`, body`Tu as fini une compétition devant FrenchTrack 😎`),
+    text(title`🎙️😎 Témoin d'or pour toi !`, body`FrenchTrack t'a vu passer devant, bien joué 🏃`),
+    text(title`🥇🏃 FrenchTrack battu !`, body`Témoin d'or ${p.season} : devant le compte FrenchTrack 😎`),
+  ]);
+}
+
 /** Reminders worth nothing once their time is over: a short lifetime on the push service. */
 const SHORT_LIVED = ["forgotten", "mercato_round", "lineup"];
 
@@ -477,6 +549,8 @@ export function notificationVariants(due, now = Date.now()) {
       return mercatoRevealOf(p, tag);
     case "trash_talk":
       return trashTalkOf(p, due.evening);
+    case "trophy":
+      return trophyOf(p, tag);
     case "forgotten":
       return forgottenOf(p, due.evening, now);
     default:
@@ -486,7 +560,8 @@ export function notificationVariants(due, now = Date.now()) {
 
 /**
  * The text of a notification due: « Pronos oubliés », « Résultats du soir » (#681), a Manager one
- * (#836), the reactions to my moments (#672), the trash talk or the mercato reveal (#1093). One
+ * (#836), the reactions to my moments (#672), the trash talk or the mercato reveal (#1093), a
+ * trophy won (#1134). One
  * variant, always the same for the same player and the same thing.
  * @param {{ user_id?: string, kind: string, evening: string, ref?: string, payload: any }} due
  * @param {number} [now]
@@ -687,6 +762,15 @@ export function testNotifications(now = Date.now()) {
       evening: "f",
       payload: { ...league, count: 3, pseudo: "Gazelle" },
     }),
+    manager("trophy", {
+      ...league,
+      trophy: "league",
+      metal: "gold",
+      animal: "guepard",
+      season: 2026,
+      points: null,
+    }),
+    manager("trophy", { ...league, trophy: "chrono", metal: null, animal: null, season: 2026, points: 84 }),
     programNotificationOf({ competition_slug: "demo", competition_name: "Meeting de démo" }),
   ];
   return [

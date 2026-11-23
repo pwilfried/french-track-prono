@@ -80,8 +80,9 @@ Le propriétaire a validé la proposition sans trancher ces points ; ils valent 
 
 ## Mise en œuvre des trophées (#822)
 
-- **Calcul** : en TypeScript, comme les points (décision B) : `src/domain/trophies.ts`. L'admin
-  attribue les trophées d'une saison depuis le back-office (« Trophées », `/admin/trophees`) ;
+- **Calcul** : en TypeScript, comme les points (décision B) : `src/domain/trophies.ts`. Les
+  trophées s'attribuent seuls chaque matin (#1134, ci-dessous) ; l'admin peut relancer
+  l'attribution d'une saison depuis le back-office (« Trophées », `/admin/trophees`) ;
   relancer remplace les trophées de la saison d'un coup (`admin_replace_trophies`), sans doublon
   (un trophée par joueur, saison, sorte et ligue). C'est aussi là qu'il désigne le compte
   FrenchTrack, par son pseudo.
@@ -101,3 +102,29 @@ Le propriétaire a validé la proposition sans trancher ces points ; ils valent 
 - **Témoin d'or** : finir strictement devant le compte FrenchTrack au classement d'une compétition,
   une fois par saison ; si le compte n'a pas joué la compétition, personne ne le gagne.
 - **Qui voit** : le joueur et les membres de ses ligues (pronos et Manager), sécurité par ligne.
+
+## Attribution automatique et annonces (#1134)
+
+Décision du propriétaire du 22 novembre 2026 : les trophées s'attribuent seuls et se fêtent.
+
+- **Chaque matin** (workflow « Trophies », `docs/SETUP.md`), la saison en cours est attribuée avec
+  les règles ci-dessus ; en janvier, la saison qui vient de finir aussi (son top 10 du général).
+  C'est le même calcul que le bouton du back-office, qui reste pour relancer à la main. La tâche
+  utilise la clé `service_role` du projet, comptée comme admin par `is_admin()` (elle contourne
+  déjà la sécurité par ligne : cela ne lui donne rien de plus).
+- **Ce qui s'annonce** : les trophées nouveaux après un passage, c'est-à-dire absents avant ou
+  passés à un autre métal (`freshTrophies`). Un trophée déjà là ou retiré par le recalcul ne
+  s'annonce pas. Un trophée gardé garde sa ligne (seuls ceux que le calcul ne donne plus sont
+  effacés). Trophées et annonces sont écrits dans la même transaction ; une annonce faite deux
+  fois est gardée une fois (clé du moment, trophée et métal de la nouvelle) : relancer n'annonce
+  rien.
+- **Fil de la ligue** : un moment `trophy` dans le fil de la ligue concernée, pronos ou Manager,
+  lu par ses seuls membres (sécurité par ligne inchangée), donc aussi dans « Dans ma communauté ».
+  Un seul moment par ligue pour son podium final (« Podium final : Prince 🥇 Léa 🥈 Max 🥉 »,
+  puis la statuette du vainqueur), un par joueur pour un Chrono figé (⏱️, ses points d'une
+  soirée) ou un Record de ligue (📜, son total). Le top 10 du général et le Témoin d'or n'ont pas
+  de moment.
+- **Notification** : chaque nouveau trophée est notifié à son gagnant une fois, famille « Ma
+  ligue » (aussi pour le général et le Témoin d'or, faute de famille plus juste), dans les
+  48 heures, hors heures calmes, s'il le détient encore. Textes au format de #1093
+  (`supabase/functions/_shared/push.mjs`) ; toucher ouvre le profil.

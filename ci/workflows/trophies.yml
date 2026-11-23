@@ -1,0 +1,49 @@
+name: Trophies
+
+# To activate: move this file to .github/workflows/trophies.yml (the agents' GitHub App may not
+# push workflows, #1134).
+# #1134: draws the trophies of the current season every day (and, in January, of the one just
+# over), then announces the new ones in the league feeds and by notification; running it again
+# adds nothing and announces nothing again (scripts/award-trophies.mjs). Every morning, in
+# production and in pre-production, or by hand from the Actions tab. The « Attribuer les
+# trophées » button of the back-office stays, to run it again by hand.
+# Secrets of each environment ("production", "preprod"), as for the migrations:
+# SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF (the service_role key is read from them).
+on:
+  schedule:
+    # 05:23 UTC: after 6 am in Paris, when the competition day of yesterday is over.
+    - cron: "23 5 * * *"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Site
+        type: choice
+        options: [production, preprod]
+        default: production
+
+permissions:
+  contents: read
+
+jobs:
+  trophies:
+    name: Award the trophies (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.target)) || fromJSON('["production", "preprod"]') }}
+    environment: ${{ matrix.target }}
+    concurrency:
+      group: trophies-${{ matrix.target }}
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node scripts/award-trophies.mjs

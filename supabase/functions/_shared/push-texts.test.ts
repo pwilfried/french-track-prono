@@ -110,6 +110,24 @@ const WORST: Due[] = [
     evening: "e",
     payload: { ...league, count, pseudo: PSEUDO },
   })),
+  // #1134: every trophy, in every metal, with the longest statuette and points.
+  ...[
+    ...(["gold", "silver", "bronze"] as const).flatMap((metal) => [
+      { trophy: "league", metal, animal: "kangourou" },
+      { trophy: "manager", metal, animal: "lievre" },
+      { trophy: "general", metal, animal: null, league_id: null, league_name: null },
+    ]),
+    { trophy: "chrono", metal: null, animal: null, points: 1284 },
+    { trophy: "chrono", metal: null, animal: null, points: null },
+    { trophy: "record", metal: null, animal: null, points: 2312 },
+    { trophy: "record", metal: null, animal: null, points: null },
+    { trophy: "witness", metal: null, animal: null, league_id: null, league_name: null },
+  ].map((p) => ({
+    kind: "trophy",
+    evening: "e",
+    ref: "n1",
+    payload: { ...league, season: 2026, points: null, ...p },
+  })),
 ];
 
 const allVariants = () => [
@@ -274,6 +292,30 @@ describe("what each notification says (#1093)", () => {
       expect(t).toMatch(/\| 800 m H.*Les Lièvres$|\| …sauf toi : 800 m H/);
     for (const t of texts(due({ trigger: "lone_find", event: { slug: "800m-h", discipline: "800 m", gender: "M" } })))
       expect(t).toMatch(/\| 800 m H : .*Les Lièvres$/);
+  });
+
+  it("tells a trophy won with its statuette, its place, its points and its league, and opens the profile", () => {
+    const trophy = (p: object) => ({
+      kind: "trophy",
+      evening: "e",
+      ref: "n1",
+      payload: { ...league, season: 2026, metal: null, animal: null, points: null, ...p },
+    });
+    const podium = texts(trophy({ trophy: "league", metal: "gold", animal: "guepard" }));
+    expect(podium.some((t) => t.includes("Guépard d'or"))).toBe(true);
+    for (const t of podium) expect(t).toMatch(/1er au classement final.*Les Lièvres/);
+    expect(texts(trophy({ trophy: "manager", metal: "silver" }))[0]).toContain("Lièvre d'argent");
+    for (const t of texts(trophy({ trophy: "chrono", points: 84 }))) expect(t).toContain("84 pts");
+    for (const t of texts(trophy({ trophy: "record", points: 212 }))) expect(t).toContain("212 pts");
+    const general = texts(
+      trophy({ trophy: "general", metal: "bronze", league_id: null, league_name: null }),
+    );
+    for (const t of general) expect(t).toMatch(/Top 10/);
+    expect(texts(trophy({ trophy: "witness", league_name: null }))[0]).toContain("Témoin d'or");
+    expect(notificationVariants(trophy({ trophy: "witness" }), now)).toMatchObject({
+      url: "/profil",
+      tag: "trophy-n1",
+    });
   });
 
   it("tells the competition whose programme is out", () => {

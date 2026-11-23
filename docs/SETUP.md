@@ -629,6 +629,20 @@ Règles : migration `20261109030000_inactive_accounts.sql` (testées en pgTAP). 
 ceux des migrations : `RESEND_API_KEY` et `RESEND_FROM` (environnement « production »). Sans eux,
 personne n'est prévenu, donc personne n'est supprimé.
 
+## Trophées (chaque matin)
+
+Le workflow « Trophies » (`.github/workflows/trophies.yml`, script `scripts/award-trophies.mjs`,
+#1134 ; livré dans `ci/workflows/trophies.yml`, à déplacer dans `.github/workflows/` : l'app
+GitHub des agents ne peut pas pousser de workflow) attribue chaque matin à 5 h 23 UTC les trophées de la saison en cours et, en janvier, ceux
+de la saison qui vient de finir (top 10 du général), en prod puis en préprod (ou à la main, onglet
+Actions → Run workflow, en choisissant le site). Il lance le même calcul que le bouton
+« Attribuer les trophées » de `/admin/trophees`, qui reste pour une relance à la main. Les
+nouveaux trophées sont annoncés dans le fil de leur ligue et par notification (famille « Ma
+ligue ») ; relancer n'ajoute rien et n'annonce rien de plus. Secrets : ceux des migrations
+(`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`) dans les environnements « production » et
+« preprod » ; la clé `service_role` est lue par l'API de gestion Supabase (ou
+`SUPABASE_SERVICE_ROLE_KEY` si l'environnement la donne). Sans projet, le script ne fait rien.
+
 ## Tours d'enchères du Manager
 
 Le job pg_cron `manager-rounds` (chaque minute, posé par la migration

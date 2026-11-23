@@ -3,10 +3,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { UseCaseError } from "@/application/errors";
 import type { LeagueMomentRepository, MomentLeague } from "@/application/league-moments";
 import { BADGE_LEVELS, BADGES, type Badge, type BadgeLevel } from "@/domain/badges";
+import { ANIMALS, type Animal } from "@/domain/band";
 import { bibOf } from "@/domain/bib";
 import { inScreenOrder, type LeagueFamily } from "@/domain/league-families";
 import { isPredictionJoker } from "@/domain/league-jokers";
-import { isMomentKind, type FeedMoment } from "@/domain/league-moments";
+import { isMomentKind, type FeedMoment, type FeedTrophy } from "@/domain/league-moments";
 
 type LeagueRow = {
   id: string;
@@ -34,6 +35,11 @@ export type FeedRow = {
     badge?: string;
     level?: string;
     scores?: [number, number];
+    /** A trophy moment (#1134); the feed gives the pseudos of the podium. */
+    trophy?: string;
+    animal?: string;
+    points?: number;
+    podium?: { pseudo: string; metal: string }[];
   };
 };
 
@@ -72,10 +78,33 @@ function leagueOf(row: LeagueRow): MomentLeague {
 const isBadge = (badge: unknown): badge is Badge => BADGES.includes(badge as Badge);
 const isLevel = (level: unknown): level is BadgeLevel => BADGE_LEVELS.includes(level as BadgeLevel);
 
-/** A moment of a feed; a kind, a badge or a level the app no longer knows is left out. */
+const TROPHIES: FeedTrophy["kind"][] = ["league", "manager", "chrono", "record"];
+const METALS = ["gold", "silver", "bronze"] as const;
+type PodiumMetal = (typeof METALS)[number];
+
+/** The trophy of a moment, when the app knows it (#1134). */
+function trophyOf(data: FeedRow["data"]): FeedTrophy | null {
+  const kind = TROPHIES.find((k) => k === data.trophy);
+  if (!kind) return null;
+  const podium = (data.podium ?? []).flatMap((p) =>
+    METALS.includes(p.metal as PodiumMetal)
+      ? [{ pseudo: p.pseudo, metal: p.metal as PodiumMetal }]
+      : [],
+  );
+  return {
+    kind,
+    ...(ANIMALS.includes(data.animal as Animal) ? { animal: data.animal as Animal } : {}),
+    ...(typeof data.points === "number" ? { points: data.points } : {}),
+    ...(podium.length > 0 ? { podium } : {}),
+  };
+}
+
+/** A moment of a feed; a kind, a badge, a level or a trophy the app no longer knows is left out. */
 export function momentOf(row: FeedRow): FeedMoment | null {
   if (!isMomentKind(row.kind)) return null;
   const { length, price, badge, level, scores } = row.data ?? {};
+  const trophy = row.kind === "trophy" ? trophyOf(row.data ?? {}) : null;
+  if (row.kind === "trophy" && !trophy) return null;
   return {
     key: row.key,
     kind: row.kind,
@@ -92,6 +121,7 @@ export function momentOf(row: FeedRow): FeedMoment | null {
     ...(isBadge(badge) ? { badge } : {}),
     ...(isLevel(level) ? { level } : {}),
     ...(scores ? { scores } : {}),
+    ...(trophy ? { trophy } : {}),
   };
 }
 

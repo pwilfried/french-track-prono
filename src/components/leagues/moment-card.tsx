@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { messages } from "@/app/messages.fr";
 import { Bib } from "@/components/profile/bib";
 import { ChipStatus, type ChipTone } from "@/components/ui/chip-status";
-import type { FeedMoment, MomentKind } from "@/domain/league-moments";
+import type { FeedMoment, FeedTrophy, MomentKind } from "@/domain/league-moments";
 
 const text = messages.leagues.feed;
 
@@ -14,7 +14,36 @@ const TONE: Record<MomentKind, ChipTone> = {
   mercato_win: "ghost",
   badge: "gold",
   streak: "ok",
+  trophy: "gold",
 };
+
+/** « Guépard d'or », « Lièvre d'argent »: the statuette of a podium trophy, as the showcase says. */
+function statuetteOf(trophy: FeedTrophy): string {
+  const gold = trophy.podium?.[0]?.metal ?? "gold";
+  const base =
+    trophy.kind === "league" && trophy.animal
+      ? messages.band.animals[trophy.animal]
+      : messages.trophies.kinds[trophy.kind].name;
+  return `${base} ${messages.band.metals[gold]}`;
+}
+
+/** The sentence of a trophy moment (#1134). */
+function trophyText(pseudo: string, trophy: FeedTrophy): string {
+  const podium = trophy.podium
+    ?.map((step) => `${step.pseudo} ${text.medals[step.metal]}`)
+    .join(" ");
+  return text.text.trophy(
+    pseudo,
+    trophy.kind,
+    statuetteOf(trophy),
+    trophy.points ?? null,
+    podium ?? null,
+  );
+}
+
+/** The emoji of a moment: the one of its trophy for a trophy moment. */
+const emojiOf = (moment: FeedMoment) =>
+  moment.trophy ? text.trophyEmoji[moment.trophy.kind] : text.emoji[moment.kind];
 
 /** The sentence of a moment, written from its facts: no text is ever stored (#671). */
 function momentText(moment: FeedMoment): string {
@@ -47,6 +76,16 @@ function momentText(moment: FeedMoment): string {
       );
     case "streak":
       return text.text.streak(moment.pseudo, moment.length ?? null);
+    case "trophy":
+      return moment.trophy
+        ? trophyText(moment.pseudo, moment.trophy)
+        : text.text.trophy(
+            moment.pseudo,
+            "league",
+            messages.trophies.kinds.league.name,
+            null,
+            null,
+          );
   }
 }
 
@@ -109,7 +148,7 @@ export function MomentCard({
   return (
     <article className="flex flex-col gap-3 rounded-2xl border border-border bg-card px-3.5 py-3">
       <div className="flex items-start gap-3">
-        <MomentIcon emoji={text.emoji[moment.kind]} />
+        <MomentIcon emoji={emojiOf(moment)} />
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <ChipStatus tone={TONE[moment.kind]}>{text.label[moment.kind]}</ChipStatus>

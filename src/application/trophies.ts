@@ -2,6 +2,7 @@ import type { LeagueFamilyRule } from "@/domain/league-families";
 import { PSEUDO_MAX_LENGTH } from "@/domain/profile";
 import {
   competitionOver,
+  freshTrophies,
   generalTrophies,
   leagueOver,
   leagueSeason,
@@ -9,11 +10,14 @@ import {
   managerTrophies,
   seasonOf,
   seasonOver,
+  seasonsToDraw,
+  trophyMoments,
   trophyShelves,
   witnessTrophies,
   type FinishedManagerLeague,
   type SeasonCompetition,
   type Trophy,
+  type TrophyMoment,
   type TrophyShelf,
 } from "@/domain/trophies";
 
@@ -47,14 +51,29 @@ export type SeasonFacts = {
 };
 
 /**
+ * What a draw announces (#1134): the moments of the league feeds, and the fresh trophies, each
+ * notified to its winner. The same announcement made twice is kept once.
+ */
+export type TrophyAnnouncements = { moments: TrophyMoment[]; news: Trophy[] };
+
+/**
  * Port: the season trophies (#822). Real adapter = Supabase (the admin draws them, every player
  * reads their own and those of the players of their leagues), fake = in memory.
  */
 export interface TrophyRepository {
   /** Admin only: throws NOT_ADMIN otherwise. */
   seasonFacts(season: number): Promise<SeasonFacts>;
-  /** Admin only: replaces every trophy of the season, in one go. */
-  replaceSeason(season: number, trophies: Trophy[]): Promise<void>;
+  /** Admin only: every trophy of the season, all players. */
+  seasonTrophies(season: number): Promise<Trophy[]>;
+  /**
+   * Admin only: replaces every trophy of the season and publishes the announcements, in one go.
+   * A trophy kept keeps its row.
+   */
+  replaceSeason(
+    season: number,
+    trophies: Trophy[],
+    announcements: TrophyAnnouncements,
+  ): Promise<void>;
   /** The trophies of a player, any season. */
   ofPlayer(userId: string): Promise<Trophy[]>;
   /** Admin only: the pseudo of the FrenchTrack account, null when none is set. */
@@ -67,7 +86,8 @@ export interface TrophyRepository {
  * Draws the trophies of a season and replaces them (#822): the podium and the feats of each
  * finished predictions league, the Manager podiums, the Témoin d'or of each finished competition
  * and, once the year is over, the laurels of the general ranking. Can be run again at any time:
- * the season's trophies are replaced, never duplicated.
+ * the season's trophies are replaced, never duplicated. The fresh ones (absent before, or now in
+ * another metal) are announced (#1134): in the feed of their league, and to their winner.
  */
 export function awardSeasonTrophies(ports: {
   trophies: TrophyRepository;
@@ -76,8 +96,9 @@ export function awardSeasonTrophies(ports: {
   today: () => string;
 }) {
   return {
-    async execute(input: { season: number }): Promise<Trophy[]> {
+    async execute(input: { season: number }): Promise<{ trophies: Trophy[]; fresh: Trophy[] }> {
       const today = ports.today();
+      const before = await ports.trophies.seasonTrophies(input.season);
       const facts = await ports.trophies.seasonFacts(input.season);
       const finished = facts.leagues.filter((l) => leagueOver(l.competitions, today));
       const ofSeason = facts.competitions.filter(
@@ -124,8 +145,31 @@ export function awardSeasonTrophies(ports: {
             )
           : []),
       ].filter((t) => t.season === input.season);
-      await ports.trophies.replaceSeason(input.season, trophies);
-      return trophies;
+      const fresh = freshTrophies(before, trophies);
+      await ports.trophies.replaceSeason(input.season, trophies, {
+        moments: trophyMoments(fresh, trophies),
+        news: fresh,
+      });
+      return { trophies, fresh };
+    },
+  };
+}
+
+/**
+ * The daily draw (#1134): the trophies of the current season and, in January, of the one just
+ * over, with the rules of awardSeasonTrophies. Run twice, it neither duplicates nor announces
+ * anything again.
+ */
+export function awardDueTrophies(ports: Parameters<typeof awardSeasonTrophies>[0]) {
+  return {
+    async execute(): Promise<{ season: number; awarded: number; fresh: number }[]> {
+      const award = awardSeasonTrophies(ports);
+      const done = [];
+      for (const season of seasonsToDraw(ports.today())) {
+        const { trophies, fresh } = await award.execute({ season });
+        done.push({ season, awarded: trophies.length, fresh: fresh.length });
+      }
+      return done;
     },
   };
 }

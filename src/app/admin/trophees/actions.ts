@@ -11,7 +11,10 @@ import { formText } from "../../form-data";
 import { adminOnly } from "../guard";
 
 export type WitnessState = { error?: ErrorCode; outcome?: "saved" | "cleared" };
-export type AwardState = { error?: ErrorCode; awarded?: { season: number; count: number } };
+export type AwardState = {
+  error?: ErrorCode;
+  awarded?: { season: number; count: number; fresh: number };
+};
 
 /** Sets the FrenchTrack account of the Témoin d'or (#807), by its pseudo; empty: none. */
 export async function setWitnessAction(_: WitnessState, data: FormData): Promise<WitnessState> {
@@ -28,7 +31,10 @@ export async function setWitnessAction(_: WitnessState, data: FormData): Promise
   }
 }
 
-/** Draws the trophies of a season again (#822): they replace the previous ones. */
+/**
+ * Draws the trophies of a season again (#822), by hand: the daily draw does it too (#1134). They
+ * replace the previous ones; only the fresh ones are announced.
+ */
 export async function awardTrophiesAction(_: AwardState, data: FormData): Promise<AwardState> {
   const { client } = await adminOnly();
   const season = Number(formText(data, "season"));
@@ -36,13 +42,13 @@ export async function awardTrophiesAction(_: AwardState, data: FormData): Promis
     return { error: "TROPHIES_UNAVAILABLE" };
   }
   try {
-    const trophies = await awardSeasonTrophies({
+    const { trophies, fresh } = await awardSeasonTrophies({
       trophies: createSupabaseTrophyRepository(client),
       ranking: createSupabaseRankingRepository(client),
       today: currentCompetitionDay,
     }).execute({ season });
     revalidatePath("/profil");
-    return { awarded: { season, count: trophies.length } };
+    return { awarded: { season, count: trophies.length, fresh: fresh.length } };
   } catch (error) {
     if (error instanceof UseCaseError) return { error: error.code };
     throw error;

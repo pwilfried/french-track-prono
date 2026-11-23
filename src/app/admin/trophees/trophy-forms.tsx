@@ -72,7 +72,7 @@ export function AwardForm({ seasons, current }: { seasons: number[]; current: nu
       )}
       {state.awarded && (
         <p role="status" className="text-sm font-semibold text-success-text">
-          {text.awarded(state.awarded.season, state.awarded.count)}
+          {text.awarded(state.awarded.season, state.awarded.count, state.awarded.fresh)}
         </p>
       )}
     </form>

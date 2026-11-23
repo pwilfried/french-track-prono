@@ -1637,6 +1637,7 @@ export const messages = {
         mercato_win: "Mercato",
         badge: "Badge",
         streak: "Série",
+        trophy: "Trophée",
       },
       emoji: {
         perfect_podium: "🎯",
@@ -1645,7 +1646,11 @@ export const messages = {
         mercato_win: "🤝",
         badge: "🏅",
         streak: "🔥",
+        trophy: "🏆",
       },
+      /** The emoji of a trophy moment, by trophy (#1134); the medals of a podium. */
+      trophyEmoji: { league: "🏆", manager: "🏆", chrono: "⏱️", record: "📜" },
+      medals: { gold: "🥇", silver: "🥈", bronze: "🥉" },
       text: {
         perfect_podium: (pseudo: string, event: string | null) =>
           event
@@ -1664,6 +1669,22 @@ export const messages = {
             : `${pseudo} gagne un nouveau badge.`,
         streak: (pseudo: string, length: number | null) =>
           `${pseudo} enchaîne ${length ?? 5} pronos qui rapportent d'affilée.`,
+        /**
+         * A trophy (#1134): the final podium, medals after the pseudos, then the winner's
+         * statuette (« Guépard d'or »); a Chrono figé or a Record de ligue with its points.
+         */
+        trophy: (
+          pseudo: string,
+          kind: "league" | "manager" | "chrono" | "record",
+          statuette: string,
+          score: number | null,
+          podium: string | null,
+        ) =>
+          kind === "chrono"
+            ? `Chrono figé pour ${pseudo}${score !== null ? ` : ${points(score)} en une soirée` : ""}, la meilleure de la saison ⏱️`
+            : kind === "record"
+              ? `Record de ligue battu par ${pseudo}${score !== null ? ` : ${points(score)} sur une compétition` : ""} 📜`
+              : `${podium ? `Podium final : ${podium}. ` : ""}${pseudo} décroche le ${statuette}. Rendez-vous la saison prochaine pour la revanche 😤`,
       },
       /** The athletes of a mercato round, folded under its card (#979). */
       athletes: "Voir les athlètes",
@@ -2045,12 +2066,12 @@ export const messages = {
       "Les statuettes de la saison : podiums des ligues, ligues Manager, top 10 du général et exploits.",
     awardTitle: "Attribuer",
     awardHelp:
-      "Les trophées des ligues finies, des saisons Manager finies et des compétitions finies. Le top 10 du général attend la fin de l'année. Relancer remplace les trophées de la saison, sans doublon.",
+      "Les trophées des ligues finies, des saisons Manager finies et des compétitions finies. Le top 10 du général attend la fin de l'année. Ils s'attribuent seuls chaque nuit ; ce bouton relance à la main. Relancer remplace les trophées de la saison, sans doublon, et n'annonce que les nouveaux.",
     seasonLabel: "Saison",
     award: "Attribuer les trophées",
     awarding: "Attribution en cours…",
-    awarded: (season: number, count: number) =>
-      `Saison ${season} : ${count} trophée${count > 1 ? "s" : ""} attribué${count > 1 ? "s" : ""}.`,
+    awarded: (season: number, count: number, fresh: number) =>
+      `Saison ${season} : ${count} trophée${count > 1 ? "s" : ""} attribué${count > 1 ? "s" : ""}, ${fresh === 0 ? "aucun nouveau" : `${fresh} nouveau${fresh > 1 ? "x" : ""} annoncé${fresh > 1 ? "s" : ""}`}.`,
     witnessTitle: "Compte FrenchTrack",
     witnessHelp:
       "Le Témoin d'or récompense les joueurs qui finissent une compétition devant ce compte. Sans compte, le trophée n'est pas proposé.",
