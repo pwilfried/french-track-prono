@@ -3201,7 +3201,6 @@ export const messages = {
     celebrationTitle: "Le lièvre a une médaille pour toi !",
     celebrationLevel: (name: string, level: string) => `${name} : ${level}`,
     celebrationClose: "Super !",
-    emailPrivate: "Ton e-mail reste privé : il n'apparaît jamais dans l'application.",
     signOut: "Se déconnecter",
     signingOut: "Déconnexion en cours…",
     deleteLink: "Supprimer mon compte",
