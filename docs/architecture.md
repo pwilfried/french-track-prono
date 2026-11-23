@@ -605,7 +605,15 @@ seule légende sous les records. « Retour » ramène d'où l'on vient (`?from=`
 depuis une épreuve). Cas d'usage `getAthlete`, port `AthleteReader`. Enrichissement depuis
 Wikidata (identité, date de naissance, lien Wikipédia, PB quand Wikidata les connaît, jamais les
 médailles) : étudié en v0.20 (#895), décision et découpage dans
-`docs/decisions/athletes-wikidata.md`, pas encore construit.
+`docs/decisions/athletes-wikidata.md`. Base posée (#1191) : `athletes.wikidata_id`,
+`birth_date` (non affichée), `wikipedia_url`, `wikidata_status` (`unknown`, `linked`,
+`to_review`, `absent`), table `athlete_wikidata_candidates` (lue par l'admin seul) et
+`athlete_records.source` (`admin`, `results`, `wikidata`, ou `null` pour une ligne d'origine
+inconnue, conservée). L'admin relie, défait ou marque absent (`admin_link_athlete_wikidata`,
+`admin_unlink_athlete_wikidata`, `admin_mark_athlete_absent_from_wikidata`) ; le script
+hebdomadaire écrit par les fonctions `admin_wikidata_save_*` avec la clé `service_role`. Un PB de
+Wikidata remplace un PR non vérifié (sauf un PR de nos résultats meilleur que lui), jamais un PR
+vérifié. Le reste (script, back-office, fiche) n'est pas encore construit.
 
 Disciplines (v0.9, issue #257) : la table `disciplines` porte, pour chaque discipline, sa famille,
 son unité (`time`, `distance`, `points`), le sens du classement et la tolérance du prono de
