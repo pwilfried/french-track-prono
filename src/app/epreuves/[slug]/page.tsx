@@ -263,6 +263,7 @@ async function PredictionSection({
   leagues,
   mine,
   predictionLeagues,
+  requestedLeague,
 }: {
   event: EventDetail;
   slug: string;
@@ -277,6 +278,8 @@ async function PredictionSection({
   mine: Prediction | null | "error";
   /** The player's leagues counting the competition (#1068); null when unreadable. */
   predictionLeagues: PredictionLeague[] | null;
+  /** The league in `?ligue` (#1147): the prediction counts there by default. */
+  requestedLeague?: string;
 }) {
   const back = `/epreuves/${slug}`;
 
@@ -356,6 +359,7 @@ async function PredictionSection({
               save: savePredictionLeaguesAction.bind(null, slug, event.id),
               jokers,
               play: playLeagueJokerAction.bind(null, slug, event.id),
+              requested: requestedLeague,
             }
           }
         />
@@ -582,6 +586,7 @@ export default async function EventPage({
                 leagues={leagues}
                 mine={mine}
                 predictionLeagues={predictionLeagues}
+                requestedLeague={requestedLeague}
               />
             )}
           </section>

@@ -7,6 +7,7 @@ import type { PredictionLeague } from "@/application/prediction-leagues";
 import {
   PredictionLeaguesBlock,
   PredictionLeaguesSheet,
+  revealJokers,
   type LeagueJokersView,
   type PlayLeagueJoker,
   type SavePredictionLeagues,
@@ -23,6 +24,7 @@ import {
   markRange,
   readMark,
 } from "@/domain/mark-range";
+import { leagueOffer } from "@/domain/prediction-league-offer";
 import { isComplete, OTHER_ATHLETE, type PodiumDraft } from "@/domain/podium-draft";
 import { athleteHref } from "@/domain/redirect";
 import { cn } from "@/lib/utils";
@@ -41,6 +43,8 @@ export type FormLeagues = {
   /** My jokers of the event in each league that has some (#1090), by league id. */
   jokers: Record<string, LeagueJokersView>;
   play: PlayLeagueJoker;
+  /** The league in `?ligue` (#1147), as asked: ignored unless it is one of `list`. */
+  requested?: string;
 };
 
 /** The podium of a signed-in player on an open event: compose, save. */
@@ -120,11 +124,24 @@ export function PredictionForm({
   // go through the block under the podium.
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetOffered, setSheetOffered] = useState(isComplete(initial.draft));
+  const offer = leagues && leagueOffer(leagues.list, leagues.requested);
+  const origin = offer?.origin;
+  const originCounted = !!leagues?.list.find((l) => l.id === origin)?.counted;
+  // Coming from a league, the prediction counts there by default (#1147): added at each save.
+  const addedTo = useRef<PredictionState | null>(null);
+  useEffect(() => {
+    if (!state.saved || !leagues || !origin || originCounted || addedTo.current === state) return;
+    addedTo.current = state;
+    const ids = [...leagues.list.filter((l) => l.counted).map((l) => l.id), origin];
+    leagues.save(ids).then((result) => {
+      if (!result.error && offer?.mode === "none") revealJokers();
+    });
+  }, [state, leagues, origin, originCounted, offer?.mode]);
   if (answered !== state) {
     setAnswered(state);
     if (state.saved && !sheetOffered && leagues && leagues.list.length > 0) {
       setSheetOffered(true);
-      if (!leagues.list.some((l) => l.counted)) setSheetOpen(true);
+      if (offer?.mode !== "none") setSheetOpen(true);
     }
     setNotice(
       state.saved
@@ -215,7 +232,12 @@ export function PredictionForm({
           <PredictionLeaguesSheet
             open={sheetOpen}
             onClose={() => setSheetOpen(false)}
+            onDone={() => {
+              setSheetOpen(false);
+              revealJokers();
+            }}
             leagues={leagues.list}
+            origin={origin}
             lockLabel={leagues.lockLabel}
             save={leagues.save}
           />

@@ -3548,6 +3548,10 @@ export const messages = {
   predictionLeagues: {
     sheetTitle: "Ajouter ce prono à mes ligues",
     sheetText: "Ton podium compte déjà au classement général. Coche les ligues où il compte aussi.",
+    sheetTextOne: (name: string) =>
+      `Ton podium compte déjà au classement général. Le faire compter aussi dans « ${name} » ?`,
+    sheetTextOrigin: (name: string) =>
+      `Ton prono compte dans « ${name} » et au général. Veux-tu l'ajouter aussi à tes autres ligues ?`,
     general: "Classement général",
     always: "Toujours",
     /** « 8 joueurs · tu es 3e », or no points yet. */
@@ -3556,13 +3560,9 @@ export const messages = {
     sheetNote: (when: string) => `Modifiable depuis la page de l'épreuve jusqu'au verrou, ${when}.`,
     pickOne: "Coche au moins une ligue",
     add: (n: number) => `Ajouter à ${n} ${n <= 1 ? "ligue" : "ligues"}`,
+    addTo: (name: string) => `Ajouter à « ${name} »`,
     adding: "Ajout en cours…",
     later: "Plus tard",
-    done: (names: string[]) =>
-      names.length === 1
-        ? `C'est fait : ton prono compte dans « ${names[0]} » et au général.`
-        : `C'est fait : ton prono compte dans ${names.length} ligues et au général.`,
-    seeMine: "Voir mon prono",
     blockTitle: "Ce prono compte dans",
     /** The open event: one block for the leagues and their jokers (#1121). */
     jokersTitle: "🃏 Sors tes jokers",

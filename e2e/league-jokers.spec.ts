@@ -45,9 +45,9 @@ test("a joker played on a podium of a league counts in that league only, and sho
     for (const index of [0, 1, 2]) await athletes.nth(index).click();
     await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
     const sheet = page.getByRole("dialog", { name: "Ajouter ce prono à mes ligues" });
-    await sheet.getByRole("checkbox", { name: new RegExp(league) }).check();
-    await sheet.getByRole("button", { name: "Ajouter à 1 ligue" }).click();
-    await sheet.getByRole("button", { name: "Voir mon prono" }).click();
+    // A single league: a plain question, no list; the jokers follow without another tap.
+    await sheet.getByRole("button", { name: `Ajouter à « ${league} »` }).click();
+    await expect(sheet).toBeHidden();
 
     // Under the podium, one block: the league is on, its hand of cards. The Double is put down.
     const jokers = page.getByRole("region", { name: "🃏 Sors tes jokers" });

@@ -25,10 +25,13 @@ export function LeagueEventList({
   events,
   variant = "league",
   title,
+  leagueId,
 }: {
   events: LeagueEventItem[];
   variant?: "league" | "preview";
   title: string;
+  /** The league the list is seen from: the event opens with it as the league to count in (#1147). */
+  leagueId?: string;
 }) {
   const preview = variant === "preview";
   return (
@@ -49,7 +52,7 @@ export function LeagueEventList({
             {events.map((e) => (
               <li key={e.id}>
                 <Link
-                  href={`/epreuves/${e.slug}`}
+                  href={leagueId ? `/epreuves/${e.slug}?ligue=${leagueId}` : `/epreuves/${e.slug}`}
                   className={cn(
                     "flex min-h-13 items-center gap-3 rounded-2xl border border-border bg-card px-3.5 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     !e.counts && !preview && "bg-muted text-muted-foreground",

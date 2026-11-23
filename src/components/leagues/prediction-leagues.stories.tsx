@@ -30,6 +30,7 @@ const longName = league(
   { kind: "official", memberCount: 1520, rank: 104 },
 );
 
+const sheetDone = fn();
 const body = () => within(document.body);
 const jokerText = messages.leagueJokers;
 const hand = (over: Partial<JokerHand> = {}): JokerHand => ({
@@ -253,6 +254,7 @@ export const Sheet: Story = {
     <PredictionLeaguesSheet
       open
       onClose={fn()}
+      onDone={sheetDone}
       leagues={args.leagues}
       lockLabel={args.lockLabel}
       save={args.save!}
@@ -266,8 +268,50 @@ export const Sheet: Story = {
     await userEvent.click(sheet.getByText(amis.name));
     await userEvent.click(sheet.getByRole("button", { name: text.add(1) }));
     await expect(args.save).toHaveBeenCalledWith([amis.id]);
-    await expect(await sheet.findByRole("status")).toHaveTextContent(text.done([amis.name]));
-    await expect(sheet.getByRole("button", { name: text.seeMine })).toBeVisible();
+    await expect(sheetDone).toHaveBeenCalled();
+  },
+};
+
+/** From a league: it counts there without a question, only the other leagues are offered. */
+export const SheetFromLeague: Story = {
+  render: (args) => (
+    <PredictionLeaguesSheet
+      open
+      onClose={fn()}
+      onDone={sheetDone}
+      leagues={[amis, club, longName]}
+      origin={amis.id}
+      lockLabel={args.lockLabel}
+      save={args.save!}
+    />
+  ),
+  play: async ({ args }) => {
+    const sheet = within(body().getByRole("dialog", { name: text.sheetTitle }));
+    await expect(sheet.queryByText(amis.name)).not.toBeInTheDocument();
+    await expect(sheet.getByText(text.sheetTextOrigin(amis.name))).toBeVisible();
+    await userEvent.click(sheet.getByText(club.name));
+    await userEvent.click(sheet.getByRole("button", { name: text.add(1) }));
+    await expect(args.save).toHaveBeenCalledWith([amis.id, club.id]);
+  },
+};
+
+/** A single league to offer: a plain question, no list. */
+export const SheetOneLeague: Story = {
+  render: (args) => (
+    <PredictionLeaguesSheet
+      open
+      onClose={fn()}
+      onDone={sheetDone}
+      leagues={[amis]}
+      lockLabel={args.lockLabel}
+      save={args.save!}
+    />
+  ),
+  play: async ({ args }) => {
+    const sheet = within(body().getByRole("dialog", { name: text.sheetTitle }));
+    await expect(sheet.queryByRole("checkbox")).not.toBeInTheDocument();
+    await userEvent.click(sheet.getByRole("button", { name: text.addTo(amis.name) }));
+    await expect(args.save).toHaveBeenCalledWith([amis.id]);
   },
 };
 

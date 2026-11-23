@@ -35,6 +35,8 @@ export type PredictFinal = {
 type LeaguePredictProps = {
   call: Call<PredictFinal, { startsOn: string }> | null;
   now: Date;
+  /** The league the block is seen from: the event opens with it as the league to count in (#1147). */
+  leagueId?: string;
 };
 
 const parisDate = (iso: string) => utcToParis(iso).slice(0, 10);
@@ -67,7 +69,7 @@ const eyebrow = "text-xs font-bold uppercase tracking-wider text-muted-foregroun
  * The « Pronostiquer » block on top of a league (#1069): the next final to predict (or the open
  * finals of that day), « Mes pronos sont posés » once all are, else when the next one opens.
  */
-export function LeaguePredict({ call, now }: LeaguePredictProps) {
+export function LeaguePredict({ call, now, leagueId }: LeaguePredictProps) {
   if (!call) return null;
   if (call.kind === "next") {
     return (
@@ -171,7 +173,11 @@ export function LeaguePredict({ call, now }: LeaguePredictProps) {
         </div>
       )}
       <Link
-        href={many ? competitionLink(first, "todo") : `/epreuves/${first.slug}`}
+        href={
+          many
+            ? competitionLink(first, "todo")
+            : `/epreuves/${first.slug}${leagueId ? `?ligue=${leagueId}` : ""}`
+        }
         className={cn(buttonVariants(), "min-h-14 w-full font-extrabold")}
       >
         {text.play}
