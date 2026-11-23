@@ -11,7 +11,9 @@ test("a player sets their reminders, reloads, and finds them again", async ({ pa
   await signUp(page, player);
   await page.waitForURL(/\/profil$/);
 
-  await page.getByRole("link", { name: text.link }).click();
+  await page.getByRole("link", { name: messages.settings.open }).click();
+  await page.waitForURL(/\/profil\/reglages$/);
+  await page.getByRole("link", { name: messages.settings.reminders }).click();
   await page.waitForURL(/\/profil\/rappels$/);
   await expect(page.getByRole("heading", { name: text.title, level: 1 })).toBeVisible();
 
@@ -45,7 +47,7 @@ test("a player sets their reminders, reloads, and finds them again", async ({ pa
   await expect(quietFrom).toHaveValue("22");
   await expect(quietTo).toHaveValue("7");
 
-  // « Retour au profil » leads back to where the player came from.
+  // « Retour » leads back to the settings, where the player came from.
   await page.getByRole("link", { name: text.back }).click();
-  await page.waitForURL(/\/profil$/);
+  await page.waitForURL(/\/profil\/reglages$/);
 });

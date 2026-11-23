@@ -179,7 +179,10 @@ const CARD = "rounded-card border border-border bg-card";
 const ROW = "flex min-h-11 w-full items-center justify-between px-4 text-left font-semibold";
 
 /** A permanent "install the app" row for the profile, hidden once the app is installed. */
-export function InstallEntry() {
+export function InstallEntry({ grouped = false }: { grouped?: boolean } = {}) {
+  const card = grouped ? "" : CARD;
+  const label = grouped ? messages.settings.install : messages.install.profile;
+  const row = grouped ? ROW.replace("min-h-11", "min-h-[60px] font-bold") : ROW;
   const way = useInstallWay();
   const [deferred, setDeferred] = useBrowserPrompt();
 
@@ -189,22 +192,22 @@ export function InstallEntry() {
     return (
       <button
         type="button"
-        className={`${CARD} ${ROW}`}
+        className={`${card} ${row}`}
         onClick={() => {
           void deferred.prompt();
           // The browser's prompt can only be shown once.
           setDeferred(null);
         }}
       >
-        {messages.install.profile}
+        {label}
         <span aria-hidden="true">›</span>
       </button>
     );
   }
   return (
-    <details className={`group ${CARD}`}>
-      <summary className={`${ROW} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}>
-        {messages.install.profile}
+    <details className={`group ${card}`}>
+      <summary className={`${row} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}>
+        {label}
         <span
           aria-hidden="true"
           className="transition-transform group-open:rotate-90 motion-reduce:transition-none"

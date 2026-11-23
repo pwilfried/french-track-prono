@@ -49,7 +49,7 @@ export default async function EditProfilePage() {
           }}
         />
         <Link
-          href="/profil"
+          href="/profil/reglages"
           className="flex min-h-11 items-center justify-center font-semibold text-primary underline underline-offset-4"
         >
           {messages.editProfile.cancel}

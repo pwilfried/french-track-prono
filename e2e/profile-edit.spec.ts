@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { onPreprod, sql } from "../src/infra/contract/database";
+import { messages } from "../src/app/messages.fr";
 import { clearMailbox, latestCodeFromMailbox } from "../src/infra/contract/mailbox";
 import { newPlayer, signIn, signUp } from "./players";
 
@@ -21,7 +22,8 @@ test("a player changes pseudo and club, then signs in with a new address", async
   await page.waitForURL(/\/profil$/);
 
   // Pseudo and club
-  await page.getByRole("link", { name: "Modifier mon profil" }).click();
+  await page.getByRole("link", { name: "Réglages" }).click();
+  await page.getByRole("link", { name: /Modifier : / }).click();
   await page.waitForURL(/\/profil\/modifier$/);
   const pseudo = `Nouveau ${player.pseudo.slice(-6)}`;
   await page.getByLabel("Ton pseudo").fill(pseudo);
@@ -31,13 +33,14 @@ test("a player changes pseudo and club, then signs in with a new address", async
   await page.waitForURL(/\/profil\?enregistre=1$/);
   await expect(page.getByText("Ton profil est à jour.")).toBeVisible();
   await expect(page.getByText(pseudo).first()).toBeVisible();
-  // The club also shows in the header (validated clubs) and the club ranking: check the account.
+  // The club also shows in the header (validated clubs) and the club ranking: check the settings.
+  await page.getByRole("link", { name: "Réglages" }).click();
   await expect(
     page.getByRole("region", { name: "Compte" }).getByText("Stade Imaginaire Athlétisme"),
   ).toBeVisible();
 
   // Bib: a number on the keypad and a colour, previewed, then shown on the profile
-  await page.getByRole("link", { name: "Modifier mon profil" }).click();
+  await page.getByRole("link", { name: /Modifier : / }).click();
   await expect(page.getByLabel("Numéro", { exact: true })).toHaveAttribute("inputmode", "numeric");
   // The field takes 3 digits at most (1000 cannot be typed): a leading zero is the wrong case.
   await page.getByLabel("Numéro", { exact: true }).fill("007");
@@ -59,24 +62,27 @@ test("a player changes pseudo and club, then signs in with a new address", async
   ).toBe("7 gold");
 
   // A banned pseudo is refused
-  await page.getByRole("link", { name: "Modifier mon profil" }).click();
+  await page.getByRole("link", { name: "Réglages" }).click();
+  await page.getByRole("link", { name: /Modifier : / }).click();
   await page.getByLabel("Ton pseudo").fill("SuperConnard");
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await expect(page.locator("main").getByRole("alert")).toContainText("pseudo n'est pas possible");
-  await page.getByRole("link", { name: "Retour au profil" }).click();
+  await page.getByRole("link", { name: "Retour aux réglages" }).click();
 
   // New sign-in address
   const moved = `moved-${player.email}`;
   await clearMailbox(moved);
-  await page.getByRole("link", { name: "Changer d'e-mail" }).click();
+  await page.getByRole("link", { name: /Changer : .*E-mail/ }).click();
   await page.getByLabel("Ta nouvelle adresse").fill(moved);
   await page.getByRole("button", { name: "Recevoir un code" }).click();
   await page.getByLabel("Code reçu").fill(await latestCodeFromMailbox(moved));
   await page.getByRole("button", { name: "Confirmer ma nouvelle adresse" }).click();
   await page.waitForURL(/\/profil\?email=1$/);
-  await expect(page.getByText(moved)).toBeVisible();
+  await expect(page.getByText(messages.changeEmail.done)).toBeVisible();
 
   // Signs out, then back in with the new address: same player
+  await page.getByRole("link", { name: "Réglages" }).click();
+  await expect(page.getByText(moved)).toBeVisible();
   await page.getByRole("button", { name: "Se déconnecter" }).click();
   await page.goto("/profil");
   await page.waitForURL(/\/connexion/);

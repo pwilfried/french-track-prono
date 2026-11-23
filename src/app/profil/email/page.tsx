@@ -21,7 +21,7 @@ export default async function ChangeEmailPage() {
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
         <EmailForm />
         <Link
-          href="/profil"
+          href="/profil/reglages"
           className="flex min-h-11 items-center justify-center font-semibold text-primary underline underline-offset-4"
         >
           {messages.editProfile.cancel}

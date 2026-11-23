@@ -34,7 +34,7 @@ export function DeleteForm() {
       <SubmitButton pendingLabel={messages.deleteAccount.submitting}>
         {messages.deleteAccount.submit}
       </SubmitButton>
-      <Link href="/profil" className={`${buttonVariants({ variant: "muted" })} w-full`}>
+      <Link href="/profil/reglages" className={`${buttonVariants({ variant: "muted" })} w-full`}>
         {messages.deleteAccount.cancel}
       </Link>
     </form>

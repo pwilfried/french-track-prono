@@ -4,8 +4,6 @@ import { messages } from "../src/app/messages.fr";
 import { onPreprod, sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
 
-const text = messages.notifications;
-
 // Headless Chromium denies notifications and cannot reach a push service: the permission and the
 // subscription are simulated, the rest (button, server action, database) is real. The CI build
 // has a test push key.
@@ -37,23 +35,27 @@ test("a player turns notifications on for this device, then off", async ({ page 
   await page.goto("/profil");
   await signUp(page, player);
   await page.waitForURL(/\/profil$/);
-  // A build without a push key shows no « Notifications » block: pre-production has none (#830).
-  const block = page.getByText(text.description);
+  await page.getByRole("link", { name: messages.settings.open }).click();
+  await page.waitForURL(/\/profil\/reglages$/);
+  // A build without a push key shows no notifications switch: pre-production has none (#830).
+  const toggle = page.getByRole("switch", { name: messages.settings.phone });
   test.skip(
-    onPreprod() && (await block.count()) === 0,
+    onPreprod() && (await toggle.count()) === 0,
     "no NEXT_PUBLIC_VAPID_PUBLIC_KEY in this pre-production build",
   );
   const devices = () =>
     sql(`select count(*) from push_subscriptions s join auth.users u on u.id = s.user_id
          where u.email = '${player.email}'`);
 
-  await page.getByRole("button", { name: text.turnOn }).click();
-  await expect(page.getByRole("status").filter({ hasText: text.on })).toBeVisible();
+  await expect(toggle).not.toBeChecked();
+  await toggle.click();
+  await expect(toggle).toBeChecked();
   expect(devices()).toBe("1");
 
   // Still on after a reload, and turned off in one touch.
   await page.reload();
-  await page.getByRole("button", { name: text.turnOff }).click();
-  await expect(page.getByRole("button", { name: text.turnOn })).toBeVisible();
+  await expect(toggle).toBeChecked();
+  await toggle.click();
+  await expect(toggle).not.toBeChecked();
   expect(devices()).toBe("0");
 });

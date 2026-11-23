@@ -9,6 +9,7 @@ test("a player deletes his account and his profile is gone", async ({ page }) =>
   await signUp(page, player);
   await page.waitForURL(/\/profil$/);
 
+  await page.getByRole("link", { name: "Réglages" }).click();
   await page.getByRole("link", { name: "Supprimer mon compte" }).click();
   await page.getByRole("button", { name: "Supprimer définitivement" }).click();
   await expect(page.getByText("Coche la case pour confirmer la suppression.")).toBeVisible();

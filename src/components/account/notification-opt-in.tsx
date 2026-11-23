@@ -87,11 +87,61 @@ export function NotificationToggle({
   );
 }
 
+/** The settings page row (#1137): the same states as a switch. */
+export function NotificationSwitchRow({
+  state,
+  onTurnOn,
+  onTurnOff,
+}: {
+  state: NotificationState;
+  onTurnOn: () => void;
+  onTurnOff: () => void;
+}) {
+  const note = {
+    unsupported: text.unsupported,
+    denied: text.denied,
+    failed: text.failed,
+  }[state as "unsupported" | "denied" | "failed"];
+  const blocked = state === "unsupported" || state === "denied";
+  return (
+    <div className="flex min-h-[60px] items-center justify-between gap-3 px-4 py-2">
+      <div className="min-w-0">
+        <p className="font-bold">{messages.settings.phone}</p>
+        {note && (
+          <p role="status" className="text-sm text-muted-foreground">
+            {note}
+          </p>
+        )}
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={state === "on"}
+        aria-label={messages.settings.phone}
+        disabled={blocked || state === "busy"}
+        onClick={state === "on" ? onTurnOff : onTurnOn}
+        className="relative inline-flex h-11 w-14 shrink-0 items-center disabled:opacity-50"
+      >
+        <span
+          aria-hidden="true"
+          className={`h-7 w-12 rounded-full border border-border transition-colors motion-reduce:transition-none ${state === "on" ? "bg-primary" : "bg-muted"}`}
+        />
+        <span
+          aria-hidden="true"
+          className={`absolute top-1/2 size-5 -translate-y-1/2 rounded-full bg-white shadow transition-all motion-reduce:transition-none ${state === "on" ? "left-7" : "left-1.5"}`}
+        />
+      </button>
+    </div>
+  );
+}
+
 /** Reads and changes this device's subscription. Hidden when the site has no push key. */
 export function NotificationOptIn({
   turnOn,
   turnOff,
+  layout = "card",
 }: {
+  layout?: "card" | "row";
   turnOn: (device: PushDevice) => Promise<boolean>;
   turnOff: (endpoint: string) => Promise<void>;
 }) {
@@ -137,5 +187,6 @@ export function NotificationOptIn({
     setState("off");
   }
 
-  return <NotificationToggle state={state} onTurnOn={onTurnOn} onTurnOff={onTurnOff} />;
+  const View = layout === "row" ? NotificationSwitchRow : NotificationToggle;
+  return <View state={state} onTurnOn={onTurnOn} onTurnOff={onTurnOff} />;
 }

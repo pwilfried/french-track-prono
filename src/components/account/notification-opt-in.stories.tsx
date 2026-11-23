@@ -3,7 +3,7 @@ import { expect, fn, userEvent, within } from "storybook/test";
 
 import { messages } from "@/app/messages.fr";
 
-import { NotificationToggle } from "./notification-opt-in";
+import { NotificationSwitchRow, NotificationToggle } from "./notification-opt-in";
 
 const text = messages.notifications;
 
@@ -46,5 +46,37 @@ export const Unsupported: Story = {
   args: { state: "unsupported" },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByRole("status")).toHaveTextContent(text.unsupported);
+  },
+};
+
+/** The settings page row (#1137): a switch, with the same states. */
+export const SwitchRow: Story = {
+  render: (args) => <NotificationSwitchRow {...args} />,
+  play: async ({ canvasElement, args }) => {
+    const toggle = within(canvasElement).getByRole("switch", { name: messages.settings.phone });
+    await expect(toggle).not.toBeChecked();
+    await userEvent.click(toggle);
+    await expect(args.onTurnOn).toHaveBeenCalled();
+  },
+};
+
+export const SwitchRowOn: Story = {
+  args: { state: "on" },
+  render: (args) => <NotificationSwitchRow {...args} />,
+  play: async ({ canvasElement, args }) => {
+    const toggle = within(canvasElement).getByRole("switch", { name: messages.settings.phone });
+    await expect(toggle).toBeChecked();
+    await userEvent.click(toggle);
+    await expect(args.onTurnOff).toHaveBeenCalled();
+  },
+};
+
+export const SwitchRowDenied: Story = {
+  args: { state: "denied" },
+  render: (args) => <NotificationSwitchRow {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("switch")).toBeDisabled();
+    await expect(canvas.getByRole("status")).toHaveTextContent(text.denied);
   },
 };
