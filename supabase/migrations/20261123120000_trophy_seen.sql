@@ -6,13 +6,14 @@ alter table trophies add column seen_at timestamptz;
 update trophies set seen_at = now() where seen_at is null;
 
 create function trophies_unsee_new_metal() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = public as $$
 begin
   if new.metal is distinct from old.metal then
     new.seen_at := null;
   end if;
   return new;
 end $$;
+revoke execute on function trophies_unsee_new_metal() from public, anon, authenticated;
 create trigger trophies_unsee_new_metal before update on trophies
   for each row execute function trophies_unsee_new_metal();
 

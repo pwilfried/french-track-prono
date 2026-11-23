@@ -11,8 +11,8 @@ insert into profiles (id, pseudo, age_confirmed_at) values
   ('7c0f0000-0000-0000-0000-000000000001', 'Ana Vue', now()),
   ('7c0f0000-0000-0000-0000-000000000002', 'Bob Vue', now());
 insert into trophies (user_id, season, kind, metal, league_name, animal) values
-  ('7c0f0000-0000-0000-0000-000000000001', 2031, 'league', 'gold', 'Ligue Vue', 'guepard'),
-  ('7c0f0000-0000-0000-0000-000000000002', 2031, 'league', 'silver', 'Ligue Vue', 'guepard');
+  ('7c0f0000-0000-0000-0000-000000000001', 2031, 'general', 'gold', 'Ligue Vue', 'guepard'),
+  ('7c0f0000-0000-0000-0000-000000000002', 2031, 'general', 'silver', 'Ligue Vue', 'guepard');
 
 select is((select count(*)::int from trophies where seen_at is null), 2,
           'a new trophy is not seen yet');
