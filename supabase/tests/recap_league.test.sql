@@ -98,7 +98,7 @@ select is((select payload ->> 'league_event_slug' from due
 select is((select payload ->> 'league_name' from due
            where user_id = 'adad0000-0000-0000-0000-000000000006'),
   'Ancienne', 'the oldest league on a tie');
-select is((select concat_ws('/', payload ->> 'points', payload ? 'league_id',
+select is((select concat_ws('/', payload ->> 'points', (payload ? 'league_id')::text,
                              payload ->> 'league_id') from due
            where user_id = 'adad0000-0000-0000-0000-000000000008'),
   '2/true', 'no league for a player without one: the recap keeps the competition only');
