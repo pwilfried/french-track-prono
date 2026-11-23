@@ -28,7 +28,7 @@ test("the « Pronostiquer » button of a league opens its open final (#1069)", a
   const block = page.getByRole("region", { name: "Pronostiquer dans cette ligue" });
   await expect(block.getByText("Ton prochain prono")).toBeVisible();
   await block.getByRole("link", { name: /^Pronostiquer/ }).click();
-  await page.waitForURL(new RegExp(`/epreuves/${slug}-100m$`));
+  await page.waitForURL(new RegExp(`/epreuves/${slug}-100m\\?ligue=${leagueId}$`));
 
   sql(`delete from competitions where slug = '${slug}'`);
 });

@@ -98,8 +98,19 @@ test("a podium composed from the home counts only in the league the player ticks
 test("a podium composed from a league counts there by default, then goes to the jokers (#1147)", async ({
   page,
 }) => {
-  const competition = defaultCompetitionSlug();
   const tag = `${Date.now() % 1000000}`;
+  // A competition of its own with a single open final: the league button opens it directly.
+  const competition = `e2e-from-league-${tag}`;
+  sql(`with c as (
+      insert into competitions (slug, name, starts_on, ends_on)
+      values ('${competition}', 'Meeting ${tag}', current_date + 5, current_date + 6) returning id
+    ), e as (
+      insert into events (competition_id, slug, discipline, gender, starts_at, lock_at)
+      select id, '${competition}-100m', '100 m', 'F', now() + interval '5 days', now() + interval '5 days'
+      from c returning id
+    )
+    insert into entries (event_id, athlete_id)
+    select e.id, a.id from e, (select id from athletes where gender = 'F' order by name limit 4) a`);
   const player = newPlayer("from-league");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/profil");
@@ -146,5 +157,6 @@ test("a podium composed from a league counts there by default, then goes to the 
     ).toBeChecked();
   } finally {
     sql(`delete from leagues where id in ('${amisId}', '${clubId}')`);
+    sql(`delete from competitions where slug = '${competition}'`);
   }
 });
