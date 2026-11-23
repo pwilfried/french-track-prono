@@ -166,18 +166,82 @@ function forgottenOf(p, evening, now) {
   };
 }
 
+/** « 1 finale », « 3 finales ». @param {number} n */
+const finalsOf = (n) => (n > 1 ? `${n} finales` : "1 finale");
+
 /**
- * « Résultats du soir » (#681): the points of the evening and the place in the competition.
- * @param {{ points: number, finals: number, rank: number | null, players: number,
- *           competition_slug: string }} p
+ * @typedef {{ points: number, finals: number, rank: number | null, players: number,
+ *             competition_slug: string, league_id?: string | null, league_name?: string | null,
+ *             league_event_slug?: string | null, league_rank?: number | null,
+ *             league_players?: number | null }} Recap
+ */
+
+/** On the podium of the league on the evening, below this rank. */
+const LEAGUE_PODIUM = 3;
+
+/**
+ * « Résultats du soir » in the player's main league (#1156): the points of the evening, the place
+ * in the league that evening, and a link to the league result of the last final.
+ * @param {Recap} p
+ * @param {string} evening
+ * @returns {Variants}
+ */
+function leagueRecapOf(p, evening) {
+  const l = name(/** @type {string} */ (p.league_name));
+  const rank = /** @type {number} */ (p.league_rank);
+  const plus = `+${pts(p.points)}`;
+  const r = `${ordinal(rank)} sur ${p.league_players}`;
+  const f = finalsOf(p.finals);
+  /** @param {Text[]} variants @returns {Variants} */
+  const out = (variants) => ({
+    url: p.league_event_slug
+      ? `/ligues/${p.league_id}/epreuves/${encodeURIComponent(p.league_event_slug)}`
+      : `/ligues/${p.league_id}`,
+    tag: `recap-${evening}`,
+    variants,
+  });
+  if (p.points === 0)
+    return out([
+      text(title`😬🥶 0 pt. Mordu à la planche`, body`${r} ce soir, ${f}. Revanche demain 🔁 ${l}`),
+      text(title`🫠🔴 0 pt, soirée blanche`, body`${r} ce soir. La ligue t'a vu passer 👀 ${l}`),
+      text(title`🙈🚫 0 pt. Faux départ général`, body`${r} ce soir, ${f}. On remet les blocs 🔁 ${l}`),
+      text(title`🥶⛔ 0 pt. Barre tombée`, body`${r} ce soir. Les copains rigolent déjà 😏 ${l}`),
+    ]);
+  if (rank === 1)
+    return out([
+      text(title`👑🔥 ${plus}, roi de la soirée !`, body`${r} ce soir, ${f}. Tour d'honneur 🏟️ ${l}`),
+      text(title`👑🏁 ${plus}, soirée gagnée !`, body`${r} ce soir. Les autres regardent ton dos 😎 ${l}`),
+      text(title`👑📸 ${plus}, photo-finish gagné`, body`${r} ce soir, ${f}. Champion de la ligue 🏆 ${l}`),
+      text(title`👑🎉 ${plus}, la soirée est à toi`, body`${r} ce soir. Drapeau sur les épaules 🇫🇷 ${l}`),
+    ]);
+  if (rank <= LEAGUE_PODIUM)
+    return out([
+      text(title`🥈💪 ${plus}, sur le podium !`, body`${r} ce soir, ${f}. Le 👑 n'est pas loin 🔥 ${l}`),
+      text(title`🥉🏁 ${plus}, podium ce soir`, body`${r} ce soir. Encore un coup de rein 💨 ${l}`),
+      text(title`📈🥈 ${plus}, dans le top 3`, body`${r} ce soir, ${f}. Le premier n'est pas loin 👀 ${l}`),
+      text(title`🔥🥉 ${plus}, sur la boîte !`, body`${r} ce soir. Vise le 👑 demain 🎯 ${l}`),
+    ]);
+  return out([
+    text(title`🐢📉 ${plus}, loin du podium`, body`${r} ce soir, ${f}. Les copains sont devant 🏃 ${l}`),
+    text(title`😅🏃 ${plus}, hors du podium`, body`${r} ce soir. Accroche-toi au groupe 🐇 ${l}`),
+    text(title`🫣📉 ${plus}, pas ta soirée`, body`${r} ce soir, ${f}. Revanche demain 🔁 ${l}`),
+    text(title`🐌🏁 ${plus}, le podium s'éloigne`, body`${r} ce soir. Le podium t'attend demain 🥉 ${l}`),
+  ]);
+}
+
+/**
+ * « Résultats du soir » (#681): the points of the evening and the place in the competition, or in
+ * the player's main league when they have one that evening (#1156).
+ * @param {Recap} p
  * @param {string} evening
  * @returns {Variants}
  */
 function recapOf(p, evening) {
+  if (p.league_id && p.league_rank) return leagueRecapOf(p, evening);
   const url = `/mes-points?competition=${encodeURIComponent(p.competition_slug)}`;
   const tag = `recap-${evening}`;
   const plus = `+${pts(p.points)}`;
-  const finals = p.finals > 1 ? `${p.finals} finales` : "1 finale";
+  const finals = finalsOf(p.finals);
   const placed = p.rank
     ? `${ordinal(p.rank)} sur ${p.players}, ${finals}.`
     : p.finals > 1
@@ -731,6 +795,18 @@ export function testNotifications(now = Date.now()) {
     notificationOf({ kind: "recap", evening: "c", payload: { ...recap, points: 12, rank: 1 } }),
     notificationOf({ kind: "recap", evening: "d", payload: { ...recap, points: 12, rank: 4 } }),
     notificationOf({ kind: "recap", evening: "e", payload: { ...recap, points: 0, rank: 12 } }),
+    ...[
+      { points: 12, league_rank: 1 },
+      { points: 9, league_rank: 2 },
+      { points: 3, league_rank: 6 },
+      { points: 0, league_rank: 8 },
+    ].map((p, i) =>
+      notificationOf({
+        kind: "recap",
+        evening: `league-${i}`,
+        payload: { ...recap, ...league, ...p, rank: 4, league_event_slug: "800m-h", league_players: 8 },
+      }),
+    ),
     manager("mercato_round", { ...league, round: 2, ends_at: inMinutes(120) }),
     manager("lineup", {
       ...league,
