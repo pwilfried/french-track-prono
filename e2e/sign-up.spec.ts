@@ -98,6 +98,8 @@ test("sex, disciplines and club are filled in later from « Modifier mon profil 
   await page.waitForURL(/\/profil$/);
 
   await page.goto("/profil/modifier");
+  // The private box is folded by default.
+  await page.getByRole("button", { name: /Privé : sexe et disciplines/ }).click();
   await page.locator("label", { hasText: "Femme" }).click();
   await page.locator("label", { hasText: /^100 m$/ }).click();
   await page.locator("label", { hasText: /^200 m$/ }).click();

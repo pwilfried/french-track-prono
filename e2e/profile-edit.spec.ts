@@ -24,7 +24,7 @@ test("a player changes pseudo and club, then signs in with a new address", async
   await page.getByRole("link", { name: "Modifier mon profil" }).click();
   await page.waitForURL(/\/profil\/modifier$/);
   const pseudo = `Nouveau ${player.pseudo.slice(-6)}`;
-  await page.getByLabel("Ton pseudo").fill(pseudo);
+  await page.getByLabel("Pseudo", { exact: true }).fill(pseudo);
   await page.getByLabel("Cherche ton club").fill("songeville");
   await page.getByRole("button", { name: /Stade Imaginaire Athlétisme/ }).click();
   await page.getByRole("button", { name: "Enregistrer" }).click();
@@ -47,7 +47,7 @@ test("a player changes pseudo and club, then signs in with a new address", async
   await page
     .locator("label", { has: page.getByRole("radio", { name: "Or", exact: true }) })
     .click();
-  await expect(page.getByRole("img", { name: `Dossard 7, ${pseudo}` })).toBeVisible();
+  await expect(page.getByRole("img", { name: new RegExp(`^Dossard 7, ${pseudo}`) })).toBeVisible();
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/profil\?enregistre=1$/);
   // The profile header (#768): the animal, then the bib chip next to the pseudo.
@@ -60,10 +60,10 @@ test("a player changes pseudo and club, then signs in with a new address", async
 
   // A banned pseudo is refused
   await page.getByRole("link", { name: "Modifier mon profil" }).click();
-  await page.getByLabel("Ton pseudo").fill("SuperConnard");
+  await page.getByLabel("Pseudo", { exact: true }).fill("SuperConnard");
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await expect(page.locator("main").getByRole("alert")).toContainText("pseudo n'est pas possible");
-  await page.getByRole("link", { name: "Retour au profil" }).click();
+  await page.getByRole("link", { name: "Annuler" }).click();
 
   // New sign-in address
   const moved = `moved-${player.email}`;

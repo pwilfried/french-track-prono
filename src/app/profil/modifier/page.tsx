@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { listDisciplines } from "@/application/disciplines";
 import { getProfile } from "@/application/get-profile";
 import { getPlayerDetails } from "@/application/player-details";
+import { BackLink } from "./back-link";
 import { AccountHero } from "@/components/account/account-hero";
 import {
   createSupabaseDisciplineRepository,
@@ -13,6 +13,8 @@ import {
 
 import { messages } from "../../messages.fr";
 import { getCurrentUser, getSessionClient } from "../../session";
+import { findClubsAction } from "../../club-actions";
+import { editProfileAction } from "./actions";
 import { EditProfileForm } from "./edit-profile-form";
 
 /** The player changes their pseudo, bib, sex, disciplines and club (#341, #537). */
@@ -33,9 +35,13 @@ export default async function EditProfilePage() {
 
   return (
     <main id="main" className="flex flex-1 flex-col">
+      <BackLink fallback="/profil" label={messages.editProfile.back} />
       <AccountHero title={messages.editProfile.title} subtitle={messages.editProfile.subtitle} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
         <EditProfileForm
+          save={editProfileAction}
+          searchClubs={findClubsAction}
+          clubValidated={details.club ? details.club.validated : null}
           disciplines={disciplines.map(({ name, family }) => ({ name, family }))}
           initial={{
             pseudo: profile.pseudo,
@@ -48,12 +54,6 @@ export default async function EditProfilePage() {
             newClubCity: "",
           }}
         />
-        <Link
-          href="/profil"
-          className="flex min-h-11 items-center justify-center font-semibold text-primary underline underline-offset-4"
-        >
-          {messages.editProfile.cancel}
-        </Link>
       </div>
     </main>
   );
