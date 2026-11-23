@@ -1,8 +1,9 @@
 name: Push notifications
 
 # #203: sends the push notifications due (reminder before a lock, points once computed), by hand
-# from the Actions tab. In production, pg_cron calls the Edge Function `push-notifications` every
-# minute (#502): a GitHub schedule runs late or not at all when GitHub is busy.
+# from the Actions tab. In production and pre-production (#1150), pg_cron calls the Edge Function
+# `push-notifications` every minute (#502), deployed by ci/push-deploy.sh (migrations.yml at each
+# tag, preprod.yml at each merge): a GitHub schedule runs late or not at all when GitHub is busy.
 # Secrets (environment "production"): SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF (as for the
 # migrations), VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY.
 # A test (#977): `test` sends one notification to every device of the owner's account, on the

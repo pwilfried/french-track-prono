@@ -5,12 +5,13 @@ name: Pre-production
 # (https://french-track-preprod.vercel.app, kept out of search engines). Production is untouched:
 # it still follows the vX.Y.Z tags (migrations.yml), set automatically by ci/agents/release.sh once
 # a milestone is finished; a failed run of this workflow on main's commit makes the tag wait.
-# Each merge: migrations, demo set, deploy and smoke test only. The full e2e suite runs once per
+# Each merge: migrations, push notifications, demo set, deploy and smoke test only. The full e2e suite runs once per
 # version (e2e=true, started by ci/agents/release.sh before the tag, #743); no daily run since
 # 22 Nov 2026 (owner's decision).
 # Secrets (GitHub > Settings > Environments > preprod, never the production ones):
 #   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, SUPABASE_PROJECT_REF,
-#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (docs/SETUP.md, « Préproduction »).
+#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (docs/SETUP.md, « Préproduction »);
+#   optional: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, SENTRY_DSN (push notifications, ci/push-deploy.sh).
 # Pre-production holds invented data only: no production export, no production secret.
 
 on:
@@ -80,6 +81,19 @@ jobs:
       # A failure stops here: the site is not deployed ahead of its schema.
       - name: Apply the migrations
         run: supabase db push --remote --yes --password "$SUPABASE_DB_PASSWORD"
+
+      # #1150: the push notifications from pre-production too, as in production
+      # (ci/push-deploy.sh): the Edge Function, its secrets, its address and secret in Vault for
+      # pg_cron. Only devices really subscribed in pre-production receive them (the demo players
+      # have none). Without VAPID keys in the preprod environment: a notice, nothing else. A failure
+      # does not stop the deploy: the notifications wait, the warning stays on the run.
+      - name: Deploy the push notifications
+        continue-on-error: true
+        env:
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: ci/push-deploy.sh
 
       # Public data, then the invented demo set (#694); idempotent (on conflict do nothing): what the
       # owner adds by hand stays. The owner's account follows (ci/preprod/owner.sh, #769).
