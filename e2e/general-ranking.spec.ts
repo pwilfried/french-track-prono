@@ -95,6 +95,22 @@ test("the ranking opens on my league, and the general one adds up every competit
     await expect(page).toHaveURL(new RegExp(`ligue=${other}`));
     await expect(page.getByText(`Une autre ligue ${tag} · 1 joueur`)).toBeVisible();
 
+    // « Ce soir » opens on the first league, with a chip per league and « 🌍 Tous » (#1132).
+    await views.getByRole("tab", { name: "🌙 Ce soir" }).click();
+    await expect(page).toHaveURL(/vue=soir/);
+    const tonight = page.getByRole("navigation", { name: "Choisir le classement" });
+    await expect(tonight.getByRole("link", { name: /Ligue E2E/ })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await tonight.getByRole("link", { name: "🌍 Tous" }).click();
+    await expect(page).toHaveURL(/ligue=tous/);
+    // No finals tonight here: the last evening with points, or tonight's waiting for results
+    // when another test runs a live competition.
+    await expect(
+      page.getByText(/😴 Pas de finale ce soir|Points des finales de ce soir/).first(),
+    ).toBeVisible();
+
     // « Général » shows the player's place, whatever it is, and no sheet to open.
     await views.getByRole("tab", { name: "🌍 Général" }).click();
     await expect(page).toHaveURL(/vue=general/);

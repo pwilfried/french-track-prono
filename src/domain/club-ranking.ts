@@ -11,21 +11,25 @@ export type ClubRank = {
   rank: number;
 };
 
+/** A ranked club with its players, best first (#1132): the ranking tab unfolds them. */
+export type RankedClub<T> = ClubRank & { members: T[] };
+
 /**
  * Club ranking (#386): the average points of each club's players. Clubs with fewer than
  * `minPlayers` players are left out. Equal averages share the rank (1, 2, 2, 4); the order the
  * players arrive in never matters.
  */
-export function rankClubs(
-  players: { clubId: string | null; club: string | null; points: number }[],
+export function rankClubs<T extends { clubId: string | null; club: string | null; points: number }>(
+  players: T[],
   minPlayers = MIN_CLUB_PLAYERS,
-): ClubRank[] {
-  const byClub = new Map<string, { name: string; players: number; points: number }>();
+): RankedClub<T>[] {
+  const byClub = new Map<string, { name: string; players: number; points: number; members: T[] }>();
   for (const p of players) {
     if (!p.clubId || !p.club) continue;
-    const club = byClub.get(p.clubId) ?? { name: p.club, players: 0, points: 0 };
+    const club = byClub.get(p.clubId) ?? { name: p.club, players: 0, points: 0, members: [] };
     club.players += 1;
     club.points += p.points;
+    club.members.push(p);
     byClub.set(p.clubId, club);
   }
   const sorted = [...byClub]
@@ -35,6 +39,7 @@ export function rankClubs(
       name: c.name,
       players: c.players,
       average: Math.round((c.points / c.players) * 10) / 10,
+      members: [...c.members].sort((a, b) => b.points - a.points),
     }))
     .sort(
       (a, b) =>

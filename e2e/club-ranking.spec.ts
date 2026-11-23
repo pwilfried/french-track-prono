@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { sql } from "../src/infra/contract/database";
 import { newPlayer, signUp } from "./players";
 
-test("the profile shows my club's rank in the club ranking and the podium of the clubs", async ({
+test("the ranking tab shows my club, the clubs, and unfolds the players of a club", async ({
   page,
 }) => {
   // A club of its own, a competition of its own with one event.
@@ -47,13 +47,38 @@ test("the profile shows my club's rank in the club ranking and the podium of the
     where p.club_id = (select id from clubs where name = '${club}') and e.slug = '${tag}-100m'`);
   await page.reload();
 
-  const section = page.getByRole("region", { name: "Classement des clubs" });
-  await expect(section).toContainText(`${club} : 1er sur`);
-  await expect(section).toContainText("900 pts de moyenne");
-  const podium = section.getByRole("list", { name: "Podium des clubs" });
-  await expect(podium.getByRole("listitem").first()).toContainText(club);
-  await expect(podium.getByRole("listitem").first()).toHaveAttribute("aria-current", "true");
-  await expect(podium.getByRole("listitem").first()).toContainText("4 joueurs");
+  // The profile links to the club ranking of the rankings tab: one way to see it (#1132).
+  await expect(page.getByRole("region", { name: "Classement des clubs" })).toHaveCount(0);
+  await page.getByRole("link", { name: /Classement des clubs/ }).click();
+  await expect(page).toHaveURL(/vue=general&clubs=1/);
+  const chips = page.getByRole("navigation", { name: "Choisir le classement" });
+  await expect(chips.getByRole("link", { name: "🏟️ Clubs" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+
+  const myClub = page.getByRole("region", { name: "Ton club" });
+  await expect(myClub).toContainText(club);
+  await expect(myClub).toContainText("1er sur");
+  await expect(myClub).toContainText("900 pts de moyenne");
+  await expect(myClub).toContainText("👟 Tu en apportes 900");
+
+  const list = page.getByRole("list", { name: "Classement des clubs" });
+  const first = list.getByRole("listitem").first();
+  await expect(first).toContainText(club);
+  await expect(first).toContainText("🥇");
+  await expect(first).toHaveAttribute("aria-current", "true");
+  await expect(first).toContainText("4 joueurs");
+
+  // Touching the club unfolds its players with their points.
+  const row = first.getByRole("button").first();
+  await expect(row).toHaveAttribute("aria-expanded", "false");
+  await row.click();
+  await expect(row).toHaveAttribute("aria-expanded", "true");
+  const players = page.getByRole("list", { name: `Joueurs de ${club}` });
+  await expect(players.getByRole("listitem")).toHaveCount(4);
+  await expect(players).toContainText(player.pseudo);
+  await expect(players).toContainText("900 pts");
 
   sql(`delete from competitions where slug = '${tag}'`);
   sql(`delete from auth.users where email like '${tag}-%@example.test'`);

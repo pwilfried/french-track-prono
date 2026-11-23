@@ -1785,6 +1785,8 @@ export const messages = {
       createOrJoin: "＋ Créer ou rejoindre",
       league: (name: string) => `🏆 ${name}`,
       season: "Toute la saison",
+      all: "🌍 Tous",
+      clubs: "🏟️ Clubs",
     },
     /** The line under the chips: what the ranking below is made of. */
     context: {
@@ -1792,6 +1794,7 @@ export const messages = {
       general: (scope: string, players: number | null) =>
         `🌍 Tous les joueurs · ${scope}${players === null ? "" : ` · ${players.toLocaleString("fr-FR")} ${players <= 1 ? "joueur" : "joueurs"}`}`,
       noLeague: "Joue contre tes amis",
+      clubs: (scope: string) => `🏟️ Clubs · ${scope}`,
     },
     scope: {
       season: (years: { from: number; to: number } | null) =>
@@ -1834,6 +1837,17 @@ export const messages = {
     notRanked: "Tu n'as pas encore de points : fais tes pronos pour entrer au classement.",
     tonightEmpty:
       "Pas encore de points ce soir : ils arrivent dès que les résultats des finales du jour sont saisis.",
+    /** A day without finals: « Ce soir » shows the last evening with points (#1132). */
+    noFinal: (lastDay: string | null) => {
+      if (!lastDay) return "😴 Pas de finale ce soir";
+      const date = new Date(`${lastDay}T12:00:00Z`).toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "short",
+        timeZone: "UTC",
+      });
+      return `😴 Pas de finale ce soir · dernière soirée : ${date}`;
+    },
     notRankedTonight: "Pas de points pour toi ce soir.",
     predict: "Faire mes pronos",
     visitor: "Connecte-toi pour poser tes podiums et entrer au classement.",
@@ -3032,22 +3046,26 @@ export const messages = {
   },
   clubRanking: {
     title: "Classement des clubs",
-    podium: "Podium des clubs",
-    myClub: (name: string, rank: number, clubs: number) =>
-      `${name} : ${ordinal(rank)} sur ${clubs}`,
+    myClubTitle: "Ton club",
+    myClubRank: (rank: number, clubs: number) => `🏟️ ${ordinal(rank)} sur ${clubs}`,
     average: (points: string) => `${points} pts de moyenne`,
+    averageShort: "moy.",
+    brings: (points: number) => `👟 Tu en apportes ${points}`,
     notRanked: (name: string, min: number) =>
       `${name} n'est pas encore classé : il faut ${min} joueurs du club avec des points.`,
     addClub: "Ajoute ton club pour le faire grimper",
     empty: "Aucun club classé pour l'instant.",
     rank: (rank: number) => `${ordinal(rank)} :`,
     players: (n: number) => `${n} joueur${n > 1 ? "s" : ""}`,
+    points: pts,
+    membersOf: (name: string) => `Joueurs de ${name}`,
     rule: (min: number) =>
       `Moyenne des points des joueurs du club, toutes compétitions, à partir de ${min} joueurs.`,
   },
   profile: {
     title: "Mon profil",
     season: "Saison",
+    clubRanking: "🏟️ Classement des clubs",
     account: "Compte",
     pseudo: "Pseudo",
     email: "E-mail",

@@ -44,6 +44,11 @@ describe("rankClubs", () => {
     ]);
   });
 
+  it("lists each club's players, best first (#1132)", () => {
+    const ranked = rankClubs([player("a", 2), player("a", 9), player("a", 5)], 3);
+    expect(ranked[0]!.members.map((m) => m.points)).toEqual([9, 5, 2]);
+  });
+
   it("does not depend on the order of the players", () => {
     const players = [
       player("a", 5),
