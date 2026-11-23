@@ -105,6 +105,25 @@ export function trophyRepositoryContract(name: string, world: () => Promise<Trop
       expect(await w.outsider.ofPlayer(w.playerId)).toEqual([]);
     });
 
+    it("celebrates a trophy once: unseen until its winner marks them seen (#1135)", async () => {
+      const w = await world();
+      await w.admin.replaceSeason(w.season, [gold(w)], NONE);
+
+      expect(await w.player.unseen(w.playerId)).toEqual([gold(w)]);
+      // A league mate neither sees them as theirs nor marks them.
+      expect(await w.mate.unseen(w.playerId)).toEqual([]);
+      await w.mate.markSeen();
+      expect(await w.player.unseen(w.playerId)).toEqual([gold(w)]);
+
+      await w.player.markSeen();
+      expect(await w.player.unseen(w.playerId)).toEqual([]);
+      // Drawing the same trophy again does not bring it back; a new metal does.
+      await w.admin.replaceSeason(w.season, [gold(w)], NONE);
+      expect(await w.player.unseen(w.playerId)).toEqual([]);
+      await w.admin.replaceSeason(w.season, [{ ...gold(w), metal: "silver" }], NONE);
+      expect(await w.player.unseen(w.playerId)).toEqual([{ ...gold(w), metal: "silver" }]);
+    });
+
     it("sets the FrenchTrack account by its pseudo, whatever the case, and clears it", async () => {
       const w = await world();
 

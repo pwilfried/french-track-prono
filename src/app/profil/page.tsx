@@ -8,13 +8,14 @@ import { listEvents } from "@/application/list-events";
 import { getPlayerDetails } from "@/application/player-details";
 import { getMySeason } from "@/application/get-my-season";
 import { getMyManagerHonours } from "@/application/manager-honours";
-import { getTrophyShowcase } from "@/application/trophies";
+import { getNewTrophies, getTrophyShowcase } from "@/application/trophies";
 import { ShareSeasonCard } from "@/components/profile/share-season-card";
 import { getMyPredictionHistory } from "@/application/list-my-predictions";
 import { BadgeCelebration } from "@/components/profile/badge-celebration";
 import { BadgeGrid } from "@/components/profile/badge-grid";
 import { ProfileHelp } from "@/components/profile/profile-help";
 import { ProfileStart } from "@/components/profile/profile-start";
+import { TrophyCelebration } from "@/components/profile/trophy-celebration";
 import { TrophyShowcase } from "@/components/profile/trophy-showcase";
 import { Bib } from "@/components/profile/bib";
 import { InstallEntry } from "@/components/shell/install-prompt";
@@ -30,6 +31,7 @@ import { BandPoints } from "@/components/band/band-points";
 import { buttonVariants } from "@/components/ui/button";
 import { TIME_ZONE } from "@/domain/competition";
 import { firstFinalToPredict } from "@/domain/home";
+import { trophyKey } from "@/domain/trophies";
 import {
   createSupabaseClubNoticeRepository,
   createSupabaseManagerHonoursRepository,
@@ -45,6 +47,7 @@ import { turnOffNotificationsAction, turnOnNotificationsAction } from "../push-a
 import { getCurrentUser, getSessionClient, getSessionProfiles } from "../session";
 import { markBadgesSeenAction } from "./badge-actions";
 import { badgePorts } from "./badge-ports";
+import { markTrophiesSeenAction } from "./trophy-actions";
 import { publicEventReader, publicDisciplines, publicRanking } from "../public-data";
 import { readOr } from "../read-or";
 
@@ -112,7 +115,7 @@ export default async function ProfilePage({
     userId: user.userId,
   });
   if (!profile) redirect(`/bienvenue?next=${encodeURIComponent("/profil")}`);
-  const [{ season, badges, latest }, details, params, clubNotices, honours, shelves] =
+  const [{ season, badges, latest }, details, params, clubNotices, honours, shelves, newTrophies] =
     await Promise.all([
       loadSeason(user.userId),
       readOr(
@@ -143,6 +146,13 @@ export default async function ProfilePage({
         }),
         null,
       ),
+      readOr(
+        "new trophies",
+        getNewTrophies({ trophies: createSupabaseTrophyRepository(client) }).execute({
+          userId: user.userId,
+        }),
+        [],
+      ),
     ]);
   const notice = params.email
     ? messages.changeEmail.done
@@ -166,6 +176,7 @@ export default async function ProfilePage({
     <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-6">
       <h1 className="sr-only">{text.title}</h1>
       <ClubNotices notices={clubNotices} />
+      <TrophyCelebration trophies={newTrophies} onSeen={markTrophiesSeenAction} />
       {badges && <BadgeCelebration raised={badges.raised} onSeen={markBadgesSeenAction} />}
       {notice ? (
         <p role="status" className="rounded-card bg-muted p-4 font-semibold">
@@ -224,7 +235,9 @@ export default async function ProfilePage({
         </>
       )}
       {badges && !starting && <BadgeGrid progress={badges.progress} />}
-      {shelves && (!starting || hasTrophies) && <TrophyShowcase shelves={shelves} />}
+      {shelves && (!starting || hasTrophies) && (
+        <TrophyShowcase shelves={shelves} fresh={newTrophies.map(trophyKey)} />
+      )}
 
       {honours.length > 0 && (
         <section aria-labelledby="honours" className="flex flex-col gap-2">

@@ -1,6 +1,7 @@
 import { messages } from "@/app/messages.fr";
 import { Statuette, type StatuetteShape } from "@/components/band/statuette";
-import type { Trophy, TrophyKind, TrophyShelf } from "@/domain/trophies";
+import { trophyKey, type Trophy, type TrophyKind, type TrophyShelf } from "@/domain/trophies";
+import { cn } from "@/lib/utils";
 
 const text = messages.trophies;
 
@@ -30,7 +31,8 @@ function trophyLabel(trophy: Trophy): { name: string; detail: string } {
   };
 }
 
-function TrophyStatuette({ trophy }: { trophy: Trophy }) {
+/** What the statuette of a trophy shows; shared by the showcase and the celebration (#1135). */
+export function statuetteOf(trophy: Trophy) {
   const label = trophyLabel(trophy);
   // A feat has no metal of its own: it is cast in gold.
   const metal = trophy.metal ?? "gold";
@@ -38,15 +40,32 @@ function TrophyStatuette({ trophy }: { trophy: Trophy }) {
     trophy.kind === "league" || trophy.kind === "manager"
       ? (trophy.animal ?? "lievre")
       : FORM[trophy.kind];
+  return {
+    shape,
+    metal,
+    title: label.name,
+    plaque: [label.detail, text.season(trophy.season)],
+    center: trophy.kind === "general" ? text.laurelPlace[metal] : undefined,
+  };
+}
+
+function TrophyStatuette({ trophy, fresh }: { trophy: Trophy; fresh: boolean }) {
   return (
-    <li data-kind={trophy.kind} data-metal={trophy.metal ?? "none"} className="min-w-0">
-      <Statuette
-        shape={shape}
-        metal={metal}
-        title={label.name}
-        plaque={[label.detail, text.season(trophy.season)]}
-        center={trophy.kind === "general" ? text.laurelPlace[metal] : undefined}
-      />
+    <li
+      data-kind={trophy.kind}
+      data-metal={trophy.metal ?? "none"}
+      data-fresh={fresh ? "true" : undefined}
+      className={cn(
+        "relative min-w-0",
+        fresh && "rounded-md motion-safe:animate-trophy-glow ring-2 ring-gold-ink/60",
+      )}
+    >
+      {fresh && (
+        <span className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold whitespace-nowrap text-primary-foreground">
+          {text.celebration.fresh}
+        </span>
+      )}
+      <Statuette {...statuetteOf(trophy)} />
     </li>
   );
 }
@@ -64,8 +83,16 @@ function EmptySlot({ kind }: { kind: keyof typeof FORM }) {
   );
 }
 
-/** « Vitrine » (#822): one shelf per season, the latest first; an empty one says how to start. */
-export function TrophyShowcase({ shelves }: { shelves: TrophyShelf[] }) {
+/** « Vitrine » (#822): one shelf per season, the latest first; an empty one says how to start.
+ * The new trophies glow with a « Nouveau » tag (#1135). */
+export function TrophyShowcase({
+  shelves,
+  fresh = [],
+}: {
+  shelves: TrophyShelf[];
+  /** The `trophyKey` of the trophies just celebrated: tagged « Nouveau » until the next visit. */
+  fresh?: string[];
+}) {
   return (
     <section aria-labelledby="trophies" className="flex flex-col gap-2">
       <h2
@@ -99,7 +126,11 @@ export function TrophyShowcase({ shelves }: { shelves: TrophyShelf[] }) {
                 feat not won yet keeps its slot, dashed, with what it takes. */}
             <ul className="-mx-3 grid grid-cols-3 gap-x-1.5 gap-y-3 border-b-[6px] border-gold-ink/40 px-2 pb-3">
               {shelf.trophies.map((t) => (
-                <TrophyStatuette key={`${t.kind}-${t.leagueId ?? ""}`} trophy={t} />
+                <TrophyStatuette
+                  key={`${t.kind}-${t.leagueId ?? ""}`}
+                  trophy={t}
+                  fresh={fresh.includes(trophyKey(t))}
+                />
               ))}
               {i === 0 &&
                 FEATS.filter((k) => !shelf.trophies.some((t) => t.kind === k)).map((k) => (

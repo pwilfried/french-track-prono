@@ -16,12 +16,14 @@ export type TrophyFixture = {
 /**
  * Test double of the TrophyRepository port, with the rules of the database: only an admin draws
  * the trophies and sets the FrenchTrack account; a player reads their trophies and those of the
- * players of their leagues; one trophy per player, season, kind and league; the points of a feat
+ * players of their leagues, and celebrates their own once (#1135); one trophy per player, season, kind and league; the points of a feat
  * are told, not kept; an announcement made twice is kept once (#1134).
  */
 export function createInMemoryTrophyStore(fixture: TrophyFixture) {
   let trophies: Trophy[] = structuredClone(fixture.trophies ?? []);
   let witnessId: string | null = null;
+  // The trophies celebrated (#1135), as `trophyKey|metal`: those of the fixture were won before.
+  const seen = new Set(trophies.map((t) => `${trophyKey(t)}|${t.metal ?? ""}`));
   const moments = new Map<string, TrophyMoment>();
   const news = new Map<string, Trophy>();
   return {
@@ -73,6 +75,19 @@ export function createInMemoryTrophyStore(fixture: TrophyFixture) {
           return sees(playerId)
             ? structuredClone(trophies.filter((t) => t.userId === playerId))
             : [];
+        },
+        async unseen(playerId) {
+          return playerId === userId
+            ? structuredClone(
+                trophies.filter(
+                  (t) => t.userId === userId && !seen.has(`${trophyKey(t)}|${t.metal ?? ""}`),
+                ),
+              )
+            : [];
+        },
+        async markSeen() {
+          for (const t of trophies)
+            if (t.userId === userId) seen.add(`${trophyKey(t)}|${t.metal ?? ""}`);
         },
         async witness() {
           admin();

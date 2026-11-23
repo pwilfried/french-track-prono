@@ -3010,6 +3010,35 @@ export const messages = {
     empty:
       "Pas encore de trophée. Termine sur le podium d'une ligue d'au moins 4 joueurs pour poser ta première statuette.",
     managerDetail: (league: string) => `Manager · ${league}`,
+    /** The celebration of the new trophies, full screen on the profile (#1135). */
+    celebration: {
+      label: "Nouveau trophée",
+      badge: "🏆 Nouveau trophée !",
+      counter: (index: number, total: number) => `${index} / ${total}`,
+      step: (index: number, total: number) => `Trophée ${index} sur ${total}`,
+      place: { gold: "1er", silver: "2e", bronze: "3e" },
+      reason: {
+        league: (place: string, league: string) => `${place} de ${league}`,
+        manager: (place: string, league: string) => `${place} de ${league} (Manager)`,
+        general: (place: string) => `Classement général : ${place}`,
+        chrono: (league: string) => `Meilleure soirée de ${league}`,
+        record: (league: string) => `Record battu dans ${league}`,
+        witness: "Devant le compte FrenchTrack",
+      },
+      tease: {
+        general: "Le haut du classement, c'est chez toi. 🌟",
+        league: "Le podium, c'est chez toi. ⚡",
+        manager: "Quel flair de manager. 🧠",
+        chrono: "Quelle soirée ! ⏱️",
+        record: "Le record a changé de mains. 💥",
+        witness: "Tu as battu la maison. 🎯",
+      },
+      next: "Suivant 👉",
+      last: "Poser dans ma vitrine 🏆",
+      later: "Plus tard",
+      saving: "… en cours",
+      fresh: "Nouveau ✨",
+    },
     kinds: {
       general: { name: "Laurier", detail: "Classement général" },
       league: { name: "Ligue", detail: "Ligue de pronos" },
