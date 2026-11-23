@@ -39,9 +39,9 @@ insert into league_members (league_id, user_id) values
   ('acac1000-0000-0000-0000-000000000001', 'acac0000-0000-0000-0000-000000000001'),
   ('acac1000-0000-0000-0000-000000000002', 'acac0000-0000-0000-0000-000000000002');
 insert into league_competitions (league_id, competition_id)
-select 'acac1000-0000-0000-0000-000000000001', competition_id from final
+select 'acac1000-0000-0000-0000-000000000001'::uuid, competition_id from final
 union all
-select 'acac1000-0000-0000-0000-000000000002', c.id from competitions c
+select 'acac1000-0000-0000-0000-000000000002'::uuid, c.id from competitions c
 where c.id <> (select competition_id from final);
 
 create temp view due as
