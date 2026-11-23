@@ -83,6 +83,9 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
   const ranking = publicRanking();
   const predictions = createSupabasePredictionRepository(client);
   const leagueRepository = createSupabaseLeagueRepository(client);
+  // The competitions still to come or under way other than the one shown: their finals can be
+  // predicted too (they count in the general ranking), one read each.
+  const extra = [...choices.mine, ...choices.others].filter((c) => c.slug !== competition.slug);
   const listed = [...lists.coming, ...lists.past].map((c) => c.slug);
 
   const [
@@ -97,6 +100,7 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
     scale,
     challenge,
     trend,
+    extraEvents,
   ] = await Promise.all([
     safely(() =>
       listEvents({ events: publicEventReader() }).execute({
@@ -162,7 +166,50 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
         consensus: createSupabaseConsensusRepository(client),
       }).execute({ competitionSlug: competition.slug, now }),
     ),
+    Promise.all(
+      extra.map(async (c) => ({
+        slug: c.slug,
+        inLeagues: choices.mine.some((m) => m.slug === c.slug),
+        events:
+          (await safely(() =>
+            listEvents({ events: publicEventReader() }).execute({ competitionSlug: c.slug }),
+          )) ?? [],
+      })),
+    ),
   ]);
+
+  const slugOf = new Map<string, string>();
+  for (const e of events ?? []) slugOf.set(e.id, competition.slug);
+  for (const c of extraEvents) for (const e of c.events) slugOf.set(e.id, c.slug);
+  const shownInLeagues = choices.mine.some((m) => m.slug === competition.slug);
+  const inLeagues = [
+    ...(shownInLeagues ? (events ?? []) : []),
+    ...extraEvents.filter((c) => c.inLeagues).flatMap((c) => c.events),
+  ];
+  const outside = [
+    ...(shownInLeagues ? [] : (events ?? [])),
+    ...extraEvents.filter((c) => !c.inLeagues).flatMap((c) => c.events),
+  ];
+  const predictedByOthers = await Promise.all(
+    extraEvents
+      .filter((c) => c.events.length > 0)
+      .map((c) =>
+        safely(() =>
+          listMyPredictions({ predictions }).execute({ userId, competitionSlug: c.slug }),
+        ),
+      ),
+  );
+  const predicted = new Set(
+    [...(mine ?? []), ...predictedByOthers.flatMap((p) => p ?? [])].map((p) => p.eventId),
+  );
+  const action = nextAction({
+    events: inLeagues,
+    otherEvents: outside,
+    competitionOf: (id) => slugOf.get(id) ?? "",
+    predicted,
+    competitions: lists.coming,
+    now,
+  });
 
   const day = competitionDay(now.toISOString());
   const funFacts = await safely(() =>
@@ -199,13 +246,9 @@ export async function loadPlayerHome(userId: string, now: Date): Promise<PlayerH
       bib: profile.bib,
       pseudo: profile.pseudo,
     },
-    action: nextAction({
-      events: events ?? [],
-      predicted: new Set((mine ?? []).map((p) => p.eventId)),
-      competitions: lists.coming,
-      now,
-    }),
-    competitionSlug: competition.slug,
+    action,
+    competitionSlug:
+      (action?.kind === "predict" && slugOf.get(action.final.id)) || competition.slug,
     league: shownLeague
       ? {
           id: shownLeague.id,
