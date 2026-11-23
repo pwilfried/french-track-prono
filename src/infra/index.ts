@@ -147,3 +147,8 @@ export { createInMemoryLeagueJokerStore } from "./in-memory/league-joker-reposit
 export { createSupabaseLeagueJokerRepository } from "./supabase/league-joker-repository";
 export { createInMemoryManagerJokerStore } from "./in-memory/manager-joker-repository";
 export { createSupabaseManagerJokerRepository } from "./supabase/manager-joker-repository";
+export {
+  createInMemoryWikidataSource,
+  type InMemoryWikidataSource,
+} from "./in-memory/wikidata-source";
+export { createWikidataSource } from "./wikidata/wikidata-source";

@@ -4028,6 +4028,7 @@ export const messages = {
     FRENCHTRACK_UNAVAILABLE: "Le défi FrenchTrack n'a pas pu être chargé. Réessaie.",
     FRENCHTRACK_LOCKED: "L'épreuve est verrouillée : le prono de FrenchTrack ne change plus.",
     FRENCHTRACK_PICK_INVALID: "Choisis trois athlètes différents de la liste de départ.",
+    WIKIDATA_UNAVAILABLE: "Wikidata n'a pas répondu. Les fiches gardent leurs dernières valeurs.",
     ODDS_UNAVAILABLE: "Les cotes n'ont pas pu être chargées. Réessaie.",
     COMPETITION_INVALID:
       "Il faut un nom, un type, des dates dans l'ordre, un fuseau horaire valide et un code pays à trois lettres (facultatif).",

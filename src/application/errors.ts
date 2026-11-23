@@ -171,7 +171,8 @@ export type ErrorCode =
   | "FUN_FACTS_UNAVAILABLE"
   | "FRENCHTRACK_UNAVAILABLE"
   | "FRENCHTRACK_LOCKED"
-  | "FRENCHTRACK_PICK_INVALID";
+  | "FRENCHTRACK_PICK_INVALID"
+  | "WIKIDATA_UNAVAILABLE";
 
 let reportUnavailable: ((code: ErrorCode) => void) | undefined;
 
