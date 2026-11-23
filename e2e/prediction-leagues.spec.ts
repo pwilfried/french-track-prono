@@ -58,10 +58,6 @@ test("a podium composed from the home counts only in the league the player ticks
     // One league of the two.
     await amisBox.check();
     await sheet.getByRole("button", { name: "Ajouter à 1 ligue" }).click();
-    await expect(sheet.getByRole("status")).toHaveText(
-      `C'est fait : ton prono compte dans « ${amis} » et au général.`,
-    );
-    await sheet.getByRole("button", { name: "Voir mon prono" }).click();
     await expect(sheet).toBeHidden();
 
     // Under the podium, the same choice, still open to change until the lock.
@@ -95,5 +91,71 @@ test("a podium composed from the home counts only in the league the player ticks
          where user_id = (select id from auth.users where email = '${player.email}')`);
     sql(`delete from leagues where id in ('${amisId}', '${clubId}')`);
     sql(`delete from auth.users where email in ('${friends.join("', '")}')`);
+  }
+});
+
+test("a podium composed from a league counts there by default, then goes to the jokers (#1147)", async ({
+  page,
+}) => {
+  const tag = `${Date.now() % 1000000}`;
+  // A competition of its own with a single open final: the league button opens it directly.
+  const competition = `e2e-from-league-${tag}`;
+  sql(`with c as (
+      insert into competitions (slug, name, starts_on, ends_on)
+      values ('${competition}', 'Meeting ${tag}', current_date + 5, current_date + 6) returning id
+    ), e as (
+      insert into events (competition_id, slug, discipline, gender, starts_at, lock_at)
+      select id, '${competition}-100m', '100 m', 'F', now() + interval '5 days', now() + interval '5 days'
+      from c returning id
+    )
+    insert into entries (event_id, athlete_id)
+    select e.id, a.id from e, (select id from athletes where gender = 'F' order by name limit 4) a`);
+  const player = newPlayer("from-league");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/profil");
+  await signUp(page, player);
+  await page.waitForURL(/\/profil$/);
+
+  const leagueOf = (name: string) =>
+    sql(`with u as (select id from auth.users where email = '${player.email}'),
+      l as (insert into leagues (name, owner_id) select '${name}', id from u returning id, owner_id),
+      m as (insert into league_members (league_id, user_id, role) select id, owner_id, 'owner' from l),
+      c as (insert into league_competitions (league_id, competition_id)
+            select l.id, c.id from l, competitions c where c.slug = '${competition}')
+      select id from l`);
+  const amis = `Amis ${tag}`;
+  const club = `Club ${tag}`;
+  const amisId = leagueOf(amis);
+  const clubId = leagueOf(club);
+
+  try {
+    await page.goto(`/ligues/${amisId}`);
+    await page
+      .getByRole("region", { name: "Pronostiquer dans cette ligue" })
+      .getByRole("link", { name: /Pronostiquer/ })
+      .click();
+    await page.waitForURL(/\/epreuves\/[^/?]+\?ligue=/);
+    const athletes = page.locator("li > button[aria-pressed]");
+    for (const index of [0, 1, 2]) await athletes.nth(index).click();
+    await page.getByRole("button", { name: "Enregistrer mon podium" }).click();
+
+    // The league the player comes from is not asked: only the other one is offered.
+    const sheet = page.getByRole("dialog", { name: "Ajouter ce prono à mes ligues" });
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByText(amis)).toHaveCount(1); // only in the sentence
+    await sheet.getByRole("button", { name: `Ajouter à « ${club} »` }).click();
+    await expect(sheet).toBeHidden();
+
+    const block = page.getByRole("region", { name: "🃏 Sors tes jokers" });
+    await expect(block).toBeInViewport();
+    await expect(
+      block.getByRole("switch", { name: `Compter ce prono dans ${amis}` }),
+    ).toBeChecked();
+    await expect(
+      block.getByRole("switch", { name: `Compter ce prono dans ${club}` }),
+    ).toBeChecked();
+  } finally {
+    sql(`delete from leagues where id in ('${amisId}', '${clubId}')`);
+    sql(`delete from competitions where slug = '${competition}'`);
   }
 });

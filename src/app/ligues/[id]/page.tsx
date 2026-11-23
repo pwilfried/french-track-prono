@@ -244,7 +244,7 @@ export default async function LeaguePage({
         }
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
-        {tab !== "inviter" && <LeaguePredict call={predict} now={new Date()} />}
+        {tab !== "inviter" && <LeaguePredict call={predict} now={new Date()} leagueId={id} />}
         <LeagueTabs
           label={league.name}
           tabs={BAR.map(({ tab: t, label }) => ({

@@ -24,7 +24,7 @@ const text = messages.predictionLeagues;
 /** Sets the leagues the prediction counts in; the error code when it is refused. */
 export type SavePredictionLeagues = (leagueIds: string[]) => Promise<{ error?: ErrorCode }>;
 
-/** The id of the block on the page of the event: « Voir mon prono » leads there. */
+/** The id of the block on the page of the event: the sheet leads there once done. */
 const PREDICTION_LEAGUES_ID = "ce-prono-compte";
 
 const kindLabel: Record<LeagueKind, string> = {
@@ -61,65 +61,77 @@ function LeagueText({ league }: { league: PredictionLeague }) {
 }
 
 /**
- * « Ajouter ce prono à mes ligues » (#1068): after a save, the player's leagues counting the
- * competition, none checked. « Plus tard » closes it: the podium counts in the general ranking
- * whatever the choice.
+ * Brings the player to « Sors tes jokers »: scrolls to the block and highlights it for a moment,
+ * so the cards are in view without another tap (#1147).
+ */
+export function revealJokers() {
+  requestAnimationFrame(() => {
+    const block = document.getElementById(PREDICTION_LEAGUES_ID);
+    if (!block) return;
+    block.scrollIntoView({ block: "start" });
+    block.classList.add("ring-4", "ring-ring");
+    window.setTimeout(() => block.classList.remove("ring-4", "ring-ring"), 2500);
+  });
+}
+
+/**
+ * « Ajouter ce prono à mes ligues » (#1068, #1147): after a save, the player's leagues counting the
+ * competition, none checked. Coming from a league (`origin`), the prediction counts there already:
+ * the sheet only offers the other ones. A single league to offer is a plain question, without a
+ * list. « Plus tard » closes it: the podium counts in the general ranking whatever the choice.
+ * After the add the sheet closes on the jokers (`onDone`).
  */
 export function PredictionLeaguesSheet({
   open,
   onClose,
+  onDone,
   leagues,
+  origin,
   lockLabel,
   save,
 }: {
   open: boolean;
   onClose: () => void;
+  /** The prediction was added: lead to the jokers. */
+  onDone: () => void;
   leagues: PredictionLeague[];
+  /** The league the player comes from: already counted, never asked. */
+  origin?: string;
   /** « samedi 23 novembre à 19:00 », Paris time. */
   lockLabel: string;
   save: SavePredictionLeagues;
 }) {
   const [checked, setChecked] = useState<string[]>([]);
-  const [done, setDone] = useState<string[] | null>(null);
   const [error, setError] = useState<ErrorCode | null>(null);
   const [pending, startTransition] = useTransition();
   const toggle = (id: string) =>
     setChecked((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
   const counted = leagues.filter((l) => l.counted).map((l) => l.id);
+  const originLeague = leagues.find((l) => l.id === origin);
+  const offered = leagues.filter((l) => l.id !== origin && !l.counted);
+  const single = offered.length === 1 ? offered[0] : undefined;
+  const chosen = single ? [single.id] : checked;
   const submit = () =>
     startTransition(async () => {
       setError(null);
-      const result = await save([...new Set([...counted, ...checked])]);
+      const result = await save([...new Set([...counted, ...(origin ? [origin] : []), ...chosen])]);
       if (result.error) setError(result.error);
-      else setDone(leagues.filter((l) => checked.includes(l.id)).map((l) => l.name));
+      else onDone();
     });
-  const seeMine = () => {
-    onClose();
-    requestAnimationFrame(() =>
-      document.getElementById(PREDICTION_LEAGUES_ID)?.scrollIntoView({ block: "start" }),
-    );
-  };
+  const lead = originLeague
+    ? text.sheetTextOrigin(originLeague.name)
+    : single
+      ? text.sheetTextOne(single.name)
+      : text.sheetText;
 
   return (
     <BottomSheet open={open} onClose={onClose} title={text.sheetTitle}>
-      {done ? (
-        <div className="flex flex-col gap-3">
-          <p
-            role="status"
-            className="rounded-2xl bg-success-soft px-3.5 py-3 font-semibold text-success-ink"
-          >
-            {text.done(done)}
-          </p>
-          <button type="button" onClick={seeMine} className={cn(buttonVariants(), "w-full")}>
-            {text.seeMine}
-          </button>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          <p className="text-sm leading-relaxed">{text.sheetText}</p>
+      <div className="flex flex-col gap-3">
+        <p className="text-sm leading-relaxed">{lead}</p>
+        {!single && (
           <ul className="flex flex-col gap-2">
             <GeneralLine />
-            {leagues.map((league) => {
+            {offered.map((league) => {
               const on = checked.includes(league.id);
               return (
                 <li key={league.id}>
@@ -142,29 +154,36 @@ export function PredictionLeaguesSheet({
               );
             })}
           </ul>
-          <p className="text-sm text-muted-foreground">{text.sheetNote(lockLabel)}</p>
-          {error && (
-            <p role="alert" className="text-sm font-semibold text-accent-text">
-              {messages.errors[error]}
-            </p>
-          )}
-          <button
-            type="button"
-            onClick={submit}
-            disabled={checked.length === 0 || pending}
-            className={cn(buttonVariants(), "w-full")}
-          >
-            {pending ? text.adding : checked.length === 0 ? text.pickOne : text.add(checked.length)}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className={cn(buttonVariants({ variant: "outline" }), "w-full")}
-          >
-            {text.later}
-          </button>
-        </div>
-      )}
+        )}
+        <p className="text-sm text-muted-foreground">{text.sheetNote(lockLabel)}</p>
+        {error && (
+          <p role="alert" className="text-sm font-semibold text-accent-text">
+            {messages.errors[error]}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={submit}
+          disabled={chosen.length === 0 || pending}
+          className={cn(buttonVariants(), "w-full")}
+        >
+          {pending
+            ? text.adding
+            : single
+              ? text.addTo(single.name)
+              : chosen.length === 0
+                ? text.pickOne
+                : text.add(chosen.length)}
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={pending}
+          className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+        >
+          {text.later}
+        </button>
+      </div>
     </BottomSheet>
   );
 }
