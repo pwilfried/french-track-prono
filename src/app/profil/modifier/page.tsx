@@ -35,7 +35,7 @@ export default async function EditProfilePage() {
 
   return (
     <main id="main" className="flex flex-1 flex-col">
-      <BackLink fallback="/profil" label={messages.editProfile.back} />
+      <BackLink fallback="/profil/reglages" label={messages.editProfile.back} />
       <AccountHero title={messages.editProfile.title} subtitle={messages.editProfile.subtitle} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-5">
         <EditProfileForm

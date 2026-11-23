@@ -18,17 +18,13 @@ import { ProfileStart } from "@/components/profile/profile-start";
 import { TrophyCelebration } from "@/components/profile/trophy-celebration";
 import { TrophyShowcase } from "@/components/profile/trophy-showcase";
 import { Bib } from "@/components/profile/bib";
-import { InstallEntry } from "@/components/shell/install-prompt";
-import { NotificationOptIn } from "@/components/account/notification-opt-in";
 import { ClubNotices } from "@/components/account/club-notices";
 import { rankingHref } from "@/components/leaderboard/ranking-href";
-import { SubmitButton } from "@/components/account/submit-button";
 import { LatestPredictions } from "@/components/profile/prediction-history";
 import { BestShot, SeasonCurve, SeasonTiles } from "@/components/profile/season-blocks";
 import { Animal } from "@/components/band/animal";
 import { AnimalChange } from "@/components/band/animal-change";
 import { BandPoints } from "@/components/band/band-points";
-import { buttonVariants } from "@/components/ui/button";
 import { TIME_ZONE } from "@/domain/competition";
 import { firstFinalToPredict } from "@/domain/home";
 import { trophyKey } from "@/domain/trophies";
@@ -43,7 +39,6 @@ import {
 
 import { currentCompetition, seasonCompetitionSlugs } from "../competition";
 import { messages } from "../messages.fr";
-import { turnOffNotificationsAction, turnOnNotificationsAction } from "../push-actions";
 import { getCurrentUser, getSessionClient, getSessionProfiles } from "../session";
 import { markBadgesSeenAction } from "./badge-actions";
 import { badgePorts } from "./badge-ports";
@@ -174,7 +169,16 @@ export default async function ProfilePage({
   const hasTrophies = shelves !== null && shelves.length > 0;
   return (
     <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-6">
-      <h1 className="sr-only">{text.title}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-display text-2xl font-extrabold">{messages.settings.profileTitle}</h1>
+        <Link
+          href="/profil/reglages"
+          aria-label={messages.settings.open}
+          className="inline-flex size-12 shrink-0 items-center justify-center rounded-full border border-border bg-card text-xl"
+        >
+          <span aria-hidden="true">⚙️</span>
+        </Link>
+      </div>
       <ClubNotices notices={clubNotices} />
       <TrophyCelebration trophies={newTrophies} onSeen={markTrophiesSeenAction} />
       {badges && <BadgeCelebration raised={badges.raised} onSeen={markBadgesSeenAction} />}
@@ -279,112 +283,6 @@ export default async function ProfilePage({
           </span>
         </Link>
       )}
-
-      <section aria-labelledby="season" className="flex flex-col gap-2">
-        <h2
-          id="season"
-          className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
-        >
-          {text.season}
-        </h2>
-        <Link
-          href="/mes-points"
-          className="flex min-h-11 items-center justify-between rounded-card border border-border bg-card px-4 font-semibold"
-        >
-          {messages.points.profileLink}
-          <span aria-hidden="true">›</span>
-        </Link>
-        <Link
-          href="/ligues"
-          className="flex min-h-11 items-center justify-between rounded-card border border-border bg-card px-4 font-semibold"
-        >
-          {messages.points.leaguesLink}
-          <span aria-hidden="true">›</span>
-        </Link>
-        <Link
-          href="/regles"
-          className="flex min-h-11 items-center justify-between rounded-card border border-border bg-card px-4 font-semibold"
-        >
-          {messages.rules.link}
-          <span aria-hidden="true">›</span>
-        </Link>
-        <InstallEntry />
-        <NotificationOptIn
-          turnOn={turnOnNotificationsAction}
-          turnOff={turnOffNotificationsAction}
-        />
-        <Link
-          href="/profil/rappels"
-          className="flex min-h-11 items-center justify-between rounded-card border border-border bg-card px-4 font-semibold"
-        >
-          {messages.reminders.link}
-          <span aria-hidden="true">›</span>
-        </Link>
-      </section>
-
-      <section aria-labelledby="account" className="flex flex-col gap-2">
-        <h2
-          id="account"
-          className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
-        >
-          {text.account}
-        </h2>
-        <dl className="flex flex-col divide-y divide-border rounded-card border border-border bg-card">
-          <div className="flex min-h-14 items-center justify-between gap-3 px-4 py-2">
-            <div className="min-w-0">
-              <dt className="text-sm font-bold">{text.pseudo}</dt>
-              <dd className="break-words text-sm text-muted-foreground">{profile.pseudo}</dd>
-            </div>
-          </div>
-          <div className="flex min-h-14 items-center justify-between gap-3 px-4 py-2">
-            <div className="min-w-0">
-              <dt className="text-sm font-bold">{messages.editProfile.club}</dt>
-              <dd className="break-words text-sm text-muted-foreground">
-                {details?.club
-                  ? `${details.club.name}${details.club.validated ? "" : ` (${messages.editProfile.toValidate})`}`
-                  : messages.editProfile.noClub}
-              </dd>
-            </div>
-          </div>
-          <div className="flex min-h-14 items-center justify-between gap-3 px-4 py-2">
-            <div className="min-w-0">
-              <dt className="text-sm font-bold">
-                {text.email}{" "}
-                <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs font-bold">
-                  {text.private}
-                </span>
-              </dt>
-              <dd className="break-all text-sm text-muted-foreground">{user.email}</dd>
-            </div>
-            <Link
-              href="/profil/email"
-              aria-label={messages.changeEmail.title}
-              className="inline-flex min-h-11 shrink-0 items-center font-semibold text-primary underline underline-offset-4"
-            >
-              {messages.changeEmail.link}
-            </Link>
-          </div>
-        </dl>
-        <p className="text-sm text-muted-foreground">{text.emailPrivate}</p>
-        <Link
-          href="/profil/modifier"
-          className={`${buttonVariants({ variant: "outline" })} w-full`}
-        >
-          {messages.editProfile.link}
-        </Link>
-      </section>
-
-      <form action="/auth/sign-out" method="post">
-        <SubmitButton variant="outline" pendingLabel={text.signingOut} navigates>
-          {text.signOut}
-        </SubmitButton>
-      </form>
-      <Link
-        href="/profil/supprimer"
-        className="flex min-h-11 items-center justify-center text-sm font-semibold text-accent-text underline underline-offset-4"
-      >
-        {text.deleteLink}
-      </Link>
     </main>
   );
 }

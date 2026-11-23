@@ -3112,6 +3112,37 @@ export const messages = {
     rule: (min: number) =>
       `Moyenne des points des joueurs du club, toutes compétitions, à partir de ${min} joueurs.`,
   },
+  /** The settings page (#1137): account, notifications and app, out of the profile. */
+  settings: {
+    title: "⚙️ Réglages",
+    open: "Réglages",
+    profileTitle: "👤 Profil",
+    back: "‹ Profil",
+    account: "👤 Compte",
+    notifications: "🔔 Notifications",
+    app: "📱 Appli",
+    pseudo: "🎽 Pseudo et dossard",
+    pseudoValue: (pseudo: string, bib: number) => `${pseudo} · n° ${bib}`,
+    edit: "Modifier",
+    club: "🏟️ Club",
+    clubValue: (name: string, validated: boolean) =>
+      `${name} · ${validated ? "validé" : "à valider"}`,
+    noClub: "Aucun club",
+    change: "Changer",
+    email: "✉️ E-mail",
+    private: "privé",
+    phone: "📲 Notifications sur ce téléphone",
+    reminders: "⏰ Mes rappels",
+    remindersSummary: (on: number, total: number) =>
+      on === 0 ? "Tout est coupé" : on === total ? "Tout est allumé" : `${on} sur ${total} allumés`,
+    install: "⬇️ Installer l'appli",
+    rules: "📖 Règles du jeu",
+    privacy:
+      "🔒 Ton e-mail, ton sexe et tes disciplines restent privés : ils n'apparaissent jamais dans l'application.",
+    signOut: "👋 Se déconnecter",
+    signingOut: "Déconnexion en cours…",
+    deleteLink: "Supprimer mon compte",
+  },
   profile: {
     title: "Mon profil",
     season: "Saison",
@@ -3249,7 +3280,7 @@ export const messages = {
     save: "Enregistrer mes rappels",
     saving: "Enregistrement…",
     saved: "Tes rappels sont enregistrés.",
-    back: "Retour au profil",
+    back: "Retour aux réglages",
   },
   editProfile: {
     title: "✏️ Mon dossard",
@@ -3270,7 +3301,7 @@ export const messages = {
     save: "Enregistrer",
     saving: "Enregistrement…",
     saved: "Ton profil est à jour.",
-    cancel: "Retour au profil",
+    cancel: "Retour aux réglages",
     club: "Club",
     noClub: "Aucun club",
     toValidate: "à valider",

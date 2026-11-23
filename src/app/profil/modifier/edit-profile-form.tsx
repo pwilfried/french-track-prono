@@ -178,7 +178,7 @@ export function EditProfileForm({
       <div className="sticky bottom-0 -mx-4 flex flex-col gap-1 border-t border-border bg-background px-4 pb-3 pt-3">
         <SubmitButton pendingLabel={text.saving}>{text.save}</SubmitButton>
         <Link
-          href="/profil"
+          href="/profil/reglages"
           className="flex min-h-11 items-center justify-center font-semibold text-primary underline underline-offset-4"
         >
           {text.cancelEdit}
