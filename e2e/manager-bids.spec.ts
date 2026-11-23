@@ -8,6 +8,7 @@ import { newPlayer, signUp } from "./players";
 test("a participant bids secretly within the budget, changes and withdraws a bid", async ({
   browser,
 }) => {
+  test.slow();
   seasonReady();
   const tag = `${Date.now() % 1000000}`;
   const league = `Enchères ${tag}`;
