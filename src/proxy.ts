@@ -4,6 +4,7 @@ import { lookUpProfile } from "@/application/get-profile";
 import { requiresProfile } from "@/domain/profile-gate";
 import { createSessionClient, createSupabaseProfileRepository, readCurrentUser } from "@/infra";
 
+import { canonicalUrl } from "./app/canonical-host";
 import { forwardedHeaders, type ProxiedSession } from "./app/proxied-session";
 
 /**
@@ -11,6 +12,14 @@ import { forwardedHeaders, type ProxiedSession } from "./app/proxied-session";
  * the page the user it checked (#1021): the page does not ask the auth server again.
  */
 export async function proxy(request: NextRequest) {
+  // #1145: the production Vercel address goes to the site address, where the captcha works.
+  const canonical = canonicalUrl(
+    request.nextUrl,
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.VERCEL_ENV,
+  );
+  if (canonical) return NextResponse.redirect(canonical, 308);
+
   let response = NextResponse.next({ request });
   const client = createSessionClient({
     getAll: () => request.cookies.getAll(),
