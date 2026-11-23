@@ -14,7 +14,13 @@ export type LeagueEventItem = {
   /** ISO 8601. */
   startsAt: string;
   counts: boolean;
+  /** Where it stands (#1155): result published, predictions closed, or still to come. */
+  phase?: "finished" | "locked" | "upcoming";
+  /** The winner of the final, once its result is published. */
+  winner?: string | null;
 };
+
+const PHASE_ICON = { finished: "🏁", locked: "🔒", upcoming: "⏳" } as const;
 
 /**
  * The finals of a league limited to families (#613). In the league, an event of another family is
@@ -25,10 +31,13 @@ export function LeagueEventList({
   events,
   variant = "league",
   title,
+  leagueId,
 }: {
   events: LeagueEventItem[];
   variant?: "league" | "preview";
   title: string;
+  /** In the league: a finished final that counts opens its result in the league (#1155). */
+  leagueId?: string;
 }) {
   const preview = variant === "preview";
   return (
@@ -49,16 +58,29 @@ export function LeagueEventList({
             {events.map((e) => (
               <li key={e.id}>
                 <Link
-                  href={`/epreuves/${e.slug}`}
+                  href={
+                    leagueId && e.counts && e.phase === "finished"
+                      ? `/ligues/${leagueId}/epreuves/${e.slug}`
+                      : `/epreuves/${e.slug}`
+                  }
                   className={cn(
                     "flex min-h-13 items-center gap-3 rounded-2xl border border-border bg-card px-3.5 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     !e.counts && !preview && "bg-muted text-muted-foreground",
                   )}
                 >
+                  {!preview && e.phase && (
+                    <span aria-hidden="true" className="w-6 shrink-0 text-center text-lg">
+                      {PHASE_ICON[e.phase]}
+                    </span>
+                  )}
                   <span className="min-w-0 flex-1">
                     <span className="block break-words font-semibold">{e.name}</span>
                     <span className="block text-xs text-muted-foreground">
-                      {text.eventDay(e.startsAt)}
+                      {!preview && e.phase === "finished"
+                        ? text.eventFinished(e.winner ?? null)
+                        : !preview && e.phase === "locked"
+                          ? text.eventLocked
+                          : text.eventDay(e.startsAt)}
                     </span>
                   </span>
                   {preview ? (
@@ -72,9 +94,11 @@ export function LeagueEventList({
               </li>
             ))}
           </ul>
-          <p className="text-sm text-muted-foreground">
-            {preview ? text.previewNote : text.outOfLeagueNote}
-          </p>
+          {(preview || events.some((e) => !e.counts)) && (
+            <p className="text-sm text-muted-foreground">
+              {preview ? text.previewNote : text.outOfLeagueNote}
+            </p>
+          )}
         </>
       )}
     </section>

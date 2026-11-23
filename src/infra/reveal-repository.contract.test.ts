@@ -16,12 +16,15 @@ revealRepositoryContract("in-memory fake", async () => {
     bib: { number: 7, color: "blue" },
     podium: { first, second, third: "c" },
     reactions: [],
-    flair: false,
+    score: null,
   });
   const anna = {
     ...of("anna", "a", "b"),
     reactions: [{ userId: "bob", reaction: "🔥" as const }],
-    flair: true,
+    score: {
+      points: 7,
+      reasons: [{ kind: "exact" as const, slot: 1 as const }, { kind: "flair" as const }],
+    },
   };
   return {
     annaId: "anna",

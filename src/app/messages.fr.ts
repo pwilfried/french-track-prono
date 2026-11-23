@@ -1763,6 +1763,11 @@ export const messages = {
     familiesBadge: (names: string[]) => names.join(" · "),
     familiesBadgeLabel: (names: string[]) => `Épreuves qui comptent : ${names.join(", ")}`,
     eventsTitle: "Épreuves de la ligue",
+    /** In a league counting whole competitions: the finals already closed (#1155). */
+    finalsTitle: "Les finales de la ligue",
+    eventFinished: (winner: string | null) =>
+      winner ? `Terminée · ${winner} gagne la finale` : "Terminée",
+    eventLocked: "En cours · pronos fermés",
     eventsEmpty: "Pas encore d'épreuve annoncée dans les compétitions de la ligue.",
     outOfLeague: "Hors ligue",
     outOfLeagueNote:
@@ -3485,9 +3490,6 @@ export const messages = {
     emptyAll: "Personne n'a pronostiqué cette épreuve.",
     emptyLeague: "Personne dans cette ligue n'a pronostiqué cette épreuve.",
     emptyText: "Même Duplantis commence à 5 m. Rendez-vous à la prochaine.",
-    /** Unfolds the folded podiums (#949, #984); `n`: how many are folded. */
-    seeAll: (n: number) => `Voir tous les pronos (${n})`,
-    hideOthers: "Masquer les autres pronos",
     seeEvents: "Voir les autres épreuves",
     places: { first: "1er", second: "2e", third: "3e" },
   },
@@ -3509,6 +3511,80 @@ export const messages = {
     boldest: (name: string, place: string) => `ton choix le plus original : ${name} en ${place}`,
     perfect: (percent: number) => `🎯 ${percent} % ont trouvé le podium parfait`,
     perfectNobody: "Personne n'a trouvé le podium parfait.",
+  },
+  /** The detail of a revealed and scored prediction, line by line (#1155). */
+  breakdown: {
+    open: "Détail",
+    label: (pseudo: string) => `Détail des points de ${pseudo}`,
+    exact: { 1: "🥇 Vainqueur trouvé", 2: "🥈 2e trouvé", 3: "🥉 3e trouvé" },
+    misplaced: (count: number) =>
+      count === 1 ? "🔄 1 athlète mal placé" : `🔄 ${count} athlètes mal placés`,
+    perfect: "🎯 Podium parfait",
+    flair: "✨ Coup de flair",
+    odds: "📈 Cotes",
+    marks: "⏱️ Perf juste",
+    none: "Aucun athlète sur le podium",
+    subtotal: "Sous-total",
+    joker: (emoji: string, name: string) => `${emoji} Joker ${name}`,
+    jokerChip: (emoji: string, name: string) => `${emoji} ${name}`,
+    total: "Total",
+    points: gain,
+    signed: (n: number) => (n < 0 ? `−${pts(-n)}` : gain(n)),
+    pending: "Points pas encore calculés",
+    /** How a predicted athlete did, on its pill. */
+    outcome: { exact: "✅", on_podium: "🔄", off: "✖" },
+    outcomeLabel: {
+      exact: "bonne place",
+      on_podium: "sur le podium, mal placé",
+      off: "hors podium",
+    },
+    legend: "Légende",
+    medals: { 1: "🥇", 2: "🥈", 3: "🥉" } as Record<number, string>,
+    rank: (rank: number) => ordinal(rank),
+  },
+  /** A final inside a league once its result is in (#1155). */
+  leagueResult: {
+    kicker: (date: string) => `Résultat dans la ligue · ${date}`,
+    official: "Podium officiel",
+    listTitle: (predicted: number, members: number) =>
+      `Les pronos de la ligue · ${predicted} sur ${members}`,
+    noPrediction: "🦗 Pas de prono",
+    noResult: "Le résultat officiel n'est pas encore publié.",
+    allPlayers: "📊 Et chez tous les joueurs ?",
+    allPlayersText: "Les stats de l'épreuve, parmi tous les joueurs.",
+    notCounted: "Cette épreuve ne compte pas dans la ligue.",
+    /** The card « Dernier résultat » at the top of the league. */
+    latest: "🏁 Dernier résultat",
+    latestWinner: "👑 Vainqueur",
+    latestMine: "🃏 Toi",
+    latestPerfect: "🎯 Podiums parfaits",
+    latestPlace: (rank: number) => ordinal(rank),
+    latestSeeAll: "Voir les pronos de la ligue ›",
+    latestNobody: "Personne dans la ligue n'a encore de points sur cette finale.",
+  },
+  /** The « Tous » view of a revealed event: stats, never the list of podiums (#1155). */
+  pointsStats: {
+    myPlaceTitle: "Ta place sur cette finale",
+    myPlace: (rank: number, total: number) => `${ordinal(rank)} sur ${playersCount(total)}`,
+    top: (percent: number) => `🔥 Top ${percent} %`,
+    mean: (mean: number) => `📊 Moyenne : ${String(mean).replace(".", ",")} ${ptsUnit(mean)}`,
+    meanOnly: (mean: number) => `Moyenne : ${String(mean).replace(".", ",")} ${ptsUnit(mean)}`,
+    spreadTitle: "Répartition des points",
+    range: (min: number, max: number | null) =>
+      max === null ? `${min} +` : min === max ? pts(min) : `${min}-${max}`,
+    rangeRow: (range: string, count: number, percent: number, mine: boolean) =>
+      `${range} : ${playersCount(count)}, ${percent} %${mine ? " (ta tranche)" : ""}`,
+    percent: (percent: number) => `${percent} %`,
+    perfect: (n: number) =>
+      n === 0
+        ? "Personne n'a trouvé le podium parfait."
+        : n === 1
+          ? "🎯 1 podium parfait"
+          : `🎯 ${n} podiums parfaits`,
+    topTitle: "🏆 Les 3 meilleurs pronos",
+    leaguesHint:
+      "👥 Les pronos un par un se regardent dans tes ligues : choisis une ligue en haut.",
+    noLeagueHint: "👥 Les pronos un par un se regardent dans une ligue, entre amis.",
   },
   reactions: {
     group: (pseudo: string) => `Réagir au prono de ${pseudo}`,

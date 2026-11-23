@@ -5,7 +5,8 @@ import type { RevealRepository } from "@/application/reveal";
 /**
  * Two events of their own: `openEventId` still open and `lockedEventId` locked, each predicted by
  * Anna (a b c) and Bob (b a c). `bob` reads as Bob; on the locked event, Bob reacted 🔥 to
- * Anna's prediction, and Anna's computed points include the "coup de flair".
+ * Anna's prediction, and Anna's computed points (7: the winner and the "coup de flair") are in;
+ * Bob's are not computed.
  */
 export type RevealWorld = {
   annaId: string;
@@ -28,7 +29,7 @@ export function revealRepositoryContract(name: string, world: () => Promise<Reve
       expect(open.predictions.filter((p) => p.userId !== w.bobId)).toEqual([]);
     });
 
-    it("reveals every prediction of a locked event, with pseudo, podium and reactions", async () => {
+    it("reveals every prediction of a locked event, with pseudo, podium, reactions and points", async () => {
       const w = await world();
       const [a, b, c] = w.athleteIds as [string, string, string];
 
@@ -39,11 +40,14 @@ export function revealRepositoryContract(name: string, world: () => Promise<Reve
       expect(anna.podium).toEqual({ first: a, second: b, third: c });
       expect(anna.pseudo).not.toBe("");
       expect(anna.reactions).toEqual([{ userId: w.bobId, reaction: "🔥" }]);
-      expect(anna.flair).toBe(true);
+      expect(anna.score).toEqual({
+        points: 7,
+        reasons: [{ kind: "exact", slot: 1 }, { kind: "flair" }],
+      });
       const bob = locked.predictions.find((p) => p.userId === w.bobId)!;
       expect(bob.podium).toEqual({ first: b, second: a, third: c });
       expect(bob.reactions).toEqual([]);
-      expect(bob.flair).toBe(false);
+      expect(bob.score).toBeNull();
     });
   });
 }
