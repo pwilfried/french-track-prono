@@ -28,6 +28,8 @@ export function BibPicker({
   pseudo,
   numberError,
   colorError,
+  hidePreview = false,
+  onPreview,
 }: {
   /** As last sent: the number as typed, the colour code. */
   chosen: { number: string; color: string };
@@ -35,6 +37,10 @@ export function BibPicker({
   pseudo?: string;
   numberError?: string;
   colorError?: string;
+  /** The page shows its own preview (the edit page, #1139). */
+  hidePreview?: boolean;
+  /** Told the bib to show as the number is typed (last valid one) and the colour is chosen. */
+  onPreview?: (bib: BibValue) => void;
 }) {
   const [number, setNumber] = useState(chosen.number);
   const [color, setColor] = useState(chosen.color);
@@ -50,9 +56,11 @@ export function BibPicker({
       <legend className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">
         {messages.bib.legend}
       </legend>
-      <div className="flex justify-center" aria-live="polite">
-        <Bib bib={preview} size="large" pseudo={pseudo} />
-      </div>
+      {hidePreview ? null : (
+        <div className="flex justify-center" aria-live="polite">
+          <Bib bib={preview} size="large" pseudo={pseudo} />
+        </div>
+      )}
       <Field
         id="bibNumber"
         name="bibNumber"
@@ -63,7 +71,10 @@ export function BibPicker({
         onChange={(event) => {
           setNumber(event.target.value);
           const valid = validNumber(event.target.value);
-          if (valid !== null) setShownNumber(valid);
+          if (valid !== null) {
+            setShownNumber(valid);
+            onPreview?.({ number: valid, color: preview.color });
+          }
         }}
         type="text"
         inputMode="numeric"
@@ -89,7 +100,10 @@ export function BibPicker({
                 name="bibColor"
                 value={code}
                 checked={color === code}
-                onChange={() => setColor(code)}
+                onChange={() => {
+                  setColor(code);
+                  onPreview?.({ number: shownNumber, color: code });
+                }}
                 aria-label={messages.bib.colors[code]}
                 className="peer sr-only"
               />

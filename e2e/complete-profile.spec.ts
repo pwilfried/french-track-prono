@@ -99,6 +99,7 @@ test("a player without a club is asked to complete their profile, puts it off, t
 
   // « Préciser les épreuves »: the profile form lets the player take a discipline off.
   await page.goto("/profil/modifier");
+  await page.getByRole("button", { name: /Privé : sexe et disciplines/ }).click();
   await page.getByText("200 m", { exact: true }).click();
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/profil\?enregistre=1$/);
