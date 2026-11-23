@@ -3,7 +3,8 @@ import Link from "next/link";
 import { messages } from "@/app/messages.fr";
 import { MIN_CLUB_PLAYERS, type RankedClub } from "@/domain/club-ranking";
 
-import { ClubRow, decimal, type ClubMember } from "./club-row";
+import { ClubRow, type ClubMember } from "./club-row";
+import { decimal } from "./decimal";
 
 const text = messages.clubRanking;
 

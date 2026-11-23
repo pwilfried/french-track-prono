@@ -5,9 +5,10 @@ import { useId, useState } from "react";
 import { messages } from "@/app/messages.fr";
 import type { RankedClub } from "@/domain/club-ranking";
 
+import { decimal } from "./decimal";
+
 const text = messages.clubRanking;
 const medals = ["🥇", "🥈", "🥉"];
-export const decimal = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
 
 /** A player of a club, as the unfolded line lists them. */
 export type ClubMember = { userId: string; pseudo: string; points: number };
