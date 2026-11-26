@@ -189,7 +189,7 @@ echo "Tagging $tag on ${sha:0:7} (go in #$go_number)"
 message="$tag
 
 $(as_bot gh api "repos/$repo/compare/$latest...$sha" --jq '.commits[].commit.message | split("\n")[0]' |
-  grep -v '^Merge ' | sed 's/^/- /')"
+  { grep -v '^Merge ' || true; } | sed 's/^/- /')" # none when the previous tag is on this commit
 object=$(as_owner gh api -X POST "repos/$repo/git/tags" -f "tag=$tag" -f "message=$message" \
   -f "object=$sha" -f type=commit --jq .sha)
 as_owner gh api -X POST "repos/$repo/git/refs" -f "ref=refs/tags/$tag" -f "sha=${object:-$sha}" >/dev/null
