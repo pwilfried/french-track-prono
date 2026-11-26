@@ -23,7 +23,12 @@ type Go = { state: "open" | "completed" | "not_planned"; sha?: string } | null;
  * (through the same --jq filters); writes are only printed (DRY_RUN). v0.17 is finished, its last
  * issue closed at 18:00. A run name ending with "!" failed, one ending with "…" is still going.
  */
-function release({ runs, e2e, go }: { runs?: string[]; e2e?: Pass[]; go?: Go } = {}) {
+function release({
+  runs,
+  e2e,
+  go,
+  description,
+}: { runs?: string[]; e2e?: Pass[]; go?: Go; description?: string } = {}) {
   // By default the owner has given the go on the commit of the first green pass.
   const passed = (e2e ?? [{}]).filter((pass) => (pass.state ?? "success") === "success").at(-1);
   const goes =
@@ -78,7 +83,9 @@ function release({ runs, e2e, go }: { runs?: string[]; e2e?: Pass[]; go?: Go } =
     "repos/owner/repo/pulls/41/files?per_page=100": [{ filename: "src/app/page.tsx" }],
     "repos/owner/repo/pulls/42/files?per_page=100": [{ filename: "ci/agents/lib.sh" }],
     "repos/owner/repo/pulls/41": { title: "feat: add a screen" },
-    "repos/owner/repo/milestones/7": { description: "It works when the league is themed." },
+    "repos/owner/repo/milestones/7": {
+      description: description ?? "It works when the league is themed.",
+    },
     "repos/owner/repo/issues?state=all&labels=release-go&per_page=100": goes,
   };
   writeFileSync(join(dir, "api.json"), JSON.stringify(api));
@@ -218,4 +225,19 @@ it("tags the first green pass of the version, not a later one still running (#96
     e2e: [{ state: "running", at: "2026-11-15T20:00:00Z" }, { sha: "0ld5ha0000000000" }],
   });
   expect(out).toContain("Tagging v0.17.0 on 0ld5ha0");
+});
+
+it("takes a go given ahead in the milestone's description and tags at once", () => {
+  const out = release({
+    go: { state: "open" },
+    description: "It works when the league is themed.\nGo prod : donné",
+  });
+  expect(out).toContain("issues/90 -f state=closed -f state_reason=completed");
+  expect(out).toContain("Tagging v0.17.0 on abcdef1 (go in #90)");
+});
+
+it("keeps waiting for the go when the description gives none", () => {
+  const out = release({ go: { state: "open" }, description: "Go prod après la recette." });
+  expect(out).not.toContain("state_reason=completed");
+  expect(out).not.toContain("Tagging");
 });

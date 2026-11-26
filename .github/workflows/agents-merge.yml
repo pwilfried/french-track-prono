@@ -3,13 +3,17 @@ name: agents-merge
 # Merges Claude's green PRs, sends red or conflicting ones back to Claude, retries the work waiting
 # for quota, tags a finished milestone once main is green (which deploys it, ci/agents/release.sh),
 # and starts the next agent:ready issues of the milestone (two at a time by default).
-# Runs after every CI or agents run, every hour, or by hand. See ci/agents/merge-sweep.sh.
+# Runs after every CI or agents run, when an issue is closed or released, every hour, or by hand. See ci/agents/merge-sweep.sh.
 # Stop everything: disable this workflow (Actions, agents-merge, "…", Disable workflow).
 on:
   workflow_run:
     # Pre-production: the tag follows its deploy and its full e2e pass at once (#743).
     workflows: [CI, agents, Pre-production]
     types: [completed]
+  # At once rather than at the next run (GitHub's cron skips hours, #736): a go given by closing
+  # « Go prod », an issue closed, or a label that held an issue back removed.
+  issues:
+    types: [closed, unlabeled]
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch:
@@ -26,7 +30,9 @@ concurrency:
 jobs:
   sweep:
     if: >-
-      github.event_name != 'workflow_run' ||
+      (github.event_name == 'issues' && (github.event.action == 'closed' ||
+        contains(fromJSON('["after-ui","agent:blocked","needs-human","agent:needs-answer","agent:local","agent:held"]'), github.event.label.name))) ||
+      (github.event_name != 'workflow_run' && github.event_name != 'issues') ||
       github.event.workflow_run.name == 'agents' ||
       github.event.workflow_run.name == 'Pre-production' ||
       github.event.workflow_run.event == 'pull_request' ||

@@ -79,11 +79,52 @@ send_back_conflict() { # $1 number, $2 short sha
 $mark"
 }
 
-current=$(as_bot gh api "repos/$repo/milestones?state=open&per_page=100" \
-  --jq '.[] | select(.title | test("^v[0-9]")) | select(.open_issues > 0) | .title' | sort -V | head -1)
+# The version to tag next (#1062): the oldest open milestone, finished or not. Only its PRs are
+# merged, so its tag holds that version alone; a PR of a later version waits with agent:held and
+# is merged at the first sweep after the tag. PRs without a milestone (CI, tooling) never wait.
+current=$(open_milestones | head -1 | cut -f1)
 echo "Current milestone: ${current:-none}"
 prs=$(as_bot gh pr list -R "$repo" --state open --limit 100 \
   --json number,title,headRefName,headRefOid,isCrossRepository,isDraft,labels,mergeable,milestone,files,statusCheckRollup)
+
+claude_prs='[.[] | select(.isCrossRepository | not) | select(.headRefName | startswith("claude/")) | select(.isDraft | not)]'
+if [ -n "$current" ]; then
+  jq -r --arg m "$current" "$claude_prs"' | .[] | select(.milestone != null and .milestone.title != $m)
+      | select([.labels[].name] | index("agent:held") | not) | "\(.number)\t\(.milestone.title)"' <<< "$prs" |
+    while IFS=$'\t' read -r n m; do
+      echo "#$n ($m) waits for the tag of $current"
+      add_label "$n" agent:held
+      comment as_bot "$n" "En attente : cette PR est de **$m**, elle sera fusionnée après la mise en prod de **$current** (une version n'embarque que son milestone, #1062)."
+    done
+fi
+
+# Migrations (#1095, #1124): a new migration must come after every migration of main, or Supabase
+# applies the versions out of order. Prints the PR's offending files, nothing when all is fine.
+late_migrations() { # $1 PR JSON
+  local mine on_main max
+  mine=$(jq -r '.files[]?.path | select(test("^supabase/migrations/[0-9]+_.*\\.sql$"))' <<< "$1")
+  [ -n "$mine" ] || return 0
+  on_main=$(as_bot gh api "repos/$repo/contents/supabase/migrations?ref=main" --jq '.[].name' 2>/dev/null || true)
+  max=$(grep -oE '^[0-9]+' <<< "$on_main" | sort -n | tail -1 || true)
+  [ -n "$max" ] || return 0
+  while read -r path; do
+    name=${path##*/}
+    grep -qxF "$name" <<< "$on_main" && continue # already on main: an edit, not a new migration
+    [ "${name%%_*}" -gt "$max" ] || echo "$name"
+  done <<< "$mine"
+}
+
+send_back_migrations() { # $1 number, $2 short sha, $3 files
+  local n=$1 mark="<!-- agents:migration sha=$2 -->"
+  seen "$n" "$mark" && return 0
+  if [ "$(count "$n" '<!-- agents:migration ')" -ge 2 ]; then
+    ask_owner "$n" "Les migrations de cette PR passent encore avant celles de main après 2 corrections."; return 0
+  fi
+  comment as_owner "$n" "@claude Ces migrations ont un numéro plus ancien que la dernière migration de main : Supabase les appliquerait dans le désordre. Renomme-les avec un numéro postérieur (vérifie qu'aucune fonction SQL réécrite ne part d'une version périmée), puis pousse.
+
+$(sed 's/^/- /' <<< "$3")
+$mark"
+}
 
 # Claude's PRs, no milestone first (CI, tooling), then the current milestone, p1 first, then the oldest.
 candidates=$(jq -c --arg m "$current" '[.[]
@@ -116,6 +157,9 @@ while read -r -u 3 pr; do
       { grep -qi conflict <<< "$out" && send_back_conflict "$n" "$sha"; }
     continue
   fi
+  late=$(late_migrations "$pr")
+  if [ -n "$late" ]; then send_back_migrations "$n" "$sha" "$late"; continue; fi
+  remove_label "$n" agent:held
   echo "Merging #$n"
   # Our own commit message: GitHub's default one lists every commit author as a co-author, and
   # AGENTS.md wants no Co-Authored-By trailer.

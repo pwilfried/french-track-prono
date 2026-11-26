@@ -165,14 +165,19 @@ Claude Code tourne sur les issues et les PR depuis GitHub Actions (`agents.yml`,
   la traite), ou bloquée par une issue ouverte.
 - Une session Claude Code locale qui prend une issue y pose `agent:local` avant d'écrire la moindre
   ligne (et le retire si elle abandonne) : la chaîne ne la prend pas en double (#583).
-- PR verte : fusionnée. Rouge : renvoyée à Claude 2 fois, puis au propriétaire ; si l'échec vient
+- PR verte : fusionnée si elle est de la version à taguer (le plus petit milestone ouvert) ou
+  sans milestone ; une PR d'une version suivante attend le tag avec `agent:held` (#1062), et la
+  chaîne ne travaille pas à plus d'une version d'avance. Une nouvelle migration doit venir après
+  la dernière de `main`, sinon la PR repart à Claude ; une seule issue `zone:db` à la fois (#1095).
+- Rouge : renvoyée à Claude 2 fois, puis au propriétaire ; si l'échec vient
   de l'outil (GitHub, réseau, runner), les jobs sont d'abord relancés une fois, sans Claude. En
   conflit : renvoyée à Claude 3 fois, puis au propriétaire (#1012).
 - Modèle : Opus pour `p1`, `p2`, `zone:db`, `c:scoring`, `milestone-plan` ou le label `model:opus` ;
   Sonnet pour le reste (`p3`, refactor-check, docs-check), pour ménager la limite hebdomadaire.
 - Milestone fini et `main` vert (préprod comprise) : tag `vX.Y.0` (ou `vX.Y.Z` pour un milestone
   correctif) posé avec `AGENTS_PAT` (sinon il ne déclencherait pas le déploiement), après le go
-  du propriétaire (issue « Go prod vX.Y.Z » fermée comme terminée) ; release GitHub qui liste les PR, milestone fermé (`ci/agents/release.sh`). Un déploiement
+  du propriétaire (issue « Go prod vX.Y.Z » fermée comme terminée, ou ligne « Go prod : donné »
+  dans la description du milestone) ; release GitHub qui liste les PR, milestone fermé (`ci/agents/release.sh`). Un déploiement
   préprod en échec sur ce commit fait attendre le tag jusqu'au passage suivant.
 
 Quand tu tournes là-bas :

@@ -45,6 +45,14 @@ model_for() {
 # down, the network cut, the runner lost. Rerunning the job fixes it; Claude would not.
 infra_re='The requested URL returned error: 5[0-9][0-9]|code (ECONNRESET|ETIMEDOUT|EAI_AGAIN)|runner has received a shutdown signal|lost communication with the server|HTTP 50[234]: |Bad Gateway|Service Unavailable'
 
+# The open "vX.Y …" milestones that hold issues, oldest first, one line "<title>\t<open issues>".
+# A tagged milestone is closed by release.sh: the first line is the version to tag next (#1062).
+open_milestones() {
+  as_bot gh api --paginate "repos/$repo/milestones?state=open&per_page=100" \
+    --jq '.[] | select(.title | test("^v[0-9]")) | select(.open_issues + .closed_issues > 0)
+      | "\(.title)\t\(.open_issues)"' | sort -V || true
+}
+
 # The issues that PR bodies (on stdin) close with "Closes/Fixes/Resolves #n", one number per line.
 closed_by() { grep -oiE '(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+' | grep -oE '[0-9]+' | sort -u || true; }
 
