@@ -86,12 +86,14 @@ export function onPreprod(): boolean {
 
 /**
  * An answer of the Supabase Management API worth sending the query again: a gateway error (502,
- * 503, 504: the API did not reach the database, #871), or the API failing for a while to check a
- * valid token (500 « Failed to check user auth status », then 401 « Invalid access token », #888).
+ * 503, 504: the API did not reach the database, #871; 544 « Failed to retrieve project », #1051),
+ * an isolated 403 with a valid token (#1051), or the API failing for a while to check a valid
+ * token (500 « Failed to check user auth status », then 401 « Invalid access token », #888).
+ * A real 403 still fails, after the retries, with Supabase's code and message.
  * Self-contained: its source is run as it is by sqlOnPreprod.
  */
 export function isTransientPreprodError(status: number, body: string): boolean {
-  if ([502, 503, 504].includes(status)) return true;
+  if ([403, 502, 503, 504, 544].includes(status)) return true;
   return (
     (status === 500 && body.includes("Failed to check user auth status")) ||
     (status === 401 && body.includes("Invalid access token"))
