@@ -11,6 +11,13 @@ const milestone = { title: "v0.13.1 Test" };
 /** Runs ci/agents/next.sh against a fake gh that knows these issues; nothing is written. */
 function next(
   issues: { number: number; labels: { name: string }[]; assignees?: { login: string }[] }[],
+  {
+    prs = [],
+    milestones = [],
+  }: {
+    prs?: { number: number; labels: { name: string }[]; body: string }[];
+    milestones?: { title: string; open_issues: number; closed_issues: number }[];
+  } = {},
 ) {
   const dir = mkdtempSync(join(tmpdir(), "agents-next-"));
   writeFileSync(join(dir, "state.json"), JSON.stringify(issues.map((i) => ({ ...i, milestone }))));
@@ -20,13 +27,20 @@ function next(
       issues.map((i) => ({ ...i, title: `Issue ${i.number}`, body: "", blockedBy: [] })),
     ),
   );
+  writeFileSync(join(dir, "prs.json"), JSON.stringify(prs));
+  writeFileSync(
+    join(dir, "milestones.txt"),
+    milestones.map((m) => `${m.title}\t${m.open_issues}`).join("\n") +
+      (milestones.length ? "\n" : ""),
+  );
   writeFileSync(
     join(dir, "gh"),
     `#!/usr/bin/env bash
 case "$*" in
   *"issue list"*--milestone*) cat "${dir}/issues.json" ;;
   *"issue list"*) cat "${dir}/state.json" ;;
-  *"pr list"*) echo "[]" ;;
+  *"pr list"*) cat "${dir}/prs.json" ;;
+  *milestones*) cat "${dir}/milestones.txt" ;;
 esac
 `,
   );
@@ -101,4 +115,54 @@ it("picks refactor-check once no feature is left, docs-check after it (#655)", (
     ]),
   ).toContain("Next: #60");
   expect(next([{ number: 61, labels: label("docs-check") }])).toContain("Next: #61");
+});
+
+it("starts no zone:db issue while another one has an open PR (#1095)", () => {
+  const out = next(
+    [
+      { number: 70, labels: label("feature", "p1", "zone:db") },
+      { number: 71, labels: label("feature", "p2") },
+    ],
+    { prs: [{ number: 80, labels: label("zone:db"), body: "Closes #69" }] },
+  );
+  expect(out).toContain("#70: waits for the migration in progress");
+  expect(out).toContain("Next: #71");
+});
+
+it("starts one zone:db issue at a time (#1095)", () => {
+  const out = next([
+    { number: 72, labels: label("feature", "p1", "zone:db") },
+    { number: 73, labels: label("feature", "p2", "zone:db") },
+  ]);
+  expect(out).toContain("Next: #72");
+  expect(out).toContain("#73: waits for the migration in progress");
+});
+
+it("ignores a zone:db PR held for a later tag (#1062)", () => {
+  const out = next([{ number: 74, labels: label("feature", "p1", "zone:db") }], {
+    prs: [{ number: 81, labels: label("zone:db", "agent:held"), body: "Closes #68" }],
+  });
+  expect(out).toContain("Next: #74");
+});
+
+it("works one version ahead of the version waiting for its tag (#1062)", () => {
+  const out = next([{ number: 75, labels: label("feature", "p1") }], {
+    milestones: [
+      { title: "v0.13 Done", open_issues: 0, closed_issues: 4 },
+      { title: "v0.13.1 Test", open_issues: 1, closed_issues: 0 },
+    ],
+  });
+  expect(out).toContain("Next: #75");
+});
+
+it("starts nothing two versions ahead of the version waiting for its tag (#1062)", () => {
+  const out = next([{ number: 76, labels: label("feature", "p1") }], {
+    milestones: [
+      { title: "v0.12 Done", open_issues: 0, closed_issues: 4 },
+      { title: "v0.12.5 Held", open_issues: 2, closed_issues: 1 },
+      { title: "v0.13.1 Test", open_issues: 1, closed_issues: 0 },
+    ],
+  });
+  expect(out).toContain("more than one version ahead of v0.12 Done");
+  expect(out).not.toContain("Next:");
 });

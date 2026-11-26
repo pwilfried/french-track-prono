@@ -9,7 +9,8 @@
 # links, or "Blocked by #n" lines in its body).
 # Order: milestone-plan, then features (p1, p2, p3, then the oldest) once no milestone-plan is
 # open (the plan is validated first), then refactor-check once no feature is left, then docs-check
-# last.
+# last. A zone:db issue waits while another one is in progress (one migration at a time), and
+# nothing starts more than one version ahead of the version to tag (#1062).
 # It labels each picked issue agent:claude as an owner (AGENTS_PAT), which starts Claude.
 # Env: BOT_TOKEN, PAT_TOKEN, AGENTS_CLAUDE_SLOTS.
 set -euo pipefail
@@ -42,11 +43,29 @@ current=$(jq -r --arg closing "$closing" '($closing | split("\n") | map(select(.
   | select(.number as $n | $done | index($n) | not) | .milestone.title' <<< "$issues_state" \
   | sort -uV | head -1)
 [ -n "$current" ] || { echo "No open milestone with an issue left to do."; exit 0; }
+# At most one version ahead of the one to tag (#1062): its PRs wait for that tag (agent:held), so
+# the agents keep working while the owner checks pre-production, but no further.
+milestones=$(open_milestones)
+if [ -n "$milestones" ]; then
+  release=$(head -1 <<< "$milestones" | cut -f1)
+  ahead=$(tail -n +2 <<< "$milestones" | awk -F'\t' '$2 > 0 { print $1; exit }')
+  if [ "$current" != "$release" ] && [ "$current" != "$ahead" ]; then
+    echo "$current is more than one version ahead of $release (waiting for its tag): nothing started."; exit 0
+  fi
+fi
 issues=$(as_bot gh issue list -R "$repo" --milestone "$current" --state open --limit 100 \
   --json number,title,labels,body,blockedBy,assignees)
 kind='([.labels[].name] | if index("milestone-plan") then "plan" elif index("refactor-check") then "refactor" elif index("docs-check") then "docs" else "feature" end)'
 count() { jq --arg k "$1" "[.[] | select($kind == \$k)] | length" <<< "$issues"; }
 features=$(count feature) plans=$(count plan) refactors=$(count refactor)
+
+# One migration at a time (#1095, #1124): two branches that each add one take the same or a
+# misordered number, or rewrite a SQL function from a stale version. A zone:db issue waits while
+# another one is with Claude or in an open PR (one waiting for a later tag aside).
+db_busy=$( { jq '[.[] | select([.labels[].name] | index("zone:db"))
+               | select([.labels[].name] | any(. == "agent:claude" or . == "agent:working-claude"))] | length' <<< "$issues_state"
+             jq '[.[] | select([.labels[].name] | index("zone:db")) | select([.labels[].name] | index("agent:held") | not)] | length' <<< "$open_prs"
+           } | awk '{ s += $1 } END { print s + 0 }')
 
 picks=()
 while read -r i; do
@@ -68,6 +87,10 @@ while read -r i; do
     open_blocker=$b; break
   done
   [ -z "$open_blocker" ] || { echo "#$n: blocked by #$open_blocker"; continue; }
+  if jq -e '[.labels[].name] | index("zone:db")' <<< "$i" >/dev/null; then
+    [ "$db_busy" -eq 0 ] || { echo "#$n: waits for the migration in progress (zone:db)"; continue; }
+    db_busy=1
+  fi
   picks+=("$n")
 done < <(jq -c "sort_by(($kind | if . == \"plan\" then 0 elif . == \"feature\" then 1 elif . == \"refactor\" then 2 else 3 end),
     ([.labels[].name] | if index(\"p1\") then 0 elif index(\"p2\") then 1 elif index(\"p3\") then 2 else 3 end), .number) | .[]" <<< "$issues")

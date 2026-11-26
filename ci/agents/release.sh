@@ -159,9 +159,21 @@ $criterion
 $marker
 <!-- release-sha:$sha -->" >/dev/null
   echo "$version is ready in pre-production on ${sha:0:7}: waiting for the owner's go."
-  exit 0
+  # A go given ahead is taken at once (below), not at the next sweep.
+  grep -qiE '^[[:space:]]*go prod[[:space:]]*:[[:space:]]*donn' <<< "$criterion" || exit 0
+  go=$(as_bot gh api --paginate "repos/$repo/issues?state=all&labels=release-go&per_page=100" \
+    --jq ".[] | select(.body // \"\" | contains(\"$marker\")) | \"\(.number)|\(.state)|\(.state_reason)|$sha\"" |
+    head -1 || true)
+  [ -n "$go" ] || exit 0
 fi
 IFS='|' read -r go_number go_state go_reason go_sha <<< "$go"
+# A go given ahead (owner's decision of 22 Nov 2026 for v0.25 and v0.26): a line « Go prod :
+# donné » in the milestone's description closes the issue as completed once the e2e pass is green.
+if [ "$go_state" = open ] && grep -qiE '^[[:space:]]*go prod[[:space:]]*:[[:space:]]*donn' <<< "$criterion"; then
+  comment as_bot "$go_number" "Go donné d'avance dans la description du milestone (« Go prod : donné ») : tag $tag sur ${go_sha:0:7}."
+  as_owner gh api -X PATCH "repos/$repo/issues/$go_number" -f state=closed -f state_reason=completed >/dev/null
+  go_state=closed go_reason=completed
+fi
 if [ "$go_state" = open ]; then
   echo "$version waits for the owner's go (#$go_number)."
   exit 0

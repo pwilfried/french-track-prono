@@ -8,18 +8,26 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
 
 1. Un propriétaire range une issue dans un milestone `vX.Y …`. Le label `agent:ready` n'est plus
    nécessaire (décision du propriétaire du 13 nov. 2026, #655).
-2. `agents-merge.yml` (après chaque CI, chaque run d'agent, et toutes les heures) prend les issues
-   ouvertes du milestone en cours, deux à la fois, et leur met `agent:claude`. Ordre :
-   `milestone-plan`, puis les features (`p1` d'abord) une fois `milestone-plan` fermée, puis
-   `refactor-check`, puis `docs-check`. Le milestone
+2. `agents-merge.yml` (après chaque CI, chaque run d'agent, dès qu'une issue est fermée ou qu'on
+   retire un label qui la retenait — `after-ui`, `agent:blocked`, `needs-human`… —, et toutes les
+   heures) prend les issues ouvertes du milestone en cours, deux à la fois, et leur met
+   `agent:claude`. Ordre : `milestone-plan`, puis les features (`p1` d'abord) une fois
+   `milestone-plan` fermée, puis `refactor-check`, puis `docs-check`. Le milestone
    en cours est le plus petit `vX.Y` qui a encore une issue sans PR ouverte : une version dont
-   toutes les issues attendent leur fusion ne bloque pas la suivante.
+   toutes les issues attendent leur fusion ne bloque pas la suivante. Mais la chaîne ne travaille
+   pas à plus d'une version d'avance sur la version à taguer (le plus petit milestone ouvert,
+   #1062). Une seule issue `zone:db` à la fois : une autre attend tant que la première est chez
+   Claude ou dans une PR ouverte (deux migrations en parallèle se marchaient dessus, #1095).
 3. `agents.yml` lance Claude Code : il travaille sur une branche `claude/…`, la pousse, et le
    workflow ouvre la PR (`Closes #n`, labels et milestone de l'issue). Le modèle suit les labels
    (`model_for`, `lib.sh`, #1012) : Opus pour `p1`, `p2`, `zone:db`, `c:scoring`,
    `milestone-plan` ou `model:opus`, Sonnet pour le reste. Pour forcer Opus sur une issue `p3`,
    mets-lui le label `model:opus`.
-4. CI verte : la PR est fusionnée (squash), après y avoir fusionné `main` si elle était en retard.
+4. CI verte : la PR est fusionnée (squash), après y avoir fusionné `main` si elle était en retard,
+   à deux conditions. Elle est de la version à taguer (ou sans milestone) : une PR d'une version
+   suivante prend `agent:held` et attend le tag, pour qu'une version n'embarque que son milestone
+   (#1062). Ses nouvelles migrations viennent après la dernière de `main` : sinon elle repart à
+   Claude pour les renuméroter (2 essais, puis le propriétaire).
    CI rouge : si les logs montrent une panne de l'outil (GitHub en 5xx, réseau npm, runner perdu),
    les jobs en échec sont relancés une fois, sans Claude ; sinon la PR repart à Claude avec les
    logs (2 essais, puis le propriétaire, #1012). Conflit : la PR repart à Claude (3 essais).
@@ -39,8 +47,9 @@ GitHub (le dépôt est public : minutes gratuites). Les règles de travail des a
    avec `AGENTS_PAT`, ce qui lance la mise en prod (`migrations.yml`). Le go (décision du
    propriétaire du 22 nov. 2026, remplace celle du 13 nov.) : après le passage vert, l'issue
    « Go prod vX.Y.Z » (`needs-human`, `release-go`, hors milestone) liste le critère et une case
-   par PR qui touche l'interface, à regarder en préprod. La fermer comme terminée = go : tag au
-   passage suivant (au plus une heure). Laissée ouverte, la version attend ; fermée comme
+   par PR qui touche l'interface, à regarder en préprod. La fermer comme terminée = go : tag tout
+   de suite (la fermeture relance agents-merge). Go donné d'avance : une ligne « Go prod : donné »
+   dans la description du milestone ferme l'issue dès le passage e2e vert, et le tag suit. Laissée ouverte, la version attend ; fermée comme
    « not planned », elle ne part pas. Après le tag, une release GitHub liste les PR (sa
    notification prévient les propriétaires) et le milestone est fermé. Seul garde-fou : si le
    déploiement en préprod de ce commit a échoué, pas de tag, un avertissement dans le run, nouvel

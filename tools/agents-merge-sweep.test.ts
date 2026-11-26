@@ -26,7 +26,23 @@ const green: Check = {
 };
 
 /** Runs ci/agents/merge-sweep.sh on one Claude PR against a fake gh; nothing is written. */
-function sweep(mergeable: string, checks: Check[], event = "workflow_run", log = "") {
+function sweep(
+  mergeable: string,
+  checks: Check[],
+  event = "workflow_run",
+  log = "",
+  {
+    milestone = null,
+    milestones = "",
+    files = [],
+    onMain = "",
+  }: {
+    milestone?: { title: string } | null;
+    milestones?: string;
+    files?: { path: string }[];
+    onMain?: string;
+  } = {},
+) {
   const dir = mkdtempSync(join(tmpdir(), "agents-sweep-"));
   for (const f of ["merge-sweep.sh", "lib.sh"]) copyFileSync(`ci/agents/${f}`, join(dir, f));
   for (const f of ["release.sh", "next.sh"]) {
@@ -42,18 +58,22 @@ function sweep(mergeable: string, checks: Check[], event = "workflow_run", log =
     isDraft: false,
     labels: [],
     mergeable,
-    milestone: null,
-    files: [],
+    milestone,
+    files,
     statusCheckRollup: checks,
   };
   writeFileSync(join(dir, "prs.json"), JSON.stringify([pr]));
   writeFileSync(join(dir, "job.log"), log);
+  writeFileSync(join(dir, "milestones.txt"), milestones);
+  writeFileSync(join(dir, "main.txt"), onMain);
   writeFileSync(
     join(dir, "gh"),
     `#!/usr/bin/env bash
 case "$*" in
   *"pr list"*) cat "${dir}/prs.json" ;;
   *compare*) echo 0 ;;
+  *milestones*) cat "${dir}/milestones.txt" ;;
+  *contents/supabase/migrations*) cat "${dir}/main.txt" ;;
   *"run view"*) cat "${dir}/job.log" ;;
   *"labels=agent:waiting-quota"*) echo 694 ;;
   *"issues/694 "*) echo false ;;
@@ -127,4 +147,44 @@ it("sends a check that failed on the code back to Claude (#1012)", () => {
   const out = sweep("MERGEABLE", [red], "workflow_run", "AssertionError: expected 2 to be 3");
   expect(out).toContain("agents:fix sha=abcdef1");
   expect(out).not.toContain("gh run rerun");
+});
+
+const v20 = "v0.20 Done\t0\nv0.21 Next\t3\n";
+
+it("holds a green PR of a later version until the tag of the current one (#1062)", () => {
+  const out = sweep("MERGEABLE", [green], "workflow_run", "", {
+    milestone: { title: "v0.21 Next" },
+    milestones: v20,
+  });
+  expect(out).toContain("#70 (v0.21 Next) waits for the tag of v0.20 Done");
+  expect(out).toContain("labels[]=agent:held");
+  expect(out).not.toContain("Merging #70");
+});
+
+it("merges a green PR of the version to tag (#1062)", () => {
+  const out = sweep("MERGEABLE", [green], "workflow_run", "", {
+    milestone: { title: "v0.20 Done" },
+    milestones: v20,
+  });
+  expect(out).not.toContain("agent:held\n");
+  expect(out).toContain("Merging #70");
+});
+
+it("sends back a PR whose new migration comes before main's last one (#1095)", () => {
+  const out = sweep("MERGEABLE", [green], "workflow_run", "", {
+    files: [{ path: "supabase/migrations/20261122150000_jokers.sql" }],
+    onMain: "20261122140000_a.sql\n20261122160000_b.sql\n",
+  });
+  expect(out).toContain("agents:migration sha=abcdef1");
+  expect(out).toContain("20261122150000_jokers.sql");
+  expect(out).not.toContain("Merging #70");
+});
+
+it("merges a PR whose new migration comes after main's last one (#1095)", () => {
+  const out = sweep("MERGEABLE", [green], "workflow_run", "", {
+    files: [{ path: "supabase/migrations/20261122170000_jokers.sql" }],
+    onMain: "20261122140000_a.sql\n20261122160000_b.sql\n",
+  });
+  expect(out).not.toContain("agents:migration");
+  expect(out).toContain("Merging #70");
 });
