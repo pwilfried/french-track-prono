@@ -28,7 +28,8 @@ function release({
   e2e,
   go,
   description,
-}: { runs?: string[]; e2e?: Pass[]; go?: Go; description?: string } = {}) {
+  sameCommit,
+}: { runs?: string[]; e2e?: Pass[]; go?: Go; description?: string; sameCommit?: boolean } = {}) {
   // By default the owner has given the go on the commit of the first green pass.
   const passed = (e2e ?? [{}]).filter((pass) => (pass.state ?? "success") === "success").at(-1);
   const goes =
@@ -74,11 +75,14 @@ function release({
     "repos/owner/repo/compare/v0.16.0...0ld5ha0000000000": {
       commits: [{ commit: { message: "feat: add a screen (#41)" } }],
     },
+    // No commit when the previous version is tagged on this very commit (#1223).
     [`repos/owner/repo/compare/v0.16.0...${sha}`]: {
-      commits: [
-        { commit: { message: "feat: add a screen (#41)" } },
-        { commit: { message: "chore: tidy the scripts (#42)" } },
-      ],
+      commits: sameCommit
+        ? []
+        : [
+            { commit: { message: "feat: add a screen (#41)" } },
+            { commit: { message: "chore: tidy the scripts (#42)" } },
+          ],
     },
     "repos/owner/repo/pulls/41/files?per_page=100": [{ filename: "src/app/page.tsx" }],
     "repos/owner/repo/pulls/42/files?per_page=100": [{ filename: "ci/agents/lib.sh" }],
@@ -240,4 +244,9 @@ it("keeps waiting for the go when the description gives none", () => {
   const out = release({ go: { state: "open" }, description: "Go prod après la recette." });
   expect(out).not.toContain("state_reason=completed");
   expect(out).not.toContain("Tagging");
+});
+
+it("tags a version on the same commit as the previous tag (#1223)", () => {
+  const out = release({ go: { state: "completed" }, sameCommit: true });
+  expect(out).toContain("v0.17.0 tagged");
 });
